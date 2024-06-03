@@ -27,13 +27,6 @@ import kotlin.io.path.absolutePathString
 class GitRepositoryIntegrationTest : BaseGitTest() {
 
 
-
-   private fun deployTestProjectToRemoteGitPath(pathInRepository: Path = Paths.get(".")) {
-      remoteRepoDir.root.resolve(pathInRepository.toString()).toPath().deployProject("sample-project")
-      remoteRepo.add().addFilepattern(".").call()
-      remoteRepo.commit().apply { message = "initial" }.call()
-   }
-
    @Test
    fun `configure a git repository at runtime and see initial state pulled along with changes`() {
       deployTestProjectToRemoteGitPath()
@@ -76,7 +69,6 @@ class GitRepositoryIntegrationTest : BaseGitTest() {
             "my-git-repo",
             uri = remoteRepoDir.root.toURI().toASCIIString(),
             branch = "master",
-
          )
       )
 

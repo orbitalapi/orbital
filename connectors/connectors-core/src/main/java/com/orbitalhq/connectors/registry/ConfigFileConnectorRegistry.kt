@@ -1,6 +1,8 @@
 package com.orbitalhq.connectors.registry
 
+import com.orbitalhq.Message
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.ResultWithMessage
 import com.orbitalhq.config.BaseHoconConfigFileRepository
 import com.orbitalhq.config.toHocon
 import com.orbitalhq.connections.ConnectionStatus
@@ -120,18 +122,22 @@ data class ConnectorConfigurationSummary(
    val properties: Map<String, Any>,
    val packageIdentifier: PackageIdentifier,
    val connectionStatus: ConnectionStatus,
-   val usages: List<SchemaMemberReference>?
-) {
+   val usages: List<SchemaMemberReference>?,
+   // used when performing a mutation (adding / removing a connection)
+   override val messages: List<Message> = emptyList()
+):ResultWithMessage {
    constructor(
       packageIdentifier: PackageIdentifier,
       config: ConnectorConfiguration,
       connectionStatus: ConnectionStatus = ConnectionStatus.unknown(),
       connectionUIDisplayProvider: ConnectionUIDisplayProvider? = null,
-      usages: List<SchemaMemberReference>? = null
+      usages: List<SchemaMemberReference>? = null,
+      messages: List<Message> = emptyList()
    ) : this(
       config.connectionName, config.type, config.driverName,
       connectionUIDisplayProvider?.uiProps(config) ?: config.getUiDisplayProperties(),
-      packageIdentifier, connectionStatus, usages
+      packageIdentifier, connectionStatus, usages,
+      messages
    )
 }
 

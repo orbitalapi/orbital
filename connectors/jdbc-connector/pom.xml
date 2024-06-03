@@ -15,6 +15,20 @@
    </properties>
 
    <dependencies>
+
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>schema-server-core</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>schema-server-core</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+      </dependency>
       <dependency>
          <groupId>org.jooq.pro</groupId>
          <artifactId>jooq</artifactId>

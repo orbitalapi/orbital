@@ -1,6 +1,8 @@
 package com.orbitalhq.connectors.jdbc.registry
 
+import com.orbitalhq.DefaultResultWithMessage
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.ResultWithMessage
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
 import com.orbitalhq.connectors.registry.MutableConnectionRegistry
 
@@ -19,16 +21,19 @@ class InMemoryJdbcConnectionRegistry(configs: List<JdbcConnectionConfiguration> 
       connections[connectionConfiguration.connectionName] = connectionConfiguration
    }
 
-   override fun register(targetPackage: PackageIdentifier, connectionConfiguration: JdbcConnectionConfiguration) {
+   override fun register(targetPackage: PackageIdentifier, connectionConfiguration: JdbcConnectionConfiguration): DefaultResultWithMessage {
       connections[connectionConfiguration.connectionName] = connectionConfiguration
+      return ResultWithMessage.SUCCESS
    }
 
-   override fun remove(targetPackage: PackageIdentifier, connectionConfiguration: JdbcConnectionConfiguration) {
+   override fun remove(targetPackage: PackageIdentifier, connectionConfiguration: JdbcConnectionConfiguration): DefaultResultWithMessage {
       connections.remove(connectionConfiguration.connectionName)
+      return ResultWithMessage.SUCCESS
    }
 
-   override fun remove(targetPackage: PackageIdentifier, connectionName: String) {
+   override fun remove(targetPackage: PackageIdentifier, connectionName: String): DefaultResultWithMessage {
       connections.remove(connectionName)
+      return ResultWithMessage.SUCCESS
    }
 
    override fun listAll(): List<JdbcConnectionConfiguration> {

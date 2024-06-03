@@ -33,7 +33,7 @@ import {ValueWithTypeName} from './models';
 import {ENVIRONMENT, Environment} from './environment';
 import {TuiDialogService} from '@taiga-ui/core';
 import {PackageIdentifier, PackageMetadata} from "../package-viewer/packages.service";
-import { HttpMethod, SchemaEditOperation } from '../project-import/schema-importer.service';
+import {HttpMethod, SchemaEditOperation} from '../project-import/schema-importer.service';
 
 
 @Injectable({
@@ -444,8 +444,8 @@ export interface ContentWithSchemaParseResponse {
   types: Type[];
 }
 
-export interface SchemaSubmissionResult<T = SchemaEditOperation> extends PartialSchema {
-  messages: CompilationMessage[];
+export interface SchemaSubmissionResult<T = SchemaEditOperation> extends PartialSchema, ResultWithMessage {
+  compilationMessages: CompilationMessage[];
   sourcePackage: SourcePackage
   pendingEdits: T[]
 }
@@ -502,4 +502,11 @@ interface HttpOperation {
 
 interface WebsocketOperation {
   path: string;
+}
+
+
+export interface ResultWithMessage {
+  messages: Message[];
+  hasWarning: boolean;
+  hasError: boolean;
 }

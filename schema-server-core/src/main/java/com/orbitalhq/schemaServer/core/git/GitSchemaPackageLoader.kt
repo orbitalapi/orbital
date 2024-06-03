@@ -1,14 +1,19 @@
 package com.orbitalhq.schemaServer.core.git
 
+import com.orbitalhq.Message
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.ResultWithMessage
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
+import com.orbitalhq.config.ConfigSourceWriter
+import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.schema.publisher.PublisherType
 import com.orbitalhq.schema.publisher.loaders.AddChangesToChangesetResponse
 import com.orbitalhq.schema.publisher.loaders.AvailableChangesetsResponse
 import com.orbitalhq.schema.publisher.loaders.Changeset
 import com.orbitalhq.schema.publisher.loaders.CreateChangesetResponse
 import com.orbitalhq.schema.publisher.loaders.FinalizeChangesetResponse
+import com.orbitalhq.schema.publisher.loaders.LoaderExposingTaxiProject
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
 import com.orbitalhq.schema.publisher.loaders.SchemaSourcesAdaptor
@@ -20,7 +25,10 @@ import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageWriter
 import com.orbitalhq.utils.RetryFailOnSerializeEmitHandler
 import com.orbitalhq.utils.files.ReactiveFileSystemMonitor
 import com.orbitalhq.utils.files.ReactiveWatchingFileSystemMonitor
+import com.typesafe.config.Config
 import kotlinx.coroutines.reactor.mono
+import lang.taxi.messages.Severity
+import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -41,13 +49,13 @@ class GitSchemaPackageLoader(
    // visible for testing
    val fileMonitor: ReactiveFileSystemMonitor = ReactiveWatchingFileSystemMonitor(workingDir, listOf(".git")),
    val gitPollFrequency: Duration = Duration.ofSeconds(30),
-) : SchemaPackageTransport {
+) : SchemaPackageTransport, LoaderExposingTaxiProject {
 
    override val publisherType: PublisherType = PublisherType.GitRepo
+
    override val description: String = "GitLoader at ${config.description}"
 
-
-   private val filePackageLoader: FileSystemPackageLoader
+   val filePackageLoader: FileSystemPackageLoader
 
    private var currentBranch = config.branch
    private val defaultBranchName = config.branch
@@ -259,4 +267,38 @@ class GitSchemaPackageLoader(
 
    override val packageIdentifier: PackageIdentifier
       get() = filePackageLoader.packageIdentifier
+
+   override fun loadTaxiProject(): Mono<Pair<Path, TaxiPackageProject>> {
+      return filePackageLoader.loadTaxiProject()
+   }
+
+   override fun configureWriter(writer: ConfigSourceWriter): ConfigSourceWriter {
+      return GitWriterDecorator(writer)
+   }
+}
+
+/**
+ * Simple decorator which appends UI messaging to write operations, indicating that
+ * the user still needs to perform a commit and push
+ */
+class GitWriterDecorator(private val writer: ConfigSourceWriter) : ConfigSourceWriter by writer {
+   companion object {
+      val GIT_COMMIT_NEEDED = Message(
+         Severity.WARNING,
+         "Files have been changed locally, but have not been committed or pushed to the git repository - you'll need to do this manually. \n\nPulls from the git repository may fail while there are uncommitted changes."
+      )
+   }
+
+   override fun save(source: VersionedSource): ResultWithMessage {
+      return appendGitWarning(writer.save(source))
+   }
+
+   override fun saveConfig(updated: Config): ResultWithMessage {
+      return appendGitWarning(writer.saveConfig(updated))
+   }
+
+   private fun appendGitWarning(result: ResultWithMessage): ResultWithMessage {
+      return result.append(GIT_COMMIT_NEEDED, replaceIfExists = ResultWithMessage.SUCCESS_MESSAGE)
+   }
+
 }

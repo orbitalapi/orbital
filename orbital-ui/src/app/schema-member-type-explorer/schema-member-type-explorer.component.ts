@@ -24,85 +24,85 @@ import {
 @Component({
   selector: 'app-schema-member-type-explorer',
   template: `
-    <div class="main-content">
-      <tui-tabs [(activeItemIndex)]="activeTabIndex" *ngIf="hasCodeView" class="schema-source-tabs">
-        <button tuiTab>
-          <img src="assets/img/tabler/table.svg" class="icon">
-          Schema
-        </button>
-        <button tuiTab>
-          <img src="assets/img/tabler/code.svg" class="icon">
-          Source
-        </button>
-      </tui-tabs>
-      <as-split direction="horizontal" unit="pixel" *ngIf="activeTabIndex === 0">
-        <as-split-area size="260" maxSize="260">
-          <app-schema-member-tree [partialSchema$]="partialSchema$" #schemaEntryTable
-                                  (modelSelected)="onModelSelected($event)"
-                                  (operationSelected)="onOperationSelected($event)"
-                                  (resetSelection)="onResetMemberSelection()"
-          ></app-schema-member-tree>
-        </as-split-area>
-        <as-split-area size="*">
-          <as-split direction="horizontal">
-            <as-split-area [size]="selectedOperation ? 100 : 50">
-              <div class="documentation-content-container">
-                <div class="documentation-content">
-                  <app-type-viewer *ngIf="selectedModel"
-                                   [type]="selectedModel"
-                                   [schema]="schema"
-                                   [partialSchema]="partialSchema"
-                                   [showUsages]="false"
-                                   [showContentsList]="false"
-                                   [anonymousTypes]="partialSchema?.types"
-                                   commitMode="explicit"
-                                   [editable]="editable"
-                                   [schemaMemberNavigable]="!editable"
-                                   (newTypeCreated)="handleNewTypeCreated($event, selectedModel)"
-                                   (typeUpdated)="handleSchemaEditOperation($event.schemaEditOperation, $event.member, selectedModel)"
-                  ></app-type-viewer>
-                  <app-operation-view *ngIf="selectedOperation"
-                                      [operation]="selectedOperation"
-                                      [schema]="schema"
-                                      [allowTryItOut]="allowTryItOut"
-                                      [editable]="editable"
-                                      [schemaMemberNavigable]="!editable"
-                                      commitMode="explicit"
-                                      (newTypeCreated)="handleNewTypeCreated($event, selectedOperation)"
-                                      (updateDeferred)="handleSchemaEditOperation($event.schemaEditOperation, $event.member, selectedOperation)"
-                  ></app-operation-view>
-                  <div *ngIf="!selectedModel && !selectedOperation">
-                    Select a schema member from the panel on the left to view here.
-                  </div>
-                </div>
-              </div>
-            </as-split-area>
-            <as-split-area *ngIf="selectedModel || selectedOperation" size="50">
-              <app-schema-diagram
-                [schema$]="combinedSchema$"
-                [displayedMembers]="editable ? availableMemberLinks : [selectedModel ? selectedModel.name.fullyQualifiedName : selectedOperation.memberQualifiedName.fullyQualifiedName]"
-                [memberNameNavigable]="!editable"
-              ></app-schema-diagram>
-            </as-split-area>
+      <div class="main-content">
+          <tui-tabs [(activeItemIndex)]="activeTabIndex" *ngIf="hasCodeView" class="schema-source-tabs">
+              <button tuiTab>
+                  <img src="assets/img/tabler/table.svg" class="icon">
+                  Schema
+              </button>
+              <button tuiTab>
+                  <img src="assets/img/tabler/code.svg" class="icon">
+                  Source
+              </button>
+          </tui-tabs>
+          <as-split direction="horizontal" unit="pixel" *ngIf="activeTabIndex === 0">
+              <as-split-area size="260" maxSize="260">
+                  <app-schema-member-tree [partialSchema$]="partialSchema$" #schemaEntryTable
+                                          (modelSelected)="onModelSelected($event)"
+                                          (operationSelected)="onOperationSelected($event)"
+                                          (resetSelection)="onResetMemberSelection()"
+                  ></app-schema-member-tree>
+              </as-split-area>
+              <as-split-area size="*">
+                  <as-split direction="horizontal">
+                      <as-split-area [size]="selectedOperation ? 100 : 50">
+                          <div class="documentation-content-container">
+                              <div class="documentation-content">
+                                  <app-type-viewer *ngIf="selectedModel"
+                                                   [type]="selectedModel"
+                                                   [schema]="schema"
+                                                   [partialSchema]="partialSchema"
+                                                   [showUsages]="false"
+                                                   [showContentsList]="false"
+                                                   [anonymousTypes]="partialSchema?.types"
+                                                   commitMode="explicit"
+                                                   [editable]="editable"
+                                                   [schemaMemberNavigable]="!editable"
+                                                   (newTypeCreated)="handleNewTypeCreated($event, selectedModel)"
+                                                   (typeUpdated)="handleSchemaEditOperation($event.schemaEditOperation, $event.member, selectedModel)"
+                                  ></app-type-viewer>
+                                  <app-operation-view *ngIf="selectedOperation"
+                                                      [operation]="selectedOperation"
+                                                      [schema]="schema"
+                                                      [allowTryItOut]="allowTryItOut"
+                                                      [editable]="editable"
+                                                      [schemaMemberNavigable]="!editable"
+                                                      commitMode="explicit"
+                                                      (newTypeCreated)="handleNewTypeCreated($event, selectedOperation)"
+                                                      (updateDeferred)="handleSchemaEditOperation($event.schemaEditOperation, $event.member, selectedOperation)"
+                                  ></app-operation-view>
+                                  <div *ngIf="!selectedModel && !selectedOperation">
+                                      Select a schema member from the panel on the left to view here.
+                                  </div>
+                              </div>
+                          </div>
+                      </as-split-area>
+                      <as-split-area *ngIf="selectedModel || selectedOperation" size="50">
+                          <app-schema-diagram
+                                  [schema$]="combinedSchema$"
+                                  [displayedMembers]="editable ? availableMemberLinks : [selectedModel ? selectedModel.name.fullyQualifiedName : selectedOperation.memberQualifiedName.fullyQualifiedName]"
+                                  [memberNameNavigable]="!editable"
+                          ></app-schema-diagram>
+                      </as-split-area>
+                  </as-split>
+              </as-split-area>
           </as-split>
-        </as-split-area>
-      </as-split>
-      <app-code-viewer
-        *ngIf="activeTabIndex === 1"
-        class='code-editor'
-        [sources]="versionedSources"
-        [flexboxMode]="codeViewerFlexBoxMode"
-      ></app-code-viewer>
-    </div>
-    <div class="error-message-box" *ngIf="saveResultMessage && saveResultMessage.level === 'FAILURE'">
-      {{ saveResultMessage.message }}
-    </div>
-    <div class="button-bar" *ngIf="editable">
-      <button tuiButton appearance="secondary" size="m" (click)="cancelConfig.emit()" [showLoader]="working">
-        Cancel
-      </button>
-      <button tuiButton size="m" (click)="savePendingEdits()" [showLoader]="working">Save</button>
-    </div>
+          <app-code-viewer
+                  *ngIf="activeTabIndex === 1"
+                  class='code-editor'
+                  [sources]="versionedSources"
+                  [flexboxMode]="codeViewerFlexBoxMode"
+          ></app-code-viewer>
+      </div>
+      <div class="error-message-box" *ngIf="saveResultMessage && saveResultMessage.severity === 'FAILURE'">
+          {{ saveResultMessage.message }}
+      </div>
+      <div class="button-bar" *ngIf="editable">
+          <button tuiButton appearance="secondary" size="m" (click)="cancelConfig.emit()" [showLoader]="working">
+              Cancel
+          </button>
+          <button tuiButton size="m" (click)="savePendingEdits()" [showLoader]="working">Save</button>
+      </div>
   `,
   styleUrls: ['./schema-member-type-explorer.component.scss'],
 })

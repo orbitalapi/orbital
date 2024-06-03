@@ -1,11 +1,12 @@
-import { Component, Inject } from '@angular/core';
-import { Observable } from 'rxjs';
-import { tap } from 'rxjs/operators';
-import { TuiDialogContext } from '@taiga-ui/core';
-import { POLYMORPHEUS_CONTEXT } from '@tinkoff/ng-polymorpheus';
-import { ConnectorSummary, ConnectorType } from './db-importer.service';
-import { PackageIdentifier, PackagesService, SourcePackageDescription } from '../package-viewer/packages.service';
-import { ConnectionEditorComponent, ConnectionEditorMode } from './connection-editor.component';
+import {Component, Inject, Injector} from '@angular/core';
+import {Observable} from 'rxjs';
+import {tap} from 'rxjs/operators';
+import {TuiAlertService, TuiDialogContext} from '@taiga-ui/core';
+import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
+import {ConnectorSummary, ConnectorType} from './db-importer.service';
+import {PackageIdentifier, PackagesService, SourcePackageDescription} from '../package-viewer/packages.service';
+import {ConnectionEditorComponent, ConnectionEditorMode} from './connection-editor.component';
+import {showAlertForMessage} from "../alert-with-dismiss/alert-with-dismiss.component";
 
 
 export class ConnectionEditorContext {
@@ -39,7 +40,9 @@ export class DbConnectionEditorDialogComponent {
   selectedPackage: SourcePackageDescription;
 
   constructor(@Inject(POLYMORPHEUS_CONTEXT) public readonly context: TuiDialogContext<ConnectorSummary, ConnectionEditorContext>,
-              private packagesService: PackagesService,
+              packagesService: PackagesService,
+              private alerts: TuiAlertService,
+              @Inject(Injector) private readonly injector: Injector,
   ) {
     this.packages$ = packagesService.listPackages()
       .pipe(
@@ -48,5 +51,11 @@ export class DbConnectionEditorDialogComponent {
 
   onConnectionCreated($event: ConnectorSummary) {
     this.context.completeWith($event);
+
+    if ($event.hasWarning) {
+      const warning = $event.messages.find(m => m.severity === 'WARNING')
+      showAlertForMessage(warning, this.alerts, this.injector)
+        .subscribe()
+    }
   }
 }

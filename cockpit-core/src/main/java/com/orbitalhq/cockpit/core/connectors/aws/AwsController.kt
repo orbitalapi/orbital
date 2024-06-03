@@ -38,8 +38,8 @@ class AwsController(val registry: AwsConnectionRegistry) {
          .map {
             val packageIdentifier = PackageIdentifier.fromUriSafeId(packageUri)
             val connectionEditor = registry as MutableConnectionRegistry<AwsConnectionConfiguration>
-            connectionEditor.register(packageIdentifier, connectionConfig)
-            ConnectorConfigurationSummary(packageIdentifier, connectionConfig)
+            val result = connectionEditor.register(packageIdentifier, connectionConfig)
+            ConnectorConfigurationSummary(packageIdentifier, connectionConfig, messages = result.messages)
          }
    }
 }

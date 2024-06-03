@@ -8,9 +8,11 @@ import {Observable} from 'rxjs/internal/Observable';
 import {SavedQuery, SchemaSubmissionResult} from '../services/types.service';
 import {PartialSchema, QualifiedName, SchemaMemberKind, VersionedSource} from '../services/schema';
 import {PackageIdentifier, PackagesService, SourcePackageDescription} from '../package-viewer/packages.service';
-import {switchMap} from 'rxjs/operators';
+import {switchMap, tap} from 'rxjs/operators';
 import {WorkspacesService} from "../services/workspaces.service";
 import {AppConfig, AppInfoService} from "../services/app-info.service";
+import {TuiAlertService} from "@taiga-ui/core";
+import {showAlertForMessages} from "../alert-with-dismiss/alert-with-dismiss.component";
 
 @Injectable({
   providedIn: VyneServicesModule,
@@ -22,7 +24,9 @@ export class SchemaImporterService {
   constructor(private httpClient: HttpClient,
               private packagesService: PackagesService,
               private workspaceService: WorkspacesService,
-              private configService: AppInfoService
+              private configService: AppInfoService,
+              private alerts:TuiAlertService,
+
   ) {
     configService.getConfig().subscribe(next => this.appConfig = next)
 
@@ -38,6 +42,12 @@ export class SchemaImporterService {
 
   submitSchemaEditOperation(edit: SchemaEdit): Observable<SchemaSubmissionResult> {
     return this.httpClient.post<SchemaSubmissionResult>(`${environment.serverUrl}/api/schemas/edits`, edit)
+      .pipe(
+        tap(next => {
+          showAlertForMessages(next, "WARNING", this.alerts, null)
+            .subscribe()
+        })
+      )
   }
 
   submitEditedSchema(schema: PartialSchema): Observable<any> {

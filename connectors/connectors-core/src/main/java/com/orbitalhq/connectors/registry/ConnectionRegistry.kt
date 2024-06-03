@@ -3,6 +3,7 @@ package com.orbitalhq.connectors.registry
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.toConfig
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.ResultWithMessage
 import com.orbitalhq.connectors.config.ConnectionsConfig
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import kotlin.reflect.KProperty1
@@ -14,12 +15,12 @@ interface ConnectionRegistry<T : ConnectorConfiguration> {
 }
 
 interface MutableConnectionRegistry<T : ConnectorConfiguration> : ConnectionRegistry<T> {
-   fun register(targetPackage: PackageIdentifier, connectionConfiguration: T)
-   fun remove(targetPackage: PackageIdentifier, connectionConfiguration: T) {
+   fun register(targetPackage: PackageIdentifier, connectionConfiguration: T):ResultWithMessage
+   fun remove(targetPackage: PackageIdentifier, connectionConfiguration: T):ResultWithMessage {
       return remove(targetPackage, connectionConfiguration.connectionName)
    }
 
-   fun remove(targetPackage: PackageIdentifier, connectionName: String)
+   fun remove(targetPackage: PackageIdentifier, connectionName: String):ResultWithMessage
 }
 
 /**
@@ -56,7 +57,7 @@ abstract class SourceLoaderConnectionRegistryAdapter<T : ConnectorConfiguration>
     * Will also invoke a writer, so the config is updated, and
     * the local cache in invalidated
     */
-   override fun register(targetPackage: PackageIdentifier, connectionConfiguration: T) {
+   override fun register(targetPackage: PackageIdentifier, connectionConfiguration: T):ResultWithMessage {
       // The full config, including all different types of connectors
       // but with env variables unresolved
       val currentConnectionsConfig = sourceLoaderConnectorsRegistry.loadUnresolvedConfig(targetPackage)
@@ -67,16 +68,16 @@ abstract class SourceLoaderConnectionRegistryAdapter<T : ConnectorConfiguration>
          .withFallback(connectionAsHocon)
          .withFallback(currentConnectionsConfig)
 
-      sourceLoaderConnectorsRegistry.saveConfig(targetPackage, updated)
+      return sourceLoaderConnectorsRegistry.saveConfig(targetPackage, updated)
    }
 
    private fun configPath(connectionName: String) = "${property.name}.$connectionName"
 
-   override fun remove(targetPackage: PackageIdentifier, connectionName: String) {
+   override fun remove(targetPackage: PackageIdentifier, connectionName: String):ResultWithMessage {
       val currentConnectionsConfig = sourceLoaderConnectorsRegistry.loadUnresolvedConfig(targetPackage)
       val updated = currentConnectionsConfig.withoutPath(configPath(connectionName))
 
-      sourceLoaderConnectorsRegistry.saveConfig(targetPackage, updated)
+      return sourceLoaderConnectorsRegistry.saveConfig(targetPackage, updated)
 
    }
 }

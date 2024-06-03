@@ -164,22 +164,25 @@ class LocalSchemaEditingService(
                   }
             )
 
-            val submissionResult = SchemaSubmissionResult(
-               editedTypes.toSet(),
-               editedServices.toSet(),
-               editedQueries.toSet(),
-               compilationMessages,
-               edit.dryRun,
-               sourcePackageWithOnlyTouchedFiles,
-               pendingUpdates
-            )
-
-            if (edit.dryRun) {
-               Mono.just(submissionResult)
+            val messagesFromUpdate = if (edit.dryRun) {
+               Mono.just(emptyList())
             } else {
                val modifiedSources = updatedSourcePackage.sources
                   .filter { touchedFilenames.contains(it.name) }
-               submitEdits(modifiedSources, updatedSourcePackage.identifier).map { submissionResult }
+               submitEdits(modifiedSources, updatedSourcePackage.identifier).map { it.messages }
+            }
+
+            messagesFromUpdate.map { messages ->
+               SchemaSubmissionResult(
+                  editedTypes.toSet(),
+                  editedServices.toSet(),
+                  editedQueries.toSet(),
+                  compilationMessages,
+                  edit.dryRun,
+                  sourcePackageWithOnlyTouchedFiles,
+                  pendingUpdates,
+                  messages
+               )
             }
          }
    }
@@ -354,8 +357,8 @@ class LocalSchemaEditingService(
    ): Mono<SchemaSubmissionResult> {
       val importRequestSourceName = "ImportRequest_${UUID.randomUUID()}"
       val packageIdentifier = PackageIdentifier.fromId(rawPackageIdentifier)
-      val (messages, compiled) = validate(generatedSource, importRequestSourceName)
-      val errors = messages.errors()
+      val (compilationMessages, compiled) = validate(generatedSource, importRequestSourceName)
+      val errors = compilationMessages.errors()
       if (errors.isNotEmpty()) {
          throw CompilationException(errors)
       }
@@ -370,19 +373,25 @@ class LocalSchemaEditingService(
       val vyneServices = servicesInThisRequest.map { (service, _) -> updatedSchema.service(service.qualifiedName) }
       val vyneQueries =
          queriesInThisRequest.map { (query, _) -> updatedSchema.queries.single { it.name.parameterizedName == query.name.parameterizedName } }
-      val submissionResult = SchemaSubmissionResult(
-         vyneTypes.toSet(), vyneServices.toSet(), vyneQueries.toSet(), messages,
-         dryRun = validateOnly,
-         // TODO : I think this whole doSubmit() method is about to be killed,
-         // so stubbing these values for now.
-         SourcePackage(PackageMetadata.from(packageIdentifier), emptyList(), emptyMap()),
-         emptyList()
-      )
-      return if (persist) {
+
+      val messagesFromUpdate =  if (persist) {
          submitEdits(versionedSources, packageIdentifier)
-            .map { submissionResult }
+            .map { it.messages }
       } else {
-         Mono.just(submissionResult)
+         Mono.just(emptyList())
+      }
+
+      return messagesFromUpdate.map { messages ->
+         SchemaSubmissionResult(
+            vyneTypes.toSet(),
+            vyneServices.toSet(),
+            vyneQueries.toSet(),
+            compilationMessages,
+            dryRun = validateOnly,
+            SourcePackage(PackageMetadata.from(packageIdentifier), emptyList(), emptyMap()),
+            emptyList(),
+            messages
+         )
       }
    }
 

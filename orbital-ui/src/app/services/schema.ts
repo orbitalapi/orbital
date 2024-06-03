@@ -2,6 +2,7 @@ import {PrimitiveTypeNames} from './taxi';
 import {isNullOrUndefined, isString} from 'util';
 import {PackageIdentifier} from "../package-viewer/packages.service";
 import {SavedQuery} from "./types.service";
+import {TuiNotificationT} from "@taiga-ui/core";
 
 export function fqn(input: string): QualifiedName {
   return QualifiedName.from(input);
@@ -411,14 +412,14 @@ export function collectAllServiceOperations(service: Service): ServiceMember[] {
     .concat(service.tableOperations)
 }
 
-export function collectionAllOperations(schema: Schema):ServiceMember[] {
+export function collectionAllOperations(schema: Schema): ServiceMember[] {
   return (schema.operations as ServiceMember[])
     .concat(schema.streamOperations || [])
     .concat(schema.tableOperations?.flatMap(t => t.queryOperations) || [])
     .concat(schema.queryOperations || [])
 }
 
-export interface QueryOperation extends RemoteOperation{
+export interface QueryOperation extends RemoteOperation {
   name: string;
   qualifiedName: QualifiedName;
   contract?: any;
@@ -703,14 +704,28 @@ export interface VersionedSource {
 
 export interface Message {
   message: string;
-  level: Level;
+  severity: Severity;
   link?: string;
 }
 
-export type Level = 'INFO' | 'WARN' | 'ERROR' |
+export type Severity = 'INFO' | 'WARNING' | 'ERROR' |
   // UI only messages:
   'SUCCESS' | 'FAILURE';
 
+export function severityToTuiNotification(severity: Severity): TuiNotificationT {
+  switch (severity) {
+    case "INFO":
+      return "info";
+    case "SUCCESS":
+      return "success";
+    case "WARNING":
+      return "warning"
+    case "ERROR":
+      return "error";
+    default:
+      return "neutral"
+  }
+}
 
 export function getCollectionMemberType(type: Type, schema: Schema, defaultIfUnknown: Type | String = type, anonymousTypes: Type[] = []): Type {
   function resolveDefaultType(): Type {

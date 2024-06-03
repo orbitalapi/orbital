@@ -4,6 +4,7 @@ import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
+import com.orbitalhq.config.ConfigSourceWriter
 import com.orbitalhq.schema.publisher.PublisherType
 import lang.taxi.packages.TaxiPackageProject
 import reactor.core.publisher.Flux
@@ -124,6 +125,14 @@ interface SchemaPackageTransport {
    val publisherType: PublisherType
 
    val config: ProjectTransportConfig
+
+   /**
+    * An opportunity for this loader to make changes to a ConfigSourceWriter
+    * before returning it for use
+    */
+   fun configureWriter(writer: ConfigSourceWriter):ConfigSourceWriter {
+      return writer
+   }
 }
 
 

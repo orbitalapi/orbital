@@ -9,6 +9,8 @@ import com.orbitalhq.schema.publisher.ProjectLoaderManager
 import com.orbitalhq.schema.publisher.loaders.LoaderExposingTaxiProject
 import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
 import lang.taxi.packages.SourcesType
+import lang.taxi.packages.TaxiPackageProject
+import lang.taxi.writers.ConfigWriter
 import mu.KotlinLogging
 import reactor.core.Disposable
 import reactor.core.publisher.Flux
@@ -16,6 +18,8 @@ import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
 
 private object CacheReloadTrigger
 
@@ -101,22 +105,37 @@ class ProjectManagerConfigSourceLoader(
          }
 
          sourcePackage.sources.size == 1 -> {
-            FileConfigSourceLoader(Paths.get(sourcePackage.sources.single().name), packageIdentifier = identifier)
+            val sourceFile = sourcePackage.sources.single()
+            val filePath = if (sourceFile.path == null) {
+               // If this happens, we need to invesitgate why the path wasn't set.
+               // If there's a valid reason, we should document it in the path property of VersionedSource
+               logger.warn { "File ${sourceFile.name} does not have a path set. Falling back to using the name, but this may not be correct" }
+               Paths.get(sourceFile.name)
+            } else {
+               Paths.get(sourceFile.path)
+            }
+            FileConfigSourceLoader(filePath, packageIdentifier = identifier)
          }
 
          else -> error("Unable to determine the path to write to for $sourceType - found ${sourcePackage.sources.size} sources, couldn't determine which one to write to.")
       }
-      return writer
+      return loader.configureWriter(writer)
    }
 
    private fun createConfigFile(loader: SchemaPackageTransport, sourcePackage: SourcePackage): Path {
       require(loader is LoaderExposingTaxiProject) { "Config file does not exist, and cannot create one as the provided loader does not expose a taxi.conf file" }
       return loader.loadTaxiProject()
          .map { (_, taxiConf) ->
-            val sourcePatternPath = taxiConf.additionalSources[sourceType]
-               ?.let { Paths.get(it) }
-            require(sourcePatternPath != null) { "The required config file does not exist, and cannot be created as the taxi.conf file for package ${sourcePackage.identifier.id} does not declare an additionalSources config for type $sourceType." }
+            // ensure there's a place for us to append this config.
             require(taxiConf.packageRootPath != null) { "The taxi.conf has been loaded incorrectly - the packageRootPath is null" }
+            if (taxiConf.additionalSources.containsKey(sourceType)) {
+               taxiConf to Paths.get(taxiConf.additionalSources[sourceType]!!)
+            } else {
+               val updatedTaxiConf = updateTaxiConfFile(taxiConf, sourceType)
+               updatedTaxiConf to Paths.get(updatedTaxiConf.additionalSources[sourceType]!!)
+            }
+         }
+         .map { (taxiConf, sourcePatternPath) ->
             val configFilePath = if (sourcePatternPath.fileName.toString().contains("*")) {
                require(!this.filePattern.contains("*")) { "The source directory for additionalSources of type $sourceType in package ${sourcePackage.identifier.id} can not be resolved, as it contains a wildcard - but so does the configured filePattern of $filePattern" }
                taxiConf.packageRootPath!!.resolve(sourcePatternPath.parent).resolve(filePattern)
@@ -130,9 +149,37 @@ class ProjectManagerConfigSourceLoader(
          .block()!!
    }
 
+   private fun updateTaxiConfFile(taxiProject: TaxiPackageProject, sourceType: SourcesType):TaxiPackageProject {
+      if (taxiProject.taxiConfFile == null) {
+         error("Cannot append additionalSources entry to the taxi.conf file for ${taxiProject.identifier.id} as no path is present")
+      }
+      logger.info { "Appending additionalSources entry for sourceType $sourceType to taxi.conf file for project ${taxiProject.identifier.id} at ${taxiProject.taxiConfFile}" }
+      val newAdditionalSources = taxiProject.additionalSources + mapOf(
+         sourceType to ConfigFileLocationConventions.getConventionalPathEntry(sourceType)
+      )
+      val originalTaxiConfFile = taxiProject.taxiConfFile!!.readText()
+      val updatedHocon = ConfigWriter().replaceOrAppendProperty(TaxiPackageProject::additionalSources.name, newAdditionalSources, originalTaxiConfFile)
+      taxiProject.taxiConfFile!!.writeText(updatedHocon)
+
+      val updatedTaxiProject = taxiProject.copy(additionalSources = newAdditionalSources)
+      logger.info { "Appending additionalSources entry for sourceType $sourceType to taxi.conf file for project ${taxiProject.identifier.id} at ${taxiProject.taxiConfFile}" }
+      return updatedTaxiProject
+   }
+
    override fun hasWriter(identifier: PackageIdentifier): Boolean {
       return projectManager.editableLoaders.any { it.packageIdentifier == identifier }
    }
 
 
+}
+
+// This should be somewhere else, but not sure where.
+object ConfigFileLocationConventions {
+   fun getConventionalPathEntry(sourcesType: SourcesType):String {
+      return conventions[sourcesType] ?: error("No convention exists for additional sources type of $sourcesType")
+   }
+   private val conventions = mapOf(
+      // TODO : Can we define a const for this?
+      "@orbital/config" to "orbital/config/*.conf"
+   )
 }

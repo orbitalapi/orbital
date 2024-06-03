@@ -1,6 +1,8 @@
 package com.orbitalhq.connectors.kafka.registry
 
+import com.orbitalhq.DefaultResultWithMessage
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.ResultWithMessage
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.registry.MutableConnectionRegistry
 
@@ -16,20 +18,23 @@ class InMemoryKafkaConnectorRegistry(configs: List<KafkaConnectionConfiguration>
    override fun getConnection(name: String): KafkaConnectionConfiguration =
       connections[name] ?: error("No JdbcConnection with name $name is registered")
 
-   override fun remove(targetPackage: PackageIdentifier, connectionName: String) {
+   override fun remove(targetPackage: PackageIdentifier, connectionName: String): DefaultResultWithMessage {
       connections.remove(connectionName)
+      return ResultWithMessage.SUCCESS
    }
 
    fun register(connectionConfiguration: KafkaConnectionConfiguration) {
       connections[connectionConfiguration.connectionName] = connectionConfiguration
    }
 
-   override fun register(targetPackage: PackageIdentifier, connectionConfiguration: KafkaConnectionConfiguration) {
+   override fun register(targetPackage: PackageIdentifier, connectionConfiguration: KafkaConnectionConfiguration): DefaultResultWithMessage {
       connections[connectionConfiguration.connectionName] = connectionConfiguration
+      return ResultWithMessage.SUCCESS
    }
 
-   override fun remove(targetPackage: PackageIdentifier, connectionConfiguration: KafkaConnectionConfiguration) {
+   override fun remove(targetPackage: PackageIdentifier, connectionConfiguration: KafkaConnectionConfiguration): DefaultResultWithMessage {
       connections.remove(connectionConfiguration.connectionName)
+      return ResultWithMessage.SUCCESS
    }
 
    override fun listAll(): List<KafkaConnectionConfiguration> {

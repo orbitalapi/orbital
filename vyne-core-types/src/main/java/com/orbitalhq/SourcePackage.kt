@@ -123,7 +123,8 @@ data class SourcePackage(
                   pathString,
                   packageMetadata.identifier.version,
                   path.readText(),
-                  packageMetadata.identifier
+                  packageMetadata.identifier,
+                  path = path.toAbsolutePath().toString()
                )
             }.values.toList()
             sourceType to sources
