@@ -17,21 +17,44 @@ import org.apache.avro.util.Utf8
 class AvroFormatDeserializer(private val schemaCache: AvroSchemaCache = AvroFormatSpec.newSchemaCache()) :
    ModelFormatDeserializer {
 
-   override fun canParse(value: Any, metadata: Metadata): Boolean = value is ByteArray
+   override fun canParse(value: Any, metadata: Metadata): Boolean = value is ByteArray || value is String
 
    override fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema, source: DataSource): Any {
       val avroSchema = schemaCache.get(type to schema)
-      require(value is ByteArray) { "AvroFormatDeserializer requires ByteArray input, received ${value::class.simpleName}" }
-      val decoder = DecoderFactory.get().binaryDecoder(value, null)
+      val decoder = when (value) {
+         is ByteArray -> {
+            // When reading a byte array, we need to determine how it was encoded ...
+            // either as JSON or binary
+            if (isJsonString(value)) {
+               DecoderFactory.get().jsonDecoder(avroSchema, String(value))
+            } else {
+               DecoderFactory.get().binaryDecoder(value, null)
+            }
+
+         }
+         is String -> DecoderFactory.get().jsonDecoder(avroSchema, value)
+         else -> error("Decoding Avro from input type ${value::class.simpleName} is not supported")
+      }
       val reader =if (type.isCollection) {
          GenericDatumReader<GenericArray<GenericRecord>>(avroSchema)
 
       } else {
          GenericDatumReader<GenericRecord>(avroSchema)
       }
-      val deserializedRecord = reader.read(null, decoder)
+      val deserializedRecord = try {
+          reader.read(null, decoder)
+      } catch (e:Exception) {
+         throw e
+      }
+
       val rawValue = genericContainerToRawValue(deserializedRecord)
       return TypedInstance.from(type, rawValue, schema, source = source)
+   }
+
+   private fun isJsonString(data: ByteArray): Boolean {
+      // Check if the first non-whitespace character is '{' or '['
+      val firstChar = data.firstOrNull { !it.toChar().isWhitespace() }?.toChar()
+      return firstChar == '{' || firstChar == '['
    }
 
    private fun genericContainerToRawValue(rawValue: GenericContainer):Any {
@@ -49,8 +72,8 @@ class AvroFormatDeserializer(private val schemaCache: AvroSchemaCache = AvroForm
       }
    }
 
-   private fun genericRecordToMap(record: GenericData.Record): Map<String, Any> {
-      val map = mutableMapOf<String, Any>()
+   private fun genericRecordToMap(record: GenericData.Record): Map<String, Any?> {
+      val map = mutableMapOf<String, Any?>()
       val schema = record.schema
       for (field in schema.fields) {
          val fieldValue = record.get(field.name())

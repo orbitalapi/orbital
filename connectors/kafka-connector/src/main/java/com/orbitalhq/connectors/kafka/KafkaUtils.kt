@@ -2,6 +2,7 @@ package com.orbitalhq.connectors.kafka
 
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.fqn
+import lang.taxi.generators.avro.AvroMessageAnnotation
 import lang.taxi.generators.protobuf.ProtobufMessageAnnotation
 
 enum class MessageEncodingType {
@@ -12,6 +13,7 @@ enum class MessageEncodingType {
       fun forType(messageType: Type): MessageEncodingType {
          return when {
             messageType.hasMetadata(ProtobufMessageAnnotation.NAME.fqn()) -> MessageEncodingType.BYTE_ARRAY
+            messageType.hasMetadata(AvroMessageAnnotation.NAME.fqn()) -> MessageEncodingType.BYTE_ARRAY
             // TODO : Other binary types (eg, avro) go here
             else -> MessageEncodingType.STRING
          }

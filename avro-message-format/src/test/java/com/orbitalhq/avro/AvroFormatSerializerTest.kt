@@ -1,6 +1,8 @@
 package com.orbitalhq.avro
 
+import com.google.common.io.Resources
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.UndefinedSource
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
@@ -123,5 +125,22 @@ class AvroFormatSerializerTest {
 
       typedInstance.toRawObject()
          .shouldBe((readTypedInstance as TypedInstance).toRawObject())
+   }
+
+   @Test
+   fun demo() {
+      val avroSchema = Resources.getResource("demo.avsc")
+         .readText()
+      val generatedTaxi = TaxiGenerator().generate(avroSchema)
+         .concatenatedSource
+      val schema = TaxiSchema.from(generatedTaxi)
+      val type = schema.type("com.metrobank.payments.sdi.schema.SDIAccount")
+
+      val avroMessage = Resources.getResource("test-data.json")
+         .readText()
+      val readTypedInstance = AvroFormatDeserializer().parse(avroMessage, type, type.getMetadata(AvroMessageAnnotation.NAME.fqn()), schema, UndefinedSource)
+      val typedObjct = readTypedInstance.shouldBeInstanceOf<TypedObject>()
+      val title = typedObjct["ACCOUNT_TITLE_1"]
+      val openingBal = typedObjct["OPEN_AVAILABLE_BAL"]
    }
 }
