@@ -2,6 +2,7 @@ package com.orbitalhq.connectors.kafka
 
 import com.orbitalhq.StubService
 import com.orbitalhq.Vyne
+import com.orbitalhq.avro.AvroFormatSpec
 import com.orbitalhq.connectors.StreamErrorPublisher
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
@@ -49,7 +50,7 @@ abstract class BaseKafkaContainerTest {
    lateinit var kafkaProducer: Producer<String, ByteArray>
    lateinit var connectionRegistry: InMemoryKafkaConnectorRegistry
 
-   val formatRegistry = DefaultFormatRegistry(listOf(ProtobufFormatSpec))
+   val formatRegistry = DefaultFormatRegistry(listOf(ProtobufFormatSpec, AvroFormatSpec))
 
    @Rule
    @JvmField
@@ -111,7 +112,6 @@ abstract class BaseKafkaContainerTest {
    fun sendMessage(message: String, topic: String = "movies"): RecordMetadata {
       return sendMessage(message.toByteArray(), topic)
    }
-
    fun vyneWithKafkaInvoker(taxi: String): KafkaTestSetUp {
       val schema = TaxiSchema.fromStrings(
          listOf(

@@ -1,0 +1,3418 @@
+{
+   "fields": [
+      {
+         "default": null,
+         "name": "UNC_PATH",
+         "type": [
+            "null",
+            {
+               "items": {
+                  "fields": [
+                     {
+                        "name": "seq",
+                        "type": [
+                           "null",
+                           "string"
+                        ]
+                     },
+                     {
+                        "default": null,
+                        "name": "value",
+                        "type": [
+                           "null",
+                           "string"
+                        ]
+                     }
+                  ],
+                  "name": "SDIMultiValue",
+                  "type": "record"
+               },
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "PAPERLESS_STMT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CARD_TYPE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CARD_NUMBER",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CARD_NAME",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CHEQUE_BOOK",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "DEPOSIT_TYPE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "INITIAL_DEPOSIT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OTHER_BANK_ACCT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OTHER_BANK_NAME",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OTHER_BANK_ADDR",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OTHER_BANK_POST",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "KEY_FACT_REVIEW",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCT_PURPOSE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "SIGN_AUTHORITY",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MB_INCENTIVE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OTHER_CARD_BAL",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OTH_CD_AVIL_BAL",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OTH_CD_STR_DATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OTH_CD_TRF_REQD",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AUTO_CARD_REPAY",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "INT_BANK_ACCT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "INT_SORT_CODE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "INT_BANK_NAME",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "INT_BANK_ADDR",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "INT_BANK_POST",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OTHER_SORT_CODE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "FUL_LEAF_CNT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "WIN_LEAF_CNT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "FUL_CHQ_BOOK",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "WIN_CHQ_BOOK",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "IBAN_NUMBER",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OTHR_YR_SUB_AMT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OTHER_YEAR_INT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ISA_CHRGS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "DOC_FORM_RECVD",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "RE_VERIF_DATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "RE_VERIF_DETAIL",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ISA_ATTORN_NAME",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "NI_NUMBER",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ISA_MANDATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "VALID_CUST_APPL",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "VALID_CUST_SUBS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "DATE_OF_BIRTH",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ISA_PROD_TYPE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ISA_RATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ISA_INT_TODAY",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ISA_STATUS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ISA_MAX_SUB",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CURR_YR_END_DAT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "PREV_YR_END_DAT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CURR_YR_SUB_AMT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "PREV_YR_SUB_AMT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "PREV_YR_SUB_INT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AOS_PRINT_DT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AOS_REPRINT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "TRANS_ID",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "DECISION",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CUST_REF_OS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "LAST_CRED_CHECK",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "LIMIT_TIME_STP",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "KYC_STATUS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AML_STATUS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "TIME_STAMP_KYC",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "TIME_STAMP_AML",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MAN_OVERRIDE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MAN_OVER_REASON",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MTR_LIMIT_CCY",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MTR_LOA_PUR",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CARD_HLD_NAME",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MTR_DO_CC_CHECK",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MTR_OVE_LMT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "JOIN_HLD_CARD",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ISA_CUST_RESID",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CONT_NOSTRO_AC",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "R85",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "R85_DATE_ADDED",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "R85_DATE_REMOVED",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "R105",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "R105_DATE_ADDED",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "R105_DATE_REMOVED",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "FICO_GLOBAL",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "FICO_OD_MAS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "FICO_CC_MAS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "FICO_PL_MAS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "PROD_INT_AMT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "PROD_ADV_AMT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "METR_OVRDUE_CTR",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "METR_STAT_FLAG",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MTR_PRINT_FLAG",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OVERDUE_STAT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OVERDUE_DAYS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "DATE_OF_DEATH",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AC_GEN_COND",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ISA_TERM",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MATURITY_DATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "PREV_FIXED_ISA",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "LAST_MOD_DATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ISA_ROLLOVER",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "RAG_STATUS_USER",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "PROV_COMMENT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "PROV_DTE_COMT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MB_COMMENT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "RAG_STATUS_SYS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ISA_ALLOW_REM",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCT_NICKNAME",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CSC_PROCESS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "METR_IB_ACCOUNT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "RAG_DATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "PROCESS_STAGE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "PREV_MAT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "BCUR_AMT_WAIVE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "NBA_FREQUENCY",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MET_PRICARD_HOL",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MET_CO_APP",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "FICO_MAX_LMT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "FICO_LMT_STATUS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "LOPS_MAX_LMT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCT_FSCS_ELIG",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OPENING_CHANNEL",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CY_FRST_SUBDATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "L_BB_SEQ_NO",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MG_DEPENDENTS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "EXTERNAL_ID",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "FP_ALLOWED",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "FP_REJECT_CODE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "EXTREF_ID",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "COP_OPT_OUT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCOUNT_NUMBER",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CUSTOMER",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CATEGORY",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MNEMONIC",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "POSITION_TYPE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CURRENCY",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CURRENCY_MARKET",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "LIMIT_REF",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCOUNT_OFFICER",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OTHER_OFFICER",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "RECONCILE_ACCT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "INTEREST_LIQU_ACCT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "INTEREST_COMP_ACCT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "INT_NO_BOOKING",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "REFERAL_CODE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "WAIVE_LEDGER_FEE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CONDITION_GROUP",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "INACTIV_MARKER",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OPEN_ACTUAL_BAL",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OPEN_CLEARED_BAL",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ONLINE_ACTUAL_BAL",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ONLINE_CLEARED_BAL",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "WORKING_BALANCE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "DATE_LAST_CR_CUST",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AMNT_LAST_CR_CUST",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "TRAN_LAST_CR_CUST",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "DATE_LAST_CR_AUTO",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AMNT_LAST_CR_AUTO",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "TRAN_LAST_CR_AUTO",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "DATE_LAST_CR_BANK",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AMNT_LAST_CR_BANK",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "TRAN_LAST_CR_BANK",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "DATE_LAST_DR_CUST",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AMNT_LAST_DR_CUST",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "TRAN_LAST_DR_CUST",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "DATE_LAST_DR_AUTO",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AMNT_LAST_DR_AUTO",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "TRAN_LAST_DR_AUTO",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "DATE_LAST_DR_BANK",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AMNT_LAST_DR_BANK",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "TRAN_LAST_DR_BANK",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CAP_DATE_CHARGE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "CAP_DATE_CR_INT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "CAP_DATE_C2_INT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "CAP_DATE_DR_INT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "CAP_DATE_D2_INT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "CAP_BACK_VALUE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_CHG_CATEG",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_CHG_TRANS",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_CHG_AMOUNT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_CHG_SUSP",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_CR_CATEG",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_CR_TRANS",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_CR_AMOUNT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_CR_SUSP",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_CR2_CATEG",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_CR2_TRANS",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_CR2_AMOUNT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_CR2_SUSP",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_DR_CATEG",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_DR_TRANS",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_DR_AMOUNT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_DR_SUSP",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_DR2_CATEG",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_DR2_TRANS",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_DR2_AMOUNT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCR_DR2_SUSP",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "CONSOL_KEY",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "INT_LIQU_TYPE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "INT_LIQU_ACCT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "INT_LIQ_CCY",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "PASSBOOK",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "START_YEAR_BAL",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OPENING_DATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "VALUE_DATE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "CREDIT_MOVEMENT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "DEBIT_MOVEMENT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "VALUE_DATED_BAL",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "CONTINGENT_BAL_CR",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CONTINGENT_BAL_DR",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OPEN_CATEGORY",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OPEN_VAL_DATED_BAL",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "LINK_TO_LIMIT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CLOSURE_DATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "LOCKED_WITH_LIMIT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CHARGE_ACCOUNT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CHARGE_CCY",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CHARGE_MKT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "INTEREST_CCY",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "INTEREST_MKT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CON_CHARGE_ACCR",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CON_INTEREST_ACCR",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ALT_ACCT_TYPE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ALT_ACCT_ID",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "PREMIUM_TYPE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "CAP_DATE_PRM",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "PREMIUM_FREQ",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "APR",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ALLOW_NETTING",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "LEDG_RECO_WITH",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "STMT_RECO_WITH",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "OUR_EXT_ACCT_NO",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "RECO_TOLERANCE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "STOCK_CONTROL_TYPE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "SERIAL_NO_FORMAT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AUTO_PAY_ACCT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ORIG_CCY_PAYMENT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AUTO_REC_CCY",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ORIGINAL_ACCT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "DISPO_OFFICER",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "DISPO_EXEMPT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "TAX_SUSPEND",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "TAX_AT_SETTLE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ICA_MAIN_ACCOUNT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ICA_DISTRIB_RATIO",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ICA_MAIN_ACCT_IND",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ICA_DISTRIB_TYPE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ICA_POST_INTEREST",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ICA_MAIN_RATIO",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ICA_NEW_MAIN_ACC",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ICA_START_DATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ICA_ADD_REMOVE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ICA_BACK_VALUE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ICA_MAIN_ACCT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ICA_MAIN_DATE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "LIQUIDATION_MODE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OVERDUE_STATUS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "HVT_FLAG",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "SINGLE_LIMIT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CONTINGENT_INT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ALL_IN_ONE_PRODUCT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ER_VALUE_DATE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ER_BALANCE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "EP_BALANCE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "SB_GROUP_ID",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "OPEN_AVAILABLE_BAL",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AV_NAU_DB_MVMT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "AV_AUTH_CR_MVMT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "AV_NAU_CR_MVMT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "FORWARD_MVMTS",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "CREDIT_CHECK",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AVAILABLE_BAL_UPD",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CONSOLIDATE_ENT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MAX_SUB_ACCOUNT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "MASTER_ACCOUNT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "LOCK_INC_THIS_MVMT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CLOSED_ONLINE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "NEXT_AF_DATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "NEXT_ACCT_CAP",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "NEXT_EXP_DATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "DATE_LAST_UPDATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "NEXT_STMT_DATE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "EXPOSURE_DATES",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "PORTFOLIO_NO",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "SHADOW_ACCOUNT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "FWD_ENTRY_HOLD",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "FIRST_AF_DATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CASH_POOL_GROUP",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "OPEN_ASSET_TYPE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "LAST_COM_CHG_DATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "IC_CHARGE_ID",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "IC_NEXT_CAP_DATE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "IC_PRODUCT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "IC_LST_PROD_CAP",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ARRANGEMENT_ID",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACC_DEB_LIMIT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "MANDATE_APPL",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "MANDATE_REG",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "MANDATE_RECORD",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "DR_ADJ_AMOUNT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "DR2_ADJ_AMOUNT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CR_ADJ_AMOUNT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CR2_ADJ_AMOUNT",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCOUNTING_COMPANY",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CLOSURE_REASON",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "RESERVED_06",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "RESERVED_05",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "RESERVED_04",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "RESERVED_03",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "RESERVED_02",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "RESERVED_01",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "RECORD_STATUS",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CURR_NO",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "INPUTTER",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "DATE_TIME",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "AUTHORISER",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "CO_CODE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "DEPT_CODE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AUDITOR_CODE",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "AUDIT_DATE_TIME",
+         "type": [
+            "null",
+            "string"
+         ]
+      },
+      {
+         "default": null,
+         "name": "JOINT_HOLDER",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ISA_ATTORN_ADD",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "STMT_MNTH",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "STMT_BAL",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "TOT_OS",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "MIN_PYMT_DUE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "MIN_PYMT_DATE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "REASON_CODE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "REASON_TEXT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ADD_ADDR_TYPE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ADD_HOUSE_NO",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ADD_STRT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ADD_TOWN",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ADD_POSTCODE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ADD_CNTRY",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "TIME_AT_ADDRESS",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "RES_STATUS",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "RES_VALUE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "MORTG_AMT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "EMP_ADDR_TYPE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "EMP_HOUSE_NO",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "EMP_STREET",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "EMP_TOWN",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "EMP_POSTCODE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "EMP_COUNTRY",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "EMP_TIME_AT_ADD",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "EMP_RES_STATUS",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "EMP_RES_VALUE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "EMP_MORTG_AMT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "EMP_OCCUPATION",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "DATE_FROM",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "EMPLOYER_NAME",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "EMP_BUSINESS",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "MTR_PRD_ADV_LIM",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "MINI_STMT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ALERT_AMT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "SENDS_ALERTS",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "MET_AD_CARD_HOL",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "METR_PREV_ALERT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "REL_CUSTOMER",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "REL_CODE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "AC_CUST_REMOVED",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "AC_REMOVAL_REASON",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCOUNT_TITLE_1",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCOUNT_TITLE_2",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "SHORT_TITLE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "POSTING_RESTRICT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCT_CREDIT_INT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "ACCT_DEBIT_INT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "RELATION_CODE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "JOINT_NOTES",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "PENDING_ID",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "TOTAL_PENDING",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "FROM_DATE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "LOCKED_AMOUNT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "AVAILABLE_DATE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "AV_AUTH_DB_MVMT",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "AVAILABLE_BAL",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      },
+      {
+         "default": null,
+         "name": "OVERRIDE",
+         "type": [
+            "null",
+            {
+               "items": "SDIMultiValue",
+               "type": "array"
+            }
+         ]
+      }
+   ],
+   "name": "SDIAccount",
+   "namespace": "com.metrobank.payments.sdi.schema",
+   "type": "record"
+}

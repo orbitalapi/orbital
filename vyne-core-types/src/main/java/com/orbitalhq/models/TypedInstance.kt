@@ -2,6 +2,7 @@ package com.orbitalhq.models
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonView
+import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.models.json.isJson
@@ -153,6 +154,23 @@ interface TypedInstance {
          format: FormatsAndZoneOffset? = type.formatAndZoneOffset,
          metadata: Map<String, Any> = emptyMap()
       ): TypedInstance {
+
+         // Just here to DRY out the passing of params
+         fun buildUsingObjectFactory():TypedInstance {
+            return TypedObject.fromValue(
+               type,
+               value!!,
+               schema,
+               nullValues,
+               source = source,
+               evaluateAccessors = evaluateAccessors,
+               functionRegistry = functionRegistry,
+               inPlaceQueryEngine = inPlaceQueryEngine,
+               formatSpecs = formatSpecs,
+               parsingErrorBehaviour = parsingErrorBehaviour,
+               metadata = metadata
+            )
+         }
          return when {
             value is TypedInstance && value.type.taxiType.isAssignableTo(type.taxiType) -> value
             value == null -> TypedNull.create(type)
@@ -236,6 +254,9 @@ interface TypedInstance {
             type.isScalar -> {
                TypedValue.from(type, value, performTypeConversions, source, parsingErrorBehaviour, format)
             }
+            FormatDetector.get(formatSpecs).getFormatType(type) != null -> {
+               buildUsingObjectFactory()
+            }
             // This is here primarily for readability.  We could just let this fall through to below.
             isJson(value) -> TypedObjectFactory(
                type,
@@ -251,42 +272,8 @@ interface TypedInstance {
                metadata = metadata
             ).build()
 
-            // This is a bit special...value isn't a collection, but the type is.  Oooo!
-            // Must be a CSV ish type value.
-//           Deprecating this approach, and moving to a dedicated CsvModelFormatSpec
-//            type.isCollection -> readCollectionTypeFromNonCollectionValue(type, value, schema, source, functionRegistry, inPlaceQueryEngine)
-            else -> TypedObject.fromValue(
-               type,
-               value,
-               schema,
-               nullValues,
-               source = source,
-               evaluateAccessors = evaluateAccessors,
-               functionRegistry = functionRegistry,
-               inPlaceQueryEngine = inPlaceQueryEngine,
-               formatSpecs = formatSpecs,
-               parsingErrorBehaviour = parsingErrorBehaviour,
-               metadata = metadata
-            )
+            else -> buildUsingObjectFactory()
          }
-      }
-
-      private fun readCollectionTypeFromNonCollectionValue(
-         type: Type,
-         value: Any,
-         schema: Schema,
-         source: DataSource,
-         functionRegistry: FunctionRegistry,
-         inPlaceQueryEngine: InPlaceQueryEngine?
-      ): TypedInstance {
-         return CollectionReader.readCollectionFromNonTypedCollectionValue(
-            type,
-            value,
-            schema,
-            source,
-            functionRegistry,
-            inPlaceQueryEngine
-         )
       }
 
       private fun getCollectionType(type: Type): Type {

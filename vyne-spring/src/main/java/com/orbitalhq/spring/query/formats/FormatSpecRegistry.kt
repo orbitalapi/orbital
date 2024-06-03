@@ -1,5 +1,6 @@
 package com.orbitalhq.spring.query.formats
 
+import com.orbitalhq.avro.AvroFormatSpec
 import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.formats.xml.XmlFormatSpec
 import com.orbitalhq.models.format.DefaultFormatRegistry
@@ -19,7 +20,8 @@ class FormatSpecRegistry(
       val DEFAULT_SPECS = listOf(
          CsvFormatSpec,
          XmlFormatSpec,
-         ProtobufFormatSpec
+         ProtobufFormatSpec,
+         AvroFormatSpec
       )
 
       fun default() = FormatSpecRegistry(DEFAULT_SPECS)
