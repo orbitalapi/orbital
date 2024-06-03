@@ -18,7 +18,9 @@ import { QueryService } from './query.service';
 import { Schema } from './schema';
 import { TypesService } from './types.service';
 
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class QueryEditorStoreService {
   readonly queryEditorStates: WritableSignal<QueryEditorState[]> = signal([])
   readonly activeQueryEditorState: WritableSignal<QueryEditorState> = signal(null);
@@ -104,6 +106,10 @@ export class QueryEditorStoreService {
   updateQuery(query: string, chatQuery: string) {
     this.activeQueryEditorState().payload.query.set(query);
     this.activeQueryEditorState().payload.chatQuery.set(chatQuery);
+  }
+
+  updateActiveQueryEditorStateIndex(index: number) {
+    this.activeQueryEditorState.set(this.queryEditorStates()[index])
   }
 
   submitQuery() {

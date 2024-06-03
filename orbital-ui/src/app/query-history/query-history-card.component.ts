@@ -1,8 +1,9 @@
 import {Component, Input} from '@angular/core';
+import {QueryPanelStoreService} from '../services/query-panel-store.service';
 import {QueryHistorySummary} from '../services/query.service';
 import {Timespan} from '../query-panel/query-editor/query-editor-toolbar/counter-timer.component';
 import {Router} from '@angular/router';
-import {isNullOrUndefined} from 'util';
+import {isNullOrUndefined} from '../utils/utils';
 
 @Component({
   selector: 'app-query-history-card',
@@ -32,7 +33,13 @@ import {isNullOrUndefined} from 'util';
 
       <div class="timestamp-row">
         <span>{{historyRecord.startTime | amTimeAgo}}</span>
-        <img class="icon-button" src="assets/img/tabler/repeat.svg" (click)="queryAgain($event)" *ngIf="recordType === 'VyneQlQuery'">
+        <img
+          *ngIf="recordType === 'VyneQlQuery'"
+          class="icon-button"
+          src="assets/img/tabler/pencil.svg"
+          (click)="queryAgain($event)"
+          title="Reuse query"
+        >
       </div>
     </div>
   `,
@@ -54,13 +61,13 @@ export class QueryHistoryCardComponent {
     this.recordType = this.queryType(value);
   }
 
-
-  constructor(private router: Router) {
+  constructor(
+    private queryPanelStoreService: QueryPanelStoreService,
+    private router: Router
+  ) {
   }
 
-
   getFactTypeNames(record: QueryHistorySummary): string[] {
-
     if (!isNullOrUndefined(record.queryJson)) {
       return record.queryJson.facts.map(fact => fact.qualifiedName.longDisplayName);
     } else {
@@ -76,7 +83,6 @@ export class QueryHistoryCardComponent {
     }
   }
 
-
   queryType(historyRecord: QueryHistorySummary): QueryType {
     if (!isNullOrUndefined(historyRecord.taxiQl)) {
       return 'VyneQlQuery';
@@ -87,17 +93,14 @@ export class QueryHistoryCardComponent {
     }
   }
 
-
   queryAgain(event:Event) {
     event.preventDefault();
     event.stopImmediatePropagation();
     if (this.historyRecord) {
-      this.router.navigate(['/query/editor'], {state: {query: this.historyRecord}});
+      this.queryPanelStoreService.addTab('', this.historyRecord.taxiQl)
+      this.router.navigate(['/query/editor']);
     }
   }
-
 }
 
-
 type QueryType = 'VyneQlQuery' | 'RestfulQuery';
-
