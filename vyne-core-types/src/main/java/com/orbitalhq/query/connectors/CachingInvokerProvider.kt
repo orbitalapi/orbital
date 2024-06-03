@@ -14,24 +14,40 @@ object CacheNames {
 
    fun isCacheName(serviceName: QualifiedName) = serviceName.fullyQualifiedName.startsWith(CACHE_PREFIX)
    fun isCacheName(serviceName: ServiceName) = serviceName.startsWith(CACHE_PREFIX)
+
+   fun cacheReadOperationName(operationName: String):String = "readCache_$operationName"
 }
-interface OperationCacheProvider {
+interface CachingInvokerProvider {
    fun getCachingInvoker(operationKey: OperationCacheKey, invoker: OperationInvoker): CachingOperatorInvoker
    fun evict(operationKey: OperationCacheKey)
 }
+
 /**
- * Returns
- *
- * Responsibilities:
- *  - Factory : xxxx
- *  - OperationCacheBuilderStrategy :  xxxx
- *  - CachingInvocationActor: xxxx
- *  - LoadingCache<String,CachingInvocationActor>: xxxx
+ * The top level in the caching infrastructure.
+ * Generally defers to a collection of OperationCacheProviderBuilder's
+ * to create a cache
+ */
+interface CacheFactory {
+   fun getOperationCache(strategy: CachingStrategy): CachingInvokerProvider
+}
+
+/**
+ * Returns an object that knows how to build something that will
+ * either
  */
 interface OperationCacheProviderBuilder {
    fun canBuild(strategy: CachingStrategy): Boolean
 
-   fun buildOperationCache(strategy: CachingStrategy, maxCachedOperations: Int, cachedOperationTtl: Duration): OperationCacheProvider
+   fun buildOperationCache(
+      strategy: CachingStrategy,
+      maxCachedOperations: Int,
+      cachedOperationTtl: Duration,
+      /**
+       * Accepts the cache factory, to allow caches to create other caches.
+       * This lets remote caches create local caches that operate as level-one caches
+       */
+      cacheFactory: CacheFactory
+   ): CachingInvokerProvider
 }
 
 

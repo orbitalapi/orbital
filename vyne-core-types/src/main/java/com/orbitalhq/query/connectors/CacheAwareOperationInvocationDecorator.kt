@@ -34,7 +34,7 @@ private val logger = KotlinLogging.logger {}
  */
 class CacheAwareOperationInvocationDecorator(
    private val invoker: OperationInvoker,
-   private val cacheProvider: OperationCacheProvider,
+   private val cacheProvider: CachingInvokerProvider,
    /**
     * Defines the max size (in result rows) of a result that can be cached.
     * For example - a database query that returns more rows than this will not
@@ -62,7 +62,14 @@ class CacheAwareOperationInvocationDecorator(
          return invoker.invoke(service, operation, parameters, eventDispatcher, queryId, queryOptions)
       }
 
-      val (key, params) = getCacheKeyAndParamMessage(service, operation, parameters, eventDispatcher, queryId, queryOptions)
+      val (key, params) = getCacheKeyAndParamMessage(
+         service,
+         operation,
+         parameters,
+         eventDispatcher,
+         queryId,
+         queryOptions
+      )
 
       val cachingInvoker = cacheProvider.getCachingInvoker(key, invoker)
       var emittedRecords = 0
@@ -100,7 +107,7 @@ class CacheAwareOperationInvocationDecorator(
       fun decorateAll(
          invokers: List<OperationInvoker>,
          evictWhenResultSizeExceeds: Int = 10,
-         cacheProvider: OperationCacheProvider
+         cacheProvider: CachingInvokerProvider
       ): List<OperationInvoker> {
          return invokers.map { CacheAwareOperationInvocationDecorator(it, cacheProvider, evictWhenResultSizeExceeds) }
       }
@@ -134,11 +141,18 @@ class CacheAwareOperationInvocationDecorator(
 }
 
 /**
- * Takes two parameters:
- *  - The Cache Key (For looking up against some backing store - eg: a Concurrent Hash Map_
- *  - A loader function, which can be called to invoke the underlying service
+ * The lowest-level class within the caching infrastructure.
+ *
+ * Responsible for holding previously cached values.
+ * When invoked, will look for a local value in the cache, or call the invoker
  */
-typealias CacheFetcher = (OperationCacheKey, OperationInvocationParamMessage, () -> Flux<TypedInstance>) -> Flux<TypedInstance>
+interface ReadCacheOrCallInvokerHandler {
+   fun getCachedOrCallLoader(
+      operationCacheKey: OperationCacheKey,
+      operationInvocationParamMessage: OperationInvocationParamMessage,
+      invoker: () -> Flux<TypedInstance>
+   ): Flux<TypedInstance>
+}
 
 /**
  * A Kotlin Actor which ensures a single in-flight request through to the downstream invoker.
@@ -146,13 +160,13 @@ typealias CacheFetcher = (OperationCacheKey, OperationInvocationParamMessage, ()
  */
 @ExperimentalCoroutinesApi
 @ObsoleteCoroutinesApi // At the time of writing, there's no alternative provided by Kotlin
-class CachingOperatorInvoker(
+class DefaultCachingOperatorInvoker(
    private val cacheKey: OperationCacheKey,
    private val invoker: OperationInvoker,
-   private val cacheFetcher: CacheFetcher
-) {
-   suspend fun invoke(message: OperationInvocationParamMessage): Flux<TypedInstance> {
-      return cacheFetcher.invoke(cacheKey, message) {
+   override val readCacheOrCallInvokerHandler: ReadCacheOrCallInvokerHandler
+) : CachingOperatorInvoker, CacheInvokerWithHandler {
+   override fun invoke(message: OperationInvocationParamMessage): Flux<TypedInstance> {
+      return readCacheOrCallInvokerHandler.getCachedOrCallLoader(cacheKey, message) {
          logger.debug { "${cacheKey.abbreviate()} cache miss, loading from Operation Invoker" }
          invokeUnderlyingService(message)
       }
@@ -182,7 +196,7 @@ class CachingOperatorInvoker(
             try {
                invoker.invoke(service, operation, parameters, eventDispatcher, queryId, queryOptions)
                   .asFlux()
-                  .doOnError {exception ->
+                  .doOnError { exception ->
                      logger.info { "Operation with cache key ${cacheKey.abbreviate()} failed with exception ${exception::class.simpleName} ${exception.message}.  This operation with params will not be attempted again.  Future attempts will have this error replayed" }
                      sink.error(exception)
                   }
@@ -203,8 +217,19 @@ class CachingOperatorInvoker(
 
 
    }
+}
 
+/**
+ * Utility interface to allow easier composition of L1/L2 caches.
+ * L1 cache providers should return a CachingOperatorInvoker that implement this interface
+ * (eg., LocalOperationCacheProvider
+ */
+interface CacheInvokerWithHandler : CachingOperatorInvoker {
+   val readCacheOrCallInvokerHandler: ReadCacheOrCallInvokerHandler
+}
 
+interface CachingOperatorInvoker {
+   fun invoke(message: OperationInvocationParamMessage): Flux<TypedInstance>
 }
 
 data class OperationInvocationParamMessage(

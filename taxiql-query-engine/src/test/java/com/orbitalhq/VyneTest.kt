@@ -12,7 +12,7 @@ import com.orbitalhq.query.*
 import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
-import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationCacheProvider
+import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCachingInvokerProvider
 import com.orbitalhq.query.projection.LocalProjectionProvider
 import com.orbitalhq.query.projection.ProjectionProvider
 import com.orbitalhq.schemas.Operation
@@ -24,9 +24,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.test.runTest
 import lang.taxi.annotations.HttpService
-import lang.taxi.functions.stdlib.StdLib
-import lang.taxi.stdlib.StdLibSchema
-import lang.taxi.types.BuiltIns
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
@@ -1232,7 +1229,7 @@ service Broker2Service {
 
       val cacheAwareInvocationService = CacheAwareOperationInvocationDecorator(
          stubInvocationService,
-         cacheProvider = LocalOperationCacheProvider.default()
+         cacheProvider = LocalCachingInvokerProvider.default()
       )
       val queryEngineFactory =
          QueryEngineFactory.withOperationInvokers(

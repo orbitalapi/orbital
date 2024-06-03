@@ -53,7 +53,9 @@ object OperationNames {
 
    fun serviceAndOperation(qualifiedOperationName: String): Pair<ServiceName, OperationName> {
       val parts = qualifiedOperationName.split(DELIMITER)
-      require(parts.size == 2) { "$qualifiedOperationName is not a valid operation name." }
+      require(parts.size == 2) {
+         "$qualifiedOperationName is not a valid operation name."
+      }
       return parts[0] to parts[1]
    }
 

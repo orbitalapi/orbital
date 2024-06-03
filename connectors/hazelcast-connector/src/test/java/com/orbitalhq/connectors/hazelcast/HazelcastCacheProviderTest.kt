@@ -1,16 +1,14 @@
 package com.orbitalhq.connectors.hazelcast
 
 import com.hazelcast.config.Config
-import com.hazelcast.config.SerializerConfig
-import com.hazelcast.core.Hazelcast.newHazelcastInstance
 import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.test.TestHazelcastInstanceFactory
 import com.nhaarman.mockito_kotlin.mock
-import com.orbitalhq.models.OperationResultDataSourceWrapper
 import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
-import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.query.connectors.OperationInvocationParamMessage
+import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCache
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
 import com.orbitalhq.schemas.QueryOptions
@@ -28,7 +26,7 @@ class HazelcastCacheProviderTest : DescribeSpec({
    describe("Hazelcast operation cache") {
       lateinit var hazelcast: HazelcastInstance
 
-      lateinit var cacheProvider: HazelcastOperationCacheProvider
+      lateinit var cacheProvider: HazelcastCachingInvokerProvider
       lateinit var clock: ManualClock
 
       val (vyne, stub) = testVyne(
@@ -51,26 +49,19 @@ class HazelcastCacheProviderTest : DescribeSpec({
 
       beforeTest {
          clock = ManualClock(Instant.now())
-         hazelcast = newHazelcastInstance(Config().apply {
-            serializationConfig.addSerializerConfig(SerializerConfig().apply {
-               implementation = ExpiringByteArrayCustomSerializer(clock)
-               typeClass = ExpiringByteArray::class.java
+         hazelcast = TestHazelcastInstanceFactory()
+            .newHazelcastInstance(Config().apply {
+               serializationConfig = HazelcastBuilder.serializationConfig(schemaStore)
             })
 
-            serializationConfig.addSerializerConfig(SerializerConfig().apply {
-               implementation = ExpiringTypedInstanceCustomSerializer(schemaStore, clock)
-               typeClass = ExpiringTypedInstance::class.java
-            })
-         })
-
-
-         cacheProvider = HazelcastOperationCacheProvider(
+         cacheProvider = HazelcastCachingInvokerProvider(
             hazelcast,
             schemaStore,
             10,
             "connectionName",
             "connectionAddress",
-            clock
+            clock,
+            LocalCache.newLocalCache()
          )
 
          stub.clearAll()
@@ -81,7 +72,7 @@ class HazelcastCacheProviderTest : DescribeSpec({
       }
 
       suspend fun invokeCache(cacheKey: String = "testKey"): Flux<TypedInstance> {
-         val cache = cacheProvider.getCachingInvoker(
+         val cache = cacheProvider.getHazelcastCachingInvoker(
             cacheKey, stub,
          )
 
@@ -106,25 +97,25 @@ class HazelcastCacheProviderTest : DescribeSpec({
          return operationFlux
       }
       it("should cache the result") {
-         stub.addResponse("findPerson", vyne.parseJson("Person", """{ "id" : "1", "name" : "Jimmy" }"""), modifyDataSource = true)
+         stub.addResponse(
+            "findPerson",
+            vyne.parseJson("Person", """{ "id" : "1", "name" : "Jimmy" }"""),
+            modifyDataSource = true
+         )
          val result = invokeCache().collectList().block()!!
          result.shouldHaveSize(1)
+         // First call comes from the stub, not the cache
+         stub.calls["findPerson"].shouldHaveSize(1)
          // Data source should show the data came from a remote call
          result.single().source.shouldBeInstanceOf<OperationResultReference>()
             .operationName.fullyQualifiedName.shouldBe("PersonService@@findPerson")
 
-         stub.calls["findPerson"].shouldHaveSize(1)
-
          val resultFromCache = invokeCache().collectList().block()!!
          resultFromCache.shouldHaveSize(1)
-         // Data source should show the data came from a remote call
-         resultFromCache.single().source.shouldBeInstanceOf<OperationResultDataSourceWrapper>()
-            .operationResult
-            .remoteCall
-            .exchange.shouldBeInstanceOf<CacheExchange>()
-
          // Shouldn't have called the stub again
          stub.calls["findPerson"].shouldHaveSize(1)
+         // Data source should show the data came from a remote call
+         resultFromCache.single().source.shouldBeInstanceOf<CachedOperationResultReference>()
       }
       it("should cache if a second call comes when the first call is still inflight") {
          stub.addResponse("findPerson", vyne.parseJson("Person", """{ "id" : "1", "name" : "Jimmy" }"""))

@@ -3,10 +3,9 @@ package com.orbitalhq.spring.invokers
 import com.orbitalhq.Vyne
 import com.orbitalhq.annotations.http.HttpRetryAnnotationSchema
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
-import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationCacheProvider
+import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCachingInvokerProvider
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
-import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 
 enum class Invoker {
@@ -25,7 +24,7 @@ fun testVyne(schema: String, invoker: Invoker): Vyne {
          schemaProvider = SimpleSchemaProvider(taxi)
       ).let {
          if (invoker == Invoker.RestTemplateWithCache) {
-            CacheAwareOperationInvocationDecorator(it, LocalOperationCacheProvider.default())
+            CacheAwareOperationInvocationDecorator(it, LocalCachingInvokerProvider.default())
          } else {
             it
          }

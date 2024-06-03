@@ -16,7 +16,7 @@ import com.orbitalhq.connectors.jdbc.JdbcInvoker
 import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
-import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationCacheProvider
+import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCachingInvokerProvider
 import com.orbitalhq.query.runtime.QueryMessage
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.api.SchemaWithSourcesSchemaProvider
@@ -94,7 +94,7 @@ class StandaloneVyneFactory(
             cacheConfiguration,
             CacheAwareOperationInvocationDecorator.decorateAll(
                invokers,
-               cacheProvider = LocalOperationCacheProvider.default()
+               cacheProvider = LocalCachingInvokerProvider.default()
             )
          ),
          formatSpecRegistry.formats

@@ -4,7 +4,6 @@ import app.cash.turbine.test
 import app.cash.turbine.testIn
 import app.cash.turbine.withTurbineTimeout
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.jayway.awaitility.Awaitility
 import com.jayway.awaitility.Awaitility.await
 import com.jayway.awaitility.Duration
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
@@ -27,7 +26,7 @@ import com.orbitalhq.query.ResponseCodeGroup
 import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.ValueWithTypeName
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
-import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationCacheProvider
+import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCachingInvokerProvider
 import com.orbitalhq.query.history.QueryResultRow
 import com.orbitalhq.query.history.QuerySummary
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryController
@@ -351,7 +350,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
                   WebClient.builder(),
                   AuthWebClientCustomizer.empty(),
                ),
-               LocalOperationCacheProvider.default()
+               LocalCachingInvokerProvider.default()
             )
          )
       }
@@ -442,7 +441,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
                   WebClient.builder(),
                   AuthWebClientCustomizer.empty(),
                ),
-               LocalOperationCacheProvider.default()
+               LocalCachingInvokerProvider.default()
             )
          )
       }
