@@ -2149,7 +2149,7 @@ export const importedSchema = {
       }
     }
   ],
-  'messages': [],
+  'compilationMessages': [],
   'taxi': 'namespace actor {\n   type ActorId inherits Int\n   \n   type FirstName inherits String\n   \n   type LastName inherits String\n   \n   type LastUpdate inherits Instant\n   \n   @com.orbitalhq.jdbc.Table(table = "actor" , schema = "public" , connection = "asfdf")\n   model Actor {\n      @Id actor_id : ActorId\n      first_name : FirstName\n      last_name : LastName\n      last_update : LastUpdate\n   }\n   \n   @com.orbitalhq.jdbc.DatabaseService(connection = "asfdf")\n   service ActorService {\n      vyneQl query actorQuery(querySpec: vyne.vyneQl.VyneQlQuery):lang.taxi.Array<actor.Actor> with capabilities {\n         sum,\n         count,\n         avg,\n         min,\n         max,\n         filter(==,!=,in,like,>,<,>=,<=)\n      }\n   }\n}'
 } as SchemaSubmissionResult
 

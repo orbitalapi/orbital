@@ -1,5 +1,7 @@
 package com.orbitalhq.cockpit.core.schemas.editor
 
+import com.orbitalhq.Message
+import com.orbitalhq.ResultWithMessage
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.cockpit.core.schemas.editor.operations.SchemaEditOperation
 import com.orbitalhq.schemas.PartialSchema
@@ -13,7 +15,7 @@ data class SchemaSubmissionResult(
    override val services: Set<Service>,
    override val queries: Set<SavedQuery>,
 
-   val messages: List<CompilationMessage>,
+   val compilationMessages: List<CompilationMessage>,
    /**
     * Indicates if these changes were actually committed or not
     */
@@ -33,5 +35,11 @@ data class SchemaSubmissionResult(
     * to be communicated back to the UI
     *
     */
-   val pendingEdits: List<SchemaEditOperation>
-) : PartialSchema
+   val pendingEdits: List<SchemaEditOperation>,
+
+   /**
+    * These are not compilation messages, but messages / warning that occurred
+    * while processing the update - eg., informing the user they need to commit to git, etc
+    */
+   override val messages: List<Message>
+) : PartialSchema, ResultWithMessage

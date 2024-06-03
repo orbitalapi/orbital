@@ -2,6 +2,7 @@ package com.orbitalhq.config
 
 import com.typesafe.config.Config
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.ResultWithMessage
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
 import reactor.core.publisher.Flux
@@ -97,8 +98,8 @@ data class ConfigSourceRepository(
 // support ui-based writes for Auth tokens
 // for a while
 interface ConfigSourceWriter : ConfigSourceLoader {
-   fun saveConfig(updated: Config)
-   fun save(source: VersionedSource)
+   fun saveConfig(updated: Config):ResultWithMessage
+   fun save(source: VersionedSource):ResultWithMessage
 
    val packageIdentifier: PackageIdentifier
 }

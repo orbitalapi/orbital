@@ -58,17 +58,21 @@ class FileConfigSourceLoader(
          }
    }
 
-   override fun saveConfig(updated: Config) {
+   override fun saveConfig(updated: Config):ResultWithMessage {
       val configWithPlaceholderQuotesRemoved = updated.getSafeConfigString()
       if (!Files.exists(configFilePath)) {
+         if (configFilePath.parent != null) {
+            configFilePath.parent.toFile().mkdirs()
+         }
          configFilePath.createFile()
       } else {
          require(configFilePath.isRegularFile()) { "Expected the configured file path to be a file, but found a directory at $absolutePath" }
       }
       writeText(configFilePath, configWithPlaceholderQuotesRemoved)
+      return ResultWithMessage.SUCCESS
    }
 
-   override fun save(source: VersionedSource) {
+   override fun save(source: VersionedSource):ResultWithMessage  {
       val path = if (glob == null) {
          require(source.name == configFilePath.toFile().name) { "This writer can only write to ${configFilePath.fileName}" }
          configFilePath
@@ -77,8 +81,8 @@ class FileConfigSourceLoader(
          configFilePath.resolve(source.name)
       }
 
-
       writeText(path, source.content)
+      return ResultWithMessage.SUCCESS
    }
 
    private fun writeText(path: Path, text: String) {
@@ -135,7 +139,8 @@ class FileConfigSourceLoader(
    private fun loadVersionedSource(path: Path): VersionedSource = VersionedSource(
       name = path.toString(),
       packageIdentifier.version,
-      path.readText()
+      path.readText(),
+      path = path.toAbsolutePath().toString(),
    )
 
    override val contentUpdated: Flux<Class<out ConfigSourceLoader>>

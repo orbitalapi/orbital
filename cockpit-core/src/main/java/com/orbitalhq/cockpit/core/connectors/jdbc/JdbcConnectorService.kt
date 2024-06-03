@@ -207,8 +207,8 @@ class JdbcConnectorService(
             error("The provided ConnectionRegistry does not support updates")
          } else {
             val connectionEditor = connectionRegistry as MutableConnectionRegistry<JdbcConnectionConfiguration>
-            connectionRegistry.register(packageIdentifier, connectionConfig)
-            ConnectorConfigurationSummary(packageIdentifier, connectionConfig)
+            val result = connectionRegistry.register(packageIdentifier, connectionConfig)
+            ConnectorConfigurationSummary(packageIdentifier, connectionConfig, messages = result.messages)
          }
       }.subscribeOn(Schedulers.boundedElastic());
 

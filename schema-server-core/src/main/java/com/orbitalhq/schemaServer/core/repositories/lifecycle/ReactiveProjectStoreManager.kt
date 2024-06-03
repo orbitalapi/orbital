@@ -189,9 +189,9 @@ class ReactiveProjectStoreManager(
       }
    }
 
-   override val editableLoaders: List<FileSystemPackageLoader>
+   override val editableLoaders: List<SchemaPackageTransport>
       get() {
-         return fileLoaders.filter { it.isEditable() }
+         return loaders.filter { it.isEditable() }
       }
 
    override fun close() {

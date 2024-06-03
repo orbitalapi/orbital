@@ -1,22 +1,22 @@
-import { Clipboard } from '@angular/cdk/clipboard';
+import {Clipboard} from '@angular/cdk/clipboard';
 import {computed, Inject, Injectable, Injector, Signal, signal, WritableSignal} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { TuiAlertService, TuiDialogService, TuiNotification } from '@taiga-ui/core';
-import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
-import { ReplaySubject } from 'rxjs';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {TuiAlertService, TuiDialogService, TuiNotification} from '@taiga-ui/core';
+import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
+import {ReplaySubject} from 'rxjs';
 import { QueryLanguage } from '../query-panel/query-editor/query-editor-toolbar/query-editor-toolbar.component';
-import { copyQueryAs, CopyQueryFormat } from '../query-panel/query-editor/QueryFormatter';
-import { QueryResultInstanceSelectedEvent } from '../query-panel/result-display/BaseQueryResultComponent';
+import {copyQueryAs, CopyQueryFormat} from '../query-panel/query-editor/QueryFormatter';
+import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
 import {
   CodeGenRequest,
   QuerySnippetContainerComponent
 } from '../query-snippet-panel/query-snippet-container.component';
-import { AppConfig, AppInfoService } from './app-info.service';
-import { QueryEditorState } from './query-editor.state';
-import { LocalStorageQuery } from './query-panel-store.service';
-import { QueryService } from './query.service';
-import { Schema } from './schema';
-import { TypesService } from './types.service';
+import {AppConfig, AppInfoService} from './app-info.service';
+import {QueryEditorState} from './query-editor.state';
+import {LocalStorageQuery} from './query-panel-store.service';
+import {QueryService} from './query.service';
+import {Schema} from './schema';
+import {TypesService} from './types.service';
 
 @Injectable({
   providedIn: 'root'

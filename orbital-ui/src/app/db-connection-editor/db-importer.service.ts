@@ -4,7 +4,7 @@ import {environment} from 'src/environments/environment';
 import {Observable} from 'rxjs';
 import {Injectable} from '@angular/core';
 import {VyneServicesModule} from '../services/vyne-services.module';
-import {SchemaSubmissionResult} from '../services/types.service';
+import {ResultWithMessage, SchemaSubmissionResult} from '../services/types.service';
 import {NewTypeSpec} from 'src/app/type-editor/new-type-spec';
 import {PackageIdentifier} from "../package-viewer/packages.service";
 
@@ -170,7 +170,7 @@ export interface PackageWithError {
   error: string;
   configFileName?: string;
 }
-export interface ConnectorSummary {
+export interface ConnectorSummary extends ResultWithMessage {
   connectionName: string;
   connectionType: ConnectorType;
   driverName: string;
@@ -179,6 +179,8 @@ export interface ConnectorSummary {
   connectionStatus: ConnectionStatus;
   usages?: SchemaMemberReference[]
 }
+
+
 
 export interface ConnectionStatus {
   status: 'OK' | 'ERROR' | 'UNKNOWN' | 'CONNECTING';

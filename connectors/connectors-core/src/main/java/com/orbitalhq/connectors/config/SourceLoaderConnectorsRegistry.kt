@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.ResultWithMessage
 import com.orbitalhq.config.*
 import com.orbitalhq.connectors.VyneConnectionsConfig
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
@@ -62,10 +63,11 @@ class SourceLoaderConnectorsRegistry(
       return loadUnresolvedConfig(writer, packageIdentifier)
    }
 
-   fun saveConfig(packageIdentifier: PackageIdentifier, config: Config) {
+   fun saveConfig(packageIdentifier: PackageIdentifier, config: Config):ResultWithMessage {
       val writer = this.getWriter(packageIdentifier)
-      writer.saveConfig(config)
+      val result = writer.saveConfig(config)
       invalidateCache()
+      return result
    }
 
    fun defaultHazelcastConfiguration(): HazelcastConfiguration? {

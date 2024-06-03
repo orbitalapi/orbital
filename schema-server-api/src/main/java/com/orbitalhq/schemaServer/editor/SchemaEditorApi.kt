@@ -1,7 +1,9 @@
 package com.orbitalhq.schemaServer.editor
 
+import com.orbitalhq.Message
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageSourceName
+import com.orbitalhq.ResultWithMessage
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.schema.publisher.loaders.Changeset
 import com.orbitalhq.schemas.Metadata
@@ -74,8 +76,9 @@ data class SetActiveChangesetRequest(
 
 data class SchemaEditResponse(
    val success: Boolean,
-   val messages: List<CompilationMessage>
-)
+   val compilationMessages: List<CompilationMessage>,
+   override val messages: List<Message>
+) : ResultWithMessage
 
 
 data class UpdateTypeAnnotationRequest(

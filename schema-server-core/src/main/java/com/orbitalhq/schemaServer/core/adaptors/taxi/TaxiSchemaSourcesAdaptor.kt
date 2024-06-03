@@ -59,7 +59,7 @@ class TaxiSchemaSourcesAdaptor : SchemaSourcesAdaptor {
    }
 
    override fun convert(packageMetadata: PackageMetadata, transport: SchemaPackageTransport): Mono<SourcePackage> {
-      require(packageMetadata is FileBasedPackageMetadata) { "Currently, TaxiSchemaSourcesAdaptor expects a FileBasedPackageMetadata" }
+      require(packageMetadata is FileBasedPackageMetadata) { "TaxiSchemaSourcesAdaptor expects a FileBasedPackageMetadata" }
       return Mono.create { sink ->
          try {
             val sourcePackage = FileSchemaSourceProvider(packageMetadata.rootPath).packages.single()

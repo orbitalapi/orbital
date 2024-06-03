@@ -4,6 +4,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.ResultWithMessage
 import com.orbitalhq.connectors.registry.ConfigFileConnectorRegistry
 import com.orbitalhq.connectors.registry.MutableConnectionRegistry
 import java.nio.file.Path
@@ -25,11 +26,11 @@ class AzureStoreConnectionFileRegistry(path: Path, fallback: Config = ConfigFact
    override fun register(
       targetPackage: PackageIdentifier,
       connectionConfiguration: AzureStorageConnectorConfiguration
-   ) {
+   ):ResultWithMessage {
       TODO("Not yet implemented")
    }
 
-   override fun remove(targetPackage: PackageIdentifier, connectionName: String) {
+   override fun remove(targetPackage: PackageIdentifier, connectionName: String):ResultWithMessage {
       TODO("Not yet implemented")
    }
 

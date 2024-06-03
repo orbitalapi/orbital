@@ -83,7 +83,7 @@ class SwaggerSchemaConverterTest : BaseSchemaConverterServiceTest() {
       sourceDir.exists().should.be.`true`
       sourceDir.listFiles().toList().should.have.size(5)
 
-      conversionResponse.messages.errors().should.be.empty
+      conversionResponse.compilationMessages.errors().should.be.empty
       conversionResponse.types.should.have.size(3)
       conversionResponse.services.should.have.size(2)
    }
@@ -126,7 +126,7 @@ class SwaggerSchemaConverterTest : BaseSchemaConverterServiceTest() {
          .filter { it.name != ".gitkeep" }
          .should.be.empty
 
-      conversionResponse.messages.errors().should.be.empty
+      conversionResponse.compilationMessages.errors().should.be.empty
       conversionResponse.types.should.have.size(434)
       conversionResponse.services.should.have.size(219)
    }

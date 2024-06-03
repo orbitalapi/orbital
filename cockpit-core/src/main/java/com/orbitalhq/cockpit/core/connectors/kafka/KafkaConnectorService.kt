@@ -37,7 +37,7 @@ class KafkaConnectorService(
       testConnection(connectionConfig)
       val packageIdentifier = PackageIdentifier.fromUriSafeId(packageUri)
       val connectionEditor = connectionRegistry as MutableConnectionRegistry<KafkaConnectionConfiguration>
-      connectionRegistry.register(packageIdentifier,connectionConfig)
-      return ConnectorConfigurationSummary(packageIdentifier,connectionConfig)
+      val result = connectionRegistry.register(packageIdentifier,connectionConfig)
+      return ConnectorConfigurationSummary(packageIdentifier,connectionConfig, messages = result.messages)
    }
 }

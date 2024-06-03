@@ -47,6 +47,10 @@ data class VersionedSource(
    val packageIdentifier: PackageIdentifier?,
    val language: SourceCodeLanguage = SourceCodeLanguages.TAXI,
    // Don't use java.nio.Path, as it's not serializable
+   // MP: I assume this is the absolute path on disk.
+   // If not, document here what it is, why it's not the absolute path,
+   // and re-test SourceLoaderConnectorsRegistryTest (which I was working on when
+   // I made this assumption)
    val path: String? = null
 ) : Serializable {
    constructor(

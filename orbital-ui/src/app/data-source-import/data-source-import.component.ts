@@ -2,37 +2,38 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  EventEmitter,
+  EventEmitter, Inject, Injector,
   Input,
   OnDestroy, OnInit,
   Output
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
-import { BehaviorSubject } from 'rxjs';
-import { Observable } from 'rxjs/internal/Observable';
-import { shareReplay } from 'rxjs/operators';
-import { TuiNotificationModule } from '@taiga-ui/core';
-import { SchemaSubmissionResult, TypesService } from '../services/types.service';
-import { Message, Schema } from '../services/schema';
+import {CommonModule} from '@angular/common';
+import {ActivatedRoute, Router} from '@angular/router';
+import {BehaviorSubject} from 'rxjs';
+import {Observable} from 'rxjs/internal/Observable';
+import {shareReplay} from 'rxjs/operators';
+import {TuiAlertService, TuiNotificationModule} from '@taiga-ui/core';
+import {SchemaSubmissionResult, TypesService} from '../services/types.service';
+import {Message, Schema} from '../services/schema';
 import {
   ConnectionsListResponse,
   ConnectorSummary,
   DbConnectionService,
   MappedTable
 } from '../db-connection-editor/db-importer.service';
-import { ConvertSchemaEvent } from './data-source-import.models';
+import {ConvertSchemaEvent} from './data-source-import.models';
 import {
   CreateOrReplaceSource,
   SchemaEdit,
   SchemaEditOperation,
   SchemaImporterService
 } from '../project-import/schema-importer.service';
-import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
-import { PackagesService, SourcePackageDescription } from '../package-viewer/packages.service';
-import { DataSourcePanelComponent, DataSourceType } from './data-source-panel/data-source-panel.component';
-import { SchemaMemberTypeExplorerModule } from '../schema-member-type-explorer/schema-member-type-explorer.module';
-import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
+import {appInstanceType} from 'src/app/app-config/app-instance.vyne';
+import {PackagesService, SourcePackageDescription} from '../package-viewer/packages.service';
+import {DataSourcePanelComponent, DataSourceType} from './data-source-panel/data-source-panel.component';
+import {SchemaMemberTypeExplorerModule} from '../schema-member-type-explorer/schema-member-type-explorer.module';
+import {CodeViewerFlexBoxMode} from '../code-viewer/code-viewer.component';
+import {showAlertForMessage} from "../alert-with-dismiss/alert-with-dismiss.component";
 
 @Component({
   selector: 'app-data-source-import',
@@ -61,19 +62,21 @@ import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
     </div>
     <div class="configuration-step step" *ngIf="(wizardStep | async) === 'configureTypes'">
       <h3>Link your data & services</h3>
-      <div class="instructions">Here's the {{dataSourceType}} data source we just imported. Take a moment to build links to other data sources, by updating your types to existing, shared types.</div>
+      <div class="instructions">Here's the {{ dataSourceType }} data source we just imported. Take a moment to build
+        links to other data sources, by updating your types to existing, shared types.
+      </div>
       <app-schema-member-type-explorer [partialSchema]="schemaSubmissionResult"
-                                 [schema]="schema"
-                                 [working]="working"
-                                 [saveResultMessage]="schemaSaveResultMessage"
-                                 [editable]="true"
-                                 [codeViewerFlexBoxMode]="codeViewerFlexBoxMode"
-                                 (save)="submitEdits($event)"
-                                 (cancelConfig)="onCancelConfig()"
+                                       [schema]="schema"
+                                       [working]="working"
+                                       [saveResultMessage]="schemaSaveResultMessage"
+                                       [editable]="true"
+                                       [codeViewerFlexBoxMode]="codeViewerFlexBoxMode"
+                                       (save)="submitEdits($event)"
+                                       (cancelConfig)="onCancelConfig()"
       ></app-schema-member-type-explorer>
     </div>
     <tui-notification
-      [status]="schemaSaveResultMessage.level.toLowerCase()"
+      [status]="schemaSaveResultMessage.severity.toLowerCase()"
       *ngIf="schemaSaveResultMessage"
       class="notification-error"
       (close)="schemaSaveResultMessage = null"
@@ -117,7 +120,9 @@ export class DataSourceImportComponent implements OnInit, OnDestroy {
               private packagesService: PackagesService,
               private changeDetector: ChangeDetectorRef,
               private router: Router,
-              private activatedRoute: ActivatedRoute
+              private activatedRoute: ActivatedRoute,
+              private alerts: TuiAlertService,
+              @Inject(Injector) private readonly injector: Injector,
   ) {
     this.packages$ = packagesService.listPackages();
     dbService.getConnections()
@@ -143,7 +148,7 @@ export class DataSourceImportComponent implements OnInit, OnDestroy {
   }
 
 
-  convertSchema(event: {convertSchemaEvent: ConvertSchemaEvent, dataSourceType: DataSourceType}) {
+  convertSchema(event: { convertSchemaEvent: ConvertSchemaEvent, dataSourceType: DataSourceType }) {
     this.working = true;
     this.schemaService.convertSchema(event.convertSchemaEvent).subscribe({
       next: (result: SchemaSubmissionResult<CreateOrReplaceSource>) => {
@@ -151,7 +156,7 @@ export class DataSourceImportComponent implements OnInit, OnDestroy {
         this.dataSourceType = event.dataSourceType
         this.wizardStep.next('configureTypes');
         this.onConfigureStep.emit(true);
-        this.router.navigate(['configure'], { relativeTo: this.activatedRoute, replaceUrl: true });
+        this.router.navigate(['configure'], {relativeTo: this.activatedRoute, replaceUrl: true});
         console.log(JSON.stringify(result, null, 2));
         this.working = false;
         this.dataSourceSelected.emit();
@@ -179,7 +184,7 @@ export class DataSourceImportComponent implements OnInit, OnDestroy {
           this.working = false;
           this.schemaSaveResultMessage = {
             message: 'The schema was updated successfully',
-            level: 'SUCCESS',
+            severity: 'SUCCESS',
           };
           this.onConfigureStep.emit(false);
           this.wizardStep.next('importSchema');
@@ -191,7 +196,7 @@ export class DataSourceImportComponent implements OnInit, OnDestroy {
           console.error(JSON.stringify(error));
           this.schemaSaveResultMessage = {
             message: error.error?.message || 'An error occurred',
-            level: 'ERROR',
+            severity: 'ERROR',
           };
           this.working = false;
           this.changeDetector.markForCheck();
@@ -214,26 +219,4 @@ export class DataSourceImportComponent implements OnInit, OnDestroy {
       }
     );
   }
-
-  //
-  // saveSchema(schema: PartialSchema) {
-  //   this.working = true;
-  //   this.schemaService.submitEditedSchema(schema)
-  //     .subscribe(() => {
-  //         this.working = false;
-  //         this.schemaSaveResultMessage = {
-  //           message: 'The schema was updated successfully',
-  //           level: 'SUCCESS',
-  //         };
-  //       },
-  //       error => {
-  //         console.error(JSON.stringify(error));
-  //         this.schemaSaveResultMessage = {
-  //           message: error.error?.message || 'An error occurred',
-  //           level: 'FAILURE',
-  //         };
-  //         this.working = false;
-  //       },
-  //     );
-  // }
 }

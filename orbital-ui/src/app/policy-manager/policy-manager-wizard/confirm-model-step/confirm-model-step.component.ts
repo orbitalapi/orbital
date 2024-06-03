@@ -15,26 +15,26 @@ import { Message } from '../../../services/schema';
   standalone: true,
   imports: [CommonModule, CodeEditorModule, TuiButtonModule, TuiNotificationModule],
   template: `
-    <h4>Confirm model</h4>
-    <p>
-      A taxi model has been generated based on the fields you selected from your authentication token.
-    </p>
-    <p>
-      You can make any required changes below before continuing.
-    </p>
-    <tui-notification
-      [status]="schemaSaveResultMessage.level.toLowerCase()"
-      *ngIf="schemaSaveResultMessage"
-      class="notification"
-      (close)="schemaSaveResultMessage = null"
-    >
-      {{ schemaSaveResultMessage.message }}
-    </tui-notification>
-    <app-code-editor class="code-editor" [(content)]="pendingEdits.sources[0].content"></app-code-editor>
-    <div class="form-button-bar">
-      <button tuiButton appearance="secondary" [size]="'m'" (click)="gotoMapAuthTokenStep.emit()">Back</button>
-      <button tuiButton [showLoader]="working" [size]="'m'" (click)="onSubmit()">Confirm</button>
-    </div>
+      <h4>Confirm model</h4>
+      <p>
+          A taxi model has been generated based on the fields you selected from your authentication token.
+      </p>
+      <p>
+          You can make any required changes below before continuing.
+      </p>
+      <tui-notification
+              [status]="schemaSaveResultMessage.severity.toLowerCase()"
+              *ngIf="schemaSaveResultMessage"
+              class="notification"
+              (close)="schemaSaveResultMessage = null"
+      >
+          {{ schemaSaveResultMessage.message }}
+      </tui-notification>
+      <app-code-editor class="code-editor" [(content)]="pendingEdits.sources[0].content"></app-code-editor>
+      <div class="form-button-bar">
+          <button tuiButton appearance="secondary" [size]="'m'" (click)="gotoMapAuthTokenStep.emit()">Back</button>
+          <button tuiButton [showLoader]="working" [size]="'m'" (click)="onSubmit()">Confirm</button>
+      </div>
   `,
   styleUrls: ['./confirm-model-step.component.scss']
 })
@@ -74,7 +74,7 @@ export class ConfirmModelStepComponent {
           console.error(JSON.stringify(error));
           this.schemaSaveResultMessage = {
             message: error.error?.message || 'An error occurred',
-            level: 'ERROR',
+            severity: 'ERROR',
           };
           this.working = false;
           this.changeDetectorRef.markForCheck();

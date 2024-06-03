@@ -8,6 +8,8 @@ import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schema.publisher.loaders.*
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoader
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageWriter
+import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader
+import com.orbitalhq.schemaServer.core.git.GitWriterDecorator
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemaServer.editor.*
 import com.orbitalhq.schemas.SavedQuery
@@ -153,10 +155,20 @@ class SchemaEditorService(
          }"
       }
       val loader = repositoryManager.getLoader(request.packageIdentifier)
+      val (fileSystemLoader, writerMessages) = when(loader) {
+         is FileSystemPackageLoader -> loader to emptyList()
+
+         // If we're writing to a git backed store, we need to
+         // tell the user that they're responsible for the git push.
+         is GitSchemaPackageLoader -> loader.filePackageLoader to listOf(
+            GitWriterDecorator.GIT_COMMIT_NEEDED
+         )
+         else -> error("Unexpected type of SchemaPackageTransport: ${loader::class.simpleName}")
+      }
       val writer = FileSystemPackageWriter()
-      return writer.writeSources(loader as FileSystemPackageLoader, request.edits).map {
+      return writer.writeSources(fileSystemLoader, request.edits).map {
          // TODO : Actual feedback...
-         SchemaEditResponse(true, emptyList())
+         SchemaEditResponse(true, emptyList(), writerMessages)
       }
    }
 

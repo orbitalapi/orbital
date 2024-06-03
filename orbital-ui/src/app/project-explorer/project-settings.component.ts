@@ -8,21 +8,21 @@ import { TUI_PROMPT } from '@taiga-ui/kit';
 @Component({
   selector: 'app-project-settings',
   template: `
-    <app-git-config *ngIf="packageDescription.publisherType === 'GitRepo'" [editable]="false"
-                    [gitConfig]="packageDescription.packageConfig"></app-git-config>
-    <app-file-config *ngIf="packageDescription.publisherType === 'FileSystem'" [editable]="false"
-                     [fileSystemPackageConfig]="packageDescription.packageConfig"></app-file-config>
+      <app-git-config *ngIf="packageDescription.publisherType === 'GitRepo'" [editable]="false"
+                      [gitConfig]="packageDescription.packageConfig"></app-git-config>
+      <app-file-config *ngIf="packageDescription.publisherType === 'FileSystem'" [editable]="false"
+                       [fileSystemPackageConfig]="packageDescription.packageConfig"></app-file-config>
 
-    <ng-container *ngIf="canRemove">
-      <hr>
-      <h3>Danger zone</h3>
-      <button tuiButton appearance="secondary-destructive" [showLoader]="working" (click)="confirmRemoval()">
-        Remove this Project...
-      </button>
-      <tui-notification [status]="deleteResultMessage.level.toLowerCase()" *ngIf="deleteResultMessage">
-        {{ deleteResultMessage.message }}
-      </tui-notification>
-    </ng-container>
+      <ng-container *ngIf="canRemove">
+          <hr>
+          <h3>Danger zone</h3>
+          <button tuiButton appearance="secondary-destructive" [showLoader]="working" (click)="confirmRemoval()">
+              Remove this Project...
+          </button>
+          <tui-notification [status]="deleteResultMessage.severity.toLowerCase()" *ngIf="deleteResultMessage">
+              {{ deleteResultMessage.message }}
+          </tui-notification>
+      </ng-container>
 
   `,
   styleUrls: ['./project-settings.component.scss'],
@@ -78,7 +78,7 @@ export class ProjectSettingsComponent {
         error: () => {
           this.deleteResultMessage = {
             message: 'A problem occurred removing the Project',
-            level: 'ERROR',
+            severity: 'ERROR',
           }
           this.working = false;
           this.changeDetector.markForCheck();

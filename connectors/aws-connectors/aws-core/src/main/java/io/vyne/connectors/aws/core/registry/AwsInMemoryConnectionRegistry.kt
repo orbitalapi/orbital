@@ -1,6 +1,8 @@
 package com.orbitalhq.connectors.aws.core.registry
 
+import com.orbitalhq.DefaultResultWithMessage
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.ResultWithMessage
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.connectors.registry.MutableConnectionRegistry
 
@@ -13,20 +15,23 @@ class AwsInMemoryConnectionRegistry(configs: List<AwsConnectionConfiguration> = 
       connections[connectionConfiguration.connectionName] = connectionConfiguration
    }
 
-   override fun register(targetPackage: PackageIdentifier, connectionConfiguration: AwsConnectionConfiguration) {
+   override fun register(targetPackage: PackageIdentifier, connectionConfiguration: AwsConnectionConfiguration): DefaultResultWithMessage {
       connections[connectionConfiguration.connectionName] = connectionConfiguration
+      return ResultWithMessage.SUCCESS
    }
 
-   override fun remove(targetPackage: PackageIdentifier, connectionConfiguration: AwsConnectionConfiguration) {
+   override fun remove(targetPackage: PackageIdentifier, connectionConfiguration: AwsConnectionConfiguration): DefaultResultWithMessage {
       super.remove(targetPackage, connectionConfiguration)
+      return ResultWithMessage.SUCCESS
    }
 
    fun remove(connectionConfiguration: AwsConnectionConfiguration) {
         connections.remove(connectionConfiguration.connectionName)
     }
 
-   override fun remove(targetPackage: PackageIdentifier, connectionName: String) {
+   override fun remove(targetPackage: PackageIdentifier, connectionName: String): DefaultResultWithMessage {
       connections.remove(connectionName)
+      return ResultWithMessage.SUCCESS
    }
 
     override fun hasConnection(name: String): Boolean {
