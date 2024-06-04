@@ -18,6 +18,9 @@
    </properties>
 
    <dependencies>
+      <!-- TaxiQL query engine needed for access to caching primitives.
+      We may want to split these out at some point -->
+
       <dependency>
          <groupId>com.hazelcast</groupId>
          <artifactId>hazelcast</artifactId>
@@ -70,7 +73,6 @@
          <groupId>com.orbitalhq</groupId>
          <artifactId>taxiql-query-engine</artifactId>
          <version>${project.version}</version>
-         <scope>test</scope>
          <exclusions>
             <exclusion>
                <artifactId>log4j-to-slf4j</artifactId>

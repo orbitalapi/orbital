@@ -9,6 +9,8 @@ import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.orElse
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import mu.KotlinLogging
 import java.util.*
 

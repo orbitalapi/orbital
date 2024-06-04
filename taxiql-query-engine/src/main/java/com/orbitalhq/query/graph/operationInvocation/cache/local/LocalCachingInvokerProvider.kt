@@ -4,11 +4,13 @@ import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.orbitalhq.LocalOperationCacheConfiguration
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.query.connectors.CacheFetcher
+import com.orbitalhq.query.connectors.CacheFactory
+import com.orbitalhq.query.connectors.ReadCacheOrCallInvokerHandler
 import com.orbitalhq.query.connectors.CachingOperatorInvoker
+import com.orbitalhq.query.connectors.DefaultCachingOperatorInvoker
 import com.orbitalhq.query.connectors.OperationCacheKey
 import com.orbitalhq.query.connectors.OperationCacheName
-import com.orbitalhq.query.connectors.OperationCacheProvider
+import com.orbitalhq.query.connectors.CachingInvokerProvider
 import com.orbitalhq.query.connectors.OperationCacheProviderBuilder
 import com.orbitalhq.query.connectors.OperationInvocationParamMessage
 import com.orbitalhq.query.connectors.OperationInvoker
@@ -26,10 +28,10 @@ import java.util.concurrent.ConcurrentHashMap
  * Can build Operation Caches that are stored locally, in-process
  * (vs. remote - eg., in Redis or Hazelcast)
  */
-class LocalOperationCacheProvider(
+class LocalCachingInvokerProvider(
    private val actorCache: Cache<OperationCacheKey, CachingOperatorInvoker>,
 ) :
-   OperationCacheProvider {
+   CachingInvokerProvider {
    companion object {
       /**
        * Returns a default, short-lived, cache provider.
@@ -38,8 +40,8 @@ class LocalOperationCacheProvider(
        * we should be looking up the cache provider using the strategy
        * returned from parsing the query
        */
-      fun default(): LocalOperationCacheProvider {
-         return LocalOperationCacheProvider(
+      fun default(): LocalCachingInvokerProvider {
+         return LocalCachingInvokerProvider(
             LocalCacheProviderBuilder.newCache(
                LocalOperationCacheConfiguration.DEFAULT_MAX_CACHED_OPERATIONS,
                LocalOperationCacheConfiguration.DEFAULT_MAX_DURATION
@@ -58,7 +60,7 @@ class LocalOperationCacheProvider(
       invoker: OperationInvoker
    ): CachingOperatorInvoker {
       return actorCache.get(operationKey) {
-         CachingOperatorInvoker(operationKey, invoker, LocalCacheFetcher())
+         DefaultCachingOperatorInvoker(operationKey, invoker, LocalCacheFetcher())
       }
    }
 
@@ -68,14 +70,22 @@ class LocalOperationCacheProvider(
    }
 }
 
-class LocalCacheFetcher : CacheFetcher {
+/**
+ * Exposes a LocalCacheFetcher, used as L1 cache
+ */
+object LocalCache {
+   fun newLocalCache():ReadCacheOrCallInvokerHandler {
+      return LocalCacheFetcher()
+   }
+}
+class LocalCacheFetcher : ReadCacheOrCallInvokerHandler {
    private val cachedFlux = ConcurrentHashMap<String, Flux<TypedInstance>>()
-   override fun invoke(
-      key: OperationCacheKey,
-      invocationParams: OperationInvocationParamMessage,
+   override fun getCachedOrCallLoader(
+      operationCacheKey: OperationCacheKey,
+      operationInvocationParamMessage: OperationInvocationParamMessage,
       invoker: () -> Flux<TypedInstance>
    ): Flux<TypedInstance> {
-      return cachedFlux.getOrPut(key) {
+      return cachedFlux.getOrPut(operationCacheKey) {
          invoker().cache()
       }
    }
@@ -110,8 +120,9 @@ class LocalCacheProviderBuilder : OperationCacheProviderBuilder {
    override fun buildOperationCache(
       strategy: CachingStrategy,
       maxCachedOperations: Int,
-      cachedOperationTtl: Duration
-   ): OperationCacheProvider {
+      cachedOperationTtl: Duration,
+      cacheFactory: CacheFactory
+   ): CachingInvokerProvider {
       val cache = when (strategy) {
          is QueryScopedCache -> newCache(maxCachedOperations, cachedOperationTtl)
          is GlobalSharedCache -> caches.getOrPut(globalCacheName) { newCache(maxCachedOperations, cachedOperationTtl) }
@@ -122,7 +133,7 @@ class LocalCacheProviderBuilder : OperationCacheProviderBuilder {
 
          else -> error("${strategy::class.simpleName} is not suppoerted by this builder")
       }
-      return LocalOperationCacheProvider(cache)
+      return LocalCachingInvokerProvider(cache)
    }
 
 

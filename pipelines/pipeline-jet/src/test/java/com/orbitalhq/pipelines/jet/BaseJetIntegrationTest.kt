@@ -7,7 +7,6 @@ import com.hazelcast.jet.core.JetTestSupport
 import com.hazelcast.jet.core.JobStatus
 import com.hazelcast.spring.context.SpringManagedContext
 import com.mercateo.test.clock.TestClock
-import com.nhaarman.mockito_kotlin.mock
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import com.orbitalhq.*
@@ -30,7 +29,7 @@ import com.orbitalhq.pipelines.jet.sink.stream.StreamSinkTarget
 import com.orbitalhq.pipelines.jet.sink.stream.StreamSinkTargetContainer
 import com.orbitalhq.pipelines.jet.source.PipelineSourceProvider
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
-import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationCacheProvider
+import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCachingInvokerProvider
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
@@ -81,7 +80,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
                   WebClient.builder(),
                   AuthWebClientCustomizer.empty()
                ),
-               LocalOperationCacheProvider.default()
+               LocalCachingInvokerProvider.default()
             )
          )
       }
@@ -146,7 +145,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
                   WebClient.builder(),
                   AuthWebClientCustomizer.empty()
                ),
-               LocalOperationCacheProvider.default()
+               LocalCachingInvokerProvider.default()
             )
          )
       )

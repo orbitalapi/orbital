@@ -15,7 +15,7 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedValue
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
-import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalOperationCacheProvider
+import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCachingInvokerProvider
 import com.orbitalhq.schemas.Operation
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QualifiedName
@@ -59,7 +59,7 @@ class CacheAwareOperationInvocationDecoratorTest {
       val mockOperationInvoker = mock<OperationInvoker>()
       val mockQueryContext = mock<QueryContext>()
       val cacheAware =
-         CacheAwareOperationInvocationDecorator(mockOperationInvoker, LocalOperationCacheProvider.default())
+         CacheAwareOperationInvocationDecorator(mockOperationInvoker, LocalCachingInvokerProvider.default())
 
       val type =
          Type(name = QualifiedName.from("type1"), sources = listOf(), taxiType = PrimitiveType.STRING, typeDoc = null)
@@ -120,7 +120,7 @@ class CacheAwareOperationInvocationDecoratorTest {
                )
             )
          }
-      val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker, LocalOperationCacheProvider.default())
+      val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker, LocalCachingInvokerProvider.default())
       val (service, operation) = schema.operation("Service@@sayHello".fqn())
       val queryOptions = QueryOptions(streamConsumerId = "id")
       val result = cachingInvoker.invoke(
@@ -161,7 +161,7 @@ class CacheAwareOperationInvocationDecoratorTest {
                   "Long".asTypedString()
                )
             }
-         val cacheProvider = LocalOperationCacheProvider.default()
+         val cacheProvider = LocalCachingInvokerProvider.default()
          val cachingInvoker =
             CacheAwareOperationInvocationDecorator(invoker, cacheProvider, evictWhenResultSizeExceeds = 3)
          val (service, operation) = schema.operation("Service@@sayManyThings".fqn())
@@ -194,7 +194,7 @@ class CacheAwareOperationInvocationDecoratorTest {
    @Test
    fun `throws exception from underlying invoker`(): Unit = runBlocking {
       val invoker = ConcurrentAccessProhibitedInvoker { flow { error("Kaboom") } }
-      val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker, LocalOperationCacheProvider.default())
+      val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker, LocalCachingInvokerProvider.default())
       val (service, operation) = schema.operation("Service@@sayHello".fqn())
       assertFailsWith<Throwable>("Kaboom") {
          cachingInvoker.invoke(
@@ -218,7 +218,7 @@ class CacheAwareOperationInvocationDecoratorTest {
       val flow = MutableSharedFlow<TypedInstance>(replay = 0)
 
       val invoker = ConcurrentAccessProhibitedInvoker { flow }
-      val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker, LocalOperationCacheProvider.default())
+      val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker, LocalCachingInvokerProvider.default())
       val (service, operation) = schema.operation("Service@@sayManyThings".fqn())
 
       // The first time, we emit while consuming to ensure that we
@@ -314,7 +314,7 @@ class CacheAwareOperationInvocationDecoratorTest {
       runBlocking {
          // This test asserts behaviour when the exception is thrown in preperation of the Flow / FLow, not within it.
          val invoker = ExceptionThrowingInvoker(UnsupportedOperationException("You shall not pass"))
-         val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker, LocalOperationCacheProvider.default())
+         val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker, LocalCachingInvokerProvider.default())
          val (service, operation) = schema.operation("Service@@sayManyThings".fqn())
 
          // The first time, we emit while consuming to ensure that we
@@ -366,7 +366,7 @@ class CacheAwareOperationInvocationDecoratorTest {
       invoker: ConcurrentAccessProhibitedInvoker
    ): List<Any> = runBlocking {
 
-      val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker, LocalOperationCacheProvider.default())
+      val cachingInvoker = CacheAwareOperationInvocationDecorator(invoker, LocalCachingInvokerProvider.default())
       val (service, operation) = schema.operation("Service@@sayHello".fqn())
 
       val eventDispatcher: QueryContextEventDispatcher = mock { }

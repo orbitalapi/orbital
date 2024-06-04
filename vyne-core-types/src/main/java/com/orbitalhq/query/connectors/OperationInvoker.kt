@@ -28,3 +28,19 @@ interface OperationInvoker {
       queryOptions: QueryOptions
    ): Flow<TypedInstance>
 }
+
+object NullOperationInvoker : OperationInvoker{
+   override fun canSupport(service: Service, operation: RemoteOperation): Boolean = false
+
+   override suspend fun invoke(
+      service: Service,
+      operation: RemoteOperation,
+      parameters: List<Pair<Parameter, TypedInstance>>,
+      eventDispatcher: QueryContextEventDispatcher,
+      queryId: String,
+      queryOptions: QueryOptions
+   ): Flow<TypedInstance> {
+      TODO("Not yet implemented")
+   }
+
+}

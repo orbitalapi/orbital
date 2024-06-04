@@ -10,6 +10,7 @@ import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.QualifiedNameAsStringDeserializer
 import com.orbitalhq.schemas.QualifiedNameAsStringSerializer
+import com.orbitalhq.utils.Ids
 import kotlinx.serialization.Serializable
 import java.time.Instant
 import java.util.UUID
@@ -26,8 +27,8 @@ data class RemoteCall(
    /**
     * Use a consistent remoteCallId for all responses.
     */
-   val remoteCallId: String = UUID.randomUUID().toString(),
-   val responseId: String = UUID.randomUUID().toString(),
+   val remoteCallId: String = Ids.fastUuid(),
+   val responseId: String = Ids.fastUuid(),
    @JsonSerialize(using = QualifiedNameAsStringSerializer::class)
    @JsonDeserialize(using = QualifiedNameAsStringDeserializer::class)
    val service: QualifiedName,

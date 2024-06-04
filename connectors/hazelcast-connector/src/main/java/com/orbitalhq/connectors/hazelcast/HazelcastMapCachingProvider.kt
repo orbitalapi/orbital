@@ -1,12 +1,17 @@
 package com.orbitalhq.connectors.hazelcast
 
 import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.nio.ObjectDataInput
+import com.hazelcast.nio.ObjectDataOutput
+import com.hazelcast.nio.serialization.StreamSerializer
 import com.hazelcast.nio.serialization.compact.CompactReader
 import com.hazelcast.nio.serialization.compact.CompactSerializer
 import com.hazelcast.nio.serialization.compact.CompactWriter
+import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.OperationResult
-import com.orbitalhq.models.OperationResultDataSourceWrapper
+import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.UndefinedSource
 import com.orbitalhq.models.serde.SerializableTypedInstance
 import com.orbitalhq.models.serde.toSerializable
 import com.orbitalhq.query.CacheExchange
@@ -17,7 +22,10 @@ import com.orbitalhq.query.connectors.CacheNames
 import com.orbitalhq.query.connectors.OperationCacheKey
 import com.orbitalhq.query.connectors.OperationInvocationParamMessage
 import com.orbitalhq.schema.consumer.SchemaStore
+import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.fqn
+import com.orbitalhq.utils.Ids
+import com.orbitalhq.utils.StrategyPerformanceProfiler
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -62,7 +70,7 @@ class HazelcastMapCachingProvider(
       private val logger = KotlinLogging.logger {}
    }
 
-   private val map = hazelcast.getMap<String, ExpiringByteArray>(OPERATION_CACHE_NAME)
+   private val map = hazelcast.getMap<String, CachedTypedInstanceList>(OPERATION_CACHE_NAME)
 
    // see startTtlUpdateListener...
    private val updateTtlSink = Sinks.many().unicast().onBackpressureError<UpdateTtlEvent>()
@@ -116,10 +124,6 @@ class HazelcastMapCachingProvider(
       // Use Mono.create() to ensure the map reading below doesn't happen
       // on the main thread
       return Mono.create { sink ->
-
-
-
-
          // Design choice: use map.compute()...
          // We've tried multiple approaches here.
          // We need an async, atomic way to ensure the loader is only invoked once.
@@ -127,19 +131,23 @@ class HazelcastMapCachingProvider(
          // cannot be run remotely.
          // compute(key) promises atomic processing (so the loader is only invoked once),
          // and runs locally on the client.
-         val byteArray = map.computeIfAbsent(key) { invokeLoader(key, loader, resultsFromLoader) }!!
-         sink.success(byteArray)
-      }.map { expiringByteArray ->
+
+         // The downside is that there will be more cache-misses (this isn't atomic),
+         // but that's an acceptable trade-off,
+         // as the near-cache values do not incur (de)/serialization costs
+         val typedInstance = map.getOrPut(key) { invokeLoader(key, loader, resultsFromLoader) }!!
+         sink.success(typedInstance)
+      }.map { typedInstance ->
 
          // Edge case: We loaded a value from the cache which is already expired.
          // In this case, force a reload using compute() vs computeIfAbsent()
-         if (expiringByteArray.isExpired(clock)) {
+         if (typedInstance.isExpired(clock)) {
             map.compute(key) { key, _ ->
                invokeLoader(key, loader, resultsFromLoader)
             }!!
-         } else expiringByteArray
+         } else typedInstance
       }
-         .flatMapIterable { expiringByteArray ->
+         .flatMapIterable { cachedTypedInstances ->
 
             if (resultsFromLoader.isNotEmpty()) {
                // If the resultsFromLoader are populated, it means this thread
@@ -151,15 +159,13 @@ class HazelcastMapCachingProvider(
                // ... otherwise we fetched from the cache.
                // This means that we should update the datasource so it shows
                // the cache call and notify the eventDispatcher
-               val byteArrays = expiringByteArray.value
+               val typedInstances = cachedTypedInstances.instances
 
-               val (operationResult, dataSource) = createDatasource(startTime, message, key, byteArrays.size)
+               require(cachedTypedInstances.dataSource is CachedOperationResultReference) { "Expected a CachedOperationResultReference, but found ${cachedTypedInstances.dataSource::class.simpleName}" }
+               val operationResult =
+                  createOperationResult(startTime, message, key, typedInstances.size, cachedTypedInstances.dataSource)
                message.eventDispatcher.reportRemoteOperationInvoked(operationResult, message.queryId)
 
-               val typedInstances = byteArrays.map { byteArray ->
-                  SerializableTypedInstance.fromBytes(byteArray)
-                     .toTypedInstance(schemaStore.schema(), dataSource = dataSource)
-               }
                typedInstances
             }
          }
@@ -169,43 +175,69 @@ class HazelcastMapCachingProvider(
    private fun invokeLoader(
       key: String,
       loader: () -> Flux<TypedInstance>,
+      /**
+       * When loading from the actual loader, we populate the real values into
+       * this list.
+       *
+       * This means original data sources are retained
+       */
       resultsFromCacheMiss: MutableList<TypedInstance>
-   ): ExpiringByteArray {
+   ): CachedTypedInstanceList {
       val invocationReturnValue = loader.invoke()
-      val resultValues: MutableList<Pair<ByteArray, Instant?>> = (invocationReturnValue
-         .mapNotNull { typedInstance ->
-            resultsFromCacheMiss.add(typedInstance)
+      val values = invocationReturnValue
+         .doOnNext { typedInstance -> resultsFromCacheMiss.add(typedInstance) }
+         .map { typedInstance ->
             val expiration = typedInstance.metadata[TypedInstance.EXPIRY_METADATA] as? Instant
-            val bytes = typedInstance.toSerializable().toBytes()
-            bytes to expiration
+            typedInstance to expiration
          }
          .collectList()
-         .block(Duration.ofSeconds(60)))!!
+         .block(Duration.ofSeconds(60))!!
 
-      val (expirationTime, ttl) = calculateTtlFromResults(resultValues, defaultTTL, clock)
-      val resultValueBytes = resultValues.map { it.first }
+      val (expirationTime, ttl) = calculateTtlFromResults(values, defaultTTL, clock)
+      val typedInstances = values.map { it.first }
+      val operationResultReference: OperationResultReference? = collateDataSources(typedInstances)
+      val cachedTypedInstanceList =
+         CachedTypedInstanceList(expirationTime, values.map { it.first }, operationResultReference)
 
-      val expiringByteArray = ExpiringByteArray(expirationTime, resultValueBytes)
 
       // We can't directly set the TTL here, so we queue an instruction to set the ttl in a bit
       updateTtlSink.emitNext(
          UpdateTtlEvent(key, expirationTime),
          Sinks.EmitFailureHandler.busyLooping(Duration.ofSeconds(10))
       )
-      return expiringByteArray
+      return cachedTypedInstanceList
+   }
+
+   private fun collateDataSources(typedInstances: List<TypedInstance>): OperationResultReference? {
+      val sources = typedInstances.map { typedInstance ->
+         when (val dataSource = typedInstance.source) {
+            is OperationResultReference -> dataSource
+            else -> {
+               logger.warn { "Data source of type ${dataSource::class.simpleName} is not cacheable." }
+               UndefinedSource
+            }
+         }
+      }.distinct()
+      return if (sources.size == 1 && sources.single() is OperationResultReference) {
+         sources.single() as OperationResultReference
+      } else {
+         null
+      }
    }
 
 
-   private fun createDatasource(
+   private fun createOperationResult(
       startTime: Long,
       message: OperationInvocationParamMessage,
       cacheKey: OperationCacheKey,
       resultSize: Int,
-   ): Pair<OperationResult, OperationResultDataSourceWrapper> {
+      dataSource: CachedOperationResultReference,
+   ): OperationResult {
       val remoteCall = RemoteCall(
+         remoteCallId = dataSource.cacheReadOperationId,
          service = CacheNames.cacheServiceName(connectionName).fqn(),
          address = connectionAddress,
-         operation = CacheNames.CACHE_READ_OPERATION_NAME,
+         operation = CacheNames.cacheReadOperationName(message.operation.name),
          method = CacheNames.CACHE_READ_OPERATION_NAME,
          durationMs = Duration.ofNanos(System.nanoTime() - startTime).toMillis(),
          exchange = CacheExchange(
@@ -222,7 +254,6 @@ class HazelcastMapCachingProvider(
          responseTypeName = message.operation.returnType.name
       )
 
-
       // Do we always get ConstructedQueryDataSource here? If so below check is redundant. QueryProfileChartBuilder
       val parameters = message.parameters
       val isConstructedQueryDataSource =
@@ -236,9 +267,7 @@ class HazelcastMapCachingProvider(
       } else {
          OperationResult.from(parameters, remoteCall)
       }
-
-      val dataSource = OperationResultDataSourceWrapper(operationResult)
-      return Pair(operationResult, dataSource)
+      return operationResult
    }
 
 
@@ -254,14 +283,131 @@ class HazelcastMapCachingProvider(
  *
  * In this scenario, we need to treat the value as a cache miss, and re-load from the loader
  */
-data class ExpiringByteArray(val expiresAt: Long?, val value: List<ByteArray>) {
-   constructor(expiresAt: Instant?, value: List<ByteArray>) : this(expiresAt?.toEpochMilli(), value)
+data class CachedTypedInstanceList(
+   val expiresAt: Long?,
+   val instances: List<TypedInstance>,
+   val dataSource: DataSource
+) {
+   companion object {
+      // Started out using hashcode, but was breaking between local compilation rounds - not sure why
+      val SERIALIZATION_ID = 10_000
+   }
+
+   constructor(
+      expiresAt: Instant?,
+      value: List<TypedInstance>,
+      dataSource: OperationResultReference?
+   ) : this(expiresAt?.toEpochMilli(), value, dataSource ?: UndefinedSource)
 
    fun isExpired(clock: Clock): Boolean {
       return when {
          expiresAt == null -> false
          else -> expiresAt < clock.instant().toEpochMilli()
       }
+   }
+}
+
+
+object OperationParamCompactSerializer : CompactSerializer<OperationResult.OperationParam> {
+
+   override fun getTypeName(): String = OperationResult.OperationParam::class.simpleName!!
+   override fun getCompactClass(): Class<OperationResult.OperationParam> = OperationResult.OperationParam::class.java
+
+   override fun read(reader: CompactReader): OperationResult.OperationParam {
+      val paramName = reader.readString(OperationResult.OperationParam::parameterName.name)!!
+      val value = reader.readString(OperationResult.OperationParam::value.name)!!
+      return OperationResult.OperationParam(paramName, value)
+   }
+
+   override fun write(writer: CompactWriter, operationParam: OperationResult.OperationParam) {
+      writer.writeString(OperationResult.OperationParam::parameterName.name, operationParam.parameterName)
+      writer.writeString(OperationResult.OperationParam::value.name, operationParam.value?.toString() ?: "null")
+   }
+
+}
+
+object QualifiedNameCompactSerializer : CompactSerializer<QualifiedName> {
+   override fun read(reader: CompactReader): QualifiedName {
+      val parameterizedName = reader.readString(QualifiedName::parameterizedName.name)!!
+      return parameterizedName.fqn()
+   }
+
+   override fun getTypeName(): String = QualifiedName::class.simpleName!!
+   override fun getCompactClass(): Class<QualifiedName> = QualifiedName::class.java
+
+   override fun write(writer: CompactWriter, value: QualifiedName) {
+      writer.writeString(QualifiedName::parameterizedName.name, value.parameterizedName)
+   }
+}
+
+class ExpiringTypedInstanceCustomSerializer(
+   private val schemaStore: SchemaStore,
+   private val clock: Clock = Clock.systemUTC(),
+) : StreamSerializer<CachedTypedInstanceList> {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
+   override fun getTypeId(): Int = CachedTypedInstanceList.SERIALIZATION_ID
+
+   override fun write(out: ObjectDataOutput, value: CachedTypedInstanceList) {
+      StrategyPerformanceProfiler.profiled("Hazelcast serialize") {
+         out.writeLong(value.expiresAt ?: -1L)
+         val hasOperationResultReference = when (value.dataSource) {
+            is UndefinedSource -> false
+            is OperationResultReference -> true
+            else -> {
+               logger.warn { "Serializing data source of ${value.dataSource::class.simpleName} is not supported. Will be treated as an UndefinedSource" }
+               false
+            }
+         }
+         out.writeBoolean(hasOperationResultReference)
+         if (hasOperationResultReference) {
+            out.writeObject(value.dataSource)
+         }
+
+         out.writeInt(value.instances.count())
+         value.instances.forEach { typedInstance ->
+            out.writeByteArray(
+               typedInstance.toSerializable()
+                  .toBytes()
+            )
+         }
+      }
+
+   }
+
+   override fun read(input: ObjectDataInput): CachedTypedInstanceList {
+      val expirationDate = input.readLong()
+      // If this is already expired, don't bother reading any further
+      if (expirationDate != -1L && expirationDate < clock.instant().toEpochMilli()) {
+         return CachedTypedInstanceList(expirationDate, emptyList(), UndefinedSource)
+      }
+
+      val hasDatasource = input.readBoolean()
+      val dataSource = if (hasDatasource) {
+         val originalOperationResult = input.readObject<OperationResultReference>()!!
+         CachedOperationResultReference(
+            originalOperationResult
+         )
+      } else UndefinedSource
+
+      val typedInstances = mutableListOf<TypedInstance>()
+      StrategyPerformanceProfiler.profiled("Hazelcast deserialize") {
+         val listSize = input.readInt()
+         for (i in 0 until listSize) {
+            val bytes = input.readByteArray() ?: error("Expected to find a byteArray at index $i, but value was null")
+            val typedInstance = SerializableTypedInstance.fromBytes(bytes)
+               .toTypedInstance(
+                  schemaStore.schema(),
+                  dataSource = dataSource
+               ) //we update the data source before returning to the consumer
+            typedInstances.add(typedInstance)
+         }
+      }
+
+
+      return CachedTypedInstanceList(expirationDate, typedInstances, dataSource)
    }
 }
 
@@ -287,33 +433,9 @@ private data class UpdateTtlEvent(val key: String, val expiresAt: Instant, val a
 
 }
 
-class ExpiringByteArraySerializer : CompactSerializer<ExpiringByteArray> {
-   override fun read(reader: CompactReader): ExpiringByteArray {
-      val expiresAt = reader.readNullableInt64("expiresAt")
-      val listSize = reader.readInt32("listSize")
-      val byteArrayList = mutableListOf<ByteArray>()
-      for (i in 0 until listSize) {
-         val byteArray = reader.readArrayOfInt8("byteArray_$i")!!
-         byteArrayList.add(byteArray)
-      }
-      return ExpiringByteArray(expiresAt, byteArrayList)
-   }
-
-   override fun getTypeName(): String = ExpiringByteArray::class.java.name
-
-   override fun getCompactClass(): Class<ExpiringByteArray> = ExpiringByteArray::class.java
-
-   override fun write(writer: CompactWriter, value: ExpiringByteArray) {
-      writer.writeNullableInt64("expiresAt", value.expiresAt)
-      writer.writeInt32("listSize", value.value.size)
-      value.value.forEachIndexed { index, bytes ->
-         writer.writeArrayOfInt8("byteArray_$index", bytes)
-      }
-   }
-}
 
 private fun calculateTtlFromResults(
-   resultValues: List<Pair<ByteArray, Instant?>>,
+   resultValues: List<Pair<out Any, Instant?>>,
    defaultTTL: Duration,
    clock: Clock
 ): Pair<Instant, Duration> {
@@ -334,3 +456,24 @@ private fun calculateTtlFromResults(
 }
 
 private val ALREADY_EXPIRED = Instant.ofEpochMilli(0L)
+
+/**
+ * A data source for objects returned from a cache read
+ */
+data class CachedOperationResultReference(
+   val originalResult: OperationResultReference,
+
+   // This is a bit back-to-front, but we actually end up
+   // creating this - which will become the RemoteCallId
+   // within the data source - that's because this
+   // object is returned during deserialization
+   val cacheReadOperationId: String = Ids.fastUuid()
+) : DataSource {
+   companion object {
+      const val NAME: String = "Cached operation result"
+   }
+
+   override val name: String = NAME
+   override val id: String = cacheReadOperationId
+   override val failedAttempts: List<DataSource> = emptyList()
+}
