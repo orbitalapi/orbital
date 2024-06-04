@@ -180,6 +180,7 @@ export class QueryEditorState {
     };
 
     this.queryService.websocketQuery(this.payload.query(), this.payload.queryClientId(), ResultMode.SIMPLE)
+      .pipe(takeUntil(this.destroySubject))
       .subscribe({
         next: queryMessageHandler,
         error: queryErrorHandler,
