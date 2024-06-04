@@ -23,6 +23,11 @@ enum class JdbcDriver(
          tableTypesToListTables = arrayOf("TABLE")
       )
    ),
+   MYSQL(
+      metadata = JdbcMetadataParams().copy(
+         tableTypesToListTables = arrayOf("TABLE")
+      )
+   ),
    MSSQL(
       metadata = JdbcMetadataParams().copy(
          tableTypesToListTables = arrayOf("TABLE")

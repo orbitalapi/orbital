@@ -13,6 +13,7 @@ import lang.taxi.types.*
 import lang.taxi.types.EnumType
 import mu.KotlinLogging
 import org.jooq.*
+import org.jooq.Field
 import org.jooq.impl.DSL
 import org.jooq.impl.DSL.*
 import org.jooq.impl.SQLDataType
@@ -28,9 +29,18 @@ class TableGenerator(private val schema: Schema, private val databaseSupport: Da
 
    fun execute(type: Type, dsl: DSLContext, tableNameSuffix: String? = null): Int {
       val (_, statement, indexes) = generate(type, dsl)
-      val result = statement.execute()
-      indexes.forEach { it.execute() }
+      val result = executeAndLogFailures(statement)
+      indexes.forEach { executeAndLogFailures(it) }
       return result
+   }
+
+   private fun executeAndLogFailures(query: Query): Int {
+      return try {
+         query.execute()
+      } catch (e:Exception) {
+         logger.error(e) { "Failed to execute the provided query: \nProblem: ${e.message}\n SQL Statement: \n${query.sql}" }
+         throw e
+      }
    }
 
    fun generate(
@@ -51,7 +61,13 @@ class TableGenerator(private val schema: Schema, private val databaseSupport: Da
                } else {
                   dataType
                }
-
+            }
+            .let { dataType ->
+               if (typeField.hasMetadata("Id".fqn()) || typeField.hasMetadata("Index".fqn())) {
+                  setFieldSizeIfRequired(dsl.dialect(), dataType)
+               } else {
+                  dataType
+               }
             }
          field(DSL.name(attributeName), sqlType)
       }
@@ -71,7 +87,12 @@ class TableGenerator(private val schema: Schema, private val databaseSupport: Da
       }
 
       val indexStatements = indexedFields.map { indexedField ->
-         dsl.createIndexIfNotExists("$tableName${indexedField.name}_ix").on(table(name(tableName)), indexedField)
+         if (dslSupportsCreateIndexIfNotExists(dsl.dialect())) {
+            dsl.createIndexIfNotExists("$tableName${indexedField.name}_ix").on(table(name(tableName)), indexedField)
+         } else {
+            dsl.createIndex("$tableName${indexedField.name}_ix").on(table(name(tableName)), indexedField)
+         }
+
       }
 
       val sqlDsl = dsl.createTableIfNotExists(name(tableName))
@@ -79,6 +100,30 @@ class TableGenerator(private val schema: Schema, private val databaseSupport: Da
          .constraints(primaryKeyConstraints)
 
       return TableDDLData(tableName, sqlDsl, indexStatements)
+   }
+
+   /**
+    * Not all dialects support createIndexIfNotExists.
+    */
+   private fun dslSupportsCreateIndexIfNotExists(dialect: SQLDialect): Boolean {
+      return dialect != SQLDialect.MYSQL
+   }
+
+   /**
+    * MySQL (possibly others) require that string / clob columns used in an index
+    * specify a size for the column within the index
+    */
+   private fun setFieldSizeIfRequired(dialect: SQLDialect, dataType: DataType<out Any>, size: Int = 255): DataType<out Any> {
+      val ruleApplies = when {
+         dialect != SQLDialect.MYSQL -> false
+         dataType.sqlDataType == SQLDataType.VARCHAR && !dataType.lengthDefined() -> true
+         dataType.sqlDataType == SQLDataType.CLOB -> true
+         else -> false
+      }
+      if (!ruleApplies) {
+         return dataType
+      }
+      return dataType.length(size)
    }
 
    /**
