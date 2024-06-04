@@ -180,15 +180,15 @@ export class QueryEditorState {
     };
 
     this.queryService.websocketQuery(this.payload.query(), this.payload.queryClientId(), ResultMode.SIMPLE)
-      .pipe(
-        tap(_ => !this.payload.isErrorMessageSubscriptionSetup() ? this.setupErrorMessageSubscription() : null),
-        takeUntil(this.destroySubject)
-      )
       .subscribe({
         next: queryMessageHandler,
         error: queryErrorHandler,
         complete: queryCompleteHandler
       });
+    if (!this.payload.isErrorMessageSubscriptionSetup()) {
+      this.setupErrorMessageSubscription();
+    }
+
   }
 
   private subscribeForQueryStatusUpdates(queryId: string) {
