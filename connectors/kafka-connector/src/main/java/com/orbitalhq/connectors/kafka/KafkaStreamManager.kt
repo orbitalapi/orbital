@@ -29,6 +29,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
+import org.apache.kafka.common.serialization.StringDeserializer
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Scheduler
 import reactor.core.scheduler.Schedulers
@@ -165,7 +166,8 @@ class KafkaStreamManager(
                   typeName = messageType.paramaterizedName,
                   payload = messageValue
                )
-               logger.info { "Failed to parse TypedInstance from kafka data for type => $messageType  value => $messageValue" }
+
+               logger.info { "Failed to parse TypedInstance from kafka data for type => ${messageType.longDisplayName}  - error: ${errorMessage.message}" }
                Either.Left(errorMessage)
             } finally {
                // Only offsets explicitly acknowledged using ReceiverOffset#acknowledge() are committed.
