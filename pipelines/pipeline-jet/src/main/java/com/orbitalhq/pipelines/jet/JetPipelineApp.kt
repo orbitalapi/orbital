@@ -8,7 +8,6 @@ import com.hazelcast.config.YamlConfigBuilder
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.spring.context.SpringManagedContext
-import com.orbitalhq.avro.AvroSourceConverter
 import com.orbitalhq.config.ConfigSourceLoader
 import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.connectors.VyneConnectionsConfig
