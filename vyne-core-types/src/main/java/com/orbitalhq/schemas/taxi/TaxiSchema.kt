@@ -94,7 +94,7 @@ class TaxiSchema(
    @get:JsonIgnore
    override val taxi = document
 
-   override val hash: Int = (taxi.services + taxi.types).hashCode()
+   override val hash: SchemaHash = (taxi.services + taxi.types).hashCode()
 
    private fun parseServices(document: TaxiDocument): Set<Service> {
       return document.services.map { taxiService ->

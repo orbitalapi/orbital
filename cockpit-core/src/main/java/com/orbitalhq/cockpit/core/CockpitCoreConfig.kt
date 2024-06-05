@@ -3,6 +3,7 @@ package com.orbitalhq.cockpit.core
 import com.orbitalhq.auth.authentication.VyneUser
 import com.orbitalhq.connectors.registry.RawConnectionsConnectorConfig
 import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
+import com.orbitalhq.avro.AvroSourceConverter
 import com.orbitalhq.schemas.readers.SourceConverterRegistry
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
 import org.springframework.boot.autoconfigure.domain.EntityScan

@@ -120,7 +120,7 @@ data class Type(
    override val schemaMemberKind: com.orbitalhq.schemas.SchemaMemberKind = com.orbitalhq.schemas.SchemaMemberKind.TYPE
 
    // Interned, so that can be used for equality checks
-   val paramaterizedName: String = internedParameterizedNames.intern(name.parameterizedName)
+   val paramaterizedName: ParameterizedName = internedParameterizedNames.intern(name.parameterizedName)
 
    /**
     * Returns a set of all types that have been referenced by this type (including this type itself)

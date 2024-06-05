@@ -19,7 +19,7 @@ import org.apache.avro.generic.GenericDatumWriter
 import org.apache.avro.io.EncoderFactory
 import java.io.ByteArrayOutputStream
 
-class AvroFormatSerializer(private val schemaCache: AvroSchemaCache = AvroFormatSpec.newSchemaCache()) :
+class AvroFormatSerializer(private val schemaCache: AvroSchemaCache) :
    ModelFormatSerializer {
    override fun write(
       result: TypedInstance,
@@ -50,7 +50,7 @@ class AvroFormatSerializer(private val schemaCache: AvroSchemaCache = AvroFormat
 
    override fun write(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo): Any? {
       val type = result.type
-      val avroSchema = schemaCache.get(type to schema)
+      val avroSchema = schemaCache.get(schema,type)
       val genericRecord = buildAvroValue(result, avroSchema)
       val writer = GenericDatumWriter<Any>(avroSchema)
       val outputStream = ByteArrayOutputStream()

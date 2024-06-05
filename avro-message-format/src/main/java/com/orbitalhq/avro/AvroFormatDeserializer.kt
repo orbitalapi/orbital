@@ -6,6 +6,8 @@ import com.orbitalhq.models.format.ModelFormatDeserializer
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
+import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientFactory
+import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import org.apache.avro.generic.GenericArray
 import org.apache.avro.generic.GenericContainer
 import org.apache.avro.generic.GenericData
@@ -14,41 +16,60 @@ import org.apache.avro.generic.GenericRecord
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.util.Utf8
 
-class AvroFormatDeserializer(private val schemaCache: AvroSchemaCache = AvroFormatSpec.newSchemaCache()) :
-   ModelFormatDeserializer {
+class AvroFormatDeserializer(
+   private val schemaCache: AvroSchemaCache,
+   private val decoderFactory: DecoderFactory = DecoderFactory.get()
+) : ModelFormatDeserializer {
+   companion object {
+      /**
+       * Confluent embed a "magic byte" at the start of their avro encoded
+       * messages, to indicate that the message is the confluent variation of Avro.
+       */
+      const val CONFLUENT_MAGIC_BYTE: Byte = 0;
+   }
+
 
    override fun canParse(value: Any, metadata: Metadata): Boolean = value is ByteArray || value is String
 
    override fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema, source: DataSource): Any {
-      val avroSchema = schemaCache.get(type to schema)
+      val avroSchema = schemaCache.get(schema, type)
       val decoder = when (value) {
          is ByteArray -> {
             // When reading a byte array, we need to determine how it was encoded ...
             // either as JSON or binary
             if (isJsonString(value)) {
-               DecoderFactory.get().jsonDecoder(avroSchema, String(value))
+               decoderFactory.jsonDecoder(avroSchema, String(value))
+            } else if (isConfluentAvroFormat(value)) {
+               // Strip off the Confluent-specific prelude.
+               val avroWithoutConfluentPrelude = value.copyOfRange(5, value.size)
+               decoderFactory.binaryDecoder(avroWithoutConfluentPrelude, null)
             } else {
-               DecoderFactory.get().binaryDecoder(value, null)
+               decoderFactory.binaryDecoder(value, null)
             }
-
          }
+
          is String -> DecoderFactory.get().jsonDecoder(avroSchema, value)
          else -> error("Decoding Avro from input type ${value::class.simpleName} is not supported")
       }
-      val reader =if (type.isCollection) {
+      val reader = if (type.isCollection) {
          GenericDatumReader<GenericArray<GenericRecord>>(avroSchema)
 
       } else {
          GenericDatumReader<GenericRecord>(avroSchema)
       }
       val deserializedRecord = try {
-          reader.read(null, decoder)
-      } catch (e:Exception) {
+         reader.read(null, decoder)
+      } catch (e: Exception) {
          throw e
       }
 
       val rawValue = genericContainerToRawValue(deserializedRecord)
       return TypedInstance.from(type, rawValue, schema, source = source)
+   }
+
+   private fun isConfluentAvroFormat(value: ByteArray): Boolean {
+      if (value.size < 5) return false
+      return value[0] == CONFLUENT_MAGIC_BYTE
    }
 
    private fun isJsonString(data: ByteArray): Boolean {
@@ -57,15 +78,15 @@ class AvroFormatDeserializer(private val schemaCache: AvroSchemaCache = AvroForm
       return firstChar == '{' || firstChar == '['
    }
 
-   private fun genericContainerToRawValue(rawValue: GenericContainer):Any {
-      return when(rawValue) {
+   private fun genericContainerToRawValue(rawValue: GenericContainer): Any {
+      return when (rawValue) {
          is GenericData.Array<*> -> generateArrayToList(rawValue)
          is GenericData.Record -> genericRecordToMap(rawValue)
          else -> error("Unhandled root type in Avro deserialization: ${rawValue::class.simpleName}")
       }
    }
 
-   private fun generateArrayToList(record: GenericData.Array<*>):List<Any> {
+   private fun generateArrayToList(record: GenericData.Array<*>): List<Any> {
       return record.map {
          val member = it as GenericContainer
          genericContainerToRawValue(member)
@@ -87,7 +108,8 @@ class AvroFormatDeserializer(private val schemaCache: AvroSchemaCache = AvroForm
                   else -> item
                }
             }
-            is Map<*,*> -> {
+
+            is Map<*, *> -> {
                // Have to unwrap avro-special values like Utf8,
                // which are used both in keys and values.
                fieldValue.map { (key, value) ->
@@ -98,6 +120,7 @@ class AvroFormatDeserializer(private val schemaCache: AvroSchemaCache = AvroForm
                   key.toString() to mappedValue
                }.toMap()
             }
+
             is Utf8 -> fieldValue.toString()
             else -> fieldValue
          }

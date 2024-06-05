@@ -8,6 +8,7 @@ import com.hazelcast.config.YamlConfigBuilder
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.spring.context.SpringManagedContext
+import com.orbitalhq.avro.AvroSourceConverter
 import com.orbitalhq.config.ConfigSourceLoader
 import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.connectors.VyneConnectionsConfig
@@ -49,7 +50,7 @@ import java.nio.file.Files
 import java.time.Clock
 
 
-@SpringBootApplication( exclude = [MongoReactiveAutoConfiguration::class])
+@SpringBootApplication(exclude = [MongoReactiveAutoConfiguration::class])
 @VyneSchemaConsumer
 @EnableVyne
 @EnableDiscoveryClient
@@ -128,7 +129,11 @@ class JetPipelineApp {
    ): PipelineConfigRepository {
 
       val loaders = mutableListOf<ConfigSourceLoader>(
-         FileConfigSourceLoader(envVariablesConfig.envVariablesPath, failIfNotFound = false, packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER),
+         FileConfigSourceLoader(
+            envVariablesConfig.envVariablesPath,
+            failIfNotFound = false,
+            packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER
+         ),
          SchemaConfigSourceLoader(schemaChangedEventProvider, "env.conf")
       )
       if (config.pipelinePath != null) {
@@ -149,7 +154,8 @@ class JetPipelineApp {
    fun clock(): Clock = Clock.systemUTC()
 }
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
+
 @Configuration
 @EnableCloudMetrics
 class JetConfiguration {
@@ -159,10 +165,12 @@ class JetConfiguration {
    }
 
    @Bean
-   fun instance(mapStore: StreamStatusMapStore,
-              @Value("\${vyne.hazelcast.port:25701}") hazelcastPort: Int = 25701,
-               @Value("\${vyne.hazelcast.cluster-name:dev}") clusterName: String = "orbital-stream-server",
-                @Value("\${vyne.hazelcast.configYamlPath:#{null}}") configYamlPath: String? = null): HazelcastInstance {
+   fun instance(
+      mapStore: StreamStatusMapStore,
+      @Value("\${vyne.hazelcast.port:25701}") hazelcastPort: Int = 25701,
+      @Value("\${vyne.hazelcast.cluster-name:dev}") clusterName: String = "orbital-stream-server",
+      @Value("\${vyne.hazelcast.configYamlPath:#{null}}") configYamlPath: String? = null
+   ): HazelcastInstance {
       if (configYamlPath == null) {
          logger.info { "hazelcast config yaml path is not provided, setting up multicast config with port: $hazelcastPort and cluster name $clusterName" }
          val config = Config()
@@ -192,7 +200,7 @@ class JetConfiguration {
          writeDelaySeconds = 0
       }
 
-     val streamStatusMapConfig =  MapConfig(StreamStateManagerHazelcastConfig.STREAM_STATUS_CACHE_NAME)
+      val streamStatusMapConfig = MapConfig(StreamStateManagerHazelcastConfig.STREAM_STATUS_CACHE_NAME)
       streamStatusMapConfig.setMapStoreConfig(mapStoreConfig)
       return streamStatusMapConfig
 

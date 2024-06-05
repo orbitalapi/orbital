@@ -1,6 +1,10 @@
 package com.orbitalhq.connectors.kafka
 
-import com.orbitalhq.avro.AvroFormatSpec
+import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.PackageMetadata
+import com.orbitalhq.SourcePackage
+import com.orbitalhq.VersionedSource
+import com.orbitalhq.asVersionedSource
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.winterbe.expekt.should
@@ -10,7 +14,7 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.timeout
 import kotlinx.coroutines.flow.toList
 import lang.taxi.generators.avro.AvroAnnotationSchema
-import lang.taxi.generators.avro.AvroMessageAnnotation
+import lang.taxi.generators.avro.TaxiGenerator
 import org.apache.avro.Schema
 import org.apache.avro.generic.GenericData
 import org.apache.avro.generic.GenericDatumWriter
@@ -24,7 +28,6 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.junit4.SpringRunner
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
-import java.time.Duration
 
 @SpringBootTest(classes = [KafkaQueryTestConfig::class])
 @RunWith(SpringRunner::class)
@@ -38,16 +41,39 @@ class KafkaAvroConsumerTest : BaseKafkaContainerTest() {
       connectionRegistry = registry
    }
 
+   val avroSchema = """{
+  "type": "record",
+  "name": "Movie",
+  "namespace": "movies",
+  "fields": [
+    {
+      "name": "id",
+      "type": "string"
+    },
+    {
+      "name": "title",
+      "type": ["null", "string"],
+      "default": null
+    }
+  ]
+}
+"""
+
    @Test
    fun `can use a TaxiQL statement to consume avro JSON message from a Kafka stream`(): Unit = runBlocking {
-      val (vyne, kafkaStreamManager) = vyneWithKafkaInvoker(defaultSchemaSrc)
+      // Combine the Avro source, with the service declared below
+      val sourcePackage = avroToSourcePackage(avroSchema).let {
+         it.copy(sources = it.sources + VersionedSource.sourceOnly(moviesServiceTaxi))
+      }
+
+      val (vyne, kafkaStreamManager) = vyneWithKafkaInvoker(sourcePackage)
       sendMessage(avroJsonMessage("message1", "Star Wars"))
       sendMessage(avroJsonMessage("message2", "Empire Strikes Back"))
 
 
       val result = vyne.query(
          """
-         stream { Movie }"""
+         stream { movies.Movie }"""
             .trimIndent()
       )
 
@@ -55,14 +81,21 @@ class KafkaAvroConsumerTest : BaseKafkaContainerTest() {
          .timeout(kotlin.time.Duration.parse("20s"))
          .toList() as List<TypedObject>
       result.should.have.size(2)
-      val rawMaps = result.map { it.toRawObject() as Map<String,Any>}
-      rawMaps.single { it["id"] == "message1" }.shouldBe(mapOf(
-         "id" to "message1", "title" to "Star Wars"
-      ))
+      val rawMaps = result.map { it.toRawObject() as Map<String, Any> }
+      rawMaps.single { it["id"] == "message1" }.shouldBe(
+         mapOf(
+            "id" to "message1", "title" to "Star Wars"
+         )
+      )
    }
+
    @Test
    fun `can use a TaxiQL statement to consume avro byte array message from a Kafka stream`(): Unit = runBlocking {
-      val (vyne, kafkaStreamManager) = vyneWithKafkaInvoker(defaultSchemaSrc)
+      // Combine the Avro source, with the service declared below
+      val sourcePackage = avroToSourcePackage(avroSchema).let {
+         it.copy(sources = it.sources + VersionedSource.sourceOnly(moviesServiceTaxi))
+      }
+      val (vyne, kafkaStreamManager) = vyneWithKafkaInvoker(sourcePackage)
       sendMessage(avroBytesMessage("message1", "Star Wars"))
       sendMessage(avroBytesMessage("message2", "Empire Strikes Back"))
 
@@ -77,10 +110,12 @@ class KafkaAvroConsumerTest : BaseKafkaContainerTest() {
          .timeout(kotlin.time.Duration.parse("20s"))
          .toList() as List<TypedObject>
       result.should.have.size(2)
-      val rawMaps = result.map { it.toRawObject() as Map<String,Any>}
-      rawMaps.single { it["id"] == "message1" }.shouldBe(mapOf(
-         "id" to "message1", "title" to "Star Wars"
-      ))
+      val rawMaps = result.map { it.toRawObject() as Map<String, Any> }
+      rawMaps.single { it["id"] == "message1" }.shouldBe(
+         mapOf(
+            "id" to "message1", "title" to "Star Wars"
+         )
+      )
    }
 
    protected fun avroBytesMessage(id: String, title: String): ByteArray {
@@ -91,9 +126,10 @@ class KafkaAvroConsumerTest : BaseKafkaContainerTest() {
       return avroMessage(id, title) { schema, outputStream -> EncoderFactory.get().jsonEncoder(schema, outputStream) }
    }
 
+   // generates an avro schema without using taxi.
+   // Use this to test deserialization
    private fun avroMessage(id: String, title: String, encoderProvider: (Schema, OutputStream) -> Encoder): ByteArray {
-      val schemaCache = AvroFormatSpec.newSchemaCache()
-      val avroSchema = schemaCache.get(defaultSchema.type("movies.Movie") to defaultSchema)
+      val avroSchema = Schema.Parser().parse(avroSchema)
       val outputStream = ByteArrayOutputStream()
       val encoder = encoderProvider(avroSchema, outputStream)
       val movie: GenericRecord = GenericData.Record(avroSchema).apply {
@@ -107,24 +143,12 @@ class KafkaAvroConsumerTest : BaseKafkaContainerTest() {
       return outputStream.toByteArray()
    }
 
-   private val defaultSchemaSrc = """
+   private val moviesServiceTaxi = """
                import lang.taxi.formats.AvroMessage
                import lang.taxi.formats.AvroField
                ${KafkaConnectorTaxi.Annotations.imports}
 
                namespace movies {
-                  type MovieId inherits String
-                  type MovieTitle inherits String
-
-                  @AvroMessage
-                  model Movie {
-                     @AvroField(ordinal = 1) id : MovieId
-                     // Making this field nullable forces the generated Avro JSON
-                     // to be non-standard json, as the type becomes
-                     // union { null , string }
-                     @AvroField(ordinal = 2) title : MovieTitle?
-                  }
-
                   @KafkaService( connectionName = "moviesConnection" )
                   service MovieService {
                      @KafkaOperation( topic = "movies", offset = "earliest" )
@@ -133,8 +157,16 @@ class KafkaAvroConsumerTest : BaseKafkaContainerTest() {
                }
                ${AvroAnnotationSchema.taxi}
             """.trimIndent()
+}
 
-   private val defaultSchema = TaxiSchema.from(defaultSchemaSrc)
-
-
+private fun avroToSourcePackage(avro: String): SourcePackage {
+   val generatedTaxi = TaxiGenerator().generate(avro, "source.avro")
+   val identifier = PackageIdentifier.fromId("com.foo/test/1.0.0")
+   val sourcePackage = SourcePackage.asTranspiledPackage(
+      PackageMetadata.from(identifier),
+      listOf(VersionedSource.unversioned("source.avro", avro)),
+      generatedTaxi.asVersionedSource(identifier, "avro"),
+      generatedTaxi.sourceMap
+   )
+   return sourcePackage
 }

@@ -21,6 +21,21 @@
          <artifactId>vyne-core-types</artifactId>
          <version>${project.version}</version>
       </dependency>
+      <!-- Confluent seem to have their own "special" flavour of Avro, which encodes additional bytes
+      at the beginning. FFS:
+
+      "The Confluent Schema Registry based Avro serializer, by design, does not include
+       the message schema; but rather, includes the schema ID (in addition to a magic byte)
+       followed by the normal binary encoding of the data itself."
+      -->
+      <!-- https://mvnrepository.com/artifact/io.confluent/kafka-avro-serializer -->
+      <dependency>
+         <groupId>io.confluent</groupId>
+         <artifactId>kafka-avro-serializer</artifactId>
+         <version>7.6.0</version>
+      </dependency>
+
+
       <dependency>
          <groupId>org.taxilang</groupId>
          <artifactId>avro-to-taxi</artifactId>
@@ -28,5 +43,11 @@
       </dependency>
 
    </dependencies>
+   <repositories>
+      <repository>
+         <id>confluent</id>
+         <url>https://packages.confluent.io/maven/</url>
+      </repository>
+   </repositories>
 
 </project>

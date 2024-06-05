@@ -1,7 +1,6 @@
 package com.orbitalhq.schemaServer.core.adaptors.avro
 
 import com.orbitalhq.DefaultPackageMetadata
-import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
@@ -11,7 +10,7 @@ import com.orbitalhq.schema.publisher.loaders.SchemaSourcesAdaptor
 import com.orbitalhq.schemaServer.packages.AvroPackageLoaderSpec
 import lang.taxi.generators.avro.AvroSchemaFormats
 import lang.taxi.generators.avro.TaxiGenerator
-import org.apache.commons.io.FilenameUtils
+import lang.taxi.sources.SourceCodeLanguages
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.net.URI
@@ -36,7 +35,7 @@ class AvroSchemaSourcesAdaptor(private val spec: AvroPackageLoaderSpec) : Schema
 
    override fun convert(packageMetadata: PackageMetadata, transport: SchemaPackageTransport): Mono<SourcePackage> {
       return getAvroUris(transport)
-         .flatMap { uri -> transport.readUri(uri).map { uri to it} }
+         .flatMap { uri -> transport.readUri(uri).map { uri to it } }
          .map { (uri, avroSchemaBytes) ->
             val avroSchema = String(avroSchemaBytes)
             val fileName = uri.path.substringAfterLast("/").ifEmpty {
@@ -46,19 +45,23 @@ class AvroSchemaSourcesAdaptor(private val spec: AvroPackageLoaderSpec) : Schema
                name = fileName,
                version = packageMetadata.identifier.version,
                content = avroSchema,
-               language = FilenameUtils.getExtension(fileName),
+               language = SourceCodeLanguages.AVRO,
                path = uri.toASCIIString()
             )
          }.collectList()
          .map { avroSourceFiles ->
-            val taxiSource  = avroSourceFiles.flatMap { avroSourceFile ->
-               val generatedTaxiCode = TaxiGenerator().generate(avroSourceFile.content)
-               generatedTaxiCode.asVersionedSource(packageMetadata.identifier, "GeneratedFrom_${avroSourceFile.name}")
+            val taxiSource  = avroSourceFiles.map { avroSourceFile ->
+               val generatedTaxiCode = TaxiGenerator().generate(avroSourceFile.content, avroSourceFile.name)
+               generatedTaxiCode.sourceMap to generatedTaxiCode.asVersionedSource(packageMetadata.identifier, "GeneratedFrom_${avroSourceFile.name}")
             }
-            SourcePackage(packageMetadata, taxiSource,
-               additionalSources = mapOf(
-                  SourcePackage.ORIGINAL_SOURCE to avroSourceFiles
-               )
+            val allTaxiSources = taxiSource.flatMap { it.second }
+            val sourceMap = taxiSource.map { it.first }
+               .reduce { acc, sourceMap -> acc.combine(sourceMap) }
+            SourcePackage.asTranspiledPackage(
+               packageMetadata,
+               avroSourceFiles,
+               allTaxiSources,
+               sourceMap
             )
          }
    }

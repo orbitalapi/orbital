@@ -1,6 +1,11 @@
 package com.orbitalhq.avro
 
 import com.google.common.io.Resources
+import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.PackageMetadata
+import com.orbitalhq.SourcePackage
+import com.orbitalhq.VersionedSource
+import com.orbitalhq.asVersionedSource
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.UndefinedSource
@@ -97,15 +102,21 @@ class AvroFormatSerializerTest {
 
    @Test
    fun `can read and write a message with avro`() {
-      val generatedTaxi = TaxiGenerator().generate(avroSchemaJson)
-         .concatenatedSource
-      val schema = TaxiSchema.from(generatedTaxi)
+      val avroSourcePackage = avroToSourcePackage(avroSchemaJson)
+      val schema = TaxiSchema.from(avroSourcePackage)
       val typedInstance = TypedInstance.from(schema.type("com.example.test.TestMessage"), testJson, schema)
-      val bytes = AvroFormatSerializer().write(typedInstance,schema)
+      val schemaCache = AvroSchemaCache()
+      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, schema)
 
       bytes.shouldBeInstanceOf<ByteArray>()
 
-      val readTypedInstance = AvroFormatDeserializer().parse(bytes, typedInstance.type, typedInstance.type.getMetadata(AvroMessageAnnotation.NAME.fqn()), schema, UndefinedSource)
+      val readTypedInstance = AvroFormatDeserializer(schemaCache).parse(
+         bytes,
+         typedInstance.type,
+         typedInstance.type.getMetadata(AvroMessageAnnotation.NAME.fqn()),
+         schema,
+         UndefinedSource
+      )
 
       typedInstance.toRawObject()
          .shouldBe((readTypedInstance as TypedInstance).toRawObject())
@@ -113,19 +124,36 @@ class AvroFormatSerializerTest {
 
    @Test
    fun `can read and write a message with an array at root with avro`() {
-      val generatedTaxi = TaxiGenerator().generate(avroSchemaWithRootArrayJson)
-         .concatenatedSource
-      val schema = TaxiSchema.from(generatedTaxi)
+      val schemaCache = AvroSchemaCache()
+      val avroSourcePackage = avroToSourcePackage(avroSchemaWithRootArrayJson)
+      val schema = TaxiSchema.from(avroSourcePackage)
       val typedInstance = TypedInstance.from(schema.type("com.example.test.TestMessage[]"), "[ $testJson ]", schema)
-      val bytes = AvroFormatSerializer().write(typedInstance,schema)
+      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, schema)
 
       bytes.shouldBeInstanceOf<ByteArray>()
 
-      val readTypedInstance = AvroFormatDeserializer().parse(bytes, typedInstance.type, typedInstance.type.collectionType!!.getMetadata(AvroMessageAnnotation.NAME.fqn()), schema, UndefinedSource)
+      val readTypedInstance = AvroFormatDeserializer(schemaCache).parse(
+         bytes,
+         typedInstance.type,
+         typedInstance.type.collectionType!!.getMetadata(AvroMessageAnnotation.NAME.fqn()),
+         schema,
+         UndefinedSource
+      )
 
       typedInstance.toRawObject()
          .shouldBe((readTypedInstance as TypedInstance).toRawObject())
    }
 
+   private fun avroToSourcePackage(avro:String):SourcePackage {
+      val generatedTaxi = TaxiGenerator().generate(avro, "source.avro")
+      val identifier = PackageIdentifier.fromId("com.foo/test/1.0.0")
+      val sourcePackage = SourcePackage.asTranspiledPackage(
+         PackageMetadata.from(identifier),
+         listOf(VersionedSource.unversioned("source.avro",avro)),
+         generatedTaxi.asVersionedSource(identifier, "avro"),
+         generatedTaxi.sourceMap
+      )
+      return sourcePackage
+   }
 
 }

@@ -1,6 +1,10 @@
 package com.orbitalhq.connectors.kafka
 
+import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.PackageMetadata
+import com.orbitalhq.SourcePackage
 import com.orbitalhq.StubService
+import com.orbitalhq.VersionedSource
 import com.orbitalhq.Vyne
 import com.orbitalhq.avro.AvroFormatSpec
 import com.orbitalhq.connectors.StreamErrorPublisher
@@ -76,7 +80,7 @@ abstract class BaseKafkaContainerTest {
       props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer::class.java.name)
       props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer::class.java.name)
       props.put(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG, 1000)
-      val kafkaProducer = KafkaProducer<String,ByteArray>(props)
+      val kafkaProducer = KafkaProducer<String, ByteArray>(props)
 
       val connectionRegistry = InMemoryKafkaConnectorRegistry()
 
@@ -112,6 +116,20 @@ abstract class BaseKafkaContainerTest {
    fun sendMessage(message: String, topic: String = "movies"): RecordMetadata {
       return sendMessage(message.toByteArray(), topic)
    }
+
+   fun vyneWithKafkaInvoker(sourcePackage: SourcePackage): KafkaTestSetUp {
+      val schema = TaxiSchema.from(
+         listOf(
+            sourcePackage,
+            SourcePackage(
+               PackageMetadata.from(PackageIdentifier.fromId("com.orbitalhq/kafka/1.0.0")),
+               listOf(VersionedSource.sourceOnly(KafkaConnectorTaxi.schema))
+            )
+         )
+      )
+      return vyneWithKafkaInvoker(schema)
+   }
+
    fun vyneWithKafkaInvoker(taxi: String): KafkaTestSetUp {
       val schema = TaxiSchema.fromStrings(
          listOf(
@@ -119,14 +137,27 @@ abstract class BaseKafkaContainerTest {
             taxi
          )
       )
-      val kafkaStreamPublisher = KafkaStreamPublisher(connectionRegistry, formatRegistry = formatRegistry, meterRegistry = SimpleMeterRegistry())
-      val kafkaStreamManager = KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry, meterRegistry = SimpleMeterRegistry())
+      return vyneWithKafkaInvoker(schema)
+   }
+
+   fun vyneWithKafkaInvoker(schema: TaxiSchema): KafkaTestSetUp {
+      val kafkaStreamPublisher = KafkaStreamPublisher(
+         connectionRegistry,
+         formatRegistry = formatRegistry,
+         meterRegistry = SimpleMeterRegistry()
+      )
+      val kafkaStreamManager = KafkaStreamManager(
+         connectionRegistry,
+         SimpleSchemaProvider(schema),
+         formatRegistry = formatRegistry,
+         meterRegistry = SimpleMeterRegistry()
+      )
       val streamErrorPublisher = StreamErrorPublisher()
       val invokers = listOf(
          KafkaInvoker(kafkaStreamManager, kafkaStreamPublisher, streamErrorPublisher),
       )
       val (vyne, stub) = testVyneWithStub(schema, invokers)
-      return KafkaTestSetUp(vyne , kafkaStreamManager, stub, streamErrorPublisher)
+      return KafkaTestSetUp(vyne, kafkaStreamManager, stub, streamErrorPublisher)
    }
 
    fun collectQueryResults(query: QueryResult, resultsFromQuery1: MutableList<TypedInstance>) {
@@ -142,4 +173,9 @@ abstract class BaseKafkaContainerTest {
 
 }
 
-data class KafkaTestSetUp(val vyne: Vyne, val kafkaStreamManager: KafkaStreamManager, val stubService: StubService, val streamErrorPublisher: StreamErrorPublisher)
+data class KafkaTestSetUp(
+   val vyne: Vyne,
+   val kafkaStreamManager: KafkaStreamManager,
+   val stubService: StubService,
+   val streamErrorPublisher: StreamErrorPublisher
+)

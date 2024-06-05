@@ -4,8 +4,12 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.orbitalhq.models.serde.InstantSerializer
+import com.orbitalhq.schemas.toVersionedSource
 import com.orbitalhq.utils.shaHash
+import lang.taxi.generators.SourceMap
 import lang.taxi.packages.SourcesType
+import lang.taxi.packages.SourcesTypes
+import lang.taxi.packages.SourcesTypes.ORIGINAL_SOURCE
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiPackageSources
 import mu.KotlinLogging
@@ -76,18 +80,35 @@ data class SourcePackage(
    }
 
    companion object {
-      const val ORIGINAL_SOURCE: SourcesType = "OriginalSource"
-
       /**
        * Returns a source package that is the result of transpiling.
        * Sources in the original source package are moved to additional sources, tagged as OriginalSource,
        * and the new transpiled sources become the source of the package
        */
-      fun asTranspiledPackage(originalPackage: SourcePackage, transpiledSources: List<VersionedSource>):SourcePackage {
+      fun asTranspiledPackage(originalPackage: SourcePackage, generatedTaxiSources: List<VersionedSource>, sourceMap: SourceMap = SourceMap.EMPTY):SourcePackage {
+         val additionalSources = mutableMapOf(
+            ORIGINAL_SOURCE to originalPackage.sources
+         )
+         if (!sourceMap.isEmpty) {
+            additionalSources[SourcesTypes.SOURCE_MAP] = listOf(sourceMap.toVersionedSource(originalPackage.identifier))
+         }
          return SourcePackage(
             packageMetadata = originalPackage.packageMetadata,
-            sources = transpiledSources,
-            additionalSources = originalPackage.additionalSources + mapOf(ORIGINAL_SOURCE to originalPackage.sources)
+            sources = generatedTaxiSources,
+            additionalSources = additionalSources
+         )
+      }
+      fun asTranspiledPackage(packageMetadata: PackageMetadata, originalSources: List<VersionedSource>, generatedTaxiSources: List<VersionedSource>, sourceMap: SourceMap = SourceMap.EMPTY):SourcePackage {
+         val additionalSources = mutableMapOf(
+            ORIGINAL_SOURCE to originalSources
+         )
+         if (sourceMap.isNotEmpty) {
+            additionalSources[SourcesTypes.SOURCE_MAP] = listOf(sourceMap.toVersionedSource(packageMetadata.identifier))
+         }
+         return SourcePackage(
+            packageMetadata = packageMetadata,
+            sources = generatedTaxiSources,
+            additionalSources
          )
       }
 
