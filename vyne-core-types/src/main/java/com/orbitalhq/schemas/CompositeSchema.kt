@@ -25,7 +25,7 @@ class CompositeSchema(private val schemas: List<Schema>) : Schema {
       else -> error("Schema size should be  at most 1 ${schemas.size}")
    }
 
-   override val hash: Int = hashCode()
+   override val hash: SchemaHash = hashCode()
 
    @get:JsonIgnore
    override val additionalSourcePaths: List<Pair<String, PathGlob>> = this.schemas.flatMap { it.additionalSourcePaths }

@@ -20,6 +20,7 @@ import lang.taxi.services.OperationScope
 import lang.taxi.types.ArrayType
 import lang.taxi.types.ObjectType
 
+typealias SchemaHash = Int
 
 /**
  * Note - implementors must provide valid
@@ -27,7 +28,7 @@ import lang.taxi.types.ObjectType
  * are used heavily in caching.
  */
 interface Schema {
-   val hash: Int
+   val hash: SchemaHash
 
    // I've pretty much given up on avoiding the Taxi vs Schema abstraction at this point..
    @get:JsonIgnore

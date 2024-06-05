@@ -18,7 +18,17 @@ import lang.taxi.generators.GeneratedTaxiCode
  *
  * If you don't need to customize this behaviour, it's preferred to not use a SourceToTaxiConverter,
  * and do the work in a SchemaSourcesAdaptor, emitting taxi code.
+ *
+ * DEPRECATED
+ * This approach turned out to be good in theory, but hit issues because the attached
+ * sources are lost when we do a round trip from Schema -> Taxi -> Schema (eg.,
+ * when editing a package).
+ *
+ * Instead, use a SchemaSourcesAdaptor that emits a SourceMap.
+ * See AvroSchemaSourcesAdaptor for an example of how to produce a source map,
+ * and AvroFormatDeserializer / AvroSchemaCollection for an example of how to use the sourcemap at runtime
  */
+@Deprecated("Use a SchemaSourcesAdaptor with a SourceMap instead")
 interface SourceToTaxiConverter {
    fun canLoad(sourcePackage: SourcePackage): Boolean
 

@@ -3,6 +3,7 @@ package com.orbitalhq.schemas
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.collect.MapMaker
 import lang.taxi.types.ArrayType
+import lang.taxi.types.ParameterizedName
 import lang.taxi.types.QualifiedNameParser
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap
 import java.io.Serializable
@@ -45,7 +46,7 @@ data class QualifiedName @Deprecated("call QualifiedName.from() instead, as it u
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val name: String = fullyQualifiedName.split(".").last()
 
-   val parameterizedName: String = calculateParameterizedName(fullyQualifiedName, parameters)
+   val parameterizedName: ParameterizedName = calculateParameterizedName(fullyQualifiedName, parameters)
 
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val namespace: String = fullyQualifiedName.split(".").dropLast(1).joinToString(".")

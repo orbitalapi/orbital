@@ -11,6 +11,7 @@ import com.orbitalhq.schema.publisher.loaders.SchemaSourcesAdaptor
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import lang.taxi.generators.openApi.GeneratorOptions
 import lang.taxi.generators.openApi.TaxiGenerator
+import lang.taxi.packages.SourcesTypes
 import lang.taxi.sources.SourceCodeLanguages
 import mu.KotlinLogging
 import reactor.core.publisher.Mono
@@ -60,7 +61,7 @@ class OpenApiSchemaSourcesAdaptor(private val spec: OpenApiPackageLoaderSpec) : 
                packageMetadata,
                generatedTaxiCode.asVersionedSource(packageMetadata.identifier, "GeneratedFrom_${fileName}"),
                additionalSources = mapOf(
-                  SourcePackage.ORIGINAL_SOURCE to listOf(
+                  SourcesTypes.ORIGINAL_SOURCE to listOf(
                      VersionedSource(
                         fileName,
                         packageMetadata.identifier.version,
