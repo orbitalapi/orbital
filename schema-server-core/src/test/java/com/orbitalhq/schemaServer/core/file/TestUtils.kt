@@ -28,3 +28,8 @@ fun Path.deployProject(projectPath:String) {
    val testProject = File(Resources.getResource(projectPath).toURI())
    FileUtils.copyDirectory(testProject, this.toFile())
 }
+
+fun File.deployProject(projectPath:String) {
+   val testProject = File(Resources.getResource(projectPath).toURI())
+   FileUtils.copyDirectory(testProject, this)
+}

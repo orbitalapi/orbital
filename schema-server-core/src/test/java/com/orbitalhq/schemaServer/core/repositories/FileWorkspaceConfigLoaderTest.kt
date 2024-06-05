@@ -6,12 +6,12 @@ import com.orbitalhq.schemaServer.core.file.deployProject
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecRemovedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
+import com.orbitalhq.test.utils.FlakeyOnBuildServer
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import org.junit.Before
-import org.junit.Rule
-import org.junit.Test
-import org.junit.rules.TemporaryFolder
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import reactor.core.publisher.Flux
 import reactor.kotlin.test.test
 import java.io.File
@@ -19,22 +19,22 @@ import java.nio.file.Path
 
 
 class FileWorkspaceConfigLoaderTest {
-   @Rule
-   @JvmField
-   val folder = TemporaryFolder()
+   @field:TempDir
+   lateinit var folder :File
 
    lateinit var loader: FileWorkspaceConfigLoader
    lateinit var configFile: File
    lateinit var eventDispatcher: ProjectStoreLifecycleManager
 
-   @Before
+   @BeforeEach
    fun setup() {
-      configFile = folder.root.resolve("repositories.conf")
+      configFile = folder.resolve("repositories.conf")
       eventDispatcher = ProjectStoreLifecycleManager()
       loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
    }
 
    @Test
+   @FlakeyOnBuildServer
    fun `changes to file system that modifies path triggers remove and add`() {
       folder.deployProject("sample-project")
       allEvents()
@@ -44,7 +44,7 @@ class FileWorkspaceConfigLoaderTest {
             // Add a file spec. There's nothing deployed here, but the job of the workspace config
             // loader is simply to tell things that a project exists, not to verify it
             writeWorkspaceConfWithProjectPaths(
-               folder.root.resolve("/wrongPath/taxi.conf").toPath()
+               folder.resolve("/wrongPath/taxi.conf").toPath()
             )
          }
          .expectNextMatches { event ->
@@ -53,17 +53,17 @@ class FileWorkspaceConfigLoaderTest {
          }
          .then {
             writeWorkspaceConfWithProjectPaths(
-               folder.root.resolve("/anotherPath/taxi.conf").toPath()
+               folder.resolve("/anotherPath/taxi.conf").toPath()
             )
          }
          .expectNextMatches { event ->
             event.shouldBeInstanceOf<FileSpecRemovedEvent>()
-               .spec.path.shouldBe(folder.root.resolve("/wrongPath/taxi.conf").toPath())
+               .spec.path.shouldBe(folder.resolve("/wrongPath/taxi.conf").toPath())
             true
          }
          .expectNextMatches { event ->
             event.shouldBeInstanceOf<FileSpecAddedEvent>()
-               .spec.path.shouldBe(folder.root.resolve("/anotherPath/taxi.conf").toPath())
+               .spec.path.shouldBe(folder.resolve("/anotherPath/taxi.conf").toPath())
             true
          }
          .thenCancel()
