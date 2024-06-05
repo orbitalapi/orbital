@@ -100,7 +100,8 @@ class DatabaseMetadataService(
                it.isNullable
             )
          } ?: emptyList()
-         JdbcTable(table.schema.name, table.name, constraintColumns, indexes)
+         // MySQL returns null for schema.name, but a value for schema.catalogName
+         JdbcTable(table.schema.name ?: table.schema.catalogName, table.name, constraintColumns, indexes)
       }
       return tables
    }
