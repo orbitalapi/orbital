@@ -89,6 +89,7 @@ export class AuthService {
         this.isAuthenticatedSubject$.next(true);
       }
     } catch (e) {
+      console.log("error in bootstrapping Auth Service", e)
       throw e;
     }
   }
@@ -107,7 +108,20 @@ export class AuthService {
     // load the discovery document from the convential url.
     // Our OAuth library makes this use-case easy, so just call the method.
     if (!this.securityConfig.oidcDiscoveryUrl) {
-      return await this.oauthService.loadDiscoveryDocumentAndLogin(loginOptions);
+      try {
+        return await this.oauthService.loadDiscoveryDocumentAndLogin(loginOptions);
+      } catch (e) {
+        console.error("Error in loading discovery document and login");
+        console.error(e);
+        // angular-oauth2-oidc library uses browser's session store to persist various OIDC data
+        // including PKCE_Verifier. However, session store implementation various between browsers and Chrome's
+        // pre-fetch feature might lead corruptions in its session store.
+        // see https://issues.chromium.org/issues/40940701 for details.
+        // When that happens PKCE_Verifier can be removed from the session store causing 'fetch token' calls to fail.
+        // Re-initialising the whole login flow seems to be the only feasible way to recover from this.
+        this.oauthService.initLoginFlow();
+        return false;
+      }
     }
 
     // The "exceptional" use-case is where the discoveryDocument lives at a non-conventional
