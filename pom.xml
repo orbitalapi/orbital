@@ -143,6 +143,7 @@
       <module>taxi-playground-core</module>
       <module>policy-evaluator</module>
       <module>avro-message-format</module>
+      <module>test-utils</module>
    </modules>
    <scm>
       <developerConnection>scm:git:git@gitlab.com:vyne/vyne.git</developerConnection>
