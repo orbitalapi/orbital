@@ -54,7 +54,7 @@ export interface AppConfig {
 }
 
 export interface FeatureToggles {
-  chatGptEnabled: boolean;
+  copilotEnabled: boolean;
   workspacesEnabled: boolean;
   policiesEnabled: boolean;
 }
