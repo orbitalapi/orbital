@@ -151,7 +151,6 @@ export class QueryPanelStoreService {
       if (isNullOrUndefined(query.conversationMessages)) {
         query.conversationMessages = []
       } else if (!isNullOrUndefined(query['chatQuery'])) {
-        this.editorStore.activeQueryEditorState().payload.lastChatGptText.set(query['chatQuery'])
         delete query['chatQuery']
       }
       return query
