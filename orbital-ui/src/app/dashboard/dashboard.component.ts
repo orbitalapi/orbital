@@ -1,12 +1,14 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
-import { TuiButtonModule, TuiNotificationModule } from '@taiga-ui/core';
-import { UiCustomisations } from '../../environments/ui-customisations';
-import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
-import { ChangelogCardComponent } from './changelog-card/changelog-card.component';
-import { DataSourcesCardComponent } from './data-sources-card/data-sources-card.component';
-import { EndpointStatsCardComponent } from './endpoint-stats-card/endpoint-stats-card.component';
+import {CommonModule} from '@angular/common';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {Router, RouterLink, RouterOutlet} from '@angular/router';
+import {TuiButtonModule, TuiNotificationModule} from '@taiga-ui/core';
+import {UiCustomisations} from '../../environments/ui-customisations';
+import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
+import {TypesService} from '../services/types.service';
+import {ChangelogCardComponent} from './changelog-card/changelog-card.component';
+import {DataSourcesCardComponent} from './data-sources-card/data-sources-card.component';
+import {EndpointStatsCardComponent} from './endpoint-stats-card/endpoint-stats-card.component';
 
 @Component({
   selector: 'app-dashboard',
@@ -25,7 +27,24 @@ export class DashboardComponent {
   readonly uiConfig = UiCustomisations;
   private readonly HIDE_LIVE_RELOAD_NOTIFICATION_LOCAL_STORAGE_KEY = "hideLiveReloadNotification";
 
-  constructor(private changeDetectorRef: ChangeDetectorRef) {
+  constructor(
+    private typeService: TypesService,
+    private router: Router,
+    private changeDetectorRef: ChangeDetectorRef
+  ) {
+  typeService.getTypes()
+    .pipe(takeUntilDestroyed())
+    .subscribe(type => {
+      if (type.services.length === 0) {
+        router.navigate(
+          ['/onboarding'],
+          {
+            replaceUrl: true,
+          }
+        );
+      }
+    });
+
     this.hideLiveReloadNotification = localStorage.getItem(this.HIDE_LIVE_RELOAD_NOTIFICATION_LOCAL_STORAGE_KEY) === "true";
   }
 
