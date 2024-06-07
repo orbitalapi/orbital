@@ -46,7 +46,7 @@ import {SavedQueryWithSource} from '../../../project-import/schema-importer.serv
       </span>
     </div>
 
-    <button *ngIf="config.featureToggles.chatGptEnabled"
+    <button *ngIf="config.featureToggles.copilotEnabled"
             tuiButton size="s" appearance="outline"
             class='button-small menu-bar-button toggleable'
             [class.is-toggled]="isCopilotOpen"
