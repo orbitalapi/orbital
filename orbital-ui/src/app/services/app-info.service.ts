@@ -56,7 +56,6 @@ export interface AppConfig {
 export interface FeatureToggles {
   chatGptEnabled: boolean;
   workspacesEnabled: boolean;
-  onboardingEnabled: boolean;
   policiesEnabled: boolean;
 }
 export interface PipelineConfig {

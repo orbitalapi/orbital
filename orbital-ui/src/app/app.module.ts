@@ -25,7 +25,6 @@ import {
   TuiScrollbarModule
 } from '@taiga-ui/core';
 
-import { LandingPageModule } from './landing-page/landing-page.module';
 import { APP_ROUTES } from 'src/app/app.routes';
 import { ConfirmationDialogModule } from 'src/app/confirmation-dialog/confirmation-dialog.module';
 import { WebsocketService } from 'src/app/services/websocket.service';
@@ -61,7 +60,6 @@ const oauth2OidcModule = [AuthModule];
     TuiInputModule,
     PolymorpheusModule,
     TuiButtonModule,
-    LandingPageModule,
     ConfirmationDialogModule,
     TuiFocusTrapModule,
     TuiScrollbarModule,

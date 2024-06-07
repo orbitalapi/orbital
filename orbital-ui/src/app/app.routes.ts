@@ -1,7 +1,6 @@
 import { RouterModule } from '@angular/router';
 import { AuthGuard } from 'src/app/services/auth.guard';
 import { VynePrivileges } from 'src/app/services/user-info.service';
-import { LandingPageContainerComponent } from 'src/app/landing-page/landing-page-container.component';
 import { FeatureFlagGuard } from './services/feature-flag.guard';
 import { UiCustomisations } from '../environments/ui-customisations';
 
@@ -9,20 +8,16 @@ export const APP_ROUTES = RouterModule.forRoot(
   [
     {
       path: '',
-      component: LandingPageContainerComponent,
+      loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent),
+      canActivate: [AuthGuard],
+      data: {requiredAuthority: VynePrivileges.ViewConnections},
       title: `${UiCustomisations.productName}`
     },
     {
       path: 'onboarding', // working title for now...
       loadChildren: () => import('./onboarding/onboarding.route.module').then(m => m.OnboardingRouteModule),
-      canActivate: [FeatureFlagGuard],
-      data: {requiredFeatureFlag: 'onboardingEnabled'}
-    },
-    {
-      path: 'dashboard',
-      loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent),
-      canActivate: [FeatureFlagGuard],
-      data: {requiredFeatureFlag: 'dashboardEnabled'}
+      canActivate: [AuthGuard],
+      data: {requireAllAuthorities: [VynePrivileges.BrowseSchema, VynePrivileges.EditSchema]},
     },
     {
       path: 'catalog',
@@ -135,6 +130,6 @@ export const APP_ROUTES = RouterModule.forRoot(
   {
     useHash: false,
     anchorScrolling: 'enabled',
-    scrollPositionRestoration: 'disabled'
+    scrollPositionRestoration: 'enabled'
   }
 );

@@ -11,7 +11,9 @@ import {SchemaDiagramModule} from '../schema-diagram/schema-diagram.module';
 import {LandingPageContainerComponent} from './landing-page-container.component';
 import { OnboardingContainerComponent } from '../onboarding/onboarding-container.component';
 
-
+/**
+ * @deprecated superseded by the Dashboard
+ */
 @NgModule({
     imports: [
         CommonModule,
