@@ -7,6 +7,7 @@ import com.orbitalhq.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
+import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.formats.csv.CsvFormatSpec
@@ -59,6 +60,8 @@ import kotlin.test.assertEquals
 )
 @ActiveProfiles("test")
 class VyneQueryIntegrationTest : DatabaseTest() {
+   @MockBean
+   lateinit var chatService: OpenAiChatService
 
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager

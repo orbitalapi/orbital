@@ -9,6 +9,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
+import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.queryService.TestSchemaProvider
 import com.orbitalhq.schema.api.SchemaProvider
@@ -95,6 +96,9 @@ class VyneQueryOidcIntegrationTest {
 
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
+
+   @MockBean
+   lateinit var chatService: OpenAiChatService
 
    @MockBean
    lateinit var packagesService: PackageService

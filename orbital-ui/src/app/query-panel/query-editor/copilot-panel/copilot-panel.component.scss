@@ -1,0 +1,100 @@
+@import "../shared";
+
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+app-panel-header {
+  gap: 0.5rem;
+}
+
+.mono-badge {
+  background: $sky-100;
+}
+
+// Overrides for "default" button styles
+.button-link:not(.submit-query-button) {
+  opacity: 0.75;
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+.results-container {
+  flex: auto;
+  align-content: flex-end;
+  overflow: auto;
+  padding: 1rem;
+
+  .result {
+    margin-bottom: 1rem;
+
+    &.user-text {
+      max-width: 85%;
+      padding: 0.5rem 0.75rem;
+      background: $sky-200;
+      border-radius: 0.5rem 0.5rem 0 0.5rem;
+      margin-left: auto;
+    }
+
+    .copilot-tag {
+      color: $gray-400;
+    }
+
+    .taxi-markdown {
+      margin-top: 0.5rem;
+      background: $gray-100;
+      border-radius: 0.5rem;
+      overflow: hidden;
+
+      .markdown-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: -0.25rem;
+        padding: 0.25rem 0.5rem;
+        background: $gray-200;
+
+        .taxiql-tag {
+          color: $gray-500
+        }
+
+        .toolbar-buttons {
+          display: flex;
+        }
+      }
+
+      markdown {
+        display: block;
+        padding: 0.1rem 0.5rem;
+        overflow: auto;
+      }
+    }
+  }
+
+  .query-action-button-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+}
+
+.query-container {
+  margin: 0 1rem 1rem 1rem;
+  position: relative;
+
+  .submit-query-button {
+    position: absolute;
+    bottom: 0.5rem;
+    right: 0.5rem;
+    transform: scale(1.25);
+
+    img {
+      background: rgba($whiteish, 0.5);
+    }
+  }
+}

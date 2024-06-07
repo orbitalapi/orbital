@@ -5,6 +5,7 @@ import com.winterbe.expekt.should
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
+import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.history.rest.QueryHistoryService
 import com.orbitalhq.formats.csv.CsvFormatSpec
@@ -72,6 +73,10 @@ class QueryHistoryLineageTest {
       } as PostgreSQLContainer<*>
 
    }
+
+   @MockBean
+   lateinit var chatService: OpenAiChatService
+
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 

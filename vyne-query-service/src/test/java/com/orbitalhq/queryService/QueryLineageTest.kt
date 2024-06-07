@@ -4,6 +4,7 @@ import com.jayway.awaitility.Awaitility
 import com.orbitalhq.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
+import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.history.db.*
 import com.orbitalhq.models.json.parseJson
@@ -96,7 +97,8 @@ class QueryLineageTest : BaseQueryServiceTest() {
    lateinit var sankeyChartRowRepository: QuerySankeyChartRowRepository
 
 
-
+   @MockBean
+   lateinit var chatService: OpenAiChatService
 
 
    @TempDir

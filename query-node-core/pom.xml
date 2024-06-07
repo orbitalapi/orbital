@@ -23,7 +23,7 @@
       </dependency>
       <dependency>
          <groupId>com.orbitalhq</groupId>
-         <artifactId>chatgpt</artifactId>
+         <artifactId>copilot</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>

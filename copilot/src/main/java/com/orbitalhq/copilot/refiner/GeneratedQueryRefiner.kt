@@ -1,4 +1,4 @@
-package com.orbitalhq.query.chat
+package com.orbitalhq.copilot.refiner
 
 import com.orbitalhq.query.planner.QueryPlanner
 import com.orbitalhq.query.planner.TaxiQlRewriter

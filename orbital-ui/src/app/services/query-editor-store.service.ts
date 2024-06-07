@@ -4,7 +4,6 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {TuiAlertService, TuiDialogService, TuiNotification} from '@taiga-ui/core';
 import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
 import {ReplaySubject} from 'rxjs';
-import { QueryLanguage } from '../query-panel/query-editor/query-editor-toolbar/query-editor-toolbar.component';
 import {copyQueryAs, CopyQueryFormat} from '../query-panel/query-editor/QueryFormatter';
 import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
 import {
@@ -62,9 +61,9 @@ export class QueryEditorStoreService {
       return [
         ...tabs,
         new QueryEditorState({
-          queryLanguage: signal(localStorageQuery.queryLanguage),
           query: signal(localStorageQuery.query),
-          chatQuery: signal(localStorageQuery.chatQuery),
+          lastChatGptText: signal(''),
+          conversationMessages: signal(localStorageQuery.conversationMessages),
           savedQueryWithSource: signal(localStorageQuery.savedQueryWithSource),
           currentState: signal('Editing'),
           queryClientId: signal(null),
@@ -99,13 +98,16 @@ export class QueryEditorStoreService {
     this.queryEditorStates.set(clonedQueries)
   }
 
-  updateQueryLanguage($event: QueryLanguage) {
-    this.activeQueryEditorState().payload.queryLanguage.set($event)
+  updateQuery(query: string) {
+    this.activeQueryEditorState().payload.query.set(query);
   }
 
-  updateQuery(query: string, chatQuery: string) {
-    this.activeQueryEditorState().payload.query.set(query);
-    this.activeQueryEditorState().payload.chatQuery.set(chatQuery);
+  updateLastChatGptText(lastChatGptText: string) {
+    this.activeQueryEditorState().payload.lastChatGptText.set(lastChatGptText);
+  }
+
+  resetConversationMessages() {
+    this.activeQueryEditorState().payload.conversationMessages.set([]);
   }
 
   updateActiveQueryEditorStateIndex(index: number) {
@@ -113,7 +115,12 @@ export class QueryEditorStoreService {
   }
 
   submitQuery() {
-    this.activeQueryEditorState().submitQuery(this.schema, this.config)
+    this.activeQueryEditorState().submitQuery('TaxiQL', this.schema)
+  }
+
+  submitTextToChatGpt() {
+    this.activeQueryEditorState().submitQuery('Text', this.schema)
+    this.activeQueryEditorState().payload.lastChatGptText.set('');
   }
 
   cancelQuery() {

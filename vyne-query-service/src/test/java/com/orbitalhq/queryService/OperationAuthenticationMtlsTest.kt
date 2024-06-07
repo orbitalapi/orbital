@@ -5,6 +5,7 @@ import com.google.common.io.Files
 import com.orbitalhq.auth.schemes.MutualTls
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.cockpit.core.security.AuthTokenConfigurationService
+import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.queryService.JavaKeyStore.Companion.createCertificates
@@ -157,6 +158,9 @@ class OperationAuthenticationMtlsTest : DatabaseTest() {
 
    @MockBean
    lateinit var schemaEditorService: SchemaEditorService
+
+   @MockBean
+   lateinit var chatService: OpenAiChatService
 
    @Bean
    fun schemaStore(): SchemaStore = LocalValidatingSchemaStoreClient()

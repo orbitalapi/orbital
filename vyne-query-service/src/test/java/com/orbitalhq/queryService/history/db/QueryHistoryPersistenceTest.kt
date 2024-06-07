@@ -7,6 +7,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.jayway.awaitility.Awaitility.await
 import com.jayway.awaitility.Duration
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
+import com.orbitalhq.copilot.OpenAiChatService
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import com.orbitalhq.history.db.LineageRecordRepository
@@ -116,6 +117,10 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       } as PostgreSQLContainer<*>
 
    }
+
+   @MockBean
+   lateinit var chatService: OpenAiChatService
+
    @MockBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 

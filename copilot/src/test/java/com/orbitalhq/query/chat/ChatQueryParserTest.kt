@@ -1,24 +1,26 @@
 package com.orbitalhq.query.chat
 
-import com.fasterxml.jackson.core.JsonParser
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.fasterxml.jackson.module.kotlin.readValue
+import com.google.common.io.Resources
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.asSourcePackage
+import com.orbitalhq.copilot.CopilotSettings
+import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.query.VyneQlGrammar
 import io.kotest.core.spec.style.DescribeSpec
-import io.kotest.matchers.shouldBe
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import io.kotest.matchers.nulls.shouldNotBeNull
 import lang.taxi.packages.TaxiSourcesLoader
 import java.nio.file.Paths
 
-class ChatQueryParserTest : DescribeSpec({
-   val apiKey = ""
-
+/*class ChatQueryParserTest : DescribeSpec({
    // Don't run in CI/CD, just exploring.
-   xdescribe("exploring the ChatGPT query API") {
+   describe("exploring the ChatGPT query API") {
+      val apiKey = Resources.getResource("apikey.txt")
+         .readText()
+         .trim()
+      val parser = OpenAiChatService(CopilotSettings(apiKey = apiKey))
       it("should use chatGPT to parse a query") {
          val schema = TaxiSchema.from(
             """
@@ -52,39 +54,45 @@ class ChatQueryParserTest : DescribeSpec({
          }
 
          service StreamService {
-            operation reviews:Stream<FilmReview>
-            operation analytics:Stream<FilmAnalytics>
+            operation reviews():Stream<FilmReview>
+            operation analytics():Stream<FilmAnalytics>
          }
       """.trimIndent()
          )
-         val parser = ChatQueryParser(apiKey)
-         val taxiQl = parser.parseToTaxiQl(schema, "Tell me how long 'Gladiator' is, and it's review score")
+
+
+         val callResult = parser.generateAndRefineQueryFromText(
+            schema,
+            "Tell me how long 'Gladiator' is, and it's review score"
+         )
+         callResult.shouldNotBeNull()
          TODO()
 
       }
 
-      it("exploring prompt engineering") {
-         val parser = ChatQueryParser(apiKey)
-         val taxiQL = SourcePackage(
-            PackageMetadata.from("com.orbitalhq", "core-types", "1.0.0"),
-            listOf(
-               VersionedSource(
-                  "TaxiQL",
-                  version = "0.1.0",
-                  VyneQlGrammar.QUERY_TYPE_TAXI
-               )
-            )
-         )
-         val path = Paths.get("/home/martypitt/dev/orbital-demos/hz-demo/taxi")
-         val srcPackage = TaxiSourcesLoader.loadPackage(path).asSourcePackage()
-
-         val schema = TaxiSchema.from(listOf(taxiQL, srcPackage))
-         val taxi = parser.parseToTaxiQl(schema, "Build a real time stream of trades. Include the name of the trader, the name of the instrument, the quantity and hit price on the order. Also include the last traded price for the same instrument, and the ESG score (calculated as the average of the Environmental, Social and Governance pillar scores) for the instrument")
-         println(taxi)
-      }
+//      it("exploring prompt engineering") {
+//         val taxiQL = SourcePackage(
+//            PackageMetadata.from("com.orbitalhq", "core-types", "1.0.0"),
+//            listOf(
+//               VersionedSource(
+//                  "TaxiQL",
+//                  version = "0.1.0",
+//                  VyneQlGrammar.QUERY_TYPE_TAXI
+//               )
+//            )
+//         )
+//         val path = Paths.get("/home/martypitt/dev/orbital-demos/hz-demo/taxi")
+//         val srcPackage = TaxiSourcesLoader.loadPackage(path).asSourcePackage()
+//
+//         val schema = TaxiSchema.from(listOf(taxiQL, srcPackage))
+//         val taxi = parser.parseToTaxiQl(
+//            schema,
+//            "Build a real time stream of trades. Include the name of the trader, the name of the instrument, the quantity and hit price on the order. Also include the last traded price for the same instrument, and the ESG score (calculated as the average of the Environmental, Social and Governance pillar scores) for the instrument"
+//         )
+//         println(taxi)
+//      }
 
       it("exploring date formatting") {
-         val parser = ChatQueryParser(apiKey)
          val taxiQL = SourcePackage(
             PackageMetadata.from("com.orbitalhq", "core-types", "1.0.0"),
             listOf(
@@ -102,4 +110,4 @@ class ChatQueryParserTest : DescribeSpec({
          parser.generateAndRefineQueryFromText(schema, "Give me all the orders executed in the last month")
       }
    }
-})
+})*/

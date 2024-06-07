@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.jayway.awaitility.Awaitility
 import com.jayway.awaitility.Duration
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
+import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.history.db.*
 import com.orbitalhq.history.rest.QueryHistoryService
@@ -74,6 +75,8 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
       } as PostgreSQLContainer<*>
 
    }
+   @MockBean
+   lateinit var chatService: OpenAiChatService
 
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager

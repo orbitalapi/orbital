@@ -135,7 +135,7 @@
       <module>monitoring-common</module>
       <module>analytics</module>
       <module>spring-utils</module>
-      <module>chatgpt</module>
+      <module>copilot</module>
 
       <module>auth-tokens</module>
       <module>query-node-native</module>

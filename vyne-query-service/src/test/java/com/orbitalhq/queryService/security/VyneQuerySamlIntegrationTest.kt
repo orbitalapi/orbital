@@ -8,6 +8,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.cockpit.core.security.authorisation.VyneSamlConfig
+import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.queryService.TestSchemaProvider
 import com.orbitalhq.schema.api.SchemaProvider
@@ -76,6 +77,9 @@ import kotlin.io.path.absolutePathString
 class VyneQuerySamlIntegrationTest {
    companion object {
       private const val orbitalSpId = "http://foo.orbitalhq.io"
+
+      @MockBean
+      lateinit var chatService: OpenAiChatService
 
       @JvmStatic
       @TempDir

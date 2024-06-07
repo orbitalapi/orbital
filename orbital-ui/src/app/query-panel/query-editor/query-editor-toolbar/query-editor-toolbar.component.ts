@@ -46,16 +46,15 @@ import {SavedQueryWithSource} from '../../../project-import/schema-importer.serv
       </span>
     </div>
 
-    <app-dropdown [value]="queryLanguage" hint="Query language" [(isMenuOpen)]="queryLanguageDropdownOpen">
-      <tui-data-list class="query-language-dropdown">
-        @for (ql of queryLanguages; track ql) {
-          <button tuiOption (click)="queryLanguageChange.emit(ql); queryLanguageDropdownOpen = false">
-            {{ ql }}
-            <tui-svg *ngIf="ql === queryLanguage" src="tuiIconCheck"></tui-svg>
-          </button>
-        }
-      </tui-data-list>
-    </app-dropdown>
+    <button *ngIf="config.featureToggles.chatGptEnabled"
+            tuiButton size="s" appearance="outline"
+            class='button-small menu-bar-button toggleable'
+            [class.is-toggled]="isCopilotOpen"
+            (click)='showCopilotPanel.emit()'
+    >
+      <img src="assets/img/tabler/wand.svg">
+      Copilot
+    </button>
 
     <app-dropdown iconUrl="assets/img/tabler/clipboard.svg" hint="Copy query...">
       <tui-data-list>
@@ -101,11 +100,11 @@ import {SavedQueryWithSource} from '../../../project-import/schema-importer.serv
       class="button-link"
       tuiHint="Save query to project"
       tuiHintAppearance="onDark"
-      tuiHintDirection="top"
       (click)="saveClicked.emit()"
     >
       <img src="assets/img/tabler/device-floppy.svg">
     </a>
+
     <button tuiButton size="s" appearance="primary"
             class='button-small menu-bar-button'
             *ngIf="currentState() !== 'Running' && currentState() !== 'Cancelling'"
@@ -124,18 +123,6 @@ import {SavedQueryWithSource} from '../../../project-import/schema-importer.serv
       </button>
     </div>
 
-    <div *ngIf="currentState() === 'Generating'">
-      <button tuiButton size="s" appearance="outline"
-              class='button-small menu-bar-button'
-              [disabled]='true'
-      >
-        <span class='running-timer'>
-          <span class='loader'></span>
-          <span>Thinking...</span>
-        </span>
-      </button>
-    </div>
-
     <div *ngIf="currentState() === 'Cancelling'">
       <button tuiButton size="s" appearance="outline"
               class='button-small menu-bar-button'
@@ -145,7 +132,6 @@ import {SavedQueryWithSource} from '../../../project-import/schema-importer.serv
           <span class='loader'></span>
           <span>Cancelling...</span>
         </span>
-        Cancel
       </button>
     </div>
   `,
@@ -154,21 +140,13 @@ import {SavedQueryWithSource} from '../../../project-import/schema-importer.serv
 export class QueryEditorToolbar {
   config: AppConfig;
 
-  queryLanguageDropdownOpen = false;
-
   constructor(appInfo: AppInfoService) {
       appInfo.getConfig()
           .subscribe(config => this.config = config);
   }
 
-
-  queryLanguages: QueryLanguage[] = ['TaxiQL', 'Text'];
-
-  @Input()
-  queryLanguage: QueryLanguage = 'TaxiQL';
-
   @Output()
-  queryLanguageChange = new EventEmitter<QueryLanguage>();
+  showCopilotPanel = new EventEmitter<void>();
 
   @Output()
   saveClicked = new EventEmitter();
@@ -204,6 +182,9 @@ export class QueryEditorToolbar {
   @Input()
   resultType: Type | null
 
+  @Input()
+  isCopilotOpen: boolean;
+
   get percentComplete(): number | null {
       if (!this.runningQueryStatus) {
           return null;
@@ -219,5 +200,4 @@ export class QueryEditorToolbar {
   }
 }
 
-export type QueryLanguage = 'TaxiQL' | 'Text';
-export type QueryState = 'Editing' | 'Generating' | 'Running' | 'Result' | 'Error' | 'Cancelling';
+export type QueryState = 'Editing' | 'Generating' | 'Generated' | 'Running' | 'Result' | 'Error' | 'Cancelling';

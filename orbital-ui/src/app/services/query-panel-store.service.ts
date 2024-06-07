@@ -6,14 +6,16 @@ import {
   runInInjectionContext,
   Signal,
   signal,
+  untracked,
   WritableSignal
 } from '@angular/core';
-import {QueryLanguage} from '../query-panel/query-editor/query-editor-toolbar/query-editor-toolbar.component';
+import {isNullOrUndefined} from '../utils/utils';
 import {QueryEditorStoreService} from './query-editor-store.service';
 import {
   dangerouslyConvertToSavedQueryWithSource,
   SavedQueryWithSource
 } from '../project-import/schema-importer.service';
+import {ConversationMessage} from './query.service';
 import {SavedQuery} from "./types.service";
 
 export type LocalStorageQuery = {
@@ -22,8 +24,7 @@ export type LocalStorageQuery = {
   isActive: boolean,
   savedQueryWithSource: SavedQueryWithSource,
   query: string,
-  chatQuery: string,
-  queryLanguage: QueryLanguage
+  conversationMessages: ConversationMessage[],
 }
 
 const PERSISTED_QUERIES_LOCAL_STORAGE_KEY: string = 'persistedQueries'
@@ -46,8 +47,9 @@ export class QueryPanelStoreService {
   ) {
     this.checkForDeprecatedLocalStorage();
     const persistedQueries = JSON.parse(localStorage.getItem(PERSISTED_QUERIES_LOCAL_STORAGE_KEY));
-    if (persistedQueries) {
-      this.queries.set(persistedQueries);
+    const sanitisedQueries = this.checkForDeprecatedProps(persistedQueries)
+    if (sanitisedQueries) {
+      this.queries.set(sanitisedQueries);
       this.queries().map(query => this.editorStore.addQueryEditorState(query))
       this.onTabIndexChanged(this.activeTabIndex())
     } else {
@@ -57,6 +59,14 @@ export class QueryPanelStoreService {
       if (this.queries()) {
         this.updateLocalStorage();
       }
+    })
+    effect(() => {
+      const messages = this.editorStore.activeQueryEditorState().payload.conversationMessages()
+      untracked(() => {
+        if (messages.length > 0 && this.activeQuery().conversationMessages.length !== messages.length) {
+          this.updateConversationMessages(messages);
+        }
+      })
     })
   }
 
@@ -69,15 +79,14 @@ export class QueryPanelStoreService {
     this.editorStore.updateActiveQueryEditorStateIndex(index)
   }
 
-  addTab(title: string = '', query: string = '', chatQuery: string = '', savedQueryWithSource?: SavedQueryWithSource) {
+  addTab(title: string = '', query: string = '', savedQueryWithSource?: SavedQueryWithSource) {
     const newTab: LocalStorageQuery = {
       id: Date.now(), // TODO: use the same randomId() function as queryClientId?
       tabName: title || this.generateTabName(),
       isActive: true,
       savedQueryWithSource,
       query,
-      chatQuery,
-      queryLanguage: 'TaxiQL'
+      conversationMessages: [],
     }
     runInInjectionContext(this.injector, () => {
       this.editorStore.addQueryEditorState(newTab)
@@ -98,27 +107,10 @@ export class QueryPanelStoreService {
     }
   }
 
-  updateQuery(query: string, chatQuery: string) {
-    const updatedQuery: LocalStorageQuery = {
-      id: this.activeQuery().id,
-      tabName: this.activeQuery().tabName,
-      isActive: this.activeQuery().isActive,
-      savedQueryWithSource: this.activeQuery().savedQueryWithSource,
-      query,
-      chatQuery,
-      queryLanguage: this.activeQuery().queryLanguage
-    }
-    const clonedQueries = this.queries().slice();
-    clonedQueries[this.activeTabIndex()] = updatedQuery;
-    this.queries.set(clonedQueries);
-    this.editorStore.updateQuery(query, chatQuery)
-  }
-
-  updateQueryLanguage($event: QueryLanguage) {
-    const clonedQueries = this.queries().slice();
-    clonedQueries[this.activeTabIndex()].queryLanguage = $event
-    this.queries.set(clonedQueries)
-    this.editorStore.updateQueryLanguage($event)
+  updateQuery(query: string, append?: boolean) {
+    const updatedQuery = append ? query + '\n' + this.activeQuery().query : query
+    this.patchQuery('query', updatedQuery)
+    this.editorStore.updateQuery(updatedQuery)
   }
 
   onQuerySaved($event: SavedQueryWithSource) {
@@ -130,8 +122,16 @@ export class QueryPanelStoreService {
 
   onSavedQuerySelected($event: SavedQuery) {
     const savedQueryWithSource:SavedQueryWithSource = dangerouslyConvertToSavedQueryWithSource($event)
+    this.addTab($event.name.name, $event.sources[0].content, savedQueryWithSource)
+  }
 
-    this.addTab($event.name.name, $event.sources[0].content, null, savedQueryWithSource)
+  deleteChatHistory() {
+    this.updateConversationMessages([]);
+    this.editorStore.resetConversationMessages()
+  }
+
+  private updateConversationMessages(conversationMessages: ConversationMessage[]) {
+    this.patchQuery('conversationMessages', conversationMessages)
   }
 
   private updateLocalStorage() {
@@ -141,9 +141,31 @@ export class QueryPanelStoreService {
   private checkForDeprecatedLocalStorage() {
     const deprecatedQuery = localStorage.getItem(DEPRECATED_QUERY_LOCAL_STORAGE_KEY);
     if (deprecatedQuery) {
-      this.addTab('Untitled', deprecatedQuery, null);
+      this.addTab('Untitled', deprecatedQuery);
       localStorage.removeItem(DEPRECATED_QUERY_LOCAL_STORAGE_KEY)
     }
+  }
+
+  private checkForDeprecatedProps(queries: LocalStorageQuery[]): LocalStorageQuery[] {
+    return queries.map(query => {
+      if (isNullOrUndefined(query.conversationMessages)) {
+        query.conversationMessages = []
+      } else if (!isNullOrUndefined(query['chatQuery'])) {
+        this.editorStore.activeQueryEditorState().payload.lastChatGptText.set(query['chatQuery'])
+        delete query['chatQuery']
+      }
+      return query
+    })
+  }
+
+  private patchQuery<K extends keyof LocalStorageQuery>(key: K, value: LocalStorageQuery[K]) {
+    const updatedQuery: LocalStorageQuery = {
+      ...this.activeQuery(),
+      [key]: value
+    }
+    const clonedQueries = this.queries().slice();
+    clonedQueries[this.activeTabIndex()] = updatedQuery;
+    this.queries.set(clonedQueries);
   }
 
   private generateTabName(): string {
@@ -158,5 +180,4 @@ export class QueryPanelStoreService {
     }, 0);
     return `Untitled ${highestSuffix + 1}`;
   }
-
 }

@@ -14,7 +14,6 @@ import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
 import {editor, KeyCode, KeyMod} from 'monaco-editor';
 import {QueryEditorPayload} from '../../services/query-editor.state';
 import {QueryHistorySummary, QueryResult, QueryService} from '../../services/query.service';
-import {QueryLanguage} from './query-editor-toolbar/query-editor-toolbar.component';
 import {isQueryResult} from '../result-display/BaseQueryResultComponent';
 import {QualifiedName, VersionedSource} from '../../services/schema';
 import {ExportFormat, ResultsDownloadService} from 'src/app/results-download/results-download.service';
@@ -58,13 +57,22 @@ export class QueryEditorComponent {
 
 
   @Output()
-  queryChanged = new EventEmitter<{ query: string, chatQuery: string }>();
+  queryChanged = new EventEmitter<string>();
 
   @Output()
-  queryLanguageChanged = new EventEmitter<QueryLanguage>();
+  queryAppended = new EventEmitter<string>();
+
+  @Output()
+  chatGptQueryChanged = new EventEmitter<string>();
 
   @Output()
   submitQuery = new EventEmitter<void>();
+
+  @Output()
+  submitTextToChatGpt = new EventEmitter<string>();
+
+  @Output()
+  deleteChatHistory = new EventEmitter<void>();
 
   @Output()
   cancelQuery = new EventEmitter<void>();
@@ -83,6 +91,8 @@ export class QueryEditorComponent {
 
   @Output()
   onCopyQuery = new EventEmitter<CopyQueryFormat>();
+
+  showCopilot: boolean
 
   readonly customActions: editor.IActionDescriptor[] = [
     {
@@ -230,11 +240,12 @@ export class QueryEditorComponent {
     this.state.savedQueryWithSource.set(null);
   }
 
-  onQueryChanged(query: string) {
-    this.queryChanged.emit({query, chatQuery: this.state.chatQuery()});
+  runChatGptQuery($event: string) {
+    this.queryChanged.emit($event);
+    this.submitQuery.emit();
   }
 
-  onChatQueryChanged(chatQuery: string) {
-    this.queryChanged.emit({query: this.state.query(), chatQuery});
+  addQueryToEditor($event: string) {
+    this.queryAppended.emit($event);
   }
 }

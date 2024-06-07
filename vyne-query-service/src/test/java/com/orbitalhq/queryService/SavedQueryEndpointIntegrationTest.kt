@@ -11,6 +11,7 @@ import com.orbitalhq.VyneProvider
 import com.orbitalhq.cockpit.core.WebSocketConfig
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.cockpit.core.pipelines.StreamResultsWebsocketPublisher
+import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.json.parseJson
@@ -74,6 +75,9 @@ import reactor.kotlin.test.test
 )
 @ActiveProfiles("test")
 class SavedQueryEndpointIntegrationTest : DatabaseTest() {
+
+   @MockBean
+   lateinit var chatService: OpenAiChatService
 
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
