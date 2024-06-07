@@ -198,7 +198,7 @@ class QueryService(
     *  This is because:
     *    - Mono<   .... All Spring Security reactive functions must return either a reactive type or a Kotlin Flow
     *    -      ResponseEntity<  .... We want to control the headers
-    *    -                     Publisher<>   ..... Could be either a Mono or a Flux
+    *    -                     Publisher<>   ..... Could be either a Mono or a Flu             x
     */
    @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
    @PostMapping(

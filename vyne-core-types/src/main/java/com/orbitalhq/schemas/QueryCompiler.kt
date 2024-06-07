@@ -2,8 +2,10 @@ package com.orbitalhq.schemas
 
 import com.google.common.base.Stopwatch
 import com.google.common.cache.CacheBuilder
+import com.google.common.util.concurrent.UncheckedExecutionException
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.utils.log
+import lang.taxi.CompilationException
 import lang.taxi.Compiler
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
@@ -41,7 +43,14 @@ class DefaultQueryCompiler(private val schema: Schema, cacheSize: Long = 0) : Qu
       }
 
       return if (useCache) {
-         queryCache.get(query) { compileQuery() }
+         try {
+            queryCache.get(query) { compileQuery() }
+         } catch (e:UncheckedExecutionException) {
+            if (e.cause is CompilationException) {
+               throw e.cause!!
+            } else throw e
+         }
+
       } else {
          compileQuery()
       }

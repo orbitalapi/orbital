@@ -1,4 +1,5 @@
 @import "src/common";
+@import "../shared";
 
 :host {
   display: flex;
@@ -16,88 +17,20 @@ button {
 
 .menu-bar-button {
   margin-bottom: 0.2rem;
-}
 
-.running-timer {
-  color: $success-dark;
-  font-size: 0.9rem;
-  display: flex;
-  align-items: center;
+  &.toggleable {
+    background: none;
 
-  &.has-separator:after {
-    content: "";
-    height: 1.5rem;
-    margin: 0 0 0 0.5rem;
-    border: 1px solid $gray-300;
+    &:hover {
+      background: $gray-100;
+    }
   }
 
-  .loader {
-    width: 1rem;
-    height: 1rem;
-    border: 2px solid $success-dark;
-    border-bottom-color: transparent;
-    border-radius: 50%;
-    display: inline-block;
-    box-sizing: border-box;
-    animation: rotation 1s linear infinite;
-    margin-right: 0.5rem;
-  }
-
-  img {
-    width: 24px;
-    margin-right: 0.5rem;
-    animation-timing-function: ease-in-out;
-    animation-name: loading-spinner;
-    animation-duration: 1.4s;
-    animation-iteration-count: infinite;
-    display: inline-block;
-  }
-
-  .record-count {
-    color: $gray-500;
-    margin-left: 0.25rem;
-  }
-}
-
-@keyframes rotation {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes loading-spinner {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.button-link {
-  display: flex;
-  cursor: pointer;
-  padding: 4px;
-
-  &:hover {
-    border-radius: 0.25rem;
+  &.is-toggled {
     background: $whiteish;
+
+    &:hover {
+      background: $white;
+    }
   }
-
-  &:active {
-    background: $white;
-  }
-
-  &.is-disabled {
-    opacity: 0.5;
-    pointer-events: none;
-  }
-}
-
-
-.query-language-dropdown {
-  min-width: 6rem;
 }

@@ -1,0 +1,117 @@
+<app-panel-header title="Copilot">
+  <ng-container ngProjectAs="title-icon">
+    <img src="assets/img/tabler/wand.svg">
+  </ng-container>
+  <div class="mono-badge">ALPHA</div>
+  <a
+    tuiLink
+    class="button-link"
+    [class.is-disabled]="!conversationMessages().length"
+    tuiHint="Remove chat history for this tab..."
+    tuiHintAppearance="onDark"
+    (click)="confirmRemoval()"
+  >
+    <img src="assets/img/tabler/trash.svg">
+  </a>
+  <div class="spacer"></div>
+  <button
+    (click)="close.emit()"
+    tuiIconButton
+    type="button"
+    appearance="icon"
+    size="xs"
+    icon="tuiIconClose"
+  ></button>
+</app-panel-header>
+<div class="results-container" #results>
+  @for (result of conversationMessages(); let last = $last; let index = $index; track index) {
+    <div class="result" [class.user-text]="result.role === 'user'">
+      <div *ngIf="result.role === 'user'">{{result.message}}</div>
+      <div *ngIf="result.role === 'assistant'">
+        <div class="copilot-tag">COPILOT:</div>
+        @for (chunk of result.chunks; track chunk.kind) {
+          <markdown *ngIf="chunk.kind === 'Chat'" [data]="chunk['message']"/>
+          <div *ngIf="chunk.kind === 'Query'" class="taxi-markdown">
+            <div class="markdown-toolbar">
+              <div class="taxiql-tag">TaxiQL</div>
+              <div class="toolbar-buttons">
+                <a
+                  tuiLink
+                  class="button-link"
+                  tuiHint="Copy query"
+                  tuiHintAppearance="onDark"
+                  (click)="copyQuery(chunk['taxi'])"
+                >
+                  <img src="assets/img/tabler/copy.svg">
+                </a>
+                <a
+                  *ngIf="!last"
+                  tuiLink
+                  class="button-link"
+                  tuiHint="Add to query editor"
+                  tuiHintAppearance="onDark"
+                  (click)="findQueryToAddToEditor(index)"
+                >
+                  <img src="assets/img/tabler/plus.svg">
+                </a>
+                <a
+                  *ngIf="!last"
+                  tuiLink
+                  class="button-link"
+                  tuiHint="Run editor"
+                  tuiHintAppearance="onDark"
+                  (click)="findQueryToRun(index)"
+                >
+                  <img src="assets/img/tabler/player-play.svg">
+                </a>
+              </div>
+            </div>
+            <markdown [data]="'```taxi\n' + chunk['taxi'] + '\n```'">
+            </markdown>
+          </div>
+          <div *ngIf="last && chunk.kind === 'Query'" class="query-action-button-container">
+            <button tuiButton size="s" appearance="outline"
+                    class="button-small"
+                    (click)="findQueryToAddToEditor()"
+            >
+              <img src="assets/img/tabler/plus.svg">
+              Add to editor
+            </button>
+            <button tuiButton size="s" appearance="primary"
+                    class="button-small"
+                    (click)="findQueryToRun()"
+                    [disabled]="currentState() === 'Running'"
+            >
+              <img src="assets/img/tabler/player-play.svg" class='filter-white'>
+              Run
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  }
+  <span *ngIf="currentState() === 'Generating'" class='running-timer'>
+    <span class='loader'></span>
+    <span>Thinking...</span>
+  </span>
+</div>
+<div class="query-container">
+  <tui-text-area
+    class='flat'
+    tuiAutoFocus
+    [(ngModel)]='chatQuery'
+    (keydown.enter)="submitChat($event)"
+  >
+    Write a query
+  </tui-text-area>
+  <a
+    tuiLink
+    class="button-link submit-query-button"
+    [class.is-disabled]="chatQuery() === '' || currentState() === 'Generating'"
+    tuiHint="Submit query"
+    tuiHintAppearance="onDark"
+    (click)='submitChat()'
+  >
+    <img src="assets/img/tabler/message-forward.svg">
+  </a>
+</div>

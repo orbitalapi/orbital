@@ -11,7 +11,7 @@ import {
   tap,
   windowToggle
 } from 'rxjs/operators';
-import {QueryLanguage, QueryState} from '../query-panel/query-editor/query-editor-toolbar/query-editor-toolbar.component';
+import {QueryState} from '../query-panel/query-editor/query-editor-toolbar/query-editor-toolbar.component';
 import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
 import {isNullOrUndefined} from '../utils/utils';
 import {ActiveQueriesNotificationService, RunningQueryStatus} from './active-queries-notification-service';
@@ -19,6 +19,7 @@ import {AppConfig} from './app-info.service';
 import {FailedSearchResponse, isFailedSearchResponse, isValueWithTypeName, StreamingQueryMessage} from './models';
 import {QueryHistoryStoreService} from './query-history-store.service';
 import {
+  ConversationMessage,
   QueryProfileData,
   QueryResult,
   QueryService,
@@ -30,9 +31,9 @@ import {findType, InstanceLike, Schema, Type} from './schema';
 import {SavedQueryWithSource} from "../project-import/schema-importer.service";
 
 export type QueryEditorPayload = {
-  queryLanguage: WritableSignal<QueryLanguage>
   query: WritableSignal<string>
-  chatQuery: WritableSignal<string>
+  lastChatGptText: WritableSignal<string>
+  conversationMessages: WritableSignal<ConversationMessage[]>
   savedQueryWithSource: WritableSignal<SavedQueryWithSource>
   currentState: WritableSignal<QueryState>
   queryClientId: WritableSignal<string>
@@ -59,6 +60,8 @@ export type QueryEditorPayload = {
   instanceSelected: WritableSignal<ReplaySubject<QueryResultInstanceSelectedEvent>>
 }
 
+export type QueryLanguage = 'TaxiQL' | 'Text';
+
 export class QueryEditorState {
   private activeQueryNotificationService = inject(ActiveQueriesNotificationService)
   private queryService = inject(QueryService)
@@ -84,10 +87,10 @@ export class QueryEditorState {
   ) {
   }
 
-  submitQuery(schema: Schema, config: AppConfig) {
+  submitQuery(queryLanguage: QueryLanguage, schema: Schema) {
     this.schema = schema;
     this.payload.valuePanelVisible.set(false);
-    switch (this.payload.queryLanguage()) {
+    switch (queryLanguage) {
       case 'Text':
         this.submitTextQuery();
         break;
@@ -209,19 +212,31 @@ export class QueryEditorState {
   }
 
   private submitTextQuery() {
-    this.prepareToSubmitQuery();
     this.payload.currentState.set('Generating');
-    this.queryService.textToQuery(this.payload.chatQuery())
-      .subscribe(result => {
-        this.payload.query.set(result.taxi);
-        // Submit the taxiQL query.  Make sure parsingQuery = true, so we don't come
-        // through this branch again,
-        this.submitTaxiQlQuery();
-      }, error => {
-        console.log('Failed to parse ChatGPT query');
-        console.log(error);
-        this.payload.lastErrorMessage.set(`A problem occurred generating a query: ${error.error.message}`);
-        this.payload.currentState.set('Error');
+    const conversationMessage: ConversationMessage = {
+      role: 'user',
+      message: this.payload.lastChatGptText()
+    }
+    this.payload.conversationMessages.update(state => [...state, conversationMessage])
+    // clean out any chunks and displayMessage props before sending to the server
+    const sanitisedConversationMessages = this.payload.conversationMessages().map(message => {
+      return {
+        role: message.role,
+        message: message.message
+      }
+    })
+    this.queryService.textToQuery(sanitisedConversationMessages)
+      .subscribe({
+        next: results => {
+          this.payload.conversationMessages.update(state => [...state, results])
+          this.payload.currentState.set('Generated');
+        },
+        error: error => {
+          console.log('Failed to parse ChatGPT query');
+          console.log(error);
+          this.payload.lastErrorMessage.set(`A problem occurred generating a query: ${error?.error?.message || error?.message || 'Unknown error'}`);
+          this.payload.currentState.set('Error');
+        }
       });
   }
 

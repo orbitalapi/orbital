@@ -6,9 +6,10 @@ import com.orbitalhq.cockpit.core.FeatureTogglesConfig
 import com.orbitalhq.cockpit.core.lsp.LanguageServerConfig
 import com.orbitalhq.cockpit.core.pipelines.PipelineConfig
 import com.orbitalhq.cockpit.core.security.VyneUserConfig
+import com.orbitalhq.copilot.CopilotSettings
+import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.licensing.LicenseConfig
-import com.orbitalhq.query.chat.ChatQueryParser
 import com.orbitalhq.schemaServer.core.VersionedSourceLoader
 import com.orbitalhq.schemaServer.core.config.WorkspaceSettings
 import com.orbitalhq.spring.config.DiscoveryClientConfig
@@ -20,7 +21,6 @@ import com.orbitalhq.spring.metrics.MicrometerMetricsReporter
 import com.orbitalhq.spring.projection.ApplicationContextProvider
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import io.micrometer.core.instrument.MeterRegistry
-import kotlinx.coroutines.DEBUG_PROPERTY_NAME
 import mu.KotlinLogging
 import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Autowired
@@ -51,7 +51,8 @@ import java.util.concurrent.TimeUnit
    FeatureTogglesConfig::class,
    CustomSettings::class,
    WorkspaceSettings::class,
-   DatabaseConfig::class
+   DatabaseConfig::class,
+   CopilotSettings::class
 )
 @Import(
    HttpAuthConfig::class,
@@ -74,8 +75,13 @@ class OrbitalStationApp {
 
 
    @Bean
-   fun chatGptService(@Value("\${vyne.chat-gpt.api-key:''}") apiKey: String): ChatQueryParser {
-      return ChatQueryParser(apiKey, OkHttpClient().newBuilder().readTimeout(30, TimeUnit.SECONDS).build())
+   fun chatGptService(copilotSettings: CopilotSettings): OpenAiChatService {
+      return OpenAiChatService(
+         copilotSettings.apiKey,
+         copilotSettings.endpointUrl,
+         copilotSettings.model,
+         OkHttpClient().newBuilder().readTimeout(30, TimeUnit.SECONDS).build()
+      )
    }
 
    @Bean

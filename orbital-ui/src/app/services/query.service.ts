@@ -61,8 +61,8 @@ export class QueryService {
       );
   }
 
-  textToQuery(queryText: String): Observable<ChatParseResult> {
-    return this.http.post<ChatParseResult>(`${this.environment.serverUrl}/api/query/chat/parse`, queryText);
+  textToQuery(message: ConversationMessage[]): Observable<ConversationMessage> {
+    return this.http.post<ConversationMessage>(`${this.environment.serverUrl}/api/copilot/conversation/query`, message);
   }
 
   websocketQuery(query: string, clientQueryId: string, resultMode: ResultMode = ResultMode.SIMPLE, replayCacheSize = 500): Observable<ValueWithTypeName> {
@@ -506,25 +506,29 @@ export interface CacheNode {
   systemProductName: string | null;
 }
 
-export interface ChatParseResult {
-  queryText: string;
-  chatGptQuery: ChatGptQuery;
+export type ConversationMessage = {
+  message: string,
+  role: 'system' | 'assistant' | 'user',
+  displayMessage?: string | null,
+  chunks?: MessageChunk[]
+}
+
+export type ChatMessageChunk = {
+  kind: 'Chat';
+  message: string;
+};
+
+export type QueryMessageChunk = {
+  kind: 'Query';
   taxi: string;
+};
 
-}
+export type CompiledQueryMessageChunk = {
+  kind: 'CompiledQuery';
+  query: any; // TODO: should be a ParsedQuery, leaving as any for now...
+};
 
-export interface ChatGptQuery {
-  fields: string[];
-  conditions: ParsedChatCondition[];
-}
-
-// We're not really using this client-side, so not bothering
-// with ts declaration.
-export interface ParsedChatCondition {
-  operator: any;
-  left: any;
-  right: any;
-}
+export type MessageChunk = ChatMessageChunk | QueryMessageChunk | CompiledQueryMessageChunk;
 
 
 export interface StreamErrorMessage {

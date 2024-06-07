@@ -32,4 +32,12 @@ class SimpleSchemaStore(
       schemaChangedSink.emitNext(SchemaSetChangedEvent(oldSchemaSet, schemaSet), Sinks.EmitFailureHandler.FAIL_FAST)
       return this
    }
+
+   companion object {
+      fun forSchema(schema:Schema):SimpleSchemaStore {
+         return SimpleSchemaStore(
+            SchemaSet.from(schema, 0)
+         )
+      }
+   }
 }

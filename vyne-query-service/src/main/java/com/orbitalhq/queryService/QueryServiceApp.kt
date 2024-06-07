@@ -23,7 +23,6 @@ import com.orbitalhq.monitoring.EnableCloudMetrics
 import com.orbitalhq.pipelines.jet.api.transport.PipelineJacksonModule
 import com.orbitalhq.query.TaxiJacksonModule
 import com.orbitalhq.query.VyneJacksonModule
-import com.orbitalhq.query.chat.ChatQueryParser
 import com.orbitalhq.query.runtime.core.EnableVyneQueryNode
 import com.orbitalhq.schema.publisher.SchemaPublisherService
 import com.orbitalhq.search.embedded.EnableVyneEmbeddedSearch
@@ -103,12 +102,6 @@ class QueryServiceApp {
          app.run(*args)
       }
    }
-
-   @Bean
-   fun chatGptService(@Value("\${vyne.chat-gpt.api-key:''}") apiKey: String): ChatQueryParser {
-      return ChatQueryParser(apiKey, OkHttpClient().newBuilder().readTimeout(30, TimeUnit.SECONDS).build())
-   }
-
 
    @Bean
    fun csvFormatSpec(): ModelFormatSpec = CsvFormatSpec

@@ -1,5 +1,6 @@
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
+import {CopilotPanelComponent} from './query-editor/copilot-panel/copilot-panel.component';
 import {DropdownComponent} from './query-editor/query-editor-toolbar/dropdown/dropdown.component';
 import {PublishedEndpointInfoComponent} from './query-editor/query-editor-toolbar/published-endpoint-info.component';
 import {QueryPanelComponent} from './query-panel.component';
@@ -134,6 +135,7 @@ import { TuiActiveZoneModule, TuiAutoFocusModule } from '@taiga-ui/cdk';
     TuiAutoFocusModule,
     PublishedEndpointInfoComponent,
     DropdownComponent,
+    CopilotPanelComponent,
   ],
   exports: [
     QueryPanelComponent,
