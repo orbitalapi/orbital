@@ -2,6 +2,7 @@ package com.orbitalhq.schema.consumer
 
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.SourcePackage
+import com.orbitalhq.config.ConfigFileLocationConventions
 import com.orbitalhq.config.ConfigSourceWriter
 import com.orbitalhq.config.ConfigSourceWriterProvider
 import com.orbitalhq.config.FileConfigSourceLoader
@@ -42,7 +43,7 @@ class ProjectManagerConfigSourceLoader(
     * loading multiple files
     */
    private val filePattern: String,
-   private val sourceType: SourcesType = "@orbital/config"
+   private val sourceType: SourcesType = ConfigFileLocationConventions.OrbitalConfigKey
 ) : ConfigSourceWriterProvider, BaseCachingConfigLoader(filePattern) {
    private val schemaUpdateFlux: Disposable
 
@@ -169,17 +170,5 @@ class ProjectManagerConfigSourceLoader(
    override fun hasWriter(identifier: PackageIdentifier): Boolean {
       return projectManager.editableLoaders.any { it.packageIdentifier == identifier }
    }
-
-
 }
 
-// This should be somewhere else, but not sure where.
-object ConfigFileLocationConventions {
-   fun getConventionalPathEntry(sourcesType: SourcesType):String {
-      return conventions[sourcesType] ?: error("No convention exists for additional sources type of $sourcesType")
-   }
-   private val conventions = mapOf(
-      // TODO : Can we define a const for this?
-      "@orbital/config" to "orbital/config/*.conf"
-   )
-}
