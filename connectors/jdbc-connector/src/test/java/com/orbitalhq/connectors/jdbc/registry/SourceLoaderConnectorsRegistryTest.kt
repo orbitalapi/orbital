@@ -1,7 +1,7 @@
 package com.orbitalhq.connectors.jdbc.registry
 
-import com.jayway.awaitility.Awaitility
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.config.ConfigFileLocationConventions
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
@@ -35,7 +35,7 @@ class SourceLoaderConnectorsRegistryTest : BaseGitTest() {
    @Test
    fun `when adding a connection to a taxi project without additional sources declared then the config block is added`() {
       // Setup...
-
+      ConfigFileLocationConventions.OrbitalConfigKey = "@flow/config"
       // Create a git project locally
       deployTestProjectToRemoteGitPath(projectName = "sample-project-no-additional-sources")
 
@@ -75,8 +75,8 @@ class SourceLoaderConnectorsRegistryTest : BaseGitTest() {
       val taxiConfFile = localRepoDir.root.resolve("test-git-repo/taxi.conf")
       val loadedTaxiConf = TaxiProjectLoader(taxiConfFile.toPath())
          .load()
-      loadedTaxiConf.additionalSources.shouldContainKey("@orbital/config")
-      loadedTaxiConf.additionalSources["@orbital/config"].shouldBe("orbital/config/*.conf")
+      loadedTaxiConf.additionalSources.shouldContainKey(ConfigFileLocationConventions.OrbitalConfigKey)
+      loadedTaxiConf.additionalSources[ConfigFileLocationConventions.OrbitalConfigKey].shouldBe(ConfigFileLocationConventions.OrbitalConfigPathEntry)
    }
 
    @Test

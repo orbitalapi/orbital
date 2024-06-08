@@ -1,13 +1,14 @@
 package com.orbitalhq.schema.consumer
 
-import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.shouldBe
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
+import com.orbitalhq.config.ConfigFileLocationConventions
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
 import lang.taxi.packages.SourcesType
 import org.junit.Test
 
@@ -35,7 +36,7 @@ class SchemaConfigSourceLoaderTest {
 
       val schemaStore = schemaStoreWithSources(
          mapOf(
-            "@orbital/config" to listOf(
+            ConfigFileLocationConventions.OrbitalConfigKey to listOf(
                VersionedSource("auth.conf", "1.0.0", "I am auth config"),
                VersionedSource("services.conf", "1.0.0", "I am services config"),
             )
@@ -54,7 +55,7 @@ class SchemaConfigSourceLoaderTest {
    fun `loads single config file when full paths are present`() {
       val schemaStore = schemaStoreWithSources(
          mapOf(
-            "@orbital/config" to listOf(
+            ConfigFileLocationConventions.OrbitalConfigKey to listOf(
                VersionedSource("/some/path/to/auth.conf", "1.0.0", "I am auth config"),
                VersionedSource("auth.conf", "1.0.0", "I am services config"),
             )

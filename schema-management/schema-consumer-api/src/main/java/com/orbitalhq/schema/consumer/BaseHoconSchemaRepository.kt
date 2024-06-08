@@ -1,5 +1,6 @@
 package com.orbitalhq.schema.consumer
 
+import com.orbitalhq.config.ConfigFileLocationConventions
 import com.orbitalhq.config.HoconConfigRepository
 import lang.taxi.packages.SourcesType
 
@@ -10,7 +11,7 @@ import lang.taxi.packages.SourcesType
 abstract class BaseHoconSchemaRepository<T : Any>(
    schemaEventSource: SchemaChangedEventProvider,
    private val filename: String,
-   private val sourceType: SourcesType = "@orbital/config"
+   private val sourceType: SourcesType = ConfigFileLocationConventions.OrbitalConfigKey
 ) : HoconConfigRepository<T> {
 
 }

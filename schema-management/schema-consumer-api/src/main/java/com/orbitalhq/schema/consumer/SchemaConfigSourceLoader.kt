@@ -1,14 +1,10 @@
 package com.orbitalhq.schema.consumer
 
-import com.orbitalhq.SourcePackage
-import com.orbitalhq.config.ConfigSourceLoader
+import com.orbitalhq.config.ConfigFileLocationConventions
 import com.orbitalhq.schemas.Schema
 import lang.taxi.packages.SourcesType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Sinks
-import java.nio.file.Paths
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Wraps a SchemaSource (eg, SchemaSet) and turns it into a ConfigSourceLoader.
@@ -25,7 +21,7 @@ class SchemaConfigSourceLoader(
     * loading multiple files
     */
    private val filePattern: String,
-   private val sourceType: SourcesType = "@orbital/config"
+   private val sourceType: SourcesType = ConfigFileLocationConventions.OrbitalConfigKey
 ) : BaseCachingConfigLoader(filePattern) {
 
    companion object {
