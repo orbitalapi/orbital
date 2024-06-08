@@ -51,7 +51,8 @@ class OidcConfigLoader {
             accountManagementUrl = openIdpConfiguration.accountManagementUrl,
             orgManagementUrl = openIdpConfiguration.orgManagementUrl,
             identityTokenKind = openIdpConfiguration.identityTokenKind,
-            jwksUri = openIdpConfiguration.jwksUri
+            jwksUri = openIdpConfiguration.jwksUri,
+            refreshTokensDisabled = openIdpConfiguration.refreshTokensDisabled
          )
       } else{
          val mapper = jacksonObjectMapper()
@@ -75,6 +76,7 @@ class OidcConfigLoader {
                   accountManagementUrl = openIdpConfiguration.accountManagementUrl,
                   orgManagementUrl = openIdpConfiguration.orgManagementUrl,
                   identityTokenKind = openIdpConfiguration.identityTokenKind,
+                  refreshTokensDisabled = openIdpConfiguration.refreshTokensDisabled
                )
             }.block()!!
       }

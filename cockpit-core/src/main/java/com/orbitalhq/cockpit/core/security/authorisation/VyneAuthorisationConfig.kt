@@ -87,14 +87,19 @@ data class VyneOpenIdpConnectConfig(
    val jwksUri: String? = null,
    val roles: JwtRolesConfig = JwtRolesConfig(),
    val identityTokenKind: IdentityTokenKind = IdentityTokenKind.Access,
-
+   // Some Authorisation servers, like Spring Authorization Server, does not issue
+   // refresh tokens in Code Flow. For these cases, we'd like to set 'useSilentRefresh'
+   // Config parameter of the angular-oauth2-oidc to true
+   // see: https://manfredsteyer.github.io/angular-oauth2-oidc/docs/classes/AuthConfig.html#useSilentRefresh
+   val refreshTokensDisabled: Boolean = false,
    /**
     * The url to load the oidc discovery document from.
     * Normally is inferred from the issuerUrl
     * (ie., ${issuerUrl}/.well-known/openid-configuration)
     * However, some IDP's use a custom discovery url. (Azure).
     */
-   val oidcDiscoveryUrl: String?,
+   val oidcDiscoveryUrl: String?
+
 ) {
    init {
       val configErrors = mutableListOf<String>()

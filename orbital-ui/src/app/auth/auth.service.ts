@@ -17,6 +17,7 @@ interface FrontEndSecurityConfig {
   redirectUri?: string | null;
   enabled: boolean;
   requireLoginOverHttps: boolean;
+  refreshTokensDisabled: boolean;
   accountManagementUrl: string | null;
   orgManagementUrl: string | null;
   identityTokenKind: 'Access' | 'Id';
@@ -214,7 +215,7 @@ export class AuthService {
       responseType: 'code',
       redirectUri: securityConfig.redirectUri || currentLocation,
       requireHttps: securityConfig.requireLoginOverHttps,
-
+      useSilentRefresh: securityConfig.refreshTokensDisabled,
       clearHashAfterLogin: false,
       strictDiscoveryDocumentValidation: false,
       showDebugInformation: true,
