@@ -36,6 +36,7 @@ import lang.taxi.writers.ConfigWriter
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import reactor.core.publisher.Sinks.EmissionException
 import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Duration
@@ -99,6 +100,11 @@ class FileWorkspaceConfigLoader(
          // However, it re-throws the caught error, we re-catch it over here so that Orbital doesn't fall over during
          // start-up
          val rootCause = Throwables.getRootCause(e)
+         if (rootCause is EmissionException) {
+            // This isn't a config issue, it's an application issue
+            logger.error(rootCause) { "Failed to send update to changes to workspace" }
+            throw rootCause
+         }
          logger.error(rootCause) { "error in emitting workspace specs" }
          lastConfig = null
       }
