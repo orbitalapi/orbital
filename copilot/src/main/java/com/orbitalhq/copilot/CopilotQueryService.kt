@@ -1,7 +1,5 @@
-package com.orbitalhq.query.runtime.core
+package com.orbitalhq.copilot
 
-import com.orbitalhq.copilot.ConversationMessage
-import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.schema.api.SchemaProvider
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody

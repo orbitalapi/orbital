@@ -57,6 +57,7 @@ export interface FeatureToggles {
   copilotEnabled: boolean;
   workspacesEnabled: boolean;
   policiesEnabled: boolean;
+  queryPlanModeEnabled: boolean;
 }
 export interface PipelineConfig {
   kibanaUrl: string;

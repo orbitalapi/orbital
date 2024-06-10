@@ -40,6 +40,7 @@ import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.SimpleVyneProvider
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.spring.invokers.RestTemplateInvoker
+import com.orbitalhq.stubbing.StubService
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.support.GenericApplicationContext

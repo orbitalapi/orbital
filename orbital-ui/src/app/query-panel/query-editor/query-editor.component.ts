@@ -59,6 +59,7 @@ export class QueryEditorComponent {
   @Output()
   queryChanged = new EventEmitter<string>();
 
+  // NOTE: not used but leaving for now until the dust settles on how copilot wil be used
   @Output()
   queryAppended = new EventEmitter<string>();
 
@@ -245,7 +246,7 @@ export class QueryEditorComponent {
     this.submitQuery.emit();
   }
 
-  addQueryToEditor($event: string) {
-    this.queryAppended.emit($event);
+  setQueryInEditor($event: string) {
+    this.queryChanged.emit($event);
   }
 }

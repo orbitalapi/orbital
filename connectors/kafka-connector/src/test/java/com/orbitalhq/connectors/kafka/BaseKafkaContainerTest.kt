@@ -3,7 +3,7 @@ package com.orbitalhq.connectors.kafka
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
-import com.orbitalhq.StubService
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.Vyne
 import com.orbitalhq.avro.AvroFormatSpec

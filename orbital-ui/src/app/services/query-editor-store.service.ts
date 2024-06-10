@@ -25,7 +25,6 @@ export class QueryEditorStoreService {
   readonly activeQueryEditorState: WritableSignal<QueryEditorState> = signal(null);
   readonly existingQueryEndpoints: Signal<string[]> = computed(() => {
     return this.queryEditorStates().reduce((accum, query) => {
-
       const url = query.payload.savedQueryWithSource()?.savedQuery.httpEndpoint?.url;
       const path = query.payload.savedQueryWithSource()?.savedQuery.websocketOperation?.path;
       if (url) accum.push(url)
@@ -84,6 +83,7 @@ export class QueryEditorStoreService {
           errors: signal(null),
           queryProfileData: signal(null),
           isProfileDataLoading: signal(null),
+          queryPlanData: signal(null),
           queryMetadata: signal(null),
           instanceSelected: signal(new ReplaySubject<QueryResultInstanceSelectedEvent>(1)),
         })
@@ -100,6 +100,9 @@ export class QueryEditorStoreService {
 
   updateQuery(query: string) {
     this.activeQueryEditorState().payload.query.set(query);
+    if (this.config.featureToggles.queryPlanModeEnabled) {
+      this.loadQueryPlanData()
+    }
   }
 
   updateLastChatGptText(lastChatGptText: string) {
@@ -135,6 +138,10 @@ export class QueryEditorStoreService {
 
   loadProfileData() {
     this.activeQueryEditorState().loadProfileData()
+  }
+
+  loadQueryPlanData() {
+    this.activeQueryEditorState().loadQueryPlanData()
   }
 
   copyQuery($event: CopyQueryFormat) {

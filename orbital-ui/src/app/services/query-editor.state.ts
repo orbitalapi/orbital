@@ -1,7 +1,8 @@
 import {inject, WritableSignal} from '@angular/core';
-import {BehaviorSubject, merge, Observable, ReplaySubject, Subject, takeUntil} from 'rxjs';
+import {BehaviorSubject, merge, Observable, of, ReplaySubject, Subject, takeUntil} from 'rxjs';
 import {
   bufferToggle,
+  catchError,
   distinctUntilChanged,
   filter,
   map,
@@ -20,6 +21,7 @@ import {FailedSearchResponse, isFailedSearchResponse, isValueWithTypeName, Strea
 import {QueryHistoryStoreService} from './query-history-store.service';
 import {
   ConversationMessage,
+  QueryPlan,
   QueryProfileData,
   QueryResult,
   QueryService,
@@ -53,6 +55,7 @@ export type QueryEditorPayload = {
   potentiallyPausedResults: WritableSignal<Observable<InstanceLike>>
   errors: WritableSignal<ReplaySubject<StreamQueryErrorEvent>>
   queryProfileData: WritableSignal<Observable<QueryProfileData>>
+  queryPlanData: WritableSignal<Observable<QueryPlan>>
   isProfileDataLoading: WritableSignal<Observable<boolean>>
   queryMetadata: WritableSignal<Observable<RunningQueryStatus>>
   // Use a replay subject, as sometimes the UI hasn't rendered at the time
@@ -293,6 +296,24 @@ export class QueryEditorState {
 
     this.payload.queryProfileData.set(this.queryService.getQueryProfileFromClientId(this.payload.queryClientId()));
     this.payload.isProfileDataLoading.set(this.payload.queryProfileData().pipe(map(val => false), startWith(true)))
+  }
+
+  loadQueryPlanData() {
+    if (this.payload.query() === '') {
+      this.payload.queryPlanData.set(of({steps: []} as QueryPlan))
+    } else {
+      this.payload.queryPlanData.set(
+        this.queryService.getQueryPlan(this.payload.query())
+          .pipe(
+            map(parsedQuery => parsedQuery.queryPlan),
+            catchError(error => {
+              console.log(error);
+              // Return an observable to prevent the stream from completing
+              return of({ steps: [] } as QueryPlan);
+            })
+          )
+      );
+    }
   }
 
   private setupErrorMessageSubscription() {

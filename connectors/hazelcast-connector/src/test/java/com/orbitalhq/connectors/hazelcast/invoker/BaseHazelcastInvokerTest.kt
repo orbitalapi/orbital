@@ -2,7 +2,7 @@ package com.orbitalhq.connectors.hazelcast.invoker
 
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.test.TestHazelcastInstanceFactory
-import com.orbitalhq.StubService
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.connectors.hazelcast.HazelcastTaxi
 import com.orbitalhq.query.VyneQlGrammar

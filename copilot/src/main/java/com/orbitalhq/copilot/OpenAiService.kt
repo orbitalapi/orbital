@@ -6,7 +6,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.orbitalhq.copilot.prompts.V2Prompt
 import com.orbitalhq.copilot.refiner.GeneratedQueryRefiner
-import com.orbitalhq.schemas.ParsedQuery
+import com.orbitalhq.query.ParsedQuery
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.taxi.toMessage
 import lang.taxi.CompilationException

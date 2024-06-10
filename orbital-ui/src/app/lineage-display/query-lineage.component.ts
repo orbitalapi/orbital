@@ -4,7 +4,7 @@ import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
 import {QuerySankeyChartRow, SankeyNodeType, SankeyOperationNodeDetails} from '../services/query.service';
 import {ResizeObservableService} from '../services/resize-observable.service';
 import {SchemaGraph, SchemaGraphLink, SchemaGraphNode, SchemaGraphNodeType, SchemaNodeSet} from '../services/schema';
-import {ClusterNode} from '@swimlane/ngx-graph';
+import {ClusterNode, NgxGraphZoomOptions} from '@swimlane/ngx-graph';
 import {Subject} from 'rxjs';
 import {isNullOrUndefined} from "../utils/utils";
 import {capitalizeFirstLetter} from "../utils/strings";
@@ -26,7 +26,7 @@ export class QueryLineageComponent extends BaseGraphComponent implements AfterVi
 
   clusters: ClusterNode[] = [];
 
-  zoomToFit$: Subject<{autoCenter?: boolean, force?: boolean;}> = new Subject();
+  zoomToFit$: Subject<NgxGraphZoomOptions> = new Subject();
 
   @ViewChild('chartOuterContianer')
   chartContainer: ElementRef;
@@ -44,7 +44,9 @@ export class QueryLineageComponent extends BaseGraphComponent implements AfterVi
         takeUntilDestroyed(this.destroyRef),
       )
       .subscribe(resizeEntry => {
-        this.zoomToFit$.next({autoCenter: true, force: true});
+        requestAnimationFrame(() => {
+          this.zoomToFit$.next({autoCenter: true, force: true});
+        })
       })
   }
 
@@ -64,7 +66,7 @@ export class QueryLineageComponent extends BaseGraphComponent implements AfterVi
       this.refreshChartData();
       setTimeout(() => {
         this.zoomToFit$.next({autoCenter: true, force: true});
-      });
+      }, 100);
     }
   }
 

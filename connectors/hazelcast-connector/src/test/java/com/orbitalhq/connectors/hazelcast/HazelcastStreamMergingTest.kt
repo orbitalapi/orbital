@@ -3,7 +3,6 @@ package com.orbitalhq.connectors.hazelcast
 import app.cash.turbine.test
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.test.TestHazelcastInstanceFactory
-import com.orbitalhq.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.expectTypedObject
 import com.orbitalhq.models.TypedInstance
@@ -12,6 +11,7 @@ import com.orbitalhq.query.caching.StateStore
 import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.testVyne
 import com.orbitalhq.utils.Ids
 import io.kotest.core.spec.IsolationMode
@@ -25,7 +25,7 @@ private val logger = KotlinLogging.logger {  }
 class HazelcastStreamMergingTest : DescribeSpec({
    isolationMode = IsolationMode.InstancePerTest
    describe("Joining multiple streams using Hazelcast") {
-      fun buildVyneAndHazelcast(mapName: String = Ids.id("Hazelcast-")): Triple<Vyne,StubService, HazelcastInstance> {
+      fun buildVyneAndHazelcast(mapName: String = Ids.id("Hazelcast-")): Triple<Vyne, StubService, HazelcastInstance> {
          val hazelcast = TestHazelcastInstanceFactory(1).newHazelcastInstance()
 
          val schema = TaxiSchema.from(

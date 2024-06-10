@@ -1,6 +1,5 @@
 package com.orbitalhq.connectors.jdbc.sql.mysql.query
 
-import com.orbitalhq.StubService
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
@@ -12,6 +11,7 @@ import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
 import com.winterbe.expekt.should

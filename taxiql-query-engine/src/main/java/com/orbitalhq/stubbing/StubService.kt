@@ -1,10 +1,6 @@
-package com.orbitalhq
+package com.orbitalhq.stubbing
 
-import com.google.common.collect.ArrayListMultimap
-import com.google.common.collect.HashMultimap
-import com.google.common.collect.ListMultimap
 import com.google.common.collect.MultimapBuilder
-import com.google.common.collect.Multimaps
 import com.orbitalhq.models.DataSourceMutatingMapper
 import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.OperationResult
@@ -37,9 +33,11 @@ import kotlinx.coroutines.flow.map
 import mu.KotlinLogging
 import java.time.Instant
 
-private val logger = KotlinLogging.logger {}
-
-
+/**
+ * Stubs out Operation invocation with pre-canned responses.
+ * Used primarily in tests, but also used for generating indicative query plans
+ * ahead of actual execution
+ */
 class StubService(
    val responses: MutableMap<String, List<TypedInstance>> = mutableMapOf(),
    val handlers: MutableMap<String, OperationResponseHandler> = mutableMapOf(),
@@ -47,6 +45,11 @@ class StubService(
    // nullable for legacy purposes, you really really should pass a schema here.
    val schema: Schema?
 ) : OperationInvoker {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
+   private var wildcardHandler: OperationResponseHandler? = null
 
    fun clearAll() {
       clearHandlers()
@@ -122,9 +125,9 @@ class StubService(
       )
    }
 
-   val calls = MultimapBuilder.hashKeys().arrayListValues().build<String,List<TypedInstance>>()
+   val calls = MultimapBuilder.hashKeys().arrayListValues().build<String, List<TypedInstance>>()
 
-   fun callCount(stubKey:String):Int {
+   fun callCount(stubKey: String): Int {
       return if (calls.containsKey(stubKey)) {
          calls.get(stubKey).size
       } else {
@@ -158,7 +161,7 @@ class StubService(
       calls.put(stubResponseKey, paramValues)
       if (!responses.containsKey(stubResponseKey) && !handlers.containsKey(stubResponseKey) && !flowHandlers.containsKey(
             stubResponseKey
-         )
+         ) && wildcardHandler == null
       ) {
          throw IllegalArgumentException("No stub response or handler prepared for operation $stubResponseKey")
       }
@@ -172,6 +175,7 @@ class StubService(
          }
 
          flowHandlers.containsKey(stubResponseKey) -> flowHandlers[stubResponseKey]!!.invoke(operation, parameters)
+         wildcardHandler != null -> invokeWildcardHandler(operation, parameters)
          else -> error("No handler found for $stubResponseKey")
       }
       return stubResponse.map { value ->
@@ -204,6 +208,14 @@ class StubService(
          eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
          DataSourceUpdater.update(value, operationResult.asOperationReferenceDataSource())
       }
+   }
+
+   private fun invokeWildcardHandler(
+      operation: RemoteOperation,
+      parameters: List<Pair<Parameter, TypedInstance>>
+   ): Flow<TypedInstance> {
+      return wildcardHandler!!.invoke(operation, parameters)
+         .asFlow()
    }
 
 
@@ -245,11 +257,12 @@ class StubService(
       return this
    }
 
-   fun addResponseThrowing(stubOperationKey: String, error:Throwable) {
-      addResponse(stubOperationKey) { _,_ ->
+   fun addResponseThrowing(stubOperationKey: String, error: Throwable) {
+      addResponse(stubOperationKey) { _, _ ->
          throw error
       }
    }
+
    fun addResponseFlow(
       stubOperationKey: String,
       handler: OperationResponseFlowProvider
@@ -290,7 +303,7 @@ class StubService(
       return this
    }
 
-   fun addResponseReturningInputs(stubOperationKey: String):StubService {
+   fun addResponseReturningInputs(stubOperationKey: String): StubService {
       return addResponse(stubOperationKey) { op, parameters ->
          listOf(parameters[0].second)
       }
@@ -317,7 +330,17 @@ class StubService(
       return operation.metadata.any { it.name.name == "StubResponse" } ||
          this.responses.containsKey(operation.name) ||
          this.handlers.containsKey(operation.name) ||
-         this.flowHandlers.containsKey(operation.name)
+         this.flowHandlers.containsKey(operation.name) ||
+         this.wildcardHandler != null
+   }
+
+   fun returnStubValuesForAllOperations() {
+      wildcardHandler = { remoteOperation: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
+         updateDataSourceOnResponse(remoteOperation, params) { _, _ ->
+            listOf(MockTypedInstanceBuilder.build(remoteOperation.returnType, schema!!))
+         }
+
+      }
    }
 
 

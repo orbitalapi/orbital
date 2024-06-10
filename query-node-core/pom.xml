@@ -23,11 +23,6 @@
       </dependency>
       <dependency>
          <groupId>com.orbitalhq</groupId>
-         <artifactId>copilot</artifactId>
-         <version>${project.version}</version>
-      </dependency>
-      <dependency>
-         <groupId>com.orbitalhq</groupId>
          <artifactId>taxiql-query-engine</artifactId>
          <version>${project.version}</version>
          <scope>test</scope>

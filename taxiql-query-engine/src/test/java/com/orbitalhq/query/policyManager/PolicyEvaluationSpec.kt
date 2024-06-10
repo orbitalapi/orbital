@@ -1,11 +1,11 @@
 package com.orbitalhq.query.policyManager
 
 import com.orbitalhq.JWTClaimType
-import com.orbitalhq.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.firstRawObject
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.testVyne
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe

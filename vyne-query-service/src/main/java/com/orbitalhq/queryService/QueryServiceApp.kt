@@ -29,7 +29,6 @@ import com.orbitalhq.search.embedded.EnableVyneEmbeddedSearch
 import com.orbitalhq.spring.EnableVyne
 import com.orbitalhq.spring.VyneSchemaConsumer
 import com.orbitalhq.spring.VyneSchemaPublisher
-import com.orbitalhq.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
 import com.orbitalhq.spring.config.DiscoveryClientConfig
 import com.orbitalhq.spring.config.EnvVariablesConfig
 import com.orbitalhq.spring.config.VyneSpringCacheConfiguration
@@ -41,18 +40,13 @@ import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import com.orbitalhq.spring.utils.versionOrDev
 import com.orbitalhq.utils.log
 import io.orbital.station.OrbitalStationConfig
-import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
-import org.springframework.boot.web.reactive.function.client.WebClientCustomizer
-import org.springframework.cloud.client.discovery.DiscoveryClient
-import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -66,7 +60,6 @@ import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.http.codec.json.KotlinSerializationJsonEncoder
 import org.springframework.web.reactive.config.WebFluxConfigurer
 import java.util.*
-import java.util.concurrent.TimeUnit
 
 
 @SpringBootApplication(scanBasePackageClasses = [QueryServiceApp::class, OrbitalStationConfig::class])

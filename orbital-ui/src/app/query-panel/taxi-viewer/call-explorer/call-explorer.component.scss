@@ -23,7 +23,7 @@ app-sequence-diagram {
 }
 
 .toolbar {
-  margin: 1rem;
+  margin: 1rem 1rem 0 1rem;
 
   // Override the width & height of the toggle button from 48x48 to
   // 36x36 - just to keep inline with the buttons and minimize too much whitespace
@@ -174,4 +174,10 @@ app-operation-view {
 
 .request-response-container {
   flex-grow: 1;
+}
+
+app-query-lineage {
+  &.has-margin-top {
+    margin-top: 1rem;
+  }
 }

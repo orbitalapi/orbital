@@ -3,7 +3,7 @@ import { Component, HostBinding, Input } from '@angular/core';
 @Component({
   selector: 'app-panel-header',
   template: `
-    <ng-content select="title-icon"></ng-content>
+    <ng-content select="title-content"></ng-content>
     <h3 *ngIf="title && !isSecondary">{{title}}</h3>
     <h4 *ngIf="title && isSecondary">{{title}}</h4>
     <ng-content></ng-content>

@@ -1,8 +1,6 @@
 package com.orbitalhq.query.graph
 
 import app.cash.turbine.testIn
-import com.winterbe.expekt.should
-import com.orbitalhq.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.expectTypedObject
@@ -12,6 +10,8 @@ import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
 import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCachingInvokerProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.stubbing.StubService
+import com.winterbe.expekt.should
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest

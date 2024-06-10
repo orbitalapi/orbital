@@ -2,7 +2,7 @@ package com.orbitalhq.connectors.jdbc.query
 
 import com.winterbe.expekt.should
 import com.zaxxer.hikari.HikariConfig
-import com.orbitalhq.StubService
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.jdbc.NamedTemplateConnection
 import com.orbitalhq.connectors.jdbc.*
