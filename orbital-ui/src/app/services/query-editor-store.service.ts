@@ -32,6 +32,13 @@ export class QueryEditorStoreService {
       return accum
     }, [])
   })
+  readonly existingSavedQueryNames: Signal<string[]> = computed(() => {
+    return this.queryEditorStates().reduce((accum, query) => {
+      const queryName = query.payload.savedQueryWithSource()?.savedQuery.name.shortDisplayName;
+      if (queryName) accum.push(queryName)
+      return accum
+    }, [])
+  })
 
   schema: Schema
 
@@ -77,6 +84,7 @@ export class QueryEditorStoreService {
           errorCount: signal(0),
           isErrorMessageSubscriptionSetup: signal(false),
           isQueryPaused: signal(false),
+          isQuerySaveable: signal(false),
           // Observables/Subjects
           results: signal(null),
           potentiallyPausedResults: signal(null),
@@ -100,9 +108,7 @@ export class QueryEditorStoreService {
 
   updateQuery(query: string) {
     this.activeQueryEditorState().payload.query.set(query);
-    if (this.config.featureToggles.queryPlanModeEnabled) {
-      this.loadQueryPlanData()
-    }
+    this.compileQuery();
   }
 
   updateLastChatGptText(lastChatGptText: string) {
@@ -140,8 +146,8 @@ export class QueryEditorStoreService {
     this.activeQueryEditorState().loadProfileData()
   }
 
-  loadQueryPlanData() {
-    this.activeQueryEditorState().loadQueryPlanData()
+  compileQuery() {
+    this.activeQueryEditorState().compileQuery()
   }
 
   copyQuery($event: CopyQueryFormat) {

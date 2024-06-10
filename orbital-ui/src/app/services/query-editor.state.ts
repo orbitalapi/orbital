@@ -50,6 +50,7 @@ export type QueryEditorPayload = {
   errorCount: WritableSignal<number>
   isErrorMessageSubscriptionSetup: WritableSignal<boolean>
   isQueryPaused: WritableSignal<boolean>
+  isQuerySaveable: WritableSignal<boolean>
   // Observabley stuff...
   results: WritableSignal<ReplaySubject<InstanceLike>>
   potentiallyPausedResults: WritableSignal<Observable<InstanceLike>>
@@ -298,16 +299,17 @@ export class QueryEditorState {
     this.payload.isProfileDataLoading.set(this.payload.queryProfileData().pipe(map(val => false), startWith(true)))
   }
 
-  loadQueryPlanData() {
+  compileQuery() {
     if (this.payload.query() === '') {
       this.payload.queryPlanData.set(of({steps: []} as QueryPlan))
+      this.payload.isQuerySaveable.set(false)
     } else {
       this.payload.queryPlanData.set(
-        this.queryService.getQueryPlan(this.payload.query())
+        this.queryService.compileQuery(this.payload.query())
           .pipe(
+            tap(parsedQuery => this.payload.isQuerySaveable.set(!parsedQuery.hasCompilationErrors)),
             map(parsedQuery => parsedQuery.queryPlan),
             catchError(error => {
-              console.log(error);
               // Return an observable to prevent the stream from completing
               return of({ steps: [] } as QueryPlan);
             })

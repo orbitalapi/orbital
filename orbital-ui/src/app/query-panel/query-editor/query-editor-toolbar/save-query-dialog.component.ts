@@ -1,6 +1,13 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, inject, Inject, Input} from '@angular/core';
 import {PackagesService, SourcePackageDescription} from "../../../package-viewer/packages.service";
-import {UntypedFormControl, UntypedFormGroup, Validators} from "@angular/forms";
+import {
+  AbstractControl,
+  UntypedFormControl,
+  UntypedFormGroup,
+  ValidationErrors,
+  ValidatorFn,
+  Validators
+} from '@angular/forms';
 import {TUI_VALIDATION_ERRORS} from "@taiga-ui/kit";
 import {TuiAlertService, TuiDialogContext, TuiNotification} from '@taiga-ui/core';
 import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
@@ -14,7 +21,8 @@ import {VersionedSource} from '../../../services/schema';
 
 export interface SaveQueryRequestProps {
   query: string,
-  previousVersion?: SavedQueryWithSource
+  previousVersion?: SavedQueryWithSource,
+  existingSavedQueryNames: string[]
 }
 
 @Component({
@@ -28,27 +36,23 @@ export interface SaveQueryRequestProps {
         [routerLink]="['/schemas']" (click)='close()'>Schemas</a> view
       </tui-notification>
       <form [formGroup]="formGroup">
-
-
         <app-project-selector formControlName="schemaPackage"
                               [disabled]="!hasEditablePackages"
                               [packages]="editablePackages"
                               prompt="Select a project to save the query to"
         >
-
-
         </app-project-selector>
         <tui-error
           formControlName="schemaPackage"
           [error]="[] | tuiFieldError | async"
         ></tui-error>
-
         <tui-input formControlName="queryName"
         >
           Query name
           <input [disableControl]="!hasEditablePackages"
                  tuiTextfield
           />
+          <span class="tui-required"></span>
         </tui-input>
         <tui-error
           formControlName="queryName"
@@ -89,6 +93,7 @@ export interface SaveQueryRequestProps {
       useValue: {
         required: 'This is required',
         pattern: 'Names must start with a letter, and contain letters, numbers and underscores only.',
+        isExisting: 'Endpoint already exists',
       },
     },
   ],
@@ -112,7 +117,7 @@ export class SaveQueryDialogComponent {
     this.formGroup = new UntypedFormGroup({
       schemaPackage: new UntypedFormControl(null, Validators.required),
       queryName: new UntypedFormControl(null,
-        [Validators.required, Validators.pattern('[a-zA-Z](\\w|\\d)*')])
+        [Validators.required, Validators.pattern('[a-zA-Z](\\w|\\d)*'), this.existingQueryNameValidator()])
     })
     this.packagesService.listPackages()
       .subscribe(result => {
@@ -174,5 +179,15 @@ export class SaveQueryDialogComponent {
           this.changeRef.markForCheck();
         }
       })
+  }
+
+  private existingQueryNameValidator(): ValidatorFn {
+    return (control:AbstractControl) : ValidationErrors | null => {
+      if (!control.value) {
+        return null;
+      }
+      const valueExists = this.context.data.existingSavedQueryNames.includes(control.value)
+      return valueExists ? {isExisting: true}: null;
+    }
   }
 }

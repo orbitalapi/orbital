@@ -52,7 +52,7 @@ export class QueryPanelStoreService {
       this.queries.set(sanitisedQueries);
       this.queries().map(query => this.editorStore.addQueryEditorState(query))
       this.onTabIndexChanged(this.activeTabIndex())
-      this.editorStore.loadQueryPlanData()
+      this.editorStore.compileQuery()
     } else {
       this.addTab()
     }

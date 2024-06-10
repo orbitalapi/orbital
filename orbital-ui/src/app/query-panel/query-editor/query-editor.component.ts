@@ -54,6 +54,9 @@ export class QueryEditorComponent {
   // KLUDGE: this is a computed prop from the QueryEditorStoreService which we need to pass down
   @Input()
   existingEndpointPaths: string[];
+  // KLUDGE: this is a computed prop from the QueryEditorStoreService which we need to pass down
+  @Input()
+  existingSavedQueryNames: string[];
 
 
   @Output()
@@ -152,7 +155,6 @@ export class QueryEditorComponent {
   }
 
   createEndpoint(endpointType: EndpointType) {
-    const existingEndpointPaths =
     this.tuiDialogService.open<SavedQueryWithSource>(new PolymorpheusComponent(PublishEndpointDialogComponent, this.injector),
       {
         size: 'l',
@@ -188,7 +190,8 @@ export class QueryEditorComponent {
         size: 'l',
         data: {
           query: this.state.query(),
-          previousVersion: this.state.savedQueryWithSource()
+          previousVersion: this.state.savedQueryWithSource(),
+          existingSavedQueryNames: this.existingSavedQueryNames
         } as SaveQueryRequestProps,
         dismissible: true
       }
