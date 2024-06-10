@@ -18,6 +18,11 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>query-node-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>com.squareup.okhttp3</groupId>
          <artifactId>okhttp</artifactId>
       </dependency>

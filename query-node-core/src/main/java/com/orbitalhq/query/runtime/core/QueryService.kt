@@ -427,26 +427,6 @@ class QueryService(
       return session.send(output)
    }
 
-   suspend fun doVyneMonitoredWork(
-      vyneUser: VyneUser? = null,
-      schema: Schema,
-      queryCallback: suspend (Vyne, QueryContextEventBroker) -> QueryResponse
-   ): QueryResponse {
-      val queryId: String = UUID.randomUUID().toString()
-      val vyne = vyneProvider.createVyne(
-         vyneUser.facts(),
-         schema
-      )
-
-      val historyWriterEventConsumer = historyWriterProvider.createEventConsumer(queryId, schema)
-      val eventDispatcherForQuery =
-         activeQueryMonitor.eventDispatcherForQuery(queryId, listOf(historyWriterEventConsumer))
-
-      val queryResponse = queryCallback(vyne, eventDispatcherForQuery)
-      return QueryLifecycleEventObserver(historyWriterEventConsumer, activeQueryMonitor)
-         .responseWithQueryHistoryListener("Adhoc query", queryResponse)
-   }
-
    private fun extractJwtClaimFactFromQueryParameters(
       schema: Schema,
       parameters: List<lang.taxi.query.Parameter>

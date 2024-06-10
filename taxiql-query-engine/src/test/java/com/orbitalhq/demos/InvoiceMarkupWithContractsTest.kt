@@ -1,8 +1,6 @@
 package com.orbitalhq.demos
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.winterbe.expekt.expect
-import com.orbitalhq.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.firstTypedInstace
@@ -12,7 +10,9 @@ import com.orbitalhq.models.json.parseJsonModel
 import com.orbitalhq.models.json.parseKeyValuePair
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.utils.log
+import com.winterbe.expekt.expect
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.math.BigDecimal

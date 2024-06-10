@@ -66,7 +66,8 @@ data class CustomSettings(
 data class FeatureTogglesConfig(
    val copilotEnabled: Boolean = false,
    val workspacesEnabled: Boolean = false,
-   val policiesEnabled: Boolean = false
+   val policiesEnabled: Boolean = false,
+   val queryPlanModeEnabled: Boolean = false
 )
 
 data class LicenseStatus(

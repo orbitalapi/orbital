@@ -3,7 +3,7 @@ package com.orbitalhq.queryService
 //import com.orbitalhq.testVyne
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.winterbe.expekt.should
-import com.orbitalhq.StubService
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider

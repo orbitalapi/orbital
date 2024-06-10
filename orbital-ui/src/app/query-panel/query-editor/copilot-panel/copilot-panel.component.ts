@@ -53,7 +53,7 @@ export class CopilotPanelComponent {
   currentState = input<QueryState>()
 
   runQuery = output<string>();
-  addQueryToEditor = output<string>();
+  setQueryInEditor = output<string>();
   submitTextToChatGpt = output<string>();
   deleteChatHistory = output<void>();
   close = output<void>();
@@ -80,9 +80,9 @@ export class CopilotPanelComponent {
     this.runQuery.emit(query)
   }
 
-  findQueryToAddToEditor(index?: number) {
+  findQueryToSetInEditor(index?: number) {
     const query = this.findQuery(index);
-    this.addQueryToEditor.emit(query)
+    this.setQueryInEditor.emit(query)
   }
 
   copyQuery(query: string) {

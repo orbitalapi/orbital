@@ -1,6 +1,6 @@
 package com.orbitalhq.connectors.jdbc.sql.mssql.query
 
-import com.orbitalhq.StubService
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration

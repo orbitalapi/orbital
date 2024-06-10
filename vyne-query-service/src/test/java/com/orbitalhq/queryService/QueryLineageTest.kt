@@ -1,7 +1,7 @@
 package com.orbitalhq.queryService
 
 import com.jayway.awaitility.Awaitility
-import com.orbitalhq.StubService
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.copilot.OpenAiChatService

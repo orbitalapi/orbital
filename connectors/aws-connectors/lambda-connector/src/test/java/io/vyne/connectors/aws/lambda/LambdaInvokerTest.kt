@@ -1,7 +1,6 @@
 package com.orbitalhq.connectors.aws.lambda
 
 import com.google.common.io.Resources
-import com.orbitalhq.StubService
 import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.models.Provided
@@ -9,6 +8,7 @@ import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
 import com.winterbe.expekt.should

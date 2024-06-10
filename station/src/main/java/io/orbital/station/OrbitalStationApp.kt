@@ -6,8 +6,7 @@ import com.orbitalhq.cockpit.core.FeatureTogglesConfig
 import com.orbitalhq.cockpit.core.lsp.LanguageServerConfig
 import com.orbitalhq.cockpit.core.pipelines.PipelineConfig
 import com.orbitalhq.cockpit.core.security.VyneUserConfig
-import com.orbitalhq.copilot.CopilotSettings
-import com.orbitalhq.copilot.OpenAiChatService
+import com.orbitalhq.copilot.CopilotSpringModule
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.licensing.LicenseConfig
 import com.orbitalhq.schemaServer.core.VersionedSourceLoader
@@ -22,9 +21,7 @@ import com.orbitalhq.spring.projection.ApplicationContextProvider
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import io.micrometer.core.instrument.MeterRegistry
 import mu.KotlinLogging
-import okhttp3.OkHttpClient
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -33,7 +30,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
-import java.util.concurrent.TimeUnit
 
 @SpringBootApplication(
    scanBasePackageClasses = [OrbitalStationApp::class, VersionedSourceLoader::class],
@@ -52,13 +48,14 @@ import java.util.concurrent.TimeUnit
    CustomSettings::class,
    WorkspaceSettings::class,
    DatabaseConfig::class,
-   CopilotSettings::class
+
 )
 @Import(
    HttpAuthConfig::class,
    ApplicationContextProvider::class,
    LicenseConfig::class,
    DiscoveryClientConfig::class,
+   CopilotSpringModule::class
 )
 //@EnableWebFluxSecurity
 class OrbitalStationApp {
@@ -73,16 +70,6 @@ class OrbitalStationApp {
       }
    }
 
-
-   @Bean
-   fun chatGptService(copilotSettings: CopilotSettings): OpenAiChatService {
-      return OpenAiChatService(
-         copilotSettings.apiKey,
-         copilotSettings.endpointUrl,
-         copilotSettings.model,
-         OkHttpClient().newBuilder().readTimeout(30, TimeUnit.SECONDS).build()
-      )
-   }
 
    @Bean
    fun formatSpecRegistry(): FormatSpecRegistry = FormatSpecRegistry.default()

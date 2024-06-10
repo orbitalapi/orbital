@@ -22,6 +22,11 @@
 
    <dependencies>
       <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>copilot</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>io.ktor</groupId>
          <artifactId>ktor-client-cio-jvm</artifactId>
          <version>${ktor.version}</version>

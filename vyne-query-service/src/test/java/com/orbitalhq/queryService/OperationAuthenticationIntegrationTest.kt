@@ -2,7 +2,6 @@ package com.orbitalhq.queryService
 
 import com.google.common.io.Files
 import com.nhaarman.mockito_kotlin.whenever
-import com.winterbe.expekt.should
 import com.orbitalhq.asPackage
 import com.orbitalhq.auth.schemes.Cookie
 import com.orbitalhq.auth.schemes.HttpHeader
@@ -28,8 +27,7 @@ import com.orbitalhq.spring.config.TestDiscoveryClientConfig
 import com.orbitalhq.spring.http.auth.ConfigFileAuthTokenRepository
 import com.orbitalhq.spring.http.auth.VyneHttpAuthConfig
 import com.orbitalhq.withBuiltIns
-import io.mockk.core.ValueClassSupport.boxedValue
-import kotlinx.coroutines.flow.toList
+import com.winterbe.expekt.should
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.junit.Before

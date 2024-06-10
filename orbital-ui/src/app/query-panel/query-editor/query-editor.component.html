@@ -55,12 +55,13 @@
           </div>
         </div>
       </as-split-area>
-      <as-split-area size='50' [title]="!state.queryStartTime() ? 'Run a query first' : ''">
+      <as-split-area size='50'>
         <app-error-panel *ngIf='lastQueryResultAsSuccess?.unmatchedNodes?.length > 0'
                          [queryResult]='lastQueryResultAsSuccess'>
         </app-error-panel>
         <app-tabbed-results-view [instances$]='state.potentiallyPausedResults()'
                                  [profileData$]='state.queryProfileData()'
+                                 [queryPlanData$]='state.queryPlanData()'
                                  [errorMessages$]="state.errors()"
                                  [errorCount]="state.errorCount()"
                                  [type]="state.resultType()"
@@ -68,7 +69,7 @@
                                  [isQueryRunning]='state.currentState() === "Running"'
                                  [isStreamingQuery]="isStreamingQuery"
                                  [isQueryPaused]="state.isQueryPaused()"
-                                 [class.is-disabled]="!state.queryStartTime()"
+                                 [queryStartTime]="state.queryStartTime()"
                                  (instanceSelected)='state.valuePanelVisible.set(true); state.instanceSelected().next($event)'
                                  (downloadClicked)='downloadQueryHistory($event.format)'
                                  (loadProfileData)='loadProfileData.emit()'
@@ -92,7 +93,7 @@
       (submitTextToChatGpt)="submitTextToChatGpt.emit($event)"
       (deleteChatHistory)="deleteChatHistory.emit()"
       (runQuery)="runChatGptQuery($event)"
-      (addQueryToEditor)="addQueryToEditor($event)"
+      (setQueryInEditor)="setQueryInEditor($event)"
       (close)="showCopilot = false"
     ></app-copilot-panel>
   </as-split-area>

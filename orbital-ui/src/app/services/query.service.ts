@@ -4,8 +4,10 @@ import {HttpClient, HttpHeaders} from '@angular/common/http';
 import {Observable} from 'rxjs/internal/Observable';
 import {nanoid} from 'nanoid';
 import {
+  CompilationMessage,
   DataSource,
   InstanceLikeOrCollection,
+  Message,
   Proxyable,
   QualifiedName,
   ReferenceOrInstance,
@@ -13,6 +15,7 @@ import {
   TypedInstance,
   TypeNamedInstance
 } from './schema';
+import {QueryKind} from './types.service';
 import {VyneServicesModule} from './vyne-services.module';
 import {catchError, concatAll, map, shareReplay} from 'rxjs/operators';
 import {SseEventSourceService} from './sse-event-source.service';
@@ -152,6 +155,10 @@ export class QueryService {
         map(profileData => this.parseRemoteCallTimestampsAsDates(profileData))
       ) // This observable is shared
       ;
+  }
+
+  getQueryPlan(query: string): Observable<ParsedQuery> {
+    return this.http.post<ParsedQuery>(`${this.environment.serverUrl}/api/taxiql/parse`, query, this.httpOptions);
   }
 
   getRemoteCallResponse(remoteCallId: string): Observable<string> {
@@ -399,6 +406,19 @@ export interface QueryProfileData {
   remoteCalls: RemoteCallResponse[];
   operationStats: RemoteOperationPerformanceStats[];
   queryLineageData: QuerySankeyChartRow[];
+}
+
+export interface ParsedQuery {
+  taxi: string,
+  queryKind: QueryKind,
+  name: QualifiedName,
+  compilationMessages: CompilationMessage[],
+  queryPlan: QueryPlan
+}
+
+export interface QueryPlan {
+  steps: QuerySankeyChartRow[],
+  queryExecutionMessages: Message
 }
 
 export interface RemoteOperationPerformanceStats {

@@ -4,7 +4,7 @@ import com.winterbe.expekt.should
 import com.zaxxer.hikari.HikariConfig
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import com.orbitalhq.StubService
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.jdbc.*
 import com.orbitalhq.connectors.jdbc.query.JdbcQueryTestConfig

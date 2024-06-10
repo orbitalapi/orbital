@@ -1,5 +1,5 @@
 <app-panel-header title="Copilot">
-  <ng-container ngProjectAs="title-icon">
+  <ng-container ngProjectAs="title-content">
     <img src="assets/img/tabler/wand.svg">
   </ng-container>
   <div class="mono-badge">ALPHA</div>
@@ -50,7 +50,7 @@
                   class="button-link"
                   tuiHint="Add to query editor"
                   tuiHintAppearance="onDark"
-                  (click)="findQueryToAddToEditor(index)"
+                  (click)="findQueryToSetInEditor(index)"
                 >
                   <img src="assets/img/tabler/plus.svg">
                 </a>
@@ -72,10 +72,10 @@
           <div *ngIf="last && chunk.kind === 'Query'" class="query-action-button-container">
             <button tuiButton size="s" appearance="outline"
                     class="button-small"
-                    (click)="findQueryToAddToEditor()"
+                    (click)="findQueryToSetInEditor()"
             >
-              <img src="assets/img/tabler/plus.svg">
-              Add to editor
+              <img src="assets/img/tabler/pencil.svg">
+              Set in editor
             </button>
             <button tuiButton size="s" appearance="primary"
                     class="button-small"

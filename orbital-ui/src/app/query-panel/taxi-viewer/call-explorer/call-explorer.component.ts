@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import {
+  QueryPlan,
   QueryProfileData,
   QuerySankeyChartRow,
   QueryService,
@@ -13,7 +14,7 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
 @Component({
   selector: 'app-call-explorer',
   template: `
-    <div class='toolbar'>
+    <div class="toolbar" *ngIf="!onlyShowQueryPlan">
       <mat-button-toggle-group [(ngModel)]='displayMode' data-e2e-id='profiler-call-operation-selection'>
         <mat-button-toggle value='lineage' data-e2e-id='call-select' title='Query Lineage'>
           <img class='icon' src='assets/img/lineage-nodes.svg'>
@@ -26,7 +27,11 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
         </mat-button-toggle>
       </mat-button-toggle-group>
     </div>
-    <app-query-lineage *ngIf="displayMode === 'lineage'" [rows]='querySankeyChartRows$ | async'></app-query-lineage>
+    <app-query-lineage
+      *ngIf="displayMode === 'lineage'"
+      [rows]='querySankeyChartRows$ | async'
+      [class.has-margin-top]="onlyShowQueryPlan"
+    ></app-query-lineage>
     <div class='sequence-diagram-container' *ngIf="displayMode === 'sequence'">
       <as-split direction='horizontal' unit='pixel'>
         <as-split-area [size]='500'>
@@ -74,10 +79,9 @@ export class CallExplorerComponent {
   constructor(private queryService: QueryService) {
   }
 
-  private _queryProfileData$: Observable<QueryProfileData>;
-
   remoteCalls$: Observable<RemoteCallResponse[]>;
 
+  private _queryProfileData$: Observable<QueryProfileData>;
   @Input()
   get queryProfileData$(): Observable<QueryProfileData> {
     return this._queryProfileData$;
@@ -93,6 +97,22 @@ export class CallExplorerComponent {
     this.querySankeyChartRows$ = value.pipe(map(queryProfileData => queryProfileData.queryLineageData));
   }
 
+  private _queryPlanData$: Observable<QueryPlan>;
+  @Input()
+  get queryPlanData$(): Observable<QueryPlan> {
+    return this._queryPlanData$;
+  }
+
+  set queryPlanData$(value: Observable<QueryPlan>) {
+    if (this._queryPlanData$ === value || isNullOrUndefined(value)) {
+      return;
+    }
+    this._queryPlanData$ = value;
+    this.querySankeyChartRows$ = value.pipe(map(queryPlan => queryPlan.steps));
+  }
+
+  @Input()
+  onlyShowQueryPlan: boolean
 
   selectedOperation: RemoteCallResponse;
   selectedOperationResult$: Observable<string>;

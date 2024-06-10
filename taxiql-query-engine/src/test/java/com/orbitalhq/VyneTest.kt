@@ -18,6 +18,7 @@ import com.orbitalhq.query.projection.ProjectionProvider
 import com.orbitalhq.schemas.Operation
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.stubbing.StubService
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking

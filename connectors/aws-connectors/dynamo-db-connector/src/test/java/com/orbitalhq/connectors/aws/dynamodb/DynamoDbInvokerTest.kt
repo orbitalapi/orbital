@@ -1,6 +1,6 @@
 package com.orbitalhq.connectors.aws.dynamodb
 
-import com.orbitalhq.StubService
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance

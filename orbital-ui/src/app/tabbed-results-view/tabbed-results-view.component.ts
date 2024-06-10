@@ -1,9 +1,17 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component, computed, effect,
+  EventEmitter, input,
+  Input,
+  Output
+} from '@angular/core';
 import { tuiIconPause, tuiIconPlay } from '@taiga-ui/icons';
-import { BehaviorSubject, EMPTY, filter, Observable, of, Subject } from 'rxjs';
+import { BehaviorSubject, EMPTY, Observable, of, Subject } from 'rxjs';
+import {filter, map, scan, tap} from 'rxjs/operators';
 import { DisplayMode, DownloadClickedEvent } from '../object-view/object-view-container.component';
 import { InstanceLike, Type } from '../services/schema';
-import {QueryProfileData, StreamQueryErrorEvent} from '../services/query.service';
+import {QueryPlan, QueryProfileData, StreamQueryErrorEvent} from '../services/query.service';
 import { BaseQueryResultComponent } from '../query-panel/result-display/BaseQueryResultComponent';
 import { TypesService } from '../services/types.service';
 import { AppInfoService, AppConfig } from '../services/app-info.service';
@@ -14,7 +22,6 @@ import {
 import { MatDialog } from '@angular/material/dialog';
 import { isNullOrUndefined } from 'src/app/utils/utils';
 import { ExportFormat } from 'src/app/results-download/results-download.service';
-import { map, scan, tap } from 'rxjs/operators';
 
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -31,11 +38,51 @@ import { map, scan, tap } from 'rxjs/operators';
       *ngIf='isQueryRunning'
     ></progress>
     <ng-container *ngIf="{obs: responseIsLarge$ | async} as responseIsLarge">
-      <app-panel-header class="panel-header" title="Results" [isSecondary]="true">
-        <tui-tabs-with-more *ngIf="showResultsPanel"
-                            [(activeItemIndex)]="activeTabIndex"
+      <app-panel-header class="panel-header"
+                        [isSecondary]="true"
+                        [title]="!config?.featureToggles.queryPlanModeEnabled ? 'Results' : null"
+      >
+        <ng-container ngProjectAs="title-content" *ngIf="config?.featureToggles.queryPlanModeEnabled">
+          <div
+            tuiGroup
+            [collapsed]="true"
+            class="tab-mode-container"
+            [tuiHint]="!hasQueryRun() ? 'Results mode available after query has been run' : null"
+            tuiHintAppearance="onDark"
+          >
+            <tui-radio-block
+              size="s"
+              item="design"
+              [hideRadio]="true"
+              [(ngModel)]="tabMode"
+            >
+              Design
+            </tui-radio-block>
+            <tui-radio-block
+              size="s"
+              item="results"
+              [hideRadio]="true"
+              [(ngModel)]="tabMode"
+              [disabled]="!hasQueryRun()"
+            >
+              Results
+            </tui-radio-block>
+          </div>
+        </ng-container>
+        <tui-tabs *ngIf="showResultsPanel && tabMode === 'design'">
+          <button tuiTab>
+            <img src="assets/img/tabler/route-square-2.svg" class="tab-icon">
+            Query plan
+          </button>
+          <tui-notification status="info" class="alert query-plan" tuiHint="The plan may change when executed if data is missing, or services return errors" tuiHintAppearance="onDark">
+            This query plan is indicative, showing the happy path.
+          </tui-notification>
+        </tui-tabs>
+        <tui-tabs-with-more *ngIf="showResultsPanel && tabMode === 'results'"
+                            [(activeItemIndex)]="resultsTabIndex"
                             (activeItemIndexChange)="onTabIndexChanged($event)"
                             [moreContent]='more'
+                            [underline]="resultsTabIndex !== undefined"
         >
           <button *tuiItem tuiTab [disabled]="responseIsLarge.obs">
             <img src="assets/img/tabler/table.svg" class="tab-icon">
@@ -75,10 +122,10 @@ import { map, scan, tap } from 'rxjs/operators';
             class="button-small menu-bar-button pause-stream-button"
             [class.is-query-paused]="isQueryPaused"
           >
-            {{isQueryPaused ? 'Resume stream' : 'Pause stream'}}
+            {{ isQueryPaused ? 'Resume stream' : 'Pause stream' }}
           </button>
           <tui-hosted-dropdown
-            *ngIf="showResultsPanel && downloadSupported"
+            *ngIf="showResultsPanel && tabMode === 'results' && downloadSupported"
             tuiDropdownAlign="left"
             [content]="downloadDropdown"
             [(open)]="downloadMenuOpen"
@@ -91,7 +138,7 @@ import { map, scan, tap } from 'rxjs/operators';
         </div>
       </app-panel-header>
       <app-object-view-container
-        *ngIf="activeTabIndex < 3 && showResultsPanel"
+        *ngIf="resultsTabIndex < 3 && showResultsPanel && tabMode === 'results'"
         [instances$]="_instances$"
         [schema]="schema"
         [displayMode]="displayMode"
@@ -105,11 +152,17 @@ import { map, scan, tap } from 'rxjs/operators';
         (instanceClicked)="instanceClicked($event,type.name)"
       ></app-object-view-container>
     </ng-container>
-    <app-call-explorer *ngIf="activeTabIndex === 3 && profileData$ && showResultsPanel && !isQueryRunning"
-                       [queryProfileData$]="profileData$"
+    <app-call-explorer
+      *ngIf="tabMode === 'design'"
+      [queryPlanData$]="queryPlanData$"
+      [onlyShowQueryPlan]="true"
+    ></app-call-explorer>
+    <app-call-explorer
+      *ngIf="tabMode === 'results' && resultsTabIndex === 3 && profileData$ && showResultsPanel && !isQueryRunning"
+      [queryProfileData$]="profileData$"
     ></app-call-explorer>
     <app-query-errors-list
-      *ngIf="activeTabIndex == 4" [errorMessages$]="errorMessages$"></app-query-errors-list>
+      *ngIf="resultsTabIndex == 4 && tabMode === 'results'" [errorMessages$]="errorMessages$"></app-query-errors-list>
     <ng-template #downloadIcon>
       <tui-svg
         src="tuiIconChevronDown"
@@ -158,21 +211,11 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   set isQueryRunning(value: boolean) {
     this._isQueryRunning = value;
     this.isQueryPaused = false;
-    if (value && this.activeTabIndex === 3) this.activeTabIndex = 0;
+    if (value && this.resultsTabIndex === 3) this.resultsTabIndex = 0;
   }
 
-  constructor(protected typeService: TypesService,
-              protected appInfoService: AppInfoService,
-              private dialogService: MatDialog,
-              private changeDetector: ChangeDetectorRef) {
-    super(typeService);
-    appInfoService.getConfig()
-      .subscribe(next => this.config = next);
-  }
-
-  LARGE_RESPONSE_LIMIT = 1_048_576; // 1MB
   @Input()
-  activeTabIndex: number = 0;
+  resultsTabIndex: number = 0;
 
   @Input()
   downloadSupported = true;
@@ -183,17 +226,62 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   @Input()
   errorCount = 0
 
+  @Input()
+  anonymousTypes: Type[] = [];
+
+  @Input()
+  profileData$: Observable<QueryProfileData>;
+
+  @Input()
+  queryPlanData$: Observable<QueryPlan>;
+
+  @Input()
+  isStreamingQuery: boolean;
+
+  @Input()
+  isQueryPaused: boolean;
+
+  queryStartTime = input<Date>()
+  hasQueryRun = computed<boolean>(() => !!this.queryStartTime())
+
+  @Input()
+  errorMessages$: Observable<StreamQueryErrorEvent>
+
+  @Output()
+  downloadClicked = new EventEmitter<DownloadClickedEvent>();
+
+  @Output()
+  pauseStreamToggled = new EventEmitter<boolean>();
+
   @Output()
   loadProfileData = new EventEmitter();
 
+  LARGE_RESPONSE_LIMIT = 1_048_576; // 1MB
   downloadMenuOpen = false;
-
+  tabMode: 'design' | 'results';
   hasModelFormatSpecs: Subject<boolean> = new BehaviorSubject(true);
-  private jsonInstances$: Observable<string> = of();
   responseIsLarge$: Observable<boolean> = of(false);
+  private jsonInstances$: Observable<string> = of();
+
+  constructor(protected typeService: TypesService,
+              protected appInfoService: AppInfoService,
+              private dialogService: MatDialog,
+              private changeDetector: ChangeDetectorRef) {
+    super(typeService);
+    appInfoService.getConfig()
+      .subscribe(next => {
+        this.config = next
+        this.tabMode = this.config.featureToggles.queryPlanModeEnabled ? 'design' : 'results'
+      });
+    effect(() => {
+      if (this.config?.featureToggles.queryPlanModeEnabled) {
+        this.tabMode = this.queryStartTime() ? 'results' : 'design'
+      }
+    })
+  }
 
   get displayMode(): DisplayMode {
-    switch (this.activeTabIndex) {
+    switch (this.resultsTabIndex) {
       case 0:
         return 'table';
       case 1:
@@ -205,9 +293,6 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 
   protected _instances$: Observable<InstanceLike>;
   PROFILER_TAB_INDEX = 3;
-
-  @Input()
-  errorMessages$: Observable<StreamQueryErrorEvent>
 
   @Input()
   get instances$(): Observable<InstanceLike> {
@@ -223,12 +308,12 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 
     // If we're currently on the Profiler tab, switch back, as the
     // profile data is now stale.
-    if (this.activeTabIndex === this.PROFILER_TAB_INDEX) {
+    if (this.resultsTabIndex === this.PROFILER_TAB_INDEX) {
       //this.activeTabIndex = 0;
     }
 
     this.jsonInstances$ = this.instances$.pipe(
-      filter(result => this.activeTabIndex === 2),
+      filter(result => this.resultsTabIndex === 2),
       map((result) => JSON.stringify(result.value))
     );
 
@@ -239,9 +324,9 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
           return responseSize > this.LARGE_RESPONSE_LIMIT;
         }),
         tap((isLargeResponse) => {
-          if (this.activeTabIndex < 2 && isLargeResponse) {
+          if (this.resultsTabIndex < 2 && isLargeResponse) {
             // Only show JSON in large responses.
-            this.activeTabIndex = 2;
+            this.resultsTabIndex = 2;
           }
         })
       );
@@ -249,12 +334,11 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
     this.changeDetector.markForCheck();
   }
 
-  protected _type: Type;
-
   get showResultsPanel(): boolean {
     return !isNullOrUndefined(this.type) || !isNullOrUndefined(this._instances$);
   }
 
+  protected _type: Type;
   @Input()
   get type(): Type {
     return this._type;
@@ -274,26 +358,9 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
     this.changeDetector.detectChanges();
   }
 
-  @Input()
-  anonymousTypes: Type[] = [];
-
-  @Output()
-  downloadClicked = new EventEmitter<DownloadClickedEvent>();
-
-  @Output()
-  pauseStreamToggled = new EventEmitter<boolean>();
-
-  @Input()
-  profileData$: Observable<QueryProfileData>;
-
-  @Input()
-  isStreamingQuery: boolean;
-
-  @Input()
-  isQueryPaused: boolean;
-
   protected updateDataSources() {
   }
+
   onDownloadClicked(format: ExportFormat) {
     if (this.config.analytics.persistResults) {
       this.downloadClicked.emit(new DownloadClickedEvent(format));
@@ -316,8 +383,8 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 
 
   onTabIndexChanged($event: number) {
-    this.activeTabIndex = $event
-    if (this.activeTabIndex === this.PROFILER_TAB_INDEX) {
+    this.resultsTabIndex = $event
+    if (this.resultsTabIndex === this.PROFILER_TAB_INDEX) {
       this.loadProfileData.emit();
     }
     this.changeDetector.detectChanges();

@@ -1,7 +1,7 @@
 package com.orbitalhq.copilot
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.orbitalhq.schemas.ParsedQuery
+import com.orbitalhq.query.ParsedQuery
 import lang.taxi.query.TaxiQLQueryString
 
 /**
