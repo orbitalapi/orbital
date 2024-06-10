@@ -117,6 +117,11 @@ class ReactiveProjectStoreManager(
    }
 
    private fun addLoader(loader: SchemaPackageTransport) {
+      val existingLoaders = this._loaders.filter { it.key.packageIdentifier == loader.packageIdentifier }
+      if (existingLoaders.isNotEmpty()) {
+         logger.warn { "At attempt was made to add a duplicate loader - ${existingLoaders.size} loaders already exist for project ${loader.packageIdentifier.id}" }
+      }
+
       val stateSubscription = loader.loaderStatus.subscribe { status ->
          when (status.state) {
             LoaderStatus.LoaderState.ERROR -> _unhealthyLoaders[loader] = status
