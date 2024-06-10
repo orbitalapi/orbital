@@ -4,6 +4,7 @@ import com.orbitalhq.connectors.config.kafka.KafkaConnection
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.KafkaConsumerRequest
 import com.orbitalhq.connectors.valueOrThrowNiceMessage
+import mu.KotlinLogging
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
@@ -12,7 +13,9 @@ import org.apache.kafka.common.serialization.StringDeserializer
 import org.apache.kafka.common.serialization.StringSerializer
 import reactor.kafka.receiver.ReceiverOptions
 import reactor.kafka.sender.SenderOptions
+import java.util.UUID
 
+private val logger = KotlinLogging.logger {  }
 
 fun KafkaConnectionConfiguration.toReceiverOptions(offset: String = "latest", request: KafkaConsumerRequest): ReceiverOptions<Int, ByteArray> {
    val consumerProps = this.toConsumerProps(offset, request)
@@ -62,5 +65,12 @@ val KafkaConnectionConfiguration.brokers: String
    }
 val KafkaConnectionConfiguration.groupId: String
    get() {
-      return this.connectionParameters.valueOrThrowNiceMessage(KafkaConnection.Parameters.GROUP_ID.templateParamName)
+      val providedGroupId = this.connectionParameters[KafkaConnection.Parameters.GROUP_ID.templateParamName]
+      return if (providedGroupId == null) {
+         val randomGroupId = UUID.randomUUID().toString()
+         logger.warn { "No Group Id found in kafka configuration ${this.connectionName}, using a random group Id $randomGroupId instead!" }
+         randomGroupId
+      } else {
+          providedGroupId
+      }
    }
