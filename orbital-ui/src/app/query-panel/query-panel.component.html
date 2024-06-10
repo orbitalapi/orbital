@@ -44,6 +44,7 @@
 <app-query-editor
   [state]="editorStore.activeQueryEditorState().payload"
   [existingEndpointPaths]="editorStore.existingQueryEndpoints()"
+  [existingSavedQueryNames]="editorStore.existingSavedQueryNames()"
   (queryChanged)="queryPanelStore.updateQuery($event)"
   (queryAppended)="queryPanelStore.updateQuery($event, true)"
   (submitQuery)="editorStore.submitQuery()"

@@ -41,7 +41,12 @@ export interface PublishEndpointPanelProps extends SaveQueryRequestProps {
         >
           API Endpoint
           <input tuiTextfield/>
+          <span class="tui-required"></span>
         </tui-input>
+        <tui-error
+          formControlName="endpoint"
+          [error]="[] | tuiFieldError | async"
+        ></tui-error>
         <tui-select
           *ngIf="context.data.endpointType === 'HTTP' && operation === 'Add'"
           formControlName="httpMethod"
@@ -50,11 +55,8 @@ export interface PublishEndpointPanelProps extends SaveQueryRequestProps {
           <tui-data-list *tuiDataList>
             <button *ngFor='let verb of httpMethods' tuiOption [value]='verb'>{{ verb }}</button>
           </tui-data-list>
+          <span class="tui-required"></span>
         </tui-select>
-        <tui-error
-          formControlName="endpoint"
-          [error]="[] | tuiFieldError | async"
-        ></tui-error>
       </form>
       <tui-notification *ngIf="errorMessage" [status]="'error'">{{ errorMessage }}</tui-notification>
       <div class="row">

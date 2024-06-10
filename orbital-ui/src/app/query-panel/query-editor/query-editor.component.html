@@ -24,6 +24,7 @@
               [queryStarted]="state.queryStartTime()"
               [runningQueryStatus]='state.queryMetadata() | async'
               [resultType]="state.resultType()"
+              [isQuerySaveable]="state.isQuerySaveable()"
               [savedQueryWithSource]="state.savedQueryWithSource()"
               (showCopilotPanel)="showCopilot = !showCopilot"
               [isCopilotOpen]="showCopilot"

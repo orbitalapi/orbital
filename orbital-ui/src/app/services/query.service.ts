@@ -157,7 +157,7 @@ export class QueryService {
       ;
   }
 
-  getQueryPlan(query: string): Observable<ParsedQuery> {
+  compileQuery(query: string): Observable<ParsedQuery> {
     return this.http.post<ParsedQuery>(`${this.environment.serverUrl}/api/taxiql/parse`, query, this.httpOptions);
   }
 
@@ -413,7 +413,9 @@ export interface ParsedQuery {
   queryKind: QueryKind,
   name: QualifiedName,
   compilationMessages: CompilationMessage[],
-  queryPlan: QueryPlan
+  queryPlan: QueryPlan,
+  hasCompilationErrors: boolean,
+  hasQueryErrors: boolean
 }
 
 export interface QueryPlan {

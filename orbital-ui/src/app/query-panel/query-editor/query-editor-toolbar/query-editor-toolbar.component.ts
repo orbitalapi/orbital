@@ -95,15 +95,19 @@ import {SavedQueryWithSource} from '../../../project-import/schema-importer.serv
       </tui-data-list>
     </app-dropdown>
 
-    <a
-      tuiLink
-      class="button-link"
-      tuiHint="Save query to project"
+    <span
+      [tuiHint]="!isQuerySaveable ? 'Fix the compilation errors first to save this query' : 'Save query to project'"
       tuiHintAppearance="onDark"
-      (click)="saveClicked.emit()"
     >
-      <img src="assets/img/tabler/device-floppy.svg">
-    </a>
+      <a
+        tuiLink
+        class="button-link"
+        (click)="saveClicked.emit()"
+        [class.is-disabled]="!isQuerySaveable"
+      >
+        <img src="assets/img/tabler/device-floppy.svg">
+      </a>
+    </span>
 
     <button tuiButton size="s" appearance="primary"
             class='button-small menu-bar-button'
@@ -181,6 +185,9 @@ export class QueryEditorToolbar {
 
   @Input()
   resultType: Type | null
+
+  @Input()
+  isQuerySaveable: boolean;
 
   @Input()
   isCopilotOpen: boolean;
