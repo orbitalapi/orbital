@@ -1,11 +1,15 @@
 <app-card
+  *ngIf="queries$ | async as queries"
   title="Endpoints"
   titleLink="/endpoints"
-  description="Select an endpoint and time range"
+  [description]="queries.length ? 'Select an endpoint and time range' : 'You need to add an endpoint first to view metrics here'"
   icon="/assets/img/tabler/broadcast.svg"
 >
+  <div *ngIf="!queries.length" class="endpoint-onboarding">
+    You can do that by <a href="https://orbitalhq.com/docs/querying/queries-as-endpoints" target="_blank">following the documentation</a> or by saving a query in the <a routerLink="query/editor">query editor</a> and then publishing it from there.
+  </div>
   <app-endpoint-monitor
-    *ngIf="queries$ | async as queries"
+    *ngIf="queries.length"
     [onlyShowControlsInHeader]="true"
     [endpointName$]="selectedEndpoint$"
   >
