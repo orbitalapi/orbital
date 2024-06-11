@@ -2,6 +2,7 @@ package com.orbitalhq.spring
 
 import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.query.caching.StateStoreProvider
+import com.orbitalhq.query.connectors.NoOperationInvocationEventConsumer
 import com.orbitalhq.query.connectors.OperationCacheProviderBuilder
 import com.orbitalhq.query.connectors.OperationInvocationEventConsumer
 import com.orbitalhq.query.connectors.OperationInvoker
@@ -37,7 +38,7 @@ class EnableVyneConfiguration {
       operationCacheFactory: OperationCacheFactory,
       stateStoreProvider: StateStoreProvider?,
       meterRegistry: MeterRegistry,
-      operationInvocationEventConsumer: OperationInvocationEventConsumer
+      operationInvocationEventConsumer: OperationInvocationEventConsumer = NoOperationInvocationEventConsumer
    ): VyneFactory {
       return VyneFactory(
          schemaProvider,

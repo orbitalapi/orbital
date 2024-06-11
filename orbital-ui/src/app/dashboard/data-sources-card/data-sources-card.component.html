@@ -35,7 +35,7 @@
       <strong>{{conn.connectionName}}</strong>
       <app-connection-status [status]="conn.connectionStatus" [hideTimestamp]="true"></app-connection-status>
       <a
-        class="error-message"
+        class="error-message link"
         [routerLink]="'/data-source-manager/' + conn.packageIdentifier.uriSafeId + '/' + conn.connectionName"
       >
         {{conn.connectionStatus.message}}

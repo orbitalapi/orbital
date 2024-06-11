@@ -90,7 +90,7 @@ export class EndpointListComponent {
               private changeDetector: ChangeDetectorRef) {
     this.queries$ = typeService.getQueries()
       .pipe(
-        map(savedQueries => savedQueries.filter(savedQuery => savedQuery.httpEndpoint || savedQuery.websocketOperation)),
+        map(savedQueries => savedQueries.filter(savedQuery => savedQuery.httpEndpoint || savedQuery.websocketOperation || savedQuery.queryKind === "Stream")),
         tap(next => {
           this.hasStreamingQueries = next.some(query => query.queryKind === "Stream")
         })

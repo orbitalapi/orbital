@@ -1,8 +1,8 @@
-import { CommonModule, DecimalPipe, TitleCasePipe } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, Input, OnInit } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
-import { TuiDataListModule, TuiNotificationModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
+import {CommonModule, DecimalPipe, TitleCasePipe} from '@angular/common';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, Input, OnInit} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {FormsModule} from '@angular/forms';
+import {TuiDataListModule, TuiNotificationModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
 import {
   TuiBadgeModule,
   TuiCheckboxLabeledModule,
@@ -21,15 +21,17 @@ import {
   ApexYAxis,
   NgApexchartsModule
 } from 'ng-apexcharts';
-import { BehaviorSubject, combineLatestWith, filter, interval, Observable, of } from 'rxjs';
-import { catchError, mergeMap, startWith, tap } from 'rxjs/operators';
-import { CodeViewerModule } from '../code-viewer/code-viewer.module';
-import { ExpandingPanelSetModule } from '../expanding-panelset/expanding-panel-set.module';
+import {BehaviorSubject, combineLatestWith, filter, interval, Observable, of} from 'rxjs';
+import {catchError, mergeMap, startWith, tap} from 'rxjs/operators';
+import {CodeViewerModule} from '../code-viewer/code-viewer.module';
+import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
 import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
-import { PipelineService } from '../pipelines/pipelines.service';
-import { DataSeries, MetricsPeriod, MetricsService, StreamMetricsData } from '../services/metrics.service';
-import { SavedQuery } from '../services/types.service';
+import {DataSeries, MetricsPeriod, MetricsService, StreamMetricsData} from '../services/metrics.service';
+import {SavedQuery} from '../services/types.service';
 import {UiCustomisations} from "../../environments/ui-customisations";
+import {LineageDisplayModule} from "../lineage-display/lineage-display.module";
+import {QueryPlan} from "../services/query.service";
+import {AppInfoService, FeatureToggles} from "../services/app-info.service";
 
 type ChartConfig = {
   title: string;
@@ -55,6 +57,11 @@ type MetricsPeriodToDescription = {
   selector: 'app-endpoint-monitor',
   standalone: true,
   template: `
+    <ng-container *ngIf="queryPlan?.steps && featureToggles?.queryPlanModeEnabled">
+      <app-panel-header title="Overview" [class.no-header]="onlyShowControlsInHeader"/>
+      <app-query-lineage [rows]="queryPlan?.steps"/>
+    </ng-container>
+
     <app-panel-header title="Metrics" [class.no-header]="onlyShowControlsInHeader">
       <ng-content select="header-controls">
       </ng-content>
@@ -98,7 +105,8 @@ type MetricsPeriodToDescription = {
       It looks like metrics are unavailable. Check the docs on <a target="_blank" class="link" [href]="UiCustomisations.docsLinks.configureMetricsReporting">how to configure Prometheus</a>  to capture observability data on queries and streams.
     </tui-notification>
 
-    <div *ngFor="let chartConfig of chartConfigs; trackBy: chartConfigTitle" class="chart-row" [class.is-loading]="isChartLoading">
+    <div *ngFor="let chartConfig of chartConfigs; trackBy: chartConfigTitle" class="chart-row"
+         [class.is-loading]="isChartLoading">
       <div class="label-box">
         <h4 class="label">{{ chartConfig.title }}</h4>
         <div class="hero-datapoint">
@@ -136,7 +144,8 @@ type MetricsPeriodToDescription = {
     TitleCasePipe,
     DecimalPipe,
     TuiTextfieldControllerModule,
-    TuiProgressModule
+    TuiProgressModule,
+    LineageDisplayModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -146,6 +155,9 @@ export class EndpointMonitorComponent implements OnInit {
 
   @Input()
   endpointName$: Observable<string>
+
+  @Input()
+  queryPlan: QueryPlan
 
   @Input()
   streamLoadingError: string
@@ -192,14 +204,19 @@ export class EndpointMonitorComponent implements OnInit {
   metricsAvailable: boolean = true;
 
   readonly chartConfigTitle = (index: number, item: ChartConfig): string => item.title;
-
+  featureToggles: FeatureToggles;
   readonly stringifyPeriod = (item: MetricsPeriodToDescription) => item.label;
 
   constructor(
     private metricsService: MetricsService,
     private changeDetector: ChangeDetectorRef,
-    private destroyRef: DestroyRef
+    private destroyRef: DestroyRef,
+    private appInfoService: AppInfoService
   ) {
+    appInfoService.getConfig()
+      .subscribe(next => {
+        this.featureToggles = next.featureToggles
+      });
   }
 
   ngOnInit(): void {

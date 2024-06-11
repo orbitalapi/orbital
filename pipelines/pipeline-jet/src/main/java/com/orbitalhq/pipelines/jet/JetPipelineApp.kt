@@ -21,6 +21,8 @@ import com.orbitalhq.pipelines.jet.source.PipelineSourceBuilder
 import com.orbitalhq.pipelines.jet.source.PipelineSourceProvider
 import com.orbitalhq.pipelines.jet.streams.StreamStateManagerHazelcastConfig
 import com.orbitalhq.pipelines.jet.streams.StreamStatusMapStore
+import com.orbitalhq.query.connectors.NoOperationInvocationEventConsumer
+import com.orbitalhq.query.connectors.OperationInvocationEventConsumer
 import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
 import com.orbitalhq.schema.consumer.SchemaConfigSourceLoader
 import com.orbitalhq.schemas.readers.SourceConverterRegistry
@@ -102,6 +104,9 @@ class JetPipelineApp {
    fun sinkProvider(builders: List<PipelineSinkBuilder<*, *>>): PipelineSinkProvider {
       return PipelineSinkProvider(builders)
    }
+
+   @Bean
+   fun noOpEventConsumer():OperationInvocationEventConsumer = NoOperationInvocationEventConsumer
 
    @Bean
    fun webClientCustomizer(

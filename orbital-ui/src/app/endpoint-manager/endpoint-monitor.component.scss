@@ -5,6 +5,12 @@
   position: relative;
 }
 
+app-query-lineage {
+  height: 300px;
+  display: block;
+  // compensate for internal margin
+  margin: 0 -1rem;
+}
 progress {
   position: absolute;
   top: 44px;

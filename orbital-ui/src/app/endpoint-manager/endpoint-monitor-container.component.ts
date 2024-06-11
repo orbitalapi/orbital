@@ -1,19 +1,22 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { ActivatedRoute } from '@angular/router';
-import { TuiDialogService, } from '@taiga-ui/core';
-import { TUI_PROMPT, TuiBadgeModule, TuiPromptData, TuiStatus, TuiToggleModule } from '@taiga-ui/kit';
-import { combineLatestWith, filter, Observable, of } from 'rxjs';
-import { map, mergeMap } from 'rxjs/operators';
-import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
-import { PipelineService, StreamRunningState, StreamStatus } from '../pipelines/pipelines.service';
+import {CommonModule} from '@angular/common';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject} from '@angular/core';
+import {FormsModule} from '@angular/forms';
+import {ActivatedRoute} from '@angular/router';
+import {TuiDialogService,} from '@taiga-ui/core';
+import {TUI_PROMPT, TuiBadgeModule, TuiPromptData, TuiStatus, TuiToggleModule} from '@taiga-ui/kit';
+import {combineLatestWith, filter, Observable, of} from 'rxjs';
+import {map, mergeMap, tap} from 'rxjs/operators';
+import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
+import {PipelineService, StreamRunningState, StreamStatus} from '../pipelines/pipelines.service';
 import {
   PublishedEndpointInfoComponent
 } from '../query-panel/query-editor/query-editor-toolbar/published-endpoint-info.component';
-import { SavedQuery } from '../services/types.service';
-import { TypesService } from '../services/types.service';
-import { EndpointMonitorComponent } from './endpoint-monitor.component';
+import {SavedQuery} from '../services/types.service';
+import {TypesService} from '../services/types.service';
+import {EndpointMonitorComponent} from './endpoint-monitor.component';
+import {ParsedQuery, QueryService} from "../services/query.service";
+import {LineageGraphModule} from "../type-viewer/lineage-graph/lineage-graph.module";
+import {LineageDisplayModule} from "../lineage-display/lineage-display.module";
 
 @Component({
   selector: 'app-endpoint-monitor-container',
@@ -34,6 +37,7 @@ import { EndpointMonitorComponent } from './endpoint-monitor.component';
       </ng-container>
       <app-endpoint-monitor
         [endpointName$]="endpointName$"
+        [queryPlan]="(parsedQuery$ | async)?.queryPlan"
         [query$]="query$"
         [streamLoadingError]="streamLoadingError"
       ></app-endpoint-monitor>
@@ -47,7 +51,9 @@ import { EndpointMonitorComponent } from './endpoint-monitor.component';
     TuiBadgeModule,
     EndpointMonitorComponent,
     FormsModule,
-    PublishedEndpointInfoComponent
+    PublishedEndpointInfoComponent,
+    LineageGraphModule,
+    LineageDisplayModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -56,6 +62,7 @@ export class EndpointMonitorContainerComponent {
   query$: Observable<SavedQuery>
   endpointName$: Observable<string>
   streamLoadingError: string
+  parsedQuery$: Observable<ParsedQuery>
 
   private streamStatus: StreamStatus
 
@@ -75,6 +82,7 @@ export class EndpointMonitorContainerComponent {
     private typeService: TypesService,
     private changeDetector: ChangeDetectorRef,
     private pipelineService: PipelineService,
+    private queryService: QueryService,
     @Inject(TuiDialogService) private readonly dialogs: TuiDialogService,
   ) {
     this.endpointName$ = activatedRoute.paramMap.pipe(
@@ -87,6 +95,11 @@ export class EndpointMonitorContainerComponent {
     this.query$ = this.endpointName$.pipe(
       mergeMap(endpoint => {
         return typeService.getQuery(endpoint)
+          .pipe(
+            tap(savedQuery => {
+              this.parsedQuery$ = queryService.compileQuery(savedQuery.sources[0].content)
+            })
+          )
       })
     )
 
@@ -151,10 +164,10 @@ export class EndpointMonitorContainerComponent {
           closeable: false,
           dismissible: false,
         }).pipe(map(confirmed => {
-          return { savedQuery, confirmed }
+          return {savedQuery, confirmed}
         }))
       }),
-      mergeMap(({ savedQuery, confirmed }) => {
+      mergeMap(({savedQuery, confirmed}) => {
         if (confirmed) {
           return this.pipelineService.updateStreamStatus(savedQuery.name.parameterizedName, targetState)
         } else {

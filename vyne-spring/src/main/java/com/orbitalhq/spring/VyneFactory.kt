@@ -5,16 +5,15 @@ import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
-import com.orbitalhq.models.DefinedInSchema
-import com.orbitalhq.models.TypeNamedInstance
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.Fact
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.caching.StateStoreProvider
-import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
 import com.orbitalhq.query.connectors.CountingOperationInvokerDecorator
+import com.orbitalhq.query.connectors.NoOperationInvocationEventConsumer
 import com.orbitalhq.query.connectors.OperationInvocationEventConsumer
+import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.graph.operationInvocation.cache.OperationCacheFactory
 import com.orbitalhq.query.planner.QueryPlanner
 import com.orbitalhq.query.projection.LocalProjectionProvider
@@ -48,7 +47,7 @@ class VyneFactory(
    private val stateStoreProvider: StateStoreProvider? = null,
    private val metricsReporter: QueryMetricsReporter = NoOpMetricsReporter,
    private val queryPlanner: QueryPlanner = QueryPlanner(),
-   private val operationInvocationEventConsumer: OperationInvocationEventConsumer
+   private val operationInvocationEventConsumer: OperationInvocationEventConsumer = NoOperationInvocationEventConsumer
 ) : FactoryBean<Vyne>, VyneProvider {
 
    override fun isSingleton() = true
