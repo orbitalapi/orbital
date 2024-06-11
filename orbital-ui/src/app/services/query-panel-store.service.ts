@@ -148,7 +148,7 @@ export class QueryPanelStoreService {
   }
 
   private checkForDeprecatedProps(queries: LocalStorageQuery[]): LocalStorageQuery[] {
-    return queries.map(query => {
+    return queries?.map(query => {
       if (isNullOrUndefined(query.conversationMessages)) {
         query.conversationMessages = []
       } else if (!isNullOrUndefined(query['chatQuery'])) {
