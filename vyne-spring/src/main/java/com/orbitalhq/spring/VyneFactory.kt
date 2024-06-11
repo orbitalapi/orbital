@@ -13,6 +13,8 @@ import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
+import com.orbitalhq.query.connectors.CountingOperationInvokerDecorator
+import com.orbitalhq.query.connectors.OperationInvocationEventConsumer
 import com.orbitalhq.query.graph.operationInvocation.cache.OperationCacheFactory
 import com.orbitalhq.query.planner.QueryPlanner
 import com.orbitalhq.query.projection.LocalProjectionProvider
@@ -45,7 +47,8 @@ class VyneFactory(
    private val formatSpecRegistry: FormatSpecRegistry,
    private val stateStoreProvider: StateStoreProvider? = null,
    private val metricsReporter: QueryMetricsReporter = NoOpMetricsReporter,
-   private val queryPlanner: QueryPlanner = QueryPlanner()
+   private val queryPlanner: QueryPlanner = QueryPlanner(),
+   private val operationInvocationEventConsumer: OperationInvocationEventConsumer
 ) : FactoryBean<Vyne>, VyneProvider {
 
    override fun isSingleton() = true
@@ -79,7 +82,9 @@ class VyneFactory(
          queryEngineFactory = QueryEngineFactory.withOperationInvokers(
             vyneCacheConfiguration,
             CacheAwareOperationInvocationDecorator.decorateAll(
-               operationInvokers,
+               CountingOperationInvokerDecorator.decorateAll(
+                  operationInvokers, operationInvocationEventConsumer
+               ),
                vyneCacheConfiguration.operationCache.maxCachedOperations,
                operationCacheFactory.getOperationCache(queryOptions.cachingStrategy)
             ),

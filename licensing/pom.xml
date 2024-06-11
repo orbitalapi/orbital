@@ -13,7 +13,6 @@
    <packaging>pom</packaging>
    <modules>
       <module>license-client</module>
-      <module>license-vendor</module>
       <module>license-api</module>
    </modules>
 

@@ -1,5 +1,6 @@
 package com.orbitalhq.licensing
 
+import arrow.core.Either
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.io.Resources
 import com.orbitalhq.utils.Ids
@@ -7,6 +8,7 @@ import com.orbitalhq.utils.Names
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.scheduling.TaskScheduler
 import org.springframework.scheduling.annotation.EnableScheduling
@@ -17,6 +19,7 @@ import kotlin.system.exitProcess
 
 @Configuration
 @EnableScheduling
+@ComponentScan
 class LicenseConfig {
 
    private val logger = KotlinLogging.logger {}
@@ -28,6 +31,16 @@ class LicenseConfig {
       Paths.get("/opt/var/orbital/license/license.json"),
    )
 
+   @Bean
+   fun licenseValidator(@Value("\${vyne.license.path:#{null}}") licensePath: Path?): LicenseValidator {
+      val publicKey = Resources.toByteArray(Resources.getResource("vyne-license-pub.der"))
+      val validator = LicenseValidator.forPublicKey(
+         publicKey,
+         fallbackLicenseDuration = LicenseValidator.defaultFallbackLicenseDuration
+      )
+      return validator
+   }
+
    /**
     * Loads a license, searching from default paths, and optionally including a user
     * specified path.
@@ -35,12 +48,7 @@ class LicenseConfig {
     * If license validation fails, a fallback license is issued, which expires shortly.
     */
    @Bean
-   fun license(@Value("\${vyne.license.path:#{null}}") licensePath: Path?): License {
-      val publicKey = Resources.toByteArray(Resources.getResource("vyne-license-pub.der"))
-      val validator = LicenseValidator.forPublicKey(
-         publicKey,
-         fallbackLicenseDuration = LicenseValidator.defaultFallbackLicenseDuration
-      )
+   fun license(@Value("\${vyne.license.path:#{null}}") licensePath: Path?, validator: LicenseValidator): License {
       val pathsToSearch = if (licensePath != null) {
          listOf(licensePath) + defaultLicenseSearchPaths
       } else {
@@ -66,13 +74,16 @@ class LicenseConfig {
          }.mapNotNull { licensePath ->
             try {
                logger.info { "Attempting to load license from ${licensePath.toAbsolutePath()}" }
-               val loadedLicense = loadUnvalidatedLicense(licensePath)
-               if (licenseValidator.isValidLicense(loadedLicense)) {
-                  logger.info { "Successfully loaded license at ${licensePath.toAbsolutePath()}" }
-                  loadedLicense
-               } else {
-                  logger.warn { "License found at ${licensePath.toAbsolutePath()} is not valid.  Will continue looking" }
-                  null
+               when (val validationResult = licenseValidator.readAndValidateLicense(licensePath)) {
+                  is Either.Left -> {
+                     logger.warn { "License found at ${licensePath.toAbsolutePath()} is not valid - ${validationResult.value.message}.  Will continue looking" }
+                     null
+                  }
+
+                  is Either.Right -> {
+                     logger.info { "Successfully loaded license at ${licensePath.toAbsolutePath()}" }
+                     validationResult.value
+                  }
                }
             } catch (e: Exception) {
                logger.warn { "Failed to load license from ${licensePath.toAbsolutePath()} - ${e.message}.  Will continue looking" }
@@ -89,23 +100,14 @@ class LicenseConfig {
    }
 
    private fun getOrCreateFallbackLicense(licenseValidator: LicenseValidator): License {
-      return if (Files.exists(fallbackLicensePath)) {
-         logger.info { "Using existing fallback license at ${fallbackLicensePath.toFile().canonicalPath}" }
-         loadUnvalidatedLicense(fallbackLicensePath).copy(isFallbackLicense = true)
-      } else {
-         val name = Names.randomName(suffix = Ids.id("", 4))
-         val license = licenseValidator.fallbackLicense(name)
-         logger.info { "Creating new fallback license at $fallbackLicensePath" }
-         Signing.objectMapper.writerWithDefaultPrettyPrinter().writeValue(fallbackLicensePath.toFile(), license)
-         logger.info { "Fallback license for $name created at ${fallbackLicensePath.toFile().canonicalPath}" }
-         license
-      }
+      val name = Names.randomName(suffix = Ids.id("", 4))
+      val license = licenseValidator.fallbackLicense(name)
+      logger.info { "Creating new fallback license at $fallbackLicensePath" }
+      Signing.objectMapper.writerWithDefaultPrettyPrinter().writeValue(fallbackLicensePath.toFile(), license)
+      logger.info { "Fallback license for $name created at ${fallbackLicensePath.toFile().canonicalPath}" }
+      return license
    }
 
-   private fun loadUnvalidatedLicense(licensePath: Path): License {
-      val licenseJson = licensePath.toFile().readText()
-      return Signing.objectMapper.readValue(licenseJson)
-   }
 
    @Bean
    fun licenseMonitor(
