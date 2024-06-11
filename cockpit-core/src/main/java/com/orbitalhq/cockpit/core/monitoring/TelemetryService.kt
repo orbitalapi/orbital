@@ -16,8 +16,8 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import java.time.Duration
 import java.time.Instant
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 /**
@@ -82,11 +82,10 @@ class TelemetryService(
     }
 
     private fun buildStreamMetrics(query: TaxiQlQuery, window: MetricsWindow, metricsSpecs: List<DataMetricSpec>): Mono<StreamMetricsData> {
-        val endTime = Instant.now()
-        val startTime = endTime.minus(window.duration)
+        val dateRange = window.asRange()
         val stepSize = "30s"
         val httpRequests: List<Mono<Pair<DataMetricSpec, RawSeriesData>>> = metricsSpecs.map { spec ->
-            loadDataSeries(startTime, endTime, spec.promQlQuery(query.name.fullyQualifiedName, stepSize), stepSize)
+            loadDataSeries(dateRange.start, dateRange.endInclusive, spec.promQlQuery(query.name.fullyQualifiedName, stepSize), stepSize)
                 .map { spec to it }
         }
         return Flux.merge(httpRequests)
@@ -104,8 +103,9 @@ class TelemetryService(
     }
 
    private fun buildStreamMetrics(window: MetricsWindow, metricsSpecs: List<AggregateMetricSpec>): Mono<StreamMetricsData> {
-      val endTime = Instant.now()
-      val startTime = endTime.minus(window.duration)
+      val range = window.asRange()
+      val endTime = range.endInclusive
+      val startTime = range.start
       val stepSize = "30s"
       val httpRequests: List<Mono<Pair<AggregateMetricSpec, RawSeriesData>>> = metricsSpecs.map { spec ->
          loadDataSeries(startTime, endTime, spec.promQlQuery(stepSize), stepSize)
@@ -155,18 +155,6 @@ class TelemetryService(
     private fun buildQueryMetrics(query: TaxiQlQuery): Mono<StreamMetricsData> {
         TODO("Not yet implemented")
     }
-}
-
-enum class MetricsWindow(val duration: Duration) {
-    Last30Seconds(Duration.ofSeconds(30)),
-    LastMinute(Duration.ofMinutes(1)),
-    Last5Minutes(Duration.ofMinutes(5)),
-    LastHour(Duration.ofMinutes(60)),
-    Last4Hours(Duration.ofHours(4)),
-    LastDay(Duration.ofDays(1)),
-    Last7Days(Duration.ofDays(7)),
-    Last30Days(Duration.ofDays(30)),
-
 }
 
 

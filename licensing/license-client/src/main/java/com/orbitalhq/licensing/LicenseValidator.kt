@@ -1,6 +1,12 @@
 package com.orbitalhq.licensing
 
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
+import com.fasterxml.jackson.module.kotlin.readValue
 import mu.KotlinLogging
+import org.springframework.http.HttpStatus
+import org.springframework.web.bind.annotation.ResponseStatus
 import java.nio.file.Path
 import java.security.PublicKey
 import java.security.spec.X509EncodedKeySpec
@@ -16,26 +22,46 @@ class LicenseValidator(
    private val logger = KotlinLogging.logger {}
 
 
+   fun readAndValidateLicense(licensePath: Path): Either<InvalidLicenseException,License> {
+      val licenseJson = licensePath.toFile().readText()
+      return readAndValidateLicense(licenseJson)
+
+   }
+   fun readAndValidateLicense(licenseJson: String): Either<InvalidLicenseException,License> {
+      val unvalidatedLicense: License = Signing.objectMapper.readValue(licenseJson)
+      val (isValid,errorMessage) = validateLicense(unvalidatedLicense)
+      return if (isValid) {
+         unvalidatedLicense.right()
+      } else {
+         InvalidLicenseException(errorMessage).left()
+      }
+   }
+
    /**
     * Returns a fallback license, which allows the platform to run
     * if no license was found
     */
    fun fallbackLicense(licensee: String) = License.unlicensed(clock.instant().plus(fallbackLicenseDuration), licensee)
 
-   fun isValidLicense(license: License): Boolean {
+   private fun validateLicense(license: License): Pair<Boolean, String> {
       return when {
          !verifySignature(license) -> {
             logger.warn { "License failed verification." }
-            false
+            false to "License failed verification"
          }
+
          license.expiresOn.isBefore(clock.instant()) -> {
-            logger.warn { "License expired on ${license.expiresOn} which is before current time (${clock.instant()}." }
-            false
+            false to "License expired on ${license.expiresOn} which is before current time (${clock.instant()}."
          }
+
          else -> {
-            true
+            true to "OK"
          }
       }
+   }
+
+   fun isValidLicense(license: License): Boolean {
+      return validateLicense(license).first
    }
 
 
@@ -78,3 +104,6 @@ class LicenseValidator(
       }
    }
 }
+
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+class InvalidLicenseException(message: String) : RuntimeException(message)

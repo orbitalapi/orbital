@@ -3,78 +3,81 @@ package com.orbitalhq.licensing
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
-import com.orbitalhq.licensing.vendor.LicenseVendor
+import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
 import org.junit.Test
-import java.time.Duration
 import java.time.Instant
 import kotlin.io.path.toPath
 
+/**
+ * NOTE: This test validates licenses that were created with the external license-vendor app.
+ * To regenerate, they need to be regenerated using that app.
+ * See ValidationGenerationTest
+ */
 class LicenseValidatorTest {
 
-   val vendor = LicenseVendor.forPrivateKeyAtPath(
-      Resources.getResource("test-license-key.der").toURI().toPath()
-   )
    val loader = LicenseValidator.forPublicKeyAtPath(Resources.getResource("test-license-key_pub.der").toURI().toPath())
 
    val license = License(
       "Jimmy",
       Instant.parse("2030-02-14T15:30:00Z"),
       Instant.parse("2019-02-14T15:30:00Z"),
-      LicensedEdition.ENTERPRISE
+      LicensedEdition.ENTERPRISE,
+      quotas = emptyList()
    )
 
    @Test
    fun `can generate and load a license with a valid keypair`() {
-      val signedLicense = vendor.generateSignedLicense(license)
-      val licenseJson = Signing.objectMapper.writerWithDefaultPrettyPrinter()
-         .writeValueAsString(signedLicense)
-
-      val licenseFromJson = Signing.objectMapper.readValue<License>(licenseJson)
+      val validLicenseJson = Resources.getResource("test-licenses/valid-license.json")
+         .readText()
+      val licenseFromJson = Signing.objectMapper.readValue<License>(validLicenseJson)
       loader.verifySignature(licenseFromJson)
-         .should.be.`true`
+         .shouldBeTrue()
    }
 
    @Test
-   fun `license with invalid license fails verification`() {
-      val invalidVendor = LicenseVendor.forPrivateKeyAtPath(
-         Resources.getResource("invalid-license.der").toURI().toPath()
-      )
-      val signedLicense = invalidVendor.generateSignedLicense(license)
-      loader.verifySignature(signedLicense).should.be.`false`
+   fun `license signed with wrong keypair fails verification`() {
+      val licenseJson = Resources.getResource("test-licenses/license-with-wrong-keypair.json")
+         .readText()
+      val licenseFromJson = Signing.objectMapper.readValue<License>(licenseJson)
+      loader.verifySignature(licenseFromJson)
+         .shouldBeFalse()
    }
 
    @Test
    fun `license with invalid base64 characters in signature fails verification`() {
-      val invalidLicense = license.copy(signature = "Naughty naughty") // spaces aren't permitted
-      loader.verifySignature(invalidLicense)
-         .should.be.`false`
+      val validLicenseJson = Resources.getResource("test-licenses/tampered-license-invalid-chars-in-signature.json")
+         .readText()
+      val licenseFromJson = Signing.objectMapper.readValue<License>(validLicenseJson)
+      loader.verifySignature(licenseFromJson)
+         .shouldBeFalse()
    }
 
    @Test
    fun `license with invalid signature length fails verification`() {
-      val invalidLicense = license.copy(signature = "NaughtyNaughty") // causes a signature legnth exception
-      loader.verifySignature(invalidLicense)
-         .should.be.`false`
+      val validLicenseJson = Resources.getResource("test-licenses/tampered-license-invalid-signature.json")
+         .readText()
+      val licenseFromJson = Signing.objectMapper.readValue<License>(validLicenseJson)
+      loader.verifySignature(licenseFromJson)
+         .shouldBeFalse()
    }
 
    @Test
    fun `tampered license fails verification`() {
-      val signedLicense = vendor.generateSignedLicense(license)
-      val tamperedLicense = signedLicense.copy(edition = LicensedEdition.STARTER)
-      val licenseJson = Signing.objectMapper.writerWithDefaultPrettyPrinter()
-         .writeValueAsString(tamperedLicense)
-
-      val licenseFromJson = Signing.objectMapper.readValue<License>(licenseJson)
+      val validLicenseJson = Resources.getResource("test-licenses/tampered-license.json")
+         .readText()
+      val licenseFromJson = Signing.objectMapper.readValue<License>(validLicenseJson)
       loader.verifySignature(licenseFromJson)
-         .should.be.`false`
+         .shouldBeFalse()
    }
 
    @Test
    fun `expired license is not valid`() {
-      val expiredLicense = license.copy(expiresOn = Instant.now().minus(Duration.ofMinutes(1L)))
-      val signedExpiredLicense = vendor.generateSignedLicense(expiredLicense)
-
-      loader.isValidLicense(signedExpiredLicense).should.be.`false`
+      val validLicenseJson = Resources.getResource("test-licenses/expired-license.json")
+         .readText()
+      val licenseFromJson = Signing.objectMapper.readValue<License>(validLicenseJson)
+      loader.isValidLicense(licenseFromJson)
+         .shouldBeFalse()
    }
 
 

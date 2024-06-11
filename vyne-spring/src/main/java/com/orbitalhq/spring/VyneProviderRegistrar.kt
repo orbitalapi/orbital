@@ -3,6 +3,7 @@ package com.orbitalhq.spring
 import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.query.connectors.OperationCacheProviderBuilder
+import com.orbitalhq.query.connectors.OperationInvocationEventConsumer
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.graph.operationInvocation.cache.OperationCacheFactory
 import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCacheProviderBuilder
@@ -35,7 +36,8 @@ class EnableVyneConfiguration {
       formatSpecRegistry: FormatSpecRegistry,
       operationCacheFactory: OperationCacheFactory,
       stateStoreProvider: StateStoreProvider?,
-      meterRegistry: MeterRegistry
+      meterRegistry: MeterRegistry,
+      operationInvocationEventConsumer: OperationInvocationEventConsumer
    ): VyneFactory {
       return VyneFactory(
          schemaProvider,
@@ -45,12 +47,13 @@ class EnableVyneConfiguration {
          formatSpecRegistry = formatSpecRegistry,
          operationCacheFactory = operationCacheFactory,
          stateStoreProvider = stateStoreProvider,
-         metricsReporter = MicrometerMetricsReporter(meterRegistry)
+         metricsReporter = MicrometerMetricsReporter(meterRegistry),
+         operationInvocationEventConsumer = operationInvocationEventConsumer
       )
    }
 
    @Bean
-   fun operationCacheFactory(providers: List<OperationCacheProviderBuilder>):OperationCacheFactory {
+   fun operationCacheFactory(providers: List<OperationCacheProviderBuilder>): OperationCacheFactory {
       log().info("Orbital has the following OperationCacheProviderBuilders registered: ${providers.joinToString { it::class.simpleName!! }}")
       return OperationCacheFactory(providers = providers)
    }

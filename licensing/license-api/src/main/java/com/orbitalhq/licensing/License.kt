@@ -15,6 +15,7 @@ data class License(
    @JsonFormat(shape = JsonFormat.Shape.STRING)
    val timestamp: Instant,
    val edition: LicensedEdition,
+   val quotas: List<UsageQuota>,
    /**
     * Indciates that this license has been used becuase
     * one either wasn't provided, or wasn't valid (ie., was expired,
@@ -31,9 +32,11 @@ data class License(
             expiresOn,
             Instant.now(),
             LicensedEdition.STARTER,
+            emptyList(),
             true
          )
       }
+
       private val dateFormat = DateTimeFormatter
          .ofLocalizedDateTime(FormatStyle.FULL)
          .withLocale(Locale.UK)
@@ -42,7 +45,9 @@ data class License(
    }
 
    override fun toString(): String {
-      return "Licensed to ${this.licensee} with ${this.edition.name.toLowerCase().capitalize()} edition.  Expires on ${dateFormat.format(this.expiresOn)}."
+      return "Licensed to ${this.licensee} with ${
+         this.edition.name.toLowerCase().capitalize()
+      } edition.  Expires on ${dateFormat.format(this.expiresOn)}."
    }
 
    fun unsigned(): License = this.copy(signature = null)
@@ -55,18 +60,33 @@ data class License(
       require(this.signature == null) { "You should not verify an already signed license, as that mutates the claim.  Call .unlicensed()" }
       return Signing.objectMapper.writeValueAsBytes(this)
    }
+
+   fun quota(capability: MeteredCapability):UsageQuota {
+      return this.quotas.firstOrNull { it.capability == capability }
+         ?: UsageQuota(capability, 0)
+   }
 }
 
-enum class LicensedEdition(val enabledFeatures: List<LicensedFeature>, val limits: List<Limitation>) {
-   STARTER(enabledFeatures = emptyList(), limits = emptyList()),
-   PLATFORM(enabledFeatures = emptyList(), limits = emptyList()),
-   ENTERPRISE(enabledFeatures = emptyList(), limits = emptyList()),
+/**
+ * We group our capabilities into "Editions" - basically a collection
+ * of features that are enabled for the license
+ */
+enum class LicensedEdition(val enabledFeatures: List<LicensedFeature>) {
+   STARTER(enabledFeatures = emptyList()),
+   PLATFORM(enabledFeatures = emptyList()),
+   ENTERPRISE(enabledFeatures = emptyList()),
 }
 
-data class Limitation(
-   val name: String,
+data class UsageQuota(
+   val capability: MeteredCapability,
    val limit: Int
 )
+
+enum class MeteredCapability {
+   User,
+   Endpoint,
+   Invocation
+}
 
 enum class LicensedFeature {
 

@@ -1,0 +1,8 @@
+{
+  "licensee" : "This should say Jimmy",
+  "expiresOn" : "2030-02-14T15:30:00Z",
+  "timestamp" : "2019-02-14T15:30:00Z",
+  "edition" : "ENTERPRISE",
+  "quotas" : [ ],
+  "signature" : "NaughtyNaughty"
+}
