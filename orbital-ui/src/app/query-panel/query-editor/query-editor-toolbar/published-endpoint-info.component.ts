@@ -24,7 +24,7 @@ type QueryPayload = {
       <a
         *ngIf="showTitle && i === 0"
         [routerLink]="'/endpoints/'+query.queryName"
-        class="endpoint-link"
+        class="link endpoint-link"
       >
         <img src="assets/img/tabler/broadcast.svg" class="filter-link-color">
         {{query.queryName}}

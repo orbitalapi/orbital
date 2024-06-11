@@ -29,6 +29,7 @@ import { HeaderComponentLayoutModule } from '../header-component-layout/header-c
 import { PipelineService } from '../pipelines/pipelines.service';
 import { DataSeries, MetricsPeriod, MetricsService, StreamMetricsData } from '../services/metrics.service';
 import { SavedQuery } from '../services/types.service';
+import {UiCustomisations} from "../../environments/ui-customisations";
 
 type ChartConfig = {
   title: string;
@@ -93,6 +94,10 @@ type MetricsPeriodToDescription = {
     <tui-notification status="error" class="error-notification" *ngIf="streamLoadingError">
       {{ streamLoadingError }}
     </tui-notification>
+    <tui-notification status="neutral" class="error-notification" *ngIf="!metricsAvailable">
+      It looks like metrics are unavailable. Check the docs on <a target="_blank" class="link" [href]="UiCustomisations.docsLinks.configureMetricsReporting">how to configure Prometheus</a>  to capture observability data on queries and streams.
+    </tui-notification>
+
     <div *ngFor="let chartConfig of chartConfigs; trackBy: chartConfigTitle" class="chart-row" [class.is-loading]="isChartLoading">
       <div class="label-box">
         <h4 class="label">{{ chartConfig.title }}</h4>
@@ -184,6 +189,7 @@ export class EndpointMonitorComponent implements OnInit {
     }
   }
   chartConfigs: ChartConfig[] = [];
+  metricsAvailable: boolean = true;
 
   readonly chartConfigTitle = (index: number, item: ChartConfig): string => item.title;
 
@@ -191,7 +197,6 @@ export class EndpointMonitorComponent implements OnInit {
 
   constructor(
     private metricsService: MetricsService,
-    private pipelineService: PipelineService,
     private changeDetector: ChangeDetectorRef,
     private destroyRef: DestroyRef
   ) {
@@ -239,6 +244,7 @@ export class EndpointMonitorComponent implements OnInit {
   }
 
   private updateChartConfig(metricsData: StreamMetricsData) {
+    this.metricsAvailable = metricsData.metricsAvailable;
     this.chartConfigs = metricsData.series.map(dataSeries => {
       const dataPoints: [number, number][] = dataSeries.series.map(dataPoint => {
           let value: number = isNumeric(dataPoint.value.toString()) ? dataPoint.value * 1 : 0;
@@ -311,6 +317,8 @@ export class EndpointMonitorComponent implements OnInit {
 
     this.changeDetector.markForCheck();
   }
+
+  protected readonly UiCustomisations = UiCustomisations;
 }
 
 function isNumeric(str: any): boolean {

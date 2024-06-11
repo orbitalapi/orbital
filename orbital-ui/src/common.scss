@@ -39,10 +39,12 @@ $toolbar-height: 5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
+
   p {
     margin: 2rem 0;
     font-size: 1.2rem;
   }
+
   img {
     height: 20rem;
   }
@@ -58,6 +60,7 @@ $toolbar-height: 5rem;
   // Remove top paddins so that the list items align with the header bar
   padding-top: 0;
 }
+
 .mat-toolbar {
   position: sticky;
   top: 0;
@@ -152,6 +155,7 @@ $border-highlight: rgba($vyne-lilac, 0.6);
 
 .documentation {
   flex-grow: 1;
+
   table {
     width: 100%;
   }
@@ -163,7 +167,15 @@ $border-highlight: rgba($vyne-lilac, 0.6);
     margin-bottom: 0;
     font-weight: 700;
   }
+
   margin-bottom: 2rem;
 }
 
+.link {
+  text-decoration: none;
+  color: $primary;
 
+  &:hover {
+    text-decoration: underline;
+  }
+}
