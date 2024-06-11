@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import {RouterLink} from '@angular/router';
 import { TuiDataListModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
 import { TuiSelectModule } from '@taiga-ui/kit';
 import { BehaviorSubject, filter, Observable } from 'rxjs';
@@ -25,7 +26,8 @@ type QueryWithLabel = {
     TuiSelectModule,
     TuiTextfieldControllerModule,
     FormsModule,
-    TuiDataListModule
+    TuiDataListModule,
+    RouterLink
   ],
   templateUrl: './endpoint-stats-card.component.html',
   styleUrls: ['./endpoint-stats-card.component.scss'],
@@ -45,22 +47,27 @@ export class EndpointStatsCardComponent {
     ).subscribe(query => this.selectedEndpoint$.next(query.query))
 
     this.queries$ = typeService.getQueries().pipe(
+      map(queries => queries.filter(savedQuery => savedQuery.httpEndpoint || savedQuery.websocketOperation)),
       map(queries => {
-        const savedQueries = queries.map(query => {
-          return {
-            label: `${query.name.shortDisplayName} (${query.queryKind})`,
-            query: query.name.shortDisplayName
-          }
-        })
-        return [
-          {
-            label: "All queries & streams",
-            query: ""
-          },
-          ...savedQueries
-        ];
+        if (queries.length) {
+          const savedQueries = queries.map(query => {
+            return {
+              label: `${query.name.shortDisplayName} (${query.queryKind})`,
+              query: query.name.shortDisplayName
+            }
+          })
+          return [
+            {
+              label: "All queries & streams",
+              query: ""
+            },
+            ...savedQueries
+          ];
+        } else {
+          return []
+        }
       }),
-      tap(queries => this.selectedQuery$.next(queries[0]))
+      tap(queries => queries.length ? this.selectedQuery$.next(queries[0]): null)
     );
   }
 }

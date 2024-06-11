@@ -231,7 +231,9 @@ export class EndpointMonitorComponent implements OnInit {
         })
       )
       .subscribe( metricsData => {
-        this.updateChartConfig(metricsData);
+        if (metricsData) {
+          this.updateChartConfig(metricsData);
+        }
         this.chartLoadingError = null;
         this.isChartLoading = false;
         this.changeDetector.markForCheck();
