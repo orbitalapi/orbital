@@ -17,7 +17,6 @@ import org.springframework.web.reactive.function.client.bodyToMono
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Instant
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 
 /**
@@ -26,14 +25,14 @@ import java.time.format.DateTimeFormatter
  */
 @RestController
 class TelemetryService(
-    private val schemaProvider: SchemaProvider,
-    webClientBuilder: WebClient.Builder,
-    discoveryClient: DiscoveryClient
+   private val schemaProvider: SchemaProvider,
+   webClientBuilder: WebClient.Builder,
+   discoveryClient: DiscoveryClient
 ) {
 
-    private val webClient =
-        webClientBuilder.clone().filter(LoadBalancerFilterFunction(discoveryClient))
-            .build()
+   private val webClient =
+      webClientBuilder.clone().filter(LoadBalancerFilterFunction(discoveryClient))
+         .build()
 
    private val aggregateMetricSpecs = listOf(
       AggregateMetricSpecs.messagesReceived,
@@ -42,19 +41,19 @@ class TelemetryService(
       //AggregateMetricSpecs.failures
    )
 
-    private val streamDataMetricSpecs = listOf(
-        DataMetricSpecs.messagesReceived,
-        DataMetricSpecs.averageQueryDuration,
-        DataMetricSpecs.maxQueryDuration,
-        //DataMetricSpecs.failures
-    )
+   private val streamDataMetricSpecs = listOf(
+      DataMetricSpecs.messagesReceived,
+      DataMetricSpecs.averageQueryDuration,
+      DataMetricSpecs.maxQueryDuration,
+      //DataMetricSpecs.failures
+   )
 
-    private val queryDataMetricSpecs = listOf(
-        DataMetricSpecs.queryInvocations,
-        DataMetricSpecs.averageQueryDuration,
-        DataMetricSpecs.maxQueryDuration,
-        //DataMetricSpecs.failures
-    )
+   private val queryDataMetricSpecs = listOf(
+      DataMetricSpecs.queryInvocations,
+      DataMetricSpecs.averageQueryDuration,
+      DataMetricSpecs.maxQueryDuration,
+      //DataMetricSpecs.failures
+   )
 
    @GetMapping("/api/metrics/stream")
    fun getAggregateForAllStreams(
@@ -64,97 +63,113 @@ class TelemetryService(
    }
 
 
-    @GetMapping("/api/metrics/stream/{name}")
-    fun getMetricsForStream(
-        @PathVariable("name") qualifiedName: String,
-        @RequestParam(name = "period", required = false, defaultValue = "Last4Hours") period: MetricsWindow
-    ): Mono<StreamMetricsData> {
-        val query = try {
-            schemaProvider.schema
-                .taxi.query(qualifiedName)
-        } catch (e: Exception) {
-            throw NotFoundException("No query named $qualifiedName is present in this schema")
-        }
-        return when (query.asSavedQuery().queryKind) {
-            SavedQuery.QueryKind.Query -> buildStreamMetrics(query, period, queryDataMetricSpecs)
-            SavedQuery.QueryKind.Stream -> buildStreamMetrics(query, period, streamDataMetricSpecs)
-        }
-    }
+   @GetMapping("/api/metrics/stream/{name}")
+   fun getMetricsForStream(
+      @PathVariable("name") qualifiedName: String,
+      @RequestParam(name = "period", required = false, defaultValue = "Last4Hours") period: MetricsWindow
+   ): Mono<StreamMetricsData> {
+      val query = try {
+         schemaProvider.schema
+            .taxi.query(qualifiedName)
+      } catch (e: Exception) {
+         throw NotFoundException("No query named $qualifiedName is present in this schema")
+      }
+      return when (query.asSavedQuery().queryKind) {
+         SavedQuery.QueryKind.Query -> buildEndpointMetrics(query, period, queryDataMetricSpecs)
+         SavedQuery.QueryKind.Stream -> buildEndpointMetrics(query, period, streamDataMetricSpecs)
+      }
+   }
 
-    private fun buildStreamMetrics(query: TaxiQlQuery, window: MetricsWindow, metricsSpecs: List<DataMetricSpec>): Mono<StreamMetricsData> {
-        val dateRange = window.asRange()
-        val stepSize = "30s"
-        val httpRequests: List<Mono<Pair<DataMetricSpec, RawSeriesData>>> = metricsSpecs.map { spec ->
-            loadDataSeries(dateRange.start, dateRange.endInclusive, spec.promQlQuery(query.name.fullyQualifiedName, stepSize), stepSize)
-                .map { spec to it }
-        }
-        return Flux.merge(httpRequests)
-            .collectList()
-            .map { specsAndResults: List<Pair<DataMetricSpec, RawSeriesData>> ->
+   private fun buildEndpointMetrics(
+      query: TaxiQlQuery,
+      window: MetricsWindow,
+      metricsSpecs: List<DataMetricSpec>
+   ): Mono<StreamMetricsData> {
+      val dateRange = window.asRange()
+      val stepSize = "30s"
+      val httpRequests: List<Mono<Pair<PrometheusMetricSpec, Result<RawSeriesData>>>> = metricsSpecs.map { spec ->
+         loadDataSeries(
+            dateRange.start,
+            dateRange.endInclusive,
+            spec.promQlQuery(query.name.fullyQualifiedName, stepSize),
+            stepSize
+         )
+            .map { spec to it }
+      }
+      return buildMetricsDataFromResults(httpRequests)
+   }
 
-                // Sorting is important so that the charts appear in a consistent order on the UI
-                val dataSeries = specsAndResults.sortedBy { (spec, _) -> streamDataMetricSpecs.indexOf(spec) }
-                    .map { (spec, data) ->
-                        DataSeries(spec.title, spec.unitLabel, spec.yAxisUnit, data.series)
-                    }
-                val tags = specsAndResults.firstOrNull()?.second?.tags ?: emptyMap()
-                StreamMetricsData(tags, dataSeries)
-            }
-    }
-
-   private fun buildStreamMetrics(window: MetricsWindow, metricsSpecs: List<AggregateMetricSpec>): Mono<StreamMetricsData> {
+   private fun buildStreamMetrics(
+      window: MetricsWindow,
+      metricsSpecs: List<AggregateMetricSpec>
+   ): Mono<StreamMetricsData> {
       val range = window.asRange()
       val endTime = range.endInclusive
       val startTime = range.start
       val stepSize = "30s"
-      val httpRequests: List<Mono<Pair<AggregateMetricSpec, RawSeriesData>>> = metricsSpecs.map { spec ->
+      val httpRequests: List<Mono<Pair<PrometheusMetricSpec, Result<RawSeriesData>>>> = metricsSpecs.map { spec ->
          loadDataSeries(startTime, endTime, spec.promQlQuery(stepSize), stepSize)
             .map { spec to it }
       }
+
+      return buildMetricsDataFromResults(httpRequests)
+   }
+
+   private fun buildMetricsDataFromResults(httpRequests: List<Mono<Pair<PrometheusMetricSpec, Result<RawSeriesData>>>>): Mono<StreamMetricsData> {
       return Flux.merge(httpRequests)
          .collectList()
-         .map { specsAndResults: List<Pair<AggregateMetricSpec, RawSeriesData>> ->
-
+         .map { specsAndResults: List<Pair<PrometheusMetricSpec, Result<RawSeriesData>>> ->
             // Sorting is important so that the charts appear in a consistent order on the UI
-            val dataSeries = specsAndResults.sortedBy { (spec, _) -> aggregateMetricSpecs.indexOf(spec) }
-               .map { (spec, data) ->
-                  DataSeries(spec.title, spec.unitLabel, spec.yAxisUnit, data.series)
-               }
-            val tags = specsAndResults.firstOrNull()?.second?.tags ?: emptyMap()
-            StreamMetricsData(tags, dataSeries)
+            val (successes, failures) = specsAndResults.partition { it.second.isSuccess }
+            val loadedMetrics = successes
+               .map { (spec, result) -> spec to result.getOrNull()!! }
+            if (successes.isEmpty()) {
+               val errors = failures.mapNotNull { it.second.exceptionOrNull()!!.message }
+                  .distinct()
+               val errorMessage = "Loading metrics failed with the following errors: ${errors.joinToString(", ")}"
+               StreamMetricsData.unavailable(errorMessage)
+            } else {
+               val dataSeries = loadedMetrics
+                  .sortedBy { (spec, _) -> aggregateMetricSpecs.indexOf(spec) }
+                  .map { (spec, data) ->
+                     DataSeries(spec.title, spec.unitLabel, spec.yAxisUnit, data.series)
+                  }
+               val tags = loadedMetrics.firstOrNull()?.second?.tags ?: emptyMap()
+               StreamMetricsData(tags, dataSeries)
+            }
+
+
          }
    }
 
-    private fun loadDataSeries(
-        startTime: Instant,
-        endTime: Instant,
-        promQlQuery: String,
-        stepSize: String
-    ): Mono<RawSeriesData> {
-        // Hard-learnt lesson: Don't try to use spring's URI builder, as it gets thrown out by the {} symbols within the PromQL query
-        val uri = "http://${ServicesConfig.METRICS_SERVER_NAME}/api/v1/query_range?query={query}&start={start}&end={end}&step={step}"
+   private fun loadDataSeries(
+      startTime: Instant,
+      endTime: Instant,
+      promQlQuery: String,
+      stepSize: String
+   ): Mono<Result<RawSeriesData>> {
+      // Hard-learnt lesson: Don't try to use spring's URI builder, as it gets thrown out by the {} symbols within the PromQL query
+      val uri =
+         "http://${ServicesConfig.METRICS_SERVER_NAME}/api/v1/query_range?query={query}&start={start}&end={end}&step={step}"
 
-        return webClient.get().uri(
-            uri,
-            mapOf(
-                "query" to promQlQuery,
-                "start" to startTime.toIsoString(),
-                "end" to endTime.toIsoString(),
-                "step" to stepSize
-            )
-        ).retrieve().bodyToMono<PrometheusQueryRangeMetricsResult>()
-            .map { prometheusMetrics ->
-                val resultItem = prometheusMetrics.data.result.firstOrNull()
-                    ?: return@map RawSeriesData.empty
-                val tags = resultItem.metric
-                val metrics = resultItem.valuesAsTimestampedValues
-                RawSeriesData(tags, metrics)
-            }
-    }
-
-    private fun buildQueryMetrics(query: TaxiQlQuery): Mono<StreamMetricsData> {
-        TODO("Not yet implemented")
-    }
+      return webClient.get().uri(
+         uri,
+         mapOf(
+            "query" to promQlQuery,
+            "start" to startTime.toIsoString(),
+            "end" to endTime.toIsoString(),
+            "step" to stepSize
+         )
+      ).retrieve().bodyToMono<PrometheusQueryRangeMetricsResult>()
+         .map { prometheusMetrics ->
+            val resultItem = prometheusMetrics.data.result.firstOrNull()
+               ?: return@map Result.success(RawSeriesData.empty)
+            val tags = resultItem.metric
+            val metrics = resultItem.valuesAsTimestampedValues
+            Result.success(RawSeriesData(tags, metrics))
+         }
+         .onErrorResume { e -> Mono.just(Result.failure(e)) }
+   }
 }
 
 

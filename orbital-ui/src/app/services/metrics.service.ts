@@ -22,7 +22,9 @@ export class MetricsService {
 
 export interface StreamMetricsData {
     tags: { [index: string]: any };
-    series: DataSeries[]
+    series: DataSeries[];
+    metricsAvailable: boolean;
+    errorMessage: string | null;
 }
 export interface DataSeries {
   title: string;

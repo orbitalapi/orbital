@@ -1,11 +1,17 @@
 package com.orbitalhq.cockpit.core.monitoring
 
 data class AggregateMetricSpec(
-   val title: String,
-   val unitLabel: String,
-   val yAxisUnit: YAxisUnit,
+   override val title: String,
+   override val unitLabel: String,
+   override val yAxisUnit: YAxisUnit,
    val promQlQuery: (stepSize: String) -> String
-)
+) : PrometheusMetricSpec
+
+interface PrometheusMetricSpec {
+   val title: String
+   val unitLabel: String
+   val yAxisUnit: YAxisUnit
+}
 
 object AggregateMetricSpecs {
     val messagesReceived = AggregateMetricSpec(

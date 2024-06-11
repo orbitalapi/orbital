@@ -22,15 +22,6 @@
     }
   }
 
-  .endpoint-link {
-    text-decoration: none;
-    color: $primary;
-
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-
   .endpoint-path {
     img {
       margin-top: 0.1rem;

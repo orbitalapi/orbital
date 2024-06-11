@@ -4,7 +4,7 @@
   </div>
   <div class="title-with-description">
     <h3>
-      <a *ngIf="titleLink" [routerLink]="titleLink">{{title}}</a>
+      <a *ngIf="titleLink" [routerLink]="titleLink" class="link">{{title}}</a>
       <ng-container *ngIf="!titleLink">{{title}}</ng-container>
     </h3>
     <div>{{description}}</div>
