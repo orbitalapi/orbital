@@ -1,7 +1,7 @@
 <app-card
   title="Data sources"
   titleLink="/data-source-manager"
-  [description]="description$ | async"
+  [description]="description()"
   icon="/assets/img/tabler/plug.svg"
 >
   <ng-container ngProjectAs="header-controls">
@@ -15,15 +15,23 @@
       Add data source
     </button>
   </ng-container>
-  <ng-container *ngIf="(percentHealthy$ | async) as percentHealthy; else connectionLoading">
-    <progress tuiProgressBar [value]="percentHealthy" max="100"></progress>
+  <ng-container *ngIf="!connectionsLoading(); else connectionLoading">
+    <progress *ngIf="percentHealthy()" tuiProgressBar [value]="percentHealthy()" max="100"></progress>
   </ng-container>
   <ng-template #connectionLoading>
     <progress tuiProgressBar max="100"></progress>
   </ng-template>
-  <ng-container *ngIf="unhealthyConnections$ | async as unhealthyConnections">
-    <h4 *ngIf="unhealthyConnections.length">Unhealthy connections:</h4>
-    <div *ngFor="let conn of unhealthyConnections" class="connection-error">
+  <ng-container *ngIf="definitionsWithErrors().length">
+    <tui-notification status='warning'>
+      <strong>Connections with definition error(s):</strong>
+      <div *ngFor="let conn of definitionsWithErrors()" class="connection-error">
+        <div>{{conn.configFileName}}</div>
+      </div>
+    </tui-notification>
+  </ng-container>
+  <ng-container *ngIf="unhealthyConnections()">
+    <h4 *ngIf="unhealthyConnections().length">Unhealthy connection(s):</h4>
+    <div *ngFor="let conn of unhealthyConnections()" class="connection-error">
       <strong>{{conn.connectionName}}</strong>
       <app-connection-status [status]="conn.connectionStatus" [hideTimestamp]="true"></app-connection-status>
       <a

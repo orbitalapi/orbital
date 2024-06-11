@@ -21,7 +21,7 @@ export class SchemaNotificationService {
     // followed by stream of updates over websocket
     this.schemaUpdates$ = this.getSchemaSummary()
       .pipe(
-        concatWith(websocketService.connect('/api/schema/updates')),
+        concatWith(websocketService.connect<SchemaUpdatedNotification>('/api/schema/updates')),
         shareReplay(1)
       );
   }

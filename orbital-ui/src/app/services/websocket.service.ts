@@ -27,7 +27,7 @@ export class WebsocketService {
    * Returns a websocket that receives updates, and reconnects on failure.
    * Does not support sending
    */
-  connect(path: string): Observable<any> {
+  connect<T>(path: string): Observable<T> {
     return this.websocket(path)
       .pipe(
         retryWhen((errors) => errors.pipe(delay(this.RETRY_SECONDS)))

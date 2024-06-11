@@ -1,27 +1,31 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import {ChangeDetectionStrategy, Component, signal} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { TuiButtonModule } from '@taiga-ui/core';
+import {TuiButtonModule, TuiNotificationModule} from '@taiga-ui/core';
 import { TuiProgressModule } from '@taiga-ui/kit';
-import { BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { ConnectionStatusComponent } from '../../data-source-manager/connection-status/connection-status.component';
-import { ConnectorSummary, DbConnectionService } from '../../db-connection-editor/db-importer.service';
+import {ConnectorSummary, DbConnectionService, PackageWithError} from '../../db-connection-editor/db-importer.service';
 import { CardComponent } from '../card/card.component';
 
 @Component({
   selector: 'app-data-sources-card',
   standalone: true,
-  imports: [CommonModule, CardComponent, TuiProgressModule, TuiButtonModule, RouterLink, ConnectionStatusComponent],
+  imports: [
+    CommonModule, CardComponent, TuiProgressModule, TuiButtonModule, RouterLink, ConnectionStatusComponent,
+    TuiNotificationModule
+  ],
   templateUrl: './data-sources-card.component.html',
   styleUrls: ['./data-sources-card.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DataSourcesCardComponent {
-  description$: BehaviorSubject<string> = new BehaviorSubject<string>("Loading...");
-  unhealthyConnections$: BehaviorSubject<ConnectorSummary[]> = new BehaviorSubject([])
-  percentHealthy$: BehaviorSubject<number> = new BehaviorSubject<number>(undefined);
+  connectionsLoading = signal<boolean>(true)
+  description = signal<string>("Loading...");
+  unhealthyConnections = signal<ConnectorSummary[]>([])
+  definitionsWithErrors = signal<PackageWithError[]>([])
+  percentHealthy = signal<number>(null);
 
   constructor(
     private dbService: DbConnectionService,
@@ -38,9 +42,13 @@ export class DataSourcesCardComponent {
             }
             return acc;
           }, { healthyConnections: [], unhealthyConnections: [] });
-          this.description$.next(`${healthyConnections.length} out of ${connLength} healthy`);
-          this.unhealthyConnections$.next(unhealthyConnections);
-          this.percentHealthy$.next((healthyConnections.length/connLength)*100);
+          const healthDescription = `${healthyConnections.length} out of ${connLength} healthy`
+          const definitionsWithErrorsDescription = connections.definitionsWithErrors.length ? `${connections.definitionsWithErrors.length} has definition error(s)` : null
+          this.description.set(definitionsWithErrorsDescription || healthDescription)
+          this.definitionsWithErrors.set(connections.definitionsWithErrors)
+          this.unhealthyConnections.set(unhealthyConnections);
+          this.percentHealthy.set((healthyConnections.length/connLength)*100);
+          this.connectionsLoading.set(false)
         }),
         takeUntilDestroyed()
       ).subscribe();

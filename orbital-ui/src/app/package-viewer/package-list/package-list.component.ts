@@ -21,7 +21,8 @@ import {TuiStatus} from "@taiga-ui/kit";
       >
         <h3 class="package-title">
           {{ sourcePackage.identifier.name }}
-          <tui-badge [status]="getPackageBadgeState(sourcePackage)" size="s"
+          <tui-badge *ngIf="getPackageBadgeState(sourcePackage) === 'error'"
+                     [status]="getPackageBadgeState(sourcePackage)" size="s"
                      [value]="getPackageStateBadgeMessage(sourcePackage)"></tui-badge>
         </h3>
         <div *ngIf="getPackageStateMessage(sourcePackage)" class="unhealthy-state">

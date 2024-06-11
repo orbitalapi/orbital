@@ -13,9 +13,9 @@ export class ActiveQueriesNotificationService {
   private readonly activeQueries$: Observable<RunningQueryStatus>;
 
   constructor(private websocketService: WebsocketService) {
-    this.activeQueries$ = this.websocketService.connect('/api/query/status')
+    this.activeQueries$ = this.websocketService.connect<RunningQueryStatus>('/api/query/status')
       .pipe(
-        map((message: RunningQueryStatus) => {
+        map((message) => {
           // Convert the utc date string received to a js Date object
           const startTimeString = (message as any).startTime as string;
           message.startTime = new Date(Date.parse(startTimeString));
