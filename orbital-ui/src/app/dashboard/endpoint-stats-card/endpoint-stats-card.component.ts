@@ -10,6 +10,7 @@ import {map, tap} from 'rxjs/operators';
 import { EndpointMonitorComponent } from '../../endpoint-manager/endpoint-monitor.component';
 import { TypesService } from '../../services/types.service';
 import { CardComponent } from '../card/card.component';
+import {UiCustomisations} from "../../../environments/ui-customisations";
 
 type QueryWithLabel = {
   label: string,
@@ -70,4 +71,6 @@ export class EndpointStatsCardComponent {
       tap(queries => queries.length ? this.selectedQuery$.next(queries[0]): null)
     );
   }
+
+  protected readonly UiCustomisations = UiCustomisations;
 }

@@ -22,6 +22,11 @@ interface OperationInvocationEventConsumer {
    fun operationInvoked(operation: RemoteOperation)
 }
 
+object NoOperationInvocationEventConsumer: OperationInvocationEventConsumer {
+   override fun operationInvoked(operation: RemoteOperation) {
+   }
+
+}
 class CountingOperationInvokerDecorator(
    private val invoker: OperationInvoker,
    private val operationInvocationEventConsumer: OperationInvocationEventConsumer
