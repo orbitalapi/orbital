@@ -10,7 +10,8 @@ import {DropdownComponent} from './dropdown/dropdown.component';
 type QueryPayload = {
   queryName: string,
   path: string,
-  method?: HttpMethod
+  method?: HttpMethod,
+  isSSE?: boolean
 }
 
 @Component({
@@ -72,6 +73,7 @@ export class PublishedEndpointInfoComponent implements OnChanges {
         queryName: this.savedQuery.name.shortDisplayName,
         path: this.savedQuery.httpEndpoint.url,
         method: this.savedQuery.httpEndpoint.method,
+        isSSE: this.savedQuery.queryKind === 'Stream'
       })
     }
     if (this.savedQuery?.websocketOperation) {
@@ -83,15 +85,16 @@ export class PublishedEndpointInfoComponent implements OnChanges {
   }
 
   copyEndpoint(query: QueryPayload, copyType: 'URL' | 'cURL') {
-    const { path, method} = query;
+    const { path, method, isSSE} = query;
     const absolutePath = window.location.origin + path;
     if (copyType === 'URL') {
       this.clipboard.copy(absolutePath);
     } else if (copyType === 'cURL') {
       let clipboardContent: string;
+      const acceptHeader = "-H 'Accept: text/event-stream;charset-UTF-8' "
       switch (method) {
         case 'GET':
-          clipboardContent = `curl -X GET "${absolutePath}"`
+          clipboardContent = `curl ${isSSE ? acceptHeader : ''}-X GET "${absolutePath}"`
           break;
         case 'POST':
           clipboardContent = `curl -X POST "${absolutePath}"`
