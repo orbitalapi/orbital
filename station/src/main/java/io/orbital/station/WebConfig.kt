@@ -22,8 +22,14 @@ import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
+import org.springframework.stereotype.Component
+import org.springframework.web.filter.CommonsRequestLoggingFilter
 import org.springframework.web.reactive.config.CorsRegistry
 import org.springframework.web.reactive.config.WebFluxConfigurer
+import org.springframework.web.server.ServerWebExchange
+import org.springframework.web.server.WebFilter
+import org.springframework.web.server.WebFilterChain
+import reactor.core.publisher.Mono
 
 @Configuration
 @Import(WebUiUrlSupportFilter::class)
@@ -113,4 +119,30 @@ class JacksonConfig {
          }
       }
    }
+}
+
+/**
+ * Logs requests.
+ * To enable, set log level for io.orbital.station.RequestLoggingFilter=TRACE
+ */
+@Component
+class RequestLoggingFilter : WebFilter {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+   override fun filter(exchange: ServerWebExchange, chain: WebFilterChain): Mono<Void> {
+      logger.trace {
+         val headers = exchange.request.headers.map { (key, value) -> "[$key: ${value.joinToString(",")}]" }
+            .joinToString(" , ")
+         "[${exchange.request.id}] Request ${exchange.request.method.name()} : ${exchange.request.path} {Headers: $headers}"
+      }
+      return chain.filter(exchange)
+         .doOnSuccess {
+            logger.trace {
+               "[${exchange.request.id}] Response ${exchange.response.statusCode}"
+            }
+
+         }
+   }
+
 }
