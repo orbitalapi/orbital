@@ -1,17 +1,20 @@
 import {AppConfig} from "../app/services/app-info.service";
 import {SidebarElement} from '../app/sidenav/sidenav.component';
+import {DocsLinks} from "./docs-links";
 
-
-/**
- * A list of places in the docs we link to.
- * Allows whitelabels to provide analagous links in their own docs
- */
-export class DocsLinks {
-  constructor(
-    public readonly configureMetricsReporting = 'https://orbitalhq.com/docs/querying/observability#configuring-prometheus',
-    public readonly publishQueriesAsEndpoints = 'https://orbitalhq.com/docs/querying/queries-as-endpoints'
-  ) {
-  }
+const orbitalDocsLinks : DocsLinks = {
+  configureMetricsReporting : 'https://orbitalhq.com/docs/querying/observability#configuring-prometheus',
+  publishQueriesAsEndpoints : 'https://orbitalhq.com/docs/querying/queries-as-endpoints',
+  workspaceConfigFile : 'https://orbitalhq.com/docs/workspace/overview#workspace-conf-file',
+  authenticationToServices : 'https://orbitalhq.com/docs/describing-data-sources/authentication-to-services',
+  managingSecrets : 'https://orbitalhq.com/docs/deploying/managing-secrets',
+  authentication : 'https://orbitalhq.com/docs/deploying/authentication',
+  dynamoDbConnection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#dynamo-db',
+  lambdaDbConnection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#lambda' ,
+  s3Connection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#lambda' ,
+  sqsConnection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#lambda' ,
+  dataPolicies : 'https://orbitalhq.com/docs/deploying/data-policies' ,
+  docsHome : 'https://orbitalhq.com/docs' ,
 }
 
 export const UiCustomisations = {
@@ -20,5 +23,5 @@ export const UiCustomisations = {
   customSidebarElements: function (appConfig: AppConfig): SidebarElement[] {
     return [];
   },
-  docsLinks: new DocsLinks()
+  docsLinks: orbitalDocsLinks
 }

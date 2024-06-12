@@ -53,4 +53,5 @@ export class OnboardingContainerComponent implements OnInit {
     }
   }
 
+    protected readonly UiCustomisations = UiCustomisations;
 }
