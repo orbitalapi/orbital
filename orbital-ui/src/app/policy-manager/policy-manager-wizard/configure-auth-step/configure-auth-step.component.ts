@@ -17,8 +17,8 @@ import { UiCustomisations } from '../../../../environments/ui-customisations';
         knows the user who is requesting data.
       </p>
       <p>
-        Learn how to configure authentication in our <a [href]="UiCustomisations.docsLinks.authentication"
-                                                        target="_blank">docs</a>.
+        Learn how to configure authentication in our
+        <a class="link" [href]="UiCustomisations.docsLinks.authentication" target="_blank">docs</a>.
       </p>
       <a tuiButton appearance="secondary" [href]="UiCustomisations.docsLinks.authentication" target="_blank">Learn
         more</a>

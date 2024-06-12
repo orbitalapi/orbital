@@ -1079,7 +1079,32 @@ export const testSchema = {
       'metadata': [],
       'aliasForType': null,
       'inheritsFrom': [],
-      'enumValues': ['POINTS', 'GBP'],
+      'enumValues': [
+        {
+          'name': 'Open',
+          'value': 'Open',
+          'synonyms': [
+            'bankY.orders.EntryType.Opened',
+            'bankX.orders.EntryType.Opened'
+          ],
+          'typeDoc': ''
+        },
+        {
+          'name': 'Filled',
+          'value': 'Filled',
+          'synonyms': [],
+          'typeDoc': ''
+        },
+        {
+          'name': 'Withheld',
+          'value': 'Withheld',
+          'synonyms': [
+            'bankX.orders.EntryType.WithHeld',
+            'bankY.orders.EntryType.WithHeld'
+          ],
+          'typeDoc': ''
+        }
+      ],
       'sources': [{
         'name': 'customer-service',
         'version': '0.0.0',

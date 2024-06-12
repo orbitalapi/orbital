@@ -114,3 +114,12 @@ progress {
     }
   }
 }
+
+.download-menu-option {
+  display: flex;
+  align-items: center;
+
+  button {
+    flex: 1;
+  }
+}

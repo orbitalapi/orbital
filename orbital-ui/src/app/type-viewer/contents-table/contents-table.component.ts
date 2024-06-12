@@ -11,7 +11,7 @@ import {timeout} from "rxjs/operators";
       <h4>On this page</h4>
       <ul class="list-reset">
         <li *ngFor="let contentsItem of contents.items">
-          <a href="javascript: void(0);" (click)="scroll(contentsItem.slug)">{{contentsItem.name}}</a>
+          <a href="javascript: void(0);" class="link" (click)="scroll(contentsItem.slug)">{{contentsItem.name}}</a>
         </li>
       </ul>
     </div>

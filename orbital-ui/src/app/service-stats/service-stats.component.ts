@@ -20,14 +20,15 @@ import {formatNumber} from '@angular/common';
       <tr *ngFor="let statRow of operationStats">
         <td>
           <div class="badges">
-              <span class="mono-badge">
+            <span class="mono-badge">
               <a [routerLink]="['/services',statRow.serviceName]">{{ statRow.serviceName }}</a>
-              </span>
+            </span>
             <span class="separator-slash">/</span>
             <span class="mono-badge">
-<a
-  [routerLink]="['/services',statRow.serviceName, statRow.operationName]">{{ statRow.operationName }}</a>
-</span>
+              <a [routerLink]="['/services',statRow.serviceName, statRow.operationName]">
+                {{ statRow.operationName }}
+              </a>
+            </span>
           </div>
         </td>
         <td>{{ statRow.callsInitiated }}</td>

@@ -8,6 +8,7 @@ const config: StorybookConfig = {
     '../src/**/*.mdx',
     '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'
   ],
+  staticDirs: [{from: '../src/assets', to: '/assets'}],
   addons: [
     "@storybook/addon-links",
     "@storybook/addon-essentials"

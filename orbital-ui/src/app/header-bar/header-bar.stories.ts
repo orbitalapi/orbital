@@ -1,7 +1,9 @@
-import { moduleMetadata } from "@storybook/angular";
+import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
+import {moduleMetadata} from '@storybook/angular';
 import { CommonModule } from "@angular/common";
-import { BrowserModule } from "@angular/platform-browser";
-import { ObjectViewModule } from "../object-view/object-view.module";
+import {TuiRootModule} from '@taiga-ui/core';
+import {AuthService} from '../auth/auth.service';
+import {Environment, ENVIRONMENT} from '../services/environment';
 import { HeaderBarModule } from "./header-bar.module";
 import { VyneUser } from "../services/user-info.service";
 
@@ -25,16 +27,34 @@ export default {
 
   decorators: [
     moduleMetadata({
-      imports: [CommonModule, BrowserModule, HeaderBarModule],
+      imports: [CommonModule, BrowserAnimationsModule, HeaderBarModule, TuiRootModule],
+      providers: [
+        {
+          provide: AuthService,
+          useValue: {
+            securityConfig: {
+              accountManagementUrl: 'http://test.account-management.com',
+              orgManagementUrl: 'http://test.org-management.com'
+            }
+          }
+        },
+        {
+          provide: ENVIRONMENT,
+          useValue: {
+            serverUrl: "http://localhost:9022",
+            production: false,
+          } as Environment,
+        }
+      ]
     }),
   ],
 };
 
 export const UserWithImage = () => {
   return {
-    template: `<div style="padding: 40px">
+    template: `<tui-root style="padding: 40px">
     <app-avatar [user]="user"></app-avatar>
-    </div>`,
+    </tui-root>`,
     props: {
       user: userWithImage,
     },
@@ -47,9 +67,9 @@ UserWithImage.story = {
 
 export const UserWithoutImage = () => {
   return {
-    template: `<div style="padding: 40px">
+    template: `<tui-root style="padding: 40px">
     <app-avatar [user]="user"></app-avatar>
-    </div>`,
+    </tui-root>`,
     props: {
       user: userWithoutImage,
     },
