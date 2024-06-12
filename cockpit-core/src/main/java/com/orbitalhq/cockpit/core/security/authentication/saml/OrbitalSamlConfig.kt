@@ -31,6 +31,9 @@ private val logger = KotlinLogging.logger {  }
 // to define the callback and logout controllers
 @ComponentScan(basePackages = ["org.pac4j.springframework.web"])
 class OrbitalSamlConfig {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
 
    @Bean fun userAuthenticatedEventSource() = SamlUserAuthenticatedEventSource()
    @Bean
@@ -66,7 +69,8 @@ class OrbitalSamlConfig {
    fun securityWebFilterChain(http: ServerHttpSecurity,
                               languageServerConfig: LanguageServerConfig,
                               @Value("\${management.endpoints.web.base-path:/actuator}") actuatorPath: String): SecurityWebFilterChain? {
-       http
+      logger.info { "Using SAML Authentication" }
+      http
          .securityMatcher {
             NegatedServerWebExchangeMatcher(
                 ServerWebExchangeMatchers.pathMatchers("/api/security/config", SamlCallbackUrlProvider.samlCallbackUrl)
@@ -80,7 +84,7 @@ class OrbitalSamlConfig {
                config.addAllowedOrigin("*")
                config.addAllowedHeader("*")
                config.addExposedHeader("*")
-               config.addAllowedMethod("")
+               config.addAllowedMethod("*")
                configSrc.registerCorsConfiguration("/**", config)
                configSrc
             }

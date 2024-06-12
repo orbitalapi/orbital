@@ -5,6 +5,7 @@ import com.orbitalhq.auth.authorisation.VyneUserRoleDefinitionRepository
 import com.orbitalhq.cockpit.core.lsp.LanguageServerConfig
 import com.orbitalhq.cockpit.core.security.FrontEndSecurityConfig
 import com.orbitalhq.cockpit.core.security.authorisation.JwtRolesExtractor
+import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
@@ -38,6 +39,9 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
 // see: https://github.com/spring-projects/spring-security/issues/12821
 @EnableReactiveMethodSecurity(useAuthorizationManager = false)
 class OidcAuthorizationPkceConfig {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
    @Bean
    fun grantedAuthoritiesExtractor(
       rolesExtractor: JwtRolesExtractor,
@@ -57,6 +61,7 @@ class OidcAuthorizationPkceConfig {
       grantedAuthoritiesExtractor: GrantedAuthoritiesExtractor,
       oidcConfig: FrontEndSecurityConfig
    ): SecurityWebFilterChain {
+      logger.info { "Using OIDC Authentication" }
       http
          .securityMatcher {
             NegatedServerWebExchangeMatcher(
@@ -70,7 +75,7 @@ class OidcAuthorizationPkceConfig {
                config.addAllowedOrigin("*")
                config.addAllowedHeader("*")
                config.addExposedHeader("*")
-               config.addAllowedMethod("")
+               config.addAllowedMethod("*")
                configSrc.registerCorsConfiguration("/**", config)
                configSrc
             }
