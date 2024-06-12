@@ -2,11 +2,11 @@
   *ngIf="queries$ | async as queries"
   title="Endpoints"
   titleLink="/endpoints"
-  [description]="queries.length ? 'Select an endpoint and time range' : 'You need to add an endpoint first to view metrics here'"
+  [description]="queries.length ? 'Select an endpoint and time range' : 'Metrics for endpoints will be shown here.'"
   icon="/assets/img/tabler/broadcast.svg"
 >
   <div *ngIf="!queries.length" class="endpoint-onboarding">
-    You can do that by <a class="link" [href]="UiCustomisations.docsLinks.publishQueriesAsEndpoints" target="_blank">following the documentation</a> or by saving a query in the <a routerLink="query/editor">query editor</a> and then publishing it from there.
+    First, create a query in the <a class="link" routerLink="query/editor">query editor</a>, then publish it as an endpoint. Learn more about publishing queries in our <a class="link" [href]="UiCustomisations.docsLinks.publishQueriesAsEndpoints" target="_blank">docs</a>.
   </div>
   <app-endpoint-monitor
     *ngIf="queries.length"

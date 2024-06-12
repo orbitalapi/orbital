@@ -120,7 +120,7 @@ export class AppComponent implements OnInit {
             message: `Your workspace cannot be loaded: ${status.message}`,
             actionLabel: 'Read docs',
             handler: () => {
-              window.open('https://orbitalhq.com/docs/workspace/overview#workspace-conf-file', '_blank');
+              window.open(UiCustomisations.docsLinks.workspaceConfigFile, '_blank');
             }
           })
         }

@@ -13,7 +13,7 @@ import { UiCustomisations } from '../../../../environments/ui-customisations';
       <img tuiSlot="top" src="assets/img/illustrations/settings-28.svg">
       <h4>Write a policy</h4>
       <p>Now that you've got a model setup, learn about writing a policy to make use of it.</p>
-      <a tuiButton appearance="secondary" href="https://orbitalhq.com/docs/deploying/data-policies" target="_blank">Learn
+      <a tuiButton appearance="secondary" [href]="UiCustomisations.docsLinks.dataPolicies" target="_blank">Learn
         more</a>
     </tui-block-status>
   `,

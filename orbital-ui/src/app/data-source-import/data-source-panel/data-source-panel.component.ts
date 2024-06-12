@@ -1,8 +1,8 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
-import { Observable } from 'rxjs/internal/Observable';
-import { TuiButtonModule, TuiDataListModule, TuiDropdownModule, TuiHintModule } from '@taiga-ui/core';
+import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {FormsModule} from '@angular/forms';
+import {Observable} from 'rxjs/internal/Observable';
+import {TuiButtonModule, TuiDataListModule, TuiDropdownModule, TuiHintModule} from '@taiga-ui/core';
 import {
   TuiDataListWrapperModule,
   TuiFilterByInputPipeModule,
@@ -10,18 +10,19 @@ import {
   TuiSelectModule,
   TuiStringifyContentPipeModule
 } from '@taiga-ui/kit';
-import { ConnectorSummary, MappedTable } from '../../db-connection-editor/db-importer.service';
-import { ConvertSchemaEvent } from '../data-source-import.models';
-import { Schema } from '../../services/schema';
-import { SourcePackageDescription } from '../../package-viewer/packages.service';
-import { ProjectSelectorModule } from '../../project-selector/project-selector.module';
-import { SwaggerConfigComponent } from './config-panels/swagger-config.component';
-import { JsonSchemaConfigComponent } from './config-panels/jsonschema-config.component';
-import { DatabaseTableConfigComponent } from './config-panels/database-table-config.component';
-import { KafkaTopicConfigComponent } from './config-panels/kafka-topic-config.component';
-import { ProtobufConfigComponent } from './config-panels/protobuf-config.component';
-import { ConnectionFiltersModule } from '../../utils/connections.pipe';
-import { TuiClickOutsideModule } from '@taiga-ui/cdk';
+import {ConnectorSummary, MappedTable} from '../../db-connection-editor/db-importer.service';
+import {ConvertSchemaEvent} from '../data-source-import.models';
+import {Schema} from '../../services/schema';
+import {SourcePackageDescription} from '../../package-viewer/packages.service';
+import {ProjectSelectorModule} from '../../project-selector/project-selector.module';
+import {SwaggerConfigComponent} from './config-panels/swagger-config.component';
+import {JsonSchemaConfigComponent} from './config-panels/jsonschema-config.component';
+import {DatabaseTableConfigComponent} from './config-panels/database-table-config.component';
+import {KafkaTopicConfigComponent} from './config-panels/kafka-topic-config.component';
+import {ProtobufConfigComponent} from './config-panels/protobuf-config.component';
+import {ConnectionFiltersModule} from '../../utils/connections.pipe';
+import {TuiClickOutsideModule} from '@taiga-ui/cdk';
+import {UiCustomisations} from "../../../environments/ui-customisations";
 
 @Component({
   selector: 'app-data-source-panel',
@@ -65,7 +66,7 @@ import { TuiClickOutsideModule } from '@taiga-ui/cdk';
         [(ngModel)]="schemaType"
         [disabled]="!selectedPackage"
       >
-        {{!selectedPackage ? 'Select a project first' : 'Select a data source to add'}}
+        {{ !selectedPackage ? 'Select a project first' : 'Select a data source to add' }}
         <tui-data-list *tuiDataList class="data-source-list">
           <button
             *ngFor="let item of schemaTypes"
@@ -76,7 +77,7 @@ import { TuiClickOutsideModule } from '@taiga-ui/cdk';
             (click)="item.externalLink ? openSite(item.externalLink) : null; isDataSourceSelectorOpen = null"
           >
             <img [src]="item.icon"/>
-            {{item.label}}
+            {{ item.label }}
             <img *ngIf="item.externalLink" src="/assets/img/tabler/external-link.svg" class="external-link"/>
           </button>
         </tui-data-list>
@@ -126,15 +127,35 @@ export class DataSourcePanelComponent {
 
   schemaTypes: SchemaType[] = [
     // { 'label' : 'Taxi', id: 'taxi'},
-    { label: 'Swagger / OpenAPI', id: 'swagger', icon: '/assets/img/data-source-icons/open-api-icon.svg' },
-    { label: 'Database table', id: 'databaseTable', icon: '/assets/img/tabler/database.svg' },
-    { label: 'Kafka topic', id: 'kafkaTopic', icon: '/assets/img/data-source-icons/kafka-icon.svg' },
-    { label: 'Protobuf', id: 'protobuf', icon: '/assets/img/data-source-icons/protobuf-icon.svg' },
-    { label: 'DynamoDb', id: 'dynamodb', icon: '/assets/img/data-source-icons/aws-icon.svg', externalLink: 'https://orbitalhq.com/docs/describing-data-sources/aws-services#dynamo-db' },
-    { label: 'Lambda', id: 'lambda', icon: '/assets/img/data-source-icons/aws-icon.svg', externalLink: 'https://orbitalhq.com/docs/describing-data-sources/aws-services#lambda' },
-    { label: 'S3', id: 's3', icon: '/assets/img/data-source-icons/aws-icon.svg', externalLink: 'https://orbitalhq.com/docs/describing-data-sources/aws-services#s3' },
-    { label: 'SQS', id: 'sqs', icon: '/assets/img/data-source-icons/aws-icon.svg', externalLink: 'https://orbitalhq.com/docs/describing-data-sources/aws-services#sqs' },
-    { label: 'JsonSchema', id: 'jsonSchema', icon: '/assets/img/data-source-icons/json-icon.svg', isDisabled: true },
+    {label: 'Swagger / OpenAPI', id: 'swagger', icon: '/assets/img/data-source-icons/open-api-icon.svg'},
+    {label: 'Database table', id: 'databaseTable', icon: '/assets/img/tabler/database.svg'},
+    {label: 'Kafka topic', id: 'kafkaTopic', icon: '/assets/img/data-source-icons/kafka-icon.svg'},
+    {label: 'Protobuf', id: 'protobuf', icon: '/assets/img/data-source-icons/protobuf-icon.svg'},
+    {
+      label: 'DynamoDb',
+      id: 'dynamodb',
+      icon: '/assets/img/data-source-icons/aws-icon.svg',
+      externalLink: UiCustomisations.docsLinks.dynamoDbConnection
+    },
+    {
+      label: 'Lambda',
+      id: 'lambda',
+      icon: '/assets/img/data-source-icons/aws-icon.svg',
+      externalLink: UiCustomisations.docsLinks.lambdaDbConnection
+    },
+    {
+      label: 'S3',
+      id: 's3',
+      icon: '/assets/img/data-source-icons/aws-icon.svg',
+      externalLink: UiCustomisations.docsLinks.s3Connection
+    },
+    {
+      label: 'SQS',
+      id: 'sqs',
+      icon: '/assets/img/data-source-icons/aws-icon.svg',
+      externalLink: UiCustomisations.docsLinks.sqsConnection
+    },
+    {label: 'JsonSchema', id: 'jsonSchema', icon: '/assets/img/data-source-icons/json-icon.svg', isDisabled: true},
     // { 'label' : 'XML Schema (xsd)', id: 'xsd'},
   ]
 
@@ -160,7 +181,7 @@ export class DataSourcePanelComponent {
   dbConnectionChanged = new EventEmitter<ConnectorSummary>();
 
   @Output()
-  convertSchema = new EventEmitter<{convertSchemaEvent: ConvertSchemaEvent, dataSourceType: DataSourceType}>();
+  convertSchema = new EventEmitter<{ convertSchemaEvent: ConvertSchemaEvent, dataSourceType: DataSourceType }>();
 
   @Input()
   schema: Schema

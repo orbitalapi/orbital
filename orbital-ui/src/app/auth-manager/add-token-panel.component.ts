@@ -1,6 +1,7 @@
 import {Component, Inject, OnInit} from '@angular/core';
 import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
 import {TuiDialogContext} from "@taiga-ui/core";
+import {UiCustomisations} from "../../environments/ui-customisations";
 
 @Component({
   selector: 'app-add-token-panel',
@@ -9,8 +10,8 @@ import {TuiDialogContext} from "@taiga-ui/core";
       <div>
           <p>Authentication tokens are defined in your Taxi projects.</p>
           <p>Click to learn more about how to <a
-                  href="https://orbitalhq.com/docs/describing-data-sources/authentication-to-services" target="_blank">add
-              authentication tokens</a>, or how <a href="https://orbitalhq.com/docs/deploying/managing-secrets"
+                  [href]="UiCustomisations.docsLinks.authenticationToServices" target="_blank">add
+              authentication tokens</a>, or how <a [href]="UiCustomisations.docsLinks.managingSecrets"
                                                    target="_blank">secrets are managed</a> in our docs.</p>
       </div>
       <div class="form-buttons">
@@ -33,4 +34,5 @@ export class AddTokenPanelComponent {
     this.dialogContext.completeWith()
   }
 
+  protected readonly UiCustomisations = UiCustomisations;
 }
