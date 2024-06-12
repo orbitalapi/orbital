@@ -28,14 +28,12 @@ li {
   padding: 0.25rem 0;
   font-size: 0.9rem;
   color: $purple-grey;
+
   a {
-    text-decoration: none;
-    color: $purple-grey;
     transition: all .2s ease-out;
   }
 
   a:hover {
     padding-left: 0.25rem;
-    color: $dark-grey-3;
   }
 }

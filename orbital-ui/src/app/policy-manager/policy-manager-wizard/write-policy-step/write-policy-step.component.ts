@@ -13,8 +13,9 @@ import { UiCustomisations } from '../../../../environments/ui-customisations';
       <img tuiSlot="top" src="assets/img/illustrations/settings-28.svg">
       <h4>Write a policy</h4>
       <p>Now that you've got a model setup, learn about writing a policy to make use of it.</p>
-      <a tuiButton appearance="secondary" [href]="UiCustomisations.docsLinks.dataPolicies" target="_blank">Learn
-        more</a>
+      <a tuiButton appearance="secondary" [href]="UiCustomisations.docsLinks.dataPolicies" target="_blank">
+        Learn more
+      </a>
     </tui-block-status>
   `,
   styleUrls: ['./write-policy-step.component.scss']

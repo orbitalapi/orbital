@@ -41,7 +41,7 @@ import { Observable } from 'rxjs/internal/Observable';
         </mat-form-field>
 
       </div>
-      <a class='subtle' [routerLink]="['browse']">I'd rather browse</a>
+      <a class="link" [routerLink]="['browse']">I'd rather browse</a>
     </div>
 
     <div class='search-results-table-container'>

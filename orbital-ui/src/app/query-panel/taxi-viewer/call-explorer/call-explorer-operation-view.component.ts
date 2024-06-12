@@ -18,14 +18,15 @@ import { OperationName, splitOperationQualifiedName } from 'src/app/services/sch
       </div>
 
       <div class="badges row">
-            <span class="mono-badge">
-              <a [routerLink]="['/services',operationName?.serviceName]">{{operationName?.serviceName}}</a>
-            </span>
+        <span class="mono-badge">
+          <a [routerLink]="['/services',operationName?.serviceName]">{{operationName?.serviceName}}</a>
+        </span>
         <span class="separator-slash">/</span>
         <span class="mono-badge">
-              <a
-                [routerLink]="['/services',operationName?.serviceName, operationName?.operationName]">{{operationName?.operationName}}</a>
-            </span>
+          <a [routerLink]="['/services',operationName?.serviceName, operationName?.operationName]">
+            {{operationName?.operationName}}
+          </a>
+        </span>
       </div>
 
       <div class="address  row">

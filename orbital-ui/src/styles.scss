@@ -84,7 +84,6 @@ tui-root {
 
 html, body {
   height: 100%;
-  overflow: hidden;
   font-size: 16px;
 }
 
@@ -95,10 +94,6 @@ html, body {
 body {
   margin: 0;
   font-family: $font-sans;
-}
-
-a:visited {
-  color: $sky-500;
 }
 
 $custom-typography: mat.define-typography-config(
@@ -146,6 +141,11 @@ $vyne-app-theme: mat.define-light-theme((
 // that you are using.
 @include mat.all-component-themes($vyne-app-theme);
 @include mat.all-component-typographies($custom-typography);
+
+
+.mat-mdc-dialog-surface {
+  padding: 1rem;
+}
 
 // We want the tabs to fill 100% height of their parents.
 // If removing this, be sure to test the ag-grid height in the tabbed-results-view component

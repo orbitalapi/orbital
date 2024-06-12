@@ -1,11 +1,12 @@
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
-  Component, computed, effect,
+  Component, computed, DestroyRef, effect,
   EventEmitter, input,
   Input,
   Output
 } from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import { tuiIconPause, tuiIconPlay } from '@taiga-ui/icons';
 import { BehaviorSubject, EMPTY, Observable, of, Subject } from 'rxjs';
 import {filter, map, scan, tap} from 'rxjs/operators';
@@ -166,23 +167,36 @@ enum ViewMode {
     </ng-template>
     <ng-template #downloadDropdown>
       <tui-data-list>
-        <button tuiOption (click)="onDownloadClicked(downloadFileType.JSON)"
-                [disabled]="!config?.analytics.persistResults">as JSON
-          <a *ngIf="!config?.analytics.persistResults"
-             href="#"
-             (click)="showDisabledPersistResultsConfig($event)">Why is this disabled?</a>
-        </button>
+        <div class="download-menu-option">
+          <button tuiOption (click)="onDownloadClicked(downloadFileType.JSON)"
+                  [disabled]="!config?.analytics.persistResults">
+            as JSON
+          </button>
+          <a
+            *ngIf="!config?.analytics.persistResults"
+            href="#"
+            class="link"
+            (click)="showDisabledPersistResultsConfig($event)"
+          >
+            Why is this disabled?
+          </a>
+        </div>
         <button tuiOption (click)="onDownloadClicked(downloadFileType.CSV)">as CSV</button>
-        <button tuiOption (click)="onDownloadClicked(downloadFileType.TEST_CASE)"
-                [disabled]="!config?.analytics.persistRemoteCallResponses || !config?.analytics.persistResults">as
-          Test Case
-          <a *ngIf="!config?.analytics.persistRemoteCallResponses || !config?.analytics.persistResults"
-             href="#"
-             (click)="showDisabledTestCaseConfig($event)">Why is this disabled?</a>
-        </button>
+        <div class="download-menu-option">
+          <button tuiOption (click)="onDownloadClicked(downloadFileType.TEST_CASE)"
+                  [disabled]="!config?.analytics.persistRemoteCallResponses || !config?.analytics.persistResults">
+            as Test Case
+          </button>
+          <a
+            *ngIf="!config?.analytics.persistRemoteCallResponses || !config?.analytics.persistResults"
+            href="#"
+            (click)="showDisabledTestCaseConfig($event)"
+            class="link"
+          >Why is this disabled?</a>
+        </div>
         <button tuiOption
                 (click)="onDownloadClicked(downloadFileType.CUSTOM_FORMAT)"
-                [disabled]="!(hasModelFormatSpecs | async) || !config?.analytics.persistResults">Using the defined
+                [disabled]="!(hasModelFormatSpecs$ | async) || !config?.analytics.persistResults">Using the defined
           format
         </button>
       </tui-data-list>
@@ -253,16 +267,20 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   LARGE_RESPONSE_LIMIT = 1_048_576; // 1MB
   downloadMenuOpen = false;
   viewMode: ViewMode
-  hasModelFormatSpecs: Subject<boolean> = new BehaviorSubject(true);
+  hasModelFormatSpecs$: Subject<boolean> = new BehaviorSubject(true);
   responseIsLarge$: Observable<boolean> = of(false);
   private jsonInstances$: Observable<string> = of();
 
-  constructor(protected typeService: TypesService,
-              protected appInfoService: AppInfoService,
-              private dialogService: MatDialog,
-              private changeDetector: ChangeDetectorRef) {
+  constructor(
+    protected typeService: TypesService,
+    protected appInfoService: AppInfoService,
+    private dialogService: MatDialog,
+    private changeDetector: ChangeDetectorRef,
+    private destroyRef: DestroyRef
+  ) {
     super(typeService);
     appInfoService.getConfig()
+      .pipe(takeUntilDestroyed())
       .subscribe(next => {
         this.config = next
         this.viewMode = this.config.featureToggles.queryPlanModeEnabled ? ViewMode.DESIGN : ViewMode.RESULTS
@@ -348,7 +366,8 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
     if (value) {
       this.typeService
         .getModelFormatSpecsForType(this.type)
-        .subscribe(data => this.hasModelFormatSpecs.next(data.length > 0));
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(data => this.hasModelFormatSpecs$.next(data.length > 0));
     }
     this.changeDetector.detectChanges();
   }

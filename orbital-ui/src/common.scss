@@ -179,3 +179,8 @@ $border-highlight: rgba($vyne-lilac, 0.6);
     text-decoration: underline;
   }
 }
+
+a:visited,
+a:active {
+  color: $primary-light;
+}

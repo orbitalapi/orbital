@@ -29,18 +29,18 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
     vertical-align: bottom;
     text-decoration: none;
     white-space: nowrap;
-    border-bottom: 1px solid rgba($primary-light,0.4);
     font-weight: 500;
     cursor: pointer;
-
-    // This is to force the border-bottom to render closer to the text
     line-height: 0.4rem;
     padding: 0.4rem 0.1rem 0.3rem;
   }
 
   a:focus, a:hover {
+    text-decoration: underline;
+  }
+
+  a:visited, a:active {
     color: $primary-light;
-    border-color: $primary-light;
   }
 }
 
@@ -96,16 +96,6 @@ $font-sans-alt: $body-font, /*Hind,*/ system-ui,BlinkMacSystemFont,-apple-system
   // overridden by search in the toolbar.
   font-size: 0.85rem !important;
   @include badge( $gray-700);
-  //font-weight: 300;
-  //color: $vyne-lilac;
-  //border: 1px solid rgba($vyne-lilac,0.6);
-  //background-color: rgba($vyne-lilac, 0.1);
-  //border-radius: 4px;
-  //padding: 0.2rem 0.4rem;
-  //display: inline-block;
-  //margin-top: 0.25rem;
-  //
-  //@include links();
 }
 
 .metadata {

@@ -10,8 +10,8 @@ import {UiCustomisations} from "../../environments/ui-customisations";
       <div>
           <p>Authentication tokens are defined in your Taxi projects.</p>
           <p>Click to learn more about how to <a
-                  [href]="UiCustomisations.docsLinks.authenticationToServices" target="_blank">add
-              authentication tokens</a>, or how <a [href]="UiCustomisations.docsLinks.managingSecrets"
+                  class="link" [href]="UiCustomisations.docsLinks.authenticationToServices" target="_blank">add
+              authentication tokens</a>, or how <a class="link" [href]="UiCustomisations.docsLinks.managingSecrets"
                                                    target="_blank">secrets are managed</a> in our docs.</p>
       </div>
       <div class="form-buttons">
