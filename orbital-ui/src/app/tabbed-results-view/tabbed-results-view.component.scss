@@ -14,22 +14,21 @@
   }
 }
 
-
 .tab-mode-container {
-  margin-right: 0.5rem;
-  padding-right: 0.5rem;
-  border-right: 1px solid $gray-200;
-
-  tui-radio-block:last-child {
-    // so the text doesn't get truncated
-    min-width: 5.5rem;
-  }
+  margin-right: 1rem;
 }
 
 .tab-icon {
   margin-right: 0.6rem;
   width: 24px;
   opacity: 0.5;
+}
+
+button {
+  &.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 }
 
 tui-badge.error-count-badge {

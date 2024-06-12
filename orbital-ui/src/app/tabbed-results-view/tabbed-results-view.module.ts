@@ -1,5 +1,6 @@
 import {NgModule} from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import {FormsModule} from '@angular/forms';
+import {TuiSegmentedModule} from '@taiga-ui/experimental';
 import {TabbedResultsViewComponent} from './tabbed-results-view.component';
 import {MatTabsModule} from '@angular/material/tabs';
 import {ObjectViewModule} from '../object-view/object-view.module';
@@ -7,10 +8,10 @@ import {CallExplorerModule} from '../query-panel/taxi-viewer/call-explorer/call-
 import {CommonModule} from '@angular/common';
 import {LineageDisplayModule} from '../lineage-display/lineage-display.module';
 import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
-import {TuiBadgeModule, TuiProgressModule, TuiRadioBlockModule, TuiTabsModule} from '@taiga-ui/kit';
+import {TuiBadgeModule, TuiProgressModule, TuiTabsModule} from '@taiga-ui/kit';
 import {
   TuiButtonModule,
-  TuiDataListModule, TuiGroupModule,
+  TuiDataListModule,
   TuiHintModule,
   TuiHostedDropdownModule,
   TuiNotificationModule,
@@ -38,10 +39,8 @@ import {QueryErrorsListComponent} from "../query-errors-list/query-errors-list.c
     QueryErrorsListComponent,
     TuiBadgeModule,
     TuiHintModule,
-    TuiRadioBlockModule,
-    TuiGroupModule,
-    TuiNotificationModule
-
+    TuiNotificationModule,
+    TuiSegmentedModule,
   ],
   exports: [TabbedResultsViewComponent],
   declarations: [TabbedResultsViewComponent],
