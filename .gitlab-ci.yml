@@ -297,6 +297,13 @@ regression-test:
 
 .publish-to-gitlab-container-registry:
    extends: .publish-docker
+   rules:
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: never
+      -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
+      -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
+         when: manual
+         allow_failure: true
    variables:
       registry_vyne: $CI_REGISTRY_IMAGE
       registry_orbital: $CI_REGISTRY_IMAGE
