@@ -12,6 +12,7 @@ import com.orbitalhq.spring.config.ConditionallyLoadBalancedExchangeFilterFuncti
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
+import org.springframework.boot.web.reactive.filter.OrderedWebFilter
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
 import org.springframework.boot.web.reactive.function.client.WebClientCustomizer
@@ -126,7 +127,7 @@ class JacksonConfig {
  * To enable, set log level for io.orbital.station.RequestLoggingFilter=TRACE
  */
 @Component
-class RequestLoggingFilter : WebFilter {
+class RequestLoggingFilter : WebFilter, OrderedWebFilter {
    companion object {
       private val logger = KotlinLogging.logger {}
    }
@@ -144,5 +145,9 @@ class RequestLoggingFilter : WebFilter {
 
          }
    }
+
+   // Highest precendence to ensure we go before spring security filters
+   // As we want to log requests that were rejected as well
+   override fun getOrder(): Int = OrderedWebFilter.HIGHEST_PRECEDENCE
 
 }
