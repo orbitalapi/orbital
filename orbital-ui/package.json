@@ -50,6 +50,7 @@
     "@taiga-ui/addon-table": "^3.57.0",
     "@taiga-ui/cdk": "^3.76.0",
     "@taiga-ui/core": "^3.76.0",
+    "@taiga-ui/experimental": "^3.83.0",
     "@taiga-ui/i18n": "^3.76.0",
     "@taiga-ui/icons": "^3.76.0",
     "@taiga-ui/kit": "^3.76.0",

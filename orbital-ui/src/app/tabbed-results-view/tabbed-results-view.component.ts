@@ -23,6 +23,11 @@ import { MatDialog } from '@angular/material/dialog';
 import { isNullOrUndefined } from 'src/app/utils/utils';
 import { ExportFormat } from 'src/app/results-download/results-download.service';
 
+enum ViewMode {
+  DESIGN,
+  RESULTS
+}
+
 @Component({
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-tabbed-results-view',
@@ -43,42 +48,30 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
                         [title]="!config?.featureToggles.queryPlanModeEnabled ? 'Results' : null"
       >
         <ng-container ngProjectAs="title-content" *ngIf="config?.featureToggles.queryPlanModeEnabled">
-          <div
-            tuiGroup
-            [collapsed]="true"
+          <tui-segmented
             class="tab-mode-container"
+            [(activeItemIndex)]="viewMode"
             [tuiHint]="!hasQueryRun() ? 'Results mode available after query has been run' : null"
             tuiHintAppearance="onDark"
           >
-            <tui-radio-block
-              size="s"
-              item="design"
-              [hideRadio]="true"
-              [(ngModel)]="tabMode"
-            >
+            <button>
               Design
-            </tui-radio-block>
-            <tui-radio-block
-              size="s"
-              item="results"
-              [hideRadio]="true"
-              [(ngModel)]="tabMode"
-              [disabled]="!hasQueryRun()"
-            >
+            </button>
+            <button [class.is-disabled]="!hasQueryRun()">
               Results
-            </tui-radio-block>
-          </div>
-        </ng-container>
-        <tui-tabs *ngIf="showResultsPanel && tabMode === 'design'">
-          <button tuiTab>
-            <img src="assets/img/tabler/route-square-2.svg" class="tab-icon">
-            Query plan
-          </button>
-          <tui-notification status="info" class="alert query-plan" tuiHint="The plan may change when executed if data is missing, or services return errors" tuiHintAppearance="onDark">
-            This query plan is indicative, showing the happy path.
+            </button>
+          </tui-segmented>
+          <tui-notification
+            *ngIf="showResultsPanel && viewMode === ViewMode.DESIGN"
+            status="info"
+            class="alert query-plan"
+            tuiHint="The plan may change when executed if data is missing, or services return errors"
+            tuiHintAppearance="onDark"
+          >
+            The query plan below is indicative, and only shows the happy path.
           </tui-notification>
-        </tui-tabs>
-        <tui-tabs-with-more *ngIf="showResultsPanel && tabMode === 'results'"
+        </ng-container>
+        <tui-tabs-with-more *ngIf="showResultsPanel && viewMode === ViewMode.RESULTS"
                             [(activeItemIndex)]="resultsTabIndex"
                             (activeItemIndexChange)="onTabIndexChanged($event)"
                             [moreContent]='more'
@@ -125,7 +118,7 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
             {{ isQueryPaused ? 'Resume stream' : 'Pause stream' }}
           </button>
           <tui-hosted-dropdown
-            *ngIf="showResultsPanel && tabMode === 'results' && downloadSupported"
+            *ngIf="showResultsPanel && viewMode === ViewMode.RESULTS && downloadSupported"
             tuiDropdownAlign="left"
             [content]="downloadDropdown"
             [(open)]="downloadMenuOpen"
@@ -138,7 +131,7 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
         </div>
       </app-panel-header>
       <app-object-view-container
-        *ngIf="resultsTabIndex < 3 && showResultsPanel && tabMode === 'results'"
+        *ngIf="resultsTabIndex < 3 && showResultsPanel && viewMode === ViewMode.RESULTS"
         [instances$]="_instances$"
         [schema]="schema"
         [displayMode]="displayMode"
@@ -153,16 +146,17 @@ import { ExportFormat } from 'src/app/results-download/results-download.service'
       ></app-object-view-container>
     </ng-container>
     <app-call-explorer
-      *ngIf="tabMode === 'design'"
+      *ngIf="viewMode === ViewMode.DESIGN"
       [queryPlanData$]="queryPlanData$"
       [onlyShowQueryPlan]="true"
     ></app-call-explorer>
     <app-call-explorer
-      *ngIf="tabMode === 'results' && resultsTabIndex === 3 && profileData$ && showResultsPanel && !isQueryRunning"
+      *ngIf="viewMode === ViewMode.RESULTS && resultsTabIndex === 3 && profileData$ && showResultsPanel && !isQueryRunning"
       [queryProfileData$]="profileData$"
     ></app-call-explorer>
     <app-query-errors-list
-      *ngIf="resultsTabIndex == 4 && tabMode === 'results'" [errorMessages$]="errorMessages$"></app-query-errors-list>
+      *ngIf="resultsTabIndex == 4 && viewMode === ViewMode.RESULTS"
+      [errorMessages$]="errorMessages$"></app-query-errors-list>
     <ng-template #downloadIcon>
       <tui-svg
         src="tuiIconChevronDown"
@@ -258,7 +252,7 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 
   LARGE_RESPONSE_LIMIT = 1_048_576; // 1MB
   downloadMenuOpen = false;
-  tabMode: 'design' | 'results';
+  viewMode: ViewMode
   hasModelFormatSpecs: Subject<boolean> = new BehaviorSubject(true);
   responseIsLarge$: Observable<boolean> = of(false);
   private jsonInstances$: Observable<string> = of();
@@ -271,11 +265,12 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
     appInfoService.getConfig()
       .subscribe(next => {
         this.config = next
-        this.tabMode = this.config.featureToggles.queryPlanModeEnabled ? 'design' : 'results'
+        this.viewMode = this.config.featureToggles.queryPlanModeEnabled ? ViewMode.DESIGN : ViewMode.RESULTS
       });
     effect(() => {
       if (this.config?.featureToggles.queryPlanModeEnabled) {
-        this.tabMode = this.queryStartTime() ? 'results' : 'design'
+        this.viewMode = this.queryStartTime() ? ViewMode.RESULTS : ViewMode.DESIGN;
+        this.changeDetector.markForCheck()
       }
     })
   }
@@ -392,4 +387,5 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 
   protected readonly tuiIconPlay = tuiIconPlay;
   protected readonly tuiIconPause = tuiIconPause;
+  protected readonly ViewMode = ViewMode;
 }
