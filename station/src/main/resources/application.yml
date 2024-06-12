@@ -27,6 +27,13 @@ spring:
    flyway:
       enabled: true
       locations: classpath:db/migration
+   web:
+      resources:
+         cache:
+            use-last-modified: on
+            cachecontrol:
+               no-transform: true
+               must-revalidate: true
 
 management:
    endpoint:
