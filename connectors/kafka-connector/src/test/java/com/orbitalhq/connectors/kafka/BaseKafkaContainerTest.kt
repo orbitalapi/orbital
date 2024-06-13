@@ -29,6 +29,7 @@ import org.apache.kafka.clients.producer.Producer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord
 import org.apache.kafka.clients.producer.RecordMetadata
+import org.apache.kafka.common.header.Header
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringSerializer
 import org.junit.After
@@ -105,9 +106,15 @@ abstract class BaseKafkaContainerTest {
       admin.createTopics(singleton(newTopic))
    }
 
-   fun sendMessage(message: ByteArray, topic: String = "movies"): RecordMetadata {
+   fun sendMessage(message: ByteArray, topic: String = "movies", key:String = UUID.randomUUID().toString(), headers: List<Header> = emptyList()): RecordMetadata {
       logger.info { "Sending message to topic $topic" }
-      val metadata = kafkaProducer.send(ProducerRecord(topic, UUID.randomUUID().toString(), message))
+      val metadata = kafkaProducer.send(ProducerRecord(
+         topic,
+         null, // partition
+         key,
+         message,
+         headers
+      ))
          .get()
       logger.info { "message sent to topic $topic with offset ${metadata.offset()}" }
       return metadata

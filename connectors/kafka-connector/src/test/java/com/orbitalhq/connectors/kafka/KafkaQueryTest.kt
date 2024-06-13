@@ -6,6 +6,9 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.protobuf.wire.RepoBuilder
 import com.winterbe.expekt.should
+import io.kotest.matchers.longs.shouldBeGreaterThan
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -18,6 +21,9 @@ import kotlinx.coroutines.runBlocking
 import lang.taxi.generators.protobuf.TaxiGenerator
 import mu.KotlinLogging
 import okio.fakefilesystem.FakeFileSystem
+import org.apache.kafka.common.header.Header
+import org.apache.kafka.common.header.internals.RecordHeader
+import org.apache.kafka.common.header.internals.RecordHeaders
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -26,6 +32,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Configuration
 import org.springframework.test.context.junit4.SpringRunner
 import reactor.test.StepVerifier
+import java.math.BigInteger
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit.SECONDS
@@ -56,13 +63,151 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       sendMessage(message("message2"))
 
 
-      val result = vyne.query("""
+      val result = vyne.query(
+         """
          stream { Movie }"""
-         .trimIndent())
+            .trimIndent()
+      )
 
          .results.take(2).toList() as List<TypedObject>
       result.should.have.size(2)
+   }
 
+   @Test
+   fun `can read Kafka message key into message payload`(): Unit = runBlocking {
+      val (vyne, kafkaStreamManager) = vyneWithKafkaInvoker(
+         """
+         ${KafkaConnectorTaxi.Annotations.imports}
+
+         import com.orbitalhq.kafka.KafkaMessageKey
+         import com.orbitalhq.kafka.KafkaHeader
+
+         model Movie {
+            @KafkaMessageKey
+            id : MovieId inherits String
+            title : Title inherits String
+         }
+         @KafkaService( connectionName = "moviesConnection" )
+         service MovieService {
+            @KafkaOperation( topic = "movies", offset = "earliest" )
+            stream streamMovieQuery:Stream<Movie>
+         }
+      """.trimIndent()
+      )
+
+      sendMessage("""{ "title" : "Star Wars" }""".toByteArray(), key = "sw-IV")
+
+      val result = vyne.query(
+         """
+         stream { Movie }"""
+            .trimIndent()
+      )
+
+         .results.take(1).toList() as List<TypedObject>
+
+      result.should.have.size(1)
+      result.single().toRawObject()
+         .shouldBe(
+            mapOf("id" to "sw-IV", "title" to "Star Wars")
+         )
+   }
+
+   @Test
+   fun `can read Kafka message metadata key into message payload`(): Unit = runBlocking {
+      val (vyne, kafkaStreamManager) = vyneWithKafkaInvoker(
+         """
+         ${KafkaConnectorTaxi.Annotations.imports}
+
+         import com.orbitalhq.kafka.KafkaMessageKey
+         import com.orbitalhq.kafka.KafkaHeader
+         import com.orbitalhq.kafka.KafkaMessageMetadata
+         import com.orbitalhq.kafka.KafkaMetadataType
+
+         model Movie {
+            @KafkaMessageMetadata(KafkaMetadataType.Offset)
+            offset : Int
+            @KafkaMessageMetadata(KafkaMetadataType.Timestamp)
+            timestamp : Long
+            @KafkaMessageMetadata(KafkaMetadataType.TimestampType)
+            timestampType : String
+            @KafkaMessageMetadata(KafkaMetadataType.Partition)
+            partition : Int
+
+
+            title : Title inherits String
+         }
+         @KafkaService( connectionName = "moviesConnection" )
+         service MovieService {
+            @KafkaOperation( topic = "movies", offset = "earliest" )
+            stream streamMovieQuery:Stream<Movie>
+         }
+      """.trimIndent()
+      )
+
+      sendMessage("""{ "title" : "Star Wars" }""".toByteArray(), key = "sw-IV")
+
+      val result = vyne.query(
+         """
+         stream { Movie }"""
+            .trimIndent()
+      )
+
+         .results.take(1).toList() as List<TypedObject>
+
+      result.should.have.size(1)
+      val typedObject = result.single()
+         .toRawObject() as Map<String, Any>
+      typedObject["offset"].shouldBe(0)
+      typedObject["timestamp"].shouldBeInstanceOf<BigInteger>()
+         .toLong()
+         .shouldBeGreaterThan(1718000000000) // a date in the past, but indicates we got a valid timestamp
+      typedObject["timestampType"].shouldBe("CreateTime")
+      typedObject["partition"].shouldBe(0)
+      typedObject["title"].shouldBe("Star Wars")
+   }
+
+   @Test
+   fun `can read Kafka message headers into message payload`(): Unit = runBlocking {
+      val (vyne, kafkaStreamManager) = vyneWithKafkaInvoker(
+         """
+         ${KafkaConnectorTaxi.Annotations.imports}
+
+         import com.orbitalhq.kafka.KafkaMessageKey
+         import com.orbitalhq.kafka.KafkaHeader
+         import com.orbitalhq.kafka.KafkaMessageMetadata
+         import com.orbitalhq.kafka.KafkaMetadataType
+
+         model Movie {
+            @KafkaHeader("correlationId")
+            correlationId : CorrelationId inherits String
+            title : Title inherits String
+         }
+         @KafkaService( connectionName = "moviesConnection" )
+         service MovieService {
+            @KafkaOperation( topic = "movies", offset = "earliest" )
+            stream streamMovieQuery:Stream<Movie>
+         }
+      """.trimIndent()
+      )
+
+      sendMessage("""{ "title" : "Star Wars" }""".toByteArray(), headers = listOf(
+         RecordHeader("correlationId", "24601".toByteArray())
+      ))
+
+      val result = vyne.query(
+         """
+         stream { Movie }"""
+            .trimIndent()
+      )
+
+         .results.take(1).toList() as List<TypedObject>
+
+      result.should.have.size(1)
+      result.single().toRawObject()
+         .shouldBe(mapOf(
+            "correlationId" to "24601",
+            "title" to "Star Wars",
+         ))
    }
 
    @Test
@@ -225,11 +370,12 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
    }
 
    @Test
-   fun `when there are two active queries with same stream consumer id only one of them gets the data`(): Unit = runBlocking {
+   fun `when there are two active queries with same stream consumer id only one of them gets the data`(): Unit =
+      runBlocking {
 
-      val singlePartitionTopic = "films_${Random.nextInt()}"
-      createTopic(singlePartitionTopic)
-      val moviesExSchema = """
+         val singlePartitionTopic = "films_${Random.nextInt()}"
+         createTopic(singlePartitionTopic)
+         val moviesExSchema = """
                ${KafkaConnectorTaxi.Annotations.imports}
                type MovieId inherits String
                type MovieTitle inherits String
@@ -246,38 +392,43 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
                }
 
             """.trimIndent()
-      val (vyne1, _) = vyneWithKafkaInvoker(moviesExSchema)
-      (0..9).forEach {
-         sendMessage(message("message$it"), singlePartitionTopic)
+         val (vyne1, _) = vyneWithKafkaInvoker(moviesExSchema)
+         (0..9).forEach {
+            sendMessage(message("message$it"), singlePartitionTopic)
+         }
+
+         val result = vyne1.query(
+            """
+         @StreamConsumer(id = "123")
+         stream { Movie }"""
+               .trimIndent()
+         )
+            .results
+            .map { "query1" to it }
+
+         val (vyne2, _) = vyneWithKafkaInvoker(moviesExSchema)
+         val result2 = vyne2.query(
+            """
+         @StreamConsumer(id = "123")
+         stream { Movie }"""
+               .trimIndent()
+         )
+            .results
+            .map { "query2" to it }
+
+         val mergedResults = merge(result, result2).take(10).toList()
+
+         val groupByQuery = mergedResults.groupBy { it.first }
+         groupByQuery.keys.size.should.equal(1)
       }
-
-      val result = vyne1.query("""
-         @StreamConsumer(id = "123")
-         stream { Movie }"""
-         .trimIndent())
-         .results
-         .map { "query1" to it }
-
-      val (vyne2, _) = vyneWithKafkaInvoker(moviesExSchema)
-      val result2 = vyne2.query("""
-         @StreamConsumer(id = "123")
-         stream { Movie }"""
-         .trimIndent())
-         .results
-         .map { "query2" to it }
-
-     val mergedResults = merge(result, result2).take(10).toList()
-
-      val groupByQuery = mergedResults.groupBy { it.first }
-      groupByQuery.keys.size.should.equal(1)
-   }
 
 
    @Test
-   fun `A test where there are two active queries with different StreamConsumer id values, to show that the records are received by both`(): Unit = runBlocking {
-      val singlePartitionTopic = "arthouse_${Random.nextInt()}"
-      createTopic(singlePartitionTopic)
-      val moviesExSchema = """
+   fun `A test where there are two active queries with different StreamConsumer id values, to show that the records are received by both`(): Unit =
+      runBlocking {
+         val singlePartitionTopic = "arthouse_${Random.nextInt()}"
+         createTopic(singlePartitionTopic)
+         val moviesExSchema = """
                ${KafkaConnectorTaxi.Annotations.imports}
                type MovieId inherits String
                type MovieTitle inherits String
@@ -296,37 +447,42 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
                }
 
             """.trimIndent()
-      val (vyne1, _) = vyneWithKafkaInvoker(moviesExSchema)
-      (0..9).forEach {
-         sendMessage(message("message$it"), singlePartitionTopic)
-      }
+         val (vyne1, _) = vyneWithKafkaInvoker(moviesExSchema)
+         (0..9).forEach {
+            sendMessage(message("message$it"), singlePartitionTopic)
+         }
 
-      val result = vyne1.query("""
+         val result = vyne1.query(
+            """
          @StreamConsumer(id = "123")
          stream { Movie }"""
-         .trimIndent())
-         .results
-         .map { "query1" to it }
+               .trimIndent()
+         )
+            .results
+            .map { "query1" to it }
 
-      val (vyne2, _) = vyneWithKafkaInvoker(moviesExSchema)
-      val result2 = vyne2.query("""
+         val (vyne2, _) = vyneWithKafkaInvoker(moviesExSchema)
+         val result2 = vyne2.query(
+            """
          @StreamConsumer(id = "1234")
          stream { Movie }"""
-         .trimIndent())
-         .results
-         .map { "query2" to it }
+               .trimIndent()
+         )
+            .results
+            .map { "query2" to it }
 
-      val mergedResults = merge(result, result2).take(10).toList()
+         val mergedResults = merge(result, result2).take(10).toList()
 
-      val groupByQuery = mergedResults.groupBy { it.first }
-      groupByQuery.keys.size.should.equal(2)
-   }
+         val groupByQuery = mergedResults.groupBy { it.first }
+         groupByQuery.keys.size.should.equal(2)
+      }
 
    @Test
    fun `subscription is not cancelled when there is a parsing exception`(): Unit = runBlocking {
 
       val topic = "arrivals"
-      val (vyne, kafkaStreamManager, stub, streamErrors) = vyneWithKafkaInvoker("""
+      val (vyne, kafkaStreamManager, stub, streamErrors) = vyneWithKafkaInvoker(
+         """
                ${KafkaConnectorTaxi.Annotations.imports}
                 [[ Flight Number]]
                 type FlightNum inherits String
@@ -362,9 +518,10 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
                   stream streamMovieQuery:Stream<Arrival>
                }
 
-            """.trimIndent())
+            """.trimIndent()
+      )
 
-     val p =  DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
+      val p = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssXXX")
          .parse("2024-03-04T16:57:06+00:00")
 
       fun arrivalMessage(eventTime: String) = """
@@ -378,13 +535,15 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
          }
       """.trimIndent()
       // This will cause TypedInstance parse exception.
-      sendMessage(arrivalMessage( "2024-03-04T16:57:06.555+00:00"), topic)
+      sendMessage(arrivalMessage("2024-03-04T16:57:06.555+00:00"), topic)
       // This is a valid message
-      sendMessage(arrivalMessage( "2024-03-04T16:57:06+00:00"), topic)
+      sendMessage(arrivalMessage("2024-03-04T16:57:06+00:00"), topic)
 
-      val result = vyne.query("""
+      val result = vyne.query(
+         """
          stream { Arrival }"""
-         .trimIndent())
+            .trimIndent()
+      )
 
          .results.take(1).toList() as List<TypedObject>
 
@@ -398,11 +557,6 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
 
    }
-
-
-
-
-
 
 
    private fun message(messageId: String) = """{ "id": "$messageId"}"""
@@ -424,7 +578,6 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
                }
 
             """.trimIndent()
-
 
 
    fun buildFiniteQuery(
