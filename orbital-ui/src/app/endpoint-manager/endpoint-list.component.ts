@@ -2,9 +2,10 @@ import { AsyncPipe, CommonModule, TitleCasePipe } from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component} from '@angular/core';
 import { TuiNotificationModule } from '@taiga-ui/core';
 import { TuiBadgeModule } from '@taiga-ui/kit';
-import {Observable} from 'rxjs';
+import {Observable, switchMap} from 'rxjs';
 import { ConnectionStatusComponent } from '../data-source-manager/connection-status/connection-status.component';
 import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
+import {SchemaNotificationService} from '../services/schema-notification.service';
 import { SavedQuery, TypesService } from '../services/types.service';
 import {ActivatedRoute, Router} from "@angular/router";
 import {
@@ -83,22 +84,32 @@ export class EndpointListComponent {
   private streamServerState: StreamServerStatusEvent = null;
   websocketConnectionError: string | null = null;
 
-  constructor(typeService: TypesService,
-              private router: Router,
-              private activeRoute: ActivatedRoute,
-              private pipelineService: PipelineService,
-              private changeDetector: ChangeDetectorRef) {
-    this.queries$ = typeService.getQueries()
+  constructor(
+    private typeService: TypesService,
+    private router: Router,
+    private activeRoute: ActivatedRoute,
+    private pipelineService: PipelineService,
+    private schemaNotificationService: SchemaNotificationService,
+    private changeDetector: ChangeDetectorRef
+  ) {
+    this.queries$ = this.schemaNotificationService.createSchemaNotificationsSubscription()
       .pipe(
-        map(savedQueries => savedQueries.filter(savedQuery => savedQuery.httpEndpoint || savedQuery.websocketOperation || savedQuery.queryKind === "Stream")),
-        tap(next => {
-          this.hasStreamingQueries = next.some(query => query.queryKind === "Stream")
-        })
-      )
+        switchMap(() => this.typeService.getQueries()
+          .pipe(
+            map(savedQueries => savedQueries.filter(savedQuery =>
+              savedQuery.httpEndpoint ||
+              savedQuery.websocketOperation ||
+              savedQuery.queryKind === 'Stream'
+            )),
+            tap(savedQueries => {
+              this.hasStreamingQueries = savedQueries.some(query => query.queryKind === 'Stream');
+              this.changeDetector.markForCheck();
+            })
+          )
+        )
+      );
+
     const streamServerStatusMessages = pipelineService.streamsStatus()
-      .pipe(
-        takeUntilDestroyed()
-      )
     this.streamServerConnectionStatus$ = streamServerStatusMessages.pipe(
       map(event => event.connectionStatus),
       map((event: ConnectionStatus) => {
@@ -109,7 +120,9 @@ export class EndpointListComponent {
       })
     )
 
-    streamServerStatusMessages.subscribe(
+    streamServerStatusMessages
+      .pipe(takeUntilDestroyed())
+      .subscribe(
       {
         next: next => {
           this.streamServerState = next.streamServerState;
@@ -121,7 +134,6 @@ export class EndpointListComponent {
           changeDetector.markForCheck();
         }
       });
-
   }
 
   queryStateBadgeType(state: 'RUNNING' | 'PAUSED' | 'UNKNOWN'): TuiStatus {
