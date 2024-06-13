@@ -1,0 +1,60 @@
+@import "src/common";
+
+.timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+ul > li {
+  display: grid;
+  font-size: 0.9rem;
+  grid-template-columns: 5rem 45px auto;
+}
+
+.timeline-left {
+  width: 5rem;
+  text-align: right;
+}
+
+.timeline-center {
+  .vertical-line {
+    height: 100%;
+    width: 2px;
+    background-color: $slate-300;
+    margin-top: -15px;
+    margin-left: 20px;
+  }
+}
+
+.timeline-entry-icon {
+  border: 2px solid $slate-400;
+  background-color: white;
+  border-radius: 50%;
+  width: 14px;
+  height: 14px;
+  margin: 4px 0.8rem;
+  position: relative;
+  z-index: 1;
+}
+
+.changelog-package {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+  gap: 0.5rem;
+}
+
+.diff-length {
+  color: $gray-600;
+  font-style: italic;
+
+  &:hover {
+    color: $gray-700;
+  }
+}
+
+::ng-deep {
+  tui-hint {
+    max-width: 30rem !important;
+  }
+}

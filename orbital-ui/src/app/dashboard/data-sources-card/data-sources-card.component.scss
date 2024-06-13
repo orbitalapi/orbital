@@ -1,26 +1,31 @@
 @import "src/common";
 
-:host ::ng-deep {
-  progress {
-    color: $green;
-    background: $red-light;
-    height: 1rem;
-    margin-bottom: 1rem;
+.connection-error {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+
+  app-connection-status {
+    ::ng-deep tui-badge {
+      margin: 0;
+    }
   }
 }
 
-.connection-error {
-  margin-top: 1rem;
+.row {
   display: flex;
-  align-items: center;
+  gap: 2rem;
+}
 
-  app-connection-status {
-    margin-right: 0.25rem;
-  }
+h4 {
+  margin: 1rem 0 0 0;
+}
 
-  .error-message {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
+app-statistic::ng-deep {
+  min-width: 6rem;
+
+  .stat-value {
+    font-size: 2.3rem;
   }
 }

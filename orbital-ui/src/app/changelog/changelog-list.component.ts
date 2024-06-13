@@ -14,7 +14,7 @@ import { paginate } from 'src/app/utils/arrays';
         <h3>{{ changeLogEntry.affectedPackages[0] }}</h3>
       </div>
       <div class="diff-list-container">
-        <h3>{{changeLogEntry.diffs.length}} Changes</h3>
+        <h3>{{changeLogEntry.diffs.length}} Change{{changeLogEntry.diffs.length > 1 ? 's' : null}}</h3>
         <app-diff-list [diffs]="changeLogEntry.diffs"></app-diff-list>
       </div>
     </div>

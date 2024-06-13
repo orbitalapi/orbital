@@ -310,7 +310,7 @@ export class QueryEditorState {
             tap(parsedQuery => this.payload.isQuerySaveable.set(!parsedQuery.hasCompilationErrors)),
             map(parsedQuery => parsedQuery.queryPlan),
             catchError(error => {
-              // Return an observable to prevent the stream from completing
+              // Return an observ/**/able to prevent the stream from completing
               return of({ steps: [] } as QueryPlan);
             })
           )

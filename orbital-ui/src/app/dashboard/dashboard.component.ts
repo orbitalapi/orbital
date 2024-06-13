@@ -9,13 +9,17 @@ import {TypesService} from '../services/types.service';
 import {ChangelogCardComponent} from './changelog-card/changelog-card.component';
 import {DataSourcesCardComponent} from './data-sources-card/data-sources-card.component';
 import {EndpointStatsCardComponent} from './endpoint-stats-card/endpoint-stats-card.component';
+import {CardComponent} from "./card/card.component";
+import {ContentCardComponent} from "./content-card/content-card.component";
+import {ContentCardData, ContentService} from "../services/content.service";
+import {Observable} from "rxjs";
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [
     CommonModule, HeaderComponentLayoutModule, RouterOutlet, TuiButtonModule, RouterLink,
-    TuiNotificationModule, DataSourcesCardComponent, EndpointStatsCardComponent, ChangelogCardComponent
+    TuiNotificationModule, DataSourcesCardComponent, EndpointStatsCardComponent, ChangelogCardComponent, CardComponent, ContentCardComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
@@ -27,23 +31,27 @@ export class DashboardComponent {
   readonly uiConfig = UiCustomisations;
   private readonly HIDE_LIVE_RELOAD_NOTIFICATION_LOCAL_STORAGE_KEY = "hideLiveReloadNotification";
 
+  contentCards$: Observable<ContentCardData[]>
+
   constructor(
     private typeService: TypesService,
     private router: Router,
-    private changeDetectorRef: ChangeDetectorRef
+    private changeDetectorRef: ChangeDetectorRef,
+    private contentService: ContentService
   ) {
-  typeService.getTypes()
-    .pipe(takeUntilDestroyed())
-    .subscribe(type => {
-      if (type.services.length === 0) {
-        router.navigate(
-          ['/onboarding'],
-          {
-            replaceUrl: true,
-          }
-        );
-      }
-    });
+    this.contentCards$ = contentService.getContent();
+    typeService.getTypes()
+      .pipe(takeUntilDestroyed())
+      .subscribe(type => {
+        if (type.services.length === 0) {
+          router.navigate(
+            ['/onboarding'],
+            {
+              replaceUrl: true,
+            }
+          );
+        }
+      });
 
     this.hideLiveReloadNotification = localStorage.getItem(this.HIDE_LIVE_RELOAD_NOTIFICATION_LOCAL_STORAGE_KEY) === "true";
   }

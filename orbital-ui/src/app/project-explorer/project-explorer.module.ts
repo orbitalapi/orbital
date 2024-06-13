@@ -1,4 +1,5 @@
 import {NgModule} from '@angular/core';
+import {ChangelogTimelineComponent} from '../changelog/changelog-timeline.component';
 import { ProjectImportComponent } from '../project-import/project-import.component';
 import { AuthGuard } from '../services/auth.guard';
 import { VynePrivileges } from '../services/user-info.service';
@@ -67,7 +68,7 @@ import {HeaderComponentLayoutModule} from "../header-component-layout/header-com
         path: 'project-import',
         component: ProjectImportComponent,
         canActivate: [AuthGuard],
-        data: {requiredAuthority: VynePrivileges.EditSchema}
+        data: { requiredAuthority: VynePrivileges.EditSchema }
       },
       {
         path: '',
@@ -106,6 +107,7 @@ import {HeaderComponentLayoutModule} from "../header-component-layout/header-com
     TuiNotificationModule,
     ExpandingPanelSetModule,
     HeaderComponentLayoutModule,
+    ChangelogTimelineComponent,
   ],
     exports: [ProjectExplorerComponent, ProjectSummaryViewComponent],
   declarations: [ProjectExplorerComponent, ProjectExplorerContainerComponent, ProjectSummaryViewComponent, ProjectSettingsComponent, ProjectErrorListComponent],

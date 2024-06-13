@@ -26,6 +26,11 @@
 
    <dependencies>
       <dependency>
+         <groupId>com.github.freva</groupId>
+         <artifactId>ascii-table</artifactId>
+         <version>1.8.0</version>
+      </dependency>
+      <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>soap-connector</artifactId>
          <version>${project.version}</version>

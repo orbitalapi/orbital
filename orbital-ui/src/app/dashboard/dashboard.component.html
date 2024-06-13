@@ -16,9 +16,28 @@
   <tui-notification (close)="onHideNotification()" status="info" *ngIf="!hideLiveReloadNotification">
     <strong>Live reload</strong>
     <div>The developer environment of {{ uiConfig.productName }} is configured with live reload, so any changes you make
-      in your taxi project are automatically picked up and detected inside of {{ uiConfig.productName }}</div>
+      in your taxi project are automatically picked up and detected inside of {{ uiConfig.productName }}
+    </div>
   </tui-notification>
-  <app-data-sources-card></app-data-sources-card>
-  <app-endpoint-stats-card></app-endpoint-stats-card>
-  <app-changelog-card></app-changelog-card>
+
+  <div class="grid-container grid-cols-2">
+    <app-data-sources-card></app-data-sources-card>
+    <app-changelog-card></app-changelog-card>
+  </div>
+
+  <section *ngIf="(contentCards$ | async)?.length > 0">
+    <h3>Recommended</h3>
+    <div class="grid-container grid-cols-3">
+      <app-content-card *ngFor="let contentCard of contentCards$ | async"
+                        [cardData]="contentCard"/>
+    </div>
+  </section>
+
+
+  <section>
+    <h3>Metrics</h3>
+    <app-endpoint-stats-card></app-endpoint-stats-card>
+  </section>
+
+
 </app-header-component-layout>

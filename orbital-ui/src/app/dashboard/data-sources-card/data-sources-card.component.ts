@@ -8,13 +8,16 @@ import { tap } from 'rxjs/operators';
 import { ConnectionStatusComponent } from '../../data-source-manager/connection-status/connection-status.component';
 import {ConnectorSummary, DbConnectionService, PackageWithError} from '../../db-connection-editor/db-importer.service';
 import { CardComponent } from '../card/card.component';
+import {StatisticModule} from "../../statistic/statistic.module";
+import {BehaviorSubject} from "rxjs";
 
 @Component({
   selector: 'app-data-sources-card',
   standalone: true,
   imports: [
     CommonModule, CardComponent, TuiProgressModule, TuiButtonModule, RouterLink, ConnectionStatusComponent,
-    TuiNotificationModule
+    TuiNotificationModule,
+    StatisticModule
   ],
   templateUrl: './data-sources-card.component.html',
   styleUrls: ['./data-sources-card.component.scss'],
@@ -23,9 +26,9 @@ import { CardComponent } from '../card/card.component';
 export class DataSourcesCardComponent {
   connectionsLoading = signal<boolean>(true)
   description = signal<string>("Loading...");
+  healthyConnections = signal<ConnectorSummary[]>([])
   unhealthyConnections = signal<ConnectorSummary[]>([])
   definitionsWithErrors = signal<PackageWithError[]>([])
-  percentHealthy = signal<number>(null);
 
   constructor(
     private dbService: DbConnectionService,
@@ -47,7 +50,7 @@ export class DataSourcesCardComponent {
           this.description.set(definitionsWithErrorsDescription || healthDescription)
           this.definitionsWithErrors.set(connections.definitionsWithErrors)
           this.unhealthyConnections.set(unhealthyConnections);
-          this.percentHealthy.set((healthyConnections.length/connLength)*100);
+          this.healthyConnections.set(healthyConnections);
           this.connectionsLoading.set(false)
         }),
         takeUntilDestroyed()
