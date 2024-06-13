@@ -39,6 +39,15 @@ object KafkaConnectorTaxi {
             )
          }
       }
+      object KafkaMessageKey {
+         const val NAME = "$namespace.KafkaMessageKey"
+      }
+      object KafkaHeader {
+         const val NAME = "$namespace.KafkaHeader"
+      }
+      object KafkaMessageMetadata {
+         const val NAME = "$namespace.KafkaMessageMetadata"
+      }
       data class KafkaOperation(val topic: String, val offset: Offset) : AnnotationWrapper {
          enum class Offset {
             EARLIEST,
@@ -96,6 +105,23 @@ namespace  ${Annotations.namespace} {
       latest,
       none
    }
+   annotation KafkaMessageKey {}
+
+   annotation KafkaMessageMetadata {
+      value : KafkaMetadataType
+   }
+   enum KafkaMetadataType {
+      Partition,
+      Offset,
+      Timestamp,
+      TimestampType
+   }
+
+
+   annotation KafkaHeader {
+      value : String
+   }
+
    annotation ${Annotations.KafkaOperation.NAME.fqn().name} {
       topic : TopicName inherits String
       offset : TopicOffset

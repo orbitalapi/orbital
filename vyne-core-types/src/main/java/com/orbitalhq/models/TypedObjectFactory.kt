@@ -51,6 +51,7 @@ class TypedObjectFactory(
    private val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf(),
    private val projectionScope: ProjectionFunctionScope? = null,
    private val metadata: Map<String, Any> = emptyMap(),
+   private val valueSuppliers: List<ValueSupplier> = emptyList(),
    /**
     * Normally, we don't allow construction of closed types.
     * However, if a type is both closed AND a parameter type,
@@ -277,7 +278,8 @@ class TypedObjectFactory(
             evaluateAccessors = evaluateAccessors,
             functionRegistry = functionRegistry,
             formatSpecs = formatSpecs,
-            parsingErrorBehaviour = parsingErrorBehaviour
+            parsingErrorBehaviour = parsingErrorBehaviour,
+            valueSuppliers = valueSuppliers
          )
       }
 
@@ -323,7 +325,8 @@ class TypedObjectFactory(
          formatSpecs = formatSpecs,
          inPlaceQueryEngine = inPlaceQueryEngine,
          parsingErrorBehaviour = parsingErrorBehaviour,
-         metadata = metadata
+         metadata = metadata,
+         valueSuppliers = valueSuppliers
       )
    }
 
@@ -351,7 +354,8 @@ class TypedObjectFactory(
             formatSpecs = formatSpecs,
             inPlaceQueryEngine = inPlaceQueryEngine,
             parsingErrorBehaviour = parsingErrorBehaviour,
-            metadata = metadata
+            metadata = metadata,
+            valueSuppliers = valueSuppliers
          )
       }
 
@@ -646,6 +650,9 @@ class TypedObjectFactory(
             value
          )
       val evaluateTypeExpression = fieldType.hasExpression && evaluateAccessors
+      val valueSupplier = valueSuppliers.firstOrNull { supplier ->
+         supplier.canSupply(field, fieldType)
+      }
 
       // Questionable design choice: Favour directly supplied values over accessors and conditions.
       // The idea here is that when we're reading from a file or non parsed source, we need
@@ -656,6 +663,7 @@ class TypedObjectFactory(
       // Otherwise, look to leverage conditions.
       // Note - revisit if this proves to be problematic.
       return when {
+         valueSupplier != null -> valueSupplier.supplyValue(field, fieldType, schema, source, this)
          // Cheaper readers first
          value is CSVRecord && field.accessor is ColumnAccessor && considerAccessor -> {
             readAccessor(fieldTypeName, field.accessor, field.nullable, field.format)
@@ -834,7 +842,7 @@ class TypedObjectFactory(
       attributeName: AttributeName?// null if searching for top-level type
    ): TypedInstance {
       require(inPlaceQueryEngine != null)
-      fun failWithTypedNull(failureMessage: String):TypedNull {
+      fun failWithTypedNull(failureMessage: String): TypedNull {
          return if (attributeName != null) {
             failWithTypedNull(
                searchType,
@@ -867,17 +875,20 @@ class TypedObjectFactory(
                // Unwrap the array
                TypedCollection.empty(searchType)
             } else if (isNullListBuildResult(buildResult, searchFailureBehaviour)) {
-               val failureMessage = "Searching for ${searchType.name.shortDisplayName}${attributeNameErrorMessagePart} failed"
+               val failureMessage =
+                  "Searching for ${searchType.name.shortDisplayName}${attributeNameErrorMessagePart} failed"
                failWithTypedNull(failureMessage)
 
             } else {
                TypedCollection.arrayOf(searchType.collectionType!!, buildResult.filter { it !is TypedNull })
             }
          }
+
          buildResult.isEmpty() -> {
             val message = "Searching for ${searchType.name.shortDisplayName}${attributeNameErrorMessagePart} failed"
             failWithTypedNull(message)
          }
+
          buildResult.size == 1 -> buildResult.single()
          else -> {
             val message =
@@ -1001,7 +1012,8 @@ class TypedObjectFactory(
             true,
             source = source,
             parsingErrorBehaviour = parsingErrorBehaviour,
-            format = format
+            format = format,
+            valueSuppliers = valueSuppliers
          )
       }
    }

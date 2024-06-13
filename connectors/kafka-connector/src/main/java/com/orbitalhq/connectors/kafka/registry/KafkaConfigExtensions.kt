@@ -17,7 +17,7 @@ import java.util.UUID
 
 private val logger = KotlinLogging.logger {  }
 
-fun KafkaConnectionConfiguration.toReceiverOptions(offset: String = "latest", request: KafkaConsumerRequest): ReceiverOptions<Int, ByteArray> {
+fun KafkaConnectionConfiguration.toReceiverOptions(offset: String = "latest", request: KafkaConsumerRequest): ReceiverOptions<Any, ByteArray> {
    val consumerProps = this.toConsumerProps(offset, request)
    return ReceiverOptions.create(consumerProps)
 }

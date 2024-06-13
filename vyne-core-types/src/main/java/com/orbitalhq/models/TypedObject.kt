@@ -91,7 +91,8 @@ data class TypedObject(
          formatSpecs: List<ModelFormatSpec> = emptyList(),
          parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
          functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf(),
-         metadata: Map<String, Any> = emptyMap()
+         metadata: Map<String, Any> = emptyMap(),
+         valueSuppliers: List<ValueSupplier> = emptyList()
       ): TypedInstance {
          return TypedObjectFactory(
             type,
@@ -105,7 +106,8 @@ data class TypedObject(
             formatSpecs = formatSpecs,
             parsingErrorBehaviour = parsingErrorBehaviour,
             functionResultCache = functionResultCache,
-            metadata = metadata
+            metadata = metadata,
+            valueSuppliers = valueSuppliers
          ).build()
       }
    }

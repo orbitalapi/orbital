@@ -29,7 +29,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
-import org.apache.kafka.common.serialization.StringDeserializer
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Scheduler
 import reactor.core.scheduler.Schedulers
@@ -109,7 +108,7 @@ class KafkaStreamManager(
       val encoding = MessageEncodingType.forType(messageType)
       val schema = schemaProvider.schema
       val dataSource = buildDataSource(request, connectionConfiguration)
-      val flow = KafkaReceiver.create(
+      val flow = KafkaReceiver.create<Any,ByteArray>(
          // Commits are performed when either the interval or batch size is reached.
          receiverOptions
             .commitInterval(Duration.ofSeconds(2L))
@@ -155,7 +154,8 @@ class KafkaStreamManager(
                      messageValue,
                      schema,
                      formatSpecs = formatRegistry.formats,
-                     source = dataSource
+                     source = dataSource,
+                     valueSuppliers = listOf(KafkaValueSupplier(record))
                   )
                )
             } catch (e: Exception) {
@@ -211,7 +211,7 @@ class KafkaStreamManager(
       )
    }
 
-   private fun buildReceiverOptions(request: KafkaConsumerRequest): Pair<KafkaConnectionConfiguration, ReceiverOptions<Int, ByteArray>> {
+   private fun buildReceiverOptions(request: KafkaConsumerRequest): Pair<KafkaConnectionConfiguration, ReceiverOptions<Any, ByteArray>> {
       val connectionConfiguration =
          connectionRegistry.getConnection(request.connectionName)
 

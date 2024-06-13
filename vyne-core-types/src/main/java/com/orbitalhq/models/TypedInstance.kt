@@ -152,7 +152,8 @@ interface TypedInstance {
          inPlaceQueryEngine: InPlaceQueryEngine? = null,
          parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
          format: FormatsAndZoneOffset? = type.formatAndZoneOffset,
-         metadata: Map<String, Any> = emptyMap()
+         metadata: Map<String, Any> = emptyMap(),
+         valueSuppliers:List<ValueSupplier> = emptyList()
       ): TypedInstance {
 
          // Just here to DRY out the passing of params
@@ -168,7 +169,8 @@ interface TypedInstance {
                inPlaceQueryEngine = inPlaceQueryEngine,
                formatSpecs = formatSpecs,
                parsingErrorBehaviour = parsingErrorBehaviour,
-               metadata = metadata
+               metadata = metadata,
+               valueSuppliers = valueSuppliers
             )
          }
          return when {
@@ -190,7 +192,8 @@ interface TypedInstance {
                   inPlaceQueryEngine,
                   parsingErrorBehaviour,
                   format,
-                  metadata
+                  metadata,
+                  valueSuppliers
                )
             }
             value is Array<*> -> {
@@ -208,7 +211,8 @@ interface TypedInstance {
                   inPlaceQueryEngine,
                   parsingErrorBehaviour,
                   format,
-                  metadata
+                  metadata,
+                  valueSuppliers
                )
             }
             value is Collection<*> -> {
@@ -233,7 +237,8 @@ interface TypedInstance {
                         functionRegistry = functionRegistry,
                         parsingErrorBehaviour = parsingErrorBehaviour,
                         format = format,
-                        metadata = metadata
+                        metadata = metadata,
+                        valueSuppliers = valueSuppliers
                      )
                   },
                   source
@@ -269,7 +274,8 @@ interface TypedInstance {
                inPlaceQueryEngine = inPlaceQueryEngine,
                formatSpecs = formatSpecs,
                parsingErrorBehaviour = parsingErrorBehaviour,
-               metadata = metadata
+               metadata = metadata,
+               valueSuppliers = valueSuppliers
             ).build()
 
             else -> buildUsingObjectFactory()
@@ -297,3 +303,5 @@ interface TypedInstance {
 fun TypedInstance.containsMetadata(name: String): Boolean {
    return this.metadata.containsKey(name)
 }
+
+
