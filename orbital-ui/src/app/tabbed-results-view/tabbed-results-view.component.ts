@@ -46,9 +46,9 @@ enum ViewMode {
     <ng-container *ngIf="{obs: responseIsLarge$ | async} as responseIsLarge">
       <app-panel-header class="panel-header"
                         [isSecondary]="true"
-                        [title]="!config?.featureToggles.queryPlanModeEnabled ? 'Results' : null"
+                        [title]="!config?.featureToggles.queryPlanModeEnabled || onlyShowResultsViewMode ? 'Results' : null"
       >
-        <ng-container ngProjectAs="title-content" *ngIf="config?.featureToggles.queryPlanModeEnabled">
+        <ng-container ngProjectAs="title-content" *ngIf="config?.featureToggles.queryPlanModeEnabled && !onlyShowResultsViewMode">
           <tui-segmented
             class="tab-mode-container"
             [(activeItemIndex)]="viewMode"
@@ -72,7 +72,7 @@ enum ViewMode {
             The query plan below is indicative, and only shows the happy path.
           </tui-notification>
         </ng-container>
-        <tui-tabs-with-more *ngIf="showResultsPanel && viewMode === ViewMode.RESULTS"
+        <tui-tabs-with-more *ngIf="showResultsPanel && (viewMode === ViewMode.RESULTS || onlyShowResultsViewMode)"
                             [(activeItemIndex)]="resultsTabIndex"
                             (activeItemIndexChange)="onTabIndexChanged($event)"
                             [moreContent]='more'
@@ -249,6 +249,9 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   @Input()
   isQueryPaused: boolean;
 
+  @Input()
+  onlyShowResultsViewMode: boolean
+
   queryStartTime = input<Date>()
   hasQueryRun = computed<boolean>(() => !!this.queryStartTime())
 
@@ -283,11 +286,11 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
       .pipe(takeUntilDestroyed())
       .subscribe(next => {
         this.config = next
-        this.viewMode = this.config.featureToggles.queryPlanModeEnabled ? ViewMode.DESIGN : ViewMode.RESULTS
+        this.viewMode = this.config.featureToggles.queryPlanModeEnabled && !this.onlyShowResultsViewMode ? ViewMode.DESIGN : ViewMode.RESULTS
       });
     effect(() => {
       if (this.config?.featureToggles.queryPlanModeEnabled) {
-        this.viewMode = this.queryStartTime() ? ViewMode.RESULTS : ViewMode.DESIGN;
+        this.viewMode = this.queryStartTime() || this.onlyShowResultsViewMode ? ViewMode.RESULTS : ViewMode.DESIGN;
         this.changeDetector.markForCheck()
       }
     })

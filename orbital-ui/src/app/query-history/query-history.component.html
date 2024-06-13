@@ -18,6 +18,7 @@
                                [profileData$]="activeQueryProfileData$"
                                [instances$]="activeRecordResults$"
                                [type]="activeRecordResultType"
+                               [onlyShowResultsViewMode]="true"
                                (downloadClicked)="downloadQueryHistory($event)"
                                (instanceSelected)="sidePanelVisible = true; instanceSelected$.next($event)"></app-tabbed-results-view>
     </as-split-area>
