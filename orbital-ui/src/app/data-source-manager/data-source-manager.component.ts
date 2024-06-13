@@ -1,13 +1,15 @@
-import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import {CommonModule} from '@angular/common';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router, RouterOutlet} from '@angular/router';
-import { AngularSplitModule } from 'angular-split';
-import { Observable } from 'rxjs';
-import { UiCustomisations } from '../../environments/ui-customisations';
-import { ConnectionsListResponse, DbConnectionService } from '../db-connection-editor/db-importer.service';
-import { Schema } from '../services/schema';
-import { TypesService } from '../services/types.service';
-import { DataSourceTreeComponent } from './data-source-tree/data-source-tree.component';
+import {AngularSplitModule} from 'angular-split';
+import {Observable} from 'rxjs';
+import {UiCustomisations} from '../../environments/ui-customisations';
+import {ConnectionsListResponse, DbConnectionService} from '../db-connection-editor/db-importer.service';
+import {Schema} from '../services/schema';
+import {SchemaNotificationService} from '../services/schema-notification.service';
+import {TypesService} from '../services/types.service';
+import {DataSourceTreeComponent} from './data-source-tree/data-source-tree.component';
 
 @Component({
   selector: 'app-data-source-manager',
@@ -40,7 +42,8 @@ import { DataSourceTreeComponent } from './data-source-tree/data-source-tree.com
     DataSourceTreeComponent,
     RouterOutlet
   ],
-  standalone: true
+  standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DataSourceManagerComponent {
   schema$: Observable<Schema>
@@ -51,15 +54,22 @@ export class DataSourceManagerComponent {
     private dbService: DbConnectionService,
     private router: Router,
     private activatedRoute: ActivatedRoute,
+    private schemaNotificationService: SchemaNotificationService,
+    private changeDetectorRef: ChangeDetectorRef
   ) {
-    this.schema$ = this.typeService.getTypes();
-    this.connections$ = this.dbService.getConnections(true);
+    this.schemaNotificationService.createSchemaNotificationsSubscription().pipe(
+      takeUntilDestroyed()
+    )
+      .subscribe(() => {
+        this.schema$ = this.typeService.getTypes();
+        this.connections$ = this.dbService.getConnections(true);
+        this.changeDetectorRef.markForCheck()
+      });
   }
 
   showProblemsPanel() {
     this.router.navigate(['problems'], { relativeTo: this.activatedRoute })
   }
-
 
   protected readonly UiCustomisations = UiCustomisations;
 }
