@@ -24,10 +24,11 @@ import {TuiPaginationModule} from '@taiga-ui/kit';
     DocumentationChangeComponent,
     DiffListComponent
   ],
-  exports: [
-    ChangelogListComponent,
-    InputParamsChangeComponent
-  ],
+    exports: [
+        ChangelogListComponent,
+        InputParamsChangeComponent,
+        DiffListComponent
+    ],
     imports: [
         CommonModule,
         MomentModule,

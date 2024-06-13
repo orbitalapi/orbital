@@ -1,7 +1,6 @@
 <app-card
   title="Data sources"
   titleLink="/data-source-manager"
-  [description]="description()"
   icon="/assets/img/tabler/plug.svg"
 >
   <ng-container ngProjectAs="header-controls">
@@ -15,30 +14,48 @@
       Add data source
     </button>
   </ng-container>
-  <ng-container *ngIf="!connectionsLoading(); else connectionLoading">
-    <progress *ngIf="percentHealthy()" tuiProgressBar [value]="percentHealthy()" max="100"></progress>
-  </ng-container>
-  <ng-template #connectionLoading>
-    <progress tuiProgressBar max="100"></progress>
-  </ng-template>
-  <ng-container *ngIf="definitionsWithErrors().length">
-    <tui-notification status='warning'>
-      <strong>Connections with definition error(s):</strong>
-      <div *ngFor="let conn of definitionsWithErrors()" class="connection-error">
-        <div>{{conn.configFileName}}</div>
-      </div>
-    </tui-notification>
-  </ng-container>
-  <ng-container *ngIf="unhealthyConnections()">
-    <h4 *ngIf="unhealthyConnections().length">Unhealthy connection(s):</h4>
+  <progress *ngIf="connectionsLoading()" tuiProgressBar max="100"></progress>
+  <div class="row">
+    <app-statistic size="l"
+                   status="success"
+                   label="Healthy"
+                   [value]="healthyConnections()?.length?.toString()"
+    />
+    <app-statistic size="l"
+                   status="warning"
+                   label="Unhealthy"
+                   [value]="unhealthyConnections()?.length?.toString()"
+                   *ngIf="unhealthyConnections()?.length > 0"
+    />
+    <app-statistic size="l"
+                   status="error"
+                   label="Error"
+                   [value]="definitionsWithErrors()?.length?.toString()"
+                   *ngIf="definitionsWithErrors()?.length > 0"
+    />
+  </div>
+  <ng-container *ngIf="unhealthyConnections()?.length">
+    <h4>Unhealthy connections:</h4>
     <div *ngFor="let conn of unhealthyConnections()" class="connection-error">
       <strong>{{conn.connectionName}}</strong>
       <app-connection-status [status]="conn.connectionStatus" [hideTimestamp]="true"></app-connection-status>
       <a
-        class="error-message link"
+        class="link"
         [routerLink]="'/data-source-manager/' + conn.packageIdentifier.uriSafeId + '/' + conn.connectionName"
       >
         {{conn.connectionStatus.message}}
+      </a>
+    </div>
+  </ng-container>
+  <ng-container *ngIf="definitionsWithErrors()?.length">
+    <h4>Definition errors:</h4>
+    <div *ngFor="let defn of definitionsWithErrors()" class="connection-error">
+      <div *ngIf="defn.identifier.uriSafeId?.split(':') as packageSplit">{{packageSplit?.[0]}} / {{packageSplit?.[1]}}</div>
+      <a
+        class="link"
+        routerLink="/data-source-manager/problems"
+      >
+        {{defn.error}}
       </a>
     </div>
   </ng-container>

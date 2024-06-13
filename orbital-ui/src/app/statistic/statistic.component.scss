@@ -1,14 +1,32 @@
 @import "src/common";
 
-.stat-label {
-  font-size: 1rem;
-  color: lighten($body, 5);
-}
+
 :host {
-  padding: 1rem;
+  padding: 0.5rem;
+  border: 1px solid $slate-200;
+  border-radius: 8px;
+  --label-font-size: 0.9rem;
+  --value-font-size: 1.3rem;
+}
+
+
+:host(.size-l) {
+  --label-font-size: 1rem;
+  --value-font-size: 2.3rem;
+
+}
+
+
+.stat-label {
+  font-size: #{--label-font-size};
+  color: lighten($body, 5);
+  margin-bottom: 0.4rem;
 }
 
 .stat-value {
-  font-size: 1.3rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: #{--value-font-size};
   font-weight: bold;
 }

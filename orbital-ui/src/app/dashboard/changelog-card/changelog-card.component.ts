@@ -8,11 +8,12 @@ import { ProjectExplorerModule } from '../../project-explorer/project-explorer.m
 import { ParsedSource } from '../../services/schema';
 import { SchemaNotificationService } from '../../services/schema-notification.service';
 import { CardComponent } from '../card/card.component';
+import {ChangelogTimelineComponent} from "../../changelog/changelog-timeline.component";
 
 @Component({
   selector: 'app-changelog-card',
   standalone: true,
-  imports: [CommonModule, CardComponent, ProjectExplorerModule],
+  imports: [CommonModule, CardComponent, ProjectExplorerModule, ChangelogTimelineComponent],
   templateUrl: './changelog-card.component.html',
   styleUrls: ['./changelog-card.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush

@@ -1,0 +1,24 @@
+::ng-deep.content {
+  display: flex;
+  flex-direction: column;
+}
+
+.body-text {
+  flex-grow: 1;
+}
+.button-bar {
+  margin-top: 1rem;
+  text-align: right;
+  font-size: 0.9rem;
+
+  display: flex;
+  flex-direction: row-reverse;
+
+  a {
+    display: flex;
+    img {
+      margin-left: 0.5rem;
+      width: 1rem;
+    }
+  }
+}
