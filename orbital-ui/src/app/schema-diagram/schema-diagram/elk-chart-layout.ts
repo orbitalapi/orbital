@@ -32,7 +32,7 @@ export function applyElkLayout(nodes: Node[], edges: Edge[]): Promise<Node[]> {
       'cycleBreaking.strategy': 'INTERACTIVE',
       'layering.strategy': 'INTERACTIVE',
       'crossingMinimization.semiInteractive': 'true',
-      'separateConnectedComponents': 'false',
+      //'separateConnectedComponents': 'false',
       // 'elk.direction': width > height ? 'RIGHT' : 'UP',
       // 'layered.edgeRouting.splines.mode': 'CONSERVATIVE',
       'spacing.nodeNode': '40',
