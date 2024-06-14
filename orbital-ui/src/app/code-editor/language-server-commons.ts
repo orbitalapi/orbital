@@ -27,7 +27,9 @@ export const createLanguageClient = (transports: MessageTransports): MonacoLangu
       documentSelector: [TAXI_LANGUAGE_ID],
       errorHandler: {
         error: () => ({action: ErrorAction.Continue}),
-        closed: () => ({action: CloseAction.Restart})
+        // MonacoLanguageClient doesn't handle WS reconnection correctly (or at all), so this is set to
+        // DoNotRestart and the restarting occurs in the language-server.service and code-editor.component
+        closed: () => ({action: CloseAction.DoNotRestart})
       }
     },
 
