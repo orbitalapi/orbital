@@ -1,7 +1,7 @@
 import {Inject, Injectable} from "@angular/core";
 import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from "./language-server.tokens";
 import {MonacoLanguageClient} from "monaco-languageclient";
-import {defer, Observable} from "rxjs";
+import {defer, Observable, Subject} from 'rxjs';
 import {shareReplay} from "rxjs/operators";
 import {createLanguageClient, createWebsocketConnection, performInit, WsTransport} from "./language-server-commons";
 
@@ -9,11 +9,12 @@ import {createLanguageClient, createWebsocketConnection, performInit, WsTranspor
   providedIn: 'root',
 })
 export class MonacoLanguageServerService {
-
   readonly languageServicesInit$: Observable<void>
+  readonly websocketClosed$: Subject<CloseEvent> = new Subject();
 
   private languageClient: MonacoLanguageClient;
   private webSocket: WebSocket;
+  private connection: Promise<[WebSocket, WsTransport]> | null = null;
 
   constructor(@Inject(LANGUAGE_SERVER_WS_ADDRESS_TOKEN) private languageServerWsAddress: string,) {
     this.languageServicesInit$ = defer(() => {
@@ -24,16 +25,24 @@ export class MonacoLanguageServerService {
       shareReplay(1)
     );
 
-    /*// For testing websocket reconnection
+    // For testing websocket reconnection
     // @ts-ignore
     window.killWebsocket = () => {
       this.webSocket.close()
-    }*/
+    }
   }
 
-  private connection: Promise<[WebSocket, WsTransport]> | null = null;
+  private async reset() {
+    this.connection = null;
+    this.webSocket.onclose = null;
+    try {
+      await this.languageClient?.dispose()
+    } catch(e) {
+    }
+    this.languageClient = null
+  }
 
-  async createLanguageServerWebsocketTransport(): Promise<[WebSocket, WsTransport]> {
+  private async createLanguageServerWebsocketTransport(): Promise<[WebSocket, WsTransport]> {
     // Re-use the connection. This is important as if there's multiple
     // editors in the page, they all need to be part of the same session.
     // In future, we may want to make this an observable that cleans up when
@@ -49,6 +58,11 @@ export class MonacoLanguageServerService {
       console.log('Creating new language client')
       const [websocket, wsTransport] = await this.createLanguageServerWebsocketTransport()
       this.webSocket = websocket;
+      this.webSocket.onclose = async (event) => {
+        console.warn('language server web socket closed...', event)
+        await this.reset();
+        this.websocketClosed$.next(event)
+      }
       this.languageClient = createLanguageClient(wsTransport);
     }
     return this.languageClient;

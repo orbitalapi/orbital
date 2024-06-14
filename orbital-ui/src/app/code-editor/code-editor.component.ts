@@ -1,4 +1,4 @@
-import {Component, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild} from '@angular/core';
+import {Component, DestroyRef, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {debounceTime} from "rxjs/operators";
 import {editor, MarkerSeverity} from 'monaco-editor';
@@ -135,7 +135,8 @@ export class CodeEditorComponent implements OnDestroy {
   contentChange = new EventEmitter<string>();
 
   constructor(
-    private languageServerService: MonacoLanguageServerService
+    private languageServerService: MonacoLanguageServerService,
+    private destroyRef: DestroyRef
   ) {
 
     this.languageServerService.languageServicesInit$
@@ -184,13 +185,14 @@ export class CodeEditorComponent implements OnDestroy {
 
     await this.sendOpenNotifcation();
 
+    this.languageServerService.websocketClosed$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(async (closeEvent) => this.reconnect(closeEvent))
+
     this.updateActionsOnEditor()
   }
 
   private async sendOpenNotifcation() {
-    if (!this.languageClient) {
-      this.languageClient = await this.languageServerService.getLanguageClient();
-    }
     await this.languageClient.sendNotification(DidOpenTextDocumentNotification.type, {
       textDocument: {
         uri: this.monacoModel.resource.toString(),
@@ -199,6 +201,14 @@ export class CodeEditorComponent implements OnDestroy {
         text: this.content,
       }
     })
+  }
+
+  private async reconnect(closeEvent: CloseEvent) {
+    if (closeEvent.code === 1006 || closeEvent.code === 1005) {
+      console.log("Refreshing websocket connection for language server");
+      this.languageClient = await this.languageServerService.getLanguageClient();
+      await this.sendOpenNotifcation();
+    }
   }
 
   private async createNewMonacoModel() {
