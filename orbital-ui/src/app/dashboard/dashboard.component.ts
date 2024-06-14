@@ -5,6 +5,7 @@ import {Router, RouterLink, RouterOutlet} from '@angular/router';
 import {TuiButtonModule, TuiNotificationModule} from '@taiga-ui/core';
 import {UiCustomisations} from '../../environments/ui-customisations';
 import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
+import {OnboardingContainerComponent} from '../onboarding/onboarding-container.component';
 import {TypesService} from '../services/types.service';
 import {ChangelogCardComponent} from './changelog-card/changelog-card.component';
 import {DataSourcesCardComponent} from './data-sources-card/data-sources-card.component';
@@ -43,11 +44,15 @@ export class DashboardComponent {
     typeService.getTypes()
       .pipe(takeUntilDestroyed())
       .subscribe(type => {
-        if (type.services.length === 0) {
+        const hideOnboarding = localStorage.getItem(OnboardingContainerComponent.IS_ONBOARDING_HIDDEN_LOCAL_STORAGE_KEY) === "true";
+        if (type.services.length === 0 && !hideOnboarding) {
           router.navigate(
             ['/onboarding'],
             {
               replaceUrl: true,
+              queryParams: {
+                isOnboarding: true
+              }
             }
           );
         }

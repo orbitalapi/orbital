@@ -39,6 +39,10 @@
         Explore
       </button>
     </tui-stepper>
+    <tui-notification status="info" *ngIf="isRedirectedFromDashboard()">
+      If you're happy exploring  {{ uiConfig.productName }} on your own, then you may elect to
+      <a class="link" routerLink="/" (click)="hideOnboarding()">go to the dashboard</a> and we'll remember your decision
+    </tui-notification>
   </header>
   <div class="content" [class.full-width]="(currentStepIndex$ | async) === 2">
     <router-outlet></router-outlet>

@@ -45,6 +45,7 @@ ul > li {
 }
 
 .diff-length {
+  display: table-cell;
   color: $gray-600;
   font-style: italic;
 
