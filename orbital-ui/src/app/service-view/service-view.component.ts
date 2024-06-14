@@ -3,6 +3,7 @@ import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
 import { SchemaDiagramModule } from '../schema-diagram/schema-diagram.module';
+import {AppConfig, AppInfoService} from '../services/app-info.service';
 import { QualifiedName, Schema, Service } from '../services/schema';
 import { TypesService } from '../services/types.service';
 import { getCatalogType } from 'src/app/operation-view/operation-view.component';
@@ -10,7 +11,6 @@ import { OperationSummary, toOperationSummary } from 'src/app/service-view/opera
 import { methodClassFromName } from 'src/app/service-view/service-view-class-utils';
 import { DescriptionEditorModule } from '../type-viewer/description-editor/description-editor.module';
 import { LineageGraphModule } from '../type-viewer/lineage-graph/lineage-graph.module';
-
 
 @Component({
   selector: 'app-service-view',
@@ -58,7 +58,7 @@ import { LineageGraphModule } from '../type-viewer/lineage-graph/lineage-graph.m
           </div>
         </section>
 
-        <section>
+        <section *ngIf="(config$ | async)?.featureToggles.serviceLineageDiagramsEnabled">
           <h2>Lineage</h2>
           <p class="help-text">This chart shows how this service depends on others.</p>
 
@@ -82,9 +82,14 @@ export class ServiceViewComponent {
   private _service: Service;
   operationSummaries: OperationSummary[];
   schema$: Observable<Schema>;
+  config$: Observable<AppConfig>
 
-  constructor(typeService:TypesService) {
+  constructor(
+    private typeService:TypesService,
+    private appInfoService: AppInfoService
+  ) {
     this.schema$ = typeService.getTypes()
+    this.config$ = appInfoService.getConfig()
   }
 
   navigationTargetForType(name: QualifiedName): string {

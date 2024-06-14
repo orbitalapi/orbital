@@ -1,5 +1,6 @@
 import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
 import { UiCustomisations } from '../../environments/ui-customisations';
+import {AppConfig, AppInfoService} from '../services/app-info.service';
 import {
   NamedAndDocumented,
   PartialSchema,
@@ -90,6 +91,8 @@ export class TypeViewerComponent {
 
   sourceTaxi: string;
 
+  config$: Observable<AppConfig>
+
   @Input()
   showAttributes = true;
 
@@ -114,9 +117,13 @@ export class TypeViewerComponent {
   @Input()
   typeUsages: OperationQueryResult;
 
-  constructor(private router: Router,
-              private changeDetector: ChangeDetectorRef) {
+  constructor(
+    private router: Router,
+    private changeDetector: ChangeDetectorRef,
+    private appInfoService: AppInfoService
+  ) {
     this.showPolicyManager = false; //environment.showPolicyManager;
+    this.config$ = appInfoService.getConfig()
   }
 
   @Input()

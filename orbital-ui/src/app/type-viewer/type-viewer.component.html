@@ -68,7 +68,9 @@
     <app-usages-table [typeUsages]="typeUsages" [schemaMemberNavigable]="schemaMemberNavigable"></app-usages-table>
     <h3>Chart</h3>
 
-    <tui-tabs [(activeItemIndex)]="chartDisplayTabIndex">
+    <tui-tabs [(activeItemIndex)]="chartDisplayTabIndex"
+              *ngIf="(config$ | async)?.featureToggles.serviceLineageDiagramsEnabled"
+    >
       <button tuiTab>Links</button>
       <button tuiTab>Lineage</button>
     </tui-tabs>
@@ -81,7 +83,7 @@
       <!--      <app-type-link-graph-container [member]="schemaMember"-->
       <!--                                     *ngIf="chartDisplayMode === 'links'"></app-type-link-graph-container>-->
     </div>
-    <div class="chart-container" *ngIf="chartDisplayTabIndex === 1">
+    <div class="chart-container" *ngIf="chartDisplayTabIndex === 1 && (config$ | async)?.featureToggles.serviceLineageDiagramsEnabled">
       <p class="help-text">This chart shows how {{type.name.shortDisplayName}} data flows between data sources and
         systems.</p>
       <p class='help-text'>{{type.name.shortDisplayName}} flows between these services outside of {{UiCustomisations.productName}}.</p>

@@ -28,8 +28,6 @@ export class AppInfoService {
       });
       return observable;
     }
-
-
   }
 
 }
@@ -58,6 +56,7 @@ export interface FeatureToggles {
   workspacesEnabled: boolean;
   policiesEnabled: boolean;
   queryPlanModeEnabled: boolean;
+  serviceLineageDiagramsEnabled: boolean;
 }
 export interface PipelineConfig {
   kibanaUrl: string;
