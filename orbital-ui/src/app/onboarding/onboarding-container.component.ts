@@ -3,12 +3,12 @@ import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import {
   ActivatedRoute,
   NavigationEnd,
-  Router,
+  Router, RouterLink,
   RouterOutlet,
   Scroll
 } from '@angular/router';
 import { TuiStepperModule } from '@taiga-ui/kit';
-import { TuiLinkModule } from '@taiga-ui/core';
+import {TuiLinkModule, TuiNotificationModule} from '@taiga-ui/core';
 import { UiCustomisations } from '../../environments/ui-customisations';
 import { Observable } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
@@ -16,14 +16,14 @@ import { filter, map } from 'rxjs/operators';
 @Component({
   selector: 'app-onboarding-container',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, TuiStepperModule, TuiLinkModule],
+  imports: [CommonModule, RouterOutlet, TuiStepperModule, TuiLinkModule, TuiNotificationModule, RouterLink],
   templateUrl: './onboarding-container.component.html',
   styleUrls: ['./onboarding-container.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class OnboardingContainerComponent implements OnInit {
   readonly uiConfig = UiCustomisations;
-
+  static readonly IS_ONBOARDING_HIDDEN_LOCAL_STORAGE_KEY = 'isOnboardingHidden'
   currentStepIndex$: Observable<number>;
 
   constructor(private router: Router, private activatedRoute: ActivatedRoute) {
@@ -36,6 +36,14 @@ export class OnboardingContainerComponent implements OnInit {
       map((event) => event instanceof Scroll ? event.routerEvent as NavigationEnd : event as NavigationEnd),
       map((event: NavigationEnd) => this.getStepIndex(event.url))
     );
+  }
+
+  hideOnboarding() {
+    localStorage.setItem(OnboardingContainerComponent.IS_ONBOARDING_HIDDEN_LOCAL_STORAGE_KEY, "true");
+  }
+
+  isRedirectedFromDashboard(): boolean {
+    return this.activatedRoute.snapshot.queryParams.hasOwnProperty('isOnboarding')
   }
 
   private getStepIndex(url: string): number {
@@ -53,5 +61,5 @@ export class OnboardingContainerComponent implements OnInit {
     }
   }
 
-    protected readonly UiCustomisations = UiCustomisations;
+  protected readonly UiCustomisations = UiCustomisations;
 }
