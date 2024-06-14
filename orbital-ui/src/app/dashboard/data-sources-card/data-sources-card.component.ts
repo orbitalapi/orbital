@@ -4,12 +4,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import {TuiButtonModule, TuiNotificationModule} from '@taiga-ui/core';
 import { TuiProgressModule } from '@taiga-ui/kit';
-import { tap } from 'rxjs/operators';
 import { ConnectionStatusComponent } from '../../data-source-manager/connection-status/connection-status.component';
 import {ConnectorSummary, DbConnectionService, PackageWithError} from '../../db-connection-editor/db-importer.service';
+import {SchemaNotificationService} from '../../services/schema-notification.service';
 import { CardComponent } from '../card/card.component';
 import {StatisticModule} from "../../statistic/statistic.module";
-import {BehaviorSubject} from "rxjs";
 
 @Component({
   selector: 'app-data-sources-card',
@@ -32,10 +31,20 @@ export class DataSourcesCardComponent {
 
   constructor(
     private dbService: DbConnectionService,
+    private schemaNotificationService: SchemaNotificationService
   ) {
+    this.schemaNotificationService.createSchemaNotificationsSubscription().pipe(
+      takeUntilDestroyed()
+    )
+      .subscribe(() => {
+        this.getConnections();
+      });
+  }
+
+  private getConnections() {
     this.dbService.getConnections(true)
-      .pipe(
-        tap(connections => {
+      .subscribe({
+        next: (connections) => {
           const connLength = connections.connections.length
           const { healthyConnections, unhealthyConnections } = connections.connections.reduce((acc, connection) => {
             if (connection.connectionStatus.status === 'OK') {
@@ -52,8 +61,7 @@ export class DataSourcesCardComponent {
           this.unhealthyConnections.set(unhealthyConnections);
           this.healthyConnections.set(healthyConnections);
           this.connectionsLoading.set(false)
-        }),
-        takeUntilDestroyed()
-      ).subscribe();
+        },
+    });
   }
 }
