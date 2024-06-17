@@ -3,8 +3,14 @@
 .connection-error {
   margin-top: 0.5rem;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.5rem;
+
+  a {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+  }
 
   app-connection-status {
     ::ng-deep tui-badge {
