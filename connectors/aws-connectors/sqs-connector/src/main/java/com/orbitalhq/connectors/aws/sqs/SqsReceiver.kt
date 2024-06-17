@@ -1,6 +1,5 @@
 package com.orbitalhq.connectors.aws.sqs
 
-import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
 import mu.KotlinLogging
 import reactor.core.Disposable
 import reactor.core.publisher.Flux
@@ -13,9 +12,12 @@ import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchRequestEntry
 import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import java.time.Duration
+import java.util.UUID
+import java.util.concurrent.ConcurrentSkipListSet
 
 class SqsReceiver(private val sqsClient: SqsAsyncClient, private val receiverOptions: SqsReceiverOptions) {
 
+   private val messagesToBeDeleted: ConcurrentSkipListSet<String> = ConcurrentSkipListSet()
    private val messageDeleteSink = Sinks.many()
       .unicast()
       .onBackpressureBuffer<Message>()
@@ -24,18 +26,27 @@ class SqsReceiver(private val sqsClient: SqsAsyncClient, private val receiverOpt
       .bufferTimeout(10, Duration.ofSeconds(5))
       .map { messages ->
          val messageDeleteBatchEntry =
-            messages.map { DeleteMessageBatchRequestEntry.builder().receiptHandle(it.receiptHandle()).build() }
+            messages.map { DeleteMessageBatchRequestEntry.builder()
+               .receiptHandle(it.receiptHandle())
+               .id(UUID.randomUUID().toString())
+               .build()
+            }
          DeleteMessageBatchRequest.builder()
             .queueUrl(receiverOptions.queueName)
             .entries(messageDeleteBatchEntry)
-            .build()
+            .build()to messages.map { it.messageId() }.toSet()
       }
       .flatMap { deleteMessageBatchRequest ->
-         logger.debug { "Sending SQS Message Deletion batch for ${deleteMessageBatchRequest.entries().size} messages" }
-         Mono.fromFuture(sqsClient.deleteMessageBatch(deleteMessageBatchRequest))
+         logger.debug { "Sending SQS Message Deletion batch for ${deleteMessageBatchRequest.first.entries().size} messages" }
+         Mono.fromFuture(sqsClient.deleteMessageBatch(deleteMessageBatchRequest.first))
             .onErrorResume { e ->
-               logger.error(e) { "Failed to delete SQS message batch from queue ${deleteMessageBatchRequest.queueUrl()} containing ${deleteMessageBatchRequest.entries().size} messages.  ${e.message}" }
+               logger.error(e) { "Failed to delete SQS message batch from queue ${deleteMessageBatchRequest.first.queueUrl()} containing ${deleteMessageBatchRequest.first.entries().size} messages.  ${e.message}" }
                Mono.empty()
+            }.doOnNext {
+               logger.info { "deleted batch" }
+            }
+            .doFinally {
+               messagesToBeDeleted.removeAll(deleteMessageBatchRequest.second)
             }
       }
       .subscribe()
@@ -50,49 +61,35 @@ class SqsReceiver(private val sqsClient: SqsAsyncClient, private val receiverOpt
          .queueUrl(receiverOptions.queueName)
          .maxNumberOfMessages(receiverOptions.maxNumberOfMessagesToFetch)
          .waitTimeSeconds(receiverOptions.pollTimeout.toSeconds().toInt())
+         .visibilityTimeout(receiverOptions.visibilityTimeOut)
          .build()
-      return Mono.fromFuture(sqsClient.receiveMessage(sqsRequest))
+
+
+      return  Mono.defer {
+         Mono.fromFuture(sqsClient.receiveMessage(sqsRequest))
+      }
          .repeat()
+         .doOnError { t: Throwable -> logger.error(t) { "Error in calling receive message in sqs queue ${receiverOptions.queueName}"  } }
+         .retryWhen(reactor.util.retry.Retry.backoff(3, Duration.ofSeconds(2)).transientErrors(true))
          .doOnSubscribe {
             logger.info { "Subscribing to SQS queue ${receiverOptions.queueName} on connection ${receiverOptions.awsConnectionConfiguration.connectionName}" }
          }
-         .retry()
          .subscribeOn(Schedulers.boundedElastic())
-         .flatMapIterable { f -> f.messages() }
+         .flatMapIterable { f ->
+            f.messages()
+         }
+         .filter {
+            !messagesToBeDeleted.contains(it.messageId())
+         }.map {
+            messagesToBeDeleted.add(it.messageId())
+            it
+         }
          .doOnNext { message ->
-            logger.debug { "SQS queue ${receiverOptions.queueName} on connection ${receiverOptions.awsConnectionConfiguration.connectionName} received message ${message.messageId()}" }
+            logger.info { "SQS queue ${receiverOptions.queueName} on connection ${receiverOptions.awsConnectionConfiguration.connectionName} received message ${message.messageId()}" }
             messageDeleteSink.emitNext(message, Sinks.EmitFailureHandler.FAIL_FAST)
          }
          .doFinally {
             messageDeleteSubscription.dispose()
          }
    }
-
-
-
-//   fun receive(): Flux<Message> {
-//      return withHandler { scheduler: Scheduler, handler: SqsConsumerHandler ->
-//         handler
-//            .receive()
-//            .filter { it.hasMessages() }
-//            .flatMapIterable { it.messages() }
-//            .publishOn(scheduler)
-//      }
-//   }
-//
-//   private fun <T> withHandler(function: BiFunction<Scheduler,SqsConsumerHandler, Flux<T>>): Flux<T> {
-//
-//      return Flux.usingWhen(
-//         Mono.fromCallable {
-//            SqsConsumerHandler(sqsConnection)
-//         },
-//         { handler: SqsConsumerHandler ->
-//            Flux.using(
-//               { Schedulers.single(Supplier { Schedulers.immediate() }.get()) },
-//               { scheduler: Scheduler -> function.apply(scheduler, handler) }) { obj: Scheduler -> obj.dispose() }
-//         }
-//      ) { handler: SqsConsumerHandler -> handler.close() }
-//   }
-
-
 }

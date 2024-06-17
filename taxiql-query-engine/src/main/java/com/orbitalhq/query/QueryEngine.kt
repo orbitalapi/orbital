@@ -1,10 +1,21 @@
 package com.orbitalhq.query
 
 import com.google.common.base.Stopwatch
-import com.orbitalhq.*
+import com.orbitalhq.ErrorType
+import com.orbitalhq.FactSetId
+import com.orbitalhq.FactSetMap
+import com.orbitalhq.FactSets
+import com.orbitalhq.ModelContainer
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
-import com.orbitalhq.models.*
+import com.orbitalhq.models.DataSource
+import com.orbitalhq.models.DataSourceUpdater
+import com.orbitalhq.models.FailedSearch
+import com.orbitalhq.models.MixedSources
+import com.orbitalhq.models.QueryFailureBehaviour
+import com.orbitalhq.models.TypedCollection
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.query.graph.edges.EvaluatedEdge
@@ -12,13 +23,35 @@ import com.orbitalhq.query.graph.edges.ParameterFactory
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.query.graph.operationInvocation.SearchRuntimeException
 import com.orbitalhq.query.projection.ProjectionProvider
-import com.orbitalhq.schemas.*
+import com.orbitalhq.retainFactsFromFactSet
+import com.orbitalhq.schemas.Operation
+import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.QualifiedName
+import com.orbitalhq.schemas.QueryOptions
+import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.Service
+import com.orbitalhq.schemas.Type
+import com.orbitalhq.toFactBag
 import com.orbitalhq.utils.NoStackException
 import com.orbitalhq.utils.StrategyPerformanceProfiler
 import com.orbitalhq.utils.TimeBucketed
 import com.orbitalhq.utils.timeBucketAsync
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.collectIndexed
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.isActive
 import lang.taxi.mutations.Mutation
 import mu.KotlinLogging
 import java.time.Duration
@@ -613,6 +646,11 @@ class StatefulQueryEngine(
                   .collectIndexed { _, value ->
                      resultsReceivedFromStrategy = true
 
+                     if (value.typeName == ErrorType.type.paramaterizedName) {
+                        throw IllegalStateException(value.value!! as String)
+                      //  close()
+                     }
+
                      // We may have received a TypedCollection upstream (ie., from a service
                      // that returns Foo[]).  Given we treat everything as a flow of results,
                      // we don't want consumers to receive a result that is a collection (as it makes the
@@ -622,6 +660,7 @@ class StatefulQueryEngine(
                      } else {
                         listOf(value)
                      }
+
                      emitTypedInstances(valueAsCollection, (!isActive || context.cancelRequested), failedAttempts) { instance ->
                         if (instance is TypedNull) {
                            logger.debug { "Emitting TypedNull of type ${instance.type.qualifiedName.shortDisplayName} produced from strategy ${queryStrategy::class.simpleName} in search for ${target.description}" }

@@ -1,6 +1,11 @@
 package com.orbitalhq.connectors.config.aws
 
-import com.orbitalhq.connectors.*
+import com.orbitalhq.connectors.ConnectionDriverOptions
+import com.orbitalhq.connectors.ConnectionDriverParam
+import com.orbitalhq.connectors.ConnectionParameterName
+import com.orbitalhq.connectors.IConnectionParameter
+import com.orbitalhq.connectors.SimpleDataType
+import com.orbitalhq.connectors.connectionParams
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import com.orbitalhq.connectors.registry.ConnectorType
 import java.io.Serializable
@@ -45,7 +50,17 @@ object AwsConnection {
             required = false,
             visible = false
          )
-      )
+      ),
+      SQS_RECEIVE_REQUEST_WAIT_TIME(ConnectionDriverParam("SQS Receive Message Request Wait Time In Seconds", SimpleDataType.NUMBER, defaultValue = 1, templateParamName = "sqsReceiveRequestWaitTime")),
+      SQS_RECEIVE_MAX_NUMBER_OF_MESSAGES(ConnectionDriverParam("SQS The maximum number of messages to return.", SimpleDataType.NUMBER, defaultValue = 10, templateParamName = "sqsReceiveRequestWaitTime")),
+      SQS_RECEIVE_VISIBILITY_TIMEOUT(
+         ConnectionDriverParam(
+            "SQS Receive  duration (in seconds) that the received messages are hidden from subsequent retrieve requests after being retrieved by a ReceiveMessage request.",
+            SimpleDataType.NUMBER,
+            defaultValue = 300,
+            templateParamName = "sqsReceiveVisibilityTimeout",
+         )
+      ),
    }
 
    val parameters: List<ConnectionDriverParam> = Parameters.values().connectionParams()
@@ -66,16 +81,21 @@ data class AwsConnectionConfiguration(
    val region: String,
    val accessKey: String?,
    val secretKey: String?,
-   val endPointOverride: String? = null
+   val endPointOverride: String? = null,
+   val connectionParameters: Map<ConnectionParameterName, String>? = null
 ) : ConnectorConfiguration, Serializable {
    override val type: ConnectorType = ConnectorType.AWS
    override fun getUiDisplayProperties(): Map<String, Any> {
       val result = mapOf(
          "region" to region
       )
-      return if (endPointOverride != null) {
-         result + mapOf("endpointOverride" to endPointOverride)
-      } else result
+
+      return when {
+         endPointOverride != null && connectionParameters != null ->   result + mapOf("endpointOverride" to endPointOverride)  + connectionParameters
+         endPointOverride != null -> result + mapOf("endpointOverride" to endPointOverride)
+         connectionParameters != null -> result + connectionParameters
+         else -> result
+      }
    }
 
    override val driverName: String = AwsConnection.DRIVER_NAME

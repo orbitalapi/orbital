@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
 import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
+import com.orbitalhq.connectors.config.aws.AwsConnection
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.models.format.FormatRegistry
 import software.amazon.awssdk.services.sqs.SqsAsyncClient
@@ -21,14 +22,26 @@ class SqsConnectionBuilder(
 
    fun buildReceiver(
       connectionName: String,
-      topicName: String,
-      pollTimeout: Duration = Duration.ofSeconds(1)
+      topicName: String
    ): SqsReceiver {
       val awsConnectionConfig = connectionRegistry.getConnection(connectionName)
+      val pollTimeout = awsConnectionConfig.connectionParameters?.get(AwsConnection.Parameters.SQS_RECEIVE_REQUEST_WAIT_TIME.templateParamName)?.let {
+         Duration.ofSeconds(it.toLong())
+      } ?: Duration.ofSeconds(1)
+
+      val maxMessagesToReturn = awsConnectionConfig.connectionParameters?.get(AwsConnection.Parameters.SQS_RECEIVE_MAX_NUMBER_OF_MESSAGES.templateParamName)
+         ?.toInt() ?: AwsConnection.Parameters.SQS_RECEIVE_MAX_NUMBER_OF_MESSAGES.param.defaultValue!! as Int
+
+
+      val visibilityTimeout = awsConnectionConfig.connectionParameters?.get(AwsConnection.Parameters.SQS_RECEIVE_VISIBILITY_TIMEOUT.templateParamName)
+         ?.toInt() ?: AwsConnection.Parameters.SQS_RECEIVE_VISIBILITY_TIMEOUT.param.defaultValue!! as Int
+
       val sqsReceiverOptions = SqsReceiverOptions(
          pollTimeout,
          topicName,
          awsConnectionConfig,
+         maxMessagesToReturn,
+         visibilityTimeout
       )
 
       val client = buildClient(connectionName)
@@ -53,6 +66,6 @@ data class SqsReceiverOptions(
    val pollTimeout: Duration,
    val queueName: String,
    val awsConnectionConfiguration: AwsConnectionConfiguration,
-   // This can be at most 10
-   val maxNumberOfMessagesToFetch: Int = 10
+   val maxNumberOfMessagesToFetch: Int,
+   val visibilityTimeOut: Int
 )
