@@ -115,7 +115,9 @@ abstract class BaseOperationInvocationStrategy(
 
       val operation = selectMostSpecificOperation(operationsToInvoke, queryNode, context.facts)
       return invokeOperation(operation, operationToParameters.getValue(operation), context, target)
-         .map { queryNode to it }
+         .map {
+            queryNode to it
+         }
 
       // Legacy implementation - invoke ALL services that match.
       //

@@ -1,16 +1,16 @@
 package com.orbitalhq.connectors.aws.sqs
 
-import com.winterbe.expekt.should
+import com.orbitalhq.ErrorType
 import com.orbitalhq.Vyne
 import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.firstRawObject
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.format.DefaultFormatRegistry
-import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
+import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
@@ -48,10 +48,18 @@ class SqsInvokerTest {
                ${SqsConnectorTaxi.Annotations.imports}
                type MovieId inherits String
                type MovieTitle inherits String
-
+               type ActorId inherits String
+               type ActorName inherits String
+               
                model Movie {
                   id : MovieId
                   title : MovieTitle
+               }
+               
+               model Actor {
+                   id: ActorId
+                   name: ActorName
+              
                }
 
                @SqsService( connectionName = "moviesConnection" )
@@ -61,6 +69,9 @@ class SqsInvokerTest {
 
                   @SqsOperation( queue = "$sqsQueue" )
                   write operation publishMovie(Movie):Movie
+                  
+                   @SqsOperation( queue = "invalidQueueName" )
+                  operation streamActorQuery():Stream<Actor>
                }
 
             """.trimIndent()
@@ -68,14 +79,15 @@ class SqsInvokerTest {
    @Before
    fun before() {
       sqsQueueUrl = createSqsQueue()
+      val endPointOverride = localstack.getEndpointOverride(
+         LocalStackContainer.Service.SQS
+      ).toASCIIString()
       val connectionConfig = AwsConnectionConfiguration(
          connectionName = "moviesConnection",
           region = localstack.region,
           accessKey = localstack.accessKey,
           secretKey = localstack.secretKey,
-          endPointOverride = localstack.getEndpointOverride(
-              LocalStackContainer.Service.S3
-          ).toASCIIString()
+          endPointOverride = endPointOverride
       )
       connectionRegistry.register(connectionConfig)
    }
@@ -130,10 +142,23 @@ class SqsInvokerTest {
       result.should.have.size(1)
    }
 
+   @Test
+   fun `sqs listener tries 3 times and then exists when the sqs name is invalid`(): Unit = runBlocking {
+      val (vyne, _) = vyneWithSqsInvoker()
+      try {
+         vyne.query("""stream { Actor }""").results.take(1).toList()
+      } catch (e: Exception) {
+         e.message.should.equal("Retries exhausted: 3/3 in a row (3 total)")
+      }
+
+
+   }
+
    private fun vyneWithSqsInvoker(taxi: String = defaultSchema(sqsQueueUrl)): Pair<Vyne, SqsStreamManager> {
       val schema = TaxiSchema.fromStrings(
          listOf(
             SqsConnectorTaxi.schema,
+            ErrorType.queryErrorVersionedSource.content,
             taxi
          )
       )
