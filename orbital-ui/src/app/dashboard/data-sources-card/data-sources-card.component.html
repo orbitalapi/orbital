@@ -42,6 +42,7 @@
       <a
         class="link"
         [routerLink]="'/data-source-manager/' + conn.packageIdentifier.uriSafeId + '/' + conn.connectionName"
+        [title]="conn.connectionStatus.message"
       >
         {{conn.connectionStatus.message}}
       </a>
@@ -54,6 +55,7 @@
       <a
         class="link"
         routerLink="/data-source-manager/problems"
+        [title]="defn.error"
       >
         {{defn.error}}
       </a>
