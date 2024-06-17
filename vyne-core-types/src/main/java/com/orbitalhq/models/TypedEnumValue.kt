@@ -62,7 +62,7 @@ data class TypedEnumValue(
 
    override val value: Any = if (valueKind == EnumValueKind.VALUE) enumValue.value else enumValue.name
    private val enumType: EnumType = type.taxiType as EnumType
-   val enumValueQualifiedName: EnumValueQualifiedName = enumType.ofName(enumValue.name).qualifiedName
+   val enumValueQualifiedName: EnumValueQualifiedName = enumType.ofName(enumValue.name).enumValueQualifiedName
 
    private val equality = ImmutableEquality(this, TypedEnumValue::type, TypedEnumValue::enumValue)
    override fun hashCode(): Int = equality.hash()

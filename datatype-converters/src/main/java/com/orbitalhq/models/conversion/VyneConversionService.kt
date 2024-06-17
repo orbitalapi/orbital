@@ -95,7 +95,7 @@ private class SpringConverterWrapper : ConversionService {
          })
          extractedInstant.atZone(ZoneId.of("UTC")).toLocalDate()
       }
-      service.addConverter(EnumValue::class.java, String::class.java) { s -> s.qualifiedName }
+      service.addConverter(EnumValue::class.java, String::class.java) { s -> s.enumValueQualifiedName }
       return service
    }
 
