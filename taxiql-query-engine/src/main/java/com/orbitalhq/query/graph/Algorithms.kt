@@ -2,7 +2,6 @@ package com.orbitalhq.query.graph
 
 import com.orbitalhq.HipsterGraphBuilder
 import com.orbitalhq.SchemaPathFindingGraph
-import com.orbitalhq.VyneGraphBuilderCacheSettings
 import com.orbitalhq.models.DefinedInSchema
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
@@ -52,7 +51,7 @@ object Algorithms {
       }
       matchingTaxiTypes.addAll(enumType.values.filter { it.hasAnnotationContaining(searchTerm) }
          .map { enumValue ->
-            AnnotationSearchResult(enumValue.qualifiedName, enumType.qualifiedName)
+            AnnotationSearchResult(enumValue.enumValueQualifiedName, enumType.qualifiedName)
          })
       return matchingTaxiTypes.toList()
    }
