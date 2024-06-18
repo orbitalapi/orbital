@@ -1,5 +1,6 @@
 package com.orbitalhq.schemaServer.core.repositories.lifecycle
 
+import com.google.common.base.Throwables
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schema.publisher.ProjectLoaderManager
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
@@ -117,7 +118,20 @@ class ReactiveProjectStoreManager(
    }
 
    private fun addLoader(loader: SchemaPackageTransport) {
-      val existingLoaders = this._loaders.filter { it.key.packageIdentifier == loader.packageIdentifier }
+      val existingLoaders = this._loaders
+         .filter { existingLoader ->
+            try {
+               // Note: This can throw an exception if the
+               // existing loader is in an error state 
+               // If that happens, catch, log, and move on
+               existingLoader.key.packageIdentifier == loader.packageIdentifier
+            } catch (e: Exception) {
+               val rootCause = Throwables.getRootCause(e)
+               logger.warn { "A recoverable error occurred when validating for duplicates against ${existingLoader} : ${rootCause.message}. Cannot verify this isn't a duplicate project. Will continue" }
+               false
+            }
+
+         }
       if (existingLoaders.isNotEmpty()) {
          logger.warn { "At attempt was made to add a duplicate loader - ${existingLoaders.size} loaders already exist for project ${loader.packageIdentifier.id}" }
       }
@@ -188,9 +202,9 @@ class ReactiveProjectStoreManager(
          // Don't use fileLoaders, as that excludes invalid configs
          _loaders.keys.filterIsInstance<FileSystemPackageLoader>()
             .filter { loader ->
-            // can't use packageIdentifier here, as it's not required that one has been defined
-            loader.config.path == event.spec.path
-         }.forEach { loader -> removeLoader(loader) }
+               // can't use packageIdentifier here, as it's not required that one has been defined
+               loader.config.path == event.spec.path
+            }.forEach { loader -> removeLoader(loader) }
       }
    }
 
