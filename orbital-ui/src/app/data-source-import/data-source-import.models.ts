@@ -22,6 +22,7 @@ export class JsonSchemaConverterOptions {
 
 export class ProtobufSchemaConverterOptions {
   public protobuf: string | null;
+  public filename: string | null;
   public url: string | null;
 }
 

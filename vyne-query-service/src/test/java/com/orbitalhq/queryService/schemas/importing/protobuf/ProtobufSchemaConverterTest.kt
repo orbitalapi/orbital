@@ -43,7 +43,7 @@ message Person {
          )
       ).block(Duration.ofSeconds(5))!!
 
-      conversionResponse.types.should.have.size(1)
+      conversionResponse.types.should.have.size(4)
    }
 
    @Test
@@ -62,7 +62,27 @@ message Person {
          )
       ).block(Duration.ofSeconds(5))!!
 
-      conversionResponse.types.should.have.size(4)
+      conversionResponse.types.should.have.size(8)
+   }
+
+   @Test
+   fun `can convert protobuf using explicit proto`() {
+      val converterService = createConverterService(converter)
+      val protobuf = Resources.getResource("schemas/protobuf/simple-schema.proto").readText()
+      server.prepareResponse { response -> response.setBody(protobuf) }
+
+      val conversionResponse = converterService.preview(
+         SchemaConversionRequest(
+            ProtobufSchemaConverter.PROTOBUF_FORMAT,
+            ProtobufSchemaConverterOptions(
+               protobuf = protobuf,
+               filename = "simple-schema.proto"
+            ),
+            packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
+         )
+      ).block(Duration.ofSeconds(5))!!
+
+      conversionResponse.types.should.have.size(8)
    }
 
 }

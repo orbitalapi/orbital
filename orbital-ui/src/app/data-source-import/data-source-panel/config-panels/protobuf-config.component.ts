@@ -87,6 +87,7 @@ export class ProtobufConfigComponent {
     readSingleFile($event)
       .subscribe((text: string) => {
         this.protobufSchemaConverterOptions.protobuf = text;
+        this.protobufSchemaConverterOptions.filename = $event.fileEntry.name
       });
   }
 

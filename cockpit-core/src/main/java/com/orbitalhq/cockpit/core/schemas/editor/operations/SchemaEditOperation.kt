@@ -11,6 +11,7 @@ import com.orbitalhq.asTaxiSource
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.SchemaMemberKind
 import lang.taxi.CompilationException
+import lang.taxi.CompilationMessage
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
 import lang.taxi.TaxiParser
@@ -120,15 +121,23 @@ abstract class SchemaEditOperation {
       val (compilerMessages, updatedCompiled) = buildCompiler(updatedSources, taxiDocument)
          .compileWithMessages()
 
-      return if (compilerMessages.errors().isNotEmpty()) {
-         CompilationException(compilerMessages.errors()).left()
-      } else {
-         SourceEditResult(
-            updatedSources,
-            updatedCompiled,
-            edits.map { it.sourceName }.toSet()
-         ).right()
-      }
+      // MP 18-Jun-24: Rather than failing here,
+      // return the errors back to the UI.
+      // This lets the user potentially address them.
+      // Otherwise it's a stop-the-world event
+//      return if (compilerMessages.errors().isNotEmpty()) {
+//         CompilationException(compilerMessages.errors()).left()
+//      } else {
+//        .right()
+//      }
+
+      return SourceEditResult(
+         updatedSources,
+         updatedCompiled,
+         edits.map { it.sourceName }.toSet(),
+         compilerMessages.errors()
+      ).right()
+
    }
 
    private fun applyEdit(edit: SourceEdit, sourcePackage: SourcePackage): SourcePackage {
@@ -223,5 +232,6 @@ data class SourceEdit(
 data class SourceEditResult(
    val sourcePackage: SourcePackage,
    val taxiDocument: TaxiDocument,
-   val touchedFileNames: Set<String>
+   val touchedFileNames: Set<String>,
+   val compilerMessages: List<CompilationMessage>
 )

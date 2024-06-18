@@ -103,7 +103,7 @@ class LocalSchemaEditingService(
 //               SourcePackage(packageWithDescription.parsedPackage.metadata, emptyList(), emptyMap())
 //            }
             val initial: Either<CompilationException, SourceEditResult> =
-               SourceEditResult(currentSourcePackage, schema.asTaxiSchema().taxi, emptySet()).right()
+               SourceEditResult(currentSourcePackage, schema.asTaxiSchema().taxi, emptySet(), emptyList()).right()
 
             // Apply all the edits, incrementally.
             val editResult = edit.edits

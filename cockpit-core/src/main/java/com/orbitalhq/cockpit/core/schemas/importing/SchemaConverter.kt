@@ -64,13 +64,6 @@ class CompositeSchemaImporter(
                )
 
             )
-
-
-//            schemaEditor.submit(
-//               sourcePackageWithMessages.concatenatedSource,
-//               validateOnly,
-//               editorConfig.editablePackages.single().id
-//            )
          }
 
 
