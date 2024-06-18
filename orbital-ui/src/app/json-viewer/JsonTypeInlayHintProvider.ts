@@ -17,7 +17,7 @@ export class JsonTypeInlayHintProvider implements monaco.languages.InlayHintsPro
   onDidChangeInlayHints:monaco.IEvent<void> = this._onDidChange.event;
 
   provideInlayHints(model: monaco.editor.ITextModel, range: monaco.Range, token: monaco.CancellationToken): monaco.languages.ProviderResult<monaco.languages.InlayHintList> {
-    const hints = this.inlayHints.get(model.uri.path) || [];
+    const hints = this.inlayHints.get(model.uri.toString()) || [];
     return {
       hints,
       dispose: () => {

@@ -21,6 +21,8 @@ import {isNullOrUndefined} from "../utils/utils";
 import {isSourceWithTypeHints, SourceWithTypeHints} from './json-results-view.component';
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
 import ITextModel = editor.ITextModel;
+import {MonacoLanguageServerService} from "../code-editor/language-server.service";
+import {Disposable} from "vscode-languageclient";
 
 
 @Component({
@@ -66,9 +68,18 @@ export class JsonViewerComponent implements OnDestroy {
   isResponseLarge: boolean;
 
   private hintProvider: JsonTypeInlayHintProvider = new JsonTypeInlayHintProvider();
+  private hintProviderRegistration: Disposable;
 
-  constructor(private changeDetector: ChangeDetectorRef, private clipboard: Clipboard) {
-    monaco.languages.registerInlayHintsProvider("json", this.hintProvider)
+  constructor(private changeDetector: ChangeDetectorRef, private clipboard: Clipboard,
+              private languageServerService: MonacoLanguageServerService,
+              ) {
+    // Even though we're not connecting to the language server, we have
+    // to let it initialize, as we're registering new services with the
+    // inlay hint provider. Otherwise exceptions are thrown
+    languageServerService.languageServicesInit$.subscribe(() => {
+      this.hintProviderRegistration = monaco.languages.registerInlayHintsProvider("json", this.hintProvider)
+    });
+
   }
 
   get hasTypes(): Boolean {
@@ -145,6 +156,9 @@ export class JsonViewerComponent implements OnDestroy {
       this.monacoEditor.getModel().dispose();
       this.monacoEditor.dispose();
     }
+    if (this.hintProviderRegistration) {
+      this.hintProviderRegistration.dispose();
+    }
   }
 
   applyFormat() {
@@ -195,6 +209,7 @@ export class JsonViewerComponent implements OnDestroy {
     } else {
       this.monacoEditor = monaco.editor.create(this._codeEditorContainer.nativeElement, {
         model: monacoTextModel,
+        language: 'json',
         glyphMargin: true,
         automaticLayout: true,
         readOnly: this._readOnly,
@@ -250,7 +265,7 @@ export class JsonViewerComponent implements OnDestroy {
     } else {
       const src = this.json as SourceWithTypeHints;
       const typeHints = this.showTypeHints ? src.typeHints : [];
-      this.hintProvider.setHints(this.modelUri.path, typeHints);
+      this.hintProvider.setHints(this.modelUri.toString(), typeHints);
     }
 
 
