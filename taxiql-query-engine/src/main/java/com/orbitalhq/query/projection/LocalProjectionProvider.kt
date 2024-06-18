@@ -51,9 +51,9 @@ class LocalProjectionProvider : ProjectionProvider {
             LinkedBlockingQueue(),
             OrbitalProjectionProviderThreadFactory()
          ).asCoroutineDispatcher()
-
-      private val projectingScope = CoroutineScope(projectingDispatcher)
    }
+
+   private val projectingScope = CoroutineScope(projectingDispatcher)
 
    override fun project(
       source: Flow<TypedInstance>,

@@ -1,20 +1,43 @@
-import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component, computed,
+  EventEmitter,
+  input,
+  Input,
+  InputSignal,
+  Output, signal,
+  Signal, WritableSignal
+} from '@angular/core';
 import { UiCustomisations } from '../../../environments/ui-customisations';
 import {ProjectLoaderWithStatus, PublisherHealthStatus, SourcePackageDescription} from '../packages.service';
 import {TuiStatus} from "@taiga-ui/kit";
+
+type SortOrder = 'A-Z' | 'Updated'
 
 @Component({
   selector: 'app-package-list',
   styleUrls: ['./package-list.component.scss'],
   template: `
     <div class="list-container">
+      <div class="header">
+        <app-dropdown [value]="sortOrder()" hint="Sort order" [(isMenuOpen)]="sortOrderDropdownOpen">
+          <tui-data-list>
+            @for (so of sortOrders; track so) {
+              <button tuiOption (click)="sortOrder.set(so); sortOrderDropdownOpen = false">
+                {{ so }}
+                <tui-svg *ngIf="so === sortOrder()" src="tuiIconCheck"></tui-svg>
+              </button>
+            }
+          </tui-data-list>
+        </app-dropdown>
+      </div>
       <div *ngIf="projectsWithProblems?.length > 0" class="source-package-card error-state"
            (click)="showProjectsWithProblems.emit()">
         <img src="assets/img/tabler/exclamation-circle.svg">
         <h3 class="package-title">{{ projectsWithProblems.length }} of your projects has a configuration problem</h3>
       </div>
       <div
-        *ngFor="let sourcePackage of packages"
+        *ngFor="let sourcePackage of sortedPackages()"
         [routerLink]="sourcePackage.uriPath"
         routerLinkActive="selected-list-item"
         class="source-package-card"
@@ -58,8 +81,16 @@ export class PackageListComponent {
   @Input()
   projectsWithProblems: ProjectLoaderWithStatus[]
 
-  @Input()
-  packages: SourcePackageDescription[];
+  packages: InputSignal<SourcePackageDescription[]> = input<SourcePackageDescription[]>();
+  sortedPackages: Signal<SourcePackageDescription[]> = computed(() => {
+    return this.packages()?.sort((a, b) => {
+      if (this.sortOrder() === 'A-Z') {
+        return a.identifier.name.localeCompare(b.identifier.name)
+      } else if (this.sortOrder() === 'Updated') {
+        return new Date(b.submissionDate).valueOf() - new Date(a.submissionDate).valueOf();
+      }
+    })
+  })
 
   @Input()
   packagesWithCompilationErrors: string[] = [];
@@ -69,6 +100,10 @@ export class PackageListComponent {
 
   @Output()
   packageClicked = new EventEmitter<SourcePackageDescription>()
+
+  sortOrders: SortOrder[] = ['A-Z', 'Updated']
+  sortOrder: WritableSignal<SortOrder> = signal('A-Z');
+  sortOrderDropdownOpen: boolean
 
   getSourceDescription(sourcePackage: SourcePackageDescription): string {
     switch (sourcePackage.publisherType) {

@@ -26,6 +26,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
 import reactor.core.publisher.Mono
+import java.time.Instant
 
 class LocalSchemaEditingServiceTest {
    private lateinit var editorService: LocalSchemaEditingService
@@ -371,6 +372,7 @@ class LocalSchemaEditingServiceTest {
          0,
          PublisherType.FileSystem,
          true,
+         Instant.now(),
          null
       )
    }
@@ -394,6 +396,7 @@ fun SourcePackage.withDescription(editable: Boolean = true): PackageWithDescript
          0,
          PublisherType.FileSystem,
          editable,
+         Instant.now(),
          null
       )
    )

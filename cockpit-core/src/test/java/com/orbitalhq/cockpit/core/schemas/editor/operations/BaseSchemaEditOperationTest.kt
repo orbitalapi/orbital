@@ -22,6 +22,7 @@ import com.orbitalhq.schemaServer.packages.SourcePackageDescription
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import org.junit.jupiter.api.BeforeEach
 import reactor.core.publisher.Mono
+import java.time.Instant
 
 abstract class BaseSchemaEditOperationTest {
    protected lateinit var editorService: LocalSchemaEditingService
@@ -109,6 +110,7 @@ fun SourcePackage.withDescription(editable: Boolean = true): PackageWithDescript
          errorCount = 0,
          publisherType = PublisherType.FileSystem,
          editable = editable,
+         submissionDate = Instant.now(),
          packageConfig = null
       )
    )

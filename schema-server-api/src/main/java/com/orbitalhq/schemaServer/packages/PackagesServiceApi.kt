@@ -5,6 +5,7 @@ import com.orbitalhq.PackageMetadata
 import com.orbitalhq.ParsedPackage
 import com.orbitalhq.schema.publisher.PublisherHealth
 import com.orbitalhq.schema.publisher.PublisherType
+import java.time.Instant
 
 data class SourcePackageDescription(
    val identifier: PackageIdentifier,
@@ -14,8 +15,8 @@ data class SourcePackageDescription(
    val errorCount: Int,
    val publisherType: PublisherType,
    val editable: Boolean,
+   val submissionDate: Instant,
    val packageConfig: Any? // GitRepositoryConfig or  FileSystemPackageSpec
-   // TODO : Other things for visualisation
 ) {
    val uriPath: String = PackageIdentifier.toUriSafeId(identifier)
 
@@ -45,6 +46,7 @@ data class PackageWithDescription(
                0,
                PublisherType.FileSystem,
                true,
+               Instant.now(),
                null
             )
          )
