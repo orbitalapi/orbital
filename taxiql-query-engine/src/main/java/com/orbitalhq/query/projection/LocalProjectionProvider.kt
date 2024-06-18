@@ -42,15 +42,18 @@ import java.util.concurrent.atomic.AtomicInteger
 private val logger = KotlinLogging.logger {}
 
 @OptIn(FlowPreview::class)
-class LocalProjectionProvider(private val threadPoolSize: Int = 16) : ProjectionProvider {
-   private val projectingDispatcher =
-      ThreadPoolExecutor(threadPoolSize, threadPoolSize,
-      0L, TimeUnit.MILLISECONDS,
-      LinkedBlockingQueue(),
-      OrbitalProjectionProviderThreadFactory()
-   ).asCoroutineDispatcher()
+class LocalProjectionProvider : ProjectionProvider {
+   companion object {
+      private const val  threadPoolSize: Int = 16
+      private val projectingDispatcher =
+         ThreadPoolExecutor(threadPoolSize, threadPoolSize,
+            0L, TimeUnit.MILLISECONDS,
+            LinkedBlockingQueue(),
+            OrbitalProjectionProviderThreadFactory()
+         ).asCoroutineDispatcher()
 
-   private val projectingScope = CoroutineScope(projectingDispatcher)
+      private val projectingScope = CoroutineScope(projectingDispatcher)
+   }
 
    override fun project(
       source: Flow<TypedInstance>,
