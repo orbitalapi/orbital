@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
+import java.time.Instant
 
 
 @RestController
@@ -86,6 +87,7 @@ class PackageService(
          0,
          packageTransport.publisherType,
          packageTransport.isEditable(),
+         Instant.now(),
          packageTransport.config
       )
    }
@@ -122,7 +124,8 @@ class PackageService(
          parsedPackage.sourcesWithErrors.size,
          publisherType,
          editable,
-         loader?.config
+         parsedPackage.metadata.submissionDate,
+         loader?.config,
       )
    }
 

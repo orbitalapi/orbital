@@ -90,11 +90,10 @@ export interface SourcePackageDescription {
   sourceCount: number;
   warningCount: number;
   errorCount: number;
-
   uriPath: string;
   editable: boolean;
   publisherType: PublisherType;
-
+  submissionDate: Date;
   packageConfig: GitRepositoryConfig | FileSystemPackageSpec;
 }
 
