@@ -146,9 +146,6 @@ import { OperationErrorComponent } from './operation-error.component';
             required</p>
         </div>
         <div class="button-row" *ngIf="allowTryItOut">
-          <button tuiButton size="m" appearance="outline" (click)="tryMode = true" *ngIf="!tryMode"
-                  [disabled]="!operationSummary.url">Try it out
-          </button>
           <button tuiButton size="m" appearance="outline" (click)="onCancel()" *ngIf="tryMode">Cancel</button>
           <div class="spacer"></div>
           <button tuiButton size="m" appearance="secondary" *ngIf="tryMode" (click)="doSubmit()">Submit</button>
