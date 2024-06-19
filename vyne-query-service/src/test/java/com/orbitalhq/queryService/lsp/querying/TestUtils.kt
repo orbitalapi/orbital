@@ -1,5 +1,7 @@
 package com.orbitalhq.queryService.lsp.querying
 
+import com.jayway.awaitility.Awaitility
+import com.jayway.awaitility.Duration
 import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.cockpit.core.lsp.querying.QueryCodeCompletionProvider
 import com.orbitalhq.schemas.Schema
@@ -29,6 +31,7 @@ fun documentServiceForSchema(
    val sourceService = InMemoryWorkspaceSourceService.from(taxi)
    val initializeParams = InitializeParams()
    service.initialize(initializeParams, sourceService)
+   Awaitility.await().atMost(Duration.ONE_SECOND).until<Boolean> { service.lastCompilationResult != null }
    return service
 }
 

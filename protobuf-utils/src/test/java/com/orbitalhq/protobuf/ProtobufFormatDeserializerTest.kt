@@ -4,6 +4,9 @@ import com.winterbe.expekt.should
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.squareup.wire.schema.Location
+import com.squareup.wire.schema.SchemaLoader
+import io.kotest.matchers.shouldBe
 import lang.taxi.generators.protobuf.TaxiGenerator
 import okio.FileSystem
 import org.junit.Test
@@ -54,6 +57,39 @@ class ProtobufFormatDeserializerTest {
       // Make sure all the data structure was deserialized correctly
       typedInstance
          .toRawObject()!!.should.equal(data)
+
+   }
+
+   @Test
+   fun `can read a proto generated using a proto library`() {
+      val generator = TaxiGenerator(FileSystem.RESOURCES)
+         .addSchemaRoot("/cafe/src/proto")
+      val protoSchema = generator.protobufSchema
+      val data = mapOf(
+         "customer_name" to "Jimmy",
+         "shots" to listOf(mapOf(
+            "bean_type" to "Ground",
+            "caffeine_level" to 3.0
+         )),
+         "foam" to "ZOMG_SO_FOAMY",
+         "size_ounces" to 8,
+         "dairy" to mapOf(
+            "type" to "skim",
+            "count" to 1
+         )
+      )
+      val encoded = protoSchema.protoAdapter("CafeDrink", false)
+         .encode(data)
+
+      val taxiSchema = TaxiSchema.fromStrings(
+         generator.generate().taxi
+      )
+      // now try and read the protobuf message as a TypedInstance
+      val typedInstance = TypedInstance.from(
+         taxiSchema.type("CafeDrink"), encoded, taxiSchema,
+         formatSpecs = listOf(ProtobufFormatSpec)
+      ) as TypedObject
+      typedInstance.toRawObject().shouldBe(data)
 
    }
 }

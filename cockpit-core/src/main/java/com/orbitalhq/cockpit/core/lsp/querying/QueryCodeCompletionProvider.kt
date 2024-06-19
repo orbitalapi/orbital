@@ -1,5 +1,7 @@
 package com.orbitalhq.cockpit.core.lsp.querying
 
+import arrow.core.Either
+import arrow.core.getOrElse
 import com.orbitalhq.query.graph.Algorithms
 import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.RemoteOperation
@@ -8,34 +10,40 @@ import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.toTaxiQualifiedName
 import com.orbitalhq.schemas.toVyneQualifiedName
+import lang.taxi.CompilationError
 import lang.taxi.TaxiParser.ArrayMarkerContext
 import lang.taxi.TaxiParser.FactDeclarationContext
 import lang.taxi.TaxiParser.FactListContext
 import lang.taxi.TaxiParser.FunctionCallContext
 import lang.taxi.TaxiParser.GivenBlockContext
 import lang.taxi.TaxiParser.IdentifierContext
+import lang.taxi.TaxiParser.MemberReferenceContext
+import lang.taxi.TaxiParser.MutationContext
 import lang.taxi.TaxiParser.NullableTypeReferenceContext
 import lang.taxi.TaxiParser.ParameterConstraintContext
 import lang.taxi.TaxiParser.QualifiedNameContext
 import lang.taxi.TaxiParser.QueryDirectiveContext
 import lang.taxi.TaxiParser.QueryOrMutationContext
 import lang.taxi.TaxiParser.SingleNamespaceDocumentContext
-import lang.taxi.TaxiParser.TypeProjectionContext
 import lang.taxi.TaxiParser.TypeReferenceContext
 import lang.taxi.TaxiParser.VariableNameContext
 import lang.taxi.lsp.CompilationResult
 import lang.taxi.lsp.completion.CompletionDecorator
+import lang.taxi.lsp.completion.CompletionItemList
 import lang.taxi.lsp.completion.CompletionProvider
 import lang.taxi.lsp.completion.EditorCompletionService
 import lang.taxi.lsp.completion.ImportCompletionDecorator
 import lang.taxi.lsp.completion.TypeCompletionBuilder
 import lang.taxi.lsp.completion.TypeRepository
+import lang.taxi.lsp.completion.asCompletionItemList
+import lang.taxi.lsp.completion.asExclusiveCompletionItemList
 import lang.taxi.lsp.completion.completed
 import lang.taxi.lsp.completion.locationIsAfterOrEqualTo
 import lang.taxi.lsp.completion.locationIsBeforeOrEqualTo
 import lang.taxi.query.QueryMode
 import lang.taxi.searchUpForRule
-import lang.taxi.types.ImportableToken
+import lang.taxi.types.Arrays
+import lang.taxi.types.Named
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.Type
 import mu.KotlinLogging
@@ -64,10 +72,11 @@ class QueryCodeCompletionProvider(
    // The "normal" editor, not used when building queries
    private val editorCompletionService = EditorCompletionService(typeCompletionBuilder)
 
-   private val topLevelQueryCompletionItems = listOf(
+   private val topLevelQueryCompletionItems:CompletionItemList = listOf(
       "find" to "Query for a single item, or a list of items",
       "stream" to "Query for a continuous stream of data",
-      "given" to "Provide a set of facts for the starting point for a query"
+      "given" to "Provide a set of facts for the starting point for a query",
+      "call" to "Invoke a mutating service",
    )
       .map { (text, description) ->
          CompletionItem(text).apply {
@@ -76,15 +85,14 @@ class QueryCodeCompletionProvider(
             detail = description
             additionalTextEdits = emptyList()
          }
-      }
+      }.asCompletionItemList()
 
    /**
     * Looking for scenario like:
     *find { Studio( <-- cursor is here )}
     */
    private fun isDefiningConstraint(contextAtCursor: IdentifierContext): Boolean {
-      return contextAtCursor is IdentifierContext // Studio
-         && contextAtCursor.parent?.parent is FunctionCallContext // Studio( )
+      return contextAtCursor.parent?.parent is FunctionCallContext // Studio( )
          && contextAtCursor.searchUpForRule<QueryOrMutationContext>() != null // find { Studio ( ) }
    }
 
@@ -95,11 +103,10 @@ class QueryCodeCompletionProvider(
       contextAtCursor: ParserRuleContext?,
       lastSuccessfulCompilation: CompilationResult?,
       typeRepository: TypeRepository
-   ): CompletableFuture<List<CompletionItem>> {
+   ): CompletableFuture<CompletionItemList> {
       // The typeRepository passed to us is based off the compilation result.
       // However, that is often inaccurate, as the user is editing a query, so fails compilation
       // and therefore is incomplete.
-      // However,
       val schemaTypeRepository = SchemaTypeRepository(schema)
 
       if (contextAtCursor == null) {
@@ -120,7 +127,7 @@ class QueryCodeCompletionProvider(
       val decorators = listOf(importDecorator)
 
 
-      val completions = when {
+      val completions:CompletionItemList = when {
          contextAtCursor is IdentifierContext && isDefiningConstraint(contextAtCursor) -> {
             suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
          }
@@ -153,26 +160,113 @@ class QueryCodeCompletionProvider(
                   importDecorator,
                   typesInGivenClause,
                   includeModelAttributes = typesInGivenClause.isNotEmpty() // exclude model attributes if we're just in a find { .. }
-               )
+               ).asCompletionItemList()
             } else {
                val queryMode = findQueryMode(contextAtCursor)
-               findModelsReturnableFromNoArgServices(importDecorator, queryMode) +
-                  findModelsReturnableFromQueryOperations(importDecorator, queryMode)
+               findModelsReturnableFromNoArgServices(importDecorator, queryMode).asCompletionItemList() +
+                  findModelsReturnableFromQueryOperations(importDecorator, queryMode).asCompletionItemList()
             }
          }
-         contextAtCursor is IdentifierContext || contextAtCursor is ParameterConstraintContext -> {
+
+         // Mutations
+         contextAtCursor is QualifiedNameContext && isDefiningMutation(contextAtCursor) -> suggestCallMutationTargets(
+            contextAtCursor, decorators, compilationResult, lastSuccessfulCompilation
+         )
+         contextAtCursor is IdentifierContext && isDefiningMutation(contextAtCursor) -> suggestCallMutationTargets(
+            contextAtCursor, decorators, compilationResult, lastSuccessfulCompilation
+         )
+         contextAtCursor is MutationContext -> {
+            suggestCallMutationTargets(contextAtCursor, decorators, compilationResult, lastSuccessfulCompilation)
+         }
+
+         contextAtCursor is ParameterConstraintContext -> {
             suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
          }
+
          contextAtCursor is VariableNameContext -> suggestTypesAsInputs(schemaTypeRepository, importDecorator)
          // Filter operations - eg: find { Film( <-- here
-         contextAtCursor is ArrayMarkerContext -> suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
-         else -> emptyList()
+         contextAtCursor is ArrayMarkerContext -> suggestFilterTypes(
+            contextAtCursor,
+            importDecorator,
+            compilationResult
+         )
+
+         else -> CompletionItemList.empty()
       }
-      val distinctCompletions =
-         completions.distinctBy { completion ->
-            completion.additionalTextEdits.orEmpty().map { edit -> edit.newText } + completion.insertText
+
+      return completed(completions)
+   }
+
+   private fun isDefiningMutation(contextAtCursor: ParserRuleContext): Boolean {
+      return contextAtCursor.searchUpForRule<MutationContext>() != null
+   }
+
+   private enum class SuggestServiceOrMember {
+      Service,
+      Member
+   }
+   private fun suggestCallMutationTargets(
+      contextAtCursor: ParserRuleContext,
+      decorators: List<CompletionDecorator>,
+      compilationResult: CompilationResult,
+      lastSuccessfulCompilation: CompilationResult?
+   ): CompletionItemList {
+      val serviceOrMember = contextAtCursor.searchUpForRule<MemberReferenceContext>().let { memberReferenceContext ->
+         if (memberReferenceContext == null) return@let SuggestServiceOrMember.Service
+         when (memberReferenceContext.typeReference().size) {
+            0 -> SuggestServiceOrMember.Service
+            1 -> SuggestServiceOrMember.Service
+            else -> SuggestServiceOrMember.Member
          }
-      return completed(distinctCompletions)
+      }
+
+      return when (serviceOrMember) {
+         SuggestServiceOrMember.Service -> suggestServices(lastSuccessfulCompilation, decorators)
+         SuggestServiceOrMember.Member -> suggestMembersOfService(contextAtCursor, lastSuccessfulCompilation, decorators)
+      }
+   }
+
+   private fun suggestServices(
+      lastSuccessfulCompilation: CompilationResult?,
+      decorators: List<CompletionDecorator>
+   ): CompletionItemList {
+      if (lastSuccessfulCompilation == null) {
+         return CompletionItemList.empty()
+      }
+      return lastSuccessfulCompilation.documentOrEmpty.services
+         .map { service ->
+            typeCompletionBuilder.buildCompletionItem(
+               service,
+               service.toQualifiedName(),
+               decorators
+            )
+         }.asExclusiveCompletionItemList() // Only show these, not others
+   }
+
+   private fun suggestMembersOfService(
+      contextAtCursor: ParserRuleContext,
+      lastSuccessfulCompilation: CompilationResult?,
+      decorators: List<CompletionDecorator>,
+   ): CompletionItemList{
+      if (lastSuccessfulCompilation == null) {
+         return CompletionItemList.empty()
+      }
+      // Foo::Bar
+      val serviceAndMember = contextAtCursor.searchUpForRule<MemberReferenceContext>() ?: return CompletionItemList.empty()
+      // In Foo::Bar, select Foo
+      val service = serviceAndMember.typeReference().getOrNull(0) ?: return CompletionItemList.empty()
+      val completionsOrErrors: Either<List<CompilationError>, CompletionItemList> = lastSuccessfulCompilation.compiler.findInSymbolTree(service.text, service)
+         .map { textFragments ->
+            textFragments.map { it.value }
+               .filterIsInstance<lang.taxi.services.Service>()
+               .flatMap { service ->
+                  service.members.map { member ->
+                     // Don't decorate members, as they're not importable on their own
+                     typeCompletionBuilder.buildCompletionItem(member, member.toQualifiedName(), emptyList())
+                  }
+               }.asExclusiveCompletionItemList()
+         }
+      return completionsOrErrors.getOrElse { CompletionItemList.empty() }
    }
 
 
@@ -191,14 +285,17 @@ class QueryCodeCompletionProvider(
       contextAtCursor: ParserRuleContext,
       importDecorator: ImportCompletionDecorator,
       compilationResult: CompilationResult
-   ): List<CompletionItem> {
+   ): CompletionItemList {
       val typeToFilter = findFilterTargetType(contextAtCursor, compilationResult)
-         ?: return emptyList()
-      val isExposedByQueryOperations = schema.queryOperations
-         .any { it.returnTypeName == typeToFilter }
+         ?: return CompletionItemList.empty()
+      val isExposedByQueryOperations = (schema.queryOperations + schema.tableOperations)
+         .any { operation ->
+            val returnType = operation.returnType.collectionType ?: operation.returnType
+            returnType.name == typeToFilter
+         }
       val queryOperationAttributes = if (isExposedByQueryOperations) {
          schema.type(typeToFilter).attributes.map { (fieldName, field) ->
-            typeCompletionBuilder.buildCompletionItem(null, field.type.toTaxiQualifiedName(), listOf(importDecorator))
+            typeCompletionBuilder.buildCompletionItem(schema.type(field.type).taxiType, field.type.toTaxiQualifiedName(), listOf(importDecorator))
          }
       } else {
          emptyList()
@@ -212,10 +309,13 @@ class QueryCodeCompletionProvider(
                typeCompletionBuilder.buildCompletionItem(param.type.taxiType, listOf(importDecorator))
             }
          }
-      return queryOperationAttributes + operationsReturningType
+      return (queryOperationAttributes + operationsReturningType).asExclusiveCompletionItemList()
    }
 
-   private fun findFilterTargetType(contextAtCursor: ParserRuleContext, compilationResult: CompilationResult):com.orbitalhq.schemas.QualifiedName? {
+   private fun findFilterTargetType(
+      contextAtCursor: ParserRuleContext,
+      compilationResult: CompilationResult
+   ): com.orbitalhq.schemas.QualifiedName? {
       contextAtCursor.searchUpForRule<NullableTypeReferenceContext>()?.let { typeToFilterToken ->
          val typeReferenceToken = typeToFilterToken.typeReference()
          return compilationResult.compiler.lookupTypeByName(typeReferenceToken)
@@ -345,8 +445,9 @@ class QueryCodeCompletionProvider(
    private fun suggestTypesAsInputs(
       typeRepository: TypeRepository,
       importDecorator: ImportCompletionDecorator
-   ): List<CompletionItem> {
+   ): CompletionItemList {
       return typeCompletionBuilder.getTypes(typeRepository, listOf(importDecorator))
+         .asCompletionItemList()
    }
 
    private fun findModelsReturnableFromQueryOperations(
@@ -403,7 +504,7 @@ class QueryCodeCompletionProvider(
       return object : CompletionDecorator {
          override fun decorate(
             typeName: QualifiedName,
-            token: ImportableToken?,
+            token: Named?,
             completionItem: CompletionItem
          ): CompletionItem {
             completionItem.setDocumentation(MarkupContent("markdown", documentation))

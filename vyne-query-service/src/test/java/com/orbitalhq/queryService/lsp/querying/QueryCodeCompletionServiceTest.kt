@@ -3,15 +3,20 @@ package com.orbitalhq.queryService.lsp.querying
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
 import lang.taxi.lsp.TaxiTextDocumentService
 import lang.taxi.lsp.sourceService.inMemoryIdentifier
 import lang.taxi.lsp.sourceService.inMemoryVersionedId
+import lang.taxi.lsp.sourceService.inmemoryUri
 import org.eclipse.lsp4j.CompletionParams
 import org.eclipse.lsp4j.DidChangeTextDocumentParams
 import org.eclipse.lsp4j.Position
 import org.eclipse.lsp4j.TextDocumentContentChangeEvent
 import org.junit.Ignore
 import org.junit.Test
+import reactor.kotlin.test.test
 
 class QueryCodeCompletionServiceTest {
 
@@ -45,22 +50,9 @@ class QueryCodeCompletionServiceTest {
 
          operation streamTweetMentions():Stream<Tweet>
 
-         vyneQl query findStudios(querySpec: vyne.vyneQl.VyneQlQuery):Studio[] with capabilities {
-            sum,
-            count,
-            avg,
-            min,
-            max,
-            filter(==,!=,in,like,>,<,>=,<=)
-         }
-         vyneQl query findOneStudio(querySpec: vyne.vyneQl.VyneQlQuery):Studio with capabilities {
-            sum,
-            count,
-            avg,
-            min,
-            max,
-            filter(==,!=,in,like,>,<,>=,<=)
-         }
+         write operation saveTweet(Tweet):Tweet
+
+         table studio : Studio[]
       }
    """.trimIndent()
    val schema = TaxiSchema.fromStrings(VyneQlGrammar.QUERY_TYPE_TAXI, taxi)
@@ -70,6 +62,7 @@ class QueryCodeCompletionServiceTest {
    fun `offers at clause when completing after the type list and selecting a single model`() {
       val documentService = documentServiceForSchema(taxi, schema = schema)
       val position = documentService.applyEdit("query", "find { Studio } as ")
+
       val completions = documentService.completion(
          CompletionParams(
             inMemoryIdentifier("query"),
@@ -99,7 +92,6 @@ class QueryCodeCompletionServiceTest {
    }
 
    @Test
-   @Ignore("This broke, we're currently merging all items, so getting 60-ish responses. Need a smarter way to indicate not to fall back to the generic completion provider")
    fun `when defining filter attributes against a type returned from a query operation then attributes from the type are suggested`() {
       val documentService = documentServiceForSchema(taxi, schema = schema)
       val position = documentService.applyEdit("query", "find { Studio(  )}")
@@ -117,7 +109,6 @@ class QueryCodeCompletionServiceTest {
    }
 
    @Test
-   @Ignore("This broke, we're currently merging all items, so getting 60-ish responses. Need a smarter way to indicate not to fall back to the generic completion provider")
    fun `when defining filter attributes against an array type returned from a query operation then attributes from the type are suggested`() {
       val documentService = documentServiceForSchema(taxi, schema = schema)
       val position = documentService.applyEdit("query", "find { Studio[](  )}")
@@ -135,13 +126,12 @@ class QueryCodeCompletionServiceTest {
    }
 
    @Test
-   @Ignore("This broke, we're currently merging all items, so getting 60-ish responses. Need a smarter way to indicate not to fall back to the generic completion provider")
    fun `when defining filter attributes against a type then inputs from operations are offered`() {
       val documentService = documentServiceForSchema(taxi, schema = schema)
       val position = documentService.applyEdit("query", "find { Agent(  )}")
       // Move back one character to within the parentheses.
       // The closing parenthesis is added by the editor
-      position.character = position.character - 2
+      position.character -= 2
       val completions = documentService.completion(
          CompletionParams(
             inMemoryIdentifier("query"),
@@ -171,7 +161,7 @@ class QueryCodeCompletionServiceTest {
       val documentService = documentServiceForSchema(taxi, schema = schema)
       val position = documentService.applyEdit("query", "find { Fi }")
       // Move back one character to the end of the Fi.  The closing brace has been added by the editor
-      position.character = position.character - 1
+      position.character -= 1
       val completions = documentService.completion(
          CompletionParams(
             inMemoryIdentifier("query"),
@@ -192,8 +182,7 @@ class QueryCodeCompletionServiceTest {
             position
          )
       ).get().left
-      completions.should.have.size(3)
-      completions.map { it.label }.should.have.elements("Studio[] (lang.taxi)", "Studio", "Film[] (lang.taxi)")
+      completions.map { it.label }.shouldContainAll("Studio[] (lang.taxi)", "Film[] (lang.taxi)")
       val completionItem = completions.first { it.label.contains("Film[]") }
       completionItem.additionalTextEdits.single().newText.trim().should.equal("import Film")
    }
@@ -232,6 +221,49 @@ class QueryCodeCompletionServiceTest {
          "AgentName"
       )
       val agentCompletion = completions.first { it.label == "Agent" }
+   }
+
+   @Test
+   fun `when writing a mutation hints are given on services`() {
+      val documentService = documentServiceForSchema(taxi, schema = schema)
+      val position = documentService.applyEdit("query", "find { Actor } as { id: ActorId } call ")
+      documentService.forceCompilationNow()
+      val completions = documentService.completion(
+         CompletionParams(
+            inMemoryIdentifier("query"),
+            position
+         )
+      ).get().left
+      completions.shouldHaveSize(1)
+      completions.single()
+         .label.shouldBe("MyService")
+   }
+
+   @Test
+   fun `when writing a mutation service members are provided`() {
+      val documentService = documentServiceForSchema(taxi, schema = schema)
+      val position = documentService.applyEdit("query", """
+         find { Actor }
+         as { id: ActorId }
+         call MyService::""".trimIndent())
+      documentService.forceCompilationNow()
+      val completions = documentService.completion(
+         CompletionParams(
+            inMemoryIdentifier("query"),
+            position
+         )
+      ).get().left
+      completions.shouldHaveSize(7)
+      completions.map { it.label }
+         .shouldContainAll(
+            "listFilms",
+            "listActor",
+            "getActors",
+            "getAgent",
+            "streamTweetMentions",
+            "saveTweet",
+            "studio",
+         )
    }
 
 
@@ -299,5 +331,6 @@ fun TaxiTextDocumentService.applyEdit(modelName: String, content: String): Posit
    )
    val lineIndex = content.lines().size - 1
    val charIndex = content.lines().last().length - 1
+   this.forceCompilationNow()
    return Position(lineIndex, charIndex)
 }

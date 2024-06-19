@@ -6,6 +6,7 @@ import com.orbitalhq.query.ParsedQuery
 import com.orbitalhq.query.QueryPlan
 import com.orbitalhq.query.SearchFailedException
 import com.orbitalhq.query.history.QuerySankeyChartRow
+import com.orbitalhq.spring.http.BadRequestException
 import lang.taxi.CompilationException
 import lang.taxi.messages.Severity
 import lang.taxi.query.TaxiQLQueryString
@@ -30,6 +31,7 @@ class QueryParserService(
    fun parseQuery(
       @RequestBody query: TaxiQLQueryString,
    ): Mono<ParsedQuery> {
+      if (query.isEmpty()) throw BadRequestException("No query was provided")
       return Mono.fromCallable {
          val schema = schemaStore.schema()
          val compiledQuery = try {

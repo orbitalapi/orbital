@@ -1,7 +1,7 @@
 package com.orbitalhq.cockpit.core.schemas.importing.protobuf
 
 import com.orbitalhq.cockpit.core.schemas.importing.*
-import lang.taxi.generators.GeneratedTaxiCode
+import com.orbitalhq.spring.http.BadRequestException
 import lang.taxi.generators.protobuf.ProtobufUtils
 import lang.taxi.generators.protobuf.TaxiGenerator
 import okio.FileSystem
@@ -32,7 +32,7 @@ class ProtobufSchemaConverter(
       val fileSystem = if (options.url != null) {
          loadFromUrl(options)
       } else {
-         TODO("Not yet implemented")
+         loadFromProvidedProtobuf(options)
       }
 
       return fileSystem.map { fs ->
@@ -42,13 +42,37 @@ class ProtobufSchemaConverter(
       }.map { taxiCode ->
          taxiCode.toSourcePackageWithMessages(request.packageIdentifier, generatedImportedFileName("Protobuf"))
       }
+   }
 
+   private fun loadFromProvidedProtobuf(options: ProtobufSchemaConverterOptions): Mono<FileSystem> {
+      val protobuf = options.protobuf ?: throw BadRequestException("protobuf must be supplied")
+      val filename = options.filename ?: throw BadRequestException("filename must be supplied")
+      val packageName = ProtobufUtils.findPackageName(protobuf)
+      return loadFromFakeFilesystem(protobuf, filename, packageName)
+   }
+
+   private fun loadFromFakeFilesystem(protobuf: String, filename: String, packageName: String): Mono<FileSystem> {
+      return Mono.fromCallable {
+         val filePath = Paths.get(packageName.replace(".", "/"), filename)
+
+         // Protobuf needs files to process, as the file location
+         // is important.
+         // So, we create an in-memory file system.
+         // In the future, this may cause issues, if we get really big protobufs.
+         // For now, let's go with it.
+         val fs = FakeFileSystem()
+         fs.createDirectories(filePath.parent.toOkioPath())
+         fs.write(filePath.toOkioPath(), true) {
+            writeUtf8(protobuf)
+         }
+         fs
+      }
 
    }
 
    private fun loadFromUrl(options: ProtobufSchemaConverterOptions): Mono<FileSystem> {
       return loadSchema(options.url!!)
-         .map { schema ->
+         .flatMap { schema ->
             val uri = URI.create(options.url)
             val packageName = ProtobufUtils.findPackageName(schema)
 
@@ -59,19 +83,7 @@ class ProtobufSchemaConverter(
                   it
                }
             }
-            val filePath = Paths.get(packageName.replace(".", "/"), fileName)
-
-            // Protobuf needs files to process, as the file location
-            // is important.
-            // So, we create an in-memory file system.
-            // In the future, this may cause issues, if we get really big protobufs.
-            // For now, let's go with it.
-            val fs = FakeFileSystem()
-            fs.createDirectories(filePath.parent.toOkioPath())
-            fs.write(filePath.toOkioPath(), true) {
-               writeUtf8(schema)
-            }
-            fs
+            loadFromFakeFilesystem(schema,fileName, packageName)
          }
    }
 }
@@ -79,5 +91,6 @@ class ProtobufSchemaConverter(
 
 data class ProtobufSchemaConverterOptions(
    val protobuf: String? = null,
+   val filename: String? = null,
    val url: String? = null,
 )
