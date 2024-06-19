@@ -164,7 +164,9 @@ export class QueryEditorState {
       this.payload.isErrorMessageSubscriptionSetup.set(false);
       console.error('Search failed: ' + JSON.stringify(error));
       this.payload.currentState.set('Error');
-      this.payload.lastErrorMessage.set(this.formatErrorMessage((this.payload.lastQueryResult() as FailedSearchResponse).message));
+      this.payload.lastErrorMessage.set(
+        this.formatErrorMessage((this.payload.lastQueryResult() as FailedSearchResponse).message)?.trim()
+      );
     };
 
     const queryMessageHandler = (message: StreamingQueryMessage) => {
