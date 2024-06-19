@@ -14,7 +14,7 @@
       <a [routerLink]="element.route" routerLinkActive="active" #rla="routerLinkActive"
          [attr.data-e2e-id]="element.testId" *ngIf="element.route"
          [tuiHintShowDelay]="100" [tuiHintHideDelay]="50" [tuiHint]="isCollapsed && tooltip" tuiHintAppearance="onDark"
-         tuiHintDirection="left"
+         tuiHintDirection="right"
       >
         <tui-svg [src]="element.icon" class="icon"></tui-svg>
         <span class="label">{{ element.title }}</span>
@@ -22,7 +22,7 @@
       <a [href]="element.externalUrl" target="_blank"
          [attr.data-e2e-id]="element.testId" *ngIf="element.externalUrl"
          [tuiHintShowDelay]="100" [tuiHintHideDelay]="50" [tuiHint]="isCollapsed && tooltip" tuiHintAppearance="onDark"
-         tuiHintDirection="left"
+         tuiHintDirection="right"
       >
         <tui-svg [src]="element.icon" class="icon"></tui-svg>
         <span class="label">{{ element.title }}</span>
