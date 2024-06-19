@@ -11,30 +11,17 @@
   width: 100%;
   margin: 2rem auto;
   position: relative;
+
+  a {
+    margin: 1rem 0;
+  }
 }
 
 .input-container {
-  border: 1px solid rgba($vyne-lilac, 0.15);
-  border-radius: 8px;
-  padding: 1rem;
   display: flex;
 
   .text-input {
     flex-grow: 1;
-  }
-}
-
-.search-bar-container {
-  /* TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version. */
-  ::ng-deep .mat-form-field-underline {
-    display: none;
-  }
-  /* TODO(mdc-migration): The following rule targets internal classes of form-field that may no longer apply for the MDC version. */
-  ::ng-deep .mat-form-field-wrapper {
-    padding: 0;
-  }
-  a {
-    margin: 1rem 0;
   }
 }
 

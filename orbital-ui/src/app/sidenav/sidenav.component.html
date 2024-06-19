@@ -13,13 +13,17 @@
          routerLinkActive="active">
       <a [routerLink]="element.route" routerLinkActive="active" #rla="routerLinkActive"
          [attr.data-e2e-id]="element.testId" *ngIf="element.route"
-         [tuiHintShowDelay]="100" [tuiHintHideDelay]="50" [tuiHint]="isCollapsed && tooltip" tuiHintAppearance="onDark">
+         [tuiHintShowDelay]="100" [tuiHintHideDelay]="50" [tuiHint]="isCollapsed && tooltip" tuiHintAppearance="onDark"
+         tuiHintDirection="left"
+      >
         <tui-svg [src]="element.icon" class="icon"></tui-svg>
         <span class="label">{{ element.title }}</span>
       </a>
       <a [href]="element.externalUrl" target="_blank"
          [attr.data-e2e-id]="element.testId" *ngIf="element.externalUrl"
-         [tuiHintShowDelay]="100" [tuiHintHideDelay]="50" [tuiHint]="isCollapsed && tooltip" tuiHintAppearance="onDark">
+         [tuiHintShowDelay]="100" [tuiHintHideDelay]="50" [tuiHint]="isCollapsed && tooltip" tuiHintAppearance="onDark"
+         tuiHintDirection="left"
+      >
         <tui-svg [src]="element.icon" class="icon"></tui-svg>
         <span class="label">{{ element.title }}</span>
       </a>
@@ -32,7 +36,7 @@
     <ng-container *ngIf="(userInfo$ | async) as userInfo">
       <div *ngIf="userInfo.username && userInfo.username !== 'Anonymous'" class="navbar-item">
         <a>
-          <app-avatar [user]="userInfo"></app-avatar>
+          <app-avatar data-testid="user-info-dropdown" [user]="userInfo"></app-avatar>
         </a>
       </div>
     </ng-container>

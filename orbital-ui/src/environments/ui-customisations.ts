@@ -11,8 +11,8 @@ const orbitalDocsLinks : DocsLinks = {
   authentication : 'https://orbitalhq.com/docs/deploying/authentication',
   dynamoDbConnection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#dynamo-db',
   lambdaDbConnection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#lambda' ,
-  s3Connection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#lambda' ,
-  sqsConnection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#lambda' ,
+  s3Connection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#s3' ,
+  sqsConnection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#sqs' ,
   dataPolicies : 'https://orbitalhq.com/docs/deploying/data-policies' ,
   docsHome : 'https://orbitalhq.com/docs' ,
 }
