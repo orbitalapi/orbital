@@ -5,6 +5,7 @@ import com.orbitalhq.Vyne
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.protobuf.wire.RepoBuilder
+import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.winterbe.expekt.should
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
@@ -21,9 +22,7 @@ import kotlinx.coroutines.runBlocking
 import lang.taxi.generators.protobuf.TaxiGenerator
 import mu.KotlinLogging
 import okio.fakefilesystem.FakeFileSystem
-import org.apache.kafka.common.header.Header
 import org.apache.kafka.common.header.internals.RecordHeader
-import org.apache.kafka.common.header.internals.RecordHeaders
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -33,7 +32,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.test.context.junit4.SpringRunner
 import reactor.test.StepVerifier
 import java.math.BigInteger
-import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.random.Random
@@ -331,7 +329,6 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
          .generate(protobufSchema = protoSchema)
       val serviceTaxi = """
          ${KafkaConnectorTaxi.Annotations.imports}
-         ${geeratedTaxi.concatenatedSource}
 
           @KafkaService( connectionName = "moviesConnection" )
          service HelloService {
@@ -339,9 +336,8 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
             operation streamGoodThings():Stream<HelloWorld>
          }
       """.trimIndent()
-      val taxi = listOf(serviceTaxi)
-         .joinToString("\n")
-      val (vyne, _) = vyneWithKafkaInvoker(taxi)
+      val schema = TaxiSchema.fromStrings(geeratedTaxi.taxi + serviceTaxi + KafkaConnectorTaxi.schema)
+      val (vyne, _) = vyneWithKafkaInvoker(schema)
 
       val resultsFromQuery1 = mutableListOf<TypedInstance>()
       val query1 = runBlocking { vyne.query("""stream { HelloWorld }""") }
