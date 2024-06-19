@@ -304,17 +304,14 @@ export class QueryEditorState {
       this.payload.queryPlanData.set(of({steps: []} as QueryPlan))
       this.payload.isQuerySaveable.set(false)
     } else {
-      this.payload.queryPlanData.set(
-        this.queryService.compileQuery(this.payload.query())
-          .pipe(
-            tap(parsedQuery => this.payload.isQuerySaveable.set(!parsedQuery.hasCompilationErrors)),
-            map(parsedQuery => parsedQuery.queryPlan),
-            catchError(error => {
-              // Return an observ/**/able to prevent the stream from completing
-              return of({ steps: [] } as QueryPlan);
-            })
-          )
-      );
+      this.queryService.compileQuery(this.payload.query())
+        .subscribe({
+          next: parsedQuery => {
+            this.payload.isQuerySaveable.set(!parsedQuery.hasCompilationErrors)
+            this.payload.queryPlanData.set(of(parsedQuery.queryPlan))
+          },
+          error: () => of({ steps: [] } as QueryPlan)
+        })
     }
   }
 
