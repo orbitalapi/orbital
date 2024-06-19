@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+message CafeDrink {
+   optional string customer_name = 1;
+   repeated EspressoShot shots = 2;
+   optional Foam foam = 3;
+   optional int32 size_ounces = 14;
+   optional Dairy dairy = 15;
+
+   enum Foam {
+      NONE = 0;
+      NOT_FOAMY_AND_QUITE_BORING = 1;
+      ZOMG_SO_FOAMY = 3;
+   }
+}
+
+message Dairy {
+   optional int32 count = 2;
+   optional string type = 1;
+}
+
+message EspressoShot {
+   optional string bean_type = 1;
+   optional double caffeine_level = 2;
+}

@@ -51,7 +51,11 @@ class ProtobufSpecGenerator(private val vyneSchema: com.orbitalhq.schemas.Schema
          specUnderConstruction.fields = type.attributes.map { (name, attribute) ->
             val metadata = attribute.getMetadata(ProtobufFieldAnnotation.NAME.fqn())
             val fieldType = attribute.resolveType(vyneSchema)
-            if (!fieldType.isPrimitive) {
+
+            // We don't generate field-specific types for semantic scalars
+            // eg: `Title inherits String` just becomes string
+            val generateFieldType = fieldType.isEnum || !fieldType.isScalar
+            if (generateFieldType) {
                // Add the type to set of generated fields
                val fieldTypeMessageSpec = getOrGenerateProtoSpec(fieldType)
                requiredImports.add(fieldTypeMessageSpec.path.toString())
