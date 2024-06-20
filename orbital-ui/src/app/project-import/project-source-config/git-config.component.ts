@@ -336,7 +336,7 @@ export class GitConfigComponent {
           console.log(JSON.stringify(error))
           this.working = false;
           this.saveResultMessage = {
-            message: 'There was a problem adding the git repository',
+            message: error.error?.message || 'There was a problem adding the git repository',
             severity: 'ERROR'
           }
           this.changeDetector.markForCheck();

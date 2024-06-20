@@ -17,7 +17,7 @@ import { TUI_PROMPT } from '@taiga-ui/kit';
           <hr>
           <h3>Danger zone</h3>
           <button tuiButton appearance="secondary-destructive" [showLoader]="working" (click)="confirmRemoval()">
-              Remove this Project...
+              Remove this project...
           </button>
           <tui-notification [status]="deleteResultMessage.severity.toLowerCase()" *ngIf="deleteResultMessage">
               {{ deleteResultMessage.message }}
@@ -77,7 +77,7 @@ export class ProjectSettingsComponent {
         },
         error: () => {
           this.deleteResultMessage = {
-            message: 'A problem occurred removing the Project',
+            message: 'A problem occurred removing the project',
             severity: 'ERROR',
           }
           this.working = false;
