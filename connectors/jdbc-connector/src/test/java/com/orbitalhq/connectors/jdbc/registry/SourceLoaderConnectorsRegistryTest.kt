@@ -26,16 +26,74 @@ import io.kotest.matchers.file.shouldExist
 import io.kotest.matchers.maps.shouldContainKey
 import io.kotest.matchers.shouldBe
 import lang.taxi.packages.TaxiProjectLoader
+import org.junit.After
+import org.junit.Before
 import org.junit.Test
 import java.time.Duration
 
 class SourceLoaderConnectorsRegistryTest : BaseGitTest() {
 
+   @Before
+   fun setup() {
+      ConfigFileLocationConventions.resetToDefaults()
+   }
+   @After
+   fun tearDown() {
+      ConfigFileLocationConventions.resetToDefaults()
+   }
+
+   @Test
+   fun `can add a connection using a non standard set of config keys`() {
+      // Setup...
+      val customizedConfigKey = "@flow/config"
+      val customizedConfigPath = "flow/config/*.conf"
+      ConfigFileLocationConventions.OrbitalConfigKey = customizedConfigKey
+      ConfigFileLocationConventions.OrbitalConfigPathEntry = customizedConfigPath
+      // Create a git project locally
+      deployTestProjectToRemoteGitPath(projectName = "sample-project-no-additional-sources")
+
+      // Configure the stack to watch the git repo, and use it as a source
+      // for config
+      val projectStoreManager = buildProjectStoreManager()
+      val gitLoader = projectStoreManager.gitLoaders.single()
+      waitForSuccessfulGitClone(projectStoreManager, gitLoader)
+
+      val configSource = ProjectManagerConfigSourceLoader(
+         SimpleSchemaStore(),
+         projectStoreManager,
+         filePattern = "connections.conf"
+      )
+      val connectorRegistry = SourceLoaderJdbcConnectionRegistry(
+         SourceLoaderConnectorsRegistry(listOf(configSource), listOf(configSource))
+      )
+
+      // test: add a JDBC connection
+      val result = connectorRegistry.register(
+         PackageIdentifier.fromId("taxi/sample/0.3.0"),
+         DefaultJdbcConnectionConfiguration(
+            "testConfig",
+            JdbcDriver.POSTGRES,
+            emptyMap()
+         )
+      )
+      // Ensure we send the warning to the UI
+      result.messages.shouldContain(GitWriterDecorator.GIT_COMMIT_NEEDED)
+
+      // Test that the connections file has been created
+      val writtenConfigFile = localRepoDir.root.resolve("test-git-repo/flow/config/connections.conf")
+      writtenConfigFile.shouldBeAFile()
+      writtenConfigFile.shouldExist()
+
+
+      val taxiConfFile = localRepoDir.root.resolve("test-git-repo/taxi.conf")
+      val loadedTaxiConf = TaxiProjectLoader(taxiConfFile.toPath())
+         .load()
+      loadedTaxiConf.additionalSources.shouldContainKey(customizedConfigKey)
+      loadedTaxiConf.additionalSources[customizedConfigKey].shouldBe(customizedConfigPath)
+   }
 
    @Test
    fun `when adding a connection to a taxi project without additional sources declared then the config block is added`() {
-      // Setup...
-      ConfigFileLocationConventions.OrbitalConfigKey = "@flow/config"
       // Create a git project locally
       deployTestProjectToRemoteGitPath(projectName = "sample-project-no-additional-sources")
 
@@ -75,8 +133,8 @@ class SourceLoaderConnectorsRegistryTest : BaseGitTest() {
       val taxiConfFile = localRepoDir.root.resolve("test-git-repo/taxi.conf")
       val loadedTaxiConf = TaxiProjectLoader(taxiConfFile.toPath())
          .load()
-      loadedTaxiConf.additionalSources.shouldContainKey(ConfigFileLocationConventions.OrbitalConfigKey)
-      loadedTaxiConf.additionalSources[ConfigFileLocationConventions.OrbitalConfigKey].shouldBe(ConfigFileLocationConventions.OrbitalConfigPathEntry)
+      loadedTaxiConf.additionalSources.shouldContainKey(ConfigFileLocationConventions.DEFAULT_CONFIG_KEY)
+      loadedTaxiConf.additionalSources[ConfigFileLocationConventions.DEFAULT_CONFIG_KEY].shouldBe(ConfigFileLocationConventions.DEFAULT_CONFIG_PATH)
    }
 
    @Test
