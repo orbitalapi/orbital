@@ -15,6 +15,7 @@
    <modules>
       <module>pipeline-jet</module>
       <module>pipeline-jet-api</module>
+      <module>stream-engine</module>
    </modules>
 
    <dependencyManagement>

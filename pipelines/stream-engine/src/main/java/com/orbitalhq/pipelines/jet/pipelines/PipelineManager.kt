@@ -16,8 +16,6 @@ import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec
 import com.orbitalhq.pipelines.jet.api.transport.ScheduledPipelineTransportSpec
 import com.orbitalhq.pipelines.jet.api.transport.hazelcast.HazelcastTopicSinkSpec
-import com.orbitalhq.pipelines.jet.api.transport.log.LogLevel
-import com.orbitalhq.pipelines.jet.api.transport.log.LoggingOutputSpec
 import com.orbitalhq.pipelines.jet.api.transport.query.StreamingQueryInputSpec
 import com.orbitalhq.pipelines.jet.badRequest
 import com.orbitalhq.pipelines.jet.streams.ManagedStream

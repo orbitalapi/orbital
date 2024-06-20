@@ -4,7 +4,6 @@ import com.orbitalhq.cockpit.core.CustomSettings
 import com.orbitalhq.cockpit.core.DatabaseConfig
 import com.orbitalhq.cockpit.core.FeatureTogglesConfig
 import com.orbitalhq.cockpit.core.lsp.LanguageServerConfig
-import com.orbitalhq.cockpit.core.pipelines.PipelineConfig
 import com.orbitalhq.cockpit.core.security.VyneUserConfig
 import com.orbitalhq.copilot.CopilotSpringModule
 import com.orbitalhq.history.QueryAnalyticsConfig
@@ -40,7 +39,6 @@ import org.springframework.context.annotation.Import
    VyneSpringCacheConfiguration::class,
    LanguageServerConfig::class,
    QueryAnalyticsConfig::class,
-   PipelineConfig::class,
    VyneSpringProjectionConfiguration::class,
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class,

@@ -84,7 +84,6 @@ stages:
          # If the total size of all jar files being stored in artifacts
          # exceeds 1GB then builds can fail.
          #         - "cask/target/cask.jar"
-         - "pipelines/pipeline-jet/target/pipeline-jet.jar"
 #         - "schema-server/target/schema-server.jar"
 #         - "vyne-analytics-server/target/vyne-analytics-server.jar"
          - "query-node-native/target/query-node-native.jar"
@@ -324,33 +323,6 @@ publish-orbital-to-docker-hub-mac-m2:
       microservice_orbital: orbital
       tag_suffix: -jammy # jammy is the name of ubuntu we use
       base_image_tag: jammy # jammy is the name of ubuntu we use
-
-publish-pipeline-jet-to-docker-hub:
-   extends: .publish-to-docker-hub
-   variables:
-      projectDir: pipelines/pipeline-jet
-      microservice_orbital: stream-server
-
-publish-pipeline-jet-to-docker-hub-mac-m2:
-   extends: .publish-to-docker-hub
-   variables:
-      projectDir: pipelines/pipeline-jet
-      microservice_orbital: stream-server
-      tag_suffix: -jammy # jammy is the name of ubuntu we use.
-
-publish-pipeline-jet-to-quay-io:
-   extends: .publish-to-quay-io
-   variables:
-      projectDir: pipelines/pipeline-jet
-      microservice_orbital: hazelcast-flow-streaming-server
-
-publish-pipeline-jet-to-quay-io-mac-m2:
-   extends: .publish-to-quay-io
-   variables:
-      projectDir: pipelines/pipeline-jet
-      microservice_orbital: hazelcast-flow-streaming-server
-      tag_suffix: -jammy # jammy is the name of ubuntu we use.
-
 
 publish-query-node-to-docker-hub:
    extends: .publish-to-docker-hub

@@ -7,7 +7,6 @@ import com.orbitalhq.cockpit.core.CustomSettings
 import com.orbitalhq.cockpit.core.FeatureTogglesConfig
 import com.orbitalhq.cockpit.core.WebUiUrlSupportFilter
 import com.orbitalhq.cockpit.core.lsp.LanguageServerConfig
-import com.orbitalhq.cockpit.core.pipelines.PipelineConfig
 import com.orbitalhq.cockpit.core.schemas.BuiltInTypesSubmitter
 import com.orbitalhq.cockpit.core.security.VyneUserConfig
 import com.orbitalhq.cockpit.core.telemetry.TelemetryConfig
@@ -67,7 +66,6 @@ import java.util.*
    VyneSpringCacheConfiguration::class,
    LanguageServerConfig::class,
    QueryAnalyticsConfig::class,
-   PipelineConfig::class,
    VyneSpringProjectionConfiguration::class,
    VyneSpringHazelcastConfiguration::class,
    VyneUserConfig::class,

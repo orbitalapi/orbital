@@ -59,7 +59,6 @@ import java.time.Clock
 @EnableJpaRepositories
 @EnableConfigurationProperties(
    VyneSpringCacheConfiguration::class,
-   PipelineConfig::class,
    VyneSpringProjectionConfiguration::class,
    VyneConnectionsConfig::class,
    EnvVariablesConfig::class

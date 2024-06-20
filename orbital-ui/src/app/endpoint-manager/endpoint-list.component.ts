@@ -23,7 +23,6 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
     <app-header-component-layout title="Query Endpoints"
                                  description="Queries, Streams and Pipelines defined in your schema">
       <ng-container ngProjectAs="header-components">
-        <app-connection-status [status]="(streamServerConnectionStatus$ | async)"></app-connection-status>
         <tui-notification *ngIf="websocketConnectionError && hasStreamingQueries"
                           status="error">{{ websocketConnectionError }}
         </tui-notification>
@@ -80,7 +79,6 @@ export class EndpointListComponent {
   queries$: Observable<SavedQuery[]>;
 
   hasStreamingQueries = false;
-  readonly streamServerConnectionStatus$: Observable<ConnectionStatus>
   private streamServerState: StreamServerStatusEvent = null;
   websocketConnectionError: string | null = null;
 
@@ -108,24 +106,13 @@ export class EndpointListComponent {
           )
         )
       );
-
     const streamServerStatusMessages = pipelineService.streamsStatus()
-    this.streamServerConnectionStatus$ = streamServerStatusMessages.pipe(
-      map(event => event.connectionStatus),
-      map((event: ConnectionStatus) => {
-        return {
-          ...event,
-          message: this.updateMessageText(event)
-        } as ConnectionStatus
-      })
-    )
-
     streamServerStatusMessages
       .pipe(takeUntilDestroyed())
       .subscribe(
       {
-        next: next => {
-          this.streamServerState = next.streamServerState;
+        next: message => {
+          this.streamServerState = message
           changeDetector.markForCheck();
         },
         error: err => {
@@ -153,19 +140,6 @@ export class EndpointListComponent {
     const streamStatus = this.streamServerState.streams.find(s => s.streamName === query.name.parameterizedName)
     if (!streamStatus) return 'UNKNOWN';
     return streamStatus.state;
-  }
-
-  private updateMessageText(event: ConnectionStatus): string {
-    switch (event.status) {
-      case "OK":
-        return 'Stream server is connected and healthy'
-      case "CONNECTING":
-        return `Attempting to connect to stream server: ${event.message}`
-      case "ERROR":
-        return `Error with stream server: ${event.message}`
-      case "UNKNOWN":
-        return `Unknown state with stream server: ${event.message}`
-    }
   }
 
   navigateToQueryPage(query: SavedQuery) {
