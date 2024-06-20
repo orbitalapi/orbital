@@ -175,14 +175,14 @@ export const ExampleGroups = [
       simpleQuery
     ]
   },
-  {
-    title: 'Mutations',
-    snippets: StubExamples
-  },
-  {
-    title: 'Data Manipulation',
-    snippets: StubExamples
-  },
+  // {
+  //   title: 'Mutations',
+  //   snippets: StubExamples
+  // },
+  // {
+  //   title: 'Data Manipulation',
+  //   snippets: StubExamples
+  // },
 ]
 
 function codeSamplesToStubExamples(codeSample: CodeSample[]): StubQueryMessageWithSlug[] {
