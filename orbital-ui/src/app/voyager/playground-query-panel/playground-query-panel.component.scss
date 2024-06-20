@@ -14,7 +14,6 @@ app-code-editor {
 .result-panel {
   height: 100%;
   flex-shrink: 0;
-  min-height: 10px;
   display: flex;
   flex-direction: column;
 
@@ -33,6 +32,10 @@ app-code-editor {
 
 @include thin-splitter();
 
+app-query-lineage {
+  display: block;
+}
+
 .empty-results {
   background-color: $slate-200;
   padding: 1rem;
@@ -42,9 +45,9 @@ app-code-editor {
   button.t-header {
     // Set the background in accordion headers
     background-color: $slate-100 !important;
-
   }
   tui-expand {
+    transform: unset !important;
     .t-content {
       padding: 0 !important;
     }
@@ -62,4 +65,15 @@ app-code-editor {
 
 tui-accordion {
   height: 100%;
+}
+
+
+
+.fullscreen {
+  position: fixed;
+  top: 1rem;
+  left: calc(1rem + $sidenav-width);
+  width: calc(100% - $sidenav-width - 2rem);
+  height: calc(100% - 2rem);
+  z-index: 2000;
 }

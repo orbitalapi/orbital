@@ -175,3 +175,13 @@ tui-hint {
   //padding: 0.25rem 1rem !important;
   //min-height: unset !important;
 }
+
+
+.fullscreen {
+  position: fixed;
+  top: 1rem;
+  left: calc(1rem + $sidenav-width);
+  width: calc(100% - $sidenav-width - 2rem);
+  height: calc(100% - 2rem);
+  z-index: 2000;
+}

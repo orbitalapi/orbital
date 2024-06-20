@@ -1,10 +1,19 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input} from '@angular/core';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component, DestroyRef,
+  ElementRef,
+  Input,
+  OnInit,
+  ViewChild
+} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {BehaviorSubject, EMPTY, switchMap} from "rxjs";
 import {ExpandingPanelSetModule} from "../../expanding-panelset/expanding-panel-set.module";
 import {TuiAccordionModule, TuiTabsModule} from "@taiga-ui/kit";
 import {TuiButtonModule} from "@taiga-ui/core";
-import {AngularSplitModule} from "angular-split";
+import {AngularSplitModule, IOutputData} from "angular-split";
 import {CodeEditorModule} from "../../code-editor/code-editor.module";
 import {StubPanelComponent} from "./stub-panel.component";
 import {Schema} from "../../services/schema";
@@ -14,14 +23,17 @@ import {emptyQueryMessage, QueryParseMetadata, StubQueryMessage} from "../../ser
 import {JsonViewerModule} from "../../json-viewer/json-viewer.module";
 import {QueryConfigPanelComponent} from "./query-config-panel.component";
 import {catchError, debounceTime, filter, tap} from "rxjs/operators";
-import {QueryPlanPanelComponent} from "./query-plan-panel.component";
 import {ExpandablePanelComponent} from "../../expanding-panelset/expandable-panel/expandable-panel.component";
 import {QueryResultsPanelComponent} from "./query-results-panel.component";
+import {ResizeObservableService} from "../../services/resize-observable.service";
+import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
+import {LineageDisplayModule} from "../../lineage-display/lineage-display.module";
 
 @Component({
   selector: 'app-playground-query-panel',
   standalone: true,
-  imports: [CommonModule, ExpandingPanelSetModule, TuiAccordionModule, TuiButtonModule, AngularSplitModule, TuiTabsModule, CodeEditorModule, StubPanelComponent, HttpClientModule, JsonViewerModule, QueryConfigPanelComponent, QueryPlanPanelComponent, ExpandablePanelComponent, QueryResultsPanelComponent],
+  providers: [ResizeObservableService],
+  imports: [CommonModule, ExpandingPanelSetModule, TuiAccordionModule, TuiButtonModule, AngularSplitModule, TuiTabsModule, CodeEditorModule, StubPanelComponent, HttpClientModule, JsonViewerModule, QueryConfigPanelComponent, ExpandablePanelComponent, QueryResultsPanelComponent, LineageDisplayModule],
   template: `
     <as-split direction="vertical" unit="percent" gutterSize="1">
       <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
@@ -45,27 +57,29 @@ import {QueryResultsPanelComponent} from "./query-results-panel.component";
         </app-code-editor>
       </as-split-area>
       <as-split-area size="50">
-        <tui-accordion [rounded]="false">
-          <tui-accordion-item size="s">
+        <tui-accordion [rounded]="false" #accordion>
+          <tui-accordion-item size="s" [(open)]="queryPlanExpanded">
             Query plan
             <ng-template tuiAccordionItemContent>
-              <app-query-plan-panel [(expanded)]="queryPlanExpanded"
-                                    [queryPlan]="parsedQuery?.queryPlan"></app-query-plan-panel>
+              <app-query-lineage [(fullscreen)]="queryPlanFullscreen" *ngIf="!queryPlanFullscreen"
+                                 [style.height]="expandedPanelHeight"
+                                 [rows]="parsedQuery?.queryPlan?.steps"></app-query-lineage>
             </ng-template>
           </tui-accordion-item>
-          <tui-accordion-item size="s">
+          <tui-accordion-item size="s" [(open)]="configPanelExpanded">
             Stubs and parameters
             <ng-template tuiAccordionItemContent>
-              <app-query-config-panel [(expanded)]="configPanelExpanded" [(stubs)]="queryMessage.stubs"
+              <app-query-config-panel [style.height]="expandedPanelHeight"
+                                      [(stubs)]="queryMessage.stubs"
                                       [parameters]="queryMessage.parameters"
                                       (parameterValuesChange)="updateQueryParameters($event)"
                                       [schema]="schema"></app-query-config-panel>
             </ng-template>
           </tui-accordion-item>
-          <tui-accordion-item size="s">
+          <tui-accordion-item size="s" [(open)]="queryResultsExpanded">
             Results
             <ng-template tuiAccordionItemContent>
-              <div class="result-panel">
+              <div class="result-panel" [style.height]="expandedPanelHeight">
                 <app-json-viewer [readOnly]="true" [json]="queryResult" [showHeader]="false"
                                  *ngIf="queryResult"></app-json-viewer>
                 <div *ngIf="!queryResult" class="empty-results">
@@ -76,48 +90,28 @@ import {QueryResultsPanelComponent} from "./query-results-panel.component";
             </ng-template>
           </tui-accordion-item>
         </tui-accordion>
-
-
-<!--        <as-split direction="vertical" unit="pixel" gutterSize="1" [useTransition]="true">-->
-<!--          <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">-->
-<!--            <div class="thin-splitter-gutter-icon"></div>-->
-<!--          </div>-->
-<!--          <as-split-area [lockSize]="!queryPlanExpanded" [size]="queryPlanExpanded ? 280 : 50">-->
-
-<!--          </as-split-area>-->
-<!--          <as-split-area [lockSize]="!configPanelExpanded" [size]="configPanelExpanded ? 280 : 50">-->
-<!--            <app-query-config-panel [(expanded)]="configPanelExpanded" [(stubs)]="queryMessage.stubs"-->
-<!--                                    [parameters]="queryMessage.parameters"-->
-<!--                                    (parameterValuesChange)="updateQueryParameters($event)"-->
-<!--                                    [schema]="schema"></app-query-config-panel>-->
-<!--          </as-split-area>-->
-<!--          <as-split-area [size]="configPanelExpanded ? '*' : 50">-->
-<!--            <app-query-results-panel>-->
-
-<!--            </app-query-results-panel>-->
-<!--            <div class="result-panel">-->
-<!--              <app-expandable-panel title="Results" [isSecondary]="true">-->
-<!--                <app-json-viewer [readOnly]="true" [json]="queryResult" [showHeader]="false"-->
-<!--                                 *ngIf="queryResult"></app-json-viewer>-->
-<!--                <div *ngIf="!queryResult" class="empty-results">-->
-<!--                  No results to show-->
-<!--                </div>-->
-<!--              </app-expandable-panel>-->
-<!--            </div>-->
-<!--          </as-split-area>-->
-<!--        </as-split>-->
       </as-split-area>
 
     </as-split>
+    <!-- This is a hacky workaround.
+     See comments on QueryLineageComponent fullscreen as to why we have have two app-query-lineage
+     components (one inside the accordion, and one outside)
+     -->
+    <app-query-lineage *ngIf="queryPlanFullscreen" [(fullscreen)]="queryPlanFullscreen"
+                       [rows]="parsedQuery?.queryPlan?.steps"></app-query-lineage>
   `,
   styleUrls: ['./playground-query-panel.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class PlaygroundQueryPanelComponent {
+export class PlaygroundQueryPanelComponent implements AfterViewInit {
 
   content = new BehaviorSubject<string>(`query HelloWorld(name: String) { \n find { 'Hello ' + name } \n}`)
 
-  constructor(private service: VoyagerService, private changeDetector: ChangeDetectorRef) {
+  constructor(private service: VoyagerService,
+              private changeDetector: ChangeDetectorRef,
+              private resizeObservableService: ResizeObservableService,
+              private destroyRef: DestroyRef
+  ) {
     this.content
       .pipe(
         tap(querySrc => this.queryMessage.query = querySrc),
@@ -144,9 +138,25 @@ export class PlaygroundQueryPanelComponent {
       )
   }
 
+  ngAfterViewInit(): void {
+    this.updatePanelSizes();
+    this.resizeObservableService.resizeObservable(this.accordionElement.nativeElement)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+      )
+      .subscribe(resizeEntry => {
+        this.updatePanelSizes();
+      })
+  }
+
   queryPlanExpanded: boolean = true;
   queryResultsExpanded: boolean = false;
   configPanelExpanded: boolean = false;
+
+  expandedPanelHeight: string = '300px';
+
+  @ViewChild('accordion', {read: ElementRef})
+  accordionElement: ElementRef;
 
   @Input()
   schema: Schema
@@ -157,6 +167,8 @@ export class PlaygroundQueryPanelComponent {
 
 
   private _queryMessage: StubQueryMessage = emptyQueryMessage();
+  queryPlanFullscreen: boolean = false;
+
   @Input()
   get queryMessage(): StubQueryMessage {
     return this._queryMessage;
@@ -171,6 +183,9 @@ export class PlaygroundQueryPanelComponent {
     this.service.runQuery(this.queryMessage)
       .subscribe({
         next: result => {
+          this.queryResultsExpanded = true;
+          this.queryPlanExpanded = false;
+          this.configPanelExpanded = false;
           this.queryResult = JSON.stringify(result, null, 3)
           this.changeDetector.markForCheck();
         },
@@ -205,5 +220,13 @@ export class PlaygroundQueryPanelComponent {
       }
     }
 
+  }
+
+  updatePanelSizes() {
+    const accordionHeight = this.accordionElement.nativeElement.clientHeight;
+    const accordionHeaderHeight = this.accordionElement.nativeElement.querySelector('button.t-header').clientHeight;
+    const totalHeaderHeight = accordionHeaderHeight * 3
+    this.expandedPanelHeight = `${accordionHeight - totalHeaderHeight}px`
+    this.changeDetector.markForCheck();
   }
 }

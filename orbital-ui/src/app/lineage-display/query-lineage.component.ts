@@ -1,4 +1,4 @@
-import {AfterViewInit, Component, DestroyRef, ElementRef, Input, ViewChild} from '@angular/core';
+import {AfterViewInit, Component, DestroyRef, ElementRef, EventEmitter, Input, Output, ViewChild} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
 import {QuerySankeyChartRow, SankeyNodeType, SankeyOperationNodeDetails} from '../services/query.service';
@@ -17,7 +17,41 @@ import {capitalizeFirstLetter} from "../utils/strings";
 })
 export class QueryLineageComponent extends BaseGraphComponent implements AfterViewInit {
 
-  fullscreen = false;
+  /**
+   * We provide an external setter / getter for fullscreen
+   * This has become a neccessity because of a CSS issue in how we're displaying fullscreen.
+   * When fullscreen is applied, we use display: fixed.
+   * However, in very specific situations (if a parent to this component) is using css transform,
+   * then display: fixed becomes relative to the parent, not to the window.
+   *
+   * https://stackoverflow.com/questions/21091958/css-fixed-child-element-positions-relative-to-parent-element-not-to-the-viewpo
+   *
+   * there's no real fix / workaround for this.
+   * Removing the css transform isn't possible (ie., if it's in a 3rd party component such as Taiga).
+   *
+   * The way we've gotten around this is by duplicating the component.
+   * Once in the place to display this, and then again outside of whatever is applying the
+   * css transform (such as a Taiga accordion).
+   *
+   * We then ng-if to hide whichever of the two shouldn't be visible
+   *
+   */
+  private _fullscreen = false;
+  @Input()
+  get fullscreen():boolean {
+    return this._fullscreen;
+  }
+  set fullscreen(value) {
+    if (this._fullscreen === value) return;
+    this._fullscreen = value;
+    this.fullscreenChange.emit(value)
+    setTimeout(() => {
+      this.redrawChart$.next('xx');
+    });
+  }
+
+  @Output()
+  fullscreenChange = new EventEmitter<boolean>();
 
   redrawChart$ = new Subject();
 
@@ -153,10 +187,9 @@ export class QueryLineageComponent extends BaseGraphComponent implements AfterVi
 
   toggleFullscreen() {
     this.fullscreen = !this.fullscreen;
-    setTimeout(() => {
-      this.redrawChart$.next('xx');
-    });
   }
+
+
 
   getHtmlVerbTextColor(nodeData: QueryLineageOperationalNode) {
     const defaultColor = '#7592a2';
