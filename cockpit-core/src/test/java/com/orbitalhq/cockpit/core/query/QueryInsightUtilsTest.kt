@@ -20,10 +20,9 @@ class QueryInsightUtilsTest {
             title : FilmTitle inherits String
          }
       """.trimIndent())
-      val schemaStore = SimpleSchemaStore.forSchema(schema)
-      val service = QueryInsightUtils(schemaStore)
+      val service = QueryInsightUtils()
 
-      val parsed = service.parseQuery("""find { Film[] }""")
+      val parsed = service.parseQuery("""find { Film[] }""", schema)
          .block()!!
       parsed.hasCompilationErrors.shouldBeFalse()
    }
@@ -36,10 +35,9 @@ class QueryInsightUtilsTest {
             title : FilmTitle inherits String
          }
       """.trimIndent())
-      val schemaStore = SimpleSchemaStore.forSchema(schema)
-      val service = QueryInsightUtils(schemaStore)
+      val service = QueryInsightUtils()
 
-      val parsed = service.parseQuery("""find { Film[] }""")
+      val parsed = service.parseQuery("""find { Film[] }""", schema)
          .block()!!
       parsed.hasQueryErrors.shouldBeTrue()
       parsed.queryPlan.queryExecutionMessages.single()
@@ -76,10 +74,9 @@ class QueryInsightUtilsTest {
       }[]
       """
 
-      val schemaStore = SimpleSchemaStore.forSchema(schema)
-      val service = QueryInsightUtils(schemaStore)
+      val service = QueryInsightUtils()
 
-      val parsed = service.parseQuery(query)
+      val parsed = service.parseQuery(query, schema)
          .block()!!
 
       parsed.queryPlan.steps.shouldHaveSize(3)
@@ -93,10 +90,9 @@ class QueryInsightUtilsTest {
             title : FilmTitle inherits String
          }
       """.trimIndent())
-      val schemaStore = SimpleSchemaStore.forSchema(schema)
-      val service = QueryInsightUtils(schemaStore)
+      val service = QueryInsightUtils()
 
-      val parsed = service.parseQuery("""find { Movie[] }""")
+      val parsed = service.parseQuery("""find { Movie[] }""", schema)
          .block()!!
       parsed.hasCompilationErrors.shouldBeTrue()
    }
@@ -114,13 +110,13 @@ class QueryInsightUtilsTest {
          }
       """.trimIndent())
       val schemaStore = SimpleSchemaStore.forSchema(schema)
-      val service = QueryInsightUtils(schemaStore)
+      val service = QueryInsightUtils()
 
       val parsed = service.parseQuery("""
          query FindAllFilms {
             find { "Hello, world" }
          }
-      """.trimIndent())
+      """, schema)
          .block()!!
       parsed.hasCompilationErrors.shouldBeTrue()
    }
