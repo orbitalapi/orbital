@@ -14,7 +14,7 @@ import {
 import {SavedQuery} from '../services/types.service';
 import {TypesService} from '../services/types.service';
 import {EndpointMonitorComponent} from './endpoint-monitor.component';
-import {ParsedQuery, QueryService} from "../services/query.service";
+import {QueryParseMetadata, QueryService} from "../services/query.service";
 import {LineageGraphModule} from "../type-viewer/lineage-graph/lineage-graph.module";
 import {LineageDisplayModule} from "../lineage-display/lineage-display.module";
 
@@ -62,7 +62,7 @@ export class EndpointMonitorContainerComponent {
   query$: Observable<SavedQuery>
   endpointName$: Observable<string>
   streamLoadingError: string
-  parsedQuery$: Observable<ParsedQuery>
+  parsedQuery$: Observable<QueryParseMetadata>
 
   private streamStatus: StreamStatus
 

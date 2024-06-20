@@ -1,6 +1,8 @@
 @import "src/common";
 
 :host {
+  padding: 0 1rem;
+  display: flex;
   tui-tabs::ng-deep {
     button {
       font-family: $headings-font;

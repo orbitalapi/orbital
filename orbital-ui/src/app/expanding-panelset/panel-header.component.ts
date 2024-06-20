@@ -25,4 +25,4 @@ export class PanelHeaderComponent {
   @Input()
   @HostBinding('class.is-secondary')
   isSecondary: boolean
-}
+ }

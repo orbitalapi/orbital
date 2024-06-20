@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input} from '@angular/core';
 import {CommonModule} from '@angular/common';
-import {BehaviorSubject, EMPTY, ReplaySubject, switchMap} from "rxjs";
+import {BehaviorSubject, EMPTY, switchMap} from "rxjs";
 import {ExpandingPanelSetModule} from "../../expanding-panelset/expanding-panel-set.module";
 import {TuiAccordionModule, TuiTabsModule} from "@taiga-ui/kit";
 import {TuiButtonModule} from "@taiga-ui/core";
@@ -8,17 +8,20 @@ import {AngularSplitModule} from "angular-split";
 import {CodeEditorModule} from "../../code-editor/code-editor.module";
 import {StubPanelComponent} from "./stub-panel.component";
 import {Schema} from "../../services/schema";
-import {HttpClient, HttpClientModule} from "@angular/common/http";
-import {Parameter, TaxiQlQuery, VoyagerService} from "../../../voyager-app/voyager.service";
-import {emptyQueryMessage, OperationStub, StubQueryMessage} from "../../services/query.service";
+import {HttpClientModule} from "@angular/common/http";
+import {VoyagerService} from "../../../voyager-app/voyager.service";
+import {emptyQueryMessage, QueryParseMetadata, StubQueryMessage} from "../../services/query.service";
 import {JsonViewerModule} from "../../json-viewer/json-viewer.module";
 import {QueryConfigPanelComponent} from "./query-config-panel.component";
 import {catchError, debounceTime, filter, tap} from "rxjs/operators";
+import {QueryPlanPanelComponent} from "./query-plan-panel.component";
+import {ExpandablePanelComponent} from "../../expanding-panelset/expandable-panel/expandable-panel.component";
+import {QueryResultsPanelComponent} from "./query-results-panel.component";
 
 @Component({
   selector: 'app-playground-query-panel',
   standalone: true,
-  imports: [CommonModule, ExpandingPanelSetModule, TuiAccordionModule, TuiButtonModule, AngularSplitModule, TuiTabsModule, CodeEditorModule, StubPanelComponent, HttpClientModule, JsonViewerModule, QueryConfigPanelComponent],
+  imports: [CommonModule, ExpandingPanelSetModule, TuiAccordionModule, TuiButtonModule, AngularSplitModule, TuiTabsModule, CodeEditorModule, StubPanelComponent, HttpClientModule, JsonViewerModule, QueryConfigPanelComponent, QueryPlanPanelComponent, ExpandablePanelComponent, QueryResultsPanelComponent],
   template: `
     <as-split direction="vertical" unit="percent" gutterSize="1">
       <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
@@ -42,29 +45,67 @@ import {catchError, debounceTime, filter, tap} from "rxjs/operators";
         </app-code-editor>
       </as-split-area>
       <as-split-area size="50">
-        <as-split direction="vertical" unit="pixel" gutterSize="1">
-          <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
-            <div class="thin-splitter-gutter-icon"></div>
-          </div>
-          <as-split-area [lockSize]="!configPanelExpanded" [size]="configPanelExpanded ? 250 : 50">
-            <app-query-config-panel [(expanded)]="configPanelExpanded" [(stubs)]="queryMessage.stubs"
-                                    [parameters]="queryMessage.parameters"
-                                    (parameterValuesChange)="updateQueryParameters($event)"
-                                    [schema]="schema"></app-query-config-panel>
-          </as-split-area>
-          <as-split-area size="*">
-            <div class="result-panel">
-              <app-panel-header title="Results"></app-panel-header>
-              <app-json-viewer [readOnly]="true" [json]="queryResult" [showHeader]="false"
-                               *ngIf="queryResult"></app-json-viewer>
-              <div *ngIf="!queryResult" class="empty-results">
-                No results to show
+        <tui-accordion [rounded]="false">
+          <tui-accordion-item size="s">
+            Query plan
+            <ng-template tuiAccordionItemContent>
+              <app-query-plan-panel [(expanded)]="queryPlanExpanded"
+                                    [queryPlan]="parsedQuery?.queryPlan"></app-query-plan-panel>
+            </ng-template>
+          </tui-accordion-item>
+          <tui-accordion-item size="s">
+            Stubs and parameters
+            <ng-template tuiAccordionItemContent>
+              <app-query-config-panel [(expanded)]="configPanelExpanded" [(stubs)]="queryMessage.stubs"
+                                      [parameters]="queryMessage.parameters"
+                                      (parameterValuesChange)="updateQueryParameters($event)"
+                                      [schema]="schema"></app-query-config-panel>
+            </ng-template>
+          </tui-accordion-item>
+          <tui-accordion-item size="s">
+            Results
+            <ng-template tuiAccordionItemContent>
+              <div class="result-panel">
+                <app-json-viewer [readOnly]="true" [json]="queryResult" [showHeader]="false"
+                                 *ngIf="queryResult"></app-json-viewer>
+                <div *ngIf="!queryResult" class="empty-results">
+                  No results to show
+                </div>
               </div>
-            </div>
+
+            </ng-template>
+          </tui-accordion-item>
+        </tui-accordion>
 
 
-          </as-split-area>
-        </as-split>
+<!--        <as-split direction="vertical" unit="pixel" gutterSize="1" [useTransition]="true">-->
+<!--          <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">-->
+<!--            <div class="thin-splitter-gutter-icon"></div>-->
+<!--          </div>-->
+<!--          <as-split-area [lockSize]="!queryPlanExpanded" [size]="queryPlanExpanded ? 280 : 50">-->
+
+<!--          </as-split-area>-->
+<!--          <as-split-area [lockSize]="!configPanelExpanded" [size]="configPanelExpanded ? 280 : 50">-->
+<!--            <app-query-config-panel [(expanded)]="configPanelExpanded" [(stubs)]="queryMessage.stubs"-->
+<!--                                    [parameters]="queryMessage.parameters"-->
+<!--                                    (parameterValuesChange)="updateQueryParameters($event)"-->
+<!--                                    [schema]="schema"></app-query-config-panel>-->
+<!--          </as-split-area>-->
+<!--          <as-split-area [size]="configPanelExpanded ? '*' : 50">-->
+<!--            <app-query-results-panel>-->
+
+<!--            </app-query-results-panel>-->
+<!--            <div class="result-panel">-->
+<!--              <app-expandable-panel title="Results" [isSecondary]="true">-->
+<!--                <app-json-viewer [readOnly]="true" [json]="queryResult" [showHeader]="false"-->
+<!--                                 *ngIf="queryResult"></app-json-viewer>-->
+<!--                <div *ngIf="!queryResult" class="empty-results">-->
+<!--                  No results to show-->
+<!--                </div>-->
+<!--              </app-expandable-panel>-->
+<!--            </div>-->
+<!--          </as-split-area>-->
+<!--        </as-split>-->
       </as-split-area>
 
     </as-split>
@@ -103,12 +144,14 @@ export class PlaygroundQueryPanelComponent {
       )
   }
 
-  configPanelExpanded: false;
+  queryPlanExpanded: boolean = true;
+  queryResultsExpanded: boolean = false;
+  configPanelExpanded: boolean = false;
 
   @Input()
   schema: Schema
 
-  parsedQuery: TaxiQlQuery = null;
+  parsedQuery: QueryParseMetadata = null;
 
   queryResult: string | null = null;
 
@@ -146,7 +189,7 @@ export class PlaygroundQueryPanelComponent {
     this.changeDetector.markForCheck();
   }
 
-  private updateQueryParametersFromServer(parsedQuery: TaxiQlQuery) {
+  private updateQueryParametersFromServer(parsedQuery: QueryParseMetadata) {
     const paramKeys: Set<string> = new Set(parsedQuery.parameters.map(p => p.name));
     // Add missing keys from paramKeys to parameters
     for (const key of paramKeys) {
