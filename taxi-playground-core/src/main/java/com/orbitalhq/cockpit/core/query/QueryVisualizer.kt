@@ -1,16 +1,12 @@
 package com.orbitalhq.cockpit.core.query
 
-import com.orbitalhq.Vyne
-import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.history.chart.LineageSankeyViewBuilder
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.query.QueryContextEventBroker
-import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.QueryEvent
 import com.orbitalhq.query.QueryEventConsumer
 import com.orbitalhq.query.TaxiQlQueryResultEvent
 import com.orbitalhq.query.history.QuerySankeyChartRow
-import com.orbitalhq.query.projection.LocalProjectionProvider
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.stubbing.StubService
 import kotlinx.coroutines.runBlocking
@@ -24,20 +20,11 @@ import lang.taxi.query.TaxiQLQueryString
  * before running it.
  *
  */
-class QueryVisualizerService {
+class QueryVisualizer {
    fun visualizeQuery(query: TaxiQLQueryString, schema: Schema): List<QuerySankeyChartRow> {
       // This belongs in the service
-      val stubService = StubService(schema = schema)
+      val (vyne, stubService) = StubService.stubbedVyne(schema)
       stubService.returnStubValuesForAllOperations()
-      val queryEngineFactory =
-         QueryEngineFactory.withOperationInvokers(
-            VyneCacheConfiguration.default(),
-            formatSpecs = emptyList(),
-            invokers = listOf(stubService),
-            projectionProvider = LocalProjectionProvider(),
-            stateStoreProvider = null
-         )
-      val vyne = Vyne(listOf(schema), queryEngineFactory)
       val lineageEventBroker = QueryContextEventBroker()
       val viewBuilder = LineageSankeyViewBuilder(schema)
       lineageEventBroker.addHandler(QueryPlanEventHandler(viewBuilder))

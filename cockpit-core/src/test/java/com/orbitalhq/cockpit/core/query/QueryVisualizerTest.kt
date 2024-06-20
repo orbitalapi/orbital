@@ -9,7 +9,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import lang.taxi.annotations.HttpOperation
 import org.junit.jupiter.api.Test
 
-class QueryVisualizerServiceTest {
+class QueryVisualizerTest {
    @Test
    fun `can get a query plan using stub services and stub values`() :Unit = runBlocking{
       val schema = TaxiSchema.from(
@@ -34,7 +34,7 @@ class QueryVisualizerServiceTest {
          }
       """.trimIndent()
       )
-      val service = QueryVisualizerService()
+      val service = QueryVisualizer()
       val query = """find { foo.Film[] } as {
          id : foo.FilmId
          score : foo.ReviewScore
@@ -72,7 +72,7 @@ class QueryVisualizerServiceTest {
          }
       """.trimIndent()
       )
-      val service = QueryVisualizerService()
+      val service = QueryVisualizer()
       val query = """stream { foo.Film } as {
          id : foo.FilmId
          score : foo.ReviewScore

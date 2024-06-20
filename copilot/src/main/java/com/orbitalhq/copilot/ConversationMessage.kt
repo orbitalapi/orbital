@@ -1,7 +1,7 @@
 package com.orbitalhq.copilot
 
 import com.fasterxml.jackson.annotation.JsonIgnore
-import com.orbitalhq.query.ParsedQuery
+import com.orbitalhq.query.QueryParseMetadata
 import lang.taxi.query.TaxiQLQueryString
 
 /**
@@ -91,7 +91,7 @@ data class QueryMessageChunk(val taxi: TaxiQLQueryString) : MessageChunk {
    override val kind = MessageChunk.MessageChunkKind.Query
 }
 
-data class CompiledQueryMessageChunk(val query:ParsedQuery) :
+data class CompiledQueryMessageChunk(val query:QueryParseMetadata) :
    MessageChunk {
    override val kind = MessageChunk.MessageChunkKind.CompiledQuery
 }

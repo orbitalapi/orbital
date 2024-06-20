@@ -5,7 +5,8 @@ import com.orbitalhq.formats.xml.XmlAnnotationSpec
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.query.VyneQlGrammar
-import com.orbitalhq.testVyne
+import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.stubbing.StubService
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.reactor.asFlux
@@ -18,21 +19,27 @@ import reactor.core.publisher.Flux
 import java.time.Duration
 
 class StubQueryService(private val streamDelay: Duration = Duration.ofMillis(500)) {
-   val builtInTypes = listOf(
-      VyneQlGrammar.QUERY_TYPE_TAXI,
-      CsvAnnotationSpec.taxi,
-      XmlAnnotationSpec.taxi
-   ).joinToString("\n")
-
-   fun parseQuery(query: StubQueryMessage): TaxiQlQuery {
-      val (vyne) =  testVyne(query.schema, builtInTypes)
-      val (query) = vyne.parseQuery(query.query)
-      return query
+   companion object {
+      val builtInTypes: String = listOf(
+         VyneQlGrammar.QUERY_TYPE_TAXI,
+         CsvAnnotationSpec.taxi,
+         XmlAnnotationSpec.taxi
+      ).joinToString("\n")
    }
 
 
-   fun submitQuery(query: StubQueryMessage): Publisher<Any> {
-      val (vyne, stub) = testVyne(query.schema, builtInTypes)
+   fun submitQuery(
+      query: StubQueryMessage,
+      /**
+       * When query calls a stream, this will add a delay on each
+       * message, to simulate a 'streaming' response.
+       * If false, all data is returned instantly
+       */
+      addDelayToStreams: Boolean = false
+   ): Publisher<Any> {
+
+      val schema = TaxiSchema.fromStrings(query.schema, builtInTypes)
+      val (vyne, stub) = StubService.stubbedVyne(schema)
       query.stubs.forEach { operationStub ->
          val operation = vyne.schema.services
             .filter { it.hasRemoteOperation(operationStub.operationName) }
@@ -47,7 +54,9 @@ class StubQueryService(private val streamDelay: Duration = Duration.ofMillis(500
                flow {
                   result.forEach {
                      emit(it)
-                     delay(streamDelay.toMillis())
+                     if (addDelayToStreams) {
+                        delay(streamDelay.toMillis())
+                     }
                   }
                }
             }

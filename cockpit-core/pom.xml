@@ -26,6 +26,11 @@
 
    <dependencies>
       <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxi-playground-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>com.github.freva</groupId>
          <artifactId>ascii-table</artifactId>
          <version>1.8.0</version>

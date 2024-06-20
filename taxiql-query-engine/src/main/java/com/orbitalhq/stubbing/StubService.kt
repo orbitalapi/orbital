@@ -1,6 +1,8 @@
 package com.orbitalhq.stubbing
 
 import com.google.common.collect.MultimapBuilder
+import com.orbitalhq.Vyne
+import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.models.DataSourceMutatingMapper
 import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.OperationResult
@@ -12,6 +14,7 @@ import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.HttpHeaders
 import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.connectors.OperationInvoker
@@ -19,6 +22,7 @@ import com.orbitalhq.query.connectors.OperationResponseFlowProvider
 import com.orbitalhq.query.connectors.OperationResponseHandler
 import com.orbitalhq.query.graph.operationInvocation.DefaultOperationInvocationService
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
+import com.orbitalhq.query.projection.LocalProjectionProvider
 import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
@@ -47,6 +51,24 @@ class StubService(
 ) : OperationInvoker {
    companion object {
       private val logger = KotlinLogging.logger {}
+
+      /**
+       * For use outside of test code. (eg., Visualizers, parsers, etc).
+       * Inside of tests, call testVyne()
+       */
+      fun stubbedVyne(schema: Schema):Pair<Vyne,StubService> {
+         val stubService = StubService(schema = schema)
+         val queryEngineFactory =
+            QueryEngineFactory.withOperationInvokers(
+               VyneCacheConfiguration.default(),
+               formatSpecs = emptyList(),
+               invokers = listOf(stubService),
+               projectionProvider = LocalProjectionProvider(),
+               stateStoreProvider = null
+            )
+         val vyne = Vyne(listOf(schema), queryEngineFactory)
+         return vyne to stubService
+      }
    }
 
    private var wildcardHandler: OperationResponseHandler? = null
