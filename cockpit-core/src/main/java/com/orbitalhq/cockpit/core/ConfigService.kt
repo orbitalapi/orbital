@@ -1,6 +1,5 @@
 package com.orbitalhq.cockpit.core
 
-import com.orbitalhq.cockpit.core.pipelines.PipelineConfig
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.licensing.License
 import io.micrometer.core.instrument.MeterRegistry
@@ -18,7 +17,6 @@ import java.time.Instant
 @RestController
 class ConfigService(
    analyticsConfig: QueryAnalyticsConfig,
-   pipelineConfig: PipelineConfig,
    license: License,
    @Value("\${management.endpoints.web.base-path:/actuator}") actuatorPath: String,
    val featureToggles: FeatureTogglesConfig,
@@ -28,7 +26,6 @@ class ConfigService(
    private val configSummary =
       ConfigSummary(
          analyticsConfig,
-         pipelineConfig,
          LicenseStatus.from(license),
          actuatorPath,
          featureToggles,
@@ -46,7 +43,6 @@ class ConfigService(
 // For sending to the UI
 data class ConfigSummary(
    val analytics: QueryAnalyticsConfig,
-   val pipelineConfig: PipelineConfig,
    val licenseStatus: LicenseStatus,
    val actuatorPath: String,
    val featureToggles: FeatureTogglesConfig,

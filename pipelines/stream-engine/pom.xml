@@ -2,21 +2,16 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
    <parent>
-      <artifactId>pipelines</artifactId>
       <groupId>com.orbitalhq</groupId>
+      <artifactId>pipelines</artifactId>
       <version>0.32.0-SNAPSHOT</version>
    </parent>
-   <modelVersion>4.0.0</modelVersion>
 
-   <artifactId>pipeline-jet</artifactId>
+   <artifactId>stream-engine</artifactId>
 
    <dependencies>
-      <dependency>
-         <groupId>com.orbitalhq</groupId>
-         <artifactId>stream-engine</artifactId>
-         <version>${project.version}</version>
-      </dependency>
       <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>avro-message-format</artifactId>
@@ -364,49 +359,4 @@
          </dependency>
       </dependencies>
    </dependencyManagement>
-
-
-   <build>
-      <finalName>${project.artifactId}</finalName>
-      <plugins>
-         <plugin>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-maven-plugin</artifactId>
-            <executions>
-               <execution>
-                  <goals>
-                     <goal>build-info</goal>
-                  </goals>
-               </execution>
-            </executions>
-         </plugin>
-         <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-compiler-plugin</artifactId>
-            <configuration>
-               <source>11</source>
-               <target>11</target>
-            </configuration>
-         </plugin>
-      </plugins>
-   </build>
-
-
-   <profiles>
-      <profile>
-         <id>fastTestsOnly</id>
-         <build>
-            <plugins>
-               <plugin>
-                  <groupId>org.apache.maven.plugins</groupId>
-                  <artifactId>maven-surefire-plugin</artifactId>
-                  <configuration>
-                     <skipTests>true</skipTests>
-                  </configuration>
-               </plugin>
-            </plugins>
-         </build>
-      </profile>
-   </profiles>
-
 </project>

@@ -27,7 +27,7 @@ class PersistentStreamManager(
    private val schemaStore: SchemaChangedEventProvider,
    private val pipelineManager: PipelineManager,
    @VisibleForTesting
-   internal val streamStateManager: StreamStateManager
+   val streamStateManager: StreamStateManager
 ) {
    private val managedStreams = ConcurrentHashMap<QualifiedName, ManagedStream>()
 

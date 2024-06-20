@@ -6,6 +6,7 @@ import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import com.orbitalhq.VyneClient
+import com.orbitalhq.VyneProvider
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.pipelines.jet.api.transport.MessageContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.MessageSourceWithGroupId
@@ -27,6 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
 import org.springframework.stereotype.Component
 import reactor.core.Disposable

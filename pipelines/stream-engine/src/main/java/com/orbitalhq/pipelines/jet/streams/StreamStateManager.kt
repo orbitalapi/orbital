@@ -31,10 +31,10 @@ import reactor.core.publisher.Sinks
 class StreamStateManagerHazelcastConfig {
 
    companion object {
-      const val STREAM_STATE_CACHE = "streamStateCache"
+      const val STREAM_STATUS_CACHE_BEAN_NAME = "streamStateCache"
       const val STREAM_STATUS_CACHE_NAME = "streamStatus"
    }
-   @Bean(STREAM_STATE_CACHE)
+   @Bean(STREAM_STATUS_CACHE_BEAN_NAME)
    fun streamStateCache(hazelcastInstance: HazelcastInstance,  mapStore: StreamStatusMapStore):IMap<String,StreamStatus> {
       val streamStateCache = hazelcastInstance
          .getMap<String, StreamStatus>(STREAM_STATUS_CACHE_NAME)
@@ -60,8 +60,8 @@ class StreamStateManager(
    private val initialState: StreamStatus.State = StreamStatus.State.PAUSED,
    private val pipelineManager: PipelineManager,
    @VisibleForTesting
-   @Qualifier(StreamStateManagerHazelcastConfig.STREAM_STATE_CACHE)
-   internal val streamStateCache: MutableMap<String, StreamStatus>,
+   @Qualifier(StreamStateManagerHazelcastConfig.STREAM_STATUS_CACHE_BEAN_NAME)
+   val streamStateCache: MutableMap<String, StreamStatus>,
 ) {
 
 
@@ -215,8 +215,10 @@ class StreamStatusMapStore(
    // So, by hoisting it here, I guess it forces creation in a different order, and the
    // method calls work.
    private val unusedTransactionManager: TransactionManager,
-
 ) : MapStore<String, StreamStatus> {
+   init {
+       println()
+   }
    override fun load(key: String): StreamStatus? {
       return repository.findByIdOrNull(key)
    }

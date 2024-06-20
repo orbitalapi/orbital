@@ -4,8 +4,6 @@ import com.hazelcast.logging.ILogger
 import com.hazelcast.logging.Logger
 import kotlin.reflect.KClass
 
-typealias JetPipelineLogger = ILogger
-
 /**
  * Wrapper object that sits in front of Hazelcast Jet ILogger.
  * Does nothing but try to make our code clearer about where we're logging to the Jet
@@ -16,3 +14,4 @@ object JetLogger {
       return Logger.getLogger(clazz.java)
    }
 }
+typealias JetPipelineLogger = ILogger

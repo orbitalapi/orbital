@@ -32,6 +32,11 @@
       </dependency>
       <dependency>
          <groupId>com.orbitalhq</groupId>
+         <artifactId>stream-engine</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>soap-connector</artifactId>
          <version>${project.version}</version>
       </dependency>

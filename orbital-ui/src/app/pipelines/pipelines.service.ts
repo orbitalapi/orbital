@@ -28,7 +28,7 @@ export class PipelineService {
               private websocketService: WebsocketService) {
   }
 
-  streamsStatus(): Observable<StreamServerStatusWithConnectionMessage> {
+  streamsStatus(): Observable<StreamServerStatusEvent> {
     return this.websocketService.websocket(`/api/streams/status`)
   }
 
