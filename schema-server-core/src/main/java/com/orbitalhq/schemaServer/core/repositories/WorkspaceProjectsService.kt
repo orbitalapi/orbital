@@ -9,6 +9,7 @@ import com.orbitalhq.schemaServer.packages.PackageType
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
 import com.orbitalhq.schemaServer.repositories.*
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
+import com.orbitalhq.spring.http.BadRequestException
 import com.orbitalhq.toVynePackageIdentifier
 import lang.taxi.packages.TaxiPackageLoader
 import mu.KotlinLogging
@@ -57,7 +58,13 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) {
    fun createGitProjectStore(@RequestBody request: GitProjectStoreChangeRequest): Mono<ModifyWorkspaceResponse> {
       val config = request.toRepositorySpec()
       return try {
-         Mono.just(configRepo.addGitSpec(config))
+         Mono.just(configRepo.addGitSpec(config)).map {
+            if (it.status == ModifyProjectResponseStatus.Failed) {
+               throw BadRequestException(it.message!!)
+            } else {
+               it
+            }
+         }
       } catch (e: Exception) {
          Mono.just(ModifyWorkspaceResponse(ModifyProjectResponseStatus.Failed, e.message))
       }
