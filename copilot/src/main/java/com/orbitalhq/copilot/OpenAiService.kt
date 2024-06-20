@@ -136,7 +136,7 @@ class OpenAiChatService(
                compiledQuery,
                querySchema
             )
-            queryMessageChunk to CompiledQueryMessageChunk(QueryParseMetadata(refinedQuery))
+            queryMessageChunk to CompiledQueryMessageChunk(QueryParseMetadata.fromQuery(refinedQuery, schema = refinedQuerySchema))
          }
       val validatedResponse = response.replaceChunks(replacements)
       return updatedConversation.replaceLastMessage(validatedResponse)
