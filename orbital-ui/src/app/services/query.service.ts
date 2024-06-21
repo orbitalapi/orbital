@@ -157,8 +157,8 @@ export class QueryService {
       ;
   }
 
-  compileQuery(query: string): Observable<ParsedQuery> {
-    return this.http.post<ParsedQuery>(`${this.environment.serverUrl}/api/taxiql/parse`, query, this.httpOptions);
+  compileQuery(query: string): Observable<QueryParseMetadata> {
+    return this.http.post<QueryParseMetadata>(`${this.environment.serverUrl}/api/taxiql/parse`, query, this.httpOptions);
   }
 
   getRemoteCallResponse(remoteCallId: string): Observable<string> {
@@ -408,15 +408,25 @@ export interface QueryProfileData {
   queryLineageData: QuerySankeyChartRow[];
 }
 
-export interface ParsedQuery {
+export interface QueryParseMetadata {
   taxi: string,
   queryKind: QueryKind,
   name: QualifiedName,
   compilationMessages: CompilationMessage[],
   queryPlan: QueryPlan,
+  returnType: Type,
+  parameters: QueryParameter[]
+  facts: QueryParameter[]
   hasCompilationErrors: boolean,
   hasQueryErrors: boolean
 }
+
+
+export interface QueryParameter {
+  name: string;
+  value: any;
+}
+
 
 export interface QueryPlan {
   steps: QuerySankeyChartRow[],
@@ -576,6 +586,14 @@ export interface StubQueryMessage {
   parameters?: {[index: string]: any};
   stubs?: OperationStub[];
   expectedJson?: string | null;
+}
+export function emptyQueryMessage():StubQueryMessage {
+  return {
+    schema: '',
+    query: '',
+    parameters: {},
+    stubs: []
+  }
 }
 export interface OperationStub {
   operationName: string;

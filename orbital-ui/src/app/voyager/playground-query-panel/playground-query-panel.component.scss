@@ -10,27 +10,18 @@
 app-code-editor {
   height: 100%;
 }
-.result-panel {
-  height: 100%;
-}
-app-query-config-panel {
-  transition: height 150ms ease-in-out;
-  &.expanded {
-    height: 250px;
-  }
-  height: 49px;
-  flex-shrink: 0;
-  flex-grow: 0;
-}
 
 .result-panel {
   height: 100%;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
+
   app-json-viewer {
     flex-grow: 1;
     height: 100%;
   }
+
   .empty-results {
     height: 100%;
     flex-grow: 1;
@@ -41,7 +32,48 @@ app-query-config-panel {
 
 @include thin-splitter();
 
+app-query-lineage {
+  display: block;
+}
+
 .empty-results {
   background-color: $slate-200;
   padding: 1rem;
+}
+
+::ng-deep {
+  button.t-header {
+    // Set the background in accordion headers
+    background-color: $slate-100 !important;
+  }
+  tui-expand {
+    transform: unset !important;
+    .t-content {
+      padding: 0 !important;
+    }
+  }
+
+  tui-accordion-item {
+    height: 100%;
+    .t-wrapper {
+      button {
+        background-color: $slate-100;
+      }
+    }
+  }
+}
+
+tui-accordion {
+  height: 100%;
+}
+
+
+
+.fullscreen {
+  position: fixed;
+  top: 1rem;
+  left: calc(1rem + $sidenav-width);
+  width: calc(100% - $sidenav-width - 2rem);
+  height: calc(100% - 2rem);
+  z-index: 2000;
 }

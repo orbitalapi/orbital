@@ -80,3 +80,4 @@ export class ResponseEditorDialogComponent {
     this.context.completeWith(this.monacoEditor.getModel().getValue())
   }
 }
+

@@ -1,10 +1,11 @@
 import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {Observable} from 'rxjs';
-import {CompilationMessage, QualifiedName, Schema} from 'src/app/services/schema';
+import {CompilationMessage, QualifiedName, Schema, Type} from 'src/app/services/schema';
 import {environment} from 'src/voyager-app/environments/environment';
 import {map} from 'rxjs/operators';
-import {StubQueryMessage} from "../app/services/query.service";
+import {QueryParseMetadata, QueryPlan, StubQueryMessage} from "../app/services/query.service";
+import {QueryKind} from "../app/services/types.service";
 
 export enum SubscriptionResult {
   SUCCESS = 'SUCCESS',
@@ -44,8 +45,8 @@ export class VoyagerService {
     return this.httpClient.post(`${environment.serverUrl}/api/query`, message)
   }
 
-  parseQuery(query: StubQueryMessage): Observable<TaxiQlQuery> {
-    return this.httpClient.post<TaxiQlQuery>(`${environment.serverUrl}/api/query/parse`, query);
+  parseQuery(query: StubQueryMessage): Observable<QueryParseMetadata> {
+    return this.httpClient.post<QueryParseMetadata>(`${environment.serverUrl}/api/query/parse`, query);
   }
 }
 
@@ -69,14 +70,3 @@ export interface SubscribeDetails {
   otherCommsConsent: boolean;
 }
 
-export interface TaxiQlQuery {
-  name: QualifiedName;
-  facts: Parameter[];
-  parameters: Parameter[];
-  // other things omitted till we need 'em
-}
-
-export interface Parameter {
-  name: string;
-  value: any;
-}

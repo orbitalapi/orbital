@@ -22,7 +22,7 @@ class StubQueryServiceTest {
    @Test
    fun `can submit simple query`() {
       val query = StubQueryMessage("", "find { 1 + 2 }")
-      val result = queryService.submitQuery(query)
+      val result = queryService.submitQuery(query, false)
          .asA<Mono<Any>>()
          .block()!!
       result.shouldBe(3)

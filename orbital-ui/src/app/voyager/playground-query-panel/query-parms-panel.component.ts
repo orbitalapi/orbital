@@ -4,7 +4,6 @@ import {TuiButtonModule, TuiDataListModule} from "@taiga-ui/core";
 import {TuiComboBoxModule, TuiInputModule} from "@taiga-ui/kit";
 import {TuiTableModule} from "@taiga-ui/addon-table";
 import {FormsModule} from "@angular/forms";
-import {Parameter} from "../../../voyager-app/voyager.service";
 
 type KeyValuePair = {name: string, value: any}
 @Component({

@@ -11,11 +11,18 @@
 
    <artifactId>taxi-playground-core</artifactId>
 
+   <description>Contains code shared between Taxi Playground and Orbital</description>
+
 
    <dependencies>
       <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>vyne-history-core</artifactId>
          <version>${project.version}</version>
       </dependency>
       <dependency>
@@ -27,13 +34,13 @@
          <artifactId>taxiql-query-engine</artifactId>
          <version>${project.version}</version>
       </dependency>
-      <dependency>
-         <!-- adding the test dependency, as it contains the stub infra for calling vyne with stubbed services -->
-         <groupId>com.orbitalhq</groupId>
-         <artifactId>taxiql-query-engine</artifactId>
-         <version>${project.version}</version>
-         <type>test-jar</type>
-      </dependency>
+<!--      <dependency>-->
+<!--         &lt;!&ndash; adding the test dependency, as it contains the stub infra for calling vyne with stubbed services &ndash;&gt;-->
+<!--         <groupId>com.orbitalhq</groupId>-->
+<!--         <artifactId>taxiql-query-engine</artifactId>-->
+<!--         <version>${project.version}</version>-->
+<!--         <type>test-jar</type>-->
+<!--      </dependency>-->
       <dependency>
          <groupId>io.projectreactor</groupId>
          <artifactId>reactor-test</artifactId>

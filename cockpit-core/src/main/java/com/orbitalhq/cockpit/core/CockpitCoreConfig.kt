@@ -1,6 +1,7 @@
 package com.orbitalhq.cockpit.core
 
 import com.orbitalhq.auth.authentication.VyneUser
+import com.orbitalhq.cockpit.core.query.QueryInsightUtils
 import com.orbitalhq.connectors.registry.RawConnectionsConnectorConfig
 import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
 import com.orbitalhq.schemas.readers.SourceConverterRegistry

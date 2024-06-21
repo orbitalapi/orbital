@@ -6,7 +6,7 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.orbitalhq.copilot.prompts.V2Prompt
 import com.orbitalhq.copilot.refiner.GeneratedQueryRefiner
-import com.orbitalhq.query.ParsedQuery
+import com.orbitalhq.query.QueryParseMetadata
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.taxi.toMessage
 import lang.taxi.CompilationException
@@ -136,7 +136,7 @@ class OpenAiChatService(
                compiledQuery,
                querySchema
             )
-            queryMessageChunk to CompiledQueryMessageChunk(ParsedQuery(refinedQuery))
+            queryMessageChunk to CompiledQueryMessageChunk(QueryParseMetadata.fromQuery(refinedQuery, schema = refinedQuerySchema))
          }
       val validatedResponse = response.replaceChunks(replacements)
       return updatedConversation.replaceLastMessage(validatedResponse)

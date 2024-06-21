@@ -11,7 +11,7 @@ import io.kotest.matchers.shouldBe
 import lang.taxi.annotations.HttpOperation
 import org.junit.jupiter.api.Test
 
-class QueryParserServiceTest {
+class QueryInsightUtilsTest {
    @Test
    fun `returns a parsed query`() {
       val schema = TaxiSchema.from("""
@@ -20,10 +20,9 @@ class QueryParserServiceTest {
             title : FilmTitle inherits String
          }
       """.trimIndent())
-      val schemaStore = SimpleSchemaStore.forSchema(schema)
-      val service = QueryParserService(schemaStore)
+      val service = QueryInsightUtils()
 
-      val parsed = service.parseQuery("""find { Film[] }""")
+      val parsed = service.parseQuery("""find { Film[] }""", schema)
          .block()!!
       parsed.hasCompilationErrors.shouldBeFalse()
    }
@@ -36,10 +35,9 @@ class QueryParserServiceTest {
             title : FilmTitle inherits String
          }
       """.trimIndent())
-      val schemaStore = SimpleSchemaStore.forSchema(schema)
-      val service = QueryParserService(schemaStore)
+      val service = QueryInsightUtils()
 
-      val parsed = service.parseQuery("""find { Film[] }""")
+      val parsed = service.parseQuery("""find { Film[] }""", schema)
          .block()!!
       parsed.hasQueryErrors.shouldBeTrue()
       parsed.queryPlan.queryExecutionMessages.single()
@@ -76,10 +74,9 @@ class QueryParserServiceTest {
       }[]
       """
 
-      val schemaStore = SimpleSchemaStore.forSchema(schema)
-      val service = QueryParserService(schemaStore)
+      val service = QueryInsightUtils()
 
-      val parsed = service.parseQuery(query)
+      val parsed = service.parseQuery(query, schema)
          .block()!!
 
       parsed.queryPlan.steps.shouldHaveSize(3)
@@ -93,10 +90,9 @@ class QueryParserServiceTest {
             title : FilmTitle inherits String
          }
       """.trimIndent())
-      val schemaStore = SimpleSchemaStore.forSchema(schema)
-      val service = QueryParserService(schemaStore)
+      val service = QueryInsightUtils()
 
-      val parsed = service.parseQuery("""find { Movie[] }""")
+      val parsed = service.parseQuery("""find { Movie[] }""", schema)
          .block()!!
       parsed.hasCompilationErrors.shouldBeTrue()
    }
@@ -114,13 +110,13 @@ class QueryParserServiceTest {
          }
       """.trimIndent())
       val schemaStore = SimpleSchemaStore.forSchema(schema)
-      val service = QueryParserService(schemaStore)
+      val service = QueryInsightUtils()
 
       val parsed = service.parseQuery("""
          query FindAllFilms {
             find { "Hello, world" }
          }
-      """.trimIndent())
+      """, schema)
          .block()!!
       parsed.hasCompilationErrors.shouldBeTrue()
    }

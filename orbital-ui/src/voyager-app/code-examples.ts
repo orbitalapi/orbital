@@ -60,12 +60,14 @@ const DatabaseWithTables: CodeSample = {
   slug: 'database-with-tables',
   code: `/**
 This diagram shows a database, with two tables (and their associated models) exposed.
-
 */
+
+type Minutes inherits Int
+
 model Film {
   filmId : FilmId inherits String
   title: FilmTitle inherits String
-  duration: FilmDuration inherits Minutes inherits Int
+  duration: FilmDuration inherits Minutes
 }
 
 model Actor {
@@ -173,14 +175,14 @@ export const ExampleGroups = [
       simpleQuery
     ]
   },
-  {
-    title: 'Mutations',
-    snippets: StubExamples
-  },
-  {
-    title: 'Data Manipulation',
-    snippets: StubExamples
-  },
+  // {
+  //   title: 'Mutations',
+  //   snippets: StubExamples
+  // },
+  // {
+  //   title: 'Data Manipulation',
+  //   snippets: StubExamples
+  // },
 ]
 
 function codeSamplesToStubExamples(codeSample: CodeSample[]): StubQueryMessageWithSlug[] {
