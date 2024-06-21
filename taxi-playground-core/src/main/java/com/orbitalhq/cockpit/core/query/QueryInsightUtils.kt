@@ -25,9 +25,9 @@ class QueryInsightUtils() {
    ): Mono<QueryParseMetadata> {
       require(query.isNotEmpty()) { "No query was provided"}
       return Mono.fromCallable {
-         val compiledQuery = try {
-            val (compiledQuery, _, _) = schema.parseQuery(query)
-            compiledQuery
+         val (compiledQuery, querySchema) = try {
+            val (compiledQuery, _, querySchema) = schema.parseQuery(query)
+            compiledQuery to querySchema
          } catch (e: CompilationException) {
             return@fromCallable QueryParseMetadata.compilationFailed(
                taxi = query,
@@ -35,7 +35,7 @@ class QueryInsightUtils() {
             )
          }
          val queryPlan = try {
-            val queryPlanSteps = visualizerService.visualizeQuery(query, schema)
+            val queryPlanSteps = visualizerService.visualizeQuery(query, querySchema)
             QueryPlan(queryPlanSteps, emptyList())
          } catch (e: SearchFailedException) {
             QueryPlan(
@@ -50,7 +50,7 @@ class QueryInsightUtils() {
             compiledQuery,
             compilationMessages = emptyList(),
             queryPlan = queryPlan,
-            schema = schema
+            schema = querySchema
          )
       }.subscribeOn(Schedulers.boundedElastic())
    }
