@@ -1,9 +1,7 @@
 package com.orbitalhq.connectors.kafka
 
-import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
-import com.orbitalhq.connectors.StreamErrorMessage
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.toSenderOptions
@@ -14,12 +12,14 @@ import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
+import com.orbitalhq.utils.RetryFailOnSerializeEmitHandler
 import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.reactive.asFlow
+import kotlinx.coroutines.flow.flow
 import mu.KotlinLogging
-import reactor.core.publisher.Mono
+import reactor.core.Disposable
+import reactor.core.publisher.Sinks
+import reactor.core.scheduler.Schedulers
 import reactor.kafka.sender.KafkaSender
 import reactor.kafka.sender.SenderOptions
 import reactor.kafka.sender.SenderRecord
@@ -35,7 +35,12 @@ class KafkaStreamPublisher(
    private val cache = CacheBuilder
       .newBuilder()
       .expireAfterAccess(5, TimeUnit.MINUTES)
-      .build<String, KafkaSender<Any, Any>>()
+      .removalListener<String, Pair<Disposable, Sinks.Many<SenderRecord<Any?, Any?, Nothing?>>>> {
+         logger.warn { "Disposing the KafkaStreamPublisher for ${it.key}" }
+         it.value?.first?.dispose()
+         it.value?.second?.tryEmitComplete()
+      }
+      .build<String, Pair<Disposable, Sinks.Many<SenderRecord<Any?, Any?, Nothing?>>>>()
    companion object {
       private val logger = KotlinLogging.logger {}
    }
@@ -53,18 +58,27 @@ class KafkaStreamPublisher(
       val topic = kafkaOperation.topic
       val sender = cache.get(connectionName) {
          val (connectionConfiguration, senderOptions) = buildSenderOptions(connectionName)
-         KafkaSender.create(senderOptions)
+         val sink = Sinks.many()
+            .unicast()
+            .onBackpressureBuffer<SenderRecord<Any?, Any?, Nothing?>>()
+
+         val kafkaSender = KafkaSender.create(senderOptions)
+
+         /*********************************************************************************************************************
+          * Calling kafkaSender.send(Mono<SenderRecord>) for each 'TypedInstance' is much slower than calling kafkaSender.send(Publisher) once
+          * and injecting TypedInstances through the Publisher.
+          *********************************************************************************************************************/
+         val disposable =  kafkaSender
+            .send(sink.asFlux())
+            .subscribeOn(Schedulers.boundedElastic())
+            .doOnEach { _ -> meterRegistry.counter("orbital.connections.kafka.${connectionName}.topic.${topic}.messagesPublished").increment() }
+            .subscribe()
+
+         disposable to sink
       }
       val senderRecord = buildSenderRecord(payload, schema, topic, messageKey)
-
-      return sender.send(Mono.just(senderRecord))
-         .doOnEach { _ -> meterRegistry.counter("orbital.connections.kafka.${connectionName}.topic.${topic}.messagesPublished").increment() }
-         .doOnError { e->  logger.warn { "Failed to send message to Kafka connection $connectionName on topic $topic: ${e::class.simpleName} - ${e.message}" } }
-         .map { senderResult ->
-            logger.info { "Message published to Kafka connection  $connectionName on topic $topic with offset ${senderResult.recordMetadata()?.offset()}" }
-            payload
-         }
-         .asFlow()
+      sender.second.emitNext(senderRecord, RetryFailOnSerializeEmitHandler)
+      return flow { emit(payload) }
    }
 
    private fun buildSenderRecord(
@@ -72,12 +86,13 @@ class KafkaStreamPublisher(
       schema: Schema,
       topic: String,
       messageKey: TypedInstance?
-   ): SenderRecord<Any?, Any?, Nothing?>? {
+   ): SenderRecord<Any?, Any?, Nothing?> {
       val format = formatRegistry.forType(payload.type)
       val messageContent = if (format != null) {
          format.serializer.writeAsBytes(payload, schema)
       } else {
-         objectMapper.writeValueAsBytes(payload.toRawObject())
+         val rawObject = payload.toRawObject()
+         objectMapper.writeValueAsBytes(rawObject)
       }
       return SenderRecord.create(topic, null, null, messageKey?.toRawObject(), messageContent, null)
    }
