@@ -12,6 +12,7 @@ import com.orbitalhq.cockpit.core.security.AuthTokenConfigurationService
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.metrics.QueryMetricsReporter
+import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
@@ -61,6 +62,9 @@ import org.springframework.test.context.junit4.SpringRunner
 @ActiveProfiles("test")
 class OperationAuthenticationIntegrationTest : DatabaseTest() {
    private lateinit var taxiSchema: TaxiSchema
+
+   @MockBean
+   lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
    @MockBean
    lateinit var chatService: OpenAiChatService

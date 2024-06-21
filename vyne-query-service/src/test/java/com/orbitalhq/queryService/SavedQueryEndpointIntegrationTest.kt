@@ -15,7 +15,7 @@ import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.json.parseJson
-import com.orbitalhq.query.runtime.core.dispatcher.local.StreamResultSubscriptionManager
+import com.orbitalhq.query.runtime.core.dispatcher.local.RSocketStreamResultSubscriptionManager
 import com.orbitalhq.query.runtime.core.gateway.QueryRouteService
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
@@ -36,7 +36,6 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
-import io.ktor.client.request.*
 import io.ktor.websocket.*
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.reactor.asFlux
@@ -51,7 +50,6 @@ import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
-import org.springframework.http.HttpStatusCode
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
@@ -89,7 +87,7 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
    lateinit var schemaEditorService: SchemaEditorService
 
    @MockBean
-   lateinit var streamSubscriptionManager: StreamResultSubscriptionManager
+   lateinit var streamSubscriptionManager: RSocketStreamResultSubscriptionManager
 
 
    @Autowired

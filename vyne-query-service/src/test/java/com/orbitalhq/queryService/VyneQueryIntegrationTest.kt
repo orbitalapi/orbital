@@ -14,6 +14,7 @@ import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
+import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
@@ -62,6 +63,9 @@ import kotlin.test.assertEquals
 class VyneQueryIntegrationTest : DatabaseTest() {
    @MockBean
    lateinit var chatService: OpenAiChatService
+
+   @MockBean
+   lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager

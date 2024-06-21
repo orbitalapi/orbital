@@ -7,6 +7,7 @@ import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvi
 import com.orbitalhq.cockpit.core.security.AuthTokenConfigurationService
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.metrics.QueryMetricsReporter
+import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.queryService.JavaKeyStore.Companion.createCertificates
 import com.orbitalhq.queryService.JavaKeyStore.Companion.createPrivateKey
@@ -140,6 +141,8 @@ class OperationAuthenticationMtlsTest : DatabaseTest() {
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
+   @MockBean
+   lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
    @MockBean
    lateinit var queryMetricsReporter: QueryMetricsReporter
