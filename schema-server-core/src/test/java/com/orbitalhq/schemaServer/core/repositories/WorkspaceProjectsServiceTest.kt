@@ -5,7 +5,9 @@ import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecy
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
 import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
+import com.orbitalhq.spring.http.BadRequestException
 import com.winterbe.expekt.should
+import io.kotest.matchers.shouldBe
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -70,8 +72,12 @@ class WorkspaceProjectsServiceTest {
          .verifyComplete()
 
       StepVerifier.create(workspaceProjectsService.createFileRepository(request))
-         .expectNextMatches { it.status == ModifyProjectResponseStatus.Failed }
-         .verifyComplete()
+         .expectErrorMatches { error ->
+            error is BadRequestException
+            error.message!!.shouldBe(folder.canonicalPath + " already exists")
+            true
+         }
+         .verify()
    }
 
    @Test
@@ -93,9 +99,12 @@ class WorkspaceProjectsServiceTest {
 
       StepVerifier
          .create(workspaceProjectsService.createFileRepository(request))
-         .expectNextMatches {
-            it.status == ModifyProjectResponseStatus.Failed
-         }.verifyComplete()
+         .expectErrorMatches { error ->
+            error is BadRequestException
+            error.message!!.shouldBe(folder.canonicalPath + " already exists")
+            true
+         }
+         .verify()
    }
 
    @Test
