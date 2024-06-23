@@ -39,7 +39,13 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) {
    @PostMapping("/api/repositories/file")
    fun createFileRepository(@RequestBody request: CreateFileProjectStoreRequest): Mono<ModifyWorkspaceResponse> {
       val fileSpec = request.toRepositorySpec()
-      return Mono.just(configRepo.addFileSpec(fileSpec))
+      return Mono.just(configRepo.addFileSpec(fileSpec)).map {
+         if (it.status == ModifyProjectResponseStatus.Failed) {
+            throw BadRequestException(it.message!!)
+         } else {
+            it
+         }
+      }
    }
 
    @PostMapping("/api/repositories/file", params = ["test"])
