@@ -73,12 +73,12 @@ export class Action {
         cy.get(`${list}:nth-child(${index})`).click();
     }
 
-    downloadStatusCheckAs(fileType: string) {  // fileType -> JSON, CSV 
+    downloadStatusCheckAs(fileType: string) {  // fileType -> JSON, CSV
         cy.request({ method: 'GET', url: homePageUrl + apiQueryHistory }).then((response) => {
             expect(response.status).to.eq(200);
             expect(response.body).to.not.be.null;
 
-            // And I get clientQueryId to create file export path 
+            // And I get clientQueryId to create file export path
             const clientQueryId: string = response.body[0]['clientQueryId'];
             const exportPath: string = `/api/query/history/clientId/${clientQueryId}/${fileType}/export`
 
@@ -89,7 +89,7 @@ export class Action {
         })
     }
 
-    dropFile(dropzone: string, fileName: string) {// put all the files required for file-upload-tests inside cypress/fixtures folder 
+    dropFile(dropzone: string, fileName: string) {// put all the files required for file-upload-tests inside cypress/fixtures folder
         cy.fixture(fileName, 'base64')
             .then(Cypress.Blob.base64StringToBlob)
             .then(blob => {

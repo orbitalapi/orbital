@@ -110,18 +110,6 @@
               "**/node_modules/**"
             ]
           }
-        },
-        "e2e": {
-          "builder": "@angular-devkit/build-angular:protractor",
-          "options": {
-            "protractorConfig": "e2e/protractor.conf.js",
-            "devServerTarget": "graph-vis:serve"
-          },
-          "configurations": {
-            "production": {
-              "devServerTarget": "graph-vis:serve:production"
-            }
-          }
         }
       }
     }},
