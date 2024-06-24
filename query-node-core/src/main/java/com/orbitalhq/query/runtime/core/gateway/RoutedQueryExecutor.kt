@@ -3,15 +3,13 @@ package com.orbitalhq.query.runtime.core.gateway
 import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.query.runtime.core.dispatcher.StreamingQueryDispatcher
 import com.orbitalhq.query.runtime.core.dispatcher.local.LocalQueryDispatcher
-import com.orbitalhq.query.runtime.core.dispatcher.local.StreamResultSubscriptionManager
+import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.utils.Ids
 import lang.taxi.query.QueryMode
 import mu.KotlinLogging
 import org.reactivestreams.Publisher
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
-import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 
 /**
  * Responsible for executing queries received from a saved query with an Http()
@@ -44,7 +42,7 @@ class RoutedQueryDispatcherAdaptor(
    // So, this needs to be nullable, and we need to handle the scenario that it wasn't wired.
    configuredDispatcher: StreamingQueryDispatcher?,
    val queryService: QueryService,
-   val streamResultSubscriptionManager: StreamResultSubscriptionManager
+   val streamResultSubscriptionManager: StreamResultStreamProvider
 ) : RoutedQueryExecutor {
    companion object {
       private val logger = KotlinLogging.logger {}

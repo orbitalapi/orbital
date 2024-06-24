@@ -10,6 +10,7 @@ import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.cockpit.core.security.authorisation.VyneSamlConfig
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.metrics.QueryMetricsReporter
+import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.queryService.TestSchemaProvider
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
@@ -233,6 +234,9 @@ class VyneQuerySamlIntegrationTest {
 
    @MockBean
    lateinit var schemaEditorService: SchemaEditorService
+
+   @MockBean
+   lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
    /**
     * see "authorisation/user-role-mappings.conf" in resources.

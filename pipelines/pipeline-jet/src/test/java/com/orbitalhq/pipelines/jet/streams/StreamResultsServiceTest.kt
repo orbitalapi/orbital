@@ -19,7 +19,7 @@ class StreamResultsServiceTest {
 
       val topic = hazelcastInstance.getTopic<Any>(HazelcastTopicSinkSpec.topicNameForStream(streamName.fqn()))
 
-      service.getResultFeed(streamName)
+      service.getResultStream(streamName)
          .test()
          .expectSubscription()
          .then {

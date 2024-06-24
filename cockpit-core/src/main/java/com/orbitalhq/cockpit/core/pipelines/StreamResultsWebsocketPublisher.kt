@@ -1,7 +1,7 @@
 package com.orbitalhq.cockpit.core.pipelines
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.orbitalhq.query.runtime.core.dispatcher.local.StreamResultSubscriptionManager
+import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.query.runtime.core.gateway.WebsocketQueryRouteMatchingService
 import com.orbitalhq.spring.http.NotFoundException
 import com.orbitalhq.spring.http.websocket.WebSocketController
@@ -20,7 +20,7 @@ import reactor.core.publisher.Mono
  */
 @RestController
 class StreamResultsWebsocketPublisher(
-   private val streamResultSubscriptionManager: StreamResultSubscriptionManager,
+   private val streamResultSubscriptionManager: StreamResultStreamProvider,
    private val routeMatchingService: WebsocketQueryRouteMatchingService,
    private val objectMapper: ObjectMapper,
 ) : WebSocketController {

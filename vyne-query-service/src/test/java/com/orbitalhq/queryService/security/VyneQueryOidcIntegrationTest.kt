@@ -11,6 +11,7 @@ import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.metrics.QueryMetricsReporter
+import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.queryService.TestSchemaProvider
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
@@ -90,6 +91,9 @@ class VyneQueryOidcIntegrationTest {
 
    private var rsaJsonWebKey: RsaJsonWebKey? = null
    private var jwsBuilder: JWSBuilder? = null
+
+   @MockBean
+   lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
    @Value("\${wiremock.server.baseUrl}")
    private lateinit var wireMockServerBaseUrl: String

@@ -12,6 +12,7 @@ import com.orbitalhq.models.json.parseKeyValuePair
 import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.history.QuerySankeyChartRow
 import com.orbitalhq.query.history.SankeyNodeType
+import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
 import com.orbitalhq.schemaServer.core.packages.PackageService
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
@@ -60,6 +61,9 @@ import javax.sql.DataSource
 @ActiveProfiles("test")
 class QueryLineageTest : BaseQueryServiceTest() {
 
+   @MockBean
+   lateinit var streamResultStreamProvider: StreamResultStreamProvider
+   
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 

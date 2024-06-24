@@ -1,9 +1,9 @@
 package com.orbitalhq.query.runtime.core.dispatcher.local
 
 import com.orbitalhq.query.ResultMode
+import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.query.runtime.core.dispatcher.StreamingQueryDispatcher
-import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
 import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
@@ -23,7 +23,7 @@ import reactor.core.publisher.Mono
  */
 class LocalQueryDispatcher(
    private val queryService: QueryService,
-   private val streamResultSubscriptionManager: StreamResultSubscriptionManager
+   private val streamResultSubscriptionManager: StreamResultStreamProvider
 ) : StreamingQueryDispatcher {
 
    companion object {

@@ -13,6 +13,7 @@ import com.orbitalhq.http.emptyResponse
 import com.orbitalhq.http.response
 import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.HttpExchange
+import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.queryService.BaseQueryServiceTest
 import com.orbitalhq.queryService.TestSpringConfig
 import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
@@ -77,6 +78,9 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
    }
    @MockBean
    lateinit var chatService: OpenAiChatService
+
+   @MockBean
+   lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager

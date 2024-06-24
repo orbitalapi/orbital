@@ -12,9 +12,7 @@ import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.query.runtime.core.WebsocketQuery
-import com.orbitalhq.query.runtime.core.dispatcher.local.StreamResultSubscriptionManager
-import com.orbitalhq.query.runtime.core.gateway.QueryRouteService
-import com.orbitalhq.queryService.SavedQueryEndpointIntegrationTest.TestSchema
+import com.orbitalhq.query.runtime.core.dispatcher.local.RSocketStreamResultSubscriptionManager
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
@@ -52,7 +50,6 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import reactor.core.publisher.Sinks
 import reactor.kotlin.test.test
-import java.time.Duration
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -81,7 +78,7 @@ class QueryWebsocketIntegrationTest : DatabaseTest() {
    lateinit var schemaEditorService: SchemaEditorService
 
    @MockBean
-   lateinit var streamSubscriptionManager: StreamResultSubscriptionManager
+   lateinit var streamSubscriptionManager: RSocketStreamResultSubscriptionManager
 
    @Autowired
    lateinit var resultsSink: Sinks.Many<String>

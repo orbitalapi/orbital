@@ -11,6 +11,7 @@ import com.orbitalhq.history.db.QueryResultRowRepository
 import com.orbitalhq.history.rest.QueryHistoryService
 import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.ValueWithTypeName
+import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.queryService.BaseQueryServiceTest
 import com.orbitalhq.queryService.TestSpringConfig
 import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
@@ -67,6 +68,8 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
    @MockBean
    lateinit var chatService: OpenAiChatService
 
+   @MockBean
+   lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager

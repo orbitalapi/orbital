@@ -30,6 +30,7 @@ import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
 import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCachingInvokerProvider
 import com.orbitalhq.query.history.QueryResultRow
 import com.orbitalhq.query.history.QuerySummary
+import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryController
 import com.orbitalhq.queryService.BaseQueryServiceTest
 import com.orbitalhq.queryService.TestSpringConfig
@@ -117,6 +118,9 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       } as PostgreSQLContainer<*>
 
    }
+
+   @MockBean
+   lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
    @MockBean
    lateinit var chatService: OpenAiChatService
