@@ -21,12 +21,12 @@ class FactBagValueSupplier(
    private val facts: FactBag,
    private val schema: Schema,
    /**
-    * The value supplier to use when evaluating statements scoped with "this".
+    * The value supplier to use when evaluating statements scoped with "this"
     * If none passed, an empty value bag is used, so evaluations will fail.
     *
     * Generally, this should be a TypedObjectFactory.
     */
-   private val thisScopeValueSupplier: ScopedValueProvider = FactBagScopeValueProvider(facts),
+   private val scopedValueProvider: ScopedValueProvider = FactBagScopeValueProvider(facts, schema),
    private val typeMatchingStrategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES,
 
    ) : EvaluationValueSupplier {
@@ -34,7 +34,7 @@ class FactBagValueSupplier(
       fun of(
          facts: List<TypedInstance>,
          schema: Schema,
-         thisScopeValueSupplier: ScopedValueProvider = FactBagScopeValueProvider.empty(),
+         thisScopeValueSupplier: ScopedValueProvider = FactBagScopeValueProvider.empty(schema),
          typeMatchingStrategy: TypeMatchingStrategy = TypeMatchingStrategy.ALLOW_INHERITED_TYPES
       ): EvaluationValueSupplier {
          return FactBagValueSupplier(FactBag.of(facts, schema), schema, thisScopeValueSupplier, typeMatchingStrategy)
@@ -43,8 +43,25 @@ class FactBagValueSupplier(
       fun empty(schema: Schema): EvaluationValueSupplier {
          return of(emptyList(), schema)
       }
-
    }
+
+   override fun withAdditionalScopedFacts(scopedFacts: List<ScopedFact>): FactBagValueSupplier {
+
+      return FactBagValueSupplier(
+         this.facts,
+         schema,
+         this.scopedValueProvider.withAdditionalScopedFacts(scopedFacts),
+         typeMatchingStrategy
+      )
+   }
+
+   override val inPlaceQueryEngine: InPlaceQueryEngine?
+      get() {
+         return when (scopedValueProvider) {
+            is TypedObjectFactory -> scopedValueProvider.inPlaceQueryEngine
+            else -> null
+         }
+      }
 
    override fun getValue(
       typeName: QualifiedName,
@@ -67,15 +84,15 @@ class FactBagValueSupplier(
    }
 
    override fun getValue(attributeName: AttributeName): TypedInstance {
-      return thisScopeValueSupplier.getValue(attributeName)
+      return scopedValueProvider.getValue(attributeName)
    }
 
    override fun getScopedFact(scope: Argument): TypedInstance {
-      return thisScopeValueSupplier.getScopedFact(scope)
+      return scopedValueProvider.getScopedFact(scope)
    }
 
    override fun getScopedFactOrNull(scope: Argument): TypedInstance? {
-      return thisScopeValueSupplier.getScopedFactOrNull(scope)
+      return scopedValueProvider.getScopedFactOrNull(scope)
    }
 
    override fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance {

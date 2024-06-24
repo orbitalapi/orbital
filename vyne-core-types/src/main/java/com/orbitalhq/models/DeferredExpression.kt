@@ -38,10 +38,25 @@ class DeferredExpression(
    override fun evaluate(
       input: TypedInstance,
       dataSource: DataSource,
-      factBag: EvaluationValueSupplier,
+      evaluationValueSupplier: EvaluationValueSupplier,
       functionResultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
-      val reader = AccessorReader(factBag, schema.functionRegistry, schema, functionResultCache = functionResultCache)
+      if (evaluationValueSupplier.inPlaceQueryEngine == null) {
+         error("Cannot prepare DeferredExpression, as no evaluation engine was provided")
+      }
+      val scopedFacts = ProjectionFunctionScopeEvaluator.build(
+         expression.inputs,
+         listOf(input),
+         evaluationValueSupplier.inPlaceQueryEngine!!
+      )
+      val evaluationSupplierWithInputs = evaluationValueSupplier.withAdditionalScopedFacts(scopedFacts)
+      require(evaluationSupplierWithInputs is EvaluationValueSupplier) { "Appending scoped facts to evaluationValueSupplier ${evaluationValueSupplier::class.simpleName} return ${evaluationSupplierWithInputs::class.simpleName} but a EvaluationValueSupplier s required"}
+      val reader = AccessorReader(
+         evaluationSupplierWithInputs,
+         schema.functionRegistry,
+         schema,
+         functionResultCache = functionResultCache
+      )
       val evaluated =
          reader.evaluate(input, schema.type(expression.returnType), expression, dataSource = dataSource, format = null)
       return evaluated
@@ -82,10 +97,10 @@ data class DeferredProjection(
    override fun evaluate(
       input: TypedInstance,
       dataSource: DataSource,
-      factBag: EvaluationValueSupplier,
+      evaluationValueSupplier: EvaluationValueSupplier,
       functionResultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
-      val valueToProject = sourceInstance.evaluate(input, dataSource, factBag, functionResultCache)
+      val valueToProject = sourceInstance.evaluate(input, dataSource, evaluationValueSupplier, functionResultCache)
       val projectedValue = projector.project(
          valueToProject,
          projection,
@@ -120,7 +135,7 @@ interface DeferredTypedInstance : TypedInstance {
    fun evaluate(
       input: TypedInstance,
       dataSource: DataSource,
-      factBag: EvaluationValueSupplier,
+      evaluationValueSupplier: EvaluationValueSupplier,
       functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
    ): TypedInstance
 }

@@ -1,11 +1,12 @@
 package com.orbitalhq.models.facts
 
 import com.orbitalhq.models.TypedInstance
+import lang.taxi.accessors.Argument
 import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.types.ArrayType
 import lang.taxi.types.Arrays
 
-data class ScopedFact(val scope: ProjectionFunctionScope, val fact: TypedInstance) {
+data class ScopedFact(val scope: Argument, val fact: TypedInstance) {
    val type = fact.type
    val typeName = fact.typeName
 }
@@ -22,7 +23,7 @@ data class ScopedFact(val scope: ProjectionFunctionScope, val fact: TypedInstanc
  *
  * If this turns out to make sense, promote it to ProjectionFunctionScope
  */
-fun ProjectionFunctionScope.asIteratingScope(): ProjectionFunctionScope {
+fun Argument.asIteratingScope(): ProjectionFunctionScope {
    require(Arrays.isArray(this.type)) { "Cannot call asIteratingScope on a type that is not an Array" }
    val memberType = (this.type as ArrayType).memberType
    return ProjectionFunctionScope(

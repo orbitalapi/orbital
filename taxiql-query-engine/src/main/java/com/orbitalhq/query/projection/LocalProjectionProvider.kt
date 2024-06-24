@@ -1,5 +1,6 @@
 package com.orbitalhq.query.projection
 
+import com.orbitalhq.models.ProjectionFunctionScopeEvaluator
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull

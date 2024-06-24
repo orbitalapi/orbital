@@ -44,7 +44,7 @@ class TypedObjectFactory(
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
    private val evaluateAccessors: Boolean = true,
-   private val inPlaceQueryEngine: InPlaceQueryEngine? = null,
+   override val inPlaceQueryEngine: InPlaceQueryEngine? = null,
    private val accessorHandlers: List<AccessorHandler<out Accessor>> = emptyList(),
    private val formatSpecs: List<ModelFormatSpec> = emptyList(),
    private val parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
@@ -449,6 +449,24 @@ class TypedObjectFactory(
       } else {
          null
       }
+   }
+
+   override fun withAdditionalScopedFacts(scopedFacts: List<ScopedFact>): TypedObjectFactory {
+      return when (value) {
+         is FactBag -> newFactory(
+            this.type, value.withAdditionalScopedFacts(scopedFacts, this.schema),
+            scope = this.projectionScope
+         )
+
+         is TypedInstance -> newFactory(
+            this.type, FactBag.of(this.value, this.schema).withAdditionalScopedFacts(scopedFacts, this.schema),
+            scope = this.projectionScope
+         )
+         else -> {
+            error("Cannot append scoped facts to the evaluation context, as the provided source fact is neither a TypedInstance nor a FactBag")
+         }
+      }
+
    }
 
 

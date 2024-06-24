@@ -188,7 +188,6 @@ class VyneStreamTest {
    fun `can call mutation for each member of a stream`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
-
          model UserUpdateMessage {
             userId : UserId inherits String
             message : StatusMessage inherits String
@@ -241,11 +240,6 @@ class VyneStreamTest {
       """.trimIndent()
       ).rawObjects()
       queryResult.shouldHaveSize(2)
-
-   }
-
-   @Test
-   fun `can join streams`() {
 
    }
 }

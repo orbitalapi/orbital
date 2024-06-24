@@ -2,12 +2,16 @@ package com.orbitalhq.query.graph.edges
 
 import com.orbitalhq.models.*
 import com.orbitalhq.models.facts.CopyOnWriteFactBag
+import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.facts.ScopedFact
+import com.orbitalhq.query.AlwaysGoodSpec
 import com.orbitalhq.query.MetricTags
 import com.orbitalhq.query.QueryContext
+import com.orbitalhq.query.QueryContextSchemaProvider
 import com.orbitalhq.query.QuerySpecTypeNode
 import com.orbitalhq.query.SearchGraphExclusion
+import com.orbitalhq.query.TypedInstanceValidPredicate
 import com.orbitalhq.query.UnresolvedTypeInQueryException
 import com.orbitalhq.query.graph.operationInvocation.UnresolvedOperationParametersException
 import com.orbitalhq.schemas.Operation
@@ -16,6 +20,7 @@ import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.log
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import lang.taxi.expressions.Expression
@@ -315,7 +320,7 @@ class ParameterFactory {
 private class QueryContextWithOperationExclusion(
    private val context: QueryContext,
    private val operation: RemoteOperation?
-) : InPlaceQueryEngine {
+) : InPlaceQueryEngine by context {
    private val excludedOperations = operation?.let {
       setOf(
          SearchGraphExclusion(
@@ -335,6 +340,21 @@ private class QueryContextWithOperationExclusion(
       inheritParent: Boolean
    ): InPlaceQueryEngine {
       return QueryContextWithOperationExclusion(context.only(facts, scopedFacts, inheritParent), operation)
+   }
+
+   override suspend fun findType(
+      type: Type,
+      spec: TypedInstanceValidPredicate,
+      permittedStrategy: PermittedQueryStrategies,
+      failureBehaviour: QueryFailureBehaviour,
+   ): Flow<TypedInstance> {
+      // This method is the same as the default implementation.
+      // However, because of how InPlaceQueryEngine is implemented via delegation to context,
+      // if we don't override here, then the value of "this" becomes the delegated context,
+      // so the next call to findType() goes to the delegated context, rather than this instance,
+      // and we lose the ability to inject our excluded operations.
+      return this.findType(type, permittedStrategy, failureBehaviour)
+         .filter { spec.isValid(it) }
    }
 
    override suspend fun findType(

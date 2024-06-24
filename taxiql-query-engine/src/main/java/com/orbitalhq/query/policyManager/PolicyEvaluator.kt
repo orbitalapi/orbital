@@ -4,7 +4,7 @@ import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.query.QueryContext
-import com.orbitalhq.query.projection.ProjectionFunctionScopeEvaluator
+import com.orbitalhq.models.ProjectionFunctionScopeEvaluator
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import lang.taxi.policies.Policy

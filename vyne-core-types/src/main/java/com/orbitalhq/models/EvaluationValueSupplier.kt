@@ -1,6 +1,7 @@
 package com.orbitalhq.models
 
 import com.orbitalhq.models.facts.FactBag
+import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.schemas.AttributeName
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
@@ -22,15 +23,25 @@ interface EvaluationValueSupplier : ScopedValueProvider {
 
    fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance
    fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean, format: FormatsAndZoneOffset?): TypedInstance
+
+   /**
+    * If the EvaluationValueSupplier has access to a queryEngine, it should
+    * supply it here. However, this isn't guaranteed by the implementation.
+    */
+   val inPlaceQueryEngine:InPlaceQueryEngine?
+
+
 }
 
 interface ScopedValueProvider {
    fun getScopedFact(scope: Argument): TypedInstance
    fun getScopedFactOrNull(scope: Argument): TypedInstance?
    fun getValue(attributeName: AttributeName): TypedInstance
+
+   fun withAdditionalScopedFacts(scopedFacts: List<ScopedFact>):ScopedValueProvider
 }
 
-class FactBagScopeValueProvider(private val factBag: FactBag):ScopedValueProvider {
+class FactBagScopeValueProvider(private val factBag: FactBag, private val schema: Schema):ScopedValueProvider {
    override fun getScopedFact(scope: Argument): TypedInstance {
       return factBag.getScopedFact(scope).fact
    }
@@ -39,11 +50,20 @@ class FactBagScopeValueProvider(private val factBag: FactBag):ScopedValueProvide
       return factBag.getScopedFactOrNull(scope)?.fact
    }
 
+
    override fun getValue(attributeName: AttributeName): TypedInstance {
       TODO("Not yet implemented")
    }
+
+   override fun withAdditionalScopedFacts(scopedFacts: List<ScopedFact>): ScopedValueProvider {
+      return FactBagScopeValueProvider(
+         factBag.withAdditionalScopedFacts(scopedFacts, schema),
+         schema
+      )
+   }
+
    companion object {
-      fun empty():FactBagScopeValueProvider = FactBagScopeValueProvider(FactBag.empty())
+      fun empty(schema: Schema):FactBagScopeValueProvider = FactBagScopeValueProvider(FactBag.empty(), schema)
    }
 }
 
