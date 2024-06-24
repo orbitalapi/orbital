@@ -59,7 +59,10 @@ export class QueryEditorStoreService {
 
     typeService.getTypes()
       .pipe(takeUntilDestroyed())
-      .subscribe(schema => this.schema = schema);
+      .subscribe(schema => {
+        this.schema = schema;
+        this.compileQuery();
+      });
   }
 
   addQueryEditorState(localStorageQuery: LocalStorageQuery) {
