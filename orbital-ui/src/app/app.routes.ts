@@ -9,8 +9,6 @@ export const APP_ROUTES = RouterModule.forRoot(
     {
       path: '',
       loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent),
-      canActivate: [AuthGuard],
-      data: {requiredAuthority: VynePrivileges.ViewConnections},
       title: `${UiCustomisations.productName}`
     },
     {

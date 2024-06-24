@@ -14,13 +14,15 @@ import {CardComponent} from "./card/card.component";
 import {ContentCardComponent} from "./content-card/content-card.component";
 import {ContentCardData, ContentService} from "../services/content.service";
 import {Observable} from "rxjs";
+import {RequiresAuthorityDirective} from "../requires-authority.directive";
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
   imports: [
     CommonModule, HeaderComponentLayoutModule, RouterOutlet, TuiButtonModule, RouterLink,
-    TuiNotificationModule, DataSourcesCardComponent, EndpointStatsCardComponent, ChangelogCardComponent, CardComponent, ContentCardComponent
+    TuiNotificationModule, DataSourcesCardComponent, EndpointStatsCardComponent, ChangelogCardComponent, CardComponent, ContentCardComponent,
+    RequiresAuthorityDirective
   ],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
