@@ -2,7 +2,7 @@
   title="Welcome to {{ uiConfig.productName }}"
   description="View your data source health status, endpoint stats and recent changes made to schemas"
 >
-  <ng-container ngProjectAs="buttons">
+  <ng-container ngProjectAs="buttons" *appRequiresAuthority="['RunQuery']">
     <button
       tuiButton
       size="m"
@@ -21,7 +21,7 @@
   </tui-notification>
 
   <div class="grid-container grid-cols-2">
-    <app-data-sources-card></app-data-sources-card>
+    <app-data-sources-card *appRequiresAuthority="['ViewConnections']"></app-data-sources-card>
     <app-changelog-card></app-changelog-card>
   </div>
 

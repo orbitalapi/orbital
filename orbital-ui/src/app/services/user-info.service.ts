@@ -96,3 +96,14 @@ export enum VynePrivileges {
   EditUsers = 'EditUsers',
   CreateWorkspace = 'CreateWorkspace'
 }
+
+// Below, we want to expose the keys of VynePrivileges
+// as strings. We have to do that in two steps.
+// First, use typeof  to access the type of the enum for
+// reflection purposes.
+type PrivilegeType = typeof VynePrivileges;
+// Then expose the keys.
+// These are stringly typed.
+// This allows intellisense in things like templates, where
+// enums aren't exposed
+export type Privilege = keyof PrivilegeType;
