@@ -256,7 +256,7 @@ class AccessorReader(
             )
          }
 
-         is ArgumentSelector -> readScopedReferenceSelector(accessor)
+         is ArgumentSelector -> readScopedReferenceSelector(value,accessor)
          is ProjectingExpression -> {
             evaluateProjectingExpression(
                value,
@@ -431,8 +431,16 @@ class AccessorReader(
       return result
    }
 
-   private fun readScopedReferenceSelector(accessor: ArgumentSelector): TypedInstance {
-      val scopedInstance = objectFactory.getScopedFact(accessor.scope)
+   private fun readScopedReferenceSelector(value: Any, accessor: ArgumentSelector): TypedInstance {
+      val scopedInstance = if (value is FactBag) {
+         value.getScopedFactOrNull(accessor.scope)?.fact
+            ?: error("Failed to resolve scope argument ${accessor.scope.name}")
+
+      } else {
+         objectFactory.getScopedFactOrNull(accessor.scope)
+            ?: error("Failed to resolve scope argument ${accessor.scope.name}")
+      }
+
       val result = if (accessor.selectors.isNotEmpty()) {
          readFieldSelectorsAgainstObject(
             accessor.selectors,
@@ -915,15 +923,7 @@ class AccessorReader(
             castValue
          }
 
-         is ArgumentSelector -> {
-            if (value is FactBag) {
-               value.getScopedFactOrNull(expression.scope)?.fact
-                  ?: error("Failed to resolve scope argument ${expression.scope.name}")
-            } else {
-               objectFactory.getScopedFactOrNull(expression.scope)
-                  ?: error("Failed to resolve scope argument ${expression.scope.name}")
-            }
-         }
+         is ArgumentSelector -> readScopedReferenceSelector(value,expression)
 
          is ProjectingExpression -> {
             evaluateProjectingExpression(

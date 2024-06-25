@@ -1,11 +1,14 @@
 package com.orbitalhq.models
 
+import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.query.AlwaysGoodSpec
+import com.orbitalhq.query.QueryContextSchemaProvider
 import com.orbitalhq.query.TypedInstanceValidPredicate
 import com.orbitalhq.schemas.Type
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
+import lang.taxi.expressions.Expression
 
 /**
  * This is a lightweight version of the API exposed by Vyne's
@@ -23,7 +26,7 @@ import kotlinx.coroutines.flow.filter
  * what's going on, so can perform scoping on behalf of the query caller.  However, this design
  * choice isn't carefully considered at this point, and may need to chang.e
  */
-interface InPlaceQueryEngine {
+interface InPlaceQueryEngine : FactBag, QueryContextSchemaProvider {
    suspend fun findType(
       type: Type,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
@@ -47,6 +50,16 @@ interface InPlaceQueryEngine {
    fun only(facts: List<TypedInstance>, scopedFacts: List<ScopedFact> = emptyList(), inheritParent: Boolean = true): InPlaceQueryEngine
 
    fun withAdditionalFacts(facts: List<TypedInstance>, scopedFacts: List<ScopedFact>): InPlaceQueryEngine
+
+   fun evaluate(expression: Expression, facts: FactBag = FactBag.empty()): TypedInstance
+   fun evaluate(expression: Expression, value:TypedInstance): TypedInstance
+
+   // See ProjectionFunctionScopeEvaluator.queryContextForFact
+   // this method will need to be implemented eventually
+//   suspend fun find(
+//      typeName: String,
+//      permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING,
+//   )
 }
 
 /**

@@ -100,14 +100,6 @@ open class CollectionFilteringFunction {
    ): Either<TypedNull,Boolean> {
       val factBag = FactBagValueSupplier.of(listOf(collectionMember), schema, thisScopeValueSupplier = objectFactory)
       val evaluated = deferredInstance.evaluate(collectionMember, dataSource, factBag)
-      //         val reader = AccessorReader(factBag, schema.functionRegistry, schema)
-      //         val evaluated = reader.evaluate(
-      //            collectionMember,
-      //            expressionReturnType,
-      //            deferredInstance.expression,
-      //            dataSource = dataSource,
-      //            format = null
-      //         )
 
       if (evaluated.type.basePrimitiveTypeName?.parameterizedName != PrimitiveType.BOOLEAN.qualifiedName) {
          return failed(

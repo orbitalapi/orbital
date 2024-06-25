@@ -1,16 +1,11 @@
-package com.orbitalhq.query.projection
+package com.orbitalhq.models
 
-import com.orbitalhq.models.PermittedQueryStrategies
-import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.models.TypedNull
-import com.orbitalhq.models.ValueLookupReturnedNull
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.facts.ScopedFact
-import com.orbitalhq.query.QueryContext
 import com.orbitalhq.schemas.Type
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import lang.taxi.accessors.Argument
 import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.types.ArrayType
 import lang.taxi.types.StreamType
@@ -39,9 +34,9 @@ import lang.taxi.types.StreamType
  */
 object ProjectionFunctionScopeEvaluator {
    fun build(
-      inputs: List<ProjectionFunctionScope>,
+      inputs: List<Argument>,
       primaryFacts: List<TypedInstance>,//should be primaryFacts : List<TypedInstance> (I think)
-      context: QueryContext,
+      context: InPlaceQueryEngine,
    ):List<ScopedFact> {
       return inputs.map { scope ->
          val isAssignable = isAssignable(scope, primaryFacts)
@@ -51,7 +46,7 @@ object ProjectionFunctionScopeEvaluator {
             val scopeType = schema.type(scope.type)
             val selectedFact = try {
                // If the scope has an expression, evaluate it
-               if (scope.expression != null) {
+               if (scope is ProjectionFunctionScope && scope.expression != null) {
                   context.only(primaryFacts, context.scopedFacts)
                      .evaluate(scope.expression!!)
                } else {
@@ -82,17 +77,31 @@ object ProjectionFunctionScopeEvaluator {
    }
 
    private suspend fun queryContextForFact(
-      context: QueryContext,
+      context: InPlaceQueryEngine,
       facts: List<TypedInstance>,
       scopeType: Type
    ): TypedInstance {
-      val fromSearch = context.only(facts, context.scopedFacts)
-         // Don't do a model scan, since we've already done one in the fact bag search
-         .find(scopeType.paramaterizedName, permittedStrategy = PermittedQueryStrategies.EXCLUDE_BUILDER_AND_MODEL_SCAN)
-         .results
-         .toList()
 
-      TODO()
+      // 24-Jun-24: The below code existed (along with the TODO),
+      // which suggested that this code was never called.
+      // I need to downgrade the QueryEngine reference to InPlaceQueryEngine
+      // to allow this to be callable from core-types
+      // rather than query-engine.
+
+      // It seems that this code should be reachable
+      // (eg: if an input into a function can't come from the fact bag, and we
+      // need to query for it).
+      // When we come to implement this, it should be simple, as
+      // there's an existing method on QueryContext we need to make implement the interface
+      // All that's outstanding is handling the many-results from results to a single result defined in
+      // the signature.
+//      val fromSearch = context.only(facts, context.scopedFacts)
+//         // Don't do a model scan, since we've already done one in the fact bag search
+//         .find(scopeType.paramaterizedName, permittedStrategy = PermittedQueryStrategies.EXCLUDE_BUILDER_AND_MODEL_SCAN)
+//         .results
+//         .toList()
+
+      TODO("querying a context for a fact as a scoped function isn't yet implemented")
    }
 
    /**
@@ -107,7 +116,7 @@ object ProjectionFunctionScopeEvaluator {
     * However, that use-case hasn't presented yet.
     */
    private fun isAssignable(
-      scope: ProjectionFunctionScope,
+      scope: Argument,
       primaryFacts: List<TypedInstance>
    ): Boolean {
       if (primaryFacts.size != 1) {

@@ -497,7 +497,7 @@ data class QueryContext(
 
    }
 
-   fun evaluate(expression: Expression, facts: FactBag = FactBag.empty()): TypedInstance {
+   override fun evaluate(expression: Expression, facts: FactBag): TypedInstance {
       return TypedObjectFactory(
          schema.type(expression.returnType),
          facts.withAdditionalScopedFacts(this.scopedFacts, schema),
@@ -507,7 +507,7 @@ data class QueryContext(
          functionResultCache = this.functionResultCache,
       ).evaluateExpression(expression)
    }
-   fun evaluate(expression: Expression, value:TypedInstance): TypedInstance {
+   override fun evaluate(expression: Expression, value:TypedInstance): TypedInstance {
       return TypedObjectFactory(
          schema.type(expression.returnType),
          value,
