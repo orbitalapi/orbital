@@ -68,7 +68,11 @@ class PolicyEvaluator() {
 
       val inputs = ProjectionFunctionScopeEvaluator.build(
          policy.inputs,
-         context.facts.rootAndScopedFacts(),
+         // Important: Add the fact to a new version of the context's
+         // fact bag, otherwise we end up in a recursive loop
+         // where the inputs aren't available, so we do a search,
+         // triggering a service call, which applies the policy, which hits this method, etc etc
+         context.facts.addFact(instance).rootAndScopedFacts(),
          context
       )
       val facts = FactBag.of(instance, context.schema)

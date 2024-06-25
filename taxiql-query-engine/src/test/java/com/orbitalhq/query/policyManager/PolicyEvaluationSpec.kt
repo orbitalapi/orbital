@@ -15,7 +15,7 @@ class PolicyEvaluationSpec : DescribeSpec({
    /**
     * These tests aren't ready yet - they currently throw a stack overflow exception.
     */
-   xdescribe("policy evaluation") {
+   describe("policy evaluation") {
       val baseSchema = """
          model Film {
             title : Title inherits String
