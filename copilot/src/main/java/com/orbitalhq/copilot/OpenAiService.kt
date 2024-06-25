@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.copilot.prompts.V2Prompt
 import com.orbitalhq.copilot.refiner.GeneratedQueryRefiner
 import com.orbitalhq.query.QueryParseMetadata
@@ -219,7 +220,7 @@ class OpenAiChatService(
 
    private val excludedNamespaces = listOf(
       PrimitiveType.NAMESPACE,
-      "com.orbitalhq",
+      VyneTypes.NAMESPACE,
       "taxi.stdlib",
       "vyne.vyneQl",
       "vyne.cask"

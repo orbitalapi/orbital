@@ -1,6 +1,7 @@
 package com.orbitalhq.connectors
 
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.VyneTypes
 import org.springframework.boot.context.properties.ConfigurationProperties
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -15,7 +16,7 @@ data class VyneConnectionsConfig(
        * Package id for the config we load at the system level (not for loading from config
        * sitting inside packages)
        */
-      val PACKAGE_IDENTIFIER = PackageIdentifier.fromId("com.orbitalhq.config/connections/1.0.0")
+      val PACKAGE_IDENTIFIER = PackageIdentifier.fromId("${VyneTypes.NAMESPACE}.config/connections/1.0.0")
    }
 }
 

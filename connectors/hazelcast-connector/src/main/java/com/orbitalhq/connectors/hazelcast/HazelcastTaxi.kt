@@ -1,10 +1,11 @@
 package com.orbitalhq.connectors.hazelcast
 
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.schemas.fqn
 
 object HazelcastTaxi {
    object Annotations {
-      internal const val namespace = "com.orbitalhq.hazelcast"
+      internal val namespace = "${VyneTypes.NAMESPACE}.hazelcast"
       val HazelcastServiceAnnotation = "${namespace}.HazelcastService"
       val CompactObject = "${namespace}.CompactObject".fqn()
       val JsonObject = "${namespace}.JsonObject".fqn()

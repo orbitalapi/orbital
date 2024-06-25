@@ -1,7 +1,7 @@
 package com.orbitalhq.connectors.kafka
 
 import arrow.core.Either
-import arrow.core.flatMap
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.connectors.StreamErrorPublisher
 import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.OperationResultDataSourceWrapper
@@ -53,7 +53,7 @@ class KafkaInvoker(
       queryOptions: QueryOptions
    ): Flow<TypedInstance> {
 
-      val connectionName = service.firstMetadata("com.orbitalhq.kafka.KafkaService").params["connectionName"] as String
+      val connectionName = service.firstMetadata("${VyneTypes.NAMESPACE}.kafka.KafkaService").params["connectionName"] as String
       val kafkaOperation = operation.firstMetadata(KafkaConnectorTaxi.Annotations.KafkaOperation.NAME)
          .let { KafkaConnectorTaxi.Annotations.KafkaOperation.from(it) }
 

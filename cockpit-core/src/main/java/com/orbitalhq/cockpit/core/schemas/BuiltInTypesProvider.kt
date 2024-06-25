@@ -1,6 +1,12 @@
 package com.orbitalhq.cockpit.core.schemas
 
-import com.orbitalhq.*
+import com.orbitalhq.ErrorType
+import com.orbitalhq.JWTClaimType
+import com.orbitalhq.PackageMetadata
+import com.orbitalhq.SourcePackage
+import com.orbitalhq.UserType
+import com.orbitalhq.VersionedSource
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.annotations.http.HttpRetryAnnotationSchema
 import com.orbitalhq.cockpit.core.catalog.DataOwnerAnnotations
 import com.orbitalhq.connectors.aws.dynamodb.DynamoConnectorTaxi
@@ -22,7 +28,7 @@ import mu.KotlinLogging
 
 object BuiltInTypesProvider {
    private val builtInSources = SourcePackage(
-      PackageMetadata.from("com.orbitalhq", "core-types", "1.0.0"),
+      PackageMetadata.from(VyneTypes.NAMESPACE, "core-types", "1.0.0"),
       listOf(
          VersionedSource.unversioned("taxi.http", HttpService.asTaxi()),
          VersionedSource(
@@ -114,7 +120,7 @@ object BuiltInTypesProvider {
 
 
    // TODO  :Add the others here
-   private val builtInNamespaces = listOf("com.orbitalhq", "taxi.stdlib")
+   private val builtInNamespaces = listOf(VyneTypes.NAMESPACE, "taxi.stdlib")
    fun isInternalNamespace(namespace: String): Boolean {
       return builtInNamespaces.any { namespace.startsWith(it) }
    }

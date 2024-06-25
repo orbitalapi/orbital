@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.google.common.base.MoreObjects
 import com.orbitalhq.VersionedSource
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.annotations.http.HttpRetryAnnotationSchema
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.RemoteCall
@@ -249,9 +250,9 @@ enum class ServiceKind : Serializable {
             !hasOperations && !hasStreams && hasTables -> Database
             !hasOperations && hasStreams && !hasTables -> Kafka
 
-            serviceMetadata.containsMetadata("com.orbitalhq.kafka.KafkaService") -> Kafka
-            serviceMetadata.containsMetadata("com.orbitalhq.jdbc.DatabaseService") -> Database
-            serviceMetadata.containsMetadata("com.orbitalhq.aws.dynamo.DynamoService") -> Database
+            serviceMetadata.containsMetadata("${VyneTypes.NAMESPACE}.kafka.KafkaService") -> Kafka
+            serviceMetadata.containsMetadata("${VyneTypes.NAMESPACE}.jdbc.DatabaseService") -> Database
+            serviceMetadata.containsMetadata("${VyneTypes.NAMESPACE}.aws.dynamo.DynamoService") -> Database
             allOperationMetadata.containsMetadata(HttpOperation.NAME) -> API
             else -> null
          }

@@ -1,6 +1,7 @@
 package com.orbitalhq.spring.config
 
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.VyneTypes
 import org.springframework.boot.context.properties.ConfigurationProperties
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -24,7 +25,7 @@ data class EnvVariablesConfig(
    val envVariablesPath: Path = Paths.get("config/env.conf")
 ) {
    companion object {
-      val PACKAGE_IDENTIFIER = PackageIdentifier.fromId("com.orbitalhq.config/env/1.0.0")
+      val PACKAGE_IDENTIFIER = PackageIdentifier.fromId("${VyneTypes.NAMESPACE}.config/env/1.0.0")
    }
 }
 

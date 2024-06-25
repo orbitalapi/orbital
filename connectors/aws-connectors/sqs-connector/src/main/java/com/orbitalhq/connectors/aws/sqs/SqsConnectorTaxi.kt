@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.aws.sqs
 
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.annotations.AnnotationWrapper
 import com.orbitalhq.connections.ConnectionUsageMetadataRegistry
 import com.orbitalhq.connections.ConnectionUsageRegistration
@@ -16,7 +17,7 @@ object SqsConnectorTaxi {
    }
 
    object Annotations {
-      internal const val namespace = "com.orbitalhq.aws.sqs"
+      internal val namespace = "${VyneTypes.NAMESPACE}.aws.sqs"
 
 
       val imports: String = listOf(SqsService.NAME, SqsOperation.NAME).joinToString("\n") { "import $it" }
@@ -24,7 +25,7 @@ object SqsConnectorTaxi {
       data class SqsService(val connectionName: String): AnnotationWrapper {
          companion object {
             const val ConnectionNameParam = "connectionName"
-            const val NAME = "$namespace.SqsService"
+            val NAME = "$namespace.SqsService"
          }
 
          private val parameterMap = mapOf(ConnectionNameParam to connectionName)
@@ -39,7 +40,7 @@ object SqsConnectorTaxi {
       data class SqsOperation(val queue: String) : AnnotationWrapper {
          companion object {
             const val QueueParamName = "queue"
-            const val NAME = "$namespace.SqsOperation"
+            val NAME = "$namespace.SqsOperation"
             fun from(annotation: Annotation): SqsOperation {
                return from(annotation.parameters)
             }

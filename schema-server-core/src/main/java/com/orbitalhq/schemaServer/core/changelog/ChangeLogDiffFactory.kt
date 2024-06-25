@@ -4,6 +4,7 @@ import com.google.common.collect.Collections2
 import com.google.common.collect.Lists
 import com.google.common.collect.Maps
 import com.google.common.collect.Sets
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.schemaServer.changelog.ChangeLogDiffEntry
 import com.orbitalhq.schemaServer.changelog.DiffKind
 import com.orbitalhq.schemas.*
@@ -16,7 +17,7 @@ class ChangeLogDiffFactory(
    private val logger = KotlinLogging.logger {}
 
    companion object {
-      val DEFAULT_EXCLUDED_NAMESPACES = listOf("lang.taxi", "com.orbitalhq", "taxi.stdlib")
+      val DEFAULT_EXCLUDED_NAMESPACES = listOf("lang.taxi", VyneTypes.NAMESPACE, "taxi.stdlib")
    }
 
    fun buildDiffs(oldSchema: Schema, schema: Schema): List<ChangeLogDiffEntry> {

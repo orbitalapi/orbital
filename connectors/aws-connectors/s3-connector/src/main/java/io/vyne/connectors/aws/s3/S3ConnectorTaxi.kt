@@ -1,9 +1,9 @@
 package com.orbitalhq.connectors.aws.s3
 
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.annotations.AnnotationWrapper
 import com.orbitalhq.connections.ConnectionUsageMetadataRegistry
 import com.orbitalhq.connections.ConnectionUsageRegistration
-import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.fqn
 import lang.taxi.TaxiDocument
@@ -31,10 +31,10 @@ namespace  ${Annotations.namespace} {
 }
 """
    object Annotations {
-      internal const val namespace = "com.orbitalhq.aws.s3"
+      internal val namespace = "${VyneTypes.NAMESPACE}.aws.s3"
       data class S3Service(val connectionName: String) : AnnotationWrapper {
          companion object {
-            const val NAME = "$namespace.S3Service"
+             val NAME = "$namespace.S3Service"
             fun from(annotation: Annotation): S3Service {
                require(annotation.qualifiedName == NAME) { "Annotation name should be $NAME" }
                return S3Service(
@@ -56,7 +56,7 @@ namespace  ${Annotations.namespace} {
       data class S3Operation(val bucket: String) : AnnotationWrapper {
          companion object {
             const val bucketMetadataName = "bucket"
-            const val NAME = "$namespace.S3Operation"
+            val NAME = "$namespace.S3Operation"
             fun from(annotation: Annotation): S3Operation {
                return from(annotation.parameters)
             }

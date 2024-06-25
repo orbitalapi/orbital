@@ -4,6 +4,7 @@ import com.google.common.collect.Sets
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schema.publisher.loaders.*
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoader
@@ -187,7 +188,7 @@ class SchemaEditorService(
       typeName: String, request: UpdateDataOwnerRequest
    ): Mono<AddChangesToChangesetResponse> {
       val name = QualifiedName.from(typeName)
-      val annotation = """@com.orbitalhq.catalog.DataOwner( id = ${request.id.quoted()} , name = ${request.name.quoted()} )"""
+      val annotation = """@${VyneTypes.NAMESPACE}.catalog.DataOwner( id = ${request.id.quoted()} , name = ${request.name.quoted()} )"""
       return generateAnnotationExtension(request.changeset, name, annotation, FileContentType.DataOwner)
    }
 

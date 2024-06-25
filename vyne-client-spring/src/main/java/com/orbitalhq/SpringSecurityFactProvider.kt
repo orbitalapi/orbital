@@ -21,6 +21,6 @@ class SpringSecurityFactProvider(private val factConverter: AuthenticationFactCo
 class SpringUserDetailsFactConverter : AuthenticationFactConverter {
    override fun getUserFact(authentication: Authentication): Fact {
       val user = authentication.principal as User
-      return Fact("com.orbitalhq.Username", user.username, FactSets.CALLER)
+      return Fact("${VyneTypes.NAMESPACE}.Username", user.username, FactSets.CALLER)
    }
 }
