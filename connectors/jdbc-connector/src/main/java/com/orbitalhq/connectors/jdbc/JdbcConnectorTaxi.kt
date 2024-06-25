@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.jdbc
 
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.annotations.AnnotationWrapper
 import com.orbitalhq.connections.ConnectionUsageMetadataRegistry
 import com.orbitalhq.connections.ConnectionUsageRegistration
@@ -18,8 +19,8 @@ object JdbcConnectorTaxi {
       )
    }
    object Annotations {
-      internal const val namespace = "com.orbitalhq.jdbc"
-      const val Column = "$namespace.Column"
+      internal val namespace = "${VyneTypes.NAMESPACE}.jdbc"
+      val Column = "$namespace.Column"
 
       val UpsertOperationAnnotationName = "$namespace.UpsertOperation".fqn()
       val InsertOperationAnnotationName = "$namespace.InsertOperation".fqn()
@@ -29,7 +30,7 @@ object JdbcConnectorTaxi {
 
       data class DatabaseOperation(val connectionName: String) : AnnotationWrapper {
          companion object {
-            const val NAME = "$namespace.DatabaseService"
+            val NAME = "$namespace.DatabaseService"
             fun from(annotation: Annotation): DatabaseOperation {
                require(annotation.qualifiedName == NAME) { "Annotation name should be $NAME" }
                return DatabaseOperation(
@@ -50,7 +51,7 @@ object JdbcConnectorTaxi {
 
       data class Table(val schemaName: String, val tableName: String, val connectionName: String) : AnnotationWrapper {
          companion object {
-            const val NAME = "$namespace.Table"
+            val NAME = "${VyneTypes.NAMESPACE}.jdbc.Table"
             fun from(annotation: Annotation): Table {
                require(annotation.qualifiedName == NAME) { "Annotation name should be $NAME" }
                return Table(

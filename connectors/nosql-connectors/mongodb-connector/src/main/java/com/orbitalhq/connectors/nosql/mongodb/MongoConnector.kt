@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.annotations.AnnotationWrapper
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnector.Annotations.BatchDurationAttribute
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnector.Annotations.BatchSizeAttribute
@@ -10,7 +11,7 @@ import lang.taxi.types.QualifiedName
 
 object MongoConnector {
    object Annotations {
-      internal const val namespace = "com.orbitalhq.mongo"
+      internal val namespace = "${VyneTypes.NAMESPACE}.mongo"
       val UpsertOperationAnnotationName = "${namespace}.UpsertOperation".fqn()
       const val BatchSizeAttribute = "BatchSize"
       const val BatchDurationAttribute = "BatchDuration"
@@ -19,7 +20,7 @@ object MongoConnector {
       val ObjectIdAnnotationName = "${namespace}.ObjectId".fqn()
       data class MongoOperation(val connectionName: String) : AnnotationWrapper {
          companion object {
-            const val NAME = "$namespace.MongoService"
+            val NAME = "$namespace.MongoService"
 
 
             fun from(annotation: Annotation): MongoOperation {
@@ -42,7 +43,7 @@ object MongoConnector {
 
       data class Collection(val collectionName: String, val connectionName: String) : AnnotationWrapper {
          companion object {
-            const val NAME = "$namespace.Collection"
+            val NAME = "$namespace.Collection"
             fun from(annotation: Annotation): Collection {
                require(annotation.qualifiedName == NAME) { "Annotation name should be $NAME" }
                return Collection(

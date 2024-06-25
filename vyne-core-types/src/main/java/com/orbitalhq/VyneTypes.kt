@@ -3,7 +3,11 @@ package com.orbitalhq
 import com.orbitalhq.schemas.fqn
 
 object VyneTypes {
-   const val NAMESPACE = "com.orbitalhq"
+   /**
+    * Defined as 'var' rather than 'val' or 'const' is to have the ability to customise the root namespace for 'built-in' Orbital Types.
+    * Though not ideal, this is the easiest / quickest way to achieve it.
+    */
+   var NAMESPACE = "com.orbitalhq"
 }
 
 object UserType {

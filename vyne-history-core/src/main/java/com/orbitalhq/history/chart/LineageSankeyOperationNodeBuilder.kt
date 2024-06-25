@@ -1,5 +1,6 @@
 package com.orbitalhq.history.chart
 
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.query.connectors.CacheNames
@@ -8,7 +9,13 @@ import com.orbitalhq.query.history.DatabaseNode
 import com.orbitalhq.query.history.HttpOperationNode
 import com.orbitalhq.query.history.KafkaOperationNode
 import com.orbitalhq.query.history.SankeyOperationNodeDetails
-import com.orbitalhq.schemas.*
+import com.orbitalhq.schemas.OperationNames
+import com.orbitalhq.schemas.QualifiedName
+import com.orbitalhq.schemas.QueryOperation
+import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.Service
+import com.orbitalhq.schemas.fqn
 import lang.taxi.annotations.HttpOperation
 import mu.KotlinLogging
 
@@ -18,7 +25,7 @@ import mu.KotlinLogging
  */
 class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
    private val logger = KotlinLogging.logger {}
-   private val jdbcTableAnnotationName = "com.orbitalhq.jdbc.Table".fqn()
+   private val jdbcTableAnnotationName = "${VyneTypes.NAMESPACE}.jdbc.Table".fqn()
 
    fun buildOperationNode(operationResult: OperationResult): SankeyOperationNodeDetails? {
       if (isCachedOperation(operationResult.remoteCall.operationQualifiedName)) {
@@ -60,7 +67,7 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
       operationResult: OperationResult
    ): SankeyOperationNodeDetails? {
       val connectionName =
-         service.firstMetadata("com.orbitalhq.jdbc.DatabaseService")?.params?.get("connection") as? String?
+         service.firstMetadata("${VyneTypes.NAMESPACE}.jdbc.DatabaseService")?.params?.get("connection") as? String?
             ?: "Unknown Db Connection"
       val memberType = operation.returnType.collectionType ?: operation.returnType
 
@@ -82,10 +89,10 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
    private fun isDatabaseQuery(service: Service, operation: RemoteOperation): Boolean {
       // Note: Not using static constants here, as don't want a compile time dependency between the JDBC Connector
       // and History Core.
-      return service.hasMetadata("com.orbitalhq.jdbc.DatabaseService") && operation is QueryOperation
+      return service.hasMetadata("${VyneTypes.NAMESPACE}.jdbc.DatabaseService") && operation is QueryOperation
    }
    private fun isHazelcastOperation(service: Service, operation: RemoteOperation):Boolean {
-      return service.hasMetadata("com.orbitalhq.hazelcast.HazelcastService")
+      return service.hasMetadata("${VyneTypes.NAMESPACE}.hazelcast.HazelcastService")
    }
 
    private fun buildKafkaTopicNode(
@@ -93,15 +100,15 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
       operation: RemoteOperation,
       operationResult: OperationResult
    ): SankeyOperationNodeDetails? {
-      val metadata = service.firstMetadata("com.orbitalhq.kafka.KafkaService")
+      val metadata = service.firstMetadata("${VyneTypes.NAMESPACE}.kafka.KafkaService")
       val connectionName = metadata.params.get("connectionName") as String?
       if (connectionName == null) {
-         logger.warn { "Didn't receive the expected params in the Kafka service metadata.  Expected an annotation named com.orbitalhq.kafka.KafkaService, with a param connectionName" }
+         logger.warn { "Didn't receive the expected params in the Kafka service metadata.  Expected an annotation named ${VyneTypes.NAMESPACE}.kafka.KafkaService, with a param connectionName" }
          return null
       }
-      val topic = operation.firstMetadata("com.orbitalhq.kafka.KafkaOperation").params.get("topic") as String?
+      val topic = operation.firstMetadata("${VyneTypes.NAMESPACE}.kafka.KafkaOperation").params.get("topic") as String?
       if (topic == null) {
-         logger.warn { "Didn't receive the expected params in the Kafka operation metadata.  Expected an annotation named com.orbitalhq.kafka.KafkaOperation, with a param topic" }
+         logger.warn { "Didn't receive the expected params in the Kafka operation metadata.  Expected an annotation named ${VyneTypes.NAMESPACE}.kafka.KafkaOperation, with a param topic" }
          return null
       }
       return KafkaOperationNode(
@@ -110,7 +117,7 @@ class LineageSankeyOperationNodeBuilder(private val schema: Schema) {
    }
 
    private fun isKafkaTopic(service: Service, operation: RemoteOperation): Boolean {
-      return operation.hasMetadata("com.orbitalhq.kafka.KafkaOperation")
+      return operation.hasMetadata("${VyneTypes.NAMESPACE}.kafka.KafkaOperation")
    }
 
    private fun isHttpApi(service: Service, operation: RemoteOperation): Boolean {

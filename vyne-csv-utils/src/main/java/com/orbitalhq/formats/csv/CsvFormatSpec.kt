@@ -1,6 +1,7 @@
 package com.orbitalhq.formats.csv
 
 import com.google.common.net.MediaType
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.annotations.AnnotationWrapper
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.schemas.Metadata
@@ -11,7 +12,7 @@ import lang.taxi.types.Annotation
 import java.io.Serializable
 
 object CsvAnnotationSpec {
-   val NAME = "com.orbitalhq.formats.Csv".fqn()
+   val NAME = "${VyneTypes.NAMESPACE}.formats.Csv".fqn()
    val taxi = """
       namespace ${NAME.namespace} {
 

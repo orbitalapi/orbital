@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.kafka
 
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.annotations.AnnotationWrapper
 import com.orbitalhq.connections.ConnectionUsageMetadataRegistry
 import com.orbitalhq.connections.ConnectionUsageRegistration
@@ -15,13 +16,13 @@ object KafkaConnectorTaxi {
       )
    }
    object Annotations {
-      internal const val namespace = "com.orbitalhq.kafka"
+      internal val namespace = "${VyneTypes.NAMESPACE}.kafka"
 
       val imports: String = listOf(KafkaService.NAME, KafkaOperation.NAME).joinToString("\n") { "import $it" }
 
       data class KafkaService(val connectionName: String): AnnotationWrapper {
          companion object {
-            const val NAME = "$namespace.KafkaService"
+             val NAME = "$namespace.KafkaService"
          }
 
          val parameterMap = mapOf("connectionName" to connectionName)
@@ -40,13 +41,13 @@ object KafkaConnectorTaxi {
          }
       }
       object KafkaMessageKey {
-         const val NAME = "$namespace.KafkaMessageKey"
+          val NAME = "$namespace.KafkaMessageKey"
       }
       object KafkaHeader {
-         const val NAME = "$namespace.KafkaHeader"
+          val NAME = "$namespace.KafkaHeader"
       }
       object KafkaMessageMetadata {
-         const val NAME = "$namespace.KafkaMessageMetadata"
+          val NAME = "$namespace.KafkaMessageMetadata"
       }
       data class KafkaOperation(val topic: String, val offset: Offset) : AnnotationWrapper {
          enum class Offset {
@@ -56,7 +57,7 @@ object KafkaConnectorTaxi {
          }
 
          companion object {
-            const val NAME = "$namespace.KafkaOperation"
+             val NAME = "$namespace.KafkaOperation"
             fun from(annotation: Annotation): KafkaOperation {
                return from(annotation.parameters)
             }

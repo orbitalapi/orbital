@@ -1,12 +1,13 @@
 package com.orbitalhq.annotations.codegen
 
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.annotations.AnnotationWrapper
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
 
 class Generated : AnnotationWrapper {
    override fun asAnnotation(schema: TaxiDocument): Annotation {
-      return Annotation(name = "com.orbitalhq.codegen.Generated")
+      return Annotation(name = "${VyneTypes.NAMESPACE}.codegen.Generated")
    }
 }
 
@@ -17,6 +18,6 @@ class Generated : AnnotationWrapper {
  */
 object SingleTypeInFile : AnnotationWrapper {
    override fun asAnnotation(schema:TaxiDocument): Annotation {
-      return Annotation(name = "com.orbitalhq.codegen.SingleTypeInFile")
+      return Annotation(name = "${VyneTypes.NAMESPACE}.codegen.SingleTypeInFile")
    }
 }

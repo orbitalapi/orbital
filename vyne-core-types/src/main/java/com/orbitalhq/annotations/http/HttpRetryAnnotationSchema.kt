@@ -1,12 +1,13 @@
 package com.orbitalhq.annotations.http
 
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.schemas.fqn
 
 object HttpRetryAnnotationSchema {
-   const val namespace = "com.orbitalhq.http.operations"
-   const val NAME = "$namespace.HttpRetry"
-   const val FIXED_RETRY_POLICY_NAME = "$namespace.HttpFixedRetryPolicy"
-   const val EXPO_RETRY_POLICY_NAME = "$namespace.HttpExponentialRetryPolicy"
+   val namespace = "${VyneTypes.NAMESPACE}.http.operations"
+   val NAME = "$namespace.HttpRetry"
+   val FIXED_RETRY_POLICY_NAME = "$namespace.HttpFixedRetryPolicy"
+   val EXPO_RETRY_POLICY_NAME = "$namespace.HttpExponentialRetryPolicy"
 
    val imports: String =  listOf(NAME, FIXED_RETRY_POLICY_NAME, EXPO_RETRY_POLICY_NAME).joinToString("\n") { "import $it" }
 

@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.azure.blob
 
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.annotations.AnnotationWrapper
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.fqn
@@ -8,7 +9,7 @@ import lang.taxi.types.Annotation
 
 object AzureStoreConnectionTaxi {
    const val AzureStoreBlobName = "AzureStoreBlob"
-   val AzureStoreBlobTypeFullyQualifiedName = "${Annotations.namespace}.$AzureStoreBlobName".fqn()
+   val AzureStoreBlobTypeFullyQualifiedName = "${VyneTypes.NAMESPACE}.azure.store.$AzureStoreBlobName".fqn()
    val schema = """
 namespace  ${Annotations.namespace} {
    annotation ${Annotations.AzureStoreService.NAME.fqn().name} {
@@ -23,11 +24,13 @@ namespace  ${Annotations.namespace} {
 }
 """
    object Annotations {
-      internal const val namespace = "com.orbitalhq.azure.store"
-      val imports: String = listOf(StoreOperation.NAME, AzureStoreService.NAME, AzureStoreBlobTypeFullyQualifiedName).joinToString("\n") { "import $it" }
+      internal  val namespace = "${VyneTypes.NAMESPACE}.azure.store"
+      val imports: String = listOf(StoreOperation.NAME, AzureStoreService.NAME, AzureStoreBlobTypeFullyQualifiedName).joinToString("\n") {
+         "import $it"
+      }
       data class AzureStoreService(val connectionName: String) : AnnotationWrapper {
          companion object {
-            const val NAME = "$namespace.BlobService"
+            val NAME = "$namespace.BlobService"
             fun from(annotation: Annotation): AzureStoreService {
                require(annotation.qualifiedName == NAME) { "Annotation name should be $NAME" }
                return AzureStoreService(
@@ -49,7 +52,7 @@ namespace  ${Annotations.namespace} {
       data class StoreOperation(val container: String) : AnnotationWrapper {
          companion object {
             const val containerMetadataName = "container"
-            const val NAME = "$namespace.AzureStoreOperation"
+            val NAME = "$namespace.AzureStoreOperation"
             fun from(annotation: Annotation): StoreOperation {
                return from(annotation.parameters)
             }

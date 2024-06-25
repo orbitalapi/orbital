@@ -1,7 +1,7 @@
 package com.orbitalhq.pipelines.jet
 
 import com.orbitalhq.PackageIdentifier
-import org.springframework.boot.context.properties.ConfigurationProperties
+import com.orbitalhq.VyneTypes
 import java.nio.file.Path
 
 //@ConstructorBinding
@@ -13,6 +13,6 @@ data class PipelineConfig(
        * Package id for the config we load at the system level (not for loading from config
        * sitting inside packages)
        */
-      val PACKAGE_IDENTIFIER = PackageIdentifier.fromId("com.orbitalhq.config/pipelines/1.0.0")
+      val PACKAGE_IDENTIFIER = PackageIdentifier.fromId("${VyneTypes.NAMESPACE}.config/pipelines/1.0.0")
    }
 }

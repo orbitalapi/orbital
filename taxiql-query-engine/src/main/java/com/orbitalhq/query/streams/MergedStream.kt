@@ -1,5 +1,6 @@
 package com.orbitalhq.query.streams
 
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.fqn
 import lang.taxi.types.StreamType
@@ -15,7 +16,7 @@ import lang.taxi.types.StreamType
  * Currently using this.
  */
 object MergedStream {
-   const val TYPE_NAME = "com.orbitalhq.streaming.MergedStream"
+   val TYPE_NAME = "${VyneTypes.NAMESPACE}.streaming.MergedStream"
    fun buildMergedStreamType(types:List<Type>) : Type{
       val parameters = types.joinToString(",") { it.typeParameters[0].paramaterizedName }
       val qualifiedName = "$TYPE_NAME<$parameters>".fqn()

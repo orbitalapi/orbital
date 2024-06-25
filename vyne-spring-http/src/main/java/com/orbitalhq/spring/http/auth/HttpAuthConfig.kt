@@ -1,9 +1,8 @@
 package com.orbitalhq.spring.http.auth
 
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.auth.schemes.AuthSchemeProvider
-import com.orbitalhq.auth.schemes.OAuth2
-import com.orbitalhq.auth.schemes.getAllOfType
 import com.orbitalhq.auth.tokens.AuthTokenRepository
 import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
@@ -12,21 +11,16 @@ import com.orbitalhq.spring.config.EnvVariablesConfig
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.spring.http.auth.schemes.HoconAuthTokensRepository
 import com.orbitalhq.spring.http.auth.schemes.HoconOAuthClientRegistrationRepository
-import com.orbitalhq.spring.http.auth.schemes.createAuthorizedClient
 import mu.KotlinLogging
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
-import org.springframework.security.authentication.AnonymousAuthenticationToken
-import org.springframework.security.core.authority.AuthorityUtils
 import org.springframework.security.oauth2.client.AuthorizedClientServiceReactiveOAuth2AuthorizedClientManager
-import org.springframework.security.oauth2.client.InMemoryReactiveOAuth2AuthorizedClientService
 import org.springframework.security.oauth2.client.ReactiveOAuth2AuthorizedClientService
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.time.Instant
 
 //@ConstructorBinding
 @ConfigurationProperties(prefix = "vyne.auth")
@@ -34,7 +28,7 @@ data class VyneHttpAuthConfig(
    val configFile: Path = Paths.get("auth.conf")
 ) {
    companion object {
-      val PACKAGE_IDENTIFIER = PackageIdentifier.fromId("com.orbitalhq.config/auth/1.0.0")
+      val PACKAGE_IDENTIFIER = PackageIdentifier.fromId("${VyneTypes.NAMESPACE}.config/auth/1.0.0")
    }
 
 }
