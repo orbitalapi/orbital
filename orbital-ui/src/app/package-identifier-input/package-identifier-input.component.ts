@@ -1,58 +1,55 @@
 import {Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
 import {CovalentCommonModule} from "@covalent/core/common";
 import {NgIf} from "@angular/common";
-import {TuiGroupModule, TuiNotificationModule} from "@taiga-ui/core";
-import {TuiInputModule} from "@taiga-ui/kit";
+import {TuiErrorModule, TuiGroupModule} from '@taiga-ui/core';
+import {TuiInputModule} from '@taiga-ui/kit';
 import {PackageIdentifier} from "../package-viewer/packages.service";
-import {NgControl, NgModel} from "@angular/forms";
-import {ProjectSourceConfigModule} from "../project-import/project-source-config/project-source-config.module";
+import {ControlContainer, NgControl, NgModel, NgModelGroup, ReactiveFormsModule} from '@angular/forms';
 import {ValidIdentifierDirective} from "../project-import/project-source-config/valid-identifier.directive";
 import {SemverValidatorDirective} from "../project-import/project-source-config/semver-validator.directive";
 
 @Component({
   selector: 'app-package-identifier-input',
+  viewProviders: [{provide: ControlContainer, useExisting: NgModelGroup}],
   standalone: true,
   imports: [
     CovalentCommonModule,
     NgIf,
     TuiGroupModule,
     TuiInputModule,
-    TuiNotificationModule,
     ValidIdentifierDirective,
     SemverValidatorDirective,
+    TuiErrorModule,
+    ReactiveFormsModule,
   ],
   template: `
-    <div tuiGroup>
+    <div tuiGroup [collapsed]="true">
       <tui-input [(ngModel)]="packageIdentifier.organisation" required name="openApiPackageOrg"
                  [readOnly]="!editable"
                  (ngModelChange)="updateDefaultNamespace()" validIdentifier #openApiPackageOrg="ngModel">
         Organisation
+        <span class="tui-required"></span>
       </tui-input>
+
       <tui-input [(ngModel)]="packageIdentifier.name" required name="openApiPackageName"
                  [readOnly]="!editable"
                  (ngModelChange)="updateDefaultNamespace()" validIdentifier #openApiPackageName="ngModel">
         Name
+        <span class="tui-required"></span>
       </tui-input>
       <tui-input [(ngModel)]="packageIdentifier.version" required name="openApiPackageVersion" semver
                  [readOnly]="!editable"
                  #openApiPackageVersion="ngModel">
         Version
+        <span class="tui-required"></span>
       </tui-input>
     </div>
-    <tui-notification class="validation-error"
-                      *ngIf="openApiPackageOrg$ && openApiPackageOrg$.invalid && (openApiPackageOrg$.dirty || openApiPackageOrg$.touched)"
-                      status="error">Organisation names must start with a letter, and only contain letters,
-      underscores, hyphens or numbers
-    </tui-notification>
-    <tui-notification class="validation-error"
-                      *ngIf="openApiPackageOrg$ && openApiPackageName$.invalid && (openApiPackageName$.dirty || openApiPackageName$.touched)"
-                      status="error">Package names must start with a letter, and only contain letters, underscores,
-      hyphens or numbers
-    </tui-notification>
-    <tui-notification class="validation-error"
-                      *ngIf="openApiPackageOrg$ && openApiPackageVersion$.invalid && (openApiPackageVersion$.dirty || openApiPackageVersion$.touched)"
-                      status="error">Versions need to follow the convention of 0.0.0 (eg., 1.0.3)
-    </tui-notification>
+    <tui-error [error]="openApiPackageOrg$ && openApiPackageOrg$.invalid && (openApiPackageOrg$.dirty || openApiPackageOrg$.touched)
+      ? 'Organisation names must start with a letter, and only contain letters, underscores, hyphens, dots or numbers' : null"></tui-error>
+    <tui-error [error]="openApiPackageOrg$ && openApiPackageName$.invalid && (openApiPackageName$.dirty || openApiPackageName$.touched)
+      ? 'Package names must start with a letter, and only contain letters, underscores, hyphens or numbers' : null"></tui-error>
+    <tui-error [error]="openApiPackageOrg$ && openApiPackageVersion$.invalid && (openApiPackageVersion$.dirty || openApiPackageVersion$.touched)
+      ? 'Versions need to follow the convention of 0.0.0 (eg., 1.0.3)' : null"></tui-error>
   `,
   styleUrl: './package-identifier-input.component.scss'
 })
@@ -82,6 +79,7 @@ export class PackageIdentifierInputComponent {
 
   @ViewChild('openApiPackageName')
   openApiPackageName$: NgControl
+
   @ViewChild('openApiPackageVersion')
   openApiPackageVersion$: NgControl
 }

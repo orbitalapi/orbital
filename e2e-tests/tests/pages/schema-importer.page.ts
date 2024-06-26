@@ -2,6 +2,8 @@ import { expect, Page } from '@playwright/test';
 import { clickButton, fillValue, openAccordion, selectTreeItem, waitFor } from '../helpers/ui';
 
 export class SchemaImporterPage {
+   // TODO: still using old style of construction, see QueryEditorPage for
+   //       approach that allows authentication to work correctly
    constructor(private page: Page) {
    }
 

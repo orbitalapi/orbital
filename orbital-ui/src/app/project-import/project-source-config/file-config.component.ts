@@ -57,12 +57,14 @@ import {FileRepositoryTestResponse, SchemaImporterService} from 'src/app/project
                                                [projectType]="'file'"
                                                [editable]="editable"
                                                [(path)]='fileSystemPackageConfig.path'
+                                               ngModelGroup="openApiForm"
                   ></app-open-api-package-config>
                   <app-avro-package-config
                           *ngIf="fileSystemPackageConfig.loader.packageType === 'Avro'"
                           [packageSpec]="avroPackageSpec"
                           [editable]="editable"
                           [(path)]='fileSystemPackageConfig.path'
+                          ngModelGroup="avroForm"
                   ></app-avro-package-config>
                   <ng-container *ngIf="fileSystemPackageConfig.loader.packageType === 'Taxi'">
                       <div class='form-row'>
