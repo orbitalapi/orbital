@@ -1,7 +1,12 @@
 import {Injectable} from '@angular/core';
 import {VyneServicesModule} from '../services/vyne-services.module';
 import {HttpClient} from '@angular/common/http';
-import {FileSystemPackageSpec, GitRepositoryConfig} from './project-import.models';
+import {
+  FileSystemPackageSpec,
+  GitHostingProvider,
+  GitRepositoryConfig,
+  PackageLoaderSpec
+} from './project-import.models';
 import {ConvertSchemaEvent} from '../data-source-import/data-source-import.models';
 import {environment} from '../../environments/environment';
 import {Observable} from 'rxjs/internal/Observable';
@@ -68,17 +73,17 @@ export class SchemaImporterService {
 
   }
 
-  addNewGitRepository(request: GitRepositoryConfig): Observable<any> {
+  addNewGitRepository(request: GitRepositoryConfig): Observable<GitProjectStoreChangeRequest> {
     if (this.appConfig.featureToggles.workspacesEnabled) {
 
     } else {
-      return this.httpClient.post<any>(`${environment.serverUrl}/api/repositories/git`, request)
+      return this.httpClient.post<GitProjectStoreChangeRequest>(`${environment.serverUrl}/api/repositories/git`, request)
     }
 
   }
 
-  addNewFileRepository(request: FileSystemPackageSpec): Observable<any> {
-    return this.httpClient.post<any>(`${environment.serverUrl}/api/repositories/file`, request)
+  addNewFileRepository(request: FileSystemPackageSpec): Observable<CreateFileProjectStoreRequest> {
+    return this.httpClient.post<CreateFileProjectStoreRequest>(`${environment.serverUrl}/api/repositories/file`, request)
   }
 
 
@@ -234,6 +239,28 @@ export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE'
 export interface SavedQueryWithSource {
   savedQuery: SavedQuery
   sourceFile: VersionedSource
+}
+
+export type GitProjectStoreChangeRequest = {
+  name: string,
+  uri: string,
+  branch: string,
+  path: string,
+  pullRequestConfig: GitUpdateFlowConfig,
+  isEditable: boolean,
+  loader: PackageLoaderSpec
+}
+
+export type GitUpdateFlowConfig = {
+  branchPrefix: string,
+  hostingProvider: GitHostingProvider
+}
+
+export type CreateFileProjectStoreRequest = {
+  path: string,
+  isEditable: boolean,
+  loader: PackageLoaderSpec,
+  newProjectIdentifier: PackageIdentifier
 }
 
 

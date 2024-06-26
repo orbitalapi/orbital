@@ -2,11 +2,15 @@ import { Page } from '@playwright/test';
 import { clickButton, fillValue, openDropdown, selectDropdownOption, selectOnAutoComplete, selectTab } from '../helpers/ui';
 
 export class AddDataSourcePage {
+   // TODO: still using old style of construction, see QueryEditorPage for
+   //       approach that allows authentication to work correctly
    constructor(private page: Page) {
    }
 
    async goto(): Promise<void> {
-      await this.page.goto('/project-import');
+      await this.page.goto('/')
+      await this.page.waitForResponse('https://signin.orbitalhq.dev/oauth2/token')
+      await this.page.goto('/projects/project-import');
    }
 
    async selectTab(text: string): Promise<void> {

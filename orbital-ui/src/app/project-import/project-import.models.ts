@@ -24,7 +24,7 @@ export class FileSystemPackageSpec {
 }
 export type LoadablePackageType = 'OpenApi' | 'Taxi' | 'Protobuf' | 'JsonSchema' | 'Avro';
 
-interface PackageLoaderSpec {
+export interface PackageLoaderSpec {
   packageType: LoadablePackageType;
 }
 

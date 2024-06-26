@@ -1,20 +1,23 @@
-import {Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
+import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {OpenApiPackageLoaderSpec} from 'src/app/project-import/project-import.models';
-import {NgControl, NgModel} from '@angular/forms';
+import {ControlContainer, NgModelGroup} from '@angular/forms';
 import {UiCustomisations} from '../../../environments/ui-customisations';
+import {fileExtensionValidator} from './file-extension-validator';
 
 @Component({
   selector: 'app-open-api-package-config',
   template: `
     <div class="form-row">
       <div class="form-item-description-container">
-        <h3>Path to Open API spec</h3>
+        <h3>Path to Open API spec file</h3>
         <div class="help-text">{{pathLabel}}</div>
       </div>
       <div class="form-element">
-        <tui-input [ngModel]="path" (ngModelChange)="onPathChanged($event)" required name="path" [readOnly]="!editable">
+        <tui-input [ngModel]="path" (ngModelChange)="onPathChanged($event)" (focusout)="validatePath()" required name="path" [readOnly]="!editable">
           Path
+          <span class="tui-required"></span>
         </tui-input>
+        <tui-error [error]="errorMessage"/>
       </div>
     </div>
     <div class="form-row">
@@ -26,9 +29,12 @@ import {UiCustomisations} from '../../../environments/ui-customisations';
         </div>
       </div>
       <div class="form-element">
-        <app-package-identifier-input [(packageIdentifier)]="openApiPackageSpec.identifier"
-                                      [editable]="editable"
-                                      (defaultNamespaceChange)="openApiPackageSpec.defaultNamespace = $event"></app-package-identifier-input>
+        <app-package-identifier-input
+          ngModelGroup="packageIdFormGroup"
+          [(packageIdentifier)]="openApiPackageSpec.identifier"
+          [editable]="editable"
+          (defaultNamespaceChange)="openApiPackageSpec.defaultNamespace = $event"
+        ></app-package-identifier-input>
       </div>
     </div>
     <div class="form-row">
@@ -60,7 +66,8 @@ import {UiCustomisations} from '../../../environments/ui-customisations';
       </div>
     </div>
   `,
-  styleUrls: ['./open-api-package-config.component.scss']
+  styleUrls: ['./open-api-package-config.component.scss'],
+  viewProviders: [{provide: ControlContainer, useExisting: NgModelGroup}]
 })
 export class OpenApiPackageConfigComponent {
 
@@ -87,9 +94,21 @@ export class OpenApiPackageConfigComponent {
   @Output()
   pathChange = new EventEmitter<string>();
 
+  errorMessage: string;
+
   onPathChanged(value: string) {
     this.path = value;
     this.pathChange.emit(value);
+  }
+
+  validatePath(): void {
+    const validator = fileExtensionValidator(['json', 'yaml']);
+    const validationResult = validator({ value: this.path } as any);
+    if (validationResult && validationResult.invalidFileExtension) {
+      this.errorMessage = 'Invalid file extension. Only *.json and *.yaml files are allowed.';
+    } else {
+      this.errorMessage = null;
+    }
   }
 
   protected readonly UiCustomisations = UiCustomisations;

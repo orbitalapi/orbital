@@ -4,7 +4,7 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
 
 
 // Start with a letter, then any collection of letters or digits.
-const pattern = new RegExp('[a-zA-Z]\\w*');
+const pattern = new RegExp('^[a-zA-Z][a-zA-Z0-9._-]*$');
 
 @Directive({
   selector: '[validIdentifier]',

@@ -3,19 +3,19 @@ import {FileConfigComponent} from 'src/app/project-import/project-source-config/
 import {GitConfigComponent} from 'src/app/project-import/project-source-config/git-config.component';
 import {
   TuiCheckboxModule,
-  TuiComboBoxModule,
+  TuiComboBoxModule, TuiFieldErrorPipeModule,
   TuiInputFilesModule,
   TuiInputModule,
   TuiSelectModule
 } from '@taiga-ui/kit';
 import {
   TuiButtonModule,
-  TuiDataListModule,
-  TuiGroupModule,
+  TuiDataListModule, TuiErrorModule,
+  TuiGroupModule, TuiHintModule,
   TuiLoaderModule,
   TuiNotificationModule
 } from '@taiga-ui/core';
-import {FormsModule} from '@angular/forms';
+import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {CommonModule} from '@angular/common';
 import {OpenApiPackageConfigComponent} from './open-api-package-config.component';
 import {ValidIdentifierDirective} from './valid-identifier.directive';
@@ -41,10 +41,14 @@ import {PackageIdentifierInputComponent} from "../../package-identifier-input/pa
     AvroPackageConfigComponent,
     PackageIdentifierInputComponent,
     ValidIdentifierDirective,
-    SemverValidatorDirective
+    SemverValidatorDirective,
+    TuiHintModule,
+    TuiFieldErrorPipeModule,
+    ReactiveFormsModule,
+    TuiErrorModule
   ],
   exports: [FileConfigComponent, GitConfigComponent],
-  declarations: [FileConfigComponent, GitConfigComponent, OpenApiPackageConfigComponent,],
+  declarations: [FileConfigComponent, GitConfigComponent, OpenApiPackageConfigComponent],
   providers: [],
 })
 export class ProjectSourceConfigModule {

@@ -15,10 +15,8 @@ import {Message} from 'src/app/services/schema';
 
 export const projectTypeToString = (item: LoadablePackageType) => {
   switch (item) {
-    case 'Taxi':
-      return 'Taxi';
     case 'OpenApi':
-      return 'Open API'
+      return 'OpenAPI'
     default:
       return item;
   }
@@ -33,7 +31,6 @@ export const projectTypeToString = (item: LoadablePackageType) => {
           <p>Connect {{ UiCustomisations.productName }} to a Git repository to add individual OpenAPI schemas, or entire
               Taxi projects</p>
       </div>
-
       <form #gitForm="ngForm">
           <div class="form-container">
               <div class="form-body">
@@ -51,12 +48,14 @@ export const projectTypeToString = (item: LoadablePackageType) => {
                       </div>
                       <div class="form-element">
                           <div class="row">
-                              <tui-input [(ngModel)]="gitConfig.uri" (change)="updateRepositoryName($event)" required
-                                         name="gitUri"
-                                         [readOnly]="!editable"
-                                         class="flex-grow">
-                                  Repository URL
-                              </tui-input>
+                            <tui-input [(ngModel)]="gitConfig.uri" (change)="updateRepositoryName($event)" required
+                                       name="gitUri"
+                                       [readOnly]="!editable"
+                                       class="flex-grow"
+                            >
+                              Repository URL
+                              <span class="tui-required"></span>
+                            </tui-input>
                               <button tuiButton appearance="outline" size="m"
                                       [disabled]="testingConnection || !gitConfig.uri"
                                       [showLoader]="testingConnection" (click)="testConnection()">Test connection
@@ -80,7 +79,8 @@ export const projectTypeToString = (item: LoadablePackageType) => {
                       </div>
                       <div class="form-element">
                           <tui-input [(ngModel)]="gitConfig.name" name="repositoryName" required [readOnly]="!editable">
-                              Repository name
+                            Repository name
+                            <span class="tui-required"></span>
                           </tui-input>
                       </div>
                   </div>
@@ -98,7 +98,8 @@ export const projectTypeToString = (item: LoadablePackageType) => {
                               <tui-combo-box
                                       [readOnly]="!editable || availableBranches === null"
                                       [(ngModel)]="gitConfig.branch" name="branch" required>
-                                  Branch
+                                Branch
+                                <span class="tui-required"></span>
                                   <tui-data-list *tuiDataList>
                                       <button tuiOption *ngFor="let branchName of availableBranches"
                                               [value]="branchName">{{ branchName }}
@@ -138,14 +139,17 @@ export const projectTypeToString = (item: LoadablePackageType) => {
                       <app-open-api-package-config [openApiPackageSpec]="openApiPackageSpec"
                                                    projectType="git"
                                                    [editable]="editable"
-                                                   [(path)]="gitConfig.path"></app-open-api-package-config>
-
+                                                   [(path)]="gitConfig.path"
+                                                   ngModelGroup="openApiForm"
+                      ></app-open-api-package-config>
                   </ng-container>
                   <ng-container *ngIf="gitConfig.loader.packageType === 'Avro'">
                       <app-avro-package-config [packageSpec]="avroPackageSpec"
                                                projectType="git"
                                                [editable]="editable"
-                                               [(path)]="gitConfig.path"></app-avro-package-config>
+                                               [(path)]="gitConfig.path"
+                                               ngModelGroup="avroForm"
+                      ></app-avro-package-config>
 
                   </ng-container>
 
@@ -164,7 +168,8 @@ export const projectTypeToString = (item: LoadablePackageType) => {
                                       <tui-input [(ngModel)]="gitConfig.path" class="flex-grow" name="pathToTaxi"
                                                  [readOnly]="!editable"
                                                  required>
-                                          Path
+                                        Path
+                                        <span class="tui-required"></span>
                                       </tui-input>
                                       <p class="help-text" style="width: 100%;">We'll look for a Taxi config file at
                                           <code>{{ expectedTaxiConfLocation }}</code></p>
@@ -254,8 +259,8 @@ export class GitConfigComponent {
     if (isNullOrUndefined(this.gitConfig.path)) {
       return ''
     } else {
-      const seperator = this.gitConfig.path.endsWith('/') ? '' : '/'
-      return this.gitConfig.path + seperator + 'taxi.conf'
+      const separator = this.gitConfig.path.endsWith('/') ? '' : '/'
+      return this.gitConfig.path + separator + 'taxi.conf'
     }
   }
 

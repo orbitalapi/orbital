@@ -2,6 +2,8 @@ node_modules/
 /test-results/
 /playwright-report/
 /playwright/.cache/
+/playwright/.auth/
 demos/*
 !demos/e2e.docker-compose.yml
 local-development/*
+.env

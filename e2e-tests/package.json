@@ -3,12 +3,16 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {},
+  "scripts": {
+    "start-ui": "npx playwright test --ui"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "1.26.1",
-    "wait-on": "6.0.1"
+    "@playwright/test": "1.44.1",
+    "@types/node": "^20.14.2",
+    "dotenv": "^16.4.5",
+    "wait-on": "^7.2.0"
   }
 }

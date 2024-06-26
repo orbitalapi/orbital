@@ -5,7 +5,9 @@ import { devices } from '@playwright/test';
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
  */
-// require('dotenv').config();
+
+import * as dotenv from 'dotenv';
+dotenv.config()
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -45,56 +47,72 @@ const config: PlaywrightTestConfig = {
 
    /* Configure projects for major browsers */
    projects: [
+      // Setup project
+      { name: 'setup', testMatch: /.*\.setup\.ts/ },
       {
          name: 'chromium',
+         dependencies: ['setup'],
          use: {
             ...devices['Desktop Chrome'],
+            storageState: 'playwright/.auth/user.json',
             launchOptions: {
                args: ["--start-fullscreen"], // starting the browser in full screen
-               slowMo: 1000, // a 1000 milliseconds pause before each operation. Useful for slow systems.
+               slowMo: 500, // a 500 milliseconds pause before each operation. Useful for slow systems.
             },
          }
       }
 
       // {
       //   name: 'firefox',
+      //   dependencies: ['setup'],
       //   use: {
       //     ...devices['Desktop Firefox'],
+      //     storageState: 'playwright/.auth/user.json',
       //   },
       // },
       //
       // {
       //   name: 'webkit',
+      //   dependencies: ['setup'],
       //   use: {
       //     ...devices['Desktop Safari'],
+      //     storageState: 'playwright/.auth/user.json',
       //   },
       // },
 
       /* Test against mobile viewports. */
       // {
       //   name: 'Mobile Chrome',
+      //   dependencies: ['setup'],
       //   use: {
       //     ...devices['Pixel 5'],
+      //     storageState: 'playwright/.auth/user.json',
       //   },
       // },
       // {
       //   name: 'Mobile Safari',
+      //   dependencies: ['setup'],
       //   use: {
       //     ...devices['iPhone 12'],
+      //     storageState: 'playwright/.auth/user.json',
       //   },
       // },
 
       /* Test against branded browsers. */
       // {
       //   name: 'Microsoft Edge',
+      //   dependencies: ['setup'],
       //   use: {
       //     channel: 'msedge',
+      //     storageState: 'playwright/.auth/user.json',
       //   },
       // },
       // {
       //   name: 'Google Chrome',
+      //   dependencies: ['setup'],
       //   use: {
       //     channel: 'chrome',
+      //     storageState: 'playwright/.auth/user.json',
       //   },
       // },
    ],
