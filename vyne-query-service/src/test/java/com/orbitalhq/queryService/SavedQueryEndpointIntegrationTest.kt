@@ -8,10 +8,12 @@ import com.nhaarman.mockito_kotlin.whenever
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.VyneProvider
+import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.WebSocketConfig
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.cockpit.core.pipelines.StreamResultsWebsocketPublisher
 import com.orbitalhq.copilot.OpenAiChatService
+import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.json.parseJson
@@ -89,6 +91,10 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
    @MockBean
    lateinit var streamSubscriptionManager: RSocketStreamResultSubscriptionManager
 
+   @MockBean
+   lateinit var configService: ConfigService
+   @MockBean
+   lateinit var licenseManager: LicenseManager
 
    @Autowired
    lateinit var queryRouteService: QueryRouteService

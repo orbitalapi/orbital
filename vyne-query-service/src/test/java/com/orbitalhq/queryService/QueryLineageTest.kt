@@ -3,10 +3,12 @@ package com.orbitalhq.queryService
 import com.jayway.awaitility.Awaitility
 import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.Vyne
+import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.history.db.*
+import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseKeyValuePair
 import com.orbitalhq.query.HistoryEventConsumerProvider
@@ -63,7 +65,13 @@ class QueryLineageTest : BaseQueryServiceTest() {
 
    @MockBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
-   
+
+   @MockBean
+   lateinit var configService: ConfigService
+   @MockBean
+   lateinit var licenseManager: LicenseManager
+
+
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 

@@ -3,6 +3,7 @@ package com.orbitalhq.queryService.security
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.orbitalhq.JWTClaimType
+import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.winterbe.expekt.should
 import io.kotest.matchers.booleans.shouldBeTrue
@@ -10,6 +11,7 @@ import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.copilot.OpenAiChatService
+import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.queryService.TestSchemaProvider
@@ -109,6 +111,12 @@ class VyneQueryOidcIntegrationTest {
 
    @MockBean
    lateinit var schemaEditorService: SchemaEditorService
+
+   @MockBean
+   lateinit var configService: ConfigService
+   @MockBean
+   lateinit var licenseManager: LicenseManager
+
 
    @Autowired
    private lateinit var restTemplate: TestRestTemplate

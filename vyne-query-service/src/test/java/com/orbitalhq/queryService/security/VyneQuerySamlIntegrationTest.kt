@@ -5,10 +5,12 @@ import com.gargoylesoftware.htmlunit.html.HtmlButton
 import com.gargoylesoftware.htmlunit.html.HtmlHeading1
 import com.gargoylesoftware.htmlunit.html.HtmlInput
 import com.gargoylesoftware.htmlunit.html.HtmlPage
+import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.cockpit.core.security.authorisation.VyneSamlConfig
 import com.orbitalhq.copilot.OpenAiChatService
+import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.queryService.TestSchemaProvider
@@ -254,6 +256,10 @@ class VyneQuerySamlIntegrationTest {
       "userWithoutAnyRoleSetup" to emptyList()
    )
 
+   @MockBean
+   lateinit var configService: ConfigService
+   @MockBean
+   lateinit var licenseManager: LicenseManager
 
    @MockBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher

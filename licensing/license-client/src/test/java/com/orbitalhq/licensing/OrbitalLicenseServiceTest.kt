@@ -12,15 +12,17 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import java.time.Instant
 
-class LicenseServiceTest {
-   lateinit var licenseService: LicenseService
+class OrbitalLicenseServiceTest {
+   lateinit var licenseService: OrbitalLicenseService
    lateinit var validator: LicenseValidator
 
    @BeforeEach
    fun setup() {
       this.validator = mock { }
-      licenseService = LicenseService(
-         License.unlicensed(Instant.now().plusSeconds(3600), "Test Server"),
+      licenseService = OrbitalLicenseService(
+         LicenseManager(
+            License.unlicensed(Instant.now().plusSeconds(3600), "Test Server"),
+         ),
          validator
       )
    }
