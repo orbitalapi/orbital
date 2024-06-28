@@ -1,8 +1,10 @@
 package com.orbitalhq.connectors.kafka
 
 import arrow.core.Either
+import arrow.core.right
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
+import com.orbitalhq.ErrorType
 import com.orbitalhq.connectors.StreamErrorMessage
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
@@ -26,10 +28,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
-import reactor.core.publisher.Mono
 import reactor.core.scheduler.Scheduler
 import reactor.core.scheduler.Schedulers
 import reactor.kafka.receiver.KafkaReceiver
@@ -120,11 +122,9 @@ class KafkaStreamManager(
             logger.info { "Subscriber detected for Kafka consumer on ${request.connectionName} / ${request.topicName}" }
          }.doOnError {
             logger.error (it){ "Error in kafka subscriber"  }
-         }.retryWhen(Retry.backoff(3, Duration.ofSeconds(2)).transientErrors(true))
-         .onErrorResume { e ->
-            Mono.empty();
          }
          .repeat()
+         .retryWhen(Retry.backoff(3, Duration.ofSeconds(2)).transientErrors(true))
          .doOnComplete {
             logger.info { "Flow Complete detected for Kafka consumer on ${request.connectionName} / ${request.topicName}" }
             evictConnection(request)
@@ -176,6 +176,15 @@ class KafkaStreamManager(
             typedInstanceOrError
          }
          .asFlow()
+         .catch {
+
+            logger.error(it.cause ?: it) { "Error in Kafka subscription for kafka connection ${request.connectionName}"  }
+            // see the error handling notes for SharedFlow:
+            // https://github.com/Kotlin/kotlinx.coroutines/issues/2034
+            val errorMessage = "Error in Kafka connection: ${request.connectionName}, details: ${it.cause?.message}"
+            this.emit(ErrorType.error(errorMessage, schemaProvider.schema, dataSource).right())
+         }
+
          // SharingStarted.WhileSubscribed() means that we unsubscribe when all subscribers have gone away.
          .shareIn(scope, SharingStarted.WhileSubscribed())
       return flow

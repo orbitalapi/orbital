@@ -16,7 +16,7 @@ class InMemoryKafkaConnectorRegistry(configs: List<KafkaConnectionConfiguration>
    override fun hasConnection(name: String): Boolean = connections.containsKey(name)
 
    override fun getConnection(name: String): KafkaConnectionConfiguration =
-      connections[name] ?: error("No JdbcConnection with name $name is registered")
+      connections[name] ?: error("No Kafka Connection with name $name is registered")
 
    override fun remove(targetPackage: PackageIdentifier, connectionName: String): DefaultResultWithMessage {
       connections.remove(connectionName)

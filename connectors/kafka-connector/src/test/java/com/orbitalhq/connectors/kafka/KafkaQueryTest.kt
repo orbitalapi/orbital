@@ -110,6 +110,41 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
          )
    }
 
+    @Test
+    fun `When Kafka subscription fails streaming query returns error`(): Unit = runBlocking {
+        val (vyne, kafkaStreamManager) = vyneWithKafkaInvoker(
+            """
+         ${KafkaConnectorTaxi.Annotations.imports}
+
+         import com.orbitalhq.kafka.KafkaMessageKey
+         import com.orbitalhq.kafka.KafkaHeader
+
+         model Movie {
+            @KafkaMessageKey
+            id : MovieId inherits String
+            title : Title inherits String
+         }
+         @KafkaService( connectionName = "invalidConnection" )
+         service MovieService {
+            @KafkaOperation( topic = "movies", offset = "earliest" )
+            stream streamMovieQuery:Stream<Movie>
+         }
+      """.trimIndent()
+        )
+
+        sendMessage("""{ "title" : "Star Wars" }""".toByteArray(), key = "sw-IV")
+
+        try {
+            val result = vyne.query(
+                """
+         stream { Movie }"""
+                    .trimIndent()
+            ) .results.take(1).toList() as List<TypedObject>
+        } catch (e: Exception ) {
+            e.message.should.equal("Error in Kafka connection: invalidConnection, details: Failed to construct kafka consumer")
+        }
+    }
+
    @Test
    fun `can read Kafka message metadata key into message payload`(): Unit = runBlocking {
       val (vyne, kafkaStreamManager) = vyneWithKafkaInvoker(
