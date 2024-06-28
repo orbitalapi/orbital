@@ -1,8 +1,8 @@
 package com.orbitalhq.licensing
 
 import arrow.core.Either
-import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.io.Resources
+import com.orbitalhq.spring.config.OrbitalOnly
 import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.Names
 import mu.KotlinLogging
@@ -15,11 +15,13 @@ import org.springframework.scheduling.annotation.EnableScheduling
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.time.Duration
 import kotlin.system.exitProcess
 
 @Configuration
 @EnableScheduling
 @ComponentScan
+@OrbitalOnly
 class LicenseConfig {
 
    private val logger = KotlinLogging.logger {}
@@ -31,14 +33,20 @@ class LicenseConfig {
       Paths.get("/opt/var/orbital/license/license.json"),
    )
 
+   companion object {
+      fun createLicenseValidator(fallbackDuration: Duration = LicenseValidator.defaultFallbackLicenseDuration):LicenseValidator  {
+         val publicKey = Resources.toByteArray(Resources.getResource("vyne-license-pub.der"))
+         val validator = LicenseValidator.forPublicKey(
+            publicKey,
+            fallbackLicenseDuration = fallbackDuration
+         )
+         return validator
+      }
+   }
+
    @Bean
-   fun licenseValidator(@Value("\${vyne.license.path:#{null}}") licensePath: Path?): LicenseValidator {
-      val publicKey = Resources.toByteArray(Resources.getResource("vyne-license-pub.der"))
-      val validator = LicenseValidator.forPublicKey(
-         publicKey,
-         fallbackLicenseDuration = LicenseValidator.defaultFallbackLicenseDuration
-      )
-      return validator
+   fun licenseValidator(): LicenseValidator {
+      return createLicenseValidator()
    }
 
    /**
@@ -59,6 +67,9 @@ class LicenseConfig {
       logger.info { license.toString() }
       return license
    }
+
+   @Bean
+   fun licenseManager(license: License):LicenseManager = LicenseManager(license)
 
    private fun loadLicenseJson(pathsToSearch: List<Path>, licenseValidator: LicenseValidator): License {
       logger.info { "Looking for license file" }

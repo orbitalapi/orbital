@@ -3,6 +3,7 @@ package com.orbitalhq.queryService.history.db
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.jayway.awaitility.Awaitility
 import com.jayway.awaitility.Duration
+import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.history.QueryAnalyticsConfig
@@ -11,6 +12,7 @@ import com.orbitalhq.history.rest.QueryHistoryService
 import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.http.emptyResponse
 import com.orbitalhq.http.response
+import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
@@ -96,6 +98,12 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
 
    @MockBean
    lateinit var packagesService: PackageService
+
+   @MockBean
+   lateinit var configService: ConfigService
+   @MockBean
+   lateinit var licenseManager: LicenseManager
+
 
    @MockBean
    lateinit var schemaEditorService: SchemaEditorService

@@ -4,11 +4,13 @@ import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import com.orbitalhq.VyneProvider
+import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.history.rest.QueryHistoryService
 import com.orbitalhq.formats.csv.CsvFormatSpec
+import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.ValueWithTypeName
@@ -101,6 +103,12 @@ class QueryHistoryLineageTest {
 
    @MockBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
+
+   @MockBean
+   lateinit var configService: ConfigService
+   @MockBean
+   lateinit var licenseManager: LicenseManager
+
 
    @Autowired
    lateinit var historyDbWriter: QueryHistoryDbWriter

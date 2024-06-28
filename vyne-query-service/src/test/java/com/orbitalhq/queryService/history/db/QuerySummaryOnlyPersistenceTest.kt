@@ -2,6 +2,7 @@ package com.orbitalhq.queryService.history.db
 
 import app.cash.turbine.testIn
 import com.jayway.awaitility.Awaitility
+import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.copilot.OpenAiChatService
 import com.winterbe.expekt.should
@@ -9,6 +10,7 @@ import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.history.db.QueryHistoryRecordRepository
 import com.orbitalhq.history.db.QueryResultRowRepository
 import com.orbitalhq.history.rest.QueryHistoryService
+import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.ValueWithTypeName
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
@@ -74,6 +76,10 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
+   @MockBean
+   lateinit var configService: ConfigService
+   @MockBean
+   lateinit var licenseManager: LicenseManager
 
    @MockBean
    lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider

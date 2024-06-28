@@ -1,6 +1,7 @@
 package com.orbitalhq.cockpit.core.telemetry
 
 import com.orbitalhq.licensing.License
+import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.spring.utils.versionOrDev
 import com.orbitalhq.telemetry.AnalyticsMeta
 import com.orbitalhq.telemetry.NoopTelemetryService
@@ -16,7 +17,7 @@ class TelemetryConfig {
 
    @Bean
    fun analyticsRecorder(
-      license: License,
+      licenseManager: LicenseManager,
       buildInfo: BuildProperties? = null,
       @Value("\${spring.application.name}") applicationName: String,
       @Value("\${vyne.telemetry.enabled:true}") telemetryEnabled: Boolean = true,
@@ -24,11 +25,11 @@ class TelemetryConfig {
       ): TelemetryService {
       val service = if (telemetryEnabled) {
          PosthogTelemetryService(
-            license.licensee,
+            licenseManager.license.licensee,
             AnalyticsMeta(
                productName = applicationName,
                version = buildInfo.versionOrDev(),
-               hasLicense = !license.isFallbackLicense
+               hasLicense = !licenseManager.license.isFallbackLicense
             )
          )
       } else {

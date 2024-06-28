@@ -35,6 +35,11 @@
          <version>31.1-jre</version>
       </dependency>
       <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>vyne-spring</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.springframework</groupId>
          <artifactId>spring-context</artifactId>
       </dependency>

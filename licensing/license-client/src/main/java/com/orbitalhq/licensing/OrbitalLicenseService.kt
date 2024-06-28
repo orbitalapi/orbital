@@ -1,50 +1,44 @@
 package com.orbitalhq.licensing
 
 import arrow.core.getOrElse
+import com.orbitalhq.spring.config.OrbitalOnly
 import mu.KotlinLogging
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
+import reactor.core.publisher.Sinks
 
 @RestController
-class LicenseService(
-   private var license: License,
+@OrbitalOnly
+class OrbitalLicenseService(
+   private val licenseManager: LicenseManager,
    private val validator: LicenseValidator
-) {
+) : BaseLicenseStatusService(licenseManager) {
 
-   companion object {
-      private val logger = KotlinLogging.logger {}
-   }
-
-   @GetMapping("/api/license/status")
-   fun getLicenseStatus(): LicenseWithUsage {
-      // stubbed for now
-      val usage = this.license.quotas.map {
-         QuotaUsageState(it, 0)
-      }
-      return LicenseWithUsage(
-         this.license,
-         usage
-      )
-   }
+   private val licenseUpdatedSink = Sinks.many().multicast().directAllOrNothing<LicenseWithUsage>()
+   val licenseUpdated = licenseUpdatedSink.asFlux()
 
    @PostMapping("/api/license")
    fun submitLicense(@RequestBody licenseJson: String): LicenseWithUsage {
       val validationResult = validator.readAndValidateLicense(licenseJson)
       val validatedLicense = validationResult.getOrElse { exception -> throw exception }
-      return submitValidatedLicense(validatedLicense)
+      return licenseManager.submitValidatedLicense(validatedLicense)
    }
+}
 
-   /**
-    * Updates the license without further verification
-    */
-   fun submitValidatedLicense(license: License): LicenseWithUsage {
-      logger.info { "License updated: New license - $license" }
-      this.license = license
-      return getLicenseStatus()
+abstract class BaseLicenseStatusService(private val licenseManager: LicenseManager) {
+   @GetMapping("/api/license/status")
+   fun getLicenseStatus(): LicenseWithUsage {
+      // stubbed for now
+      val usage = licenseManager.license.quotas.map {
+         QuotaUsageState(it, 0)
+      }
+      return LicenseWithUsage(
+         licenseManager.license,
+         usage
+      )
    }
-
 }
 
 /**

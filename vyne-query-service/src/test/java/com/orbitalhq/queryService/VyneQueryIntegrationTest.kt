@@ -6,11 +6,13 @@ import com.winterbe.expekt.should
 import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneProvider
+import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.formats.csv.CsvFormatSpec
+import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
@@ -78,6 +80,11 @@ class VyneQueryIntegrationTest : DatabaseTest() {
 
    @MockBean
    lateinit var queryMetricsReporter: QueryMetricsReporter
+
+   @MockBean
+   lateinit var configService: ConfigService
+   @MockBean
+   lateinit var licenseManager: LicenseManager
 
    @Autowired
    private lateinit var restTemplate: TestRestTemplate

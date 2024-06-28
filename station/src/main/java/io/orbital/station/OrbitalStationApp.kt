@@ -11,6 +11,7 @@ import com.orbitalhq.licensing.LicenseConfig
 import com.orbitalhq.schemaServer.core.VersionedSourceLoader
 import com.orbitalhq.schemaServer.core.config.WorkspaceSettings
 import com.orbitalhq.spring.config.DiscoveryClientConfig
+import com.orbitalhq.spring.config.OrbitalOnly
 import com.orbitalhq.spring.config.VyneSpringCacheConfiguration
 import com.orbitalhq.spring.config.VyneSpringHazelcastConfiguration
 import com.orbitalhq.spring.config.VyneSpringProjectionConfiguration
@@ -64,6 +65,7 @@ class OrbitalStationApp {
       fun main(args: Array<String>) {
          val app = SpringApplication(OrbitalStationApp::class.java)
          app.setBannerMode(Banner.Mode.OFF)
+         app.setAdditionalProfiles(OrbitalOnly.ORBITAL)
          app.run(*args)
       }
    }

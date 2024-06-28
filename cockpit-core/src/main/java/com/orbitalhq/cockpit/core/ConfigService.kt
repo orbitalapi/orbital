@@ -2,6 +2,7 @@ package com.orbitalhq.cockpit.core
 
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.licensing.License
+import com.orbitalhq.licensing.LicenseManager
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer
@@ -17,7 +18,7 @@ import java.time.Instant
 @RestController
 class ConfigService(
    analyticsConfig: QueryAnalyticsConfig,
-   license: License,
+   licenseManager: LicenseManager,
    @Value("\${management.endpoints.web.base-path:/actuator}") actuatorPath: String,
    val featureToggles: FeatureTogglesConfig,
    val customSettings: CustomSettings
@@ -26,7 +27,7 @@ class ConfigService(
    private val configSummary =
       ConfigSummary(
          analyticsConfig,
-         LicenseStatus.from(license),
+         LicenseStatus.from(licenseManager.license),
          actuatorPath,
          featureToggles,
          maxQueryRecordCount = 5000,
