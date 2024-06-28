@@ -5,6 +5,7 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.UndefinedSource
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
+import lang.taxi.types.EnumType
 import lang.taxi.types.PrimitiveType
 import java.math.BigDecimal
 import java.time.Instant
@@ -46,20 +47,25 @@ object MockTypedInstanceBuilder {
    }
 
    private fun buildTypedValue(type: Type, schema: Schema): TypedInstance {
-      val value = when (type.taxiType.basePrimitive!!) {
-         PrimitiveType.BOOLEAN -> true
-         PrimitiveType.STRING -> "stub"
-         PrimitiveType.INTEGER -> 100
-         PrimitiveType.LONG -> 100L
-         PrimitiveType.DECIMAL -> BigDecimal.valueOf(10)
-         PrimitiveType.LOCAL_DATE -> LocalDate.now()
-         PrimitiveType.TIME -> LocalTime.now()
-         PrimitiveType.DATE_TIME -> ZonedDateTime.now()
-         PrimitiveType.INSTANT -> Instant.now()
-         PrimitiveType.ANY -> "any"
-         PrimitiveType.DOUBLE -> 2.0
-         PrimitiveType.VOID -> null
+      return if (type.isEnum) {
+         val enumValue = (type.taxiType as EnumType).values.first().value
+         TypedInstance.from(type, enumValue, schema, source = UndefinedSource)
+      } else {
+         val value = when (type.taxiType.basePrimitive!!) {
+            PrimitiveType.BOOLEAN -> true
+            PrimitiveType.STRING -> "stub"
+            PrimitiveType.INTEGER -> 100
+            PrimitiveType.LONG -> 100L
+            PrimitiveType.DECIMAL -> BigDecimal.valueOf(10)
+            PrimitiveType.LOCAL_DATE -> LocalDate.now()
+            PrimitiveType.TIME -> LocalTime.now()
+            PrimitiveType.DATE_TIME -> ZonedDateTime.now()
+            PrimitiveType.INSTANT -> Instant.now()
+            PrimitiveType.ANY -> "any"
+            PrimitiveType.DOUBLE -> 2.0
+            PrimitiveType.VOID -> null
+         }
+         TypedInstance.from(type, value, schema, source = UndefinedSource)
       }
-      return TypedInstance.from(type, value, schema, source = UndefinedSource)
    }
 }

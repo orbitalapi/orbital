@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.aws.lambda
 
+import com.orbitalhq.VyneTypes
 import com.orbitalhq.annotations.AnnotationWrapper
 import com.orbitalhq.connections.ConnectionUsageMetadataRegistry
 import com.orbitalhq.connections.ConnectionUsageRegistration
@@ -28,12 +29,12 @@ namespace  ${Annotations.namespace} {
 """
 
    object Annotations {
-      internal const val namespace = "com.orbitalhq.aws.lambda"
+      internal val namespace = "${VyneTypes.NAMESPACE}.aws.lambda"
       val imports: String = listOf(LambdaOperation.NAME, LambdaInvocationService.NAME).joinToString("\n") { "import $it" }
 
       data class LambdaInvocationService(val connectionName: String) : AnnotationWrapper {
          companion object {
-            const val NAME = "$namespace.AwsLambdaService"
+            val NAME = "$namespace.AwsLambdaService"
 
             fun from(annotation: Annotation): LambdaInvocationService {
                require(annotation.qualifiedName == NAME) { "Annotation name should be $NAME" }
@@ -56,7 +57,7 @@ namespace  ${Annotations.namespace} {
       data class LambdaOperation(val name: String) : AnnotationWrapper {
          companion object {
             const val operationMetadataName = "name"
-            const val NAME = "$namespace.LambdaOperation"
+            val NAME = "$namespace.LambdaOperation"
             fun from(annotation: Annotation): LambdaOperation {
                return from(annotation.parameters)
             }
