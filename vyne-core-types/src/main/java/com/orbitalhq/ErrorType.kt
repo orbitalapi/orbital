@@ -1,5 +1,6 @@
 package com.orbitalhq
 
+import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.FailedSearch
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.schemas.EmptyTypeCache
@@ -9,11 +10,11 @@ import com.orbitalhq.schemas.fqn
 import lang.taxi.types.PrimitiveType
 
 object ErrorType {
-   fun error(message: String, schema: Schema): TypedInstance {
+   fun error(message: String, schema: Schema, source: DataSource = FailedSearch(message)): TypedInstance {
       return TypedInstance.from(
          type = schema.type(ErrorTypeQualifiedName),
          value = message,
-         source = FailedSearch(message),
+         source = source,
          schema = schema
       )
    }

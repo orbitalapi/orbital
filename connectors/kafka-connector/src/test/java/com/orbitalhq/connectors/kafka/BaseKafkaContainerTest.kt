@@ -1,9 +1,9 @@
 package com.orbitalhq.connectors.kafka
 
+import com.orbitalhq.ErrorType
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
-import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.Vyne
 import com.orbitalhq.avro.AvroFormatSpec
@@ -16,6 +16,7 @@ import com.orbitalhq.protobuf.ProtobufFormatSpec
 import com.orbitalhq.query.QueryResult
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.testVyneWithStub
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.GlobalScope
@@ -91,7 +92,17 @@ abstract class BaseKafkaContainerTest {
          "VyneTest-" + Random.nextInt(),
       )
 
+      val invalidConnection = KafkaConnectionConfiguration(
+         "invalidConnection",
+         kafkaContainer.bootstrapServers,
+         "VyneTest-" + Random.nextInt(),
+         mapOf("security.protocol" to "SASL_PLAINTEXT",
+            "sasl.mechanism" to "PLAIN",
+            "sasl.jaas.config" to "org.apache.kafka.common.security.plain.PlainLoginModule required username='myKafkaUser' password='asdas'")
+      )
+
       connectionRegistry.register(connection)
+      connectionRegistry.register(invalidConnection)
       this.kafkaProducer = kafkaProducer
       this.connectionRegistry = connectionRegistry
 
@@ -141,6 +152,7 @@ abstract class BaseKafkaContainerTest {
       val schema = TaxiSchema.fromStrings(
          listOf(
             KafkaConnectorTaxi.schema,
+            ErrorType.queryErrorVersionedSource.content,
             taxi
          )
       )
