@@ -11,6 +11,8 @@ import {
 import {isNullOrUndefined} from 'src/app/utils/utils';
 import {GitConnectionTestResult, SchemaImporterService} from 'src/app/project-import/schema-importer.service';
 import {Message} from 'src/app/services/schema';
+import {TuiAlertService, TuiNotification} from "@taiga-ui/core";
+import {Router} from "@angular/router";
 
 
 export const projectTypeToString = (item: LoadablePackageType) => {
@@ -178,23 +180,23 @@ export const projectTypeToString = (item: LoadablePackageType) => {
 
                           </div>
                       </div>
-                      <div class="form-row disabled">
-                          <div class="form-item-description-container">
-                              <h3>Enable edits and pull requests</h3>
-                              <div class="help-text">
-                                  <p>
-                                      If enabled, edits can be made through the {{ UiCustomisations.productName }} UI,
-                                      which
-                                      will result in Pull requests being opened
-                                  </p>
-                              </div>
-                          </div>
-                          <div class="form-element">
-                              <tui-checkbox [(ngModel)]="gitConfig.isEditable" name="editable" required
-                                            [readOnly]="!editable"
-                                            (change)="onEditableChanged($event)"></tui-checkbox>
-                          </div>
-                      </div>
+<!--                      <div class="form-row disabled">-->
+<!--                          <div class="form-item-description-container">-->
+<!--                              <h3>Enable edits and pull requests</h3>-->
+<!--                              <div class="help-text">-->
+<!--                                  <p>-->
+<!--                                      If enabled, edits can be made through the {{ UiCustomisations.productName }} UI,-->
+<!--                                      which-->
+<!--                                      will result in Pull requests being opened-->
+<!--                                  </p>-->
+<!--                              </div>-->
+<!--                          </div>-->
+<!--                          <div class="form-element">-->
+<!--                              <tui-checkbox [(ngModel)]="gitConfig.isEditable" name="editable" required-->
+<!--                                            [readOnly]="!editable"-->
+<!--                                            (change)="onEditableChanged($event)"></tui-checkbox>-->
+<!--                          </div>-->
+<!--                      </div>-->
                       <div class="form-row" *ngIf="gitConfig.isEditable && gitConfig.pullRequestConfig">
                           <div class="form-item-description-container">
                               <h3>Prefix for pull requests</h3>
@@ -220,7 +222,6 @@ export const projectTypeToString = (item: LoadablePackageType) => {
       <div class="form-button-bar" *ngIf="editable">
           <button
                   tuiButton
-                  *ngIf="isOnboardingMode"
                   appearance="secondary"
                   [size]="'m'"
                   (click)="goBackOnboarding.emit()"
@@ -252,7 +253,11 @@ export class GitConfigComponent {
   @Output()
   goBackOnboarding: EventEmitter<void> = new EventEmitter();
 
-  constructor(private schemaService: SchemaImporterService, private changeDetector: ChangeDetectorRef) {
+  constructor(private schemaService: SchemaImporterService,
+              private changeDetector: ChangeDetectorRef,
+              private alertsService: TuiAlertService,
+              private router: Router
+              ) {
   }
 
   get expectedTaxiConfLocation(): string {
@@ -324,17 +329,24 @@ export class GitConfigComponent {
 
 
   doCreate() {
-    console.log(JSON.stringify(this.gitConfig, null, 2));
     this.working = true;
     this.saveResultMessage = null;
     this.schemaService.addNewGitRepository(this.gitConfig)
       .subscribe(result => {
           this.gitRepoAdded.emit();
           this.working = false;
-          this.saveResultMessage = {
-            message: 'The git repository was added successfully',
-            severity: 'SUCCESS',
-          };
+          if (!this.isOnboardingMode) {
+            this.alertsService.open(
+              'The git repository was added successfully',
+              {status: 'success' }
+            ).subscribe()
+            this.router.navigate(['projects']);
+          } else {
+            this.saveResultMessage = {
+              message: 'The git repository was added successfully',
+              severity: 'SUCCESS',
+            };
+          }
           this.changeDetector.markForCheck();
         },
         error => {

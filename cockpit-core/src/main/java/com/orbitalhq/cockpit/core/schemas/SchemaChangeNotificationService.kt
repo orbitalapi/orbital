@@ -3,6 +3,7 @@ package com.orbitalhq.cockpit.core.schemas
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.VersionedSource
+import com.orbitalhq.connectors.bufferTimeout
 import com.orbitalhq.schema.api.SourceNameWithPackage
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.SchemaSetChangedEvent
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.time.Duration
 
 @Component
 @RestController
@@ -58,6 +60,8 @@ class SchemaChangeNotificationService(
    override fun handle(session: WebSocketSession): Mono<Void> {
       return session.send(
          schemaUpdatedNotificationEvents
+            // Avoid sending multiple messages to the UI
+            .bufferTimeout(Int.MAX_VALUE, Duration.ofSeconds(5))
             .map { mapper.writeValueAsString(it) }
             .map(session::textMessage)
             .asFlux())

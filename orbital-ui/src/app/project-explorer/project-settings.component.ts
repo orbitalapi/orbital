@@ -4,13 +4,14 @@ import { SchemaImporterService } from 'src/app/project-import/schema-importer.se
 import { Message } from 'src/app/services/schema';
 import { TuiAlertService, TuiDialogService } from '@taiga-ui/core';
 import { TUI_PROMPT } from '@taiga-ui/kit';
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-project-settings',
   template: `
-      <app-git-config *ngIf="packageDescription.publisherType === 'GitRepo'" [editable]="false"
+      <app-git-config *ngIf="packageDescription?.publisherType === 'GitRepo'" [editable]="false"
                       [gitConfig]="packageDescription.packageConfig"></app-git-config>
-      <app-file-config *ngIf="packageDescription.publisherType === 'FileSystem'" [editable]="false"
+      <app-file-config *ngIf="packageDescription?.publisherType === 'FileSystem'" [editable]="false"
                        [fileSystemPackageConfig]="packageDescription.packageConfig"></app-file-config>
 
       <ng-container *ngIf="canRemove">
@@ -39,7 +40,8 @@ export class ProjectSettingsComponent {
     private changeDetector: ChangeDetectorRef,
     private service: SchemaImporterService,
     @Inject(TuiDialogService) private readonly dialogService: TuiDialogService,
-    @Inject(TuiAlertService) private readonly alertService: TuiAlertService
+    @Inject(TuiAlertService) private readonly alertService: TuiAlertService,
+    private router: Router
   ) {
   }
 
@@ -74,6 +76,8 @@ export class ProjectSettingsComponent {
           this.alertService.open('Project was successfully removed', {status: 'success', autoClose: 5000 })
             .subscribe()
           this.working = false;
+          this.changeDetector.markForCheck();
+          this.router.navigate(['projects'])
         },
         error: () => {
           this.deleteResultMessage = {

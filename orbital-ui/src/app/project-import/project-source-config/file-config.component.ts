@@ -14,6 +14,8 @@ import {
 import {isNullOrUndefined} from 'src/app/utils/utils';
 import {Message} from 'src/app/services/schema';
 import {FileRepositoryTestResponse, SchemaImporterService} from 'src/app/project-import/schema-importer.service';
+import {TuiAlertService} from "@taiga-ui/core";
+import {Router} from "@angular/router";
 
 @Component({
   selector: 'app-file-config',
@@ -153,7 +155,6 @@ import {FileRepositoryTestResponse, SchemaImporterService} from 'src/app/project
     <div *ngIf='editable' class='form-button-bar'>
       <button
         tuiButton
-        *ngIf="isOnboardingMode"
         appearance="secondary"
         [size]="'m'"
         (click)="goBackOnboarding.emit()"
@@ -191,7 +192,11 @@ export class FileConfigComponent {
   filePathTestResult: FileRepositoryTestResponse;
   private filePathChanged$ = new EventEmitter<string>();
 
-  constructor(private changeDetector: ChangeDetectorRef, private schemaService: SchemaImporterService) {
+  constructor(private changeDetector: ChangeDetectorRef,
+              private schemaService: SchemaImporterService,
+              private alertsService: TuiAlertService,
+              private router: Router
+  ) {
     this.filePathChanged$
       .pipe(
         debounceTime(500),
@@ -270,10 +275,18 @@ export class FileConfigComponent {
       .subscribe(result => {
           this.localFileAdded.emit();
           this.working = false;
-          this.saveResultMessage = {
-            message: 'The local disk repository was added successfully',
-            severity: 'SUCCESS'
-          };
+          if (!this.isOnboardingMode) {
+            this.alertsService.open(
+              'The local disk repository was added successfully',
+              {status: 'success' }
+            ).subscribe()
+            this.router.navigate(['projects']);
+          } else {
+            this.saveResultMessage = {
+              message: 'The local disk repository was added successfully',
+              severity: 'SUCCESS'
+            };
+          }
           this.changeDetector.markForCheck();
         },
         error => {
@@ -288,7 +301,6 @@ export class FileConfigComponent {
   }
 
   filePathUpdated(value: string) {
-
     this.fileSystemPackageConfig.path = value;
     this.filePathChanged$.emit(value);
     this.filePathTestResult = null;

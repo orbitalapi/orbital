@@ -1,11 +1,11 @@
-<ng-container *ngIf="step !== 'projectAdded' && !hasAddedProject && displayOnboardingText; else hasAddedTemplate">
+<ng-container *ngIf="step !== 'projectAdded' && !hasAddedProject && isOnboardingMode; else hasAddedTemplate">
   <h3 class="intro-text">Projects are where you define your data sources, and hold your API specs.</h3>
   <p>You currently have {{ projectCount | i18nPlural: projectCountPluralMap }}, you can add a new project via the
     {{ uiConfig.productName }} interface (where you are now) or via a microservice.</p>
   <p>So what’s it gonna be? </p>
 </ng-container>
 <ng-template #hasAddedTemplate>
-  <div *ngIf="displayOnboardingText" class="project-added">
+  <div *ngIf="isOnboardingMode" class="project-added">
     <h3 class="intro-text">Great! Now that you've added a project, continue on to create a data source for it</h3>
     <p class="next-step">
       (or feel free to hang around and create another project, now that you're a pro at that)
@@ -15,7 +15,7 @@
 </ng-template>
 <app-project-list
   #projectList
-  *ngIf="displayOnboardingText"
+  *ngIf="isOnboardingMode"
   [isListOpen]="step === 'projectAdded'"
   (projectCountUpdated)="projectCount = $event"
 ></app-project-list>
@@ -86,7 +86,7 @@
     ></tui-avatar>
     <h3 class="tui-island__title">Git Repository</h3>
     <app-git-config
-      [isOnboardingMode]="true"
+      [isOnboardingMode]="isOnboardingMode"
       (gitRepoAdded)="step = 'projectAdded'; hasAddedProject = true"
       (goBackOnboarding)="step = 'options'"
     >
@@ -106,7 +106,7 @@
     ></tui-avatar>
     <h3 class="tui-island__title">Local disk</h3>
     <app-file-config
-      [isOnboardingMode]="true"
+      [isOnboardingMode]="isOnboardingMode"
       (localFileAdded)="step = 'projectAdded'; hasAddedProject = true"
       (goBackOnboarding)="step = 'options'">
 

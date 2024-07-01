@@ -25,8 +25,9 @@ import { RouterLink } from '@angular/router';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class AddProjectComponent {
+
   @Input()
-  displayOnboardingText = true
+  isOnboardingMode:boolean = true;
 
   readonly uiConfig = UiCustomisations;
 

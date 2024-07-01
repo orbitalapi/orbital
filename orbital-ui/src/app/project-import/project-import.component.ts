@@ -14,7 +14,7 @@ import { AddProjectComponent } from '../onboarding/add-project/add-project.compo
       title="Add a Project"
       description="Projects are where you define your data sources, and hold your API specs."
     >
-      <app-add-project [displayOnboardingText]="false"></app-add-project>
+      <app-add-project [isOnboardingMode]="false"></app-add-project>
     </app-header-component-layout>
   `,
   styleUrls: ['./project-import.component.scss'],

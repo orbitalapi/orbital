@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import {Observable, of} from 'rxjs';
 import { environment } from 'src/environments/environment';
 import {ParsedSource, PartialSchema, VersionedSource} from '../services/schema';
 import { map } from 'rxjs/operators';
@@ -34,29 +34,12 @@ export class PackagesService {
     return this.httpClient.get<PartialSchema>(`${environment.serverUrl}/api/packages/${packageUri}/schema`);
   }
 
+  /**
+   * @deprecated We no longer have a concept
+   * of an "editable package" - there are multiple.
+   */
   getEditablePackage(): Observable<SourcePackageDescription> {
-    return this.listPackages()
-      .pipe(
-        map((packages: SourcePackageDescription[]) => this.resolveEditablePackage(packages))
-        // TODO : We should be caching this.
-        // However, we need to get cache invalidation working, so that when
-        // users add a repository via the UI, they can use it.
-        // When caching is enabled, users are required to refresh after adding a repository.
-        // :(
-        // shareReplay(1),
-      );
-  }
-
-  private resolveEditablePackage(packages: SourcePackageDescription[]): SourcePackageDescription {
-    const editable = packages.filter(sourcePackage => sourcePackage.editable);
-    if (editable.length === 0) {
-      console.error('There are no editable packages configured - editing will fail');
-      return null;
-    } else if (editable.length > 1) {
-      console.error('There are multiple editable packages configured - editing will fail');
-      return null;
-    }
-    return editable[0];
+    return of(null)
   }
 }
 
