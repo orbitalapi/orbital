@@ -86,7 +86,7 @@
     ></tui-avatar>
     <h3 class="tui-island__title">Git Repository</h3>
     <app-git-config
-      [isOnboardingMode]="true"
+      [isOnboardingMode]="isOnboardingMode"
       (gitRepoAdded)="step = 'projectAdded'; hasAddedProject = true"
       (goBackOnboarding)="step = 'options'"
     >
@@ -106,7 +106,7 @@
     ></tui-avatar>
     <h3 class="tui-island__title">Local disk</h3>
     <app-file-config
-      [isOnboardingMode]="true"
+      [isOnboardingMode]="isOnboardingMode"
       (localFileAdded)="step = 'projectAdded'; hasAddedProject = true"
       (goBackOnboarding)="step = 'options'">
 
