@@ -300,7 +300,6 @@ export class FileConfigComponent {
   }
 
   filePathUpdated(value: string) {
-
     this.fileSystemPackageConfig.path = value;
     this.filePathChanged$.emit(value);
     this.filePathTestResult = null;

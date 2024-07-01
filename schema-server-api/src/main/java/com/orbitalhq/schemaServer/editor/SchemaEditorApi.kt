@@ -31,7 +31,7 @@ data class EditableRepositoryConfig(
       return when (editablePackages.size) {
          0 -> error("There are no packages configured to be editable")
          1 -> editablePackages.single()
-         else -> error("There are multiple packages defined as editable. Pick one, mofo.")
+         else -> error("There are multiple packages defined as editable.")
       }
    }
 }
