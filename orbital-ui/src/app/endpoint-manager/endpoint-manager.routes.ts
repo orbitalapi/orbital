@@ -17,6 +17,6 @@ export const endpointManagerRoutes = [
     component: EndpointMonitorContainerComponent,
     title: `${UiCustomisations.productName}: Endpoints`,
     canActivate: [AuthGuard],
-    data: {requiredAuthority: VynePrivileges.EditPipelines},
+    data: {requiredAuthority: VynePrivileges.ViewPipelines},
   }
 ]

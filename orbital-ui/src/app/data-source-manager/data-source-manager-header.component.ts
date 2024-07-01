@@ -6,6 +6,7 @@ import { Observable } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 import { UiCustomisations } from '../../environments/ui-customisations';
 import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
+import {RequiresAuthorityDirective} from "../requires-authority.directive";
 
 @Component({
   selector: 'app-data-source-manager-header',
@@ -16,7 +17,7 @@ import { HeaderComponentLayoutModule } from '../header-component-layout/header-c
       [fullWidth]="isConfiguringDataSource$ | async"
     >
       <ng-container ngProjectAs="buttons">
-        <button
+        <button *appRequiresAuthority="['EditConnections']"
           tuiButton
           size="m"
           icon="tuiIconPlus"
@@ -36,7 +37,8 @@ import { HeaderComponentLayoutModule } from '../header-component-layout/header-c
     TuiButtonModule,
     RouterOutlet,
     AsyncPipe,
-    NgIf
+    NgIf,
+    RequiresAuthorityDirective
   ],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush

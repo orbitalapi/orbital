@@ -61,6 +61,7 @@ export class BaseProjectExplorerContainer {
     <app-panel-header title="Projects">
       <div class="spacer"></div>
       <button
+        *appRequiresAuthority="['EditSchema']"
         tuiButton
         size="s"
         appearance="primary"

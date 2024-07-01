@@ -22,7 +22,7 @@
 
   <div class="grid-container grid-cols-2">
     <app-data-sources-card *appRequiresAuthority="['ViewConnections']"></app-data-sources-card>
-    <app-changelog-card></app-changelog-card>
+    <app-changelog-card  *appRequiresAuthority="['BrowseSchema']"></app-changelog-card>
   </div>
 
   <section *ngIf="(contentCards$ | async)?.length > 0">
@@ -33,7 +33,7 @@
     </div>
   </section>
 
-  <section>
+  <section *appRequiresAuthority="['ViewMetrics']">
     <h3>Metrics</h3>
     <app-endpoint-stats-card></app-endpoint-stats-card>
   </section>

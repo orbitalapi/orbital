@@ -9,9 +9,11 @@ import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.streams.StreamStateManager
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.NotFoundException
 import jakarta.annotation.PostConstruct
 import mu.KotlinLogging
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
 
@@ -95,6 +97,7 @@ class PipelineService(
       }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditPipelines}')")
    @PostMapping("/api/pipelines/scheduled")
    fun triggerScheduledPipeline(@RequestBody triggerScheduledPipelineRequest: TriggerScheduledPipelineRequest): Mono<TriggerScheduledPipelineResponse> {
       logger.info { "Received request to trigger a schedule pipeline manually => $triggerScheduledPipelineRequest" }
@@ -107,6 +110,7 @@ class PipelineService(
       )
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditPipelines}')")
    @PostMapping("/api/pipelines/{packageIdentifier}")
    override fun submitPipeline(
       @PathVariable("packageIdentifier") packageUri: UriSafePackageIdentifier,
@@ -120,17 +124,20 @@ class PipelineService(
       return Mono.just(submittedPipeline)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewPipelines}')")
    @GetMapping("/api/pipelines")
    override fun getPipelines(): Mono<List<RunningPipelineSummary>> {
       return Mono.just(pipelineManager.getPipelines())
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewPipelines}')")
    @GetMapping("/api/pipelines/{pipelineSpecId}")
    override fun getPipeline(@PathVariable("pipelineSpecId") pipelineSpecId: String): Mono<RunningPipelineSummary> {
       return Mono.just(pipelineManager.getPipeline(pipelineSpecId))
    }
 
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditPipelines}')")
    @DeleteMapping("/api/pipelines/{pipelineId}")
    override fun deletePipeline(@PathVariable("pipelineId") pipelineSpecId: String): Mono<PipelineStatus> {
       val status = pipelineManager.terminatePipeline(pipelineSpecId)
@@ -143,6 +150,7 @@ class PipelineService(
    }
 
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditPipelines}')")
    @PostMapping("/api/streams/{streamName}/status")
    override fun updateStreamStatus(
       @PathVariable("streamName") streamName: String,
@@ -153,6 +161,7 @@ class PipelineService(
       }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewPipelines}')")
    @GetMapping("/api/streams/{streamName}/status")
    override fun getStreamStatus(
       @PathVariable("streamName") streamName: String,

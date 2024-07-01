@@ -4,10 +4,12 @@ import com.orbitalhq.http.ServicesConfig
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.SavedQuery
 import com.orbitalhq.schemas.taxi.asSavedQuery
+import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.config.LoadBalancerFilterFunction
 import com.orbitalhq.spring.http.NotFoundException
 import lang.taxi.query.TaxiQlQuery
 import org.springframework.cloud.client.discovery.DiscoveryClient
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestParam
@@ -55,6 +57,7 @@ class TelemetryService(
       //DataMetricSpecs.failures
    )
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewMetrics}')")
    @GetMapping("/api/metrics/stream")
    fun getAggregateForAllStreams(
       @RequestParam(name = "period", required = false, defaultValue = "Last4Hours") period: MetricsWindow
@@ -63,6 +66,7 @@ class TelemetryService(
    }
 
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewMetrics}')")
    @GetMapping("/api/metrics/stream/{name}")
    fun getMetricsForStream(
       @PathVariable("name") qualifiedName: String,

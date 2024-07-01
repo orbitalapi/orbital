@@ -36,79 +36,81 @@ import {ExpandingPanelSetModule} from "../expanding-panelset/expanding-panel-set
 import {UiCustomisations} from '../../environments/ui-customisations';
 import {ProjectErrorListComponent} from './project-error-list.component';
 import {HeaderComponentLayoutModule} from "../header-component-layout/header-component-layout.module";
+import {RequiresAuthorityDirective} from "../requires-authority.directive";
 
 
 @NgModule({
-  imports: [
-    CommonModule,
-    MatMenuModule,
-    MatButtonModule,
-    SearchModule,
-    MatToolbarModule,
-    CodeViewerModule,
-    MatProgressBarModule,
-    MatStepperModule,
-    MatFormFieldModule,
-    MatSelectModule,
-    ReactiveFormsModule,
-    CovalentHighlightModule,
-    MatListModule,
-    MatIconModule,
-    MatInputModule,
-    HeaderBarModule,
-    RouterModule,
-    PackageViewerModule,
-    ChangelogModule,
-    SchemaMemberTypeExplorerModule,
-    SimpleBadgeListModule,
-    TuiButtonModule,
-    ProjectSourceConfigModule,
-    RouterModule.forChild([
-      {
-        path: 'project-import',
-        component: ProjectImportComponent,
-        canActivate: [AuthGuard],
-        data: { requiredAuthority: VynePrivileges.EditSchema }
-      },
-      {
-        path: '',
-        component: ProjectExplorerContainerComponent,
-        children: [
-          {
-            path: '',
-            component: ProjectSummaryViewComponent,
-            title: `${UiCustomisations.productName}: Projects`
-          },
-          {
-            path: 'problems',
-            component: ProjectErrorListComponent,
-            title: `${UiCustomisations.productName}: Projects`
-          },
-          {
-            path: ':packageName',
-            component: ProjectExplorerComponent,
-            title: `${UiCustomisations.productName}: Projects`
-          },
-          {
-            path: ':packageName/:selectedTab',
-            component: ProjectExplorerComponent,
-            title: `${UiCustomisations.productName}: Projects`
-          },
-          {
-            path: ':packageName/:selectedTab/**',
-            component: ProjectExplorerComponent,
-            title: `${UiCustomisations.productName}: Projects`
-          }
-        ]
-      },
-    ]),
-    TuiTabsModule,
-    ChangesetSelectorModule,
-    TuiNotificationModule,
-    ExpandingPanelSetModule,
-    HeaderComponentLayoutModule,
-    ChangelogTimelineComponent,
-  ],
+    imports: [
+        CommonModule,
+        MatMenuModule,
+        MatButtonModule,
+        SearchModule,
+        MatToolbarModule,
+        CodeViewerModule,
+        MatProgressBarModule,
+        MatStepperModule,
+        MatFormFieldModule,
+        MatSelectModule,
+        ReactiveFormsModule,
+        CovalentHighlightModule,
+        MatListModule,
+        MatIconModule,
+        MatInputModule,
+        HeaderBarModule,
+        RouterModule,
+        PackageViewerModule,
+        ChangelogModule,
+        SchemaMemberTypeExplorerModule,
+        SimpleBadgeListModule,
+        TuiButtonModule,
+        ProjectSourceConfigModule,
+        RouterModule.forChild([
+            {
+                path: 'project-import',
+                component: ProjectImportComponent,
+                canActivate: [AuthGuard],
+                data: {requiredAuthority: VynePrivileges.EditSchema}
+            },
+            {
+                path: '',
+                component: ProjectExplorerContainerComponent,
+                children: [
+                    {
+                        path: '',
+                        component: ProjectSummaryViewComponent,
+                        title: `${UiCustomisations.productName}: Projects`
+                    },
+                    {
+                        path: 'problems',
+                        component: ProjectErrorListComponent,
+                        title: `${UiCustomisations.productName}: Projects`
+                    },
+                    {
+                        path: ':packageName',
+                        component: ProjectExplorerComponent,
+                        title: `${UiCustomisations.productName}: Projects`
+                    },
+                    {
+                        path: ':packageName/:selectedTab',
+                        component: ProjectExplorerComponent,
+                        title: `${UiCustomisations.productName}: Projects`
+                    },
+                    {
+                        path: ':packageName/:selectedTab/**',
+                        component: ProjectExplorerComponent,
+                        title: `${UiCustomisations.productName}: Projects`
+                    }
+                ]
+            },
+        ]),
+        TuiTabsModule,
+        ChangesetSelectorModule,
+        TuiNotificationModule,
+        ExpandingPanelSetModule,
+        HeaderComponentLayoutModule,
+        ChangelogTimelineComponent,
+        RequiresAuthorityDirective,
+    ],
     exports: [ProjectExplorerComponent, ProjectSummaryViewComponent],
   declarations: [ProjectExplorerComponent, ProjectExplorerContainerComponent, ProjectSummaryViewComponent, ProjectSettingsComponent, ProjectErrorListComponent],
   providers: [],
