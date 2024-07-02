@@ -116,7 +116,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
 
     console.log(`Fetching query results for query ${selectedQueryId}`);
 
-    this.activeRecordResults$ = this.queryService.getQueryResults(selectedQueryId)
+    this.activeRecordResults$ = this.queryService.getQueryResults(selectedQueryId, null)
       .pipe(
         tap((valueWithTypeName: ValueWithTypeName) => {
             if (!isNullOrUndefined(valueWithTypeName.typeName)) {
