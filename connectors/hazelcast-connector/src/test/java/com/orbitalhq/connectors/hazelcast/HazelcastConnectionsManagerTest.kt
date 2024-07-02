@@ -2,13 +2,15 @@ package com.orbitalhq.connectors.hazelcast
 
 import com.google.common.io.Resources
 import com.hazelcast.core.Hazelcast
-import com.hazelcast.test.TestHazelcastInstanceFactory
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
+import com.orbitalhq.connectors.registry.ConfigurationFilePathCustomType
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
 import com.winterbe.expekt.should
+import io.github.config4k.registerCustomType
 import org.apache.commons.io.FileUtils
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
@@ -19,10 +21,14 @@ class HazelcastConnectionsManagerTest {
    @TempDir
    private lateinit var folder: File
 
-   private fun buildRegistry(connectionConf: String): SourceLoaderConnectorsRegistry {
+   private fun buildRegistry(connectionConf: String, additionalConfigFiles: List<String> =  emptyList()): SourceLoaderConnectorsRegistry {
       val packageIdentifier: PackageIdentifier = PackageIdentifier.fromId("com.test/foo/1.0.0")
       val testResourceUri = Resources.getResource(connectionConf).toURI()
       val configFilePath = testResourceUri.copyTo(folder).toPath()
+
+      additionalConfigFiles.forEach {
+         Resources.getResource(it).toURI().copyTo(folder)
+      }
 
       return SourceLoaderConnectorsRegistry(
          listOf(
@@ -35,6 +41,8 @@ class HazelcastConnectionsManagerTest {
       )
 
    }
+
+
 
    fun URI.copyTo(destDirectory: File): File {
       val source = File(this)
@@ -56,10 +64,42 @@ class HazelcastConnectionsManagerTest {
    }
 
    @Test
+   fun `should return hz connection from xml configuration`() {
+      val hazelcast = Hazelcast.newHazelcastInstance()
+      val (_, hzConfiguration) = HazelcastConnectionsManager(
+         buildRegistry("hz-default-connection.conf", listOf("hazelcast-client.xml")),
+         SimpleSchemaStore()
+      )
+         .hazelcastConnection("clientWithXmlConfig")
+      hzConfiguration.connectionName.should.equal("clientWithXmlConfig")
+      hazelcast.shutdown()
+   }
+
+   @Test
+   fun `should return hz connection from yaml configuration`() {
+      val hazelcast = Hazelcast.newHazelcastInstance()
+      val (_, hzConfiguration) = HazelcastConnectionsManager(
+         buildRegistry("hz-default-connection.conf", listOf("hazelcast-client.yaml")),
+         SimpleSchemaStore()
+      )
+         .hazelcastConnection("clientWithYamlConfig")
+      hzConfiguration.connectionName.should.equal("clientWithYamlConfig")
+      hazelcast.shutdown()
+   }
+
+   @Test
    fun `should throw when requested connection name is null and there is no default hz connection`() {
       assertThrows<IllegalArgumentException> {
          HazelcastConnectionsManager(buildRegistry("hz-no-default-connection.conf"), SimpleSchemaStore())
             .hazelcastConnection(null)
+      }
+   }
+
+   companion object {
+      @JvmStatic
+      @BeforeAll
+      fun setup() {
+         registerCustomType(ConfigurationFilePathCustomType())
       }
    }
 }

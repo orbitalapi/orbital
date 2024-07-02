@@ -2,8 +2,10 @@ package io.orbital.station
 
 import arrow.core.Either
 import com.orbitalhq.cockpit.core.schemas.BuiltInTypesProvider
+import com.orbitalhq.connectors.registry.ConfigurationFilePathCustomType
 import com.orbitalhq.schemaServer.core.packages.SchemaServerSourceManager
 import com.orbitalhq.schemas.taxi.toMessage
+import io.github.config4k.registerCustomType
 import lang.taxi.errors
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
@@ -16,6 +18,7 @@ class BuiltInTypesPublisher(sourceManager: SchemaServerSourceManager) {
    }
 
    init {
+      registerCustomType(ConfigurationFilePathCustomType())
       logger.info { "Submitting built-in types" }
       val result = sourceManager.submitPackage(BuiltInTypesProvider.sourcePackage)
       when (result) {

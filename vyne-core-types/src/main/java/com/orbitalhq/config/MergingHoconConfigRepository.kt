@@ -1,5 +1,6 @@
 package com.orbitalhq.config
 
+import arrow.core.Either
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.orbitalhq.PackageIdentifier
@@ -12,6 +13,7 @@ import com.typesafe.config.ConfigResolver
 import com.typesafe.config.ConfigValue
 import mu.KotlinLogging
 import reactor.core.publisher.Sinks
+import java.io.File
 
 /**
  * Models a Config as loaded from a Package,
@@ -108,7 +110,7 @@ abstract class MergingHoconConfigRepository<T : Any>(
                      logger.error(e) { "($loaderTypeName) - Parsing the config from source package ${sourcePackage.packageMetadata.identifier.id} failed: ${e.message}" }
                      val errorMessage = e.message ?: e.cause?.message
                      val sourceName = if (sourcePackage.sources.size == 1) sourcePackage.sources.first().name else null
-                     ConfigSource<T>(sourcePackage.identifier, null, null, errorMessage, sourceName)
+                     ConfigSource(sourcePackage.identifier, null, null, errorMessage, sourceName)
                   }
                }
                val healthConfig = _configSources
@@ -147,23 +149,40 @@ abstract class MergingHoconConfigRepository<T : Any>(
 
    }
 
-   protected fun readRawHoconSource(sourcePackage: SourcePackage): String {
+   protected fun readRawHoconSource(sourcePackage: SourcePackage): Either<String, File> {
       // This isn't a hard requirement, but it certainly makes life simpler.
       // If this constraint is violated, let's explore the use-case
       require(sourcePackage.sources.size == 1) { "Expected a single source within the source package" }
       val rawConfig = sourcePackage.sources.single().content
-      return rawConfig
+      return  if (sourcePackage.sources.single().path != null) {
+         Either.Right(File(sourcePackage.sources.single().path!!))
+      } else {
+         Either.Left(sourcePackage.sources.single().content)
+      }
    }
 
-   protected fun unresolvedConfig(rawConfig: String): Config {
-      return ConfigFactory.parseString(rawConfig, ConfigParseOptions.defaults())
-         .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
+   protected fun unresolvedConfig(rawConfig: Either<String, File>): Config {
+      return rawConfig.fold( { configFileContent ->
+         ConfigFactory.parseString(configFileContent, ConfigParseOptions.defaults())
+            .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
+      }, {configFile ->
+         ConfigFactory.parseFile(configFile, ConfigParseOptions.defaults())
+            .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
+      })
+
    }
 
-   protected open fun readConfig(rawConfig: String, fallback: Config): Config =
-      ConfigFactory
-         .parseString(rawConfig, ConfigParseOptions.defaults())
-         .resolveWith(fallback, ConfigResolveOptions.defaults().setAllowUnresolved(true))
+   protected open fun readConfig(rawConfig: Either<String, File>, fallback: Config): Config  {
+      return rawConfig.fold( { configFileContent ->
+         ConfigFactory
+            .parseString(configFileContent, ConfigParseOptions.defaults())
+            .resolveWith(fallback, ConfigResolveOptions.defaults().setAllowUnresolved(true))
+      }, { configFile ->
+         ConfigFactory
+            .parseFile(configFile, ConfigParseOptions.defaults())
+            .resolveWith(fallback, ConfigResolveOptions.defaults().setAllowUnresolved(true))
+      })
+   }
 
 
    init {
@@ -202,3 +221,4 @@ private object FakeResolver : ConfigResolver {
    }
 
 }
+
