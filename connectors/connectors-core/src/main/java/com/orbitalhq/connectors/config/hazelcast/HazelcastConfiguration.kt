@@ -1,6 +1,5 @@
 package com.orbitalhq.connectors.config.hazelcast
 
-import com.google.common.base.MoreObjects
 import com.google.common.base.Objects
 import com.orbitalhq.connectors.ConnectionParameterName
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection.HAZELCAST_CLIENT_NAME
@@ -10,12 +9,13 @@ import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection.HAZELCAST_E
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection.VIRIDIAN_DISCOVERY_TOKEN
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection.VIRIDIAN_KEY_STORE_PASSWORD
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection.VIRIDIAN_TRUST_STORE_PASSWORD
+import com.orbitalhq.connectors.registry.ConfigurationFilePath
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import com.orbitalhq.connectors.registry.ConnectorType
 import com.orbitalhq.utils.obfuscateKeys
 import kotlinx.serialization.Serializable
-import lang.taxi.ImmutableEquality
 import java.util.Properties
+import kotlin.io.path.absolutePathString
 
 
 @Serializable
@@ -23,6 +23,8 @@ data class HazelcastConfiguration(
    override val connectionName: String,
    val addresses: List<String> = listOf(),
    val operationCacheTtlSeconds: Int = 120,
+   val xmlConfig: ConfigurationFilePath? = null,
+   val yamlConfig: ConfigurationFilePath? = null,
    val connectionParameters: Map<ConnectionParameterName, String> = emptyMap(),
    override val default: Boolean = false
 ) : ConnectorConfiguration {
@@ -94,8 +96,11 @@ data class HazelcastConfiguration(
 
    fun hazelcastClientName() = connectionParameters[HAZELCAST_CLIENT_NAME]
 
-   fun username() = connectionParameters[HAZELCAST_ENTERPRISE_USERNAME];
-   fun password() = connectionParameters[HAZELCAST_ENTERPRISE_PASSWORD];
+   fun username() = connectionParameters[HAZELCAST_ENTERPRISE_USERNAME]
+   fun password() = connectionParameters[HAZELCAST_ENTERPRISE_PASSWORD]
+
+   fun yamlConfigFilePath() = yamlConfig?.path?.absolutePathString()
+   fun xmlConfigFilePath() = xmlConfig?.path?.absolutePathString()
 }
 
 object HazelcastConnection {
@@ -112,4 +117,7 @@ object HazelcastConnection {
    const val HAZELCAST_ENTERPRISE_PASSWORD = "password"
    const val HAZELCAST_CLUSTER_NAME = "clusterName"
    const val HAZELCAST_CLIENT_NAME = "clientName"
+
+   const val HAZELCAST_YAML_CONFIG_FILE_PATH = "yamlConfigFilePath"
+   const val HAZELCAST_XML_CONFIG_FILE_PATH = "xmlConfigFilePath"
 }

@@ -2,6 +2,8 @@ package com.orbitalhq.connectors.hazelcast
 
 import com.hazelcast.client.HazelcastClient
 import com.hazelcast.client.config.ClientConfig
+import com.hazelcast.client.config.XmlClientConfigBuilder
+import com.hazelcast.client.config.YamlClientConfigBuilder
 import com.hazelcast.config.SSLConfig
 import com.hazelcast.config.SerializationConfig
 import com.hazelcast.config.SerializerConfig
@@ -37,51 +39,66 @@ object HazelcastBuilder {
       instanceNameSuffix: String = "",
       schemaStore: SchemaStore
    ): HazelcastInstance {
-      val clientConfig = ClientConfig().apply {
-         config.hazelcastClusterName()?.let {
-            clusterName = it
-         }
-         serializationConfig = serializationConfig(schemaStore)
-
-         config.hazelcastClientName()?.let {
-            instanceName = "${it}$instanceNameSuffix"
+     return  when {
+         config.xmlConfig != null ->  {
+           val xmlConfig =  XmlClientConfigBuilder(config.xmlConfigFilePath())
+            HazelcastClient.newHazelcastClient(xmlConfig.build())
          }
 
-
-         when {
-            config.isSslEnabledCloudConfig() -> {
-               networkConfig.sslConfig = SSLConfig().apply {
-                  isEnabled = true
-                  properties = config.hazelcastCloudSslConfiguration()
-               }
-
-               networkConfig.cloudConfig.apply {
-                  discoveryToken = config.hazelcastCloudDiscoveryToken()
-                  isEnabled = true
-                  clusterName = config.hazelcastCloudClusterName()
-               }
-            }
-
-            config.isCloudConfig() -> {
-               networkConfig.cloudConfig.apply {
-                  discoveryToken = config.hazelcastCloudDiscoveryToken()
-                  isEnabled = true
-                  clusterName = config.hazelcastCloudClusterName()
-               }
-            }
-
-            config.userNamePasswordAuthentication() -> {
-               securityConfig.setUsernamePasswordIdentityConfig(config.username()!!, config.password()!!)
-               networkConfig.addAddress(*config.addresses.toTypedArray())
-            }
-
-            else -> {
-               networkConfig.addAddress(*config.addresses.toTypedArray())
-            }
+         config.yamlConfig != null -> {
+            val yamlConfig = YamlClientConfigBuilder(config.yamlConfigFilePath())
+            HazelcastClient.newHazelcastClient(yamlConfig.build())
          }
 
+         else -> {
+            val clientConfig = ClientConfig().apply {
+               config.hazelcastClusterName()?.let {
+                  clusterName = it
+               }
+               serializationConfig = serializationConfig(schemaStore)
+
+               config.hazelcastClientName()?.let {
+                  instanceName = "${it}$instanceNameSuffix"
+               }
+
+
+               when {
+                  config.isSslEnabledCloudConfig() -> {
+                     networkConfig.sslConfig = SSLConfig().apply {
+                        isEnabled = true
+                        properties = config.hazelcastCloudSslConfiguration()
+                     }
+
+                     networkConfig.cloudConfig.apply {
+                        discoveryToken = config.hazelcastCloudDiscoveryToken()
+                        isEnabled = true
+                        clusterName = config.hazelcastCloudClusterName()
+                     }
+                  }
+
+                  config.isCloudConfig() -> {
+                     networkConfig.cloudConfig.apply {
+                        discoveryToken = config.hazelcastCloudDiscoveryToken()
+                        isEnabled = true
+                        clusterName = config.hazelcastCloudClusterName()
+                     }
+                  }
+
+                  config.userNamePasswordAuthentication() -> {
+                     securityConfig.setUsernamePasswordIdentityConfig(config.username()!!, config.password()!!)
+                     networkConfig.addAddress(*config.addresses.toTypedArray())
+                  }
+
+                  else -> {
+                     networkConfig.addAddress(*config.addresses.toTypedArray())
+                  }
+               }
+
+            }
+            HazelcastClient.newHazelcastClient(clientConfig)
+         }
       }
-      return HazelcastClient.newHazelcastClient(clientConfig)
+
    }
 }
 

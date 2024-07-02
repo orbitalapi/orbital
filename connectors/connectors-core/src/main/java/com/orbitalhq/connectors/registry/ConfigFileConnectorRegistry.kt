@@ -9,10 +9,16 @@ import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.schemas.SchemaMemberReference
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import io.github.config4k.ClassContainer
+import io.github.config4k.CustomType
+import io.github.config4k.toConfig
+import kotlinx.serialization.Serializable
 import mu.KotlinLogging
 import org.http4k.quoted
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
+import kotlin.io.path.absolutePathString
 
 // Marker interface, to help make this stuff easier to follow
 interface ConnectionConfigMap
@@ -89,6 +95,45 @@ interface ConnectorConfiguration {
    fun getUiDisplayProperties(): Map<String, Any>
    val default: Boolean
       get() = false
+}
+
+@Serializable
+data class ConfigurationFilePath(val path: Path) {
+   companion object {
+      fun parse(input: String,  config: Config): ConfigurationFilePath {
+         val origin = config.origin()
+        val path =  if (origin?.filename() != null && !Paths.get(input).isAbsolute) {
+            val configFilePath = Paths.get(origin.filename())
+            configFilePath.parent.resolve(input)
+         } else {
+            Paths.get(input)
+         }
+         return ConfigurationFilePath(path)
+      }
+   }
+}
+
+/**
+ * A custom Config4k to handle the relative path resolution
+ * Config4 has built-in support for Path and File members for config POJOs, but they don't support
+ * relative paths, see - https://github.com/config4k/config4k/blob/main/src/main/kotlin/io/github/config4k/readers/FileReader.kt
+ */
+class ConfigurationFilePathCustomType: CustomType {
+   override fun parse(clazz: ClassContainer, config: Config, name: String): Any? {
+      return ConfigurationFilePath.parse(config.getString(name), config)
+   }
+
+   override fun testParse(clazz: ClassContainer): Boolean {
+      return  clazz.mapperClass == ConfigurationFilePath::class
+   }
+
+   override fun testToConfig(obj: Any): Boolean {
+      return ConfigurationFilePath::class.isInstance(obj)
+   }
+
+   override fun toConfig(obj: Any, name: String): Config {
+      return (obj as ConfigurationFilePath).path.absolutePathString().toConfig(name)
+   }
 }
 
 enum class ConnectorType {
