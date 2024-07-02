@@ -113,11 +113,12 @@ export class EndpointListComponent {
       {
         next: message => {
           this.streamServerState = message
+          this.websocketConnectionError = null;
           changeDetector.markForCheck();
         },
         error: err => {
           console.log(err)
-          this.websocketConnectionError = 'Stream server not enabled'
+          this.websocketConnectionError = 'Unable to fetch stream statuses'
           changeDetector.markForCheck();
         }
       });
