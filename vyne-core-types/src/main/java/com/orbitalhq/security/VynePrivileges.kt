@@ -42,6 +42,7 @@ object VynePrivileges {
    const val CreateWorkspace = "CREATE_WORKSPACE"
    const val ViewWorkspaces = "VIEW_WORKSPACES"
    const val ModifyWorkspaceMembership = "MODIFY_WORKSPACE_MEMBERSHIP"
+   const val ViewMetrics = "VIEW_METRICS"
 }
 
 
@@ -65,7 +66,8 @@ enum class VyneGrantedAuthority(val constantValue: GrantedAuthorityName) {
    EditUsers(VynePrivileges.EditUsers),
    CreateWorkspace(VynePrivileges.CreateWorkspace),
    ViewWorkspaces(VynePrivileges.ViewWorkspaces),
-   ModifyWorkspaceMembership(VynePrivileges.ModifyWorkspaceMembership);
+   ModifyWorkspaceMembership(VynePrivileges.ModifyWorkspaceMembership),
+   ViewMetrics(VynePrivileges.ViewMetrics);
 
    companion object {
       private val byConstant = values().associateBy { it.constantValue }

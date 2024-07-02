@@ -17,6 +17,7 @@ import {EndpointMonitorComponent} from './endpoint-monitor.component';
 import {QueryParseMetadata, QueryService} from "../services/query.service";
 import {LineageGraphModule} from "../type-viewer/lineage-graph/lineage-graph.module";
 import {LineageDisplayModule} from "../lineage-display/lineage-display.module";
+import {RequiresAuthorityDirective} from "../requires-authority.directive";
 
 @Component({
   selector: 'app-endpoint-monitor-container',
@@ -30,7 +31,7 @@ import {LineageDisplayModule} from "../lineage-display/lineage-display.module";
       <ng-container ngProjectAs="header-components">
         <app-published-endpoint-info [savedQuery]="query" [showTitle]="false"></app-published-endpoint-info>
         <div *ngIf="query.queryKind === 'Stream'" class="row stream-status-and-toggle">
-          <tui-toggle [ngModel]="streamIsRunning" (click)="handleToggleClick($event)" size="l"></tui-toggle>
+          <tui-toggle *appRequiresAuthority="['EditPipelines']" [ngModel]="streamIsRunning" (click)="handleToggleClick($event)" size="l"></tui-toggle>
           <tui-badge size="l" [value]="streamStatusBadge.label | titlecase"
                      [status]="streamStatusBadge.status"></tui-badge>
         </div>
@@ -53,7 +54,8 @@ import {LineageDisplayModule} from "../lineage-display/lineage-display.module";
     FormsModule,
     PublishedEndpointInfoComponent,
     LineageGraphModule,
-    LineageDisplayModule
+    LineageDisplayModule,
+    RequiresAuthorityDirective
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })

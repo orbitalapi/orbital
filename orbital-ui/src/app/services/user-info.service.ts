@@ -94,7 +94,8 @@ export enum VynePrivileges {
   EditConnections = 'EditConnections',
   ViewUsers = 'ViewUsers',
   EditUsers = 'EditUsers',
-  CreateWorkspace = 'CreateWorkspace'
+  CreateWorkspace = 'CreateWorkspace',
+  ViewMetrics = 'ViewMetrics'
 }
 
 // Below, we want to expose the keys of VynePrivileges

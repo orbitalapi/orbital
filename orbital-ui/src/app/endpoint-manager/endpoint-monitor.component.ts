@@ -25,13 +25,15 @@ import {BehaviorSubject, combineLatestWith, filter, interval, Observable, of} fr
 import {catchError, mergeMap, startWith, tap} from 'rxjs/operators';
 import {CodeViewerModule} from '../code-viewer/code-viewer.module';
 import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
-import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
+import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
 import {DataSeries, MetricsPeriod, MetricsService, StreamMetricsData} from '../services/metrics.service';
 import {SavedQuery} from '../services/types.service';
 import {UiCustomisations} from "../../environments/ui-customisations";
 import {LineageDisplayModule} from "../lineage-display/lineage-display.module";
 import {QueryPlan} from "../services/query.service";
 import {AppInfoService, FeatureToggles} from "../services/app-info.service";
+import {DataSourcesCardComponent} from "../dashboard/data-sources-card/data-sources-card.component";
+import {RequiresAuthorityDirective} from "../requires-authority.directive";
 
 type ChartConfig = {
   title: string;
@@ -62,7 +64,8 @@ type MetricsPeriodToDescription = {
       <app-query-lineage [rows]="queryPlan?.steps"/>
     </ng-container>
 
-    <app-panel-header title="Metrics" [class.no-header]="onlyShowControlsInHeader">
+    <app-panel-header title="Metrics" [class.no-header]="onlyShowControlsInHeader"
+                      *appRequiresAuthority="['ViewMetrics']">
       <ng-content select="header-controls">
       </ng-content>
       <span class="spacer"></span>
@@ -102,7 +105,9 @@ type MetricsPeriodToDescription = {
       {{ streamLoadingError }}
     </tui-notification>
     <tui-notification status="neutral" class="error-notification" *ngIf="!metricsAvailable">
-      It looks like metrics are unavailable. Check the docs on <a target="_blank" class="link" [href]="UiCustomisations.docsLinks.configureMetricsReporting">how to configure Prometheus</a>  to capture observability data on queries and streams.
+      It looks like metrics are unavailable. Check the docs on <a target="_blank" class="link"
+                                                                  [href]="UiCustomisations.docsLinks.configureMetricsReporting">how
+      to configure Prometheus</a> to capture observability data on queries and streams.
     </tui-notification>
 
     <div *ngFor="let chartConfig of chartConfigs; trackBy: chartConfigTitle" class="chart-row"
@@ -122,9 +127,11 @@ type MetricsPeriodToDescription = {
                  [tooltip]="chartConfig.tooltip"
                  [xaxis]="chartConfig.xAxis"></apx-chart>
     </div>
-    <ng-container *ngIf="(query$ | async) as query">
-      <app-panel-header title="Source"></app-panel-header>
-      <app-code-viewer [sources]="query.sources"></app-code-viewer>
+    <ng-container *appRequiresAuthority="['BrowseSchema']">
+      <ng-container *ngIf="(query$ | async) as query">
+        <app-panel-header title="Source"></app-panel-header>
+        <app-code-viewer [sources]="query.sources"></app-code-viewer>
+      </ng-container>
     </ng-container>
   `,
   styleUrls: ['./endpoint-monitor.component.scss'],
@@ -145,7 +152,9 @@ type MetricsPeriodToDescription = {
     DecimalPipe,
     TuiTextfieldControllerModule,
     TuiProgressModule,
-    LineageDisplayModule
+    LineageDisplayModule,
+    DataSourcesCardComponent,
+    RequiresAuthorityDirective
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -176,11 +185,11 @@ export class EndpointMonitorComponent implements OnInit {
   chartLoadingError: string | null = null;
 
   readonly periods: MetricsPeriodToDescription[] = [
-    { period: 'Last5Minutes', label: 'Last 5 minutes', autoRefreshEnabled: true },
-    { period: 'LastHour', label: 'Last hour', autoRefreshEnabled: true },
-    { period: 'Last4Hours', label: 'Last 4 hours', autoRefreshEnabled: true },
-    { period: 'LastDay', label: 'Last day', autoRefreshEnabled: false },
-    { period: 'Last7Days', label: 'Last 7 days', autoRefreshEnabled: false },
+    {period: 'Last5Minutes', label: 'Last 5 minutes', autoRefreshEnabled: true},
+    {period: 'LastHour', label: 'Last hour', autoRefreshEnabled: true},
+    {period: 'Last4Hours', label: 'Last 4 hours', autoRefreshEnabled: true},
+    {period: 'LastDay', label: 'Last day', autoRefreshEnabled: false},
+    {period: 'Last7Days', label: 'Last 7 days', autoRefreshEnabled: false},
     /*{ period: 'Last30Days', label: 'Last 30 days', autoRefreshEnabled: false },*/
   ]
   readonly selectedPeriod$: BehaviorSubject<MetricsPeriodToDescription> = new BehaviorSubject(this.periods[1])
@@ -252,7 +261,7 @@ export class EndpointMonitorComponent implements OnInit {
           );
         })
       )
-      .subscribe( metricsData => {
+      .subscribe(metricsData => {
         if (metricsData) {
           this.updateChartConfig(metricsData);
         }

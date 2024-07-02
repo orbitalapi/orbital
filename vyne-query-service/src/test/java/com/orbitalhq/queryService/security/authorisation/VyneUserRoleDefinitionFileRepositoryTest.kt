@@ -41,7 +41,8 @@ class VyneUserRoleDefinitionFileRepositoryTest {
             VyneGrantedAuthority.ViewAuthenticationTokens,
             VyneGrantedAuthority.EditAuthenticationTokens,
             VyneGrantedAuthority.ViewConnections,
-            VyneGrantedAuthority.EditConnections
+            VyneGrantedAuthority.EditConnections,
+            VyneGrantedAuthority.ViewMetrics
          )
       )
 
