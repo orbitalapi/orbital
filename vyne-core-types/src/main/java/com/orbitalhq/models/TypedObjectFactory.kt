@@ -305,10 +305,10 @@ class TypedObjectFactory(
 
 
    private fun readWithFormatSpecDeserializer(
-      parammMetadata: Metadata,
+      paramMetadata: Metadata,
       modelFormatSpec: ModelFormatSpec
    ): TypedInstance {
-      val parsedValue = modelFormatSpec.deserializer.parse(value, type, parammMetadata, schema, source)
+      val parsedValue = modelFormatSpec.deserializer.parse(value, type, paramMetadata, schema, source)
       // When parsing CSV, we may provide the type as T, and get back T[]
       val parsedType = if (parsedValue is Collection<*> && parsedValue.size > 1 && !type.isCollection) {
          type.asArrayType()
@@ -672,6 +672,11 @@ class TypedObjectFactory(
          supplier.canSupply(field, fieldType)
       }
 
+      // Support embedded formats.
+      // Eg: A field in a JSON message that contains an XML payload.
+      // Or a field in Protobuf that contains JSON, etc etc
+      val fieldModelFormatSpecPair = formatDetector.getFormatType(fieldType)
+
       // Questionable design choice: Favour directly supplied values over accessors and conditions.
       // The idea here is that when we're reading from a file or non parsed source, we need
       // to know how to construct the instance.
@@ -682,6 +687,7 @@ class TypedObjectFactory(
       // Note - revisit if this proves to be problematic.
       return when {
          valueSupplier != null -> valueSupplier.supplyValue(field, fieldType, schema, source, this)
+
          // Cheaper readers first
          value is CSVRecord && field.accessor is ColumnAccessor && considerAccessor -> {
             readAccessor(fieldTypeName, field.accessor, field.nullable, field.format)
@@ -733,6 +739,15 @@ class TypedObjectFactory(
          // Not a map, so could be an object, try the value reader - but this is an expensive
          // call, so we defer to last-ish
          valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, fieldType, field.format)
+
+         // Support embedded formats.
+         // Eg: A field in a JSON message that contains an XML payload.
+         // Or a field in Protobuf that contains JSON, etc etc
+         // This comes AFTER the valueReader approach, beceause
+         // if we're not a Map<>, and we don't have a valueReader, there's no way
+         // of plucking just the field - it's possible the whole message is just this field
+         // (eg., an avro message composed into a field of an object, with metadata on the other fields)
+         fieldModelFormatSpecPair != null -> readFieldWithFormatSpecDeserializer(field, fieldType, fieldModelFormatSpecPair)
 
          // Is there a default?
 //         field.defaultValue != null -> TypedValue.from(
@@ -787,6 +802,45 @@ class TypedObjectFactory(
          }
 
          else -> queryForFieldValue(field, fieldType, attributeName)
+      }
+   }
+
+   private fun readFieldWithFormatSpecDeserializer(
+      field: Field,
+      fieldType: Type,
+      fieldModelFormatSpecPair: Pair<Metadata, ModelFormatSpec>
+   ): TypedInstance {
+
+      // Scenario:
+      // We're deserializing a message - the message isn't something we can traverse the values of
+      // (such as a Map, or something with a valueReader), so it's probably something like a bytearray.
+      // Therefore, we attempt to read the entire body value.
+      // This would typically happen when you've got something like an Avro / Protobuf message on-the-wire,
+      // but the Taxi model is composing it into another model, adding things like metadata (eg: Kafka topic / headers)
+      return readWithFormatSpecDeserializer(value, fieldModelFormatSpecPair, fieldType)
+   }
+
+   private fun readWithFormatSpecDeserializer(
+      valueToRead: Any,
+      modelFormatSpecPair: Pair<Metadata, ModelFormatSpec>,
+      type: Type
+   ):TypedInstance {
+      val (metadata, modelFormatSpec) = modelFormatSpecPair
+      val parsed = when {
+         // "canParse" here can indicate "is any more deserializaiton required?"
+         modelFormatSpec.deserializer.canParse(valueToRead, metadata) -> modelFormatSpec.deserializer.parse(
+            valueToRead,
+            type,
+            metadata,
+            schema,
+            source
+         )
+
+         else -> valueToRead
+      }
+      return when (parsed) {
+         is TypedInstance -> parsed
+         else -> TypedInstance.from(type, parsed, schema)
       }
    }
 
@@ -1004,23 +1058,7 @@ class TypedObjectFactory(
          // Eg: A field in a JSON message that contains an XML payload.
          // Or a field in Protobuf that contains JSON, etc etc
          modelFormatSpecPair != null -> {
-            val (metadata, modelFormatSpec) = modelFormatSpecPair
-            val parsed = when {
-               // "canParse" here can indicate "is any more deserializaiton required?"
-               modelFormatSpec.deserializer.canParse(attributeValue, metadata) -> modelFormatSpec.deserializer.parse(
-                  attributeValue,
-                  type,
-                  metadata,
-                  schema,
-                  source
-               )
-
-               else -> attributeValue
-            }
-            when (parsed) {
-               is TypedInstance -> parsed
-               else -> TypedInstance.from(type, parsed, schema)
-            }
+            readWithFormatSpecDeserializer(attributeValue, modelFormatSpecPair, type)
          }
 
          else -> TypedInstance.from(
