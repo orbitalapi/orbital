@@ -1,6 +1,5 @@
 package com.orbitalhq.avro
 
-import com.google.common.io.Resources
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
@@ -11,11 +10,16 @@ import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.UndefinedSource
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import lang.taxi.generators.avro.AvroMessageAnnotation
 import lang.taxi.generators.avro.TaxiGenerator
+import org.junit.jupiter.api.AfterEach
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 class AvroFormatSerializerTest {
    // Define the schema
@@ -100,6 +104,14 @@ class AvroFormatSerializerTest {
   "score": 99.5
 }"""
 
+   @BeforeEach
+   fun setup() {
+      AvroFormatSpec.clearCache()
+   }
+   @AfterEach
+   fun tearDown() {
+      AvroFormatSpec.clearCache()
+   }
    @Test
    fun `can read and write a message with avro`() {
       val avroSourcePackage = avroToSourcePackage(avroSchemaJson)
@@ -142,6 +154,108 @@ class AvroFormatSerializerTest {
 
       typedInstance.toRawObject()
          .shouldBe((readTypedInstance as TypedInstance).toRawObject())
+   }
+
+   @Test
+   fun `can read and write a message with an array at root with avro using TypedInstance parser`() {
+      val schemaCache = AvroSchemaCache()
+      val avroSourcePackage = avroToSourcePackage(avroSchemaWithRootArrayJson)
+      val schema = TaxiSchema.from(avroSourcePackage)
+      val typedInstance = TypedInstance.from(schema.type("com.example.test.TestMessage[]"), "[ $testJson ]", schema)
+      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, schema)
+
+      bytes.shouldBeInstanceOf<ByteArray>()
+
+      val readTypedInstance = AvroFormatDeserializer(schemaCache).parse(
+         bytes,
+         typedInstance.type,
+         typedInstance.type.collectionType!!.getMetadata(AvroMessageAnnotation.NAME.fqn()),
+         schema,
+         UndefinedSource
+      )
+
+      typedInstance.toRawObject()
+         .shouldBe((readTypedInstance as TypedInstance).toRawObject())
+   }
+
+   @Test
+   @Disabled("Not supported - see ORB-479")
+   fun `can read a message that inherits from an avro message`() {
+      // Write the test message
+      val schemaCache = AvroSchemaCache()
+      val avroSourcePackage = avroToSourcePackage(avroSchemaWithRootArrayJson)
+      val schema = TaxiSchema.from(avroSourcePackage)
+      val typedInstance = TypedInstance.from(schema.type("com.example.test.TestMessage[]"), "[ $testJson ]", schema)
+      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, schema) as ByteArray
+
+      // Now, deserialize as a subtype
+      val schema2 = TaxiSchema.from("""
+          model TestMessageWithMetadata inherits TestMessage {
+            timestamp : Instant = now()
+          }
+
+      """.trimIndent(), importSources = listOf(schema))
+
+
+      val readTypedInstance = TypedInstance.from(schema2.type("TestMessageWithMetadata"), bytes, schema2,
+         formatSpecs = listOf(AvroFormatSpec)
+      )
+      readTypedInstance.shouldNotBeNull()
+   }
+
+   @Test
+   fun `can read a message that composes an avro message array`() {
+      // Write the test message
+      val schemaCache = AvroSchemaCache()
+      val avroSourcePackage = avroToSourcePackage(avroSchemaWithRootArrayJson)
+      val schema = TaxiSchema.from(avroSourcePackage)
+      val typedInstance = TypedInstance.from(schema.type("com.example.test.TestMessage[]"), "[ $testJson ]", schema)
+      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, schema) as ByteArray
+
+      // Now, deserialize as a subtype
+      val schema2 = TaxiSchema.from("""
+          model TestMessageWithMetadata  {
+            timestamp : Instant = now()
+            message:  TestMessage[]
+          }
+
+      """.trimIndent(), importSources = listOf(schema))
+      val mergedSchema = schema2.merge(schema)
+
+
+      val readTypedInstance = TypedInstance.from(mergedSchema.type("TestMessageWithMetadata"), bytes, mergedSchema,
+         formatSpecs = listOf(AvroFormatSpec)
+      ) as TypedObject
+      readTypedInstance.shouldNotBeNull().shouldBeInstanceOf<TypedObject>()
+      readTypedInstance["timestamp"].toRawObject().shouldNotBeNull()
+      readTypedInstance["message"].toRawObject().shouldNotBeNull()
+   }
+
+   @Test
+   fun `can read a message that composes an avro message`() {
+      val avroSourcePackage = avroToSourcePackage(avroSchemaJson)
+      val schema = TaxiSchema.from(avroSourcePackage)
+      val typedInstance = TypedInstance.from(schema.type("com.example.test.TestMessage"), testJson, schema)
+      val schemaCache = AvroSchemaCache()
+      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, schema) as ByteArray
+
+      // Now, deserialize as a subtype
+      val schema2 = TaxiSchema.from("""
+          model TestMessageWithMetadata  {
+            timestamp : Instant = now()
+            message:  TestMessage
+          }
+
+      """.trimIndent(), importSources = listOf(schema))
+      val mergedSchema = schema2.merge(schema)
+
+
+      val readTypedInstance = TypedInstance.from(mergedSchema.type("TestMessageWithMetadata"), bytes, mergedSchema,
+         formatSpecs = listOf(AvroFormatSpec)
+      ) as TypedObject
+      readTypedInstance.shouldNotBeNull().shouldBeInstanceOf<TypedObject>()
+      readTypedInstance["timestamp"].toRawObject().shouldNotBeNull()
+      readTypedInstance["message"].toRawObject().shouldNotBeNull()
    }
 
    private fun avroToSourcePackage(avro:String):SourcePackage {

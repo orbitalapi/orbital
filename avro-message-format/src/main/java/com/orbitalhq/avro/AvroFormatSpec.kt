@@ -33,6 +33,10 @@ object AvroFormatSpec : ModelFormatSpec {
 
    override val annotations: List<QualifiedName> = listOf(AvroMessageAnnotation.NAME.fqn())
    override val mediaType: String = AVRO_MEDIA_TYPE
+
+   fun clearCache() {
+      avroSchemaCache.clear()
+   }
 }
 
 
@@ -45,6 +49,11 @@ class AvroSchemaCache {
    fun get(schema: Schema, type: Type): org.apache.avro.Schema {
       val schemaCollection = cache.get(schema.hash) { AvroSchemaCollection(schema) }
       return schemaCollection.getOrBuild(type)
+   }
+
+   fun clear() {
+      cache.invalidateAll()
+      cache.cleanUp()
    }
 
 }
