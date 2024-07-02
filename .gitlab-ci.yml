@@ -421,7 +421,7 @@ terraform-deploy-prod-voyager:
 #      - docker login -u $CI_DEPENDENCY_PROXY_USER -p $CI_DEPENDENCY_PROXY_PASSWORD $CI_DEPENDENCY_PROXY_SERVER
       - trivy --version
       # cache cleanup is needed when scanning images with the same tags, it does not remove the database
-      - time trivy image --clear-cache
+      - time trivy clean --scan-cache
       # update vulnerabilities db
       - time trivy image --download-db-only --no-progress --cache-dir .trivycache/
       # Builds report and puts it in the default workdir $CI_PROJECT_DIR, so `artifacts:` can take it from there
