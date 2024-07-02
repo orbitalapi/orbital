@@ -60,7 +60,7 @@ export class QueryService {
         // therefore, concatAll() seems to do this.
         // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
         concatAll(),
-        shareReplay({ bufferSize: replayCacheSize, refCount: false })
+        shareReplay({bufferSize: replayCacheSize, refCount: false})
       );
   }
 
@@ -77,7 +77,7 @@ export class QueryService {
     return websocket;
   }
 
-  getQueryErrors(clientQueryId: string):Observable<StreamQueryErrorEvent> {
+  getQueryErrors(clientQueryId: string): Observable<StreamQueryErrorEvent> {
     return this.websocketService.websocket(`/api/query/taxiql/${clientQueryId}/errors`, true)
   }
 
@@ -112,11 +112,9 @@ export class QueryService {
     );
   }
 
-  getQueryResults(queryId: string, limit: number = 100): Observable<ValueWithTypeName> {
-    const url = encodeURI(`${this.environment.serverUrl}/api/query/history/${queryId}/results?limit=${limit}`);
-    return this.sse.getEventStream<ValueWithTypeName>(
-      url
-    ).pipe(
+  getQueryResults(queryId: string, limit: number | null = 100): Observable<ValueWithTypeName> {
+    const url = encodeURI(`${this.environment.serverUrl}/api/query/history/${queryId}/results?limit=${limit || ''}`);
+    return this.sse.getEventStream<ValueWithTypeName>(url).pipe(
       shareReplay(limit)
     );
   }
@@ -169,7 +167,9 @@ export class QueryService {
     );
   }
 
-  invokeOperation(serviceName: string, operationName: string, parameters: { [index: string]: Fact }): Observable<TypedInstance> {
+  invokeOperation(serviceName: string, operationName: string, parameters: {
+    [index: string]: Fact
+  }): Observable<TypedInstance> {
     return this.http.post<TypedInstance>(`${this.environment.serverUrl}/api/services/${serviceName}/${operationName}`, parameters, this.httpOptions);
   }
 
@@ -359,9 +359,10 @@ export interface RemoteCallExchangeMetadata {
 }
 
 export interface HttpExchangeHeaders {
-  requestHeaders: {[index: string]:string[]}
-  responseHeaders: {[index: string]:string[]}
+  requestHeaders: { [index: string]: string[] }
+  responseHeaders: { [index: string]: string[] }
 }
+
 export interface HttpExchange extends RemoteCallExchangeMetadata {
   uri: string;
   verb: string;
@@ -580,14 +581,16 @@ export interface StubQueryMessageWithSlug {
   slug: string;
   query: StubQueryMessage;
 }
+
 export interface StubQueryMessage {
   schema: string;
   query?: string;
-  parameters?: {[index: string]: any};
+  parameters?: { [index: string]: any };
   stubs?: OperationStub[];
   expectedJson?: string | null;
 }
-export function emptyQueryMessage():StubQueryMessage {
+
+export function emptyQueryMessage(): StubQueryMessage {
   return {
     schema: '',
     query: '',
@@ -595,6 +598,7 @@ export function emptyQueryMessage():StubQueryMessage {
     stubs: []
   }
 }
+
 export interface OperationStub {
   operationName: string;
   response: string;
