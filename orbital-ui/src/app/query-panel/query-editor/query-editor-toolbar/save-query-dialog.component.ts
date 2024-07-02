@@ -93,7 +93,7 @@ export interface SaveQueryRequestProps {
       useValue: {
         required: 'This is required',
         pattern: 'Names must start with a letter, and contain letters, numbers and underscores only.',
-        isExisting: 'Endpoint already exists',
+        isExisting: 'A query with that name already exists',
       },
     },
   ],
