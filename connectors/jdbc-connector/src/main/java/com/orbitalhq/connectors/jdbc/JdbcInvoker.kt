@@ -70,7 +70,7 @@ class JdbcInvoker(
                updateVerb
             )
 
-            else -> error("Unhandled JDBC Operation type: ${operation.qualifiedName.parameterizedName}")
+            else -> error("Unhandled JDBC Operation type: ${operation.qualifiedName.parameterizedName} - Consider adding one of the following annotations to indicate how to write: ${listOf(JdbcConnectorTaxi.Annotations.UpsertOperationAnnotationName, JdbcConnectorTaxi.Annotations.InsertOperationAnnotationName, JdbcConnectorTaxi.Annotations.UpdateOperationAnnotationName).joinToString { it.fullyQualifiedName }}")
          }
       } catch (e: Exception) {
          logger.error(e) { "Exception thrown whilst invoking Jdbc operation" }
