@@ -3,7 +3,7 @@ import { Component, Inject, OnInit } from '@angular/core';
 import { NavigationEnd, RouteConfigLoadEnd, RouteConfigLoadStart, Router } from '@angular/router';
 import { TuiAlertService } from '@taiga-ui/core';
 import { BehaviorSubject, EMPTY, Observable, Subject, switchMap, takeUntil } from 'rxjs';
-import { catchError, filter, map } from 'rxjs/operators';
+import {catchError, filter, map, throttleTime} from 'rxjs/operators';
 import { UiCustomisations } from '../environments/ui-customisations';
 import { PackagesService } from './package-viewer/packages.service';
 import { AppInfo, AppInfoService } from './services/app-info.service';
@@ -89,6 +89,9 @@ export class AppComponent implements OnInit {
     let isFirstSchemaUpdate = true;
 
     this.schemaNotificationService.createSchemaNotificationsSubscription()
+      .pipe(
+        throttleTime(1000)
+      )
       .subscribe(schemaUpdateNotification => {
         let message: string;
         if (schemaUpdateNotification.sourceNamesWithErrors.length > 0) {
