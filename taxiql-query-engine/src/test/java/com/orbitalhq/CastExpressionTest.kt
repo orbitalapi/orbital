@@ -2,8 +2,10 @@ package com.orbitalhq
 
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.json.parseJson
+import io.kotest.common.runBlocking
 import io.kotest.matchers.shouldBe
 import org.junit.Test
+import java.math.BigInteger
 
 class CastExpressionTest {
 
@@ -28,5 +30,26 @@ class CastExpressionTest {
       val instance2 = vyne.parseJson("Movie", """{ "released" : 2020, "isCopyright" : false}""") as TypedObject
       instance2["publicDomain"].value.shouldBe(2020)
       instance2["publicDomain"].type.qualifiedName.shortDisplayName.shouldBe("PublicDomainYear")
+   }
+
+   @Test
+   fun `can cast using a plain type expression`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+         model Person {
+            id: PersonId inherits String
+         }
+         service PersonService {
+            operation getPeople():Person[]
+         }
+      """.trimIndent())
+      stub.addResponse("getPeople", vyne.parseJson("Person[]", """[{"id" : "123"}]"""))
+      val result = vyne.query("""
+         find { Person[] } as {
+            id : Long = (Long) PersonId
+         }[]
+      """.trimIndent())
+         .firstRawObject()
+      result
+         .shouldBe(mapOf("id" to BigInteger.valueOf(123L)))
    }
 }
