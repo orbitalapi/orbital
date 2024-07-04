@@ -1,5 +1,6 @@
 package com.orbitalhq
 
+import com.orbitalhq.models.TypedObject
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import com.orbitalhq.models.json.parseJson
@@ -98,7 +99,39 @@ class MutationQueryTest {
       stub.invocations["findPerson"]!!.single().toRawObject().shouldBe("jimmy")
       // This should be with the value from our discovered service
       stub.invocations["deletePerson"]!!.single().toRawObject().shouldBe("found-jimmy")
+   }
 
-
+   @Test
+   fun `a mutating query containing a projection with a cast expression passes variables properly`():Unit = runBlocking {
+      val (vyne, stub) = testVyne("""
+         closed model Film {
+            filmId : FilmId inherits String
+            title : Title inherits String
+         }
+         closed parameter model Movie {
+            id : MovieId inherits Int
+            name : Title
+          }
+          service FilmsApi {
+            operation getFilms():Film[]
+            write operation saveMovie(Movie):Movie
+         }
+      """.trimIndent())
+      stub.addResponseReturningInputs("saveMovie")
+      stub.addResponse("getFilms", vyne.parseJson("Film[]", """[ { "filmId" : "1" , "title" : "Jaws" } ]"""))
+      vyne.query("""
+         find { Film[] } as {
+            id : MovieId = (MovieId) FilmId
+            name : Title
+         }[]
+         call FilmsApi::saveMovie
+        """.trimIndent())
+         .firstRawObject()
+      val callInputs = stub.calls["saveMovie"].first()
+      val inputObject = callInputs.single().toRawObject()
+      inputObject.shouldBe(mapOf(
+         "id" to 1, // note that this isn't "1"
+         "name" to "Jaws"
+      ))
    }
 }

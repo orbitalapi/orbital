@@ -249,4 +249,31 @@ class ProjectionNamedScopeTest {
       val invocations = stub.invocations["findFilmReview"]
    }
 
+   @Test
+   fun `can use a named scope to project to a static array type`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+            model Film {
+               title : Title inherits String
+            }
+            model Movie {
+               name : Title
+            }
+            model FilmCatalog {
+               films : Film[]
+            }
+            service Films {
+               operation getFilms():FilmCatalog
+            }
+      """.trimIndent())
+      stub.addResponse("getFilms", vyne.parseJson("FilmCatalog", """
+         { "films" : [ { "title" : "Jaws" }, { "title" : "Star Wars" } ] }
+      """.trimIndent()))
+      val result = vyne.query("""find { FilmCatalog } as (films:Film[]) -> Movie[]""")
+         .rawObjects()
+      result.shouldBe(listOf(
+         mapOf("name" to "Jaws"),
+         mapOf("name" to "Star Wars"),
+      ))
+   }
+
 }
