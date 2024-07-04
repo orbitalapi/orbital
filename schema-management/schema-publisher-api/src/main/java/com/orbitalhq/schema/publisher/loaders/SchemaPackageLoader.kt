@@ -93,6 +93,8 @@ interface SchemaPackageTransport {
    fun start(): Flux<SourcePackage>
    fun loadNow(): Mono<SourcePackage>
 
+   fun stop()
+
    val loaderStatus: Flux<LoaderStatus>
 
 

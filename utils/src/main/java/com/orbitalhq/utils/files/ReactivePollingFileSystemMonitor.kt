@@ -100,6 +100,13 @@ class ReactivePollingFileSystemMonitor(
       suspendedEvents.resume()
    }
 
+   override fun stop() {
+      logger.debug { "Stopping event publication for  ${rootPath.toFile().canonicalPath}" }
+      sink.tryEmitComplete()
+      monitor.removeObserver(observer)
+      monitor.stop()
+   }
+
    fun pollNow() {
       observer.checkAndNotify()
    }

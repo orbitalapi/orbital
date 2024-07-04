@@ -1,10 +1,12 @@
 package com.orbitalhq.schemaServer.core.repositories
 
+import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
 import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
+import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.spring.http.BadRequestException
 import com.winterbe.expekt.should
 import io.kotest.matchers.shouldBe
@@ -26,7 +28,7 @@ class WorkspaceProjectsServiceTest {
    @Before
    fun setup() {
       val configFile = folder.root.resolve("repositories.conf")
-      val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager())
+      val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager(), projectManager = mock {  })
       workspaceProjectsService = WorkspaceProjectsService(loader)
    }
 

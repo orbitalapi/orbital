@@ -1,6 +1,7 @@
 package com.orbitalhq.schemaServer.core.repositories
 
 import com.google.common.io.Resources
+import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schemaServer.core.config.WorkspaceGitSettings
 import com.orbitalhq.schemaServer.core.git.packages.BaseGitTest
@@ -53,7 +54,8 @@ class GitWorkspaceIntegrationTest : BaseGitTest() {
             pollDuration = Duration.ofDays(1)
          ),
          eventDispatcher = eventDispatcher,
-         syncUponInit = false // Only sync when we ask, otherwise there's race conditions in the tests
+         syncUponInit = false, // Only sync when we ask, otherwise there's race conditions in the tests
+         projectManager = mock {  }
       )
 
       val config = loader.load()
@@ -76,6 +78,7 @@ class GitWorkspaceIntegrationTest : BaseGitTest() {
          ),
          eventDispatcher = eventDispatcher,
          syncUponInit = false // Only sync when we ask, otherwise there's race conditions in the tests
+         , projectManager = mock {  }
       )
 
       val exception = assertThrows<IllegalStateException> {
@@ -98,6 +101,7 @@ class GitWorkspaceIntegrationTest : BaseGitTest() {
          ),
          eventDispatcher = eventDispatcher,
          syncUponInit = false // Only sync when we ask, otherwise there's race conditions in the tests
+         , projectManager = mock {  }
       )
 
       loader.loaderStatus
@@ -128,6 +132,7 @@ class GitWorkspaceIntegrationTest : BaseGitTest() {
          ),
          eventDispatcher = eventDispatcher,
          syncUponInit = false // Only sync when we ask, otherwise there's race conditions in the tests
+         , projectManager = mock {  }
       )
 
       loader.loaderStatus

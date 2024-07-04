@@ -124,6 +124,11 @@ class FileSystemPackageLoader(
       return sink.asFlux()
    }
 
+   override fun stop() {
+      sink.tryEmitComplete()
+      fileMonitor.stop()
+   }
+
    override val root: URI
       get() = config.path.toUri()
 

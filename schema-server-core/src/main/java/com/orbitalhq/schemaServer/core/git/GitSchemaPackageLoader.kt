@@ -6,7 +6,6 @@ import com.orbitalhq.ResultWithMessage
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.config.ConfigSourceWriter
-import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.schema.publisher.PublisherType
 import com.orbitalhq.schema.publisher.loaders.AddChangesToChangesetResponse
 import com.orbitalhq.schema.publisher.loaders.AvailableChangesetsResponse
@@ -60,6 +59,8 @@ class GitSchemaPackageLoader(
    private var currentBranch = config.branch
    private val defaultBranchName = config.branch
 
+   private var isStopped = false
+
    private val gitStatusSink = Sinks.many().replay().latest<LoaderStatus>()
    override val loaderStatus: Flux<LoaderStatus>
 
@@ -92,11 +93,19 @@ class GitSchemaPackageLoader(
       return filePackageLoader.loadNow()
    }
 
+   override fun stop() {
+      logger.info { "Stopping git package loader configured for ${config.path}" }
+      gitStatusSink.tryEmitComplete()
+      filePackageLoader.stop()
+      this.isStopped = true
+   }
+
 
    override fun start(): Flux<SourcePackage> {
       logger.info { "Starting with workingDir => $workingDir" }
       return GitRepoSync(workingDir, config, gitPollFrequency)
          .start(true, { fileMonitor.suspend() }, { fileMonitor.resume() })
+         .takeWhile { !isStopped }
          .doOnNext {
             updateLoaderStatus(it)
          }

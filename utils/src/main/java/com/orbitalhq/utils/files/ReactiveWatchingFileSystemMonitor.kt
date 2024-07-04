@@ -42,7 +42,7 @@ class ReactiveWatchingFileSystemMonitor(
      suspendedEvents.resume()
    }
 
-   fun stop() {
+   override fun stop() {
       unregisterKeys()
       cancelWatch()
       sink.tryEmitComplete()
