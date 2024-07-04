@@ -30,7 +30,8 @@ class ConfigTest {
    @Test
    fun `returns an empty config if config file doesn't exist`() {
       val empty = FileWorkspaceConfigLoader(Paths.get("/this/path/doesnt/exist"),
-         eventDispatcher = mock { })
+         eventDispatcher = mock { },
+         projectManager = mock {  })
          .load()
       empty.file.should.be.`null`
       empty.git.should.be.`null`
@@ -63,7 +64,8 @@ class ConfigTest {
 
       val path = folder.root.toPath().resolve("repo.conf")
       val configRepo = FileWorkspaceConfigLoader(path,
-         eventDispatcher = mock { })
+         eventDispatcher = mock { },
+         projectManager = mock {  })
       configRepo.save(config)
       val loaded = configRepo.load()
       loaded.should.equal(config)
@@ -78,7 +80,7 @@ class ConfigTest {
       IOUtils.copy(configFile.toURL().openStream(), targetConfigFile.outputStream())
 
       val configRepo = FileWorkspaceConfigLoader(targetConfigFile.toPath(),
-         eventDispatcher = mock { })
+         eventDispatcher = mock { }, projectManager = mock {  })
       val config = configRepo.load()
       config.file!!.projects.should.have.size(1)
       val path = config.file!!.projects[0].path
@@ -94,7 +96,7 @@ class ConfigTest {
       IOUtils.copy(configFile.toURL().openStream(), targetConfigFile.outputStream())
 
       val configRepo = FileWorkspaceConfigLoader(targetConfigFile.toPath(),
-         eventDispatcher = mock { })
+         eventDispatcher = mock { }, projectManager = mock {  })
       val config = configRepo.load()
 
       config.file!!.projects.should.have.size(3)
@@ -114,7 +116,7 @@ class ConfigTest {
       IOUtils.copy(configFile.toURL().openStream(), targetConfigFile.outputStream())
 
       val configRepo = FileWorkspaceConfigLoader(targetConfigFile.toPath(),
-         eventDispatcher = mock { })
+         eventDispatcher = mock { }, projectManager = mock {  })
 
       StepVerifier.create(configRepo.loaderStatus.take(1))
          .expectNextMatches {

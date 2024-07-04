@@ -2,12 +2,13 @@ package com.orbitalhq.schemaServer.core.repositories
 
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.base.Throwables
-import com.google.common.collect.Lists
 import com.google.common.collect.Sets
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.config.ChangeWatchingConfigFileRepository
 import com.orbitalhq.config.toHocon
+import com.orbitalhq.schema.publisher.ProjectLoaderManager
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
+import com.orbitalhq.schema.publisher.loaders.ProjectTransportConfig
 import com.orbitalhq.schemaServer.core.adaptors.InstantHoconSupport
 import com.orbitalhq.schemaServer.core.adaptors.PackageLoaderSpecHoconSupport
 import com.orbitalhq.schemaServer.core.adaptors.UriHoconSupport
@@ -47,9 +48,10 @@ import kotlin.io.path.isRegularFile
 import kotlin.io.path.writeText
 
 class FileWorkspaceConfigLoader(
-   private val configFilePath: Path,
+   val configFilePath: Path,
    fallback: Config = ConfigFactory.systemEnvironment(),
    private val eventDispatcher: ProjectSpecLifecycleEventDispatcher,
+   private val projectManager: ProjectLoaderManager,
    emitStateOnInit: Boolean = true
 ) :
    ChangeWatchingConfigFileRepository<WorkspaceConfig>(
@@ -115,8 +117,10 @@ class FileWorkspaceConfigLoader(
    private fun emitUpdateEvents(oldConfig: WorkspaceConfig?, workspaceConfig: WorkspaceConfig) {
       val oldFileSpecs = oldConfig?.fileConfigOrDefault?.projects?.toSet() ?: emptySet()
       val newFileSpecs = workspaceConfig.fileConfigOrDefault.projects.toSet()
+      val removedPackages = mutableListOf<PackageIdentifier>()
       val fileSpecsRemoved = Sets.difference(oldFileSpecs, newFileSpecs)
       fileSpecsRemoved.forEach { removedFileSpec ->
+         removedPackages.addAll(getPackageIdentifierForTransport(removedFileSpec))
          eventDispatcher.fileRepositorySpecRemoved(FileSpecRemovedEvent(removedFileSpec))
       }
       val fileSpecsAdded = Sets.difference(newFileSpecs, oldFileSpecs)
@@ -128,6 +132,7 @@ class FileWorkspaceConfigLoader(
       val newGitSpecs = workspaceConfig.gitConfigOrDefault.repositories.toSet()
       val gitSpecsRemoved = Sets.difference(oldGitSpecs, newGitSpecs)
       gitSpecsRemoved.forEach { removedGitSpec ->
+         removedPackages.addAll(getPackageIdentifierForTransport(removedGitSpec))
          eventDispatcher.gitRepositorySpecRemoved(GitSpecRemovedEvent(removedGitSpec))
       }
 
@@ -135,6 +140,26 @@ class FileWorkspaceConfigLoader(
       addedGitSpecs.forEach { addedGitSpec ->
          eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(addedGitSpec, workspaceConfig.gitConfigOrDefault))
       }
+
+      eventDispatcher.schemaSourceRemoved(removedPackages)
+
+   }
+
+   /**
+    * Looks up the package identifier(s) for the transport.
+    * Although some transports expose the package identifier directly (like file transports),
+    * others - like git - need to defer to their loader, since the identifier isn't known until
+    * we fetch the actual package.
+    * So, we consistently leverage the projectManager to find the package identifier
+    */
+   private fun getPackageIdentifierForTransport(transport: ProjectTransportConfig): List<PackageIdentifier> {
+      val packages = this.projectManager.loaders.filter {
+         it.config == transport
+      }.map { it.packageIdentifier }
+      if (packages.isEmpty()) {
+         logger.warn { "Could not find a corresponding package for transport $transport - sources from the package may not be updated" }
+      }
+      return packages
    }
 
    override fun extract(config: Config): WorkspaceConfig = config.extract()
@@ -154,6 +179,7 @@ class FileWorkspaceConfigLoader(
          val config = resolveRelativePaths(original)
          // Use busy loop here, otherwise we get errors about non-serialized event emmission
          stateSink.emitNext(LoaderStatus.OK, Sinks.EmitFailureHandler.busyLooping(Duration.ofSeconds(2L)))
+         this.lastConfig = config
          return config
       } catch (e: Exception) {
          val rootCause = Throwables.getRootCause(e)

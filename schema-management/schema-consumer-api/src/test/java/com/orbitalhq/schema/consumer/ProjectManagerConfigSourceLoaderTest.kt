@@ -80,6 +80,10 @@ class DummySchemaPackageTransport(private val sourcePackage: Mono<SourcePackage>
         TODO("Not yet implemented")
     }
 
+   override fun stop() {
+      TODO("Not yet implemented")
+   }
+
     override fun loadNow(): Mono<SourcePackage> {
        return sourcePackage
     }

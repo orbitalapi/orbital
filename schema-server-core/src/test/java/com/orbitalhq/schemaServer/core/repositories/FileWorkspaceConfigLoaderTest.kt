@@ -1,5 +1,6 @@
 package com.orbitalhq.schemaServer.core.repositories
 
+import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import com.orbitalhq.schemaServer.core.file.deployProject
@@ -30,7 +31,7 @@ class FileWorkspaceConfigLoaderTest {
    fun setup() {
       configFile = folder.resolve("repositories.conf")
       eventDispatcher = ProjectStoreLifecycleManager()
-      loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
+      loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher, projectManager = mock {  })
    }
 
    @Test

@@ -1,5 +1,6 @@
 package com.orbitalhq.schemaServer.core.config
 
+import com.orbitalhq.schema.publisher.ProjectLoaderManager
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import com.orbitalhq.schemaServer.core.git.SimpleGitRepositoryConnectionConfig
@@ -87,7 +88,8 @@ class WorkspaceLoaderConfig {
    @Bean
    fun configRepoLoader(
       workspaceConfig: WorkspaceSettings,
-      eventDispatcher: ProjectSpecLifecycleEventDispatcher
+      eventDispatcher: ProjectSpecLifecycleEventDispatcher,
+      projectManager: ProjectLoaderManager
    ): WorkspaceConfigLoader {
       return when {
          workspaceConfig.projectFile != null -> {
@@ -104,13 +106,13 @@ class WorkspaceLoaderConfig {
 
          workspaceConfig.git != null -> {
             logger.info { "Using a git-backed workspace config has been configured for ${workspaceConfig.git}" }
-            GitWorkspaceConfigLoader(workspaceConfig.git, eventDispatcher = eventDispatcher)
+            GitWorkspaceConfigLoader(workspaceConfig.git, eventDispatcher = eventDispatcher, projectManager = projectManager)
          }
 
          else -> {
             val absolutePath = workspaceConfig.configFile.toAbsolutePath()
             logger.info { "Using workspace config file at ${workspaceConfig.configFile}, absolute path => $absolutePath" }
-            FileWorkspaceConfigLoader(workspaceConfig.configFile, eventDispatcher = eventDispatcher)
+            FileWorkspaceConfigLoader(workspaceConfig.configFile, eventDispatcher = eventDispatcher, projectManager = projectManager)
          }
       }
    }

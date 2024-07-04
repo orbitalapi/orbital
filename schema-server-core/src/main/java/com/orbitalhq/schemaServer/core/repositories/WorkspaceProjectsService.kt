@@ -1,5 +1,7 @@
 package com.orbitalhq.schemaServer.core.repositories
 
+import com.google.common.annotations.VisibleForTesting
+import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.git.GitUtils
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
+import java.nio.file.Path
 import java.nio.file.Paths
 
 @RestController
@@ -46,6 +49,11 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) {
             it
          }
       }
+   }
+
+   @VisibleForTesting
+   fun removeFileRepository(repositoryPath: Path, packageIdentifier: PackageIdentifier): List<PackageIdentifier> {
+      return configRepo.removeFileRepository(repositoryPath,packageIdentifier)
    }
 
    @PostMapping("/api/repositories/file", params = ["test"])

@@ -2,6 +2,7 @@ package com.orbitalhq.schemaServer.core.repositories
 
 import com.google.common.base.Throwables
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.schema.publisher.ProjectLoaderManager
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schemaServer.core.config.WorkspaceGitSettings
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
@@ -21,6 +22,7 @@ class GitWorkspaceConfigLoader(
    private val gitSettings: WorkspaceGitSettings,
    private val fallback: Config = ConfigFactory.systemEnvironment(),
    private val eventDispatcher: ProjectSpecLifecycleEventDispatcher,
+   private val projectManager: ProjectLoaderManager,
    // Really, just for tests.
    // Should the repoSync task immediately attempt to sync?
    // In tests, this should be set to false to avoid timing issues
@@ -50,7 +52,8 @@ class GitWorkspaceConfigLoader(
          workspaceConfigPath,
          fallback,
          eventDispatcher,
-         emitStateOnInit = false
+         emitStateOnInit = false,
+         projectManager = projectManager
       )
       repoSync.start(syncImmediately = syncUponInit)
          // We wait for the currentRef to change.

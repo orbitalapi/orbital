@@ -8,6 +8,7 @@ interface ReactiveFileSystemMonitor {
    // Don't need to stop, just stop when all the subscribers to start() have gone away.
    fun suspend()
    fun resume()
+   fun stop()
 }
 
 data class FileSystemChangeEvent(

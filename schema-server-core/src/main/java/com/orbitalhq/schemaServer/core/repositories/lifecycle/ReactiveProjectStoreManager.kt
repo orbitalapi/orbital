@@ -122,7 +122,7 @@ class ReactiveProjectStoreManager(
          .filter { existingLoader ->
             try {
                // Note: This can throw an exception if the
-               // existing loader is in an error state 
+               // existing loader is in an error state
                // If that happens, catch, log, and move on
                existingLoader.key.packageIdentifier == loader.packageIdentifier
             } catch (e: Exception) {
@@ -134,6 +134,7 @@ class ReactiveProjectStoreManager(
          }
       if (existingLoaders.isNotEmpty()) {
          logger.warn { "At attempt was made to add a duplicate loader - ${existingLoaders.size} loaders already exist for project ${loader.packageIdentifier.id}" }
+         return
       }
 
       val stateSubscription = loader.loaderStatus.subscribe { status ->
@@ -146,6 +147,7 @@ class ReactiveProjectStoreManager(
    }
 
    private fun removeLoader(loader: SchemaPackageTransport) {
+      loader.stop()
       this._loaders.remove(loader)?.dispose()
       this._unhealthyLoaders.remove(loader)
    }

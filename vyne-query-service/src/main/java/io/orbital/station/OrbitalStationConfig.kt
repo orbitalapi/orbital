@@ -1,5 +1,6 @@
 package io.orbital.station
 
+import com.orbitalhq.schema.publisher.ProjectLoaderManager
 import com.orbitalhq.schemaServer.core.VersionedSourceLoader
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
@@ -27,7 +28,8 @@ class OrbitalStationConfig {
    fun configRepoLoader(
       @Value("\${vyne.repositories.config-file:repositories.conf}") configFilePath: Path,
       @Value("\${vyne.repositories.repository-path:#{null}}") repositoryHome: Path? = null,
-      eventDispatcher: ProjectSpecLifecycleEventDispatcher
+      eventDispatcher: ProjectSpecLifecycleEventDispatcher,
+      projectManager: ProjectLoaderManager
    ): WorkspaceConfigLoader {
       return if (repositoryHome != null) {
          logger.info { "vyne.repositories.repository-path was set to $repositoryHome running a file-based repository from this path, ignoring any other config from $configFilePath" }
@@ -41,7 +43,7 @@ class OrbitalStationConfig {
          )
       } else {
          logger.info { "Using repository config file at $configFilePath" }
-         FileWorkspaceConfigLoader(configFilePath, eventDispatcher = eventDispatcher)
+         FileWorkspaceConfigLoader(configFilePath, eventDispatcher = eventDispatcher, projectManager = projectManager)
       }
    }
 
