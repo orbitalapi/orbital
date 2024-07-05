@@ -85,8 +85,9 @@ logging:
       org.apache.kafka.clients.admin: WARN
       org.apache.kafka.common.metrics: WARN
       org.apache.kafka.common.utils: WARN
+      org.apache.kafka.common.security.authenticator: WARN
       org.apache.kafka.clients.NetworkClient: ERROR
-#     Enable to see request / response logging
+      #     Enable to see request / response logging
 #      io.orbital.station.RequestLoggingFilter: TRACE
 
       # Unfortunately, this is really really noisy when we try to test
