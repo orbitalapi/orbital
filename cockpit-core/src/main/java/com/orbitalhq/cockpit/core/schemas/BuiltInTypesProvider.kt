@@ -24,6 +24,7 @@ import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schema.publisher.SchemaPublisherService
 import com.orbitalhq.schemas.taxi.toMessage
 import lang.taxi.annotations.HttpService
+import lang.taxi.generators.avro.AvroAnnotationSchema
 import mu.KotlinLogging
 
 object BuiltInTypesProvider {
@@ -111,6 +112,11 @@ object BuiltInTypesProvider {
             "MongoDbConnector",
             "0.1.0",
             MongoConnector.schema
+         ),
+         VersionedSource(
+            "AvroFormat",
+            "0.1.0",
+            AvroAnnotationSchema.taxi
          ),
       ),
       emptyMap()
