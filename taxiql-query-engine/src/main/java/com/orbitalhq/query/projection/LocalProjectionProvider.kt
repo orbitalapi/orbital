@@ -56,6 +56,40 @@ class LocalProjectionProvider : ProjectionProvider {
 
    private val projectingScope = CoroutineScope(projectingDispatcher)
 
+   /**
+    * processes the given source
+    */
+   override  fun process(source: Flow<TypedInstanceWithMetadata>, context: QueryContext, block: suspend kotlinx.coroutines.CoroutineScope.(item: TypedInstanceWithMetadata) -> Flow<TypedInstanceWithMetadata>): Flow<TypedInstanceWithMetadata> {
+      context.cancelFlux.subscribe {
+         logger.info { "QueryEngine for queryId ${context.queryId} is cancelling" }
+         projectingScope.cancel()
+      }
+
+      return source
+         .buffer()
+         .withIndex()
+         .takeWhile { !context.cancelRequested }
+         .filter { !context.cancelRequested }
+         .distinctUntilChanged()
+          .map { emittedResult ->
+           //  logger.trace { "Starting to project instance of ${emittedResult.value.type.qualifiedName.shortDisplayName} (index ${emittedResult.index}) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
+             projectingScope.async {
+
+                val startTime = Instant.now()
+                if (!isActive) {
+                   logger.warn { "Query Cancelled exiting!" }
+                   cancel()
+                }
+                block(emittedResult.value)
+             }
+          }
+          .buffer(threadPoolSize).map {
+             val result = it.await()
+            // logger.trace { "projected or mapped instance of ${projection.type.qualifiedName.shortDisplayName} completed" }
+             result
+          }.flatMapMerge { it }
+   }
+
    override fun project(
       source: Flow<TypedInstance>,
       declaredSourceType: Type,

@@ -774,16 +774,29 @@ class StatefulQueryEngine(
          target
       }
 
-      val mutatedResults: Flow<TypedInstanceWithMetadata> = when (target.mutation) {
-         null -> projectedResults
-         else -> {
-            // At this point, any queries have been executed, and we're ready
-            // to invoke mutations.
+      val mutatedResults: Flow<TypedInstanceWithMetadata> = when  {
+         target.mutation == null -> projectedResults
+         target.projection != null -> {
+            /**
+             * If we are projecting we are already on a LocalProjectionProvider context here, i.e. on one of the orbital_projection threads
+             * so continue the mutation on the same thread.
+             */
             projectedResults.flatMapConcat { queryResult ->
                mutate(target.mutation, target, context, queryResult.instance).results
                   .map { typedInstance ->
-                     val tags = metricsTags
                      typedInstance.withProcessingMetadata(asOf = queryResult.processingStart)
+                  }
+            }
+         }
+         else -> {
+            /**
+             * We are not projecting but mutation might require an implicit projection so hope onto projectionProvider coroutine context
+             * so that we can perform the implicit projection concurrently.
+             */
+            projectionProvider.process(projectedResults, context) {
+               mutate(target.mutation, target, context, it.instance).results
+                  .map { typedInstance ->
+                     typedInstance.withProcessingMetadata(asOf = it.processingStart)
                   }
             }
          }

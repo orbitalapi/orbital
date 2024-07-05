@@ -29,4 +29,8 @@ interface ProjectionProvider {
        metricTags: MetricTags = MetricTags.NONE
     ): Flow<TypedInstanceWithMetadata>
 
+    fun process(source: Flow<TypedInstanceWithMetadata>, context: QueryContext, block: suspend kotlinx.coroutines.CoroutineScope.(item: TypedInstanceWithMetadata) -> Flow<TypedInstanceWithMetadata>): Flow<TypedInstanceWithMetadata>
+
+
+
 }
