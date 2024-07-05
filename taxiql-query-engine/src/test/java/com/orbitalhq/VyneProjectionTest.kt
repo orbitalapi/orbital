@@ -4,11 +4,6 @@ import app.cash.turbine.test
 import app.cash.turbine.testIn
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.base.Stopwatch
-import com.winterbe.expekt.expect
-import com.winterbe.expekt.should
-import io.kotest.matchers.collections.shouldContainInOrder
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
 import com.orbitalhq.models.*
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.json.parseJson
@@ -24,8 +19,15 @@ import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.utils.Benchmark
 import com.orbitalhq.utils.StrategyPerformanceProfiler
+import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldContainInOrder
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
@@ -2707,6 +2709,16 @@ service Broker1Service {
             }
 
          }
+
+          override fun process(
+              source: Flow<TypedInstanceWithMetadata>,
+              context: QueryContext,
+              block: suspend CoroutineScope.(item: TypedInstanceWithMetadata) -> Flow<TypedInstanceWithMetadata>
+          ): Flow<TypedInstanceWithMetadata> {
+              return source.flatMapConcat {
+                  block(it)
+              }
+          }
 
       }
       val (vyne, stub) = testVyne(

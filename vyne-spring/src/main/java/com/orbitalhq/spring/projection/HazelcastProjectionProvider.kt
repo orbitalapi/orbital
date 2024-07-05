@@ -18,6 +18,7 @@ import com.orbitalhq.query.projection.ProjectionProvider
 import com.orbitalhq.query.withProcessingMetadata
 import com.orbitalhq.schemas.Type
 import com.spikhalskiy.futurity.Futurity
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.map
@@ -51,17 +52,8 @@ class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistrib
       globalFacts: FactBag,
       metricsTags: MetricTags
    ): Flow<TypedInstanceWithMetadata> {
-
-      val instance: HazelcastInstance = Hazelcast.getAllHazelcastInstances().first()
-      val executorService: IExecutorService = instance.getExecutorService("projectionExecutorService")
-
       val vyne = ApplicationContextProvider.context()!!.getBean("vyneFactory") as Vyne
-
-      val selector = if (instance.cluster.members.size >= nonLocalDistributionClusterSize) {
-         RemoteBiasedMemberSelector()
-      } else {
-         MemberSelector { true }
-      }
+      val (selector, executorService) = memberSelector()
 
       val projectedResults = results
          .asFlux()
@@ -87,6 +79,24 @@ class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistrib
          }
 
       return projectedResults.asFlow().flatMapMerge { it }
+
+   }
+
+   override fun process(
+      source: Flow<TypedInstanceWithMetadata>,
+      context: QueryContext,
+      block: suspend CoroutineScope.(item: TypedInstanceWithMetadata) -> Flow<TypedInstanceWithMetadata>
+   ): Flow<TypedInstanceWithMetadata> {
+      TODO("Not implemented for hazelcast projection provider yet.")
+   }
+
+   private fun memberSelector(): Pair<MemberSelector, IExecutorService> {
+      val instance: HazelcastInstance = Hazelcast.getAllHazelcastInstances().first()
+      return if (instance.cluster.members.size >= nonLocalDistributionClusterSize) {
+         RemoteBiasedMemberSelector() to instance.getExecutorService("projectionExecutorService")
+      } else {
+         MemberSelector { true } to instance.getExecutorService("projectionExecutorService")
+      }
 
    }
 
