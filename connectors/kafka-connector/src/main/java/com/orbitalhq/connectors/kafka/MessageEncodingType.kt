@@ -11,11 +11,20 @@ enum class MessageEncodingType {
 
    companion object {
       fun forType(messageType: Type): MessageEncodingType {
+         val declaredEncoding = declaredEncodingOrNull(messageType)
+         if (declaredEncoding != null) {
+            return declaredEncoding
+         }
+         return declaredEncodingOrNull(messageType) ?: STRING
+      }
+
+      private fun declaredEncodingOrNull(messageType: Type): MessageEncodingType? {
          return when {
             messageType.hasMetadata(ProtobufMessageAnnotation.NAME.fqn()) -> MessageEncodingType.BYTE_ARRAY
             messageType.hasMetadata(AvroMessageAnnotation.NAME.fqn()) -> MessageEncodingType.BYTE_ARRAY
+            messageType.hasMetadata(AvroMessageAnnotation.AVRO_MESSAGE_WRAPPER_NAME.fqn()) -> MessageEncodingType.BYTE_ARRAY
             // TODO : Other binary types (eg, avro) go here
-            else -> MessageEncodingType.STRING
+            else -> null
          }
       }
    }
