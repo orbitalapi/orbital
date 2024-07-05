@@ -48,7 +48,13 @@ class AvroFormatDeserializer(
             }
          }
 
-         is String -> DecoderFactory.get().jsonDecoder(avroSchema, value)
+         is String -> {
+            if (value.startsWith("[") || value.startsWith("{")) {
+               DecoderFactory.get().jsonDecoder(avroSchema, value)
+            } else {
+               return parse(value.toByteArray(), type, metadata, schema, source)
+            }
+         }
          else -> error("Decoding Avro from input type ${value::class.simpleName} is not supported")
       }
       val reader = if (type.isCollection) {
