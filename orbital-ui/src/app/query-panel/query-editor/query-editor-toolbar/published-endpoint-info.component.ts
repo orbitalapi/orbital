@@ -11,7 +11,7 @@ type QueryPayload = {
   queryName: string,
   path: string,
   method?: HttpMethod,
-  isSSE?: boolean
+  scheme: 'http' | 'sse' | 'ws'
 }
 
 @Component({
@@ -73,20 +73,25 @@ export class PublishedEndpointInfoComponent implements OnChanges {
         queryName: this.savedQuery.name.shortDisplayName,
         path: this.savedQuery.httpEndpoint.url,
         method: this.savedQuery.httpEndpoint.method,
-        isSSE: this.savedQuery.queryKind === 'Stream'
+        scheme: this.savedQuery.queryKind === 'Stream' ? 'sse' : 'http'
       })
     }
     if (this.savedQuery?.websocketOperation) {
       this.queries.push({
         queryName: this.savedQuery.name.shortDisplayName,
         path: this.savedQuery.websocketOperation.path,
+        scheme: 'ws'
       })
     }
   }
 
   copyEndpoint(query: QueryPayload, copyType: 'URL' | 'cURL') {
-    const { path, method, isSSE} = query;
-    const absolutePath = window.location.origin + path;
+    const { path, method, scheme} = query;
+    let absolutePath = window.location.origin + path;
+    if (scheme === "ws") {
+      // https -> wss | http -> ws
+      absolutePath = absolutePath.replace('http', 'ws')
+    }
     if (copyType === 'URL') {
       this.clipboard.copy(absolutePath);
     } else if (copyType === 'cURL') {
@@ -94,7 +99,7 @@ export class PublishedEndpointInfoComponent implements OnChanges {
       const acceptHeader = "-H 'Accept: text/event-stream;charset-UTF-8' "
       switch (method) {
         case 'GET':
-          clipboardContent = `curl ${isSSE ? acceptHeader : ''}-X GET "${absolutePath}"`
+          clipboardContent = `curl ${scheme === 'sse' ? acceptHeader : ''}-X GET "${absolutePath}"`
           break;
         case 'POST':
           clipboardContent = `curl -X POST "${absolutePath}"`
