@@ -85,6 +85,7 @@ class OidcAuthorizationPkceConfig {
          // End points for Cask and other vyne based services to fetch the schema in EUREKA schema discovery mode.
          .pathMatchers("/api/security/config").permitAll()
          .pathMatchers("/api/actuator/**").permitAll()
+         .pathMatchers("/api/flow/license").permitAll()
          // All other api end points must be protected.
          .pathMatchers("/api/**").authenticated()
          .pathMatchers(
