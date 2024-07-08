@@ -79,7 +79,7 @@ enum class LicensedEdition(val enabledFeatures: List<LicensedFeature>) {
 
 data class UsageQuota(
    val capability: MeteredCapability,
-   val limit: Int
+   val limit: Long
 )
 
 enum class MeteredCapability {

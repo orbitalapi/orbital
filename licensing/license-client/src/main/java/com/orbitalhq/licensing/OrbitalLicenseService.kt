@@ -52,7 +52,7 @@ data class LicenseWithUsage(
 
 data class QuotaUsageState(
    val quota: UsageQuota,
-   val usage: Int
+   val usage: Long
 ) {
    val health: QuotaHealth = QuotaHealth.calculateFor(usage, quota.limit)
 }
@@ -63,10 +63,10 @@ enum class QuotaHealth {
    EXCEEDED;
 
    companion object {
-      fun calculateFor(consumedUsage: Int, quota: Int): QuotaHealth {
+      fun calculateFor(consumedUsage: Long, quota: Long): QuotaHealth {
          return when {
             // avoid div/0 errors
-            quota == 0 && consumedUsage == 0 -> WARNING
+            quota == 0L && consumedUsage == 0L -> WARNING
             consumedUsage > quota -> EXCEEDED
             consumedUsage / quota.toDouble() < 0.75 -> HEALTHY
             else -> WARNING
