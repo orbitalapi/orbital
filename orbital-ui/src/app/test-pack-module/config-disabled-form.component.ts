@@ -14,8 +14,7 @@ import { UiCustomisations } from '../../environments/ui-customisations';
     </p>
     <p>
       To enable, modify the
-      <code>vyne.analytics.persistRemoteCallResponses</code> setting in your server config, setting to true.
-      <code>vyne.analytics.persistResults</code> setting in your server config, setting to true.
+      <code>vyne.analytics.persistRemoteCallResponses</code> and <code>vyne.analytics.persistResults</code> settings in your server config, setting both values to <code>true</code>.
     </p>
     <p>Once this is done, you'll need to re-start {{UiCustomisations.productName}} and re-run your query.</p>
     <div class="button-row">
