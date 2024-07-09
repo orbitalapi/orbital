@@ -1,5 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {MatDialogRef} from '@angular/material/dialog';
+import {UiCustomisations} from "../../environments/ui-customisations";
 
 @Component({
   selector: 'app-config-persists-results-disabled-form',
@@ -8,7 +9,7 @@ import {MatDialogRef} from '@angular/material/dialog';
       Downloading As Json is disabled
     </h2>
     <p>
-      To create Json data, Vyne needs to store the relevant data during query execution. Currently this is
+      To create Json data, {{ UiCustomisations.productName }} needs to store the relevant data during query execution. Currently this is
       disabled.
     </p>
     <p>
@@ -31,4 +32,5 @@ export class ConfigPersistResultsDisabledFormComponent implements OnInit {
   ngOnInit() {
   }
 
+  protected readonly UiCustomisations = UiCustomisations;
 }
