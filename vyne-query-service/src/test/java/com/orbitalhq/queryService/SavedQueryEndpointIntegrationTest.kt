@@ -3,6 +3,7 @@ package com.orbitalhq.queryService
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.hazelcast.core.HazelcastInstance
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.whenever
 import com.orbitalhq.PackageMetadata
@@ -75,6 +76,8 @@ import reactor.kotlin.test.test
 )
 @ActiveProfiles("test")
 class SavedQueryEndpointIntegrationTest : DatabaseTest() {
+   @MockBean
+   lateinit var hazelcastInstance: HazelcastInstance
 
    @MockBean
    lateinit var chatService: OpenAiChatService

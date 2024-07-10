@@ -2,11 +2,10 @@ package com.orbitalhq.queryService.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.github.tomakehurst.wiremock.client.WireMock
+import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.JWTClaimType
 import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
-import com.winterbe.expekt.should
-import io.kotest.matchers.booleans.shouldBeTrue
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
@@ -25,6 +24,8 @@ import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectSto
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.config.TestDiscoveryClientConfig
+import com.winterbe.expekt.should
+import io.kotest.matchers.booleans.shouldBeTrue
 import org.jose4j.jwk.RsaJsonWebKey
 import org.junit.Ignore
 import org.junit.Test
@@ -93,6 +94,9 @@ class VyneQueryOidcIntegrationTest {
 
    private var rsaJsonWebKey: RsaJsonWebKey? = null
    private var jwsBuilder: JWSBuilder? = null
+
+   @MockBean
+   lateinit var hazelcastInstance: HazelcastInstance
 
    @MockBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider

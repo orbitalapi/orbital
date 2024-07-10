@@ -1,9 +1,9 @@
 package com.orbitalhq.queryService
 
+import com.hazelcast.core.HazelcastInstance
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
-import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.formats.csv.CsvFormatSpec
@@ -23,10 +23,12 @@ import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.SimpleVyneProvider
 import com.orbitalhq.spring.config.TestDiscoveryClientConfig
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.testVyne
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.BeforeAll
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
@@ -221,6 +223,9 @@ class TestSpringConfig {
 
    @Bean
    fun metricsReporter() = NoOpMetricsReporter
+
+   @MockBean
+   lateinit var hazelcastInstance: HazelcastInstance
 
    @Bean
    @Primary

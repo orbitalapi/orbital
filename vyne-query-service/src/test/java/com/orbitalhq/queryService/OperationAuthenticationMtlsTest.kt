@@ -2,6 +2,7 @@ package com.orbitalhq.queryService
 
 import app.cash.turbine.withTurbineTimeout
 import com.google.common.io.Files
+import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.auth.schemes.MutualTls
 import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
@@ -139,6 +140,9 @@ class OperationAuthenticationMtlsTest : DatabaseTest() {
 
    }
    private lateinit var taxiSchema: TaxiSchema
+
+   @MockBean
+   lateinit var hazelcastInstance: HazelcastInstance
 
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager

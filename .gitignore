@@ -225,3 +225,7 @@ fallback-license.json
 /vyne-query-service/saml-signing-cert.key
 /vyne-query-service/saml-signing-cert.pem
 /vyne-query-service/sp-metadata.xml
+/search9023/
+/search9024/
+/historyPersistenceQueue9023/
+/historyPersistenceQueue9024/

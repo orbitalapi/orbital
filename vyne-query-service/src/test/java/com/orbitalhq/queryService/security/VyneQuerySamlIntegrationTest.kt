@@ -5,6 +5,7 @@ import com.gargoylesoftware.htmlunit.html.HtmlButton
 import com.gargoylesoftware.htmlunit.html.HtmlHeading1
 import com.gargoylesoftware.htmlunit.html.HtmlInput
 import com.gargoylesoftware.htmlunit.html.HtmlPage
+import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
@@ -215,6 +216,9 @@ class VyneQuerySamlIntegrationTest {
          registry.add("vyne.security.saml.privateKeyPassword") { "orbital" }
       }
    }
+
+   @MockBean
+   lateinit var hazelcastInstance: HazelcastInstance
 
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager

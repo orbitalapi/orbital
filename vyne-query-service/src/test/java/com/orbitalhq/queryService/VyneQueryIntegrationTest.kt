@@ -2,18 +2,17 @@ package com.orbitalhq.queryService
 
 //import com.orbitalhq.testVyne
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.winterbe.expekt.should
-import com.orbitalhq.stubbing.StubService
+import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.copilot.OpenAiChatService
-import com.orbitalhq.models.TypedCollection
-import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
+import com.orbitalhq.models.TypedCollection
+import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
@@ -28,7 +27,9 @@ import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.SimpleVyneProvider
 import com.orbitalhq.spring.config.TestDiscoveryClientConfig
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.testVyne
+import com.winterbe.expekt.should
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.skyscreamer.jsonassert.JSONAssert
@@ -63,6 +64,9 @@ import kotlin.test.assertEquals
 )
 @ActiveProfiles("test")
 class VyneQueryIntegrationTest : DatabaseTest() {
+   @MockBean
+   lateinit var hazelcastInstance: HazelcastInstance
+
    @MockBean
    lateinit var chatService: OpenAiChatService
 

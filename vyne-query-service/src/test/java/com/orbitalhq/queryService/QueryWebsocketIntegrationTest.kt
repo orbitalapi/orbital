@@ -1,6 +1,7 @@
 package com.orbitalhq.queryService
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.VyneProvider
@@ -89,6 +90,9 @@ class QueryWebsocketIntegrationTest : DatabaseTest() {
    lateinit var configService: ConfigService
    @MockBean
    lateinit var licenseManager: LicenseManager
+
+   @MockBean
+   lateinit var hazelcastInstance: HazelcastInstance
 
 
 
