@@ -17,12 +17,16 @@ import kotlinx.serialization.Serializable
 import java.util.Properties
 import kotlin.io.path.absolutePathString
 
-
+enum class HazelcastConfigurationType {
+   Embedded,
+   Client
+}
 @Serializable
 data class HazelcastConfiguration(
    override val connectionName: String,
    val addresses: List<String> = listOf(),
    val operationCacheTtlSeconds: Int = 120,
+   val configType: HazelcastConfigurationType = HazelcastConfigurationType.Client,
    val xmlConfig: ConfigurationFilePath? = null,
    val yamlConfig: ConfigurationFilePath? = null,
    val connectionParameters: Map<ConnectionParameterName, String> = emptyMap(),

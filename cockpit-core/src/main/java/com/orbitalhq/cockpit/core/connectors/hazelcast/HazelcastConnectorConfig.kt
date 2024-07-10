@@ -1,5 +1,6 @@
 package com.orbitalhq.cockpit.core.connectors.hazelcast
 
+import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.hazelcast.HazelcastConnectionsManager
 import com.orbitalhq.connectors.hazelcast.HazelcastOperationCacheBuilder
@@ -12,8 +13,8 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class HazelcastConnectorConfig {
    @Bean
-   fun hazelcastConnectionsManager(connectors: SourceLoaderConnectorsRegistry, schemaStore: SchemaStore): HazelcastConnectionsManager {
-      return HazelcastConnectionsManager(connectors, schemaStore)
+   fun hazelcastConnectionsManager(connectors: SourceLoaderConnectorsRegistry, schemaStore: SchemaStore, orbitalHazelcastInstance: HazelcastInstance): HazelcastConnectionsManager {
+      return HazelcastConnectionsManager(connectors, schemaStore, orbitalHazelcastInstance)
 
    }
    @Bean

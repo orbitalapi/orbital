@@ -1,6 +1,7 @@
 package com.orbitalhq.connectors.hazelcast
 
 import com.google.common.io.Resources
+import com.hazelcast.client.test.TestHazelcastFactory
 import com.hazelcast.core.Hazelcast
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.config.FileConfigSourceLoader
@@ -56,7 +57,8 @@ class HazelcastConnectionsManagerTest {
       val hazelcast = Hazelcast.newHazelcastInstance()
       val (_, hzConfiguration) = HazelcastConnectionsManager(
          buildRegistry("hz-default-connection.conf"),
-         SimpleSchemaStore()
+         SimpleSchemaStore(),
+         hazelcast
       )
          .hazelcastConnection(null)
       hzConfiguration.connectionName.should.equal("integrationHazelcast")
@@ -64,11 +66,38 @@ class HazelcastConnectionsManagerTest {
    }
 
    @Test
+   fun `should throw with multiple default hz connections`() {
+      assertThrows<IllegalArgumentException> {
+         HazelcastConnectionsManager(
+            buildRegistry("hz-multiple-default-connections.conf"),
+            SimpleSchemaStore(),
+            TestHazelcastFactory().newHazelcastInstance()
+         ).hazelcastConnection(null)
+      }
+   }
+
+   @Test
+   fun `should return embedded instance when configType is embedded`() {
+      val hazelcast = Hazelcast.newHazelcastInstance()
+      val (hzInstance, hzConfiguration) = HazelcastConnectionsManager(
+         buildRegistry("hz-connections-with-embedded.conf"),
+         SimpleSchemaStore(),
+         hazelcast
+      )
+         .hazelcastConnection("integrationHazelcast")
+      hzConfiguration.connectionName.should.equal("integrationHazelcast")
+      hzInstance.should.equal(hazelcast)
+      hazelcast.shutdown()
+
+   }
+
+   @Test
    fun `should return hz connection from xml configuration`() {
       val hazelcast = Hazelcast.newHazelcastInstance()
       val (_, hzConfiguration) = HazelcastConnectionsManager(
          buildRegistry("hz-default-connection.conf", listOf("hazelcast-client.xml")),
-         SimpleSchemaStore()
+         SimpleSchemaStore(),
+         hazelcast
       )
          .hazelcastConnection("clientWithXmlConfig")
       hzConfiguration.connectionName.should.equal("clientWithXmlConfig")
@@ -80,7 +109,8 @@ class HazelcastConnectionsManagerTest {
       val hazelcast = Hazelcast.newHazelcastInstance()
       val (_, hzConfiguration) = HazelcastConnectionsManager(
          buildRegistry("hz-default-connection.conf", listOf("hazelcast-client.yaml")),
-         SimpleSchemaStore()
+         SimpleSchemaStore(),
+         hazelcast
       )
          .hazelcastConnection("clientWithYamlConfig")
       hzConfiguration.connectionName.should.equal("clientWithYamlConfig")
@@ -90,7 +120,8 @@ class HazelcastConnectionsManagerTest {
    @Test
    fun `should throw when requested connection name is null and there is no default hz connection`() {
       assertThrows<IllegalArgumentException> {
-         HazelcastConnectionsManager(buildRegistry("hz-no-default-connection.conf"), SimpleSchemaStore())
+         HazelcastConnectionsManager(buildRegistry("hz-no-default-connection.conf"), SimpleSchemaStore(),
+            TestHazelcastFactory().newHazelcastInstance())
             .hazelcastConnection(null)
       }
    }

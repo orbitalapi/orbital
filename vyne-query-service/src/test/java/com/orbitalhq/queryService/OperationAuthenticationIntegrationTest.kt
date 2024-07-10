@@ -1,6 +1,7 @@
 package com.orbitalhq.queryService
 
 import com.google.common.io.Files
+import com.hazelcast.core.HazelcastInstance
 import com.nhaarman.mockito_kotlin.whenever
 import com.orbitalhq.asPackage
 import com.orbitalhq.auth.schemes.Cookie
@@ -64,6 +65,9 @@ import org.springframework.test.context.junit4.SpringRunner
 @ActiveProfiles("test")
 class OperationAuthenticationIntegrationTest : DatabaseTest() {
    private lateinit var taxiSchema: TaxiSchema
+
+   @MockBean
+   lateinit var hazelcastInstance: HazelcastInstance
 
    @MockBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider

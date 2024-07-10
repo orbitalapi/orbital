@@ -1,13 +1,17 @@
 package com.orbitalhq.connectors.config
 
+import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.ResultWithMessage
+import com.orbitalhq.config.ConfigSourceLoader
+import com.orbitalhq.config.ConfigSourceWriterProvider
+import com.orbitalhq.config.FileConfigSourceLoader
+import com.orbitalhq.config.MergingHoconConfigRepository
+import com.orbitalhq.config.SimpleConfigSourceWriterProvider
+import com.orbitalhq.connectors.VyneConnectionsConfig
+import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
-import com.orbitalhq.PackageIdentifier
-import com.orbitalhq.ResultWithMessage
-import com.orbitalhq.config.*
-import com.orbitalhq.connectors.VyneConnectionsConfig
-import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
 import java.nio.file.Path
 
 /**
@@ -72,7 +76,11 @@ class SourceLoaderConnectorsRegistry(
 
    fun defaultHazelcastConfiguration(): HazelcastConfiguration? {
       val hazelcastConnectors = load().hazelcast
-      return hazelcastConnectors.values.firstOrNull { it.default }
+      val defaultConnections = hazelcastConnectors.values.filter { it.default }
+      if (defaultConnections.size > 1) {
+         throw IllegalArgumentException("Only One Hazelcast connection can be defined as default - ${defaultConnections.joinToString { defaultConn -> defaultConn.connectionName }} marked as default!")
+      }
+      return defaultConnections.firstOrNull()
    }
 
    fun hazelcastConfigurationForConnectionName(connectionName: String): HazelcastConfiguration? {
