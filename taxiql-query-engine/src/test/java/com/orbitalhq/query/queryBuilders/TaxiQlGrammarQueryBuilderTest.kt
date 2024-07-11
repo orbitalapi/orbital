@@ -22,6 +22,10 @@ class TaxiQlGrammarQueryBuilderTest {
    val schema = TaxiSchema.fromStrings(
       VyneQlGrammar.QUERY_TYPE_TAXI,
       """
+      model CastMember {
+         characterName : Character inherits String
+         actor : ActorName
+      }
       model Actor {
          name : ActorName inherits String
          age : Age inherits Int
@@ -60,6 +64,20 @@ class TaxiQlGrammarQueryBuilderTest {
    fun `generates from string argument`() {
       val generatedQuery = generateQuery(
          getQuerySpecNode("""given { name : ActorName = "Jimmy" } find { Actor( ActorName == name ) }""", schema)
+      )
+      generatedQuery.withoutWhitespace().shouldBe("""find { Actor( ActorName == "Jimmy" ) }""".withoutWhitespace())
+   }
+
+   @Test
+   fun `generates from model reference`() {
+      val generatedQuery = generateQuery(
+         getQuerySpecNode("""given {
+            |  castMember : CastMember = {
+            |     characterName : 'Floppy',
+            |     actor : 'Jimmy'
+            |  }
+            |}
+            |find { Actor( ActorName == castMember::ActorName ) }""".trimMargin(), schema)
       )
       generatedQuery.withoutWhitespace().shouldBe("""find { Actor( ActorName == "Jimmy" ) }""".withoutWhitespace())
    }

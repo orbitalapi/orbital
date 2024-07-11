@@ -5,21 +5,31 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.query.queryBuilders.QueryGrammarQueryBuilder
 import com.orbitalhq.query.queryBuilders.TaxiQlGrammarQueryBuilder
-import com.orbitalhq.schemas.OperatorExpressionConstraint
-import com.orbitalhq.schemas.OutputConstraint
 import com.orbitalhq.schemas.Parameter
-import com.orbitalhq.schemas.PropertyToParameterConstraint
 import com.orbitalhq.schemas.QueryOperation
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.log
+import lang.taxi.expressions.Expression
+import lang.taxi.expressions.LiteralExpression
+import lang.taxi.expressions.OperatorExpression
+import lang.taxi.expressions.TypeExpression
+import lang.taxi.services.operations.constraints.Constraint
+import lang.taxi.services.operations.constraints.ExpressionConstraint
+import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
+import lang.taxi.types.ArgumentSelector
+import lang.taxi.types.ModelAttributeReferenceSelector
+import mu.KotlinLogging
 
 class QueryOperationInvocationStrategy(
    invocationService: OperationInvocationService,
    private val queryBuilders: List<QueryGrammarQueryBuilder> = listOf(TaxiQlGrammarQueryBuilder())
 ) : QueryStrategy, BaseOperationInvocationStrategy(invocationService) {
 
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
    override suspend fun invoke(
       target: Set<QuerySpecTypeNode>,
       context: QueryContext,
@@ -98,7 +108,7 @@ class QueryOperationInvocationStrategy(
    private fun queryServiceSatisfiesConstraints(
       schema: Schema,
       queryOperation: QueryOperation,
-      dataConstraints: List<OutputConstraint>,
+      dataConstraints: List<Constraint>,
       isCovariant: Boolean
    ): Boolean {
       // bail early
@@ -109,17 +119,9 @@ class QueryOperationInvocationStrategy(
       // For now, we're only looking at filter operations.  Revisit when we get to aggregations.
       return dataConstraints.all { constraint ->
          when (constraint) {
-            is PropertyToParameterConstraint -> if (isCovariant) {
-               queryOperation.supportedFilterOperations.contains(constraint.operator)
-                  && validateSupportedFilterOperations(schema, constraint, queryOperation.returnType)
-            } else {
-               queryOperation.supportedFilterOperations.contains(constraint.operator)
-            }
-
-            is OperatorExpressionConstraint -> true
-
+            is ExpressionConstraint -> canFilterForExpression(constraint.expression, schema, queryOperation.returnType)
             else -> {
-               // TODO : Implement support for the other constraints if/when they become
+               // TODO : Implement support for the other constraints if/when they become needed
                log().warn("Support for data constraint of type ${constraint::class.simpleName} is not yet implemented, so query operations cannot be invoked for this query.")
                false
             }
@@ -127,18 +129,39 @@ class QueryOperationInvocationStrategy(
       }
    }
 
-   private fun validateSupportedFilterOperations(
+   /**
+    * Examines an expression, determining if the expression can be evaluated against the return type of the
+    * operation
+    */
+   private fun canFilterForExpression(expression: Expression,schema: Schema, operationReturnType: Type): Boolean {
+      if (expression !is OperatorExpression) return false
+      val components = listOf(expression.lhs, expression.rhs)
+      return components.all { expressionPart ->
+         when (expressionPart) {
+            is LiteralExpression -> true
+            is ArgumentSelector -> true
+            is OperatorExpression -> canFilterForExpression(expressionPart, schema, operationReturnType)
+            is ModelAttributeReferenceSelector -> canFilterOnPropertyType(schema, schema.type(expressionPart.targetType), operationReturnType)
+            is TypeExpression -> canFilterOnPropertyType(schema, schema.type(expressionPart.type), operationReturnType)
+
+            else -> {
+               logger.warn { "Not implemented - detecting if a Query operation can perform a filter satisfying an expression of kind ${expressionPart::class.simpleName} - ${expressionPart.asTaxi()}" }
+               false
+            }
+         }
+      }
+   }
+
+   private fun canFilterOnPropertyType(
       schema: Schema,
-      propertyToParameterConstraint: PropertyToParameterConstraint,
+      propertyType: Type,
       operationReturnType: Type
    ): Boolean {
-      val propertyConstraintTaxiType = propertyToParameterConstraint.propertyIdentifier.taxi
-      val propertyConstraintVyneType = schema.type(propertyConstraintTaxiType)
       val operationReturnParameterisedType =
          if (operationReturnType.isCollection) operationReturnType.typeParameters[0] else operationReturnType
       return operationReturnParameterisedType.attributes.values.any { field ->
          val fieldVyneType = field.resolveType(schema)
-         fieldVyneType == propertyConstraintVyneType || propertyConstraintVyneType.inheritsFrom(fieldVyneType)
+         fieldVyneType.isAssignableFrom(propertyType)
       }
    }
 

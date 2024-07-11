@@ -78,8 +78,7 @@ class QueryExpressionBuilder(private val queryPlanner: QueryPlanner) {
          }
          val legacyExpression = when {
             discoveryType.constraints.isNotEmpty() -> {
-               val constraints = QuerySpecTypeNode.buildConstraints(targetType, schema, discoveryType.constraints)
-               ConstrainedTypeNameQueryExpression(targetType.name.parameterizedName, constraints)
+               ConstrainedTypeNameQueryExpression(targetType.name.parameterizedName, discoveryType.constraints)
             }
 
             else -> TypeQueryExpression(targetType)

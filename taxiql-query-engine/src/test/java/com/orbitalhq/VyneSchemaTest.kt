@@ -1,20 +1,12 @@
 package com.orbitalhq
 
-import com.winterbe.expekt.expect
-import com.winterbe.expekt.should
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.schemas.EnumValue
 import com.orbitalhq.schemas.Modifier
-import com.orbitalhq.schemas.PropertyToParameterConstraint
 import com.orbitalhq.schemas.taxi.TaxiSchema
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.types.shouldBeInstanceOf
-import lang.taxi.Operator
-import lang.taxi.services.operations.constraints.ArgumentExpression
-import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
-import lang.taxi.services.operations.constraints.RelativeValueExpression
+import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
 import org.junit.Test
-import kotlin.math.exp
 
 class VyneSchemaTest {
    private fun vyneWithTestSchema():Vyne {
@@ -153,22 +145,6 @@ class VyneSchemaTest {
       expect(schema.hasType("foo.FirstName")).to.be.`true`
       expect(schema.hasType("LastName")).to.be.`true`
       expect(schema.hasType("bar.LastName")).to.be.`true`
-   }
-
-   @Test
-   fun shouldParseServiceContsraints() {
-      val vyne = vyneWithTestSchema()
-      val service = vyne.getService("vyne.example.ClientService")
-      val operation = service.operation("convertMoney")
-      expect(operation.parameters[0].constraints).size(1)
-      operation.parameters[0].constraints.first().should.be.instanceof(PropertyToParameterConstraint::class.java)
-      expect(operation.contract).not.`null`
-      expect(operation.contract.constraints).size(1)
-      val constraint = operation.contract.constraints.first() as PropertyToParameterConstraint
-      constraint.propertyIdentifier.shouldBe(PropertyFieldNameIdentifier("currency"))
-      constraint.operator.shouldBe(Operator.EQUAL)
-      val expectedValue = constraint.expectedValue.shouldBeInstanceOf<ArgumentExpression>()
-      expectedValue.argument.path.shouldBe("target")
    }
 
    @Test
