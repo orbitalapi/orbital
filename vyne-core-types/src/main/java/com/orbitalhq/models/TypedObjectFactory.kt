@@ -308,13 +308,20 @@ class TypedObjectFactory(
       paramMetadata: Metadata,
       modelFormatSpec: ModelFormatSpec
    ): TypedInstance {
-      val parsedValue = modelFormatSpec.deserializer.parse(value, type, paramMetadata, schema, source)
-      // When parsing CSV, we may provide the type as T, and get back T[]
-      val parsedType = if (parsedValue is Collection<*> && parsedValue.size > 1 && !type.isCollection) {
-         type.asArrayType()
-      } else {
-         type
+      val (parsedValue,parsedType) = modelFormatSpec.deserializer.parse(value, type, paramMetadata, schema, source).let { parsedValue ->
+         when {
+            // When parsing CSV, we may provide the type as T, and get back T[]
+            // This is a legacy behaviour, and should be removed.
+            parsedValue is Collection<*> && parsedValue.size > 1 && !type.isCollection -> parsedValue to type.asArrayType()
+
+            // The parser will generally return a collection.
+            // If the collection has a single element, and the requested type isn't a collection, unwrap the collection
+            parsedValue is Collection<*> && parsedValue.size == 1 && !type.isCollection -> parsedValue.single() to type
+
+            else -> parsedValue to type
+         }
       }
+
       return TypedInstance.from(
          parsedType,
          parsedValue,

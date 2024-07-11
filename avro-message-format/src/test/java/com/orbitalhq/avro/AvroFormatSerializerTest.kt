@@ -1,5 +1,6 @@
 package com.orbitalhq.avro
 
+import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
@@ -118,7 +119,7 @@ class AvroFormatSerializerTest {
       val schema = TaxiSchema.from(avroSourcePackage)
       val typedInstance = TypedInstance.from(schema.type("com.example.test.TestMessage"), testJson, schema)
       val schemaCache = AvroSchemaCache()
-      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, schema)
+      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, mock {  }, schema, -1)
 
       bytes.shouldBeInstanceOf<ByteArray>()
 
@@ -140,7 +141,7 @@ class AvroFormatSerializerTest {
       val avroSourcePackage = avroToSourcePackage(avroSchemaWithRootArrayJson)
       val schema = TaxiSchema.from(avroSourcePackage)
       val typedInstance = TypedInstance.from(schema.type("com.example.test.TestMessage[]"), "[ $testJson ]", schema)
-      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, schema)
+      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, mock {  }, schema, -1)
 
       bytes.shouldBeInstanceOf<ByteArray>()
 
@@ -162,7 +163,7 @@ class AvroFormatSerializerTest {
       val avroSourcePackage = avroToSourcePackage(avroSchemaWithRootArrayJson)
       val schema = TaxiSchema.from(avroSourcePackage)
       val typedInstance = TypedInstance.from(schema.type("com.example.test.TestMessage[]"), "[ $testJson ]", schema)
-      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, schema)
+      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, mock {  }, schema, -1)
 
       bytes.shouldBeInstanceOf<ByteArray>()
 
@@ -186,7 +187,7 @@ class AvroFormatSerializerTest {
       val avroSourcePackage = avroToSourcePackage(avroSchemaWithRootArrayJson)
       val schema = TaxiSchema.from(avroSourcePackage)
       val typedInstance = TypedInstance.from(schema.type("com.example.test.TestMessage[]"), "[ $testJson ]", schema)
-      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, schema) as ByteArray
+      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, mock {  }, schema, -1)
 
       // Now, deserialize as a subtype
       val schema2 = TaxiSchema.from("""
@@ -210,7 +211,7 @@ class AvroFormatSerializerTest {
       val avroSourcePackage = avroToSourcePackage(avroSchemaWithRootArrayJson)
       val schema = TaxiSchema.from(avroSourcePackage)
       val typedInstance = TypedInstance.from(schema.type("com.example.test.TestMessage[]"), "[ $testJson ]", schema)
-      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, schema) as ByteArray
+      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, mock {  }, schema, -1)
 
       // Now, deserialize as a subtype
       val schema2 = TaxiSchema.from("""
@@ -237,7 +238,7 @@ class AvroFormatSerializerTest {
       val schema = TaxiSchema.from(avroSourcePackage)
       val typedInstance = TypedInstance.from(schema.type("com.example.test.TestMessage"), testJson, schema)
       val schemaCache = AvroSchemaCache()
-      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, schema) as ByteArray
+      val bytes = AvroFormatSerializer(schemaCache).write(typedInstance, mock {  }, schema, -1)
 
       // Now, deserialize as a subtype
       val schema2 = TaxiSchema.from("""

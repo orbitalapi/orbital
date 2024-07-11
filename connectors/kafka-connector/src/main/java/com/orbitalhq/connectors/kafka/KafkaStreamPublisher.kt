@@ -87,9 +87,9 @@ class KafkaStreamPublisher(
       topic: String,
       messageKey: TypedInstance?
    ): SenderRecord<Any?, Any?, Nothing?> {
-      val format = formatRegistry.forType(payload.type)
+      val (metadata, format) = formatRegistry.forType(payload.type)
       val messageContent = if (format != null) {
-         format.serializer.writeAsBytes(payload, schema)
+         format.serializer.writeAsBytes(payload, metadata!!, schema, -1)
       } else {
          val rawObject = payload.toRawObject()
          objectMapper.writeValueAsBytes(rawObject)

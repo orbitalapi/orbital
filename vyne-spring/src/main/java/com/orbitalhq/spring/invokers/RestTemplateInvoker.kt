@@ -279,7 +279,7 @@ class RestTemplateInvoker(
    }
 
    private fun getContentTypeFromResponseType(returnType: Type): MediaType {
-      val formatSpec = formats.forType(returnType)
+      val (metadata, formatSpec) = formats.forType(returnType)
       val mediaType = if (formatSpec != null) {
          try {
             MediaType.parseMediaType(formatSpec.mediaType)

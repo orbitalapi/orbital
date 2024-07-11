@@ -1,16 +1,20 @@
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
-  Component, computed, DestroyRef, effect,
+  Component, computed, DestroyRef, effect, ElementRef,
   EventEmitter, input,
   Input,
-  Output
+  Output, ViewChild
 } from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import { tuiIconPause, tuiIconPlay } from '@taiga-ui/icons';
 import { BehaviorSubject, EMPTY, Observable, of, Subject } from 'rxjs';
 import {filter, map, scan, tap} from 'rxjs/operators';
-import { DisplayMode, DownloadClickedEvent } from '../object-view/object-view-container.component';
+import {
+  DisplayMode,
+  DownloadClickedEvent,
+  ObjectViewContainerComponent
+} from '../object-view/object-view-container.component';
 import { InstanceLike, Type } from '../services/schema';
 import {QueryPlan, QueryProfileData, StreamQueryErrorEvent} from '../services/query.service';
 import { BaseQueryResultComponent } from '../query-panel/result-display/BaseQueryResultComponent';
@@ -132,6 +136,7 @@ enum ViewMode {
         </div>
       </app-panel-header>
       <app-object-view-container
+        #objectViewContainer
         *ngIf="resultsTabIndex < 3 && showResultsPanel && viewMode === ViewMode.RESULTS"
         [instances$]="_instances$"
         [schema]="schema"
@@ -194,11 +199,6 @@ enum ViewMode {
             class="link"
           >Why is this disabled?</a>
         </div>
-        <button tuiOption
-                (click)="onDownloadClicked(downloadFileType.CUSTOM_FORMAT)"
-                [disabled]="!(hasModelFormatSpecs$ | async) || !config?.analytics.persistResults">Using the defined
-          format
-        </button>
       </tui-data-list>
     </ng-template>
   `,
@@ -221,6 +221,9 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
     this.isQueryPaused = false;
     if (value && this.resultsTabIndex === 3) this.resultsTabIndex = 0;
   }
+
+  @ViewChild('objectViewContainer')
+  objectViewContainer: ObjectViewContainerComponent;
 
   @Input()
   resultsTabIndex: number = 0;
@@ -382,7 +385,7 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
     if (this.config.analytics.persistResults) {
       this.downloadClicked.emit(new DownloadClickedEvent(format));
     } else {
-      // this.resultsTable.downloadAsCsvFromGrid();
+      this.objectViewContainer.downloadAsCsvFromGrid()
     }
   }
 

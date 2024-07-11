@@ -1,5 +1,6 @@
 package com.orbitalhq.models.format
 
+import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Type
 
 /**
@@ -7,7 +8,7 @@ import com.orbitalhq.schemas.Type
  */
 interface FormatRegistry {
    val formats: List<ModelFormatSpec>
-   fun forType(type: Type): ModelFormatSpec?
+   fun forType(type: Type): Pair<Metadata?, ModelFormatSpec?>
 }
 
 open class DefaultFormatRegistry(override val formats: List<ModelFormatSpec>) : FormatRegistry {
@@ -17,7 +18,7 @@ open class DefaultFormatRegistry(override val formats: List<ModelFormatSpec>) : 
    }
 
    private val formatDetector = FormatDetector(formats)
-   override fun forType(type: Type): ModelFormatSpec? {
-      return formatDetector.getFormatType(type)?.second
+   override fun forType(type: Type): Pair<Metadata?,ModelFormatSpec?> {
+      return formatDetector.getFormatType(type) ?: (null to null)
    }
 }

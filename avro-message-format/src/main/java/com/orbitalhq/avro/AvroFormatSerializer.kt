@@ -1,6 +1,5 @@
 package com.orbitalhq.avro
 
-import com.orbitalhq.models.TypeNamedInstance
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedEnumValue
 import com.orbitalhq.models.TypedInstance
@@ -8,11 +7,8 @@ import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.TypedValue
 import com.orbitalhq.models.format.ModelFormatSerializer
-import com.orbitalhq.models.format.TypedInstanceInfo
-import com.orbitalhq.schemas.AttributeName
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Schema
-import com.orbitalhq.schemas.Type
 import lang.taxi.types.isMapType
 import org.apache.avro.generic.GenericData
 import org.apache.avro.generic.GenericDatumWriter
@@ -25,32 +21,10 @@ class AvroFormatSerializer(private val schemaCache: AvroSchemaCache) :
       result: TypedInstance,
       metadata: Metadata,
       schema: Schema,
-      typedInstanceInfo: TypedInstanceInfo
+      index: Int
    ): Any? {
-      TODO("Not yet implemented")
-   }
-
-   override fun write(
-      result: TypeNamedInstance,
-      attributes: Set<AttributeName>,
-      metadata: Metadata,
-      typedInstanceInfo: TypedInstanceInfo
-   ): Any? {
-      TODO("Not yet implemented")
-   }
-
-   override fun write(
-      result: TypeNamedInstance,
-      type: Type,
-      metadata: Metadata,
-      typedInstanceInfo: TypedInstanceInfo
-   ): Any? {
-      TODO("Not yet implemented")
-   }
-
-   override fun write(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo): Any? {
       val type = result.type
-      val avroSchema = schemaCache.get(schema,type)
+      val avroSchema = schemaCache.get(schema, type)
       val genericRecord = buildAvroValue(result, avroSchema)
       val writer = GenericDatumWriter<Any>(avroSchema)
       val outputStream = ByteArrayOutputStream()
@@ -60,6 +34,10 @@ class AvroFormatSerializer(private val schemaCache: AvroSchemaCache) :
       outputStream.close()
 
       return outputStream.toByteArray()
+   }
+
+   override fun write(rawValue: Any?, metadata: Metadata, index: Int): Any? {
+      error("Writing raw values is not supported by Avro")
    }
 
    private fun buildAvroValue(instance: TypedInstance, avroSchema: org.apache.avro.Schema): Any? {
@@ -93,7 +71,7 @@ class AvroFormatSerializer(private val schemaCache: AvroSchemaCache) :
       }
    }
 
-   override fun writeAsBytes(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo): ByteArray {
-      TODO("Not yet implemented")
+   override fun writeAsBytes(result: TypedInstance, metadata: Metadata, schema: Schema, index: Int): ByteArray {
+      return write(result, metadata, schema, index) as ByteArray
    }
 }

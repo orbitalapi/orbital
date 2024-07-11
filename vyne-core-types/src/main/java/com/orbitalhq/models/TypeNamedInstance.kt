@@ -47,8 +47,3 @@ data class TypeNamedInstance(
       }
    }
 }
-
-data class VersionedTypedInstance(
-   val type: VersionedType,
-   val instance: TypedInstance
-)
