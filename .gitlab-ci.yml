@@ -150,6 +150,7 @@ build-jvm-develop:
    stage: build
    only:
       - develop
+      - release/*
    extends: .build-jvm
    variables:
       MAVEN_GOALS: 'clean deploy'
@@ -267,26 +268,14 @@ regression-test:
          -t "${registry}${registry_orbital}/${microservice_orbital}:${versionTag}${tag_suffix}"
          .
 
-.publish-to-quay-io:
-   extends: .publish-docker
-   rules:
-      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
-         when: never
-      -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
-      -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
-         when: manual
-         allow_failure: true
-   variables:
-      registry_vyne: vyneco
-      registry_orbital: hazelcast_cloud
-      registry: quay.io/
-
 .publish-to-docker-hub:
    extends: .publish-docker
    rules:
       -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
          when: never
       -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
+#         Always publish if we're on a release branch
+      -  if: $CI_COMMIT_BRANCH =~ /^release\//
       -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
          when: manual
          allow_failure: true
@@ -300,6 +289,8 @@ regression-test:
       -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
          when: never
       -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
+      #         Always publish if we're on a release branch
+      -  if: $CI_COMMIT_BRANCH =~ /^release\//
       -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
          when: manual
          allow_failure: true
