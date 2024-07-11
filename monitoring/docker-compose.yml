@@ -3,6 +3,7 @@ version: '3.7'
 services:
    prometheus:
       image: prom/prometheus:v2.44.0
+      network_mode: host
       ports:
          - "9090:9090"
       volumes:
