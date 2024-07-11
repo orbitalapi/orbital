@@ -30,7 +30,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 class ParameterFactory {
    suspend fun discoverAll(operation: Operation, context: QueryContext): List<Pair<Parameter, TypedInstance>> {
       return operation.parameters.map { param ->
-         param to discover(param.type, context, null, operation)
+         param to discover(param.type, context, null, operation, defaultValue = param.defaultValue)
       }
    }
 

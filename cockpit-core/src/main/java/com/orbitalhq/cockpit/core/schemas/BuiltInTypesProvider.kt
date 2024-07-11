@@ -25,6 +25,7 @@ import com.orbitalhq.schema.publisher.SchemaPublisherService
 import com.orbitalhq.schemas.taxi.toMessage
 import lang.taxi.annotations.HttpService
 import lang.taxi.generators.avro.AvroAnnotationSchema
+import lang.taxi.generators.avro.AvroMessageAnnotation
 import mu.KotlinLogging
 
 object BuiltInTypesProvider {

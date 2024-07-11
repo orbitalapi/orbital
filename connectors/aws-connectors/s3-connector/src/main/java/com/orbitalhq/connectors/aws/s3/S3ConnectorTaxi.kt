@@ -17,17 +17,34 @@ object S3ConnectorTaxi {
    }
    const val S3EntryKeyTypeName = "S3EntryKey"
    val S3EntryKeyTypeFullyQualifiedName = "${Annotations.namespace}.$S3EntryKeyTypeName".fqn()
+
+   val FilenamePatternTypeName = "FilenamePattern"
+   val FilenamePatternFqn = "${Annotations.namespace}.$FilenamePatternTypeName".fqn()
+
+   val RequestBodyTypeName = "RequestBody"
+   val RequestBodyFqn = "${Annotations.namespace}.$RequestBodyTypeName".fqn()
+
    val schema = """
 namespace  ${Annotations.namespace} {
    annotation ${Annotations.S3Service.NAME.fqn().name} {
       connectionName : ConnectionName inherits String
    }
 
+   annotation ${RequestBodyTypeName} {}
+
    annotation ${Annotations.S3Operation.NAME.fqn().name} {
       bucket : BucketName inherits String
    }
 
    type $S3EntryKeyTypeName inherits String
+
+   [[ A pattern (using standard Glob format) that defines
+   the file(s) to read from S3. Eg:
+    - `foo*.txt`
+    - `*.txt`
+    - `*`
+   ]]
+   type $FilenamePatternTypeName inherits String
 }
 """
    object Annotations {

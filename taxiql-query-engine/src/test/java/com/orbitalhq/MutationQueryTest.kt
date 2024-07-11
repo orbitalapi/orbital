@@ -14,10 +14,10 @@ import org.junit.jupiter.api.assertThrows
 
 class MutationQueryTest {
 
-    @Test
-    fun `a mutating operation can accept an array 1`(): Unit = runBlocking {
-        val (vyne, stub) = testVyne(
-            """
+   @Test
+   fun `a mutating operation can accept an array 1`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
          model Film {
             title : Title inherits String
             yearReleased : YearReleased inherits Int
@@ -26,7 +26,7 @@ class MutationQueryTest {
             name : Title
             year : YearReleased
          }
-         
+
          model FilmCatalog {
             films : Film[]
          }
@@ -36,30 +36,34 @@ class MutationQueryTest {
             write operation saveMovies(Movie[]):Movie[]
          }
       """.trimIndent()
-        )
+      )
 
 
-        stub.addResponse("getFilms", vyne.parseJson("FilmCatalog", """
+      stub.addResponse(
+         "getFilms", vyne.parseJson(
+            "FilmCatalog", """
          { "films" : [ { "title" : "Star Wars", "yearReleased" : 1978 },  { "title" : "Empire Strikes Back", "yearReleased" : 1982 }] }
-      """.trimIndent()))
-        stub.addResponseReturningInputs("saveMovies")
+      """.trimIndent()
+         )
+      )
+      stub.addResponseReturningInputs("saveMovies")
 
-        val results = vyne.query("find { FilmCatalog } as (films:Film[]) -> Movie[] call Films::saveMovies")
-            .rawObjects()
+      val results = vyne.query("find { FilmCatalog } as (films:Film[]) -> Movie[] call Films::saveMovies")
+         .rawObjects()
 
-        val calls = stub.calls["saveMovies"]
-        calls.shouldHaveSize(1)
-        val mutationCall = calls.single()
-        val input = mutationCall[0]
-        input.shouldBeInstanceOf<TypedCollection>()
-            .shouldHaveSize(2)
-    }
+      val calls = stub.calls["saveMovies"]
+      calls.shouldHaveSize(1)
+      val mutationCall = calls.single()
+      val input = mutationCall[0]
+      input.shouldBeInstanceOf<TypedCollection>()
+         .shouldHaveSize(2)
+   }
 
 
-    @Test
-    fun `a mutating operation can accept an array`(): Unit = runBlocking {
-        val (vyne, stub) = testVyne(
-            """
+   @Test
+   fun `a mutating operation can accept an array`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
          model Film {
             title : Title inherits String
             yearReleased : YearReleased inherits Int
@@ -73,37 +77,76 @@ class MutationQueryTest {
             write operation saveMovies(Movie[]):Movie[]
          }
       """.trimIndent()
-        )
-        stub.addResponse(
-            "getFilms", vyne.parseJson(
-                "Film[]",
-                """[ { "title" : "Star Wars", "yearReleased" : 1978 },
+      )
+      stub.addResponse(
+         "getFilms", vyne.parseJson(
+            "Film[]",
+            """[ { "title" : "Star Wars", "yearReleased" : 1978 },
             | { "title" : "Empire Strikes Back", "yearReleased" : 1982 }
             | ]""".trimMargin()
-            )
-        )
-        stub.addResponseReturningInputs("saveMovies")
+         )
+      )
+      stub.addResponseReturningInputs("saveMovies")
 
-        val results = vyne.query("find { Film[] } call Films::saveMovies")
-            .rawObjects()
+      val results = vyne.query("find { Film[] } call Films::saveMovies")
+         .rawObjects()
 
-        val calls = stub.calls["saveMovies"]
-        calls.shouldHaveSize(1)
-        val mutationCall = calls.single()
-        val input = mutationCall[0]
-        input.shouldBeInstanceOf<TypedCollection>()
-            .shouldHaveSize(2)
-    }
+      val calls = stub.calls["saveMovies"]
+      calls.shouldHaveSize(1)
+      val mutationCall = calls.single()
+      val input = mutationCall[0]
+      input.shouldBeInstanceOf<TypedCollection>()
+         .shouldHaveSize(2)
+   }
 
-    /**
-     * For now, we can't support this, as we'd just collect forever.
-     * In future, we can support some form of checkpointing or windowing.
-     * So, for now, this should error
-     */
-    @Test
-    fun `a mutating operation accepting an array should throw an error with a streaming source`():Unit = runBlocking {
-        val (vyne, stub) = testVyne(
-            """
+   @Test
+   fun `a mutating operation with explicit projection can accept an array`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         model Film {
+            title : Title inherits String
+            yearReleased : YearReleased inherits Int
+         }
+         parameter model Movie {
+            name : Title
+            year : YearReleased
+         }
+         service Films {
+            operation getFilms():Film[]
+            write operation saveMovies(Movie[]):Movie[]
+         }
+      """.trimIndent()
+      )
+      stub.addResponse(
+         "getFilms", vyne.parseJson(
+            "Film[]",
+            """[ { "title" : "Star Wars", "yearReleased" : 1978 },
+            | { "title" : "Empire Strikes Back", "yearReleased" : 1982 }
+            | ]""".trimMargin()
+         )
+      )
+      stub.addResponseReturningInputs("saveMovies")
+
+      val results = vyne.query("find { Film[] } as Movie[] call Films::saveMovies")
+         .rawObjects()
+
+      val calls = stub.calls["saveMovies"]
+      calls.shouldHaveSize(1)
+      val mutationCall = calls.single()
+      val input = mutationCall[0]
+      input.shouldBeInstanceOf<TypedCollection>()
+         .shouldHaveSize(2)
+   }
+
+   /**
+    * For now, we can't support this, as we'd just collect forever.
+    * In future, we can support some form of checkpointing or windowing.
+    * So, for now, this should error
+    */
+   @Test
+   fun `a mutating operation accepting an array should throw an error with a streaming source`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
          model Film {
             title : Title inherits String
             yearReleased : YearReleased inherits Int
@@ -117,26 +160,26 @@ class MutationQueryTest {
             write operation saveMovies(Movie[]):Movie[]
          }
       """.trimIndent()
-        )
-        stub.addResponse(
-            "getFilms", vyne.parseJson(
-                "Film[]",
-                """[ { "title" : "Star Wars", "yearReleased" : 1978 },
+      )
+      stub.addResponse(
+         "getFilms", vyne.parseJson(
+            "Film[]",
+            """[ { "title" : "Star Wars", "yearReleased" : 1978 },
             | { "title" : "Empire Strikes Back", "yearReleased" : 1982 }
             | ]""".trimMargin()
-            )
-        )
-        stub.addResponseReturningInputs("saveMovies")
+         )
+      )
+      stub.addResponseReturningInputs("saveMovies")
 
-        shouldThrow<SearchRuntimeException> {
-            // This should error, with a helpful error message
-            vyne.query("stream { Film } call Films::saveMovies")
-                .rawObjects()
-        }
-    }
+      shouldThrow<SearchRuntimeException> {
+         // This should error, with a helpful error message
+         vyne.query("stream { Film } call Films::saveMovies")
+            .rawObjects()
+      }
+   }
 
 
-    @Test
+   @Test
    fun `will invoke a write service for a mutation`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
@@ -189,9 +232,10 @@ class MutationQueryTest {
    }
 
    @Test
-   fun `in a query that finds then mutates the writing operation is only invoked during the mutation`(): Unit = runBlocking {
-      val (vyne, stub) = testVyne(
-         """
+   fun `in a query that finds then mutates the writing operation is only invoked during the mutation`(): Unit =
+      runBlocking {
+         val (vyne, stub) = testVyne(
+            """
          model Person {
             personId: PersonId inherits String
             anotherId: AnotherId inherits String
@@ -203,32 +247,65 @@ class MutationQueryTest {
 
          }
       """
+         )
+         stub.addResponse("findPerson") { _, params ->
+            listOf(vyne.parseJson("Person", """{ "personId" : "jimmy", "anotherId" : "found-jimmy" } """))
+         }
+         stub.addResponse("deletePerson") { _, params ->
+            listOf(vyne.parseJson("Person", """{ "personId" : "jimmy", "anotherId" : "deleted-jimmy" } """))
+         }
+         val result = vyne.query(
+            """given { person:PersonId =  "jimmy" }
+         find { Person }  // First find,
+         call Peeps::deletePerson // then delete
+      """.trimMargin()
+         )
+            .firstRawObject()
+         // The result should be from our deletePerson service
+         result.shouldBe(mapOf("personId" to "jimmy", "anotherId" to "deleted-jimmy"))
+
+         // When we called findPerson, it should be with the original id
+         stub.invocations["findPerson"]!!.single().toRawObject().shouldBe("jimmy")
+         // This should be with the value from our discovered service
+         stub.invocations["deletePerson"]!!.single().toRawObject().shouldBe("found-jimmy")
+      }
+
+   @Test
+   fun `a parameter defined in a given clause can be passed to a mutation operation`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         type AuthKey inherits String
+         model Person {
+            personId: PersonId inherits String
+            anotherId: AnotherId inherits String
+         }
+
+         service Peeps {
+            write operation deletePerson(AnotherId, authKey: AuthKey) : Person
+            operation findPerson(PersonId):Person
+
+         }
+      """
       )
-      stub.addResponse("findPerson") { _, params ->
-         listOf(vyne.parseJson("Person", """{ "personId" : "jimmy", "anotherId" : "found-jimmy" } """))
-      }
-      stub.addResponse("deletePerson") { _, params ->
-         listOf(vyne.parseJson("Person", """{ "personId" : "jimmy", "anotherId" : "deleted-jimmy" } """))
-      }
+      val person = vyne.parseJson("Person", """{ "personId" : "jimmy", "anotherId" : "found-jimmy" } """)
+      stub.addResponse("findPerson") { _, _ -> listOf(person) }
+      stub.addResponse("deletePerson") { _, _ -> listOf(person) }
       val result = vyne.query(
-         """given { person:PersonId =  "jimmy" }
+         """given { person:PersonId =  "jimmy", authKey:AuthKey = "foo" }
          find { Person }  // First find,
          call Peeps::deletePerson // then delete
       """.trimMargin()
       )
          .firstRawObject()
-      // The result should be from our deletePerson service
-      result.shouldBe(mapOf("personId" to "jimmy", "anotherId" to "deleted-jimmy"))
-
-      // When we called findPerson, it should be with the original id
-      stub.invocations["findPerson"]!!.single().toRawObject().shouldBe("jimmy")
-      // This should be with the value from our discovered service
-      stub.invocations["deletePerson"]!!.single().toRawObject().shouldBe("found-jimmy")
+      val params = stub.calls["deletePerson"].single()
+      params[1].value.shouldBe("foo")
    }
 
    @Test
-   fun `a mutating query containing a projection with a cast expression passes variables properly`():Unit = runBlocking {
-      val (vyne, stub) = testVyne("""
+   fun `a mutating query containing a projection with a cast expression passes variables properly`(): Unit =
+      runBlocking {
+         val (vyne, stub) = testVyne(
+            """
          closed model Film {
             filmId : FilmId inherits String
             title : Title inherits String
@@ -241,22 +318,57 @@ class MutationQueryTest {
             operation getFilms():Film[]
             write operation saveMovie(Movie):Movie
          }
-      """.trimIndent())
-      stub.addResponseReturningInputs("saveMovie")
-      stub.addResponse("getFilms", vyne.parseJson("Film[]", """[ { "filmId" : "1" , "title" : "Jaws" } ]"""))
-      vyne.query("""
+      """.trimIndent()
+         )
+         stub.addResponseReturningInputs("saveMovie")
+         stub.addResponse("getFilms", vyne.parseJson("Film[]", """[ { "filmId" : "1" , "title" : "Jaws" } ]"""))
+         vyne.query(
+            """
          find { Film[] } as {
             id : MovieId = (MovieId) FilmId
             name : Title
          }[]
          call FilmsApi::saveMovie
-        """.trimIndent())
+        """.trimIndent()
+         )
+            .firstRawObject()
+         val callInputs = stub.calls["saveMovie"].first()
+         val inputObject = callInputs.single().toRawObject()
+         inputObject.shouldBe(
+            mapOf(
+               "id" to 1, // note that this isn't "1"
+               "name" to "Jaws"
+            )
+         )
+      }
+
+   @Test
+   fun `can use a default param in a mutation`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         type AuthKey inherits String
+         model Person {
+            personId: PersonId inherits String
+            anotherId: AnotherId inherits String
+         }
+
+         service Peeps {
+            write operation deletePerson(AnotherId, authKey: AuthKey = "foo") : Person
+            operation findPerson(PersonId):Person
+
+         }
+      """
+      )
+      val person = vyne.parseJson("Person", """{ "personId" : "jimmy", "anotherId" : "found-jimmy" } """)
+      stub.addResponse("findPerson") { _, _ -> listOf(person) }
+      stub.addResponse("deletePerson") { _, _ -> listOf(person) }
+      val result = vyne.query(
+         """find { Person }  // First find,
+         call Peeps::deletePerson // then delete
+      """.trimMargin()
+      )
          .firstRawObject()
-      val callInputs = stub.calls["saveMovie"].first()
-      val inputObject = callInputs.single().toRawObject()
-      inputObject.shouldBe(mapOf(
-         "id" to 1, // note that this isn't "1"
-         "name" to "Jaws"
-      ))
+      val params = stub.calls["deletePerson"].single()
+      params[1].value.shouldBe("foo")
    }
 }

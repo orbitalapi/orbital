@@ -137,8 +137,10 @@ interface QueryEngine {
       metricsTags: MetricTags = MetricTags.NONE
    ): QueryResult
 
-   suspend fun findAll(queryString: QueryExpression, context: QueryContext,
-                       metricsTags: MetricTags = MetricTags.NONE): QueryResult
+   suspend fun findAll(
+      queryString: QueryExpression, context: QueryContext,
+      metricsTags: MetricTags = MetricTags.NONE
+   ): QueryResult
 
    fun queryContext(
       factSetIds: Set<FactSetId> = setOf(FactSets.DEFAULT),
@@ -153,7 +155,11 @@ interface QueryEngine {
    suspend fun build(type: Type, context: QueryContext): QueryResult =
       build(TypeNameQueryExpression(type.fullyQualifiedName), context)
 
-   suspend fun build(query: QueryExpression, context: QueryContext, metricsTags: MetricTags = MetricTags.NONE): QueryResult
+   suspend fun build(
+      query: QueryExpression,
+      context: QueryContext,
+      metricsTags: MetricTags = MetricTags.NONE
+   ): QueryResult
 
    // The inputValue allows for passing the result from a query.
    // Pass null if no upstream query exists
@@ -265,8 +271,10 @@ class StatefulQueryEngine(
 
    private val queryParser = QueryParser(schema)
 
-   override suspend fun findAll(queryString: QueryExpression, context: QueryContext,
-                                metricsTags: MetricTags): QueryResult {
+   override suspend fun findAll(
+      queryString: QueryExpression, context: QueryContext,
+      metricsTags: MetricTags
+   ): QueryResult {
       val findAllQuery = queryParser.parse(queryString).map { it.copy(mode = QueryMode.GATHER) }.toSet()
       return find(findAllQuery, context, metricsTags = metricsTags)
    }
@@ -285,7 +293,11 @@ class StatefulQueryEngine(
       return projectTo(targetType, context, metricsTags)
    }
 
-   private suspend fun projectTo(targetType: Type, context: QueryContext, metricTags: MetricTags = MetricTags.NONE): QueryResult {
+   private suspend fun projectTo(
+      targetType: Type,
+      context: QueryContext,
+      metricTags: MetricTags = MetricTags.NONE
+   ): QueryResult {
       // We're capturing metrics inside projections
       // as for streaming queries, this is where the bulk of the work happens.
       // This doesn't lead to nested metrics, as only streaming queries are propogating their metrics tags
@@ -364,7 +376,8 @@ class StatefulQueryEngine(
       val operation = service.operation(mutation.operation.name)
 
       val searchContext = if (inputValue != null) {
-         context.only(inputValue)
+         // include scoped facts. These are things that have been passed in the global given {} clause, etc
+         context.only(inputValue, scopedFacts = context.scopedFacts)
       } else {
          context
       }
@@ -487,7 +500,14 @@ class StatefulQueryEngine(
       failureBehaviour: QueryFailureBehaviour,
       metricsTags: MetricTags
    ): QueryResult {
-      return find(TypeQueryExpression(type), context, spec, applicableStrategiesPredicate, failureBehaviour, metricsTags)
+      return find(
+         TypeQueryExpression(type),
+         context,
+         spec,
+         applicableStrategiesPredicate,
+         failureBehaviour,
+         metricsTags
+      )
    }
 
    override suspend fun find(
@@ -563,6 +583,7 @@ class StatefulQueryEngine(
          target.size > 1 && target.all { it.type.isStream } -> {
             TODO("Streaming")
          }
+
          target.size == 1 -> doFind(
             target.first(),
             context,
@@ -571,6 +592,7 @@ class StatefulQueryEngine(
             failureBehaviour = failureBehaviour,
             metricsTags = metricsTags
          )
+
          else -> error("Querying with multiple targets is not supported")
 
       }
@@ -785,8 +807,8 @@ class StatefulQueryEngine(
 
 
       val mutatedResults: Flow<TypedInstanceWithMetadata> = when (target.mutation) {
-          null -> projectedResults
-          else -> performMutation(target, projectedResults, context)
+         null -> projectedResults
+         else -> performMutation(target, projectedResults, context)
       }
 
 
@@ -794,7 +816,8 @@ class StatefulQueryEngine(
       // which could never end.
       val logDurationsOfIndividualMessages = isStreamingQuery
       val metricsCapturedResultStream = context.metricsReporter.observeEventStream(
-         mutatedResults, queryStartTime, metricsTags, logDurationsOfIndividualMessages)
+         mutatedResults, queryStartTime, metricsTags, logDurationsOfIndividualMessages
+      )
 
       val anonymousTypes = if (schema is QuerySchema) {
          // Inline types defined in a schema include types defined in the
@@ -818,13 +841,17 @@ class StatefulQueryEngine(
 
    }
 
-   private  fun performMutation(target: QuerySpecTypeNode, projectedResults: Flow<TypedInstanceWithMetadata>,  context: QueryContext): Flow<TypedInstanceWithMetadata> {
-      val mutationProps = MutationProps.from(target.mutation,  target.type, schema)
+   private fun performMutation(
+      target: QuerySpecTypeNode,
+      projectedResults: Flow<TypedInstanceWithMetadata>,
+      context: QueryContext
+   ): Flow<TypedInstanceWithMetadata> {
+      val mutationProps = MutationProps.from(target.mutation, target.type, schema)
       if (mutationProps != null && !mutationProps.isValid) {
          throw IllegalArgumentException(mutationProps.validationError)
       }
       return if (mutationProps?.mutationOperationHasCollectionParameters == true) {
-         val typedCollection = CollectionBuilder.toCollectionType(projectedResults )
+         val typedCollection = CollectionBuilder.toCollectionType(projectedResults)
          projectionProvider.process(flowOf(typedCollection.withProcessingMetadata(asOf = Instant.now())), context) {
             mutate(target.mutation!!, target, context, it.instance).results
                .map { typedInstance ->
@@ -923,7 +950,8 @@ data class TypedInstanceWithMetadata(
    val processingStart: Instant,
    val instance: TypedInstance
 )
-fun TypedInstance.withProcessingMetadata(asOf:Instant = Instant.now()):TypedInstanceWithMetadata {
+
+fun TypedInstance.withProcessingMetadata(asOf: Instant = Instant.now()): TypedInstanceWithMetadata {
    return TypedInstanceWithMetadata(
       processingStart = asOf,
       this

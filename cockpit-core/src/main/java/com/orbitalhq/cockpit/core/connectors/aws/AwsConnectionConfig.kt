@@ -25,8 +25,10 @@ class AwsConnectionConfig {
    }
 
    @Bean
-   fun s3Invoker(schemaProvider: SchemaProvider, awsConnectionRegistry: AwsConnectionRegistry): S3Invoker {
-      return S3Invoker(awsConnectionRegistry, schemaProvider)
+   fun s3Invoker(schemaProvider: SchemaProvider,
+                 awsConnectionRegistry: AwsConnectionRegistry,
+                 formatRegistry: FormatRegistry): S3Invoker {
+      return S3Invoker(awsConnectionRegistry, schemaProvider, formatRegistry = formatRegistry)
    }
 
    @Bean
