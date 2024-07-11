@@ -39,9 +39,9 @@ object HazelcastBuilder {
       instanceNameSuffix: String = "",
       schemaStore: SchemaStore
    ): HazelcastInstance {
-     return  when {
-         config.xmlConfig != null ->  {
-           val xmlConfig =  XmlClientConfigBuilder(config.xmlConfigFilePath())
+      return when {
+         config.xmlConfig != null -> {
+            val xmlConfig = XmlClientConfigBuilder(config.xmlConfigFilePath())
             HazelcastClient.newHazelcastClient(xmlConfig.build())
          }
 

@@ -25,9 +25,9 @@ class SqsPublisher(
 
    fun sendMessage(instance: TypedInstance, schema: Schema): Mono<TypedInstance> {
 
-      val modelFormat = formatRegistry.forType(instance.type)
+      val (metadata, modelFormat) = formatRegistry.forType(instance.type)
       val message = if (modelFormat != null) {
-         val serializedMessage = modelFormat.serializer.write(instance,schema)
+         val serializedMessage = modelFormat.serializer.write(instance,metadata!!, schema, -1)
          if (serializedMessage == null) {
             if (instance !is TypedNull) {
                logger.warn { "Model format ${modelFormat::class.simpleName} returned null when serializing instance, but instance was not null. Instance = ${writeAsJson(instance)}" }

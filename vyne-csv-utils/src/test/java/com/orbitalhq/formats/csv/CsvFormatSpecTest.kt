@@ -1,13 +1,15 @@
 package com.orbitalhq.formats.csv
 
-import com.winterbe.expekt.should
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.from
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.models.format.EmptyTypedInstanceInfo
+import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.winterbe.expekt.should
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.Test
 
 class CsvFormatSpecTest {
@@ -82,6 +84,46 @@ jimmy,smitts,"""
    }
 
    @Test
+   fun `writes a single object to csv`() {
+      val schema = TaxiSchema.from(
+         """
+         @com.orbitalhq.formats.Csv
+         model Person {
+            firstName : String
+            lastName : String
+            age : Int
+         }
+      """.trimIndent()
+      )
+      val person = TypedInstance.from(
+         schema.type("Person"),
+         """{ "firstName" : "Jimmy", "lastName" : "jackery", "age": 23 }""",
+         schema = schema
+      )
+      val (metadata, _) = FormatDetector(listOf(CsvFormatSpec)).getFormatType(schema.type("Person"))!!
+      val generated = (CsvFormatSerializer.write(person, metadata, schema, 0) as String)
+         .replace("\r\n", "\n")
+      val expected = """firstName,lastName,age
+Jimmy,jackery,23
+"""
+      generated.should.equal(expected)
+
+      // now read it back
+      val parsed = TypedInstance.from(
+         schema.type("Person"), generated, schema,
+         formatSpecs = listOf(CsvFormatSpec)
+      )
+      // Currently, the behaviour is to return a typed collection, regardless.
+      // This is the existing behaviour, but it seems incorrect.
+      // In future, we should change this so that:
+      // - If T is requested, and it's a collection, throw an error
+      // - If T is requested, and there's a single item, return T
+      // - Otherwise, parse as T[]
+      parsed.shouldBeInstanceOf<TypedObject>()
+         .shouldBe(person)
+   }
+
+   @Test
    fun `can write using Csv spec`() {
 
       val schema = TaxiSchema.from(
@@ -113,7 +155,7 @@ jimmy|smitts|NULL"""
          )
       )
       val (metadata, _) = FormatDetector(listOf(CsvFormatSpec)).getFormatType(schema.type("Person"))!!
-      val generated = (CsvFormatSerializer.write(result, metadata, schema) as String)
+      val generated = (CsvFormatSerializer.write(result, metadata, schema, -1) as String)
          .replace("\r\n", "\n")
       val expected = """firstName|lastName|age
 jack|jackery|23
@@ -148,7 +190,7 @@ jimmy|smitts|NULL
          nullValue = "NULL",
          useFieldNamesAsColumnNames = true
       )
-      val generated = (CsvFormatSerializer.write(typedCollection, csvSpec, EmptyTypedInstanceInfo) as String)
+      val generated = (CsvFormatSerializer.write(typedCollection, csvSpec, -1) as String)
          .replace("\r\n", "\n")
       val expected = """firstName|lastName|age
 jack|jackery|23

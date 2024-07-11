@@ -156,6 +156,10 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
     }
   }
 
+  downloadAsCsvFromGrid() {
+    this.resultsTable.downloadAsCsvFromGrid();
+  }
+
   remeasureTable() {
     if (this.resultsTable) {
       console.log('Remeasuring resultsTable');

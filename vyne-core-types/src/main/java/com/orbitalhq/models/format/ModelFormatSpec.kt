@@ -34,15 +34,18 @@ interface ModelFormatSpec {
 }
 
 interface ModelFormatSerializer {
+   fun write(result: TypedInstance, metadata: Metadata, schema: Schema, index: Int):Any?
 
-   // TODO :  These method signatures aren't well defined, and are leaking implementation details. Should be:
-   // fun write(result: TypedInstance, schema: Schema):Any?
-   fun write(result: TypedInstance, metadata: Metadata, schema: Schema, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
-   fun write(result: TypeNamedInstance, attributes: Set<AttributeName>, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
-   fun write(result: TypeNamedInstance, type: Type, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
-
-   fun write(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):Any?
-   fun writeAsBytes(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo = EmptyTypedInstanceInfo):ByteArray
+   /**
+    * Writes the raw value. Typically used when exporting query history results,
+    * where the raw values have been persisted.
+    *
+    * Not supported by all clients, as we no longer have access to
+    * schema or type data.
+    *
+    */
+   fun write(rawValue: Any?, metadata: Metadata, index: Int):Any?
+   fun writeAsBytes(result: TypedInstance, metadata: Metadata, schema: Schema, index: Int):ByteArray
 }
 
 interface ModelFormatDeserializer {
@@ -61,18 +64,4 @@ interface ModelFormatDeserializer {
     */
    fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema, source: DataSource): Any
 
-}
-
-interface TypedInstanceInfo {
-   val index: Int
-}
-
-object EmptyTypedInstanceInfo: TypedInstanceInfo {
-   override val index: Int
-      get() = -1
-}
-
-object FirstTypedInstanceInfo: TypedInstanceInfo {
-   override val index: Int
-      get() = 0
 }

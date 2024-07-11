@@ -1,11 +1,8 @@
 package com.orbitalhq.formats.csv
 
-import com.orbitalhq.models.TypeNamedInstance
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.format.ModelFormatSerializer
-import com.orbitalhq.models.format.TypedInstanceInfo
-import com.orbitalhq.schemas.AttributeName
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
@@ -16,73 +13,77 @@ import org.apache.commons.csv.CSVPrinter
 import java.io.StringWriter
 
 object CsvFormatSerializer : ModelFormatSerializer {
-   override fun write(result: TypedInstance, metadata: Metadata, schema: Schema, typedInstanceInfo: TypedInstanceInfo): Any? {
+   override fun write(result: TypedInstance, metadata: Metadata, schema: Schema, index: Int): Any? {
       val csvAnnotation = CsvFormatSpecAnnotation.from(metadata)
-      return write(result, csvAnnotation, typedInstanceInfo)
+      return write(result, result.type, result.toRawObject(), csvAnnotation, index)
    }
 
-   override fun write(
-      result: TypeNamedInstance,
-      attributes: Set<AttributeName>,
-      metadata: Metadata,
-      typedInstanceInfo: TypedInstanceInfo): Any? {
-      val csvAnnotation = CsvFormatSpecAnnotation.from(metadata)
-      val parameters = csvAnnotation.ingestionParameters
-      val rawValue = result.convertToRaw() as? Map<String, Any> ?: return null
-      val target = StringWriter()
-      val printer = CsvFormatFactory.fromParameters(parameters).let { format ->
-         when {
-            parameters.firstRecordAsHeader && typedInstanceInfo.index == 0 -> format.withHeader(*attributes.toTypedArray())
-               .withSkipHeaderRecord(false).print(target)
-            else -> format.print(target)
-         }
+   override fun write(rawValue: Any?, metadata: Metadata, index: Int): Any? {
+      fun getColumnNamesFromMap(map: Map<*, *>): List<Pair<FieldName, ColumnName>> {
+         return (map.keys as Collection<String>).map { it to it }
       }
 
-      convertAndWrite(rawValue, printer, attributes.toList())
-      return target.toString()
-
+      val columnNames = when {
+         rawValue is Map<*, *> -> getColumnNamesFromMap(rawValue)
+         rawValue is List<*> && rawValue.firstOrNull() is Map<*,*> -> getColumnNamesFromMap(rawValue.first() as Map<*, *>)
+         else -> error("Exporting of raw value is not supported for this value")
+      }
+      val formatSpec = CsvFormatSpecAnnotation.from(metadata)
+      val (stringWriter,csvPrinter) = buildCsvWriter(formatSpec.ingestionParameters, rawValue, columnNames, index)
+      convertAndWrite(rawValue, csvPrinter, columnNames.map { it.first })
+      return stringWriter.toString()
    }
 
-   override fun write(result: TypeNamedInstance, type: Type, metadata: Metadata, typedInstanceInfo: TypedInstanceInfo): Any? {
-      return write(result, type, result.convertToRaw(), CsvFormatSpecAnnotation.from(metadata), typedInstanceInfo)
+   override fun writeAsBytes(result: TypedInstance, metadata: Metadata, schema: Schema, index: Int): ByteArray {
+      val csv = write(result, metadata, schema, index) as String?
+      return csv?.toByteArray() ?: ByteArray(0)
    }
 
-   override fun write(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo): Any? {
-      TODO("Not yet implemented")
+   fun write(result: TypedInstance, csvAnnotation: CsvFormatSpecAnnotation, index: Int): Any? {
+      return write(result, result.type, result.toRawObject(), csvAnnotation, index)
    }
 
-   override fun writeAsBytes(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo): ByteArray {
-      TODO("Not yet implemented")
-   }
-
-   fun write(result: TypedInstance, csvAnnotation: CsvFormatSpecAnnotation, typedInstanceInfo: TypedInstanceInfo): Any? {
-      return write(result, result.type, result.toRawObject(), csvAnnotation, typedInstanceInfo)
-   }
-
-   fun <T> write(result: T, type: Type, rawValue: Any?, csvAnnotation: CsvFormatSpecAnnotation, typedInstanceInfo: TypedInstanceInfo): Any? {
+   fun <T : Any> write(
+      result: T,
+      type: Type,
+      rawValue: Any?,
+      csvAnnotation: CsvFormatSpecAnnotation,
+      index: Int
+   ): Any? {
       if (rawValue == null) {
          return null
       }
 
       val parameters = csvAnnotation.ingestionParameters
-      val csvColumns: List<Pair<FieldName /* = kotlin.String */, ColumnName /* = kotlin.String */>> = if (csvAnnotation.useFieldNamesAsColumnNames) {
-         lookupColumnsFromFields(type)
-      } else {
-         lookupColumnsFromAccessors(type)
-      }
-
-      val target = StringWriter()
-      val printer = CsvFormatFactory.fromParameters(parameters).let { format ->
-         when {
-            parameters.firstRecordAsHeader && result is TypedCollection -> setHeader(csvColumns, format).print(target)
-            parameters.firstRecordAsHeader && typedInstanceInfo.index == 0 -> setHeader(csvColumns, format).print(target)
-            else -> format.print(target)
+      val csvColumns: List<Pair<FieldName /* = kotlin.String */, ColumnName /* = kotlin.String */>> =
+         if (csvAnnotation.useFieldNamesAsColumnNames) {
+            lookupColumnsFromFields(type)
+         } else {
+            lookupColumnsFromAccessors(type)
          }
-      }
+
+      val (target, printer) = buildCsvWriter(parameters, result, csvColumns, index)
 
       val fieldNamesToWrite = csvColumns.map { it.first }
       convertAndWrite(rawValue, printer, fieldNamesToWrite)
       return target.toString()
+   }
+
+   private fun buildCsvWriter(
+      parameters: CsvIngestionParameters,
+      result: Any,
+      csvColumns: List<Pair<FieldName, ColumnName>>,
+      index: Int
+   ): Pair<StringWriter, CSVPrinter> {
+      val target = StringWriter()
+      val printer = CsvFormatFactory.fromParameters(parameters).let { format ->
+         when {
+            parameters.firstRecordAsHeader && result is Collection<*> -> setHeader(csvColumns, format).print(target)
+            parameters.firstRecordAsHeader && index == 0 -> setHeader(csvColumns, format).print(target)
+            else -> format.print(target)
+         }
+      }
+      return Pair(target, printer)
    }
 
    private fun lookupColumnsFromFields(type: Type): List<Pair<FieldName, ColumnName>> {
@@ -113,6 +114,7 @@ object CsvFormatSerializer : ModelFormatSerializer {
             val csvColumnValues = csvColumns.map { rawValue[it] }
             printer.printRecord(*csvColumnValues.toTypedArray())
          }
+
          else -> error("CsvFormat can't handle a raw result of type ${rawValue::class.simpleName}")
       }
 
@@ -130,4 +132,5 @@ private typealias FieldName = String
 private typealias ColumnName = String
 
 
-fun String.unquoted(): String = replaceFirst("^\"".toRegex(), "").replaceFirst("\"$".toRegex(), "").replace("\\\"", "\"")
+fun String.unquoted(): String =
+   replaceFirst("^\"".toRegex(), "").replaceFirst("\"$".toRegex(), "").replace("\\\"", "\"")

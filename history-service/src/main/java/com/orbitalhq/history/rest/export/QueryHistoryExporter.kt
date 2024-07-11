@@ -9,8 +9,6 @@ import com.orbitalhq.query.toCsv
 import com.orbitalhq.history.db.QueryHistoryRecordRepository
 import com.orbitalhq.history.db.QueryResultRowRepository
 import com.orbitalhq.models.TypeNamedInstance
-import com.orbitalhq.models.format.EmptyTypedInstanceInfo
-import com.orbitalhq.models.format.FirstTypedInstanceInfo
 import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.query.PersistedAnonymousType
@@ -101,26 +99,24 @@ class QueryHistoryExporter(
    ): String? {
       val typeNamedInstance = typedNamedInstancePersistedAnonymousTypePair.first
       val anonymousTypeDefinitions = typedNamedInstancePersistedAnonymousTypePair.second
-      val includeHeaders = index == 0
       return if (anonymousTypeDefinitions.isEmpty()) {
          val responseType = schema.type(typeNamedInstance.typeName)
          this.formatDetector.getFormatType(responseType)?.let { (metadata, spec) ->
             spec.serializer.write(
-               typeNamedInstance,
-               responseType,
+               typeNamedInstance.convertToRaw(),
                metadata,
-               if (includeHeaders) FirstTypedInstanceInfo else EmptyTypedInstanceInfo
+               index
             )?.toString()
          }
       } else {
          anonymousTypeDefinitions.firstOrNull { it.name.fullyQualifiedName == typeNamedInstance.typeName }
             ?.let { persistedAnonymousType ->
+               TypeNamedInstance
                this.formatDetector.getFormatType(persistedAnonymousType.metadata)?.let { (metadata, spec) ->
                   spec.serializer.write(
-                     typeNamedInstance,
-                     persistedAnonymousType.attributes.keys,
+                     typeNamedInstance.convertToRaw(),
                      metadata,
-                     if (includeHeaders) FirstTypedInstanceInfo else EmptyTypedInstanceInfo
+                     index
                   )?.toString()
 
                }

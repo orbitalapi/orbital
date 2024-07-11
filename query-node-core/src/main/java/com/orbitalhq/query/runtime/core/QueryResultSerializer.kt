@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.models.RawObjectMapper
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedInstanceConverter
-import com.orbitalhq.models.format.FirstTypedInstanceInfo
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.models.serde.toSerializable
 import com.orbitalhq.query.QueryResult
@@ -14,6 +13,7 @@ import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import org.springframework.http.MediaType
+import java.util.concurrent.atomic.AtomicInteger
 
 class RawResultsSerializer(queryOptions: QueryOptions) : QueryResultSerializer {
 
@@ -41,14 +41,9 @@ class ModelFormatSpecSerializer(
    private val modelFormatSpec: ModelFormatSpec,
    private val metadata: com.orbitalhq.schemas.Metadata
 ) : QueryResultSerializer {
-   private var metadataEmitted: Boolean = false
+   private var index = AtomicInteger(-1)
    override fun serialize(item: TypedInstance, schema: Schema): Any? {
-      return if (!metadataEmitted) {
-         metadataEmitted = true
-         modelFormatSpec.serializer.write(item, metadata, schema, FirstTypedInstanceInfo)
-      } else {
-         modelFormatSpec.serializer.write(item, metadata, schema)
-      }
+      return modelFormatSpec.serializer.write(item, metadata, schema, index.incrementAndGet())
    }
 
    override val contentType: String = modelFormatSpec.mediaType

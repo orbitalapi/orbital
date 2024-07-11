@@ -38,16 +38,18 @@ class CsvFormatSpecAnnotation(
    val ignoreContentBefore: String? = null,
    /**
     * Indicates if the field names should be used for column names.
-    * By default, only fields with "by column(..) accessors defined are used for column names.
-    * This allows consistent serialization/deserialization for model specs.
-    * However, sometimes when writing a query to output to a CSV, including all the by column(..)
-    * is just noise if the column names already match.
-    * Therefore, set useFieldNamesAsColumnNames to control output.
-    * Note - currently, this does not work for deserialization.  Therefore, enabling this
-    * means that the spec will result in a one-way-only serialization.  This is useful for anonymous types,
-    * as query results, but should be avoided on actual models.
+    *
+    * Historically, only fields with "by column(..) accessors defined were used for column names.
+    * As part of a migration away from 'by column' towards formats, this behaviour has been rationalized.
+    *
+    * Now, fields are serialized using the fieldname as the column header.
+    *
+    * To re-enable the legacy behaviour, and only serialize where a `by column` definition exists,
+    * set this to true.
+    *
+    * This behaviour is considered deprecated, and will be removed in the future.
     */
-   val useFieldNamesAsColumnNames: Boolean = false,
+   val useFieldNamesAsColumnNames: Boolean = true,
    val quoteChar: Char? = '"',
    val recordSeparator: String = "\r\n"
 ) : Serializable, AnnotationWrapper {
@@ -89,7 +91,7 @@ class CsvFormatSpecAnnotation(
          val nullValue: String? = metadata.params["nullValue"] as String?
          val containsTrailingDelimiters: Boolean = metadata.params["containsTrailingDelimiters"] as Boolean? ?: false
          val ignoreContentBefore = metadata.params["ignoreContentBefore"] as String?
-         val useFieldNamesAsColumnNames = metadata.params["useFieldNamesAsColumnNames"] as Boolean? ?: false
+         val useFieldNamesAsColumnNames = metadata.params["useFieldNamesAsColumnNames"] as Boolean? ?: true
          val recordSeparator = (metadata.params["recordSeparator"] as String? ?: "\r\n").let { value ->
             // If the user has provided the string of \r, it's parsed as \\r, (to escape the sequence),
             // but we actually want the raw sequence.

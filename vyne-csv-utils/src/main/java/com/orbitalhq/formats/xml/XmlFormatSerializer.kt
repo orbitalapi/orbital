@@ -1,17 +1,13 @@
 package com.orbitalhq.formats.xml
 
-import com.orbitalhq.models.TypeNamedInstance
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.TypedValue
 import com.orbitalhq.models.format.ModelFormatSerializer
-import com.orbitalhq.models.format.TypedInstanceInfo
-import com.orbitalhq.schemas.AttributeName
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Schema
-import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import lang.taxi.xsd.XsdAnnotations
@@ -22,34 +18,7 @@ import javax.xml.stream.XMLStreamWriter
 object XmlFormatSerializer : ModelFormatSerializer {
 
 
-   override fun write(
-      result: TypedInstance,
-      metadata: Metadata,
-      schema: Schema,
-      typedInstanceInfo: TypedInstanceInfo
-   ): Any {
-      return write(result, schema, typedInstanceInfo)
-   }
-
-   override fun write(
-      result: TypeNamedInstance,
-      attributes: Set<AttributeName>,
-      metadata: Metadata,
-      typedInstanceInfo: TypedInstanceInfo
-   ): Any? {
-      TODO("Not yet implemented")
-   }
-
-   override fun write(
-      result: TypeNamedInstance,
-      type: Type,
-      metadata: Metadata,
-      typedInstanceInfo: TypedInstanceInfo
-   ): Any? {
-      TODO("Not yet implemented")
-   }
-
-   override fun write(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo): Any {
+   override fun write(result: TypedInstance, metadata: Metadata, schema: Schema, index: Int): Any {
       val swFactory = XMLOutputFactory2.newFactory()
       val stream = ByteArrayOutputStream()
       val writer = swFactory.createXMLStreamWriter(stream)
@@ -57,8 +26,13 @@ object XmlFormatSerializer : ModelFormatSerializer {
       return stream.toString()
    }
 
-   override fun writeAsBytes(result: TypedInstance, schema: Schema, typedInstanceInfo: TypedInstanceInfo): ByteArray {
-      val xmlString = write(result, schema, typedInstanceInfo) as String
+   override fun write(rawValue: Any?, metadata: Metadata, index: Int): Any? {
+      // If we tried harder, this is probably possible.
+      error("This operation is not supported by XML Format")
+   }
+
+   override fun writeAsBytes(result: TypedInstance, metadata: Metadata, schema: Schema, index: Int): ByteArray {
+      val xmlString = write(result, metadata, schema, index) as String
       return xmlString.toByteArray()
    }
 }

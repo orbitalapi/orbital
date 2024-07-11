@@ -39,7 +39,7 @@ class XmlFormatSerializerTest : DescribeSpec({
             mapOf("firstName" to "Jimmy", "lastName" to "Smith"),
             schema
          )
-         val xml = XmlFormatSpec.serializer.write(typedInstance, mock {  }, schema) as String
+         val xml = XmlFormatSpec.serializer.write(typedInstance, mock {  }, schema, -1) as String
          val expected = """<?xml version='1.0' encoding='UTF-8'?><Person><firstName>Jimmy</firstName><lastName>Smith</lastName></Person>"""
          xml.shouldBe(expected)
       }
@@ -48,7 +48,7 @@ class XmlFormatSerializerTest : DescribeSpec({
             mapOf("firstName" to "Jimmy", "lastName" to "Smith", "id" to 3),
             schema
          )
-         val xml = XmlFormatSpec.serializer.write(typedInstance, mock {  }, schema) as String
+         val xml = XmlFormatSpec.serializer.write(typedInstance, mock {  }, schema, -1) as String
          val expected = """<?xml version='1.0' encoding='UTF-8'?><Actor id="3"><firstName>Jimmy</firstName><lastName>Smith</lastName><fullName>Jimmy Smith</fullName></Actor>"""
          xml.shouldBe(expected)
       }
@@ -81,7 +81,7 @@ class XmlFormatSerializerTest : DescribeSpec({
             "title" to "Star Wars"
          )
          val typedInstance = TypedInstance.from(schema.type("Movie"), actual, schema)
-         val xml = XmlFormatSpec.serializer.write(typedInstance, mock {  }, schema) as String
+         val xml = XmlFormatSpec.serializer.write(typedInstance, mock {  }, schema, -1) as String
          val expected = """<?xml version='1.0' encoding='UTF-8'?><Movie><actors id="1"><firstName>Mel</firstName><lastName>Gibson</lastName><agent><firstName>Johnny</firstName><lastName>Cashpott</lastName></agent><fullName>Mel Gibson</fullName></actors><actors id="2"><firstName>Jack</firstName><lastName>Spratt</lastName><agent><firstName>Johnny</firstName><lastName>Cashpott</lastName></agent><fullName>Jack Spratt</fullName></actors><title>Star Wars</title></Movie>"""
 
          xml.shouldBe(expected)
