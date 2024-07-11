@@ -25,11 +25,11 @@ object CsvFormatSerializer : ModelFormatSerializer {
 
       val columnNames = when {
          rawValue is Map<*, *> -> getColumnNamesFromMap(rawValue)
-         rawValue is List<*> && rawValue.firstOrNull() is Map<*,*> -> getColumnNamesFromMap(rawValue.first() as Map<*, *>)
+         rawValue is List<*> && rawValue.firstOrNull() is Map<*, *> -> getColumnNamesFromMap(rawValue.first() as Map<*, *>)
          else -> error("Exporting of raw value is not supported for this value")
       }
       val formatSpec = CsvFormatSpecAnnotation.from(metadata)
-      val (stringWriter,csvPrinter) = buildCsvWriter(formatSpec.ingestionParameters, rawValue, columnNames, index)
+      val (stringWriter, csvPrinter) = buildCsvWriter(formatSpec.ingestionParameters, rawValue, columnNames, index)
       convertAndWrite(rawValue, csvPrinter, columnNames.map { it.first })
       return stringWriter.toString()
    }

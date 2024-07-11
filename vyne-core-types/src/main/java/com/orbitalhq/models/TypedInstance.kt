@@ -3,7 +3,9 @@ package com.orbitalhq.models
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonView
 import com.orbitalhq.models.format.FormatDetector
+import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.models.format.ModelFormatSpec
+import com.orbitalhq.models.format.StreamingModelFormatDeserializer
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.models.json.isJson
 import com.orbitalhq.schemas.Schema
@@ -16,6 +18,8 @@ import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.MapType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.isMapType
+import mu.KotlinLogging
+import reactor.core.publisher.Flux
 
 interface TypedInstance {
    @get:JsonIgnore
@@ -26,6 +30,7 @@ interface TypedInstance {
    val source: DataSource
 
    val nodeId: String
+
    /**
     * Hash code which includes the datasource - normally excluded.
     * Used in determining rowIds for TypedInstances when persisting to the UI.
@@ -58,6 +63,8 @@ interface TypedInstance {
    fun valueEquals(valueToCompare: TypedInstance): Boolean
 
    companion object {
+
+      private val logger = KotlinLogging.logger {}
 
       const val EXPIRY_METADATA = "expiredAt"
       fun fromNamedType(
@@ -127,9 +134,72 @@ interface TypedInstance {
          return TypedObject(type, typedAttributes, source)
       }
 
-      fun from(taxiTypedValue: lang.taxi.types.TypedValue, schema: Schema, source: DataSource):TypedInstance {
+      fun from(taxiTypedValue: lang.taxi.types.TypedValue, schema: Schema, source: DataSource): TypedInstance {
          val type = schema.type(taxiTypedValue.type)
          return from(type, taxiTypedValue.value, schema, source = source)
+      }
+
+      /**
+       * Creates a Flux<TypedInstance> from the provided value, by
+       * looking for a deserializer capable of converting value to a Flux<>.
+       *
+       * If none exists, will fall back to creating a standard TypedInstance from value.
+       * Should that produce a TypedCollection, it's unwrapped to a Flux<TypedInstance>
+       * so the stream semantics are preserved
+       */
+      fun forStream(
+         type: Type,
+         value: Any,
+         schema: Schema,
+         performTypeConversions: Boolean = true,
+         nullValues: Set<String> = emptySet(),
+         source: DataSource = UndefinedSource,
+         evaluateAccessors: Boolean = true,
+         functionRegistry: FunctionRegistry = FunctionRegistry.default,
+         formatRegistry: FormatRegistry,
+         inPlaceQueryEngine: InPlaceQueryEngine? = null,
+         parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
+         format: FormatsAndZoneOffset? = type.formatAndZoneOffset,
+         metadata: Map<String, Any> = emptyMap(),
+         valueSuppliers: List<ValueSupplier> = emptyList()
+      ): Flux<TypedInstance> {
+         val deserializer = formatRegistry.forType(type).let { (metadata,formatSpec) ->
+            if (formatSpec?.deserializer is StreamingModelFormatDeserializer) {
+               if ((formatSpec.deserializer as StreamingModelFormatDeserializer).supportsStreamingForSource(value)) {
+                  formatSpec.deserializer as StreamingModelFormatDeserializer
+               } else {
+                  logger.warn { "Attempting to convert a value of ${value::class.simpleName} to a stream of ${type.name.longDisplayName}, but the registered deserializer does not support streaming based on an input type of ${value::class.simpleName}. Will attempt to parse this as a collection instead." }
+                  null
+               }
+            } else {
+               logger.warn { "Attempting to convert a value of ${value::class.simpleName} to a stream of ${type.name.longDisplayName}, but there are no deserializers registered against that type. Consider adding an annotation defining the format (such as @Csv). Will attempt to parse this as a collection instead." }
+               null
+            }
+         }
+
+         return if (deserializer == null) {
+            val result = from(
+               type, value, schema, performTypeConversions, nullValues, source, evaluateAccessors, functionRegistry
+            )
+            when (result) {
+               is TypedCollection -> Flux.fromIterable(result.value)
+               else -> Flux.just(result)
+            }
+         } else {
+            deserializer.stream(
+               value,
+               type,
+               schema,
+               source,
+               functionRegistry,
+               formatRegistry,
+               inPlaceQueryEngine,
+               parsingErrorBehaviour,
+               format,
+               metadata,
+               valueSuppliers
+            )
+         }
       }
 
       /**
@@ -153,11 +223,11 @@ interface TypedInstance {
          parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
          format: FormatsAndZoneOffset? = type.formatAndZoneOffset,
          metadata: Map<String, Any> = emptyMap(),
-         valueSuppliers:List<ValueSupplier> = emptyList()
+         valueSuppliers: List<ValueSupplier> = emptyList()
       ): TypedInstance {
 
          // Just here to DRY out the passing of params
-         fun buildUsingObjectFactory():TypedInstance {
+         fun buildUsingObjectFactory(): TypedInstance {
             return TypedObject.fromValue(
                type,
                value!!,
@@ -196,6 +266,7 @@ interface TypedInstance {
                   valueSuppliers
                )
             }
+
             value is Array<*> -> {
                val list = (value as Array<Any>).toList()
                from(
@@ -215,9 +286,11 @@ interface TypedInstance {
                   valueSuppliers
                )
             }
+
             value is Collection<*> -> {
                if (!type.isCollection) {
-                  val errorMessage = "Provided value is a collection, but the declared type ${type.name.parameterizedName} is not"
+                  val errorMessage =
+                     "Provided value is a collection, but the declared type ${type.name.parameterizedName} is not"
                   log().warn(errorMessage)
                   return TypedNull.create(type, source = FailedParsingSource(value, errorMessage))
                }
@@ -249,16 +322,39 @@ interface TypedInstance {
             type.isEnum -> {
                type.enumTypedInstance(value, source)
             }
+
             type.taxiType is ObjectType && type.taxiType.isMapType() -> {
-               TypedMaps.parse(type, value, schema, performTypeConversions, nullValues, source, evaluateAccessors, functionRegistry, formatSpecs)
+               TypedMaps.parse(
+                  type,
+                  value,
+                  schema,
+                  performTypeConversions,
+                  nullValues,
+                  source,
+                  evaluateAccessors,
+                  functionRegistry,
+                  formatSpecs
+               )
             }
+
             type.taxiType is MapType -> {
-               TypedMaps.parse(type, value, schema, performTypeConversions, nullValues, source, evaluateAccessors, functionRegistry, formatSpecs)
+               TypedMaps.parse(
+                  type,
+                  value,
+                  schema,
+                  performTypeConversions,
+                  nullValues,
+                  source,
+                  evaluateAccessors,
+                  functionRegistry,
+                  formatSpecs
+               )
             }
 
             type.isScalar -> {
                TypedValue.from(type, value, performTypeConversions, source, parsingErrorBehaviour, format)
             }
+
             FormatDetector.get(formatSpecs).getFormatType(type) != null -> {
                buildUsingObjectFactory()
             }

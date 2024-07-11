@@ -65,10 +65,7 @@ class DefaultOperationInvocationService(
          "OperationInvocationService.invoker.invoke",
          Duration.between(startTime, Instant.now())
       )
-//       context.addOperationResult(edge, result, callArgs)
       return result
-
-//         .onEach { logger.info { "Operation invoker saw result" } }
    }
 
    private suspend fun gatherParameters(

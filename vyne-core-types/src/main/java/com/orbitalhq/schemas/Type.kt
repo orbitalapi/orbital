@@ -652,7 +652,7 @@ data class Type(
    }
 
    fun getMetadata(name: QualifiedName): Metadata {
-      return this.metadata.first { it.name == name }
+      return this.metadata.firstOrNull { it.name == name } ?: error("Type ${this.name.longDisplayName} does not contain an annotation for name ${name.longDisplayName} ")
    }
 
    fun asArrayType(): Type {

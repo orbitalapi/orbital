@@ -197,6 +197,15 @@ data class MessageStreamExchange(
 }
 
 @Serializable
+data class ObjectStoreExchange(
+   val bucketName: String,
+   val filePattern: String? = null,
+   val sql: String? = null
+) : RemoteCallExchangeMetadata() {
+   override val requestBody: String? = null
+}
+
+@Serializable
 object EmptyExchangeData : RemoteCallExchangeMetadata() {
    override val requestBody: String? = null
 }

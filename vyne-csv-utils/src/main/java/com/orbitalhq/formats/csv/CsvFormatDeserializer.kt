@@ -1,13 +1,24 @@
 package com.orbitalhq.formats.csv
 
 import com.orbitalhq.models.DataSource
+import com.orbitalhq.models.InPlaceQueryEngine
+import com.orbitalhq.models.ParsingFailureBehaviour
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.ValueSupplier
+import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.models.format.ModelFormatDeserializer
+import com.orbitalhq.models.format.StreamingModelFormatDeserializer
+import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
+import lang.taxi.types.FormatsAndZoneOffset
 import org.apache.commons.csv.CSVParser
+import reactor.core.publisher.Flux
+import java.io.InputStream
+import java.nio.charset.Charset
 
-object CsvFormatDeserializer : ModelFormatDeserializer {
+object CsvFormatDeserializer : ModelFormatDeserializer, StreamingModelFormatDeserializer {
    override fun canParse(value: Any, metadata: Metadata): Boolean {
       return value is String
    }
@@ -22,6 +33,47 @@ object CsvFormatDeserializer : ModelFormatDeserializer {
       return parsed.records.map { it.toMap() }
 //      return records
 
+   }
+
+   override fun supportsStreamingForSource(value: Any): Boolean {
+      return value is InputStream
+   }
+
+   override fun stream(
+      value: Any,
+      type: Type,
+      schema: Schema,
+      source: DataSource,
+      functionRegistry: FunctionRegistry,
+      formatRegistry: FormatRegistry,
+      inPlaceQueryEngine: InPlaceQueryEngine?,
+      parsingErrorBehaviour: ParsingFailureBehaviour,
+      format: FormatsAndZoneOffset?,
+      metadata: Map<String, Any>,
+      valueSuppliers: List<ValueSupplier>
+   ): Flux<TypedInstance> {
+      val memberType = type.collectionType ?: type
+      val csvSpecMetadata = memberType.getMetadata(CsvAnnotationSpec.NAME)
+      val csvAnnotation = CsvFormatSpecAnnotation.from(csvSpecMetadata)
+      val csvFormat = CsvFormatFactory.fromParameters(csvAnnotation.ingestionParameters)
+      require(value is InputStream) { "Parsing CSV to a stream is not supported for input value of ${value::class.simpleName}" }
+      val parsed = CSVParser.parse(value, Charset.defaultCharset(), csvFormat)
+      return Flux.fromStream(parsed.stream())
+         .map { csvRecord ->
+            TypedInstance.from(
+               type = memberType,
+               value = csvRecord,
+               schema = schema,
+               source = source,
+               functionRegistry = functionRegistry,
+               formatSpecs = formatRegistry.formats,
+               inPlaceQueryEngine = inPlaceQueryEngine,
+               parsingErrorBehaviour = parsingErrorBehaviour,
+               format = format,
+               metadata = metadata,
+               valueSuppliers = valueSuppliers
+            )
+         }
    }
 
 }

@@ -6,8 +6,10 @@ import com.winterbe.expekt.should
 import com.orbitalhq.Vyne
 import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedValue
+import com.orbitalhq.models.format.DefaultFormatRegistry
 import com.orbitalhq.query.QueryResult
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schema.api.SimpleSchemaProvider
@@ -86,13 +88,13 @@ class S3InvokerTest {
       s3.putObject({ builder -> builder.bucket(bucket).key("${objectKey}2") }, Paths.get(resource))
       val connectionConfig = AwsConnectionConfiguration(
          connectionName = "vyneAws",
-          region = localstack.region,
-          accessKey = localstack.accessKey,
-          secretKey = localstack.secretKey,
-          endPointOverride = localstack.getEndpointOverride(
-               LocalStackContainer.Service.S3
-            ).toString()
-         )
+         region = localstack.region,
+         accessKey = localstack.accessKey,
+         secretKey = localstack.secretKey,
+         endPointOverride = localstack.getEndpointOverride(
+            LocalStackContainer.Service.S3
+         ).toString()
+      )
       connectionRegistry.register(connectionConfig)
    }
 
@@ -128,7 +130,11 @@ class S3InvokerTest {
             taxi
          )
       )
-      val s3invoker = S3Invoker(connectionRegistry, SimpleSchemaProvider(schema))
+      val s3invoker = S3Invoker(
+         connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = DefaultFormatRegistry(
+            listOf(CsvFormatSpec)
+         )
+      )
       val invokers = listOf(
          s3invoker
       )
