@@ -1,10 +1,8 @@
 package com.orbitalhq.query
 
 import com.fasterxml.jackson.annotation.JsonInclude
-import com.orbitalhq.schemas.OutputConstraint
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
-import com.orbitalhq.schemas.taxi.TaxiConstraintConverter
 import lang.taxi.expressions.Expression
 import lang.taxi.expressions.TypeExpression
 import lang.taxi.mutations.Mutation
@@ -33,9 +31,7 @@ data class QuerySpecTypeNode(
    // Note: Currently using children to wrap nested nodes when joining multiple streams (one child for each contributing stream).
    val children: Set<QuerySpecTypeNode> = emptySet(),
    val mode: QueryMode = QueryMode.DISCOVER,
-   // Note: Not really convinced these need to be OutputConstraints (vs Constraints).
-   // Revisit later
-   val dataConstraints: List<OutputConstraint> = emptyList(),
+   val dataConstraints: List<Constraint> = emptyList(),
    val projection: Projection? = null,
    val mutation: Mutation? = null
 ) {
@@ -47,18 +43,11 @@ data class QuerySpecTypeNode(
    companion object {
       private val logger = KotlinLogging.logger {}
 
-      // Migrating logic here as an interim step to try to reduce
-      // the number of classes involved in building a QuerySpecTypeNode
-      fun buildConstraints(targetType: Type, schema: Schema, constraints: List<Constraint>):List<OutputConstraint> {
-         val constraintProvider = TaxiConstraintConverter(schema)
-         return constraintProvider.buildOutputConstraints(targetType,constraints)
-      }
-
       // Trying to reduce the number of steps, and bypassing the QueryParser by moving that logic here.
       fun fromExpression(expression: Expression, schema: Schema):QuerySpecTypeNode {
          val targetType = expression.returnType
          val constraints = if (expression is TypeExpression) {
-            buildConstraints(schema.type(targetType), schema, expression.constraints)
+            expression.constraints
          } else emptyList()
          return QuerySpecTypeNode(
             schema.type(expression.returnType),

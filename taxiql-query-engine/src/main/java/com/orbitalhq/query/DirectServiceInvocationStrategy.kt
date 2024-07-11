@@ -2,20 +2,23 @@ package com.orbitalhq.query
 
 import com.google.common.cache.CacheBuilder
 import com.orbitalhq.models.DefinedInSchema
+import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.query.graph.operation
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.schemas.Operation
 import com.orbitalhq.schemas.Parameter
-import com.orbitalhq.schemas.PropertyToParameterConstraint
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.StreamOperation
 import com.orbitalhq.schemas.Type
-import com.orbitalhq.utils.log
+import lang.taxi.expressions.Expression
+import lang.taxi.expressions.LiteralExpression
 import lang.taxi.services.OperationScope
 import lang.taxi.services.operations.constraints.ArgumentExpression
 import lang.taxi.services.operations.constraints.ConstantValueExpression
+import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
+import lang.taxi.types.ArgumentSelector
+import mu.KotlinLogging
 
 // Note:  Currently tested via tests in VyneTest, no direct tests, but that'd be good to add.
 /**
@@ -24,6 +27,10 @@ import lang.taxi.services.operations.constraints.ConstantValueExpression
  */
 class DirectServiceInvocationStrategy(invocationService: OperationInvocationService) : QueryStrategy,
    BaseOperationInvocationStrategy(invocationService) {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
    private val operationsForTypeCache = CacheBuilder.newBuilder()
       .weakKeys()
       .build<Type, List<RemoteOperation>>()
@@ -116,7 +123,8 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
             val (satisfiesConstraints, operationParameters) = compareOperationContractToDataRequirementsAndFetchSearchParams(
                operation,
                target,
-               schema
+               schema,
+               context
             )
             if (!satisfiesConstraints) {
                null
@@ -148,7 +156,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       operation: RemoteOperation,
       parameters: Map<Parameter, TypedInstance>,
       context: QueryContext
-   ):Pair<RemoteOperation, Map<Parameter, TypedInstance>>  {
+   ): Pair<RemoteOperation, Map<Parameter, TypedInstance>> {
       val populatedParams = operation.parameters
          .filter { param -> !param.type.isPrimitive } // Don't attempt to populate raw primitives, they're too ambiguous
          .filter { param -> context.hasFactOfType(param.type) }
@@ -176,17 +184,6 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       return operation to (parameters + defaultValues)
    }
 
-   private fun filterPropertyToParameterConstraint(
-      operationConstraint: PropertyToParameterConstraint,
-      requiredConstraint: PropertyToParameterConstraint
-   ): Boolean {
-      return operationConstraint.propertyIdentifier == requiredConstraint.propertyIdentifier
-         && operationConstraint.operator == requiredConstraint.operator
-         && operationConstraint.expectedValue is ArgumentExpression
-         && requiredConstraint.expectedValue is ConstantValueExpression
-
-   }
-
    /**
     * Checks to see if the operation satisfies the contract of the target (if either exist).
     * If a contract exists on the target which provides input params, and the operation
@@ -195,7 +192,8 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
    private fun compareOperationContractToDataRequirementsAndFetchSearchParams(
       remoteOperation: RemoteOperation,
       target: QuerySpecTypeNode,
-      schema: Schema
+      schema: Schema,
+      context: QueryContext
    ): Pair<Boolean, Map<Parameter, TypedInstance>> {
       if (target.dataConstraints.isEmpty()) {
          return true to emptyMap()
@@ -204,40 +202,67 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
          return true to emptyMap()
       }
       require(remoteOperation is Operation) { "Expected to find an Operation, but was type ${remoteOperation::class.simpleName}" }
-      val targetDataConstraints = target.dataConstraints.filterIsInstance<PropertyToParameterConstraint>()
-      // This approach is a first pass, and far from ideal.  It's far too concrete and tightly coupled
-      // to survive the long-term.
-      // Look to see if the service has declared a contract, then
-      // look to see if the contract satisfies our target's requirements contract.
-      // (This only works with PropertyToParameterConstraint types at the moment, which is
-      // moderately general-purpose).
-      // Then capture the values from the constraint passed and return them to use
-      // in the invocation of the operation.
+      val targetDataConstraints = target.dataConstraints
 
-      val operationConstraintParameterValues: Map<Parameter, TypedInstance> = targetDataConstraints
-         .filterIsInstance<PropertyToParameterConstraint>() // everything by this stage
-         .flatMap { requiredConstraint ->
-            remoteOperation.contract.constraints
-               .filterIsInstance<PropertyToParameterConstraint>()
-               .filter { operationConstraint ->
-                  filterPropertyToParameterConstraint(
-                     operationConstraint,
-                     requiredConstraint
-                  )
-               }
-               .map { operationConstraint ->
-                  val path = (operationConstraint.expectedValue as ArgumentExpression).argument
-                  val parameter = remoteOperation.parameter(path.path)
-                     ?: error("Operation ${remoteOperation.name} does not expose a parameter called ${path.path}")
-                  val value = (requiredConstraint.expectedValue as ConstantValueExpression).value
+      // Look at the constraints present on the target, and see if this
+      // contract operation satisfies the constraints.
+      // If it does, then it's possible that values in the requested constraint
+      // provide inputs into parameters.
+      // (eg: operation filmsPublishedAfter(date:PublicationDate):Film[](PublicationDate >= date)
+      // when evaluted against a contract of
+      // find { Film[](PublicationDate >= 2020-10-02)
+      // would provide a value of `date`
+      val satisfiedConstraints = targetDataConstraints.mapNotNull { requiredConstraint ->
+         val constraintComparison = remoteOperation.contract.satisfies(requiredConstraint)
+         if (constraintComparison.satisfiesRequestedConstraint) {
+            requiredConstraint to getProvidedParameterValues(remoteOperation, constraintComparison.providedValues, context, schema)
+         } else {
+            null
+         }
+      }
 
-                  // TODO: Confirm that DefinedInSchema is appropriate here, but pretty sure these are constants.
-                  val typedInstance = TypedInstance.from(parameter.type, value, schema, source = DefinedInSchema)
-                  parameter to typedInstance
-               }
-         }.toMap()
-      val allOperationConstraintsSatisfied = operationConstraintParameterValues.size == targetDataConstraints.size
+      val allOperationConstraintsSatisfied = satisfiedConstraints.size == targetDataConstraints.size
+      val operationConstraintParameterValues = satisfiedConstraints.map { it.second }
+         .flatten()
+         .toMap()
       return allOperationConstraintsSatisfied to operationConstraintParameterValues
+   }
+
+   private fun getProvidedParameterValues(
+      remoteOperation: Operation,
+      providedValues: List<Pair<Expression, Expression>>,
+      context: QueryContext,
+      schema: Schema
+   ): List<Pair<Parameter, TypedInstance>> {
+      return providedValues.mapNotNull { (paramExpression, providedValueExpression) ->
+         when (paramExpression) {
+            is ArgumentSelector -> {
+               val parameter = remoteOperation.parameter(paramExpression.path)
+               if (parameter == null) {
+                  logger.warn { "An expression was found to provide a value for parameter ${paramExpression.path}, but no such parameter exists on operation ${remoteOperation.name}" }
+                  return@mapNotNull null
+               }
+               // Short circut - if it's a literal (which is the most common case), then
+               // provide the value
+               val expressionResult = when (providedValueExpression) {
+                  is LiteralExpression -> TypedInstance.from(
+                     parameter!!.type,
+                     providedValueExpression.value,
+                     schema,
+                     source = Provided
+                  )
+
+                  else -> context.evaluate(expression = providedValueExpression)
+               }
+               parameter to expressionResult
+            }
+
+            else -> {
+               logger.warn { "Not implemented: Mapping parameterExpression of type ${paramExpression::class.simpleName}" }
+               null
+            }
+         }
+      }
    }
 }
 

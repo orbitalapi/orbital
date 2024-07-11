@@ -12,6 +12,7 @@ import com.orbitalhq.utils.StrategyPerformanceProfiler
 import com.orbitalhq.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
+import lang.taxi.types.AttributePath
 import mu.KotlinLogging
 import java.time.Duration
 import java.time.Instant
@@ -48,7 +49,7 @@ class DefaultOperationInvocationService(
       val paramStart = Instant.now()
       val parameters = try {
          gatherParameters(operation.parameters, preferredParams, context, providedParamValues, operation)
-      } catch (e:Exception) {
+      } catch (e: Exception) {
          log().error("Gather params failed", e)
          throw e
       }
@@ -82,7 +83,7 @@ class DefaultOperationInvocationService(
       // Suggest merging that here.
       val startTime = Instant.now()
       val preferredParamsByType = candidateParamValues.associateBy { it.type }
-      val unresolvedParams = mutableListOf<Pair<Parameter,QuerySpecTypeNode>>()
+      val unresolvedParams = mutableListOf<Pair<Parameter, QuerySpecTypeNode>>()
       // Holds EITHER the param value, or a QuerySpecTypeNode which can be used
       // to query the engine for a value.
       val parameterValuesOrQuerySpecs: List<Pair<Parameter, Any>> = parameters
@@ -95,11 +96,13 @@ class DefaultOperationInvocationService(
                preferredParamsByType.containsKey(requiredParam.type) -> requiredParam to preferredParamsByType.getValue(
                   requiredParam.type
                )
+
                context.hasFactOfType(requiredParam.type) -> requiredParam to context.getFact(requiredParam.type)
                requiredParam.type.isPrimitive -> {
                   logger.warn { "Operation ${operation.qualifiedName} has a parameter ${requiredParam.name} with type ${requiredParam.type} - constructing requests with primtiive types is not supported - use a semantic type instead" }
                   requiredParam to TypedNull.create(requiredParam.type)
                }
+
                else -> {
                   val queryNode = QuerySpecTypeNode(requiredParam.type)
                   unresolvedParams.add(requiredParam to queryNode)
@@ -109,20 +112,22 @@ class DefaultOperationInvocationService(
          }
 
       // Try to resolve any unresolved params
-      val resolvedParams = unresolvedParams.map { (param,paramQuerySpec) ->
-         val failureBehaviour = if (param.nullable) QueryFailureBehaviour.SEND_TYPED_NULL else QueryFailureBehaviour.THROW
+      val resolvedParams = unresolvedParams.map { (param, paramQuerySpec) ->
+         val failureBehaviour =
+            if (param.nullable) QueryFailureBehaviour.SEND_TYPED_NULL else QueryFailureBehaviour.THROW
          val queryResult = context.queryEngine.find(paramQuerySpec, context, failureBehaviour = failureBehaviour)
          when {
-             !queryResult.isFullyResolved && !param.nullable -> {
-                 throw UnresolvedOperationParametersException(
-                    "The following parameters could not be fully resolved : ${queryResult.unmatchedNodes}",
-                    context.evaluatedPath(),
-                    context.profiler.root,
-                    // TODO : Surface the failed attempts
-                    emptyList()
-                 )
-             }
-             else -> paramQuerySpec to queryResult.results.toList().first()
+            !queryResult.isFullyResolved && !param.nullable -> {
+               throw UnresolvedOperationParametersException(
+                  "The following parameters could not be fully resolved : ${queryResult.unmatchedNodes}",
+                  context.evaluatedPath(),
+                  context.profiler.root,
+                  // TODO : Surface the failed attempts
+                  emptyList()
+               )
+            }
+
+            else -> paramQuerySpec to queryResult.results.toList().first()
          }
       }.toMap()
 //      val resolvedParams: List<TypedInstance> = if (unresolvedParams.isNotEmpty()) {
@@ -171,13 +176,27 @@ class DefaultOperationInvocationService(
       context: QueryContext
    ): List<Pair<Parameter, TypedInstance>> {
 
-
       val paramsToConstraintEvaluations = parametersWithValues.map { (paramSpec, paramValue) ->
-         paramSpec to ConstraintEvaluations(paramValue,
-            paramSpec.constraints.map { constraint ->
-               constraint.evaluate(paramSpec.type, paramValue, context.schema)
+         val evaluationResults = paramSpec.allConstraints.flatMap { (path, constraints ) ->
+            val value = if (path.isNotEmpty()) {
+               require(paramValue is TypedObject) { "Cannot evaluate constraint at path $path as provided value of type ${paramValue.type.name.longDisplayName} is not an object with fields"}
+               paramValue[AttributePath.from(path)]
+            } else {
+               paramValue
             }
-         )
+            constraints.map { constraint -> constraint.evaluate(value.type, value, context.schema, context)
+               .let { evaluationResult ->
+                  if (path.isNotEmpty()) {
+                     NestedConstraintEvaluation(
+                        parent = paramValue as TypedObject,
+                        fieldName = path,
+                        evaluation = evaluationResult
+                     )
+                  } else evaluationResult
+               }
+            }
+         }
+         paramSpec to ConstraintEvaluations(paramValue,evaluationResults)
       }
 
       val resolvedParameterValues =
@@ -186,9 +205,6 @@ class DefaultOperationInvocationService(
       return resolvedParameterValues
    }
 }
-
-
-val numberOfCores = Runtime.getRuntime().availableProcessors()
 
 class OperationInvocationEvaluator(
    val invocationService: OperationInvocationService,
@@ -258,6 +274,7 @@ class OperationInvocationEvaluator(
                   typedInstances,
                   MixedSources.singleSourceOrMixedSources(typedInstances)
                )
+
                typedInstances.isEmpty() -> {
                   // This is a weak fallback.  Ideally, upstream should've provided a TypedNull with a FailedSearch,
                   // as they have reference to the RemoteCall, but we don't.
@@ -266,9 +283,11 @@ class OperationInvocationEvaluator(
                      source = FailedSearch("Call to ${operation.qualifiedName} with args $callArgs returned no results")
                   )
                }
+
                typedInstances.size == 1 -> {
                   typedInstances.first()
                }
+
                else -> {
                   logger.error { "Operation ${operation.qualifiedName} is not expected to return a collection, but yielded a collection of size ${typedInstances.size}.  The first value is being taken, and the rest ignored." }
                   typedInstances.first()
@@ -281,14 +300,20 @@ class OperationInvocationEvaluator(
       operation: RemoteOperation,
       edge: EvaluatableEdge,
       context: QueryContext
-   ):List<TypedInstance> = operation.parameters.mapNotNull { requiredParam ->
+   ): List<TypedInstance> = operation.parameters.mapNotNull { requiredParam ->
 
       try {
          // Note: We can't always assume that the inbound relationship has taken care of this
          // for us, as we don't know what path was travelled to arrive here.
          when {
             edge.previousValue != null && edge.previousValue.type.isAssignableTo(requiredParam.type) -> edge.previousValue
-            else -> parameterFactory.discover(requiredParam.type, context, edge.previousValue, operation, requiredParam.defaultValue)
+            else -> parameterFactory.discover(
+               requiredParam.type,
+               context,
+               edge.previousValue,
+               operation,
+               requiredParam.defaultValue
+            )
          }
       } catch (e: Exception) {
          logger.warn { "Failed to discover param of type ${requiredParam.type.fullyQualifiedName} for operation ${operation.qualifiedName} - ${e::class.simpleName} ${e.message}" }

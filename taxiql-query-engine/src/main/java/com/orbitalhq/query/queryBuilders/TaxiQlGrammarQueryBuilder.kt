@@ -8,9 +8,18 @@ import com.orbitalhq.query.ConstructedQueryDataSource
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QuerySpecTypeNode
 import com.orbitalhq.query.VyneQlGrammar
-import com.orbitalhq.schemas.*
-import lang.taxi.services.operations.constraints.ArgumentExpression
-import lang.taxi.utils.quotedIfNecessary
+import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.QueryOperation
+import com.orbitalhq.schemas.Schema
+import lang.taxi.accessors.LiteralAccessor
+import lang.taxi.expressions.Expression
+import lang.taxi.expressions.LiteralExpression
+import lang.taxi.expressions.OperatorExpression
+import lang.taxi.services.operations.constraints.Constraint
+import lang.taxi.services.operations.constraints.ExpressionConstraint
+import lang.taxi.types.ArgumentSelector
+import lang.taxi.types.ModelAttributeReferenceSelector
+import mu.KotlinLogging
 
 /**
  * Responsible for taking a QuerySpecNode and turning it into a TaxiQL query.
@@ -20,6 +29,10 @@ import lang.taxi.utils.quotedIfNecessary
  * Later, this TaxiQL query gets turned into the actual query language (eg. SQL)
  */
 class TaxiQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
    override val supportedGrammars: List<String> = listOf(VyneQlGrammar.GRAMMAR_NAME)
    override fun buildQuery(
       spec: QuerySpecTypeNode,
@@ -30,47 +43,70 @@ class TaxiQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
 
       val parameter =
          queryOperation.parameters.firstOrNull { it.type.name.fullyQualifiedName == VyneQlGrammar.QUERY_TYPE_NAME }
-            ?: error("A vyneQl query service must accept a parameter of type ${VyneQlGrammar.QUERY_TYPE_NAME}")
-      val constraintsAsTypedInstances = convertConstraintsToTypedInstances(spec.dataConstraints, schema, context)
-      val vyneQl = buildTaxiQl(spec, constraintsAsTypedInstances)
+            ?: error("A TaxiQL query service must accept a parameter of type ${VyneQlGrammar.QUERY_TYPE_NAME}")
+      val (taxiQl, resolvedVariables) = buildTaxiQl(spec, context)
       return mapOf(
          parameter to TypedValue.from(
             type = parameter.type,
-            value = vyneQl,
+            value = taxiQl,
             converter = ConversionService.DEFAULT_CONVERTER,
-            source = ConstructedQueryDataSource(constraintsAsTypedInstances.values.toList())
+            source = ConstructedQueryDataSource(resolvedVariables)
          )
       )
    }
 
    @VisibleForTesting
-   internal fun buildTaxiQl(spec: QuerySpecTypeNode, constraintsAsTypedInstances: Map<OutputConstraint, TypedInstance>): String {
-      return """find { ${spec.type.name.parameterizedName}(
-            ^     ${constraintsAsTypedInstances.entries.joinToString(" \n") { (constraint, value) -> buildConstraint(constraint,value) }}
-            ^   )
-            ^}
-         """.trimMargin("^")
+   internal fun buildTaxiQl(spec: QuerySpecTypeNode, context: QueryContext): Pair<String, List<TypedInstance>> {
+      val constraints = spec.dataConstraints
+      if (constraints.size > 1) {
+         logger.warn { "Received multiple constraints - expected a single, compound constraint. ${constraints.joinToString()}" }
+      }
+
+      // In converting the expressions to Taxi, we also resolve any placeholder variables
+      // using the context
+      val statementsAndValues = constraints.map { buildConstraint(it, context) }
+      val constraintsStatement = statementsAndValues.joinToString("\n", prefix = "(\n", postfix = "\n)") { it.first }
+      val resolvedValues = statementsAndValues.flatMap { it.second }
+      return """find { ${spec.type.name.parameterizedName}${constraintsStatement} }""" to resolvedValues
    }
 
-   private fun buildConstraint(constraint: OutputConstraint, value: TypedInstance): String {
+   private fun buildConstraint(constraint: Constraint, context: QueryContext): Pair<String, List<TypedInstance>> {
       return when (constraint) {
-         is PropertyToParameterConstraint -> buildPropertyConstraint(constraint, value)
-         is OperatorExpressionConstraint -> " ${value.value} "
+         is ExpressionConstraint -> buildExpressionConstraint(constraint, context)
          else -> error("Support for constraint type ${constraint::class.simpleName} not implemented yet")
       }
    }
 
-   private fun buildPropertyConstraint(constraint: PropertyToParameterConstraint, value: TypedInstance): String {
-      return when (constraint.expectedValue) {
-         is ArgumentExpression -> {
-            // Can't use .asTaxi() here, as the taxi contains a reference to a variable, which we need to substitute
-            // Foo == 123
-            "${constraint.propertyIdentifier.taxi} ${constraint.operator.symbol} ${value.toRawObject()?.quotedIfNecessary() ?: "null"}"
-         }
-
-         else -> constraint.asTaxi()
-      }
+   private fun buildExpressionConstraint(constraint: ExpressionConstraint, context: QueryContext): Pair<String,List<TypedInstance>> {
+      val (resolvedExpression, typedInstances) = constraint.expression.resolveVariablesUsing(context)
+      return resolvedExpression.asTaxi() to typedInstances
    }
+}
 
 
+/**
+ * Resolves variables against the query context where possible,
+ * returning a new expression where things like ArgumentSelectors have been replaced
+ * with Literals
+ */
+fun Expression.resolveVariablesUsing(context:QueryContext):Pair<Expression,List<TypedInstance>> {
+   return when(this) {
+      is OperatorExpression -> {
+         val (lhs,lhsInstances) = lhs.resolveVariablesUsing(context)
+         val (rhs,rhsInstances) = rhs.resolveVariablesUsing(context)
+         OperatorExpression(lhs, operator, rhs, compilationUnits) to lhsInstances + rhsInstances
+      }
+      is LiteralExpression -> {
+         this to listOf(context.evaluate(this))
+      }
+      is ArgumentSelector -> {
+         val value = context.evaluate(this)
+         LiteralExpression(LiteralAccessor(value.value!!, value.type.taxiType), this.compilationUnits) to listOf(value)
+      }
+      is ModelAttributeReferenceSelector -> {
+         val value = context.evaluate(this)
+         LiteralExpression(LiteralAccessor(value.value!!, value.type.taxiType), this.compilationUnits) to listOf(value)
+      }
+       else -> this to emptyList()
+   }
 }

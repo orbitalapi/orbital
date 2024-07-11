@@ -7,6 +7,7 @@ import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.facts.FactSearch
 import com.orbitalhq.models.facts.FilterPredicateStrategy
+import com.orbitalhq.query.ConstrainedTypeNameQueryExpression
 import com.orbitalhq.query.ExcludeQueryStrategyKlassPredicate.Companion.ExcludeObjectBuilder
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QueryEngine
@@ -26,6 +27,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 
@@ -48,12 +50,13 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
    suspend fun build(
       // Pass the actual CollectionType here, not the member type.
       targetType: Type,
-      spec: TypedInstanceValidPredicate
+      spec: TypedInstanceValidPredicate,
+      constraints: List<Constraint> = emptyList()
    ): TypedInstance? {
       val targetMemberType = targetType.collectionType
          ?: error("Type ${targetType.fullyQualifiedName} returned true for isCollection, but did not expose a collectionType")
 
-      val fromSearchByCollectionType = searchUsingCollectionType(targetType, queryContext, spec)
+      val fromSearchByCollectionType = searchUsingCollectionType(targetType, queryContext, spec, constraints)
       if (fromSearchByCollectionType != null) {
          return fromSearchByCollectionType
       }
@@ -88,9 +91,14 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
    private suspend fun searchUsingCollectionType(
       targetType: Type,
       queryContext: QueryContext,
-      spec: TypedInstanceValidPredicate
+      spec: TypedInstanceValidPredicate,
+      constraints: List<Constraint>
    ): TypedInstance? {
-      val queryResult = queryEngine.find(targetType, queryContext, spec, ExcludeObjectBuilder)
+      val queryResult =  if(constraints.isEmpty()) {
+         queryEngine.find(targetType, queryContext, spec, ExcludeObjectBuilder)
+      } else {
+         queryEngine.find(ConstrainedTypeNameQueryExpression(targetType.paramaterizedName, constraints), queryContext, spec, ExcludeObjectBuilder)
+      }
       val resultList = try {
          queryResult.results
             .toList()

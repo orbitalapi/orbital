@@ -3,13 +3,13 @@ package com.orbitalhq.query
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.orbitalhq.FactSetId
 import com.orbitalhq.FactSets
-import com.orbitalhq.schemas.OutputConstraint
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.fqn
 import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.expressions.Expression
 import lang.taxi.mutations.Mutation
+import lang.taxi.services.operations.constraints.Constraint
 import mu.KotlinLogging
 import java.util.*
 
@@ -79,17 +79,12 @@ data class ConstrainedTypeNameQueryExpression(
    val typeName: String,
    // Note: Not convinced this needs to be OutputConstraint (vs plain old
    // constraint). Revisit if this proves problematic
-   val constraint: List<OutputConstraint>
+   val constraint: List<Constraint>
 ) : QueryExpression
 
 data class ExpressionQuery(val expression: Expression, val legacyExpression: QueryExpression?): QueryExpression {
 
-   /**
-    * Provides backwards compatibility to constraints - which are vyne specific variations of the
-    * taxi Constraint concept.
-    * In time, we should replace this, and just use the taxi constraints.
-    */
-   val constraints: List<OutputConstraint>
+   val constraints: List<Constraint>
       get() {
          return when {
             legacyExpression is ConstrainedTypeNameQueryExpression -> legacyExpression.constraint

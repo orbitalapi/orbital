@@ -32,11 +32,12 @@ import kotlinx.coroutines.flow.firstOrNull
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.accessors.ConditionalAccessor
+import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
-import java.util.UUID
+import java.util.*
 
 class ObjectBuilder(
    val queryEngine: QueryEngine,
@@ -69,7 +70,8 @@ class ObjectBuilder(
       targetType: Type,
       spec: TypedInstanceValidPredicate,
       // Passing facts here allows for reference to data from parent objects when constructing child objects
-      facts: FactBag = FactBag.empty()
+      facts: FactBag = FactBag.empty(),
+      constraints: List<Constraint> = emptyList()
    ): TypedInstance? {
       val nullableFact = context.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY, spec)
       if (nullableFact != null) {
@@ -146,7 +148,7 @@ class ObjectBuilder(
          // TODO : Do we need the isScalar check there?
          buildExpressionScalar(targetType)
       } else if (targetType.isCollection) {
-         buildCollection(targetType, spec)
+         buildCollection(targetType, spec, constraints)
       } else {
          findOrBuildObjectInstance(targetType, spec, facts)
       }
@@ -202,12 +204,13 @@ class ObjectBuilder(
    // projectScopeTypes needs to be removed, replaced with a CollectionProjectionExpressionAccessor
    private suspend fun buildCollection(
       targetType: Type,
-      spec: TypedInstanceValidPredicate
+      spec: TypedInstanceValidPredicate,
+      constraints: List<Constraint> = emptyList()
    ): TypedInstance? {
       return if (targetType.collectionType?.expression is CollectionProjectionExpressionAccessor) {
          buildCollectionWithProjectionExpression(targetType)
       } else {
-         collectionBuilder.build(targetType, spec)
+         collectionBuilder.build(targetType, spec, constraints)
       }
 
    }
@@ -387,7 +390,7 @@ class ObjectBuilder(
                // Don't attempt to build primitive types.
                // There's not enough context, and attempting to search for one is silly.
                val value = if (!fieldBuildType.isPrimitive) {
-                  build(fieldBuildType, buildSpec, theseFacts)
+                  build(fieldBuildType, buildSpec, theseFacts, field.constraints)
                } else null
 
 

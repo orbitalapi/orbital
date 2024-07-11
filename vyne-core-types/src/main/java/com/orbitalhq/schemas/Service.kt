@@ -13,6 +13,8 @@ import com.orbitalhq.utils.ImmutableEquality
 import lang.taxi.annotations.HttpOperation
 import lang.taxi.expressions.Expression
 import lang.taxi.services.OperationScope
+import lang.taxi.services.operations.constraints.Constraint
+import lang.taxi.services.operations.constraints.ConstraintComparison
 import lang.taxi.types.Documented
 import reactor.util.retry.Retry
 import reactor.util.retry.RetryBackoffSpec
@@ -101,7 +103,7 @@ data class Parameter(
    val type: Type,
    override val name: String? = null,
    override val metadata: List<Metadata> = emptyList(),
-   val constraints: List<InputConstraint> = emptyList(),
+   val constraints: List<Constraint> = emptyList(),
    val typeDoc: String? = null,
    val nullable: Boolean,
    val defaultValue: Expression? = null
@@ -109,6 +111,13 @@ data class Parameter(
    fun isNamed(name: String): Boolean {
       return this.name != null && this.name == name
    }
+
+   /**
+    * Returns constraints defined both on the parameter directly,
+    * and within the type.
+    *
+    */
+   val allConstraints = mapOf("" to constraints).filter { (_,constraints) -> constraints.isNotEmpty() } + type.constraintsByPath
 
    private val equality = ImmutableEquality(
       this,
@@ -162,6 +171,7 @@ data class Operation(
    override fun hashCode(): Int {
       return cachedHashCode
    }
+
    override val operationKind: OperationKind = OperationKind.ApiCall
    override val schemaMemberKind: SchemaMemberKind = SchemaMemberKind.OPERATION
 
@@ -184,7 +194,7 @@ interface RemoteOperation : MetadataTarget, Documented, SchemaMember {
 
    val operationType: OperationScope
 
-   val operationKind:OperationKind
+   val operationKind: OperationKind
 
    val name: String
       get() = OperationNames.operationName(qualifiedName)
@@ -344,25 +354,32 @@ data class Service(
 }
 
 
+@Deprecated(message = "Try to move towards Taxi's OperationContract")
 data class OperationContract(
    @JsonSerialize(using = TypeAsNameJsonSerializer::class)
-   val returnType: Type, val constraints: List<OutputConstraint> = emptyList()
+   val returnType: Type, val constraints: List<Constraint> = emptyList()
 ) {
-   fun containsConstraint(clazz: Class<out OutputConstraint>): Boolean {
+   fun containsConstraint(clazz: Class<out Constraint>): Boolean {
       return constraints.filterIsInstance(clazz)
          .isNotEmpty()
    }
 
-   fun <T : OutputConstraint> containsConstraint(clazz: Class<T>, predicate: (T) -> Boolean): Boolean {
+   fun <T : Constraint> containsConstraint(clazz: Class<T>, predicate: (T) -> Boolean): Boolean {
       return constraints.filterIsInstance(clazz).any(predicate)
    }
 
-   fun <T : OutputConstraint> constraint(clazz: Class<T>, predicate: (T) -> Boolean): T {
+   fun <T : Constraint> constraint(clazz: Class<T>, predicate: (T) -> Boolean): T {
       return constraints.filterIsInstance(clazz).first(predicate)
    }
 
-   fun <T : OutputConstraint> constraint(clazz: Class<T>): T {
+   fun <T : Constraint> constraint(clazz: Class<T>): T {
       return constraints.filterIsInstance(clazz).first()
+   }
+
+   fun satisfies(requiredConstraint: Constraint): ConstraintComparison {
+      if (this.constraints.isEmpty()) return ConstraintComparison.NOT_SATISFIED
+      return this.constraints.map { it.satisfiesRequestedConstraint(requiredConstraint) }
+         .reduce { acc, constraintComparison -> acc + constraintComparison }
    }
 }
 
@@ -385,14 +402,23 @@ fun RemoteOperation.retrySpec(): VyneHttpRetrySpec? {
       when {
          fixedRetryPolicy != null -> VyneHttpRetrySpec(
             responseCodes = responseCodes.toSet(),
-            retrySpec = Retry.fixedDelay(fixedRetryPolicy["maxRetries"]!!.toLong(), Duration.ofSeconds(fixedRetryPolicy["retryDelay"]!!.toLong()))
+            retrySpec = Retry.fixedDelay(
+               fixedRetryPolicy["maxRetries"]!!.toLong(),
+               Duration.ofSeconds(fixedRetryPolicy["retryDelay"]!!.toLong())
+            )
          )
+
          exponentialRetryPolicy != null ->
             VyneHttpRetrySpec(
                responseCodes = responseCodes.toSet(),
-               retrySpec = Retry.backoff( (exponentialRetryPolicy["maxRetries"]!! as Int).toLong(), Duration.ofSeconds( (exponentialRetryPolicy["retryDelay"]!! as Int).toLong())).jitter(
-                  ((exponentialRetryPolicy["jitter"]!! as BigDecimal)).toDouble())
-         )
+               retrySpec = Retry.backoff(
+                  (exponentialRetryPolicy["maxRetries"]!! as Int).toLong(),
+                  Duration.ofSeconds((exponentialRetryPolicy["retryDelay"]!! as Int).toLong())
+               ).jitter(
+                  ((exponentialRetryPolicy["jitter"]!! as BigDecimal)).toDouble()
+               )
+            )
+
          else -> null
       }
    } else {
@@ -411,6 +437,7 @@ data class VyneHttpRetrySpec(val responseCodes: Set<Int>, val retrySpec: RetryBa
          .add("jitter", retrySpec.jitterFactor)
    }
 }
+
 /**
  * Use this exception when we failed to actually send the request.
  * There's no response code or remote call, because we never got the request away

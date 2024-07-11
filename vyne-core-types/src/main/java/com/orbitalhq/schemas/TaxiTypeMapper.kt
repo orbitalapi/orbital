@@ -1,7 +1,5 @@
 package com.orbitalhq.schemas
 
-import com.orbitalhq.schemas.taxi.FunctionConstraintProvider
-import com.orbitalhq.schemas.taxi.TaxiConstraintConverter
 import com.orbitalhq.schemas.taxi.toVyneFieldModifiers
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.schemas.taxi.toVyneSources
@@ -52,16 +50,12 @@ object TaxiTypeMapper {
                metadata = parseAnnotationsToMetadata(field.annotations),
                fieldProjection = field.projection,
                format = field.formatAndZoneOffset,
-               anonymousType = fieldAnonymousType
+               anonymousType = fieldAnonymousType,
+               constraints = field.constraints,
             )
 
             else -> field.name to Field(
                fieldTypeName,
-               constraintProvider = buildDeferredConstraintProvider(
-                  field.type.qualifiedName.fqn(),
-                  field.constraints,
-                  schema
-               ),
                modifiers = field.modifiers.toVyneFieldModifiers(),
                accessor = field.accessor,
                readCondition = field.readExpression,
@@ -79,7 +73,8 @@ object TaxiTypeMapper {
                else null,
                fieldProjection = field.projection,
                format = field.formatAndZoneOffset,
-               anonymousType = fieldAnonymousType
+               anonymousType = fieldAnonymousType,
+               constraints = field.constraints
             )
          }
       }.toMap()
@@ -162,18 +157,6 @@ object TaxiTypeMapper {
 
    private fun parseAnnotationsToMetadata(annotations: List<Annotation>): List<Metadata> {
       return annotations.map { Metadata(it.name.fqn(), it.parameters) }
-   }
-
-   private fun buildDeferredConstraintProvider(
-      fqn: QualifiedName,
-      constraints: List<lang.taxi.services.operations.constraints.Constraint>,
-      schema: Schema
-   ): DeferredConstraintProvider {
-      val constraintConverter = TaxiConstraintConverter(schema)
-      return FunctionConstraintProvider {
-         val type = schema.type(fqn)
-         constraintConverter.buildConstraints(type, constraints)
-      }
    }
 
    fun parseModifiers(type: lang.taxi.types.Type): List<Modifier> {

@@ -2,8 +2,10 @@ package com.orbitalhq
 
 import com.orbitalhq.models.json.parseJson
 import io.kotest.common.runBlocking
+import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.collections.shouldHaveSize
 import org.junit.jupiter.api.Test
+import java.time.LocalDate
 
 class OperationContractTest {
 
@@ -24,5 +26,13 @@ class OperationContractTest {
       val results = vyne.query("""find { Movie[]( ReleaseDate > '2023-11-01' && ReleaseDate < '2023-10-01') }""")
          .rawObjects()
       results.shouldHaveSize(1)
+      val callParameters = stub.calls["getMoviesReleasedBetween"]
+         .single()
+      callParameters.shouldHaveSize(2)
+      callParameters.map { it.value }
+         .shouldContainExactly(
+            LocalDate.parse("2023-11-01"),
+            LocalDate.parse("2023-10-01")
+         )
    }
 }

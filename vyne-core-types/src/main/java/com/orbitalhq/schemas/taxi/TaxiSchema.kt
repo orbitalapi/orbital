@@ -74,8 +74,6 @@ class TaxiSchema(
    override val metadataTypes: List<QualifiedName> = document.annotations
       .mapNotNull { it.type?.toVyneQualifiedName() }
 
-   private val constraintConverter = TaxiConstraintConverter(this)
-
    init {
       val stopwatch = Stopwatch.createStarted()
       try {
@@ -133,8 +131,7 @@ class TaxiSchema(
                   operationType = taxiOperation.scope,
                   returnType = returnType,
                   metadata = parseAnnotationsToMetadata(taxiOperation.annotations),
-                  contract = constraintConverter.buildContract(
-                     returnType, taxiOperation.contract?.returnTypeConstraints
+                  contract = OperationContract(returnType, taxiOperation.contract?.returnTypeConstraints
                         ?: emptyList()
                   ),
                   sources = taxiOperation.compilationUnits.toVyneSources(),
@@ -183,7 +180,7 @@ class TaxiSchema(
          type = type,
          name = taxiParam.name,
          metadata = parseAnnotationsToMetadata(taxiParam.annotations),
-         constraints = constraintConverter.buildConstraints(type, taxiParam.constraints),
+         constraints = taxiParam.constraints,
          typeDoc = taxiParam.typeDoc,
          nullable = taxiParam.nullable,
          defaultValue = taxiParam.defaultValue

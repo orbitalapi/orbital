@@ -12,6 +12,7 @@ import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.ImmutableEquality
 import com.orbitalhq.utils.cached
 import lang.taxi.expressions.Expression
+import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
@@ -121,6 +122,10 @@ data class Type(
 
    // Interned, so that can be used for equality checks
    val paramaterizedName: ParameterizedName = internedParameterizedNames.intern(name.parameterizedName)
+
+   val constraintsByPath: List<Pair<AttributeName, List<Constraint>>> = this.attributes.map { (name, field) ->
+      name to field.constraints
+   }.filter { it.second.isNotEmpty() }
 
    /**
     * Returns a set of all types that have been referenced by this type (including this type itself)

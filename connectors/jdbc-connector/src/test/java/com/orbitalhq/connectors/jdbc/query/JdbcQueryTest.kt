@@ -14,7 +14,6 @@ import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
-import jakarta.persistence.GeneratedValue
 import jakarta.persistence.Id
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
@@ -272,9 +271,6 @@ class JdbcQueryTest {
       result.first().toRawObject()
          .should.equal(mapOf("title" to "A New Hope", "releaseDate" to "1979-05-10"))
    }
-
-
-
 }
 
 @Entity
@@ -294,13 +290,24 @@ data class Movie(
 class JdbcQueryTestConfig
 
 interface MovieRepository : JpaRepository<Movie, Int>
-
 interface ActorRepository : JpaRepository<Actor, Int>
+interface CastRepository : JpaRepository<CastMember, Int>
 
 @Entity
 data class Actor(
    @Id val id: Int,
-   val firstName: String,
-   val lastName: String
+   val name: String
 )
 
+@Entity
+data class CastMember(
+   @Id
+   @Column
+   val id: Int,
+   @Column
+   val actorId: Int,
+   @Column
+   val movieId: Int,
+   @Column
+   val character: String,
+)

@@ -3,6 +3,7 @@ package com.orbitalhq.schemas
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.orbitalhq.utils.ImmutableEquality
 import lang.taxi.accessors.Accessor
+import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.types.FieldProjection
 import lang.taxi.types.FieldSetExpression
 import lang.taxi.types.FormatsAndZoneOffset
@@ -12,7 +13,6 @@ import lang.taxi.types.FormatsAndZoneOffset
 data class Field(
    val type: QualifiedName,
    val modifiers: List<FieldModifier>,
-   private val constraintProvider: DeferredConstraintProvider = EmptyDeferredConstraintProvider(),
    @get:JsonIgnore
    val accessor: Accessor?,
    @get:JsonIgnore
@@ -28,7 +28,9 @@ data class Field(
    val fieldProjection: FieldProjection? = null,
    val format: FormatsAndZoneOffset?,
    // If the field is an anonymous type, store the type here.
-   val anonymousType: Type? = null
+   val anonymousType: Type? = null,
+   @get:JsonIgnore
+   val constraints: List<Constraint> = emptyList()
 ) {
    init {
       if (anonymousType != null && anonymousType.paramaterizedName != type.parameterizedName) {
@@ -71,13 +73,6 @@ data class Field(
       return this.metadata.firstOrNull { it.name == name }
          ?: error("No metadata named ${name.longDisplayName} is present on field type ${type.longDisplayName}")
    }
-
-   // TODO : Why take the provider, and not the constraints?  I have a feeling it's because
-   // we parse fields before we parse their underlying types, so constrains may not be
-   // fully resolved at construction time.
-   @get:JsonIgnore
-   @delegate:JsonIgnore
-   val constraints: List<Constraint> by lazy { constraintProvider.buildConstraints() }
 }
 
 enum class FieldModifier {
