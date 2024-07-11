@@ -12,12 +12,19 @@ import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QueryEngine
 import com.orbitalhq.query.SearchFailedException
 import com.orbitalhq.query.TypedInstanceValidPredicate
+import com.orbitalhq.query.TypedInstanceWithMetadata
 import com.orbitalhq.schemas.AttributeName
 import com.orbitalhq.schemas.Field
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.fqn
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
@@ -30,6 +37,12 @@ private val logger = KotlinLogging.logger {}
 class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryContext) {
    companion object {
       val ID_ANNOTATION = "Id".fqn()
+
+      fun toCollectionType(flow: Flow<TypedInstanceWithMetadata>): TypedCollection {
+        return runBlocking {
+            TypedCollection.from(flow.map { it.instance }.toList())
+         }
+      }
    }
 
    suspend fun build(

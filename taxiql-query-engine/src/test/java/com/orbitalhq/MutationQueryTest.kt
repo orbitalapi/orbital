@@ -1,17 +1,142 @@
 package com.orbitalhq
 
-import com.orbitalhq.models.TypedObject
-import io.kotest.matchers.nulls.shouldBeNull
-import io.kotest.matchers.shouldBe
+import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.query.UnresolvedTypeInQueryException
+import com.orbitalhq.query.graph.operationInvocation.SearchRuntimeException
+import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
 
 class MutationQueryTest {
 
-   @Test
+    @Test
+    fun `a mutating operation can accept an array 1`(): Unit = runBlocking {
+        val (vyne, stub) = testVyne(
+            """
+         model Film {
+            title : Title inherits String
+            yearReleased : YearReleased inherits Int
+         }
+         parameter model Movie {
+            name : Title
+            year : YearReleased
+         }
+         
+         model FilmCatalog {
+            films : Film[]
+         }
+
+         service Films {
+            operation getFilms():FilmCatalog
+            write operation saveMovies(Movie[]):Movie[]
+         }
+      """.trimIndent()
+        )
+
+
+        stub.addResponse("getFilms", vyne.parseJson("FilmCatalog", """
+         { "films" : [ { "title" : "Star Wars", "yearReleased" : 1978 },  { "title" : "Empire Strikes Back", "yearReleased" : 1982 }] }
+      """.trimIndent()))
+        stub.addResponseReturningInputs("saveMovies")
+
+        val results = vyne.query("find { FilmCatalog } as (films:Film[]) -> Movie[] call Films::saveMovies")
+            .rawObjects()
+
+        val calls = stub.calls["saveMovies"]
+        calls.shouldHaveSize(1)
+        val mutationCall = calls.single()
+        val input = mutationCall[0]
+        input.shouldBeInstanceOf<TypedCollection>()
+            .shouldHaveSize(2)
+    }
+
+
+    @Test
+    fun `a mutating operation can accept an array`(): Unit = runBlocking {
+        val (vyne, stub) = testVyne(
+            """
+         model Film {
+            title : Title inherits String
+            yearReleased : YearReleased inherits Int
+         }
+         parameter model Movie {
+            name : Title
+            year : YearReleased
+         }
+         service Films {
+            operation getFilms():Film[]
+            write operation saveMovies(Movie[]):Movie[]
+         }
+      """.trimIndent()
+        )
+        stub.addResponse(
+            "getFilms", vyne.parseJson(
+                "Film[]",
+                """[ { "title" : "Star Wars", "yearReleased" : 1978 },
+            | { "title" : "Empire Strikes Back", "yearReleased" : 1982 }
+            | ]""".trimMargin()
+            )
+        )
+        stub.addResponseReturningInputs("saveMovies")
+
+        val results = vyne.query("find { Film[] } call Films::saveMovies")
+            .rawObjects()
+
+        val calls = stub.calls["saveMovies"]
+        calls.shouldHaveSize(1)
+        val mutationCall = calls.single()
+        val input = mutationCall[0]
+        input.shouldBeInstanceOf<TypedCollection>()
+            .shouldHaveSize(2)
+    }
+
+    /**
+     * For now, we can't support this, as we'd just collect forever.
+     * In future, we can support some form of checkpointing or windowing.
+     * So, for now, this should error
+     */
+    @Test
+    fun `a mutating operation accepting an array should throw an error with a streaming source`():Unit = runBlocking {
+        val (vyne, stub) = testVyne(
+            """
+         model Film {
+            title : Title inherits String
+            yearReleased : YearReleased inherits Int
+         }
+         parameter model Movie {
+            name : Title
+            year : YearReleased
+         }
+         service Films {
+            operation getFilms():Stream<Film>
+            write operation saveMovies(Movie[]):Movie[]
+         }
+      """.trimIndent()
+        )
+        stub.addResponse(
+            "getFilms", vyne.parseJson(
+                "Film[]",
+                """[ { "title" : "Star Wars", "yearReleased" : 1978 },
+            | { "title" : "Empire Strikes Back", "yearReleased" : 1982 }
+            | ]""".trimMargin()
+            )
+        )
+        stub.addResponseReturningInputs("saveMovies")
+
+        shouldThrow<SearchRuntimeException> {
+            // This should error, with a helpful error message
+            vyne.query("stream { Film } call Films::saveMovies")
+                .rawObjects()
+        }
+    }
+
+
+    @Test
    fun `will invoke a write service for a mutation`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """

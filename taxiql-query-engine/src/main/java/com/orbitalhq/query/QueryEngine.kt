@@ -18,6 +18,8 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.models.format.ModelFormatSpec
+import com.orbitalhq.mutations.MutationProps
+import com.orbitalhq.query.collections.CollectionBuilder
 import com.orbitalhq.query.graph.edges.EvaluatedEdge
 import com.orbitalhq.query.graph.edges.ParameterFactory
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
@@ -366,6 +368,7 @@ class StatefulQueryEngine(
       } else {
          context
       }
+
       val paramValues = ParameterFactory().discoverAll(operation, searchContext)
 
       // First pass.
@@ -598,6 +601,7 @@ class StatefulQueryEngine(
    ): QueryResult {
       val queryStartTime = Instant.now()
       val isStreamingQuery = target.type.isStream
+      val targetIsCollection = target.type.isCollection
       if (target.type.isPrimitive && target.expression != null) {
          logger.warn { "A search was started for a primitive type (${target.type.qualifiedName.shortDisplayName} - this is almost certainly a bug" }
       }
@@ -648,7 +652,7 @@ class StatefulQueryEngine(
 
                      if (value.typeName == ErrorType.type.paramaterizedName) {
                         throw IllegalStateException(value.value!! as String)
-                      //  close()
+                        //  close()
                      }
 
                      // We may have received a TypedCollection upstream (ie., from a service
@@ -661,7 +665,11 @@ class StatefulQueryEngine(
                         listOf(value)
                      }
 
-                     emitTypedInstances(valueAsCollection, (!isActive || context.cancelRequested), failedAttempts) { instance ->
+                     emitTypedInstances(
+                        valueAsCollection,
+                        (!isActive || context.cancelRequested),
+                        failedAttempts
+                     ) { instance ->
                         if (instance is TypedNull) {
                            logger.debug { "Emitting TypedNull of type ${instance.type.qualifiedName.shortDisplayName} produced from strategy ${queryStrategy::class.simpleName} in search for ${target.description}" }
                         } else {
@@ -735,7 +743,7 @@ class StatefulQueryEngine(
             metricsReporter.failed(Duration.between(queryStartTime, Instant.now()), metricsTags)
             throw exception
          } else if (context.cancelRequested) {
-            throw  exception
+            throw exception
          }
       }
 
@@ -749,14 +757,15 @@ class StatefulQueryEngine(
                it.withProcessingMetadata(asOf = queryStartTime)
             }
          }
+
          else -> {
             // Pick the facts that we want to make available during projection.
             // Currently, we pass the initial state (things from the `given {}` clause, and anything about the user).
             // We may wish to expand this.
             // The projection provider handles picking the correct entity to project,
-            // so we don't need to consdier that here.
+            // so we don't need to consider that here.
             val factsToPropagate = initialState.toFactBag(schema)
-            projectionProvider.project(resultsFlow,target.type, target.projection, context, factsToPropagate)
+            projectionProvider.project(resultsFlow, target.type, target.projection, context, factsToPropagate)
                .map { projectedInstanceWithMetadata ->
                   if (!isStreamingQuery) {
                      projectedInstanceWithMetadata.copy(processingStart = queryStartTime)
@@ -774,32 +783,10 @@ class StatefulQueryEngine(
          target
       }
 
-      val mutatedResults: Flow<TypedInstanceWithMetadata> = when  {
-         target.mutation == null -> projectedResults
-         target.projection != null -> {
-            /**
-             * If we are projecting we are already on a LocalProjectionProvider context here, i.e. on one of the orbital_projection threads
-             * so continue the mutation on the same thread.
-             */
-            projectedResults.flatMapConcat { queryResult ->
-               mutate(target.mutation, target, context, queryResult.instance).results
-                  .map { typedInstance ->
-                     typedInstance.withProcessingMetadata(asOf = queryResult.processingStart)
-                  }
-            }
-         }
-         else -> {
-            /**
-             * We are not projecting but mutation might require an implicit projection so hope onto projectionProvider coroutine context
-             * so that we can perform the implicit projection concurrently.
-             */
-            projectionProvider.process(projectedResults, context) {
-               mutate(target.mutation, target, context, it.instance).results
-                  .map { typedInstance ->
-                     typedInstance.withProcessingMetadata(asOf = it.processingStart)
-                  }
-            }
-         }
+
+      val mutatedResults: Flow<TypedInstanceWithMetadata> = when (target.mutation) {
+          null -> projectedResults
+          else -> performMutation(target, projectedResults, context)
       }
 
 
@@ -829,6 +816,46 @@ class StatefulQueryEngine(
          schema = schema
       )
 
+   }
+
+   private  fun performMutation(target: QuerySpecTypeNode, projectedResults: Flow<TypedInstanceWithMetadata>,  context: QueryContext): Flow<TypedInstanceWithMetadata> {
+      val mutationProps = MutationProps.from(target.mutation,  target.type, schema)
+      if (mutationProps != null && !mutationProps.isValid) {
+         throw IllegalArgumentException(mutationProps.validationError)
+      }
+      return if (mutationProps?.mutationOperationHasCollectionParameters == true) {
+         val typedCollection = CollectionBuilder.toCollectionType(projectedResults )
+         projectionProvider.process(flowOf(typedCollection.withProcessingMetadata(asOf = Instant.now())), context) {
+            mutate(target.mutation!!, target, context, it.instance).results
+               .map { typedInstance ->
+                  typedInstance.withProcessingMetadata(asOf = it.processingStart)
+               }
+         }
+      } else {
+         if (target.projection == null) {
+            /**
+             * We are not projecting but mutation might require an implicit projection so hope onto projectionProvider coroutine context
+             * so that we can perform the implicit projection concurrently.
+             */
+            projectionProvider.process(projectedResults, context) {
+               mutate(target.mutation!!, target, context, it.instance).results
+                  .map { typedInstance ->
+                     typedInstance.withProcessingMetadata(asOf = it.processingStart)
+                  }
+            }
+         } else {
+            /**
+             * If we are projecting we are already on a LocalProjectionProvider context here, i.e. on one of the orbital_projection threads
+             * so continue the mutation on the same thread.
+             */
+            projectedResults.flatMapConcat { queryResult ->
+               mutate(target.mutation!!, target, context, queryResult.instance).results
+                  .map { typedInstance ->
+                     typedInstance.withProcessingMetadata(asOf = queryResult.processingStart)
+                  }
+            }
+         }
+      }
    }
 
 
