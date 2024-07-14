@@ -1,14 +1,20 @@
 package com.orbitalhq.pipelines.jet.pipelines
 
 import com.hazelcast.jet.aggregate.AggregateOperations
-import com.hazelcast.jet.pipeline.*
+import com.hazelcast.jet.pipeline.GeneralStage
+import com.hazelcast.jet.pipeline.Pipeline
 import com.hazelcast.jet.pipeline.ServiceFactories.nonSharedService
+import com.hazelcast.jet.pipeline.ServiceFactory
+import com.hazelcast.jet.pipeline.StreamStage
+import com.hazelcast.jet.pipeline.WindowDefinition
 import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
-import io.micrometer.core.instrument.Counter
-import io.micrometer.core.instrument.MeterRegistry
 import com.orbitalhq.VyneClientWithSchema
-import com.orbitalhq.models.validation.*
+import com.orbitalhq.models.validation.MandatoryFieldNotNull
+import com.orbitalhq.models.validation.ValidationRule
+import com.orbitalhq.models.validation.failValidationViolationHandler
+import com.orbitalhq.models.validation.noOpViolationHandler
+import com.orbitalhq.models.validation.validate
 import com.orbitalhq.pipelines.jet.api.transport.MessageContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec
@@ -21,6 +27,8 @@ import com.orbitalhq.pipelines.jet.source.PipelineSourceProvider
 import com.orbitalhq.pipelines.jet.source.PipelineSourceType
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
 import jakarta.annotation.Resource
 import lang.taxi.query.TaxiQLQueryString
 import org.springframework.stereotype.Component
@@ -43,7 +51,9 @@ class PipelineFactory(
          jetPipeline
             .readFrom(sourceBuilder.build(pipelineSpec, inputType)!!)
             .withIngestionTimestamps()
-            .setName("Ingest from ${pipelineSpec.input.description}")
+            // Looks like the name set we here is used by hazelcast metric publisher which throws
+            // com.hazelcast.internal.metrics.impl.LongWordException when the name exceeds 255 chars.
+            .setName("Ingest from ${pipelineSpec.name.take(255)}")
       } else {
          jetPipeline.readFrom(sourceBuilder.buildBatch(pipelineSpec, inputType)!!)
             .setName("Ingest from ${pipelineSpec.input.description}")

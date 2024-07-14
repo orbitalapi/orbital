@@ -1,11 +1,9 @@
 package com.orbitalhq.pipelines.jet.streams
 
-import com.hazelcast.client.test.TestHazelcastFactory
 import com.hazelcast.test.TestHazelcastInstanceFactory
 import com.orbitalhq.pipelines.jet.api.transport.hazelcast.HazelcastTopicSinkSpec
 import com.orbitalhq.schemas.fqn
 import io.kotest.matchers.shouldBe
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import reactor.kotlin.test.test
 
@@ -28,6 +26,7 @@ class StreamResultsServiceTest {
          .expectNext("Hello, world")
          .then {
             service.cacheSize.shouldBe(1L)
+            topic.localTopicStats.receiveOperationCount.shouldBe(1)
          }
          .thenCancel()
          .verify()
@@ -35,5 +34,9 @@ class StreamResultsServiceTest {
       // Verify we remove the publisher from the cache
       // after the unsubscription
       service.cacheSize.shouldBe(0L)
+
+      // Verify that we clean up the listener on the topic.
+      (0..10).forEach { topic.publish("hello again $it") }
+      topic.localTopicStats.receiveOperationCount.shouldBe(1)
    }
 }

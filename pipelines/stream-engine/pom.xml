@@ -100,11 +100,6 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
-         <groupId>com.amazonaws</groupId>
-         <artifactId>aws-java-sdk-s3</artifactId>
-         <version>${aws.s3.sdk.version}</version>
-      </dependency>
-      <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>lambda-connector</artifactId>
          <version>${project.version}</version>
