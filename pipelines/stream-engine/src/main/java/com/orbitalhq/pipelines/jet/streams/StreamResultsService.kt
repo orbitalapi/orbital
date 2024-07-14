@@ -47,16 +47,25 @@ class StreamResultsService(
       return resultFeedCache.get(streamName) {
          logger.debug { "Building RSocket result emitter for stream $streamName" }
          val topic = hazelcastInstance.getTopic<Any>(HazelcastTopicSinkSpec.topicNameForStream(streamName.fqn()))
-         val sink = Sinks.many().unicast().onBackpressureBuffer<Any>()
+         // We are using multicast here as there might be multiple subscribers that might want to consume the same end point.
+         // Using unicast here blows up the second subscriber to a given streamName.
+         val sink = Sinks.many().multicast().onBackpressureBuffer<Any>()
 
-         topic.addMessageListener { messageEvent ->
+         val subscriptionId = topic.addMessageListener { messageEvent ->
             val messagePayload = messageEvent.messageObject
             sink.tryEmitNext(messagePayload)
          }
+         logger.info { "subscribed to HZ topic for stream $streamName, subscription id => $subscriptionId" }
          val flux = sink.asFlux()
             .doFinally { signal ->
-               logger.debug { "Result flux for stream $streamName destroyed because signal ${signal.name} received" }
-               resultFeedCache.invalidate(streamName)
+               val currentSubscriberCount = sink.currentSubscriberCount()
+               logger.debug { "Result flux for stream $streamName destroyed because signal ${signal.name} received, current subscriber count => $currentSubscriberCount" }
+               if (currentSubscriberCount == 0) {
+                  resultFeedCache.invalidate(streamName)
+                  logger.debug { "Removing the Hz topic subscription for $streamName subscription id $subscriptionId" }
+                  // We need to unregister our topic listener, otherwise we keep getting data even though the sink is disposed.
+                  topic.removeMessageListener(subscriptionId)
+               }
             }
          flux
       }
