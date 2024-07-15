@@ -1,15 +1,17 @@
 package com.orbitalhq.connectors.jdbc.sql.postgres.dml
 
-import com.winterbe.expekt.should
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
+import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi
 import com.orbitalhq.connectors.jdbc.UpsertVerb
 import com.orbitalhq.connectors.jdbc.drivers.databaseSupport
 import com.orbitalhq.connectors.jdbc.sql.dml.InsertStatementGenerator
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.utils.withoutWhitespace
+import com.winterbe.expekt.should
 import org.junit.Test
 
 class InsertStatementGeneratorTest {
@@ -19,6 +21,74 @@ class InsertStatementGeneratorTest {
       JdbcUrlAndCredentials("jdbc:postgresql://localhost:49229/test", "username", "password")
    )
 
+    @Test
+    fun `can insert typed instance to db table with BigInt Primary Key`() {
+        val schema = TaxiSchema.from(
+                """
+         ${JdbcConnectorTaxi.Annotations.imports}
+         import ${VyneQlGrammar.QUERY_TYPE_NAME}
+         type UpdatedDealAmount inherits Decimal
+        type UpdatedDealId inherits Long
+        type UpdatedDealDrawdownDate inherits Date
+
+        closed model UpdatedDeal {
+            record_id: UpdatedDealId
+            Amount: UpdatedDealAmount?
+            Drawdown_Date: UpdatedDealDrawdownDate?
+        }
+
+        service DealStreamService {
+            operation streamUpdatedDeals() : Stream<UpdatedDeal>
+        }
+        
+      
+        @com.orbitalhq.jdbc.Table(schema = "public", table = "TracerDeal", connection = "postgres")
+        closed parameter model TracerDeal {
+            @Id
+            id: UpdatedDealId
+            amount: UpdatedDealAmount
+            drawdown_date: UpdatedDealDrawdownDate
+        }
+        
+        @DatabaseService(connection="movies")
+        service TracerBulletService {
+            @UpsertOperation
+            write operation saveDeal(deal: TracerDeal)
+        }
+        query tracer {
+            stream {UpdatedDeal} as {
+                id: UpdatedDealId
+                amount: UpdatedDealAmount
+                drawdown_date: UpdatedDealDrawdownDate
+            }[]
+            call TracerBulletService::saveDeal
+        }
+      """
+            )
+
+        val typedInstance = TypedInstance.from(
+            schema.type("TracerDeal"),
+            """{ "id" : 123, "amount" : 2500.25, "drawdown_date" : "2024-01-01" }""",
+            schema
+        )
+        val insert = InsertStatementGenerator(schema, connectionDetails.databaseSupport).generateInsertWithoutConnecting(typedInstance, connectionDetails, UpsertVerb.Upsert)
+        val sql = insert.toString()
+        sql.withoutWhitespace().should.equal(
+            """insert into "TracerDeal" ("id", "amount", "drawdown_date")
+values (
+  123, 
+  2500.25, 
+  date '2024-01-01'
+)
+on conflict ("id")
+do update
+set
+  "id" = excluded."id",
+  "amount" = excluded."amount",
+  "drawdown_date" = excluded."drawdown_date"
+            """.trimIndent().withoutWhitespace()
+        )
+    }
    @Test
    fun `can insert typed instance to db table`() {
       val schema = TaxiSchema.from(

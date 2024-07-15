@@ -51,7 +51,8 @@ object TaxiTypeToJooqType {
       PrimitiveType.INSTANT to SQLDataType.INSTANT,
       PrimitiveType.STRING to SQLDataType.VARCHAR,
       PrimitiveType.TIME to SQLDataType.TIME,
-      PrimitiveType.LOCAL_DATE to SQLDataType.LOCALDATE
+      PrimitiveType.LOCAL_DATE to SQLDataType.LOCALDATE,
+      PrimitiveType.LONG to SQLDataType.BIGINT
    )
 
 }
