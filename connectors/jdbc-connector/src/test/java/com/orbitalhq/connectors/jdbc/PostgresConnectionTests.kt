@@ -1,17 +1,28 @@
 package com.orbitalhq.connectors.jdbc
 
-import com.winterbe.expekt.should
 import com.orbitalhq.connectors.ConnectionSucceeded
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
+import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
+import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.rawObjects
+import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.testVyneWithStub
 import com.orbitalhq.utils.get
+import com.winterbe.expekt.should
+import com.zaxxer.hikari.HikariConfig
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Testcontainers
+import java.math.BigDecimal
+import java.math.BigInteger
 
 @Testcontainers
 class PostgresConnectionTests {
@@ -22,8 +33,12 @@ class PostgresConnectionTests {
 
    @Rule
    @JvmField
-   val postgreSQLContainer = PostgreSQLContainer<Nothing>("postgres:11.1")
-      .withInitScript("postgres/actor-schema.sql") as PostgreSQLContainer<*>
+   val postgreSQLContainer = PostgreSQLContainer<Nothing>("postgres:11.1").apply {
+      withPassword("")
+      withInitScript("postgres/actor-schema.sql")
+   }
+       as PostgreSQLContainer<*>
+
 
    @Before
    fun before() {
@@ -34,6 +49,90 @@ class PostgresConnectionTests {
       username = postgreSQLContainer.username
       password = postgreSQLContainer.password
 
+   }
+
+   @Test
+   fun `can upsert into Postgres with BigInt Primary Key`(): Unit = runBlocking {
+      val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
+         "postgres",
+         JdbcDriver.POSTGRES,
+         JdbcUrlAndCredentials(jdbcUrl, username, password)
+      )
+      val template = SimpleJdbcConnectionFactory()
+         .jdbcTemplate(connectionDetails)
+
+      val connectionRegistry =
+         InMemoryJdbcConnectionRegistry(listOf(NamedTemplateConnection("movies", template, JdbcDriver.POSTGRES)))
+     val  connectionFactory = HikariJdbcConnectionFactory(connectionRegistry, HikariConfig())
+      val (vyne, stub) = testVyneWithStub(
+         listOf(
+            JdbcConnectorTaxi.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            """
+         ${JdbcConnectorTaxi.Annotations.imports}
+         import ${VyneQlGrammar.QUERY_TYPE_NAME}
+         type UpdatedDealAmount inherits Decimal
+        type UpdatedDealId inherits Long
+        type UpdatedDealDrawdownDate inherits Date
+
+        closed model UpdatedDeal {
+            record_id: UpdatedDealId
+            Amount: UpdatedDealAmount?
+            Drawdown_Date: UpdatedDealDrawdownDate?
+        }
+
+        service DealStreamService {
+            operation streamUpdatedDeals() : Stream<UpdatedDeal>
+        }
+        
+        @Table(connection="movies", schema="public", table="deal")
+        closed parameter model TracerDeal {
+            @Id
+            id: UpdatedDealId
+            amount: UpdatedDealAmount
+            drawdown_date: UpdatedDealDrawdownDate
+        }
+        
+        @DatabaseService(connection="movies")
+        service TracerBulletService {
+            @UpsertOperation
+            write operation saveDeal(deal: TracerDeal)
+        }
+        query tracer {
+            stream {UpdatedDeal} as {
+                id: UpdatedDealId
+                amount: UpdatedDealAmount
+                drawdown_date: UpdatedDealDrawdownDate
+            }[]
+            call TracerBulletService::saveDeal
+        }
+      """
+         )
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+
+      stub.addResponse(
+         "streamUpdatedDeals", vyne.parseJson(
+            "UpdatedDeal[]",
+            """[ { "record_id" : 1, "Amount" : 120.12, "Drawdown_Date": "2024-01-01" },
+            | { "record_id" : 2, "Amount" : 130.21, "Drawdown_Date": "2024-01-01" }
+            | ]""".trimMargin()
+         )
+      )
+
+      val results = vyne.query("""
+                stream {UpdatedDeal} as {
+        id: UpdatedDealId
+        amount: UpdatedDealAmount
+        drawdown_date: UpdatedDealDrawdownDate
+    }[]
+    call TracerBulletService::saveDeal
+            """.trimIndent())
+         .rawObjects()
+
+
+      results.size.shouldBe(2)
+      results[0]["amount"].should.equal(BigDecimal("120.12"))
+      results[0]["id"].should.equal(BigInteger("1"))
    }
 
    @Test
@@ -61,7 +160,7 @@ class PostgresConnectionTests {
       val metadataService = DatabaseMetadataService(template.jdbcTemplate, connectionDetails)
       val error = metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery)
          .get()
-      error.should.equal("Could not connect to the database: PSQLException : FATAL: password authentication failed for user \"wrongUser\"")
+      error.should.equal("Could not connect to the database: PSQLException : FATAL: role \"wrongUser\" does not exist")
    }
 
    @Test
@@ -91,7 +190,7 @@ class PostgresConnectionTests {
       val metadataService = DatabaseMetadataService(template.jdbcTemplate, connectionDetails)
       metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery).get().should.equal(ConnectionSucceeded)
       val tables = metadataService.listTables()
-      tables.should.have.size(1)
+      tables.should.have.size(2)
       tables.should.contain(
          JdbcTable(
             "public", "actor",

@@ -7,3 +7,9 @@ create table actor
    last_name varchar(45) not null,
    last_update timestamp default now() not null
 );
+CREATE TABLE deal
+(
+    id            BIGINT PRIMARY KEY,
+    amount        NUMERIC(15, 2),
+    drawdown_date DATE
+);
