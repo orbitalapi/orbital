@@ -7,7 +7,6 @@ import {filter, map} from 'rxjs/operators';
 import {UserInfoService} from '../services/user-info.service';
 import {ENVIRONMENT, Environment} from 'src/app/services/environment';
 
-
 interface FrontEndSecurityConfig {
   issuerUrl: string;
   oidcDiscoveryUrl: string;
@@ -62,7 +61,6 @@ export class AuthService {
     private userInfoService: UserInfoService,
     httpBackend: HttpBackend) {
     this.http = new HttpClient(httpBackend);
-
   }
 
   async bootstrapAuthService(): Promise<void> {
@@ -149,13 +147,14 @@ export class AuthService {
     }
   }
 
-   async doSilentRefresh(): Promise<void> {
+  async doSilentRefresh(): Promise<void> {
     await this.oauthService.silentRefresh();
-   }
+  }
 
-   tokenEndPoint(): string {
-      return this.oauthService.tokenEndpoint;
-   }
+  tokenEndPoint(): string {
+    return this.oauthService.tokenEndpoint;
+  }
+
   async logoutOidc(): Promise<void> {
     await this.oauthService.revokeTokenAndLogout();
   }
@@ -170,7 +169,6 @@ export class AuthService {
       this.isAuthenticatedSubject$.next(this.oauthService.hasValidAccessToken());
     });
 
-
     this.oauthService.events
       .pipe(filter(e => ['token_received'].includes(e.type)))
       .subscribe(async e => {
@@ -178,12 +176,17 @@ export class AuthService {
         await this.userInfoService.getUserInfo(true, this.oauthService.getAccessToken()).toPromise();
       });
 
-
     this.oauthService.events
       .pipe(filter(e => ['session_terminated', 'session_error'].includes(e.type)))
       .subscribe(() => this.router.initialNavigation());
-  }
 
+    this.oauthService.events
+      .pipe(filter(e => ['silent_refresh_timeout'].includes(e.type)))
+      .subscribe(() => {
+        console.log('silent_refresh_timeout > initLoginFlow called')
+        this.oauthService.initLoginFlow()
+      });
+  }
 
   private async configureOAuthService(): Promise<boolean | null> {
     const authConfig: AuthConfig = await this.buildAuthConfig();
@@ -207,7 +210,9 @@ export class AuthService {
 
     const currentLocation = window.location.origin;
     const slashIfNeeded = currentLocation.endsWith('/') ? '' : '/';
-    // console.log(`current silent refresh => ${currentLocation}${slashIfNeeded}silent-refresh.html`);
+    if (securityConfig.refreshTokensDisabled) {
+      console.log(`current silent refresh => ${currentLocation}${slashIfNeeded}silent-refresh.html`);
+    }
 
     return new AuthConfig({
       issuer: securityConfig.issuerUrl,
@@ -227,7 +232,6 @@ export class AuthService {
   private loadFrontendConfig(): Observable<FrontEndSecurityConfig> {
     return this.http.get<FrontEndSecurityConfig>(`${this.environment.serverUrl}/api/security/config`);
   }
-
 
 }
 

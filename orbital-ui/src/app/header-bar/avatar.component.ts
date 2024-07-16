@@ -56,14 +56,14 @@ export class AvatarComponent {
       size: 's',
       data
     })
-      .subscribe(result => {
+      .subscribe(async (result) => {
         if (result) {
           if (this.user.authenticationType === 'Oidc')  {
             console.log('Performing OIDC logout');
-            this.authService.logoutOidc();
+            await this.authService.logoutOidc();
           } else if (this.user.authenticationType === 'Saml') {
             console.log('Performing Saml Logout');
-            this.authService.samlLogout();
+            await this.authService.samlLogout();
           }
         }
       });
