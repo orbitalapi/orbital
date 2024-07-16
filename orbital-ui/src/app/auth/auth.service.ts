@@ -206,6 +206,7 @@ export class AuthService {
     }
 
     const currentLocation = window.location.origin;
+    const slashIfNeeded = currentLocation.endsWith('/') ? '' : '/';
     // console.log(`current silent refresh => ${currentLocation}${slashIfNeeded}silent-refresh.html`);
 
     return new AuthConfig({
@@ -216,10 +217,10 @@ export class AuthService {
       redirectUri: securityConfig.redirectUri || currentLocation,
       requireHttps: securityConfig.requireLoginOverHttps,
       useSilentRefresh: securityConfig.refreshTokensDisabled,
+      silentRefreshRedirectUri: `${currentLocation}${slashIfNeeded}silent-refresh.html`,
       clearHashAfterLogin: false,
       strictDiscoveryDocumentValidation: false,
       showDebugInformation: true,
-
     });
   }
 
