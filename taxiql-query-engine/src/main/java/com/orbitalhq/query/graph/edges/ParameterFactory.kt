@@ -1,14 +1,21 @@
 package com.orbitalhq.query.graph.edges
 
-import com.orbitalhq.models.*
+import com.orbitalhq.models.FailedSearch
+import com.orbitalhq.models.InPlaceQueryEngine
+import com.orbitalhq.models.MixedSources
+import com.orbitalhq.models.PermittedQueryStrategies
+import com.orbitalhq.models.QueryFailureBehaviour
+import com.orbitalhq.models.TypedCollection
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
+import com.orbitalhq.models.TypedObject
+import com.orbitalhq.models.TypedObjectFactory
+import com.orbitalhq.models.UndefinedSource
 import com.orbitalhq.models.facts.CopyOnWriteFactBag
-import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.facts.ScopedFact
-import com.orbitalhq.query.AlwaysGoodSpec
 import com.orbitalhq.query.MetricTags
 import com.orbitalhq.query.QueryContext
-import com.orbitalhq.query.QueryContextSchemaProvider
 import com.orbitalhq.query.QuerySpecTypeNode
 import com.orbitalhq.query.SearchGraphExclusion
 import com.orbitalhq.query.TypedInstanceValidPredicate
@@ -24,6 +31,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import lang.taxi.expressions.Expression
+import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.types.PrimitiveType
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -347,22 +355,25 @@ private class QueryContextWithOperationExclusion(
       spec: TypedInstanceValidPredicate,
       permittedStrategy: PermittedQueryStrategies,
       failureBehaviour: QueryFailureBehaviour,
+      constraint: List<Constraint>
    ): Flow<TypedInstance> {
       // This method is the same as the default implementation.
       // However, because of how InPlaceQueryEngine is implemented via delegation to context,
       // if we don't override here, then the value of "this" becomes the delegated context,
       // so the next call to findType() goes to the delegated context, rather than this instance,
       // and we lose the ability to inject our excluded operations.
-      return this.findType(type, permittedStrategy, failureBehaviour)
+      return this.findType(type, permittedStrategy, failureBehaviour, constraint)
          .filter { spec.isValid(it) }
    }
 
    override suspend fun findType(
       type: Type,
       permittedStrategy: PermittedQueryStrategies,
-      failureBehaviour: QueryFailureBehaviour
+      failureBehaviour: QueryFailureBehaviour,
+      constraint: List<Constraint>
    ): Flow<TypedInstance> {
-      return context.find(QuerySpecTypeNode(type), excludedOperations, failureBehaviour, MetricTags.NONE)
+      return context.find(QuerySpecTypeNode(type = type,
+         dataConstraints = constraint), excludedOperations, failureBehaviour, MetricTags.NONE)
          .results
    }
 

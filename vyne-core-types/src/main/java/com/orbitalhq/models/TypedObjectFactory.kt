@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.*
 import lang.taxi.expressions.Expression
+import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.types.FieldProjection
 import lang.taxi.types.FormatsAndZoneOffset
 import mu.KotlinLogging
@@ -907,7 +908,8 @@ class TypedObjectFactory(
             type,
             searchFailureBehaviour,
             fieldInstanceValidPredicate,
-            attributeName
+            attributeName,
+            field.constraints
          )
       } else {
          failWithTypedNull(type, attributeName)
@@ -918,7 +920,8 @@ class TypedObjectFactory(
       searchType: Type,
       searchFailureBehaviour: QueryFailureBehaviour,
       instanceValidPredicate: TypedInstanceValidPredicate,
-      attributeName: AttributeName?// null if searching for top-level type
+      attributeName: AttributeName?, // null if searching for top-level type
+      constraint: List<Constraint>  = emptyList()
    ): TypedInstance {
       require(inPlaceQueryEngine != null)
       fun failWithTypedNull(failureMessage: String): TypedNull {
@@ -941,7 +944,8 @@ class TypedObjectFactory(
                searchType,
                instanceValidPredicate,
                PermittedQueryStrategies.EXCLUDE_BUILDER_AND_MODEL_SCAN,
-               searchFailureBehaviour
+               searchFailureBehaviour,
+               constraint
             )
             .toList()
       }

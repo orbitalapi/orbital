@@ -9,6 +9,7 @@ import com.orbitalhq.schemas.Type
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import lang.taxi.expressions.Expression
+import lang.taxi.services.operations.constraints.Constraint
 
 /**
  * This is a lightweight version of the API exposed by Vyne's
@@ -32,8 +33,9 @@ interface InPlaceQueryEngine : FactBag, QueryContextSchemaProvider {
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
       permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING,
       failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
+      constraint: List<Constraint> = emptyList()
    ): Flow<TypedInstance> {
-      return this.findType(type, permittedStrategy, failureBehaviour)
+      return this.findType(type, permittedStrategy, failureBehaviour, constraint)
          .filter { spec.isValid(it) }
    }
 
@@ -41,6 +43,7 @@ interface InPlaceQueryEngine : FactBag, QueryContextSchemaProvider {
       type: Type,
       permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING,
       failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
+      constraint: List<Constraint> = emptyList()
    ): Flow<TypedInstance>
 
    fun only(fact: TypedInstance, scopedFacts: List<ScopedFact> = emptyList(), inheritParent: Boolean = true): InPlaceQueryEngine {

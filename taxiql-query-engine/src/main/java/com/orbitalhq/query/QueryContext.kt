@@ -6,15 +6,34 @@ import com.google.common.collect.HashMultimap
 import com.orbitalhq.FactSets
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
-import com.orbitalhq.retainFactsFromFactSet
-import com.orbitalhq.models.*
-import com.orbitalhq.models.facts.*
+import com.orbitalhq.models.InPlaceQueryEngine
+import com.orbitalhq.models.OperationResult
+import com.orbitalhq.models.PermittedQueryStrategies
+import com.orbitalhq.models.Provided
+import com.orbitalhq.models.QueryFailureBehaviour
+import com.orbitalhq.models.TypedCollection
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedObjectFactory
+import com.orbitalhq.models.facts.CascadingFactBag
+import com.orbitalhq.models.facts.CopyOnWriteFactBag
+import com.orbitalhq.models.facts.FactBag
+import com.orbitalhq.models.facts.FactDiscoveryStrategy
+import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.query.graph.ServiceAnnotations
 import com.orbitalhq.query.graph.ServiceParams
 import com.orbitalhq.query.graph.edges.EvaluatableEdge
 import com.orbitalhq.query.graph.edges.EvaluatedEdge
-import com.orbitalhq.schemas.*
+import com.orbitalhq.retainFactsFromFactSet
+import com.orbitalhq.schemas.Operation
+import com.orbitalhq.schemas.OperationNames
+import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.QualifiedName
+import com.orbitalhq.schemas.QueryOptions
+import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.Service
+import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.StrategyPerformanceProfiler
 import com.orbitalhq.utils.orElse
@@ -23,6 +42,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.merge
 import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.expressions.Expression
+import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.types.VoidType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
@@ -154,7 +174,8 @@ data class QueryContext(
       queryString: QueryExpression,
       permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING,
       failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
-      metricsTags: MetricTags = MetricTags.NONE
+      metricsTags: MetricTags = MetricTags.NONE,
+      constraint: List<Constraint> = emptyList()
    ): QueryResult = queryEngine.find(
       queryString,
       this.newSearchContext(),
@@ -366,8 +387,12 @@ data class QueryContext(
 
 
 
-   override suspend fun findType(type: Type, permittedStrategy: PermittedQueryStrategies, failureBehaviour: QueryFailureBehaviour): Flow<TypedInstance> {
-      return this.find(TypeQueryExpression(type), permittedStrategy, failureBehaviour = failureBehaviour)
+   override suspend fun findType(type: Type,
+                                 permittedStrategy: PermittedQueryStrategies,
+                                 failureBehaviour: QueryFailureBehaviour,
+                                 constraint: List<Constraint>): Flow<TypedInstance> {
+      val queryExpression = if (constraint.isEmpty()) TypeQueryExpression(type) else ConstrainedTypeNameQueryExpression(type.paramaterizedName, constraint)
+      return this.find(queryExpression, permittedStrategy, failureBehaviour = failureBehaviour, constraint = constraint)
          .results
    }
 
