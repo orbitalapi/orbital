@@ -3,7 +3,7 @@ import {AuthConfig, OAuthService} from 'angular-oauth2-oidc';
 import {Router} from '@angular/router';
 import {HttpBackend, HttpClient} from '@angular/common/http';
 import {BehaviorSubject, combineLatest, lastValueFrom, Observable, ReplaySubject} from 'rxjs';
-import {filter, map} from 'rxjs/operators';
+import {filter, map, tap} from 'rxjs/operators';
 import {UserInfoService} from '../services/user-info.service';
 import {ENVIRONMENT, Environment} from 'src/app/services/environment';
 
@@ -181,9 +181,10 @@ export class AuthService {
       .subscribe(() => this.router.initialNavigation());
 
     this.oauthService.events
-      .pipe(filter(e => ['silent_refresh_timeout'].includes(e.type)))
+      .pipe(
+        tap(e => console.log(e)),
+        filter(e => ['silent_refresh_timeout'].includes(e.type)))
       .subscribe(() => {
-        console.log('silent_refresh_timeout')
         //this.oauthService.initLoginFlow()
       });
   }
