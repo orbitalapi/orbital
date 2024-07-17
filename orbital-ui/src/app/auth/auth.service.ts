@@ -183,8 +183,8 @@ export class AuthService {
     this.oauthService.events
       .pipe(filter(e => ['silent_refresh_timeout'].includes(e.type)))
       .subscribe(() => {
-        console.log('silent_refresh_timeout > initLoginFlow called')
-        this.oauthService.initLoginFlow()
+        console.log('silent_refresh_timeout')
+        //this.oauthService.initLoginFlow()
       });
   }
 
@@ -222,7 +222,7 @@ export class AuthService {
       redirectUri: securityConfig.redirectUri || currentLocation,
       requireHttps: securityConfig.requireLoginOverHttps,
       useSilentRefresh: securityConfig.refreshTokensDisabled,
-      silentRefreshRedirectUri: `${currentLocation}${slashIfNeeded}silent-refresh.html`,
+      //silentRefreshRedirectUri: `${currentLocation}${slashIfNeeded}silent-refresh.html`,
       clearHashAfterLogin: false,
       strictDiscoveryDocumentValidation: false,
       showDebugInformation: true,
