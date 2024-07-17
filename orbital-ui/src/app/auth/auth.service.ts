@@ -182,7 +182,7 @@ export class AuthService {
 
     this.oauthService.events
       .pipe(
-        tap(e => console.log(e)),
+        tap(e => console.log(e.type)),
         filter(e => ['silent_refresh_timeout'].includes(e.type)))
       .subscribe(() => {
         //this.oauthService.initLoginFlow()
