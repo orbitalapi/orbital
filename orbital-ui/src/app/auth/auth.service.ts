@@ -1,8 +1,8 @@
 import {Inject, Injectable} from '@angular/core';
-import {AuthConfig, OAuthService} from 'angular-oauth2-oidc';
+import {AuthConfig, OAuthErrorEvent, OAuthService} from 'angular-oauth2-oidc';
 import {Router} from '@angular/router';
-import {HttpBackend, HttpClient} from '@angular/common/http';
-import {BehaviorSubject, combineLatest, lastValueFrom, Observable, ReplaySubject} from 'rxjs';
+import {HttpBackend, HttpClient, HttpErrorResponse, HttpHeaders, HttpParams} from '@angular/common/http';
+import {BehaviorSubject, combineLatest, lastValueFrom, Observable, of, ReplaySubject} from 'rxjs';
 import {filter, map, tap} from 'rxjs/operators';
 import {UserInfoService} from '../services/user-info.service';
 import {ENVIRONMENT, Environment} from 'src/app/services/environment';
@@ -155,8 +155,53 @@ export class AuthService {
     return this.oauthService.tokenEndpoint;
   }
 
-  async logoutOidc(): Promise<void> {
-    await this.oauthService.revokeTokenAndLogout();
+  async logoutOidc(): Promise<void | HttpErrorResponse> {
+    // NOTE: this code has been extracted out of the revokeTokenAndLogout method from
+    //       OAuthService class as AWS Cognito doesn't allow an access_token to be revoked,
+    //       but the angular-oauth2-oidc library insists on doing that
+    if (this.oauthService.issuer.toLowerCase().includes('cognito')) {
+      let revokeEndpoint = this.oauthService.revocationEndpoint;
+      let refreshToken = this.oauthService.getRefreshToken();
+      let clientId = this.oauthService.clientId;
+      let params = new HttpParams({});
+      let headers = new HttpHeaders().set('Content-Type', 'application/x-www-form-urlencoded');
+      if (this.oauthService.customQueryParams) {
+        for (const key of Object.getOwnPropertyNames(this.oauthService.customQueryParams)) {
+          params = params.set(key, this.oauthService.customQueryParams[key]);
+        }
+      }
+      return new Promise((resolve, reject) => {
+        let revokeRefreshToken;
+
+        if (refreshToken) {
+          let revokationParams = params
+            .set('token', refreshToken)
+            .set('client_id', clientId);
+          revokeRefreshToken = this.http.post(revokeEndpoint, revokationParams, { headers });
+        } else {
+          revokeRefreshToken = of(null);
+        }
+        revokeRefreshToken.subscribe((res) => {
+          this.oauthService.logOut({
+            client_id: this.oauthService.clientId,
+            redirect_uri: this.oauthService.redirectUri,
+            response_type: this.oauthService.responseType
+          });
+          resolve(res);
+        }, (err) => {
+          this.oauthService['eventsSubject'].next(new OAuthErrorEvent('token_revoke_error', err));
+          resolve(err);
+        });
+      });
+    } else {
+      return this.oauthService.revokeTokenAndLogout().then(
+        success => console.log('logout successful!'),
+        error => {
+          console.log(error)
+          return error
+        }
+      );
+    }
   }
 
   async samlLogout(): Promise<void> {
@@ -181,11 +226,9 @@ export class AuthService {
       .subscribe(() => this.router.initialNavigation());
 
     this.oauthService.events
-      .pipe(
-        tap(e => console.log(e.type)),
-        filter(e => ['silent_refresh_timeout'].includes(e.type)))
+      .pipe(filter(e => ['token_refresh_error', 'silent_refresh_error'].includes(e.type)))
       .subscribe(() => {
-        //this.oauthService.initLoginFlow()
+        this.oauthService.initLoginFlow()
       });
   }
 
@@ -223,7 +266,6 @@ export class AuthService {
       redirectUri: securityConfig.redirectUri || currentLocation,
       requireHttps: securityConfig.requireLoginOverHttps,
       useSilentRefresh: securityConfig.refreshTokensDisabled,
-      //silentRefreshRedirectUri: `${currentLocation}${slashIfNeeded}silent-refresh.html`,
       clearHashAfterLogin: false,
       strictDiscoveryDocumentValidation: false,
       showDebugInformation: true,
