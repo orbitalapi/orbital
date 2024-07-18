@@ -12,7 +12,13 @@ import { MatDialogModule } from '@angular/material/dialog';
 import { ConfirmationDialogModule } from 'src/app/confirmation-dialog/confirmation-dialog.module';
 import {WorkspaceSelectorModule} from "../workspace-selector/workspace-selector.module";
 import {TuiAvatarModule} from "@taiga-ui/kit";
-import {TuiButtonModule, TuiDataListModule, TuiHostedDropdownModule} from "@taiga-ui/core";
+import {
+  TuiAlertModule,
+  TuiButtonModule,
+  TuiDataListModule,
+  TuiHostedDropdownModule,
+  TuiNotificationModule
+} from '@taiga-ui/core';
 
 @NgModule({
   imports: [
@@ -29,6 +35,8 @@ import {TuiButtonModule, TuiDataListModule, TuiHostedDropdownModule} from "@taig
     TuiHostedDropdownModule,
     TuiDataListModule,
     TuiButtonModule,
+    TuiAlertModule,
+    TuiNotificationModule,
   ],
   exports: [HeaderBarComponent, AvatarComponent],
   declarations: [HeaderBarComponent, AvatarComponent],

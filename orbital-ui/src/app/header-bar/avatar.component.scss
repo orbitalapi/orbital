@@ -30,3 +30,12 @@
   width: 24px;
   margin-right: 0.5rem;
 }
+
+.logout-buttons {
+  display: flex;
+  justify-content: space-between;
+}
+
+tui-notification {
+  margin-top: 1rem;
+}
