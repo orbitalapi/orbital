@@ -117,12 +117,15 @@ abstract class BaseHoconConfigFileRepository<T : Any>(
 
    protected open fun saveConfig(config: Config) {
       val configWithPlaceholderQuotesRemoved = getSafeConfigString(config)
-      if (!Files.exists(path)) {
-         logger.info { "Config file at $path does not exist - creating it to save updates" }
-         path.toAbsolutePath().toFile().parentFile.mkdirs()
-         path.toFile().createNewFile()
+      synchronized(path) {
+         if (!Files.exists(path)) {
+            logger.info { "Config file at $path does not exist - creating it to save updates" }
+            path.toAbsolutePath().toFile().parentFile.mkdirs()
+            path.toFile().createNewFile()
+         }
+         path.toFile().writeText(configWithPlaceholderQuotesRemoved)
       }
-      path.toFile().writeText(configWithPlaceholderQuotesRemoved)
+
       configCache.invalidateAll()
    }
 

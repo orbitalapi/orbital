@@ -174,6 +174,11 @@ class FileWorkspaceConfigLoader(
       return getSafeConfigString(unresolvedConfig(), asJson = true)
    }
 
+   @VisibleForTesting
+   public override fun invalidateCache() {
+      super.invalidateCache()
+   }
+
    override fun load(createDefaultIfAbsent: Boolean): WorkspaceConfig {
       try {
          if (!createDefaultIfAbsent && !configFilePath.exists()) {

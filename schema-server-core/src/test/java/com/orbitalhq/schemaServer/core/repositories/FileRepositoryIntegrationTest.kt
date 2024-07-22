@@ -42,11 +42,10 @@ import reactor.kotlin.test.test
 import java.io.File
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.toPath
-import kotlin.random.Random
 import kotlin.test.assertFailsWith
-import kotlin.test.fail
 
 class FileRepositoryIntegrationTest {
    @TempDir
@@ -541,6 +540,97 @@ class FileRepositoryIntegrationTest {
       schemaRepository.removeFileRepository(configFile.toPath(), PackageIdentifier.fromId("com/foo/1.0.0"))
 
       schemaRepository.shouldHaveRepositories(fileRepoCount = 1, gitRepoCount = 2)
+   }
+
+   @Test
+   fun `can add and remove repository concurrently`() {
+      // This test relates to ORB-496, where it was observed that somehow
+      // the workspace.conf file got corrupted.
+      // The goal of this test is that when concurrent users are adding / removing
+      // the file doesn't become corrupted.
+      // We're not testing that concurrent writes detect conflicts - just that the file
+      // doesn't get corrupted.
+      val configFile = folder.newFolder().resolve("workspace.conf")
+
+      val schemaRepository =
+         FileWorkspaceConfigLoader(
+            configFile.toPath(),
+            eventDispatcher = ProjectStoreLifecycleManager(),
+            projectManager = mock { })
+
+      val parseFailed = AtomicBoolean(false)
+      fun invalidateCacheAndReload() {
+         schemaRepository.invalidateCache()
+         try {
+            schemaRepository.load()
+         } catch (e: Exception) {
+            parseFailed.set(true)
+         }
+      }
+
+      val workerThreadOne = Thread {
+         repeat(100) {
+            schemaRepository.addFileSpec(
+               FileSystemPackageSpec(
+                  folder.resolve("project-1/").toPath(),
+                  loader = TaxiPackageLoaderSpec,
+                  packageIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
+               )
+            )
+            schemaRepository.removeFileRepository(
+               folder.resolve("project-1/").toPath(),
+               packageIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
+            )
+            invalidateCacheAndReload()
+
+         }
+      }
+
+      val workerThreadTwo = Thread {
+         repeat(100) {
+            schemaRepository.addFileSpec(
+               FileSystemPackageSpec(
+                  folder.resolve("project-1/").toPath(),
+                  loader = TaxiPackageLoaderSpec,
+                  packageIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
+               )
+            )
+            schemaRepository.removeFileRepository(
+               folder.resolve("project-1/").toPath(),
+               packageIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
+            )
+            invalidateCacheAndReload()
+         }
+      }
+
+      val workerThreadThree = Thread {
+         repeat(100) {
+            schemaRepository.addGitSpec(
+               GitProjectStoreSpec(
+                  "test-repo-2",
+                  "https://github.com/test/repo2",
+                  "master",
+               )
+            )
+            schemaRepository.removeGitRepository(
+               "test-repo-2",
+               PackageIdentifier.fromId("com.test/not-used/1.0.0")
+            )
+            invalidateCacheAndReload()
+         }
+      }
+
+      workerThreadOne.start()
+      workerThreadTwo.start()
+      workerThreadThree.start()
+
+      workerThreadOne.join()
+      workerThreadTwo.join()
+      workerThreadThree.join()
+
+      // The workspace.conf file should still be valid
+      invalidateCacheAndReload()
+      parseFailed.get().shouldBeFalse()
 
    }
 
