@@ -2,13 +2,17 @@ package com.orbitalhq.schemaServer.core.repositories
 
 import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.schemaServer.core.file.deployProject
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
 import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
+import com.orbitalhq.schemaServer.repositories.FileProjectStoreTestRequest
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.spring.http.BadRequestException
 import com.winterbe.expekt.should
+import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import org.junit.Before
 import org.junit.Rule
@@ -27,9 +31,44 @@ class WorkspaceProjectsServiceTest {
 
    @Before
    fun setup() {
-      val configFile = folder.root.resolve("repositories.conf")
-      val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager(), projectManager = mock {  })
+      val configFile = folder.root.resolve("workspace.conf")
+      val loader = FileWorkspaceConfigLoader(
+         configFile.toPath(),
+         eventDispatcher = ProjectStoreLifecycleManager(),
+         projectManager = mock { })
       workspaceProjectsService = WorkspaceProjectsService(loader)
+   }
+
+   @Test
+   fun `testing file path for relative path finds existing project relative to workspace file`() {
+      val projectHome = folder.newFolder("sample-project")
+      val deployedProject = projectHome.deployProject("sample-project")
+      workspaceProjectsService.testFileProjectStore(FileProjectStoreTestRequest("sample-project"))
+         .block()!!
+         .exists.shouldBeTrue()
+   }
+
+   @Test
+   fun `testing file path for absolute path finds existing project`() {
+      val projectHome = folder.newFolder("sample-project")
+      val deployedProject = projectHome.deployProject("sample-project")
+      workspaceProjectsService.testFileProjectStore(FileProjectStoreTestRequest(projectHome.absolutePath))
+         .block()!!
+         .exists.shouldBeTrue()
+   }
+
+   @Test
+   fun `testing file path for relative path correctly indicates no project present`() {
+      workspaceProjectsService.testFileProjectStore(FileProjectStoreTestRequest("this-doesnt-exist"))
+         .block()!!
+         .exists.shouldBeFalse()
+   }
+
+   @Test
+   fun `testing file path for absolute path correctly indicates no project present`() {
+      workspaceProjectsService.testFileProjectStore(FileProjectStoreTestRequest(folder.root.resolve("this-doesnt-exist").absolutePath))
+         .block()!!
+         .exists.shouldBeFalse()
    }
 
    @Test
@@ -40,13 +79,14 @@ class WorkspaceProjectsServiceTest {
       val folder = folder.newFolder("project")
 
       StepVerifier.create(
-      workspaceProjectsService.createFileRepository(
-         CreateFileProjectStoreRequest(
-            folder.canonicalPath, true,
-            loader = TaxiPackageLoaderSpec,
-            newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
+         workspaceProjectsService.createFileRepository(
+            CreateFileProjectStoreRequest(
+               folder.canonicalPath, true,
+               loader = TaxiPackageLoaderSpec,
+               newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
+            )
          )
-      )).expectNextMatches { it.status == ModifyProjectResponseStatus.Ok }
+      ).expectNextMatches { it.status == ModifyProjectResponseStatus.Ok }
          .verifyComplete()
 
       val repositoryConfig = workspaceProjectsService.listRepositories()
@@ -92,11 +132,11 @@ class WorkspaceProjectsServiceTest {
          newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
       )
 
-     StepVerifier
-        .create(workspaceProjectsService.createFileRepository(request))
-        .expectNextMatches {
-           it.status == ModifyProjectResponseStatus.Ok
-        }.verifyComplete()
+      StepVerifier
+         .create(workspaceProjectsService.createFileRepository(request))
+         .expectNextMatches {
+            it.status == ModifyProjectResponseStatus.Ok
+         }.verifyComplete()
 
 
       StepVerifier
@@ -140,13 +180,14 @@ class WorkspaceProjectsServiceTest {
          .git?.repositories?.should?.be?.empty
 
       StepVerifier.create(
-      workspaceProjectsService.createGitProjectStore(
-         GitProjectStoreChangeRequest(
-            "test-repo",
-            "https://github.com/test/repo",
-            "master",
+         workspaceProjectsService.createGitProjectStore(
+            GitProjectStoreChangeRequest(
+               "test-repo",
+               "https://github.com/test/repo",
+               "master",
+            )
          )
-      ))
+      )
          .expectNextMatches { it.status == ModifyProjectResponseStatus.Ok }
          .verifyComplete()
 

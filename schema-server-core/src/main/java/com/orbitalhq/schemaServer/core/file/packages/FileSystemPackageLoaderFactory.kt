@@ -31,6 +31,9 @@ class FileSystemPackageLoaderFactory(
       } else {
          spec.path.parent
       }
+      if (pathToWatch == null) {
+         logger.error { "Failed to establish project path for project with spec at path ${spec.path}" }
+      }
       logger.info { "Configuring a PackageLoader using a watch method of ${config.changeDetectionMethod} at $pathToWatch" }
       val monitor: ReactiveFileSystemMonitor = when (config.changeDetectionMethod) {
          FileChangeDetectionMethod.POLL -> ReactivePollingFileSystemMonitor(pathToWatch, config.pollFrequency)

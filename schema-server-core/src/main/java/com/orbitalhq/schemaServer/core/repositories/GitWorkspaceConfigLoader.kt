@@ -11,10 +11,13 @@ import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.git.GitRef
 import com.orbitalhq.schemaServer.core.git.GitRepoSync
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.repositories.FileProjectStoreTestRequest
+import com.orbitalhq.schemaServer.repositories.FileProjectTestResponse
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
 import java.nio.file.Path
 
@@ -133,6 +136,10 @@ class GitWorkspaceConfigLoader(
 
    override fun removePushedRepository(identifier: PackageIdentifier): List<PackageIdentifier> {
       return fileConfigLoader.removePushedRepository(identifier)
+   }
+
+   override fun validateProjectExists(request: FileProjectStoreTestRequest): Mono<FileProjectTestResponse> {
+      return fileConfigLoader.validateProjectExists(request)
    }
 }
 
