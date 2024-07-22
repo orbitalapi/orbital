@@ -2,7 +2,6 @@ package com.orbitalhq.schemaServer.core.repositories.lifecycle
 
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.SourcesChangedMessage
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoader
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader
@@ -10,6 +9,7 @@ import com.orbitalhq.utils.RetryFailOnSerializeEmitHandler
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.time.Duration
+import java.util.concurrent.CompletableFuture
 
 /**
  * Central point for notifying repositories added / removed.
@@ -23,14 +23,16 @@ class ProjectStoreLifecycleManager(
    RepositorySpecLifecycleEventSource {
 
    private val emitFailureHandler: Sinks.EmitFailureHandler =
-      Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(100))
+      Sinks.EmitFailureHandler.busyLooping(Duration.ofMillis(1000))
 
-   private val schemaSourceRemovedSink = Sinks.many().replay().all<List<PackageIdentifier>>()
-   private val schemaSourceAddedSink = Sinks.many().replay().all<SchemaPackageTransport>()
-   private val gitSpecAddedSink = Sinks.many().replay().all<GitSpecAddedEvent>()
-   private val fileSpecAddedSink = Sinks.many().replay().all<FileSpecAddedEvent>()
-   private val gitSpecRemovedSink = Sinks.many().replay().all<GitSpecRemovedEvent>()
-   private val fileSpecRemovedSink = Sinks.many().replay().all<FileSpecRemovedEvent>()
+   private val schemaSourceRemovedSink =
+      Sinks.many().replay().limit<List<PackageIdentifier>>(Duration.ofSeconds(30))
+   private val schemaSourceAddedSink =
+      Sinks.many().replay().limit<SchemaPackageTransport>(Duration.ofSeconds(30))
+   private val gitSpecAddedSink = Sinks.many().replay().limit<GitSpecAddedEvent>(Duration.ofSeconds(30))
+   private val fileSpecAddedSink = Sinks.many().replay().limit<FileSpecAddedEvent>(Duration.ofSeconds(30))
+   private val gitSpecRemovedSink = Sinks.many().replay().limit<GitSpecRemovedEvent>(Duration.ofSeconds(30))
+   private val fileSpecRemovedSink = Sinks.many().replay().limit<FileSpecRemovedEvent>(Duration.ofSeconds(30))
 
    // Replay logic here: We don't wanna keep 'em forever.
    // But, on startup, subscribers may arrive late,
@@ -66,32 +68,31 @@ class ProjectStoreLifecycleManager(
       get() = fileSpecRemovedSink.asFlux()
 
    override fun fileProjectStoreAdded(repository: FileSystemPackageLoader) {
-      schemaSourceAddedSink.emitNext(repository, emitFailureHandler)
+      schemaSourceAddedSink.emitOnSingleThread(repository)
    }
 
    override fun gitProjectStoreAdded(repository: GitSchemaPackageLoader) {
-      schemaSourceAddedSink.emitNext(repository, emitFailureHandler)
+      schemaSourceAddedSink.emitOnSingleThread(repository)
    }
 
    override fun fileRepositorySpecAdded(spec: FileSpecAddedEvent) {
-      fileSpecAddedSink.emitNext(spec, emitFailureHandler)
+      fileSpecAddedSink.emitOnSingleThread(spec)
    }
 
    override fun fileRepositorySpecRemoved(spec: FileSpecRemovedEvent) {
-      fileSpecRemovedSink.emitNext(spec, emitFailureHandler)
+      fileSpecRemovedSink.emitOnSingleThread(spec)
    }
 
    override fun gitRepositorySpecAdded(spec: GitSpecAddedEvent) {
-      gitSpecAddedSink.emitNext(spec, emitFailureHandler)
+      gitSpecAddedSink.emitOnSingleThread(spec)
    }
 
    override fun gitRepositorySpecRemoved(spec: GitSpecRemovedEvent) {
-      gitSpecRemovedSink.emitNext(spec, emitFailureHandler)
+      gitSpecRemovedSink.emitOnSingleThread(spec)
    }
 
    override fun schemaSourceRemoved(packages: List<PackageIdentifier>) {
-      schemaSourceRemovedSink.emitNext(packages, emitFailureHandler)
+      schemaSourceRemovedSink.emitOnSingleThread(packages)
    }
 }
-
 

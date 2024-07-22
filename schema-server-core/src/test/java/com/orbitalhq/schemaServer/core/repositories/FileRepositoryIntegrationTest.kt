@@ -56,7 +56,8 @@ class FileRepositoryIntegrationTest {
    fun `adding a file repository to an empty folder creates a taxi project`() {
       val configFile = folder.resolve("workspace.conf")
       val eventDispatcher = ProjectStoreLifecycleManager()
-      val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher, projectManager = mock {  })
+      val loader =
+         FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher, projectManager = mock { })
 
       val projectFolder = folder.newFolder().toPath()
       loader.addFileSpec(
@@ -79,7 +80,8 @@ class FileRepositoryIntegrationTest {
 
       val configFile = folder.resolve("workspace.conf")
       val eventDispatcher = ProjectStoreLifecycleManager()
-      val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher, projectManager = mock {  })
+      val loader =
+         FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher, projectManager = mock { })
 
       loader.addFileSpec(
          FileSystemPackageSpec(
@@ -116,6 +118,10 @@ class FileRepositoryIntegrationTest {
             )
          )
 
+         Awaitility.await().atMost(10, TimeUnit.SECONDS)
+            .until<Boolean> {
+               repositoryManager.fileLoaders.size == 1
+            }
          repositoryManager.fileLoaders.should.have.size(1)
          schemaClient.schema()
             .hasType("Hello")
@@ -174,6 +180,7 @@ class FileRepositoryIntegrationTest {
    fun `configure a file repository at runtime and when files are changes then schema updates are emitted`() {
       val (repositoryService, repositoryManager, schemaClient) = setupServices()
 
+      
       repositoryManager.use {
          // First, create the new repository
          val projectFolder = folder.newFolder()
@@ -186,6 +193,9 @@ class FileRepositoryIntegrationTest {
             )
          )
 
+         Awaitility.await()
+            .atMost(5, TimeUnit.SECONDS)
+            .until<Boolean> { repositoryManager.fileLoaders.size == 1 }
          repositoryManager.fileLoaders.should.have.size(1)
          schemaClient.schema()
             .hasType("Hello")
@@ -279,7 +289,7 @@ class FileRepositoryIntegrationTest {
                loader = TaxiPackageLoaderSpec,
                newProjectIdentifier = packageIdentifier,
 
-            )
+               )
          )
 
          repositoryManager.fileLoaders.should.have.size(1)
@@ -342,6 +352,7 @@ class FileRepositoryIntegrationTest {
       val c: LocalValidatingSchemaStoreClient,
       val d: FileWorkspaceConfigLoader
    )
+
    private fun setupServices(): TestServices {
       // Setup: Loading the config from disk
       val configFile = folder.newFolder().resolve("workspace.conf")
@@ -355,9 +366,12 @@ class FileRepositoryIntegrationTest {
          eventDispatcher, eventDispatcher, eventDispatcher
       )
 
-      val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher, projectManager = repositoryManager)
+      val loader = FileWorkspaceConfigLoader(
+         configFile.toPath(),
+         eventDispatcher = eventDispatcher,
+         projectManager = repositoryManager
+      )
       val workspaceProjectsService = WorkspaceProjectsService(loader)
-
 
 
       // Setup: A SchemaStoreClient, which will
@@ -383,7 +397,8 @@ class FileRepositoryIntegrationTest {
       // Setup: Loading the config from disk
       val configFile = folder.newFolder().resolve("workspace.conf")
       val eventDispatcher = ProjectStoreLifecycleManager()
-      val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher, projectManager = mock {  })
+      val loader =
+         FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher, projectManager = mock { })
       val workspaceProjectsService = WorkspaceProjectsService(loader)
 
       // Setup: Building the file repository, which should
@@ -439,7 +454,10 @@ class FileRepositoryIntegrationTest {
       // Setup: Loading the config from disk
       val configFile = folder.newFolder().resolve("workspace.conf")
       val setupLoader =
-         FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager(), projectManager = mock {  })
+         FileWorkspaceConfigLoader(
+            configFile.toPath(),
+            eventDispatcher = ProjectStoreLifecycleManager(),
+            projectManager = mock { })
       val setupWorkspaceProjectsService = WorkspaceProjectsService(setupLoader)
 
       // First, create the project, and write some source.
@@ -458,7 +476,8 @@ class FileRepositoryIntegrationTest {
 
       // Now, "restart", by creating a new set of components.
       val eventDispatcher = ProjectStoreLifecycleManager()
-      val loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher, projectManager = mock {  })
+      val loader =
+         FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher, projectManager = mock { })
 
       // Setup: Building the file repository, which should
       // create new repositories as config is added
@@ -488,7 +507,10 @@ class FileRepositoryIntegrationTest {
    fun `can delete git repository`() {
       val configFile = folder.newFolder().resolve("workspace.conf")
       val schemaRepository =
-         FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager(), projectManager = mock {  })
+         FileWorkspaceConfigLoader(
+            configFile.toPath(),
+            eventDispatcher = ProjectStoreLifecycleManager(),
+            projectManager = mock { })
 
       schemaRepository.load()
          .git?.repositories?.should?.be?.empty
@@ -505,7 +527,10 @@ class FileRepositoryIntegrationTest {
    fun `can delete file repository`() {
       val configFile = folder.newFolder().resolve("workspace.conf")
       val schemaRepository =
-         FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager(), projectManager = mock {  })
+         FileWorkspaceConfigLoader(
+            configFile.toPath(),
+            eventDispatcher = ProjectStoreLifecycleManager(),
+            projectManager = mock { })
 
       schemaRepository.load()
          .git?.repositories?.should?.be?.empty
@@ -523,7 +548,10 @@ class FileRepositoryIntegrationTest {
    fun `throws error removing file repository that doesn't exist`() {
       val configFile = folder.newFolder().resolve("workspace.conf")
       val schemaRepository =
-         FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager(), projectManager = mock {  })
+         FileWorkspaceConfigLoader(
+            configFile.toPath(),
+            eventDispatcher = ProjectStoreLifecycleManager(),
+            projectManager = mock { })
 
       schemaRepository.load()
          .git?.repositories?.should?.be?.empty
@@ -541,7 +569,10 @@ class FileRepositoryIntegrationTest {
    fun `throws error removing git repository that doesn't exist`() {
       val configFile = folder.newFolder().resolve("workspace.conf")
       val schemaRepository =
-         FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = ProjectStoreLifecycleManager(), projectManager = mock {  })
+         FileWorkspaceConfigLoader(
+            configFile.toPath(),
+            eventDispatcher = ProjectStoreLifecycleManager(),
+            projectManager = mock { })
 
       schemaRepository.load()
          .git?.repositories?.should?.be?.empty
