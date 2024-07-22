@@ -5,19 +5,12 @@ import com.hazelcast.cluster.MembershipEvent
 import com.hazelcast.cluster.MembershipListener
 import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.connections.ConnectionStatus
-import com.orbitalhq.http.ServicesConfig.Companion.STREAM_SERVER_NAME
 import com.orbitalhq.pipelines.jet.api.streams.StreamServerStatusEvent
-import com.orbitalhq.pipelines.jet.api.streams.StreamStatus
-import com.orbitalhq.pipelines.jet.api.streams.StreamStatusUpdateRequest
-import com.orbitalhq.pipelines.jet.pipelines.PipelineService
+import com.orbitalhq.spring.http.websocket.OrbitalWebSocketConfiguration
 import com.orbitalhq.spring.http.websocket.WebSocketController
 import mu.KotlinLogging
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.stereotype.Controller
-import org.springframework.web.bind.annotation.GetMapping
-import org.springframework.web.bind.annotation.PathVariable
-import org.springframework.web.bind.annotation.PostMapping
-import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -32,9 +25,10 @@ import reactor.core.publisher.Sinks
 @Controller
 class StreamServerStatusService(
    private val hazelcastInstance: HazelcastInstance,
-   private val streamStateManager: StreamStateManager,
-   private val stateUpdatesPublisher: StreamStateUpdatesPublisher,
+   streamStateManager: StreamStateManager,
+   stateUpdatesPublisher: StreamStateUpdatesPublisher,
    private val objectMapper: ObjectMapper,
+   private val orbitalWebSocketConfiguration: OrbitalWebSocketConfiguration
 ) : WebSocketController {
 
    private val streamServerStatusSink = Sinks.many().replay().latest<StreamServerStatusEvent>()
@@ -78,14 +72,14 @@ class StreamServerStatusService(
    override val paths: List<String> = listOf("/api/streams/status")
 
    override fun handle(session: WebSocketSession): Mono<Void> {
-      return session.send(
-         statusUpdates
-            .map { event ->
-               session.textMessage(
-                  objectMapper.writeValueAsString(event)
-               )
-            }
-      )
+      val outbound =  statusUpdates
+         .map { event ->
+            session.textMessage(
+               objectMapper.writeValueAsString(event)
+            )
+         }
+
+      return orbitalWebSocketConfiguration.applyPingConfiguration(this, session, outbound)
    }
 }
 

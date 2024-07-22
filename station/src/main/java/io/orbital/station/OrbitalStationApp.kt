@@ -16,6 +16,7 @@ import com.orbitalhq.spring.config.VyneSpringCacheConfiguration
 import com.orbitalhq.spring.config.VyneSpringHazelcastConfiguration
 import com.orbitalhq.spring.config.VyneSpringProjectionConfiguration
 import com.orbitalhq.spring.http.auth.HttpAuthConfig
+import com.orbitalhq.spring.http.websocket.WebSocketPingConfig
 import com.orbitalhq.spring.metrics.MicrometerMetricsReporter
 import com.orbitalhq.spring.projection.ApplicationContextProvider
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
@@ -54,7 +55,8 @@ import org.springframework.context.annotation.Import
    ApplicationContextProvider::class,
    LicenseConfig::class,
    DiscoveryClientConfig::class,
-   CopilotSpringModule::class
+   CopilotSpringModule::class,
+   WebSocketPingConfig::class
 )
 //@EnableWebFluxSecurity
 class OrbitalStationApp {

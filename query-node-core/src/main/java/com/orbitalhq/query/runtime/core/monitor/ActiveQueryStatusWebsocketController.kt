@@ -1,7 +1,9 @@
 package com.orbitalhq.query.runtime.core.monitor
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.orbitalhq.spring.http.websocket.OrbitalWebSocketConfiguration
 import com.orbitalhq.spring.http.websocket.WebSocketController
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.reactor.asFlux
@@ -15,7 +17,8 @@ import java.time.Duration
 @Component
 class ActiveQueryStatusWebsocketController(
     private val activeQueryMonitor: ActiveQueryMonitor,
-    private val objectMapper: ObjectMapper
+    private val objectMapper: ObjectMapper,
+    private val orbitalWebSocketConfiguration: OrbitalWebSocketConfiguration
 ) :
    WebSocketController {
 
@@ -34,8 +37,9 @@ class ActiveQueryStatusWebsocketController(
    }
 
 
+   @OptIn(FlowPreview::class)
    private fun publishActiveQueryMetadata(webSocketSession: WebSocketSession): Mono<Void> {
-      return webSocketSession.send(activeQueryMonitor.allQueryStatusUpdates()
+      val outbound = activeQueryMonitor.allQueryStatusUpdates()
          .map { runningQueryStatus ->
             val json = objectMapper.writeValueAsString(runningQueryStatus)
             json
@@ -43,6 +47,7 @@ class ActiveQueryStatusWebsocketController(
          .map(webSocketSession::textMessage)
          .sample(Duration.ofSeconds(1))
          .asFlux()
-      )
+
+      return orbitalWebSocketConfiguration.applyPingConfiguration(this, webSocketSession, outbound)
    }
 }

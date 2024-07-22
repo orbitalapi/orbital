@@ -18,6 +18,7 @@ import com.orbitalhq.spring.config.EnvVariablesConfig
 import com.orbitalhq.spring.config.VyneSpringCacheConfiguration
 import com.orbitalhq.spring.config.VyneSpringProjectionConfiguration
 import com.orbitalhq.spring.http.auth.HttpAuthConfig
+import com.orbitalhq.spring.http.websocket.WebSocketPingConfig
 import com.orbitalhq.utils.log
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Autowired
@@ -44,7 +45,7 @@ import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.http.codec.json.KotlinSerializationJsonEncoder
 import java.net.InetAddress
-import java.util.*
+import java.util.Collections
 
 @SpringBootApplication(
    exclude = [
@@ -71,7 +72,8 @@ class QueryNodeServiceApp {
 @Import(
    HttpAuthConfig::class,
    DiscoveryClientConfig::class,
-   AnalyticsConfig::class
+   AnalyticsConfig::class,
+   WebSocketPingConfig::class
 )
 @EnableConfigurationProperties(
    VyneSpringCacheConfiguration::class,
