@@ -1,13 +1,18 @@
 package com.orbitalhq.schemaServer.core.repositories
 
 import com.nhaarman.mockito_kotlin.mock
+import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import com.orbitalhq.schemaServer.core.file.deployProject
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecRemovedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
+import com.orbitalhq.schemaServer.repositories.FileProjectStoreTestRequest
 import com.orbitalhq.test.utils.FlakeyOnBuildServer
+import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.file.shouldExist
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.jupiter.api.BeforeEach
@@ -17,11 +22,15 @@ import reactor.core.publisher.Flux
 import reactor.kotlin.test.test
 import java.io.File
 import java.nio.file.Path
+import java.nio.file.Paths
 
 
 class FileWorkspaceConfigLoaderTest {
    @field:TempDir
-   lateinit var folder :File
+   lateinit var folder: File
+
+   @field:TempDir
+   lateinit var projectFolder: File
 
    lateinit var loader: FileWorkspaceConfigLoader
    lateinit var configFile: File
@@ -29,9 +38,11 @@ class FileWorkspaceConfigLoaderTest {
 
    @BeforeEach
    fun setup() {
-      configFile = folder.resolve("repositories.conf")
+      configFile = folder.resolve("workspace.conf")
+      configFile.createNewFile()
       eventDispatcher = ProjectStoreLifecycleManager()
-      loader = FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher, projectManager = mock {  })
+      loader =
+         FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher, projectManager = mock { })
    }
 
    @Test
@@ -92,4 +103,113 @@ class FileWorkspaceConfigLoaderTest {
       return hoconString
    }
 
+   @Test
+   fun `adding a new project with relative path is created relative to workspace file`() {
+      loader.addFileSpec(
+         FileSystemPackageSpec(
+            path = Paths.get("test-project"),
+            packageIdentifier = PackageIdentifier.fromId("com.foo/test/1.0.0")
+         )
+      )
+      val relativeTaxiFile = folder.resolve("test-project/taxi.conf")
+      relativeTaxiFile.shouldExist()
+   }
+
+   @Test
+   fun `adding a new project with relative path defining taxi conf path is created relative to workspace file`() {
+      loader.addFileSpec(
+         FileSystemPackageSpec(
+            path = Paths.get("test-project/taxi.conf"),
+            packageIdentifier = PackageIdentifier.fromId("com.foo/test/1.0.0")
+         )
+      )
+      val relativeTaxiFile = folder.resolve("test-project/taxi.conf")
+      relativeTaxiFile.shouldExist()
+   }
+
+   @Test
+   fun `can add existing project using relative file path`() {
+      val projectHome = configFile.parentFile.resolve("test-project")
+      projectHome.mkdirs()
+      projectHome.deployProject("sample-project")
+
+      // This is an existing project, so we don't pass the identifier
+      val update = loader.addFileSpec(
+         FileSystemPackageSpec(
+            path = Paths.get("test-project"),
+         )
+      )
+      update.status.shouldBe(ModifyProjectResponseStatus.Ok)
+   }
+
+   @Test
+   fun `can add existing project using absolute file path`() {
+      val projectHome = configFile.parentFile.resolve("test-project")
+      projectHome.mkdirs()
+      projectHome.deployProject("sample-project")
+
+      // This is an existing project, so we don't pass the identifier
+      val update = loader.addFileSpec(
+         FileSystemPackageSpec(
+            path = projectHome.toPath().toAbsolutePath()
+         )
+      )
+      update.status.shouldBe(ModifyProjectResponseStatus.Ok)
+   }
+
+   @Test
+   fun `adding a new project with absolute path is created in the correct location`() {
+      loader.addFileSpec(
+         FileSystemPackageSpec(
+            path = projectFolder.toPath().resolve("test-project"),
+            packageIdentifier = PackageIdentifier.fromId("com.foo/test/1.0.0")
+         )
+      )
+      val relativeTaxiFile = projectFolder.resolve("test-project/taxi.conf")
+      relativeTaxiFile.shouldExist()
+   }
+
+   @Test
+   fun `adding a new project with absolute path referencing taxi conf path is created in the correct location`() {
+      loader.addFileSpec(
+         FileSystemPackageSpec(
+            path = projectFolder.toPath().resolve("test-project/taxi.conf"),
+            packageIdentifier = PackageIdentifier.fromId("com.foo/test/1.0.0")
+         )
+      )
+      val relativeTaxiFile = projectFolder.resolve("test-project/taxi.conf")
+      relativeTaxiFile.shouldExist()
+   }
+
+   @Test
+   fun `testing file path for relative path finds existing project relative to workspace file`() {
+      val projectHome = folder.newFolder("sample-project")
+      val deployedProject = projectHome.deployProject("sample-project")
+      loader.validateProjectExists(FileProjectStoreTestRequest("sample-project"))
+         .block()!!
+         .exists.shouldBeTrue()
+   }
+
+   @Test
+   fun `testing file path for absolute path finds existing project`() {
+      val projectHome = folder.newFolder("sample-project")
+      val deployedProject = projectHome.deployProject("sample-project")
+      loader.validateProjectExists(FileProjectStoreTestRequest(projectHome.absolutePath))
+         .block()!!
+         .exists.shouldBeTrue()
+   }
+
+   @Test
+   fun `testing file path for relative path correctly indicates no project present`() {
+      loader.validateProjectExists(FileProjectStoreTestRequest("this-doesnt-exist"))
+         .block()!!
+         .exists.shouldBeFalse()
+   }
+
+   @Test
+   fun `testing file path for absolute path correctly indicates no project present`() {
+      loader.validateProjectExists(FileProjectStoreTestRequest(folder.resolve("this-doesnt-exist").absolutePath))
+         .block()!!
+         .exists.shouldBeFalse()
+   }
 }

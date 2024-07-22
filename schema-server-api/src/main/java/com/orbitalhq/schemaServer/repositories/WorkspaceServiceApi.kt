@@ -8,7 +8,7 @@ data class FileProjectStoreTestRequest(
    val path: String
 )
 
-data class FileProjectStoreTestResponse(
+data class FileProjectTestResponse(
    val path: String,
    val exists: Boolean,
    val identifier: PackageIdentifier?

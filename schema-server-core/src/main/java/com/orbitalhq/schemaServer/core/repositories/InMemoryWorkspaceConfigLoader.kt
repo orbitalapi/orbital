@@ -8,9 +8,12 @@ import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.GitSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
+import com.orbitalhq.schemaServer.repositories.FileProjectStoreTestRequest
+import com.orbitalhq.schemaServer.repositories.FileProjectTestResponse
 import com.orbitalhq.utils.concat
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import java.nio.file.Path
 
 class InMemoryWorkspaceConfigLoader(
@@ -100,5 +103,9 @@ class InMemoryWorkspaceConfigLoader(
       val identifiers = listOf(identifier)
       eventDispatcher.schemaSourceRemoved(identifiers)
       return identifiers
+   }
+
+   override fun validateProjectExists(request: FileProjectStoreTestRequest): Mono<FileProjectTestResponse> {
+      error("Adding workspace projects is not supported without a workspace. Restart the platform using --vyne.workspace.config-file")
    }
 }

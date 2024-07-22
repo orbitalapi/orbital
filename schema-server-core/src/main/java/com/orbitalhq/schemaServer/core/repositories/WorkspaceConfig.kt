@@ -6,7 +6,10 @@ import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
 import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
+import com.orbitalhq.schemaServer.repositories.FileProjectStoreTestRequest
+import com.orbitalhq.schemaServer.repositories.FileProjectTestResponse
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import java.nio.file.Path
 
 /**
@@ -50,6 +53,7 @@ interface WorkspaceConfigLoader {
    fun removeGitRepository(repositoryName: String, packageIdentifier: PackageIdentifier): List<PackageIdentifier>
    fun removeFileRepository(repositoryPath: Path, packageIdentifier: PackageIdentifier): List<PackageIdentifier>
    fun removePushedRepository(identifier: PackageIdentifier): List<PackageIdentifier>
+   fun validateProjectExists(request: FileProjectStoreTestRequest): Mono<FileProjectTestResponse>
 
    val loaderStatus: Flux<LoaderStatus>
 

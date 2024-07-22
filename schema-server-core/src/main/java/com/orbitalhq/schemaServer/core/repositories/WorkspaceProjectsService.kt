@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import java.nio.file.Path
 import java.nio.file.Paths
 
@@ -57,14 +58,9 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) {
    }
 
    @PostMapping("/api/repositories/file", params = ["test"])
-   fun testFileProjectStore(@RequestBody request: FileProjectStoreTestRequest): Mono<FileProjectStoreTestResponse> {
-      return try {
-         val project = TaxiPackageLoader.forDirectoryContainingTaxiFile(Paths.get(request.path)).load()
-         Mono.just(FileProjectStoreTestResponse(request.path, true, project.identifier.toVynePackageIdentifier()))
-      } catch (e: Exception) {
-         logger.info { "Could not find a package at ${request.path} - maybe it doesn't exist? Error: ${e.message}" }
-         Mono.just(FileProjectStoreTestResponse(request.path, false, null))
-      }
+   fun testFileProjectStore(@RequestBody request: FileProjectStoreTestRequest): Mono<FileProjectTestResponse> {
+      return configRepo.validateProjectExists(request)
+         .subscribeOn(Schedulers.boundedElastic())
    }
 
 

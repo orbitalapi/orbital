@@ -23,6 +23,8 @@ import com.orbitalhq.schemaServer.core.repositories.lifecycle.GitSpecRemovedEven
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
+import com.orbitalhq.schemaServer.repositories.FileProjectStoreTestRequest
+import com.orbitalhq.schemaServer.repositories.FileProjectTestResponse
 import com.orbitalhq.toPackageMetadata
 import com.orbitalhq.toVynePackageIdentifier
 import com.orbitalhq.utils.concat
@@ -36,10 +38,12 @@ import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.writers.ConfigWriter
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
 import reactor.core.publisher.Sinks.EmissionException
 import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Duration
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
@@ -254,7 +258,8 @@ class FileWorkspaceConfigLoader(
          )
       )
       save(updated)
-      eventDispatcher.fileRepositorySpecAdded(FileSpecAddedEvent(fileSpec, updated.file!!))
+      val fileSpecWithAbsolutePath = fileSpec.copy(path = makeRelativeToConfigFile(fileSpec.path))
+      eventDispatcher.fileRepositorySpecAdded(FileSpecAddedEvent(fileSpecWithAbsolutePath, updated.file!!))
       return ModifyWorkspaceResponse(ModifyProjectResponseStatus.Ok)
    }
 
@@ -274,7 +279,9 @@ class FileWorkspaceConfigLoader(
    }
 
    private fun verifyTaxiProjectExists(fileSpec: FileSystemPackageSpec): PackageIdentifier {
-      val project = TaxiPackageLoader.forDirectoryContainingTaxiFile(fileSpec.path).load()
+      val projectPath = makeRelativeToConfigFile(fileSpec.path)
+
+      val project = TaxiPackageLoader.forDirectoryContainingTaxiFile(projectPath).load()
       if (fileSpec.packageIdentifier != null && project.identifier.toVynePackageIdentifier() != fileSpec.packageIdentifier) {
          error("The provided package identifier (${fileSpec.packageIdentifier!!.id} does not match the package identifier found at ${fileSpec.path} - ${project.identifier.id}")
       }
@@ -287,12 +294,13 @@ class FileWorkspaceConfigLoader(
          return verifyOpenApiProjectExists(fileSpec)
       }
 
-      val path = fileSpec.path
-      if (!path.createDirectories().exists()) {
-         logger.warn { "Failed to create directory $path for taxi project" }
-         error("Failed to create directory $path for taxi project")
+      val taxiProjectPath = makeRelativeToConfigFile(fileSpec.path)
+
+      if (!taxiProjectPath.createDirectories().exists()) {
+         logger.warn { "Failed to create directory $taxiProjectPath for taxi project" }
+         error("Failed to create directory $taxiProjectPath for taxi project")
       }
-      val taxiPackageLoader = TaxiPackageLoader.forDirectoryContainingTaxiFile(fileSpec.path)
+      val taxiPackageLoader = TaxiPackageLoader.forDirectoryContainingTaxiFile(taxiProjectPath)
       val taxiConfPath = taxiPackageLoader.taxiConfFilePath!!
       if (!taxiConfPath.exists()) {
          if (fileSpec.packageIdentifier == null) {
@@ -306,7 +314,7 @@ class FileWorkspaceConfigLoader(
          )
          val taxiConf = ConfigWriter().writeMinimal(project)
          taxiConfPath.writeText(taxiConf)
-         path.resolve(project.sourceRoot).createDirectories()
+         taxiProjectPath.resolve(project.sourceRoot).createDirectories()
       }
 
       return taxiPackageLoader.load().identifier.toVynePackageIdentifier()
@@ -388,6 +396,20 @@ class FileWorkspaceConfigLoader(
       val identifiers = listOf(identifier)
       eventDispatcher.schemaSourceRemoved(identifiers)
       return identifiers
+   }
+
+   override fun validateProjectExists(request: FileProjectStoreTestRequest): Mono<FileProjectTestResponse> {
+      return Mono.fromCallable {
+         val path = Paths.get(request.path)
+         val projectHome = makeRelativeToConfigFile(path)
+         try {
+            val project = TaxiPackageLoader.forDirectoryContainingTaxiFile(projectHome).load()
+            FileProjectTestResponse(request.path, true, project.identifier.toVynePackageIdentifier())
+         } catch (e: Exception) {
+            logger.info { "Could not find a package at ${request.path} - maybe it doesn't exist? Error: ${e.message}" }
+            FileProjectTestResponse(request.path, false, null)
+         }
+      }
    }
 
    @VisibleForTesting

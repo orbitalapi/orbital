@@ -160,7 +160,7 @@ import {Router} from "@angular/router";
         (click)="goBackOnboarding.emit()"
       >Cancel
       </button>
-      <button tuiButton [showLoader]='working' [size]="'m'" (click)='doCreate()' [disabled]='fileForm.invalid'>
+      <button tuiButton [showLoader]='working' [size]="'m'" (click)='doCreate()' [disabled]='fileForm.invalid || !filePathIsValid'>
         Create
       </button>
     </div>
@@ -172,6 +172,11 @@ import {Router} from "@angular/router";
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FileConfigComponent {
+
+  get filePathIsValid():Boolean {
+    const foundFile = this.filePathTestResult && this.filePathTestResult.exists && !this.filePathTestResult.errorMessage
+    return foundFile || this.creatingNewProject
+  }
 
   readonly stringifyProjectType = projectTypeToString;
   @Input()
