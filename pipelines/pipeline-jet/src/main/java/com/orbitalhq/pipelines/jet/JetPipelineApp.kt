@@ -31,6 +31,7 @@ import com.orbitalhq.spring.EnableVyne
 import com.orbitalhq.spring.VyneSchemaConsumer
 import com.orbitalhq.spring.config.*
 import com.orbitalhq.spring.http.auth.HttpAuthConfig
+import com.orbitalhq.spring.http.websocket.WebSocketPingConfig
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
@@ -66,7 +67,8 @@ import java.time.Clock
 @Import(
    HttpAuthConfig::class,
    PipelineStateConfig::class,
-   DiscoveryClientConfig::class
+   DiscoveryClientConfig::class,
+   WebSocketPingConfig::class
 )
 class JetPipelineApp {
    companion object {

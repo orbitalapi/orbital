@@ -9,6 +9,7 @@ import com.orbitalhq.spring.config.DiscoveryClientConfig
 import com.orbitalhq.spring.config.VyneSpringCacheConfiguration
 import com.orbitalhq.spring.config.VyneSpringProjectionConfiguration
 import com.orbitalhq.spring.http.auth.HttpAuthConfig
+import com.orbitalhq.spring.http.websocket.WebSocketPingConfig
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -22,7 +23,8 @@ import org.springframework.context.annotation.Import
 @Import(
    HttpAuthConfig::class,
    DiscoveryClientConfig::class,
-   AnalyticsConfig::class
+   AnalyticsConfig::class,
+   WebSocketPingConfig::class
 )
 @EnableConfigurationProperties(
    VyneSpringCacheConfiguration::class,

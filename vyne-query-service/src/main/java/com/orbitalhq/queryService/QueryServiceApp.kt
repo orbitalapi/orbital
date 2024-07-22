@@ -34,6 +34,7 @@ import com.orbitalhq.spring.config.VyneSpringCacheConfiguration
 import com.orbitalhq.spring.config.VyneSpringHazelcastConfiguration
 import com.orbitalhq.spring.config.VyneSpringProjectionConfiguration
 import com.orbitalhq.spring.http.auth.HttpAuthConfig
+import com.orbitalhq.spring.http.websocket.WebSocketPingConfig
 import com.orbitalhq.spring.projection.ApplicationContextProvider
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import com.orbitalhq.spring.utils.versionOrDev
@@ -58,7 +59,7 @@ import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.http.codec.json.KotlinSerializationJsonEncoder
 import org.springframework.web.reactive.config.WebFluxConfigurer
-import java.util.*
+import java.util.Collections
 
 
 @SpringBootApplication(scanBasePackageClasses = [QueryServiceApp::class, OrbitalStationConfig::class])
@@ -78,7 +79,8 @@ import java.util.*
    ApplicationContextProvider::class,
    LicenseConfig::class,
    DiscoveryClientConfig::class,
-   TelemetryConfig::class
+   TelemetryConfig::class,
+   WebSocketPingConfig::class
 
 )
 class QueryServiceApp {

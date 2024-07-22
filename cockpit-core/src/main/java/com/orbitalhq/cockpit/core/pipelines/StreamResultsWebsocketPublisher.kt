@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.query.runtime.core.gateway.WebsocketQueryRouteMatchingService
 import com.orbitalhq.spring.http.NotFoundException
+import com.orbitalhq.spring.http.websocket.OrbitalWebSocketConfiguration
 import com.orbitalhq.spring.http.websocket.WebSocketController
 import mu.KotlinLogging
 import org.springframework.web.bind.annotation.RestController
@@ -23,6 +24,7 @@ class StreamResultsWebsocketPublisher(
    private val streamResultSubscriptionManager: StreamResultStreamProvider,
    private val routeMatchingService: WebsocketQueryRouteMatchingService,
    private val objectMapper: ObjectMapper,
+   private val orbitalWebSocketConfiguration: OrbitalWebSocketConfiguration
 ) : WebSocketController {
    companion object {
       val PATH_PREFIX = "/api/s/"
@@ -50,9 +52,10 @@ class StreamResultsWebsocketPublisher(
          ?: return notFound
 
       val flux: Flux<Any> = streamResultSubscriptionManager.getResultStream(query.name.parameterizedName)
-      return session.send(flux.map { event ->
+      val outbound = flux.map { event ->
          val json = objectMapper.writeValueAsString(event)
          session.textMessage(json)
-      })
+      }
+      return orbitalWebSocketConfiguration.applyPingConfiguration(this, session, outbound)
    }
 }

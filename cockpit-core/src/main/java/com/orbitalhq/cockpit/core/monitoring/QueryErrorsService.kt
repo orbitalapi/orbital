@@ -2,20 +2,12 @@ package com.orbitalhq.cockpit.core.monitoring
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.connectors.StreamErrorPublisher
-import com.orbitalhq.connectors.StreamQueryErrorEvent
 import com.orbitalhq.history.db.QueryHistoryRecordRepository
-import com.orbitalhq.query.QueryResponse
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
-import com.orbitalhq.query.runtime.core.monitor.RunningQueryStatus
 import com.orbitalhq.spring.http.BadRequestException
+import com.orbitalhq.spring.http.websocket.OrbitalWebSocketConfiguration
 import com.orbitalhq.spring.http.websocket.WebSocketController
-import com.orbitalhq.utils.filterIsInstance
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.reactor.asFlux
 import org.springframework.web.bind.annotation.RestController
-import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.WebSocketSession
 import org.springframework.web.util.UriTemplate
 import reactor.core.publisher.Flux
@@ -29,7 +21,8 @@ class QueryErrorsService(
    val errorPublisher: StreamErrorPublisher,
    val activeQueryMonitor: ActiveQueryMonitor,
    val objectMapper: ObjectMapper,
-   val queryHistoryRecordRepository: QueryHistoryRecordRepository
+   val queryHistoryRecordRepository: QueryHistoryRecordRepository,
+   private val orbitalWebSocketConfiguration: OrbitalWebSocketConfiguration
 ) : WebSocketController {
 
    override val paths: List<String> = listOf("/api/query/taxiql/{clientQueryId}/errors")
@@ -42,14 +35,13 @@ class QueryErrorsService(
       val querySummary = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
          ?: throw BadRequestException("No query with clientQueryId of $clientQueryId found. Try again later")
 
-      return session.send(
-         errorPublisher.errors
-            .filter { event -> event.queryId == querySummary.queryId }
-            .map { event ->
-               val json = objectMapper.writeValueAsString(event)
-               session.textMessage(json)
-            }
-      )
+      val outbound = errorPublisher.errors
+         .filter { event -> event.queryId == querySummary.queryId }
+         .map { event ->
+            val json = objectMapper.writeValueAsString(event)
+            session.textMessage(json)
+         }
+      return orbitalWebSocketConfiguration.applyPingConfiguration(this, session, outbound)
    }
 }
 

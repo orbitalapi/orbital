@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.schema.api.SourceNameWithPackage
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.SchemaSetChangedEvent
+import com.orbitalhq.spring.http.websocket.OrbitalWebSocketConfiguration
 import com.orbitalhq.spring.http.websocket.WebSocketController
 import com.orbitalhq.utils.log
 import kotlinx.coroutines.GlobalScope
@@ -25,7 +26,8 @@ import reactor.core.publisher.Mono
 @EnableScheduling
 class SchemaChangeNotificationService(
    private val mapper: ObjectMapper,
-   private val schemaStore: SchemaStore
+   private val schemaStore: SchemaStore,
+   private val orbitalWebSocketConfiguration: OrbitalWebSocketConfiguration
 ) : WebSocketController, InitializingBean {
 
    private val schemaUpdatedEventSink = MutableSharedFlow<SchemaUpdatedNotification>()
@@ -54,11 +56,12 @@ class SchemaChangeNotificationService(
 
    override val paths: List<String> = listOf("/api/schema/updates")
    override fun handle(session: WebSocketSession): Mono<Void> {
-      return session.send(
-         schemaUpdatedNotificationEvents
-            .map { mapper.writeValueAsString(it) }
-            .map(session::textMessage)
-            .asFlux())
+      val outbound = schemaUpdatedNotificationEvents
+         .map { mapper.writeValueAsString(it) }
+         .map(session::textMessage)
+         .asFlux()
+
+      return orbitalWebSocketConfiguration.applyPingConfiguration(this, session, outbound)
    }
 
 
