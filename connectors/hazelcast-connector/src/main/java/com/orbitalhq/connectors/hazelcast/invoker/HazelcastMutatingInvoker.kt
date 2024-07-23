@@ -181,7 +181,8 @@ class HazelcastMutatingInvoker {
             sql,
             elapsed,
             recordCount,
-            verb)
+            verb,
+            connectionConfig.connectionName)
       return OperationResult.fromTypedInstances(
          parameters,
          remoteCall
@@ -211,7 +212,8 @@ class HazelcastMutatingInvoker {
       sql: String,
       elapsed: Duration,
       recordCount: Int,
-      verb: CacheExchange.CacheOperationVerb
+      verb: CacheExchange.CacheOperationVerb,
+      connectionName: String
    ) = RemoteCall(
       service = service.name,
       address = hazelcastAddresses,
@@ -225,7 +227,7 @@ class HazelcastMutatingInvoker {
       // Feels like capturing the results are a bad idea.  Can revisit if there's a use-case
       response = null,
       exchange = CacheExchange(
-         connectionName = hazelcastAddresses,
+         connectionName = connectionName,
          cacheName = mapName,
          cacheKeyOrStatement = sql,
          cacheType = CacheExchange.CacheType.Hazelcast,

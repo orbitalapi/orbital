@@ -13,7 +13,6 @@ import com.orbitalhq.schemas.QualifiedNameAsStringSerializer
 import com.orbitalhq.utils.Ids
 import kotlinx.serialization.Serializable
 import java.time.Instant
-import java.util.UUID
 
 /**
  * A remote call models the response from a remote operation.
@@ -162,9 +161,16 @@ data class CacheExchange(
 
    enum class CacheOperationVerb {
       /**
+       * Returns the result of a previously
+       * cached operation result.
+       *
+       */
+      GET_CACHED_RESULT,
+
+      /**
        * Find a specific value by key
        */
-      LOOKUP,
+      GET,
 
       /**
        * Execute a query against the cache
@@ -174,7 +180,7 @@ data class CacheExchange(
       /**
        * Return the full cache
        */
-      FIND_ALL,
+      GET_ALL,
 
       UPDATE,
 
