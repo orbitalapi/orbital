@@ -244,7 +244,7 @@ class HazelcastMapCachingProvider(
             connectionName,
             message.operation.name,
             cacheKey,
-            CacheExchange.CacheOperationVerb.LOOKUP,
+            CacheExchange.CacheOperationVerb.GET_CACHED_RESULT,
             CacheExchange.CacheType.Hazelcast,
             resultSize
          ),

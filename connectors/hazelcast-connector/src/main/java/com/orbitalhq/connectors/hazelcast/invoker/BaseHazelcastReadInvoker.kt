@@ -17,7 +17,6 @@ import com.orbitalhq.query.CacheExchange.CacheOperationVerb
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
-import com.orbitalhq.query.SqlExchange
 import com.orbitalhq.schemas.Field
 import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.OperationKind
@@ -216,7 +215,7 @@ abstract class BaseHazelcastReadInvoker {
          idLookupValue.toString(),
          elapsed = Duration.between(startTime, Instant.now()),
          recordCount,
-         CacheOperationVerb.LOOKUP,
+         CacheOperationVerb.GET,
          isSuccess
       )
       eventDispatcher.reportRemoteOperationInvoked(result, queryId)
@@ -277,7 +276,7 @@ abstract class BaseHazelcastReadInvoker {
          "find *",
          elapsed = Duration.between(startTime, Instant.now()),
          resultSize,
-         CacheOperationVerb.FIND_ALL,
+         CacheOperationVerb.GET_ALL,
          true
       )
       eventDispatcher.reportRemoteOperationInvoked(result, queryId)

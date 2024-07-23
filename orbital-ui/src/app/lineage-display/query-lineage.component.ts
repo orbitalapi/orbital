@@ -1,7 +1,7 @@
 import {AfterViewInit, Component, DestroyRef, ElementRef, EventEmitter, Input, Output, ViewChild} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
-import {QuerySankeyChartRow, SankeyNodeType, SankeyOperationNodeDetails} from '../services/query.service';
+import {CacheNode, QuerySankeyChartRow, SankeyNodeType, SankeyOperationNodeDetails} from '../services/query.service';
 import {ResizeObservableService} from '../services/resize-observable.service';
 import {SchemaGraph, SchemaGraphLink, SchemaGraphNode, SchemaGraphNodeType, SchemaNodeSet} from '../services/schema';
 import {ClusterNode, NgxGraphZoomOptions} from '@swimlane/ngx-graph';
@@ -257,9 +257,12 @@ export class QueryLineageComponent extends BaseGraphComponent implements AfterVi
             const httpSubheader = operationData.operationName.name.replace('@@', ' / ');
             return [httpHeader, httpSubheader]
           case "Cache":
-            const cacheHeader = 'Cache: ' + operationData.connectionName
-            const verb = capitalizeFirstLetter(operationData.verb.toLowerCase().replace("_", " "))
-            const cacheSubheader = `${verb} ${operationData.cacheName}`
+            const operationType = (operationData.verb == "GET_CACHED_RESULT") ? 'cache' : 'map';
+            const cacheHeader =  `${capitalizeFirstLetter(operationData.systemProductName)} ${operationType}: ${operationData.connectionName}` // eg: Hazelcast operation cache | Hazelcast map
+            // Hazelcast have requested that "Get cached result" become simply "Get" in the UI
+            const displayVerb = (operationData.verb == "GET_CACHED_RESULT") ? "GET" : operationData.verb
+            const verb = capitalizeFirstLetter(displayVerb.toLowerCase().replaceAll("_", " "))
+            const cacheSubheader = `${verb}: ${operationData.cacheName}`
             return [cacheHeader, cacheSubheader];
         }
       }

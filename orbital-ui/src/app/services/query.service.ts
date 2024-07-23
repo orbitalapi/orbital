@@ -535,7 +535,7 @@ export interface CacheNode {
   cacheName: string;
   cacheKey: string;
   operationType: 'Cache';
-  verb: 'LOOKUP' | 'QUERY' | 'FIND_ALL';
+  verb: 'GET' | 'QUERY' | 'GET_ALL' | 'GET_CACHED_RESULT' | 'UPDATE' | 'DELETE';
   systemProductName: string | null;
 }
 
