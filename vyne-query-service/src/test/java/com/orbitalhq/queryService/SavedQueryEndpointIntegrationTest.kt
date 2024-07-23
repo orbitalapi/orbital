@@ -53,6 +53,7 @@ import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
+import org.springframework.http.HttpStatusCode
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
@@ -60,6 +61,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException.NotFound
 import org.springframework.web.reactive.function.client.bodyToFlux
 import org.springframework.web.reactive.function.client.bodyToMono
+import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
 import reactor.kotlin.test.test
 
@@ -132,6 +134,12 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
             stream { NewReleaseAnnouncement }
          }
 
+         @HttpOperation(url = "/api/q/films", method = "POST")
+         query EchoFilm(@RequestBody film : Film) {
+            given { film }
+            find { Film }
+         }
+
 
          @HttpOperation(url = "/api/wrongPath/newReleases", method = "GET")
          @WebsocketOperation(path = "/api/wrongPath/newReleases")
@@ -191,6 +199,21 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
          )
          return SimpleVyneProvider(vyne)
       }
+   }
+
+   @Test
+   fun `calling an endpoint with the wrong verb returns not allowed`() {
+
+   }
+   @Test
+   fun `calling a post endpoint without a valid request body returns bad request`() {
+      val client = WebClient.builder()
+         .baseUrl("http://localhost:$randomServerPort")
+         .build()
+      val result = client.post().uri("/api/q/films")
+         .exchangeToMono { it -> Mono.just(it)}
+         .block()!!
+      result.statusCode().value().shouldBe(400)
    }
 
 

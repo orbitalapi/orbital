@@ -6,6 +6,7 @@ import com.orbitalhq.query.MetricTags
 import com.orbitalhq.query.tagsOf
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.consumer.SchemaStore
+import com.orbitalhq.spring.http.HttpStatusException
 import lang.taxi.query.QueryMode
 import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
@@ -154,6 +155,12 @@ class QueryRouteService(
          RoutedQuery.build(query, querySource, request)
             .flatMap { routedQuery ->
                handleQuery(request, routedQuery)
+            }
+            .onErrorResume { e ->
+               when (e) {
+                  is HttpStatusException -> status(e.status.value()).bodyValue(e.message)
+                  else -> status(HttpStatus.INTERNAL_SERVER_ERROR).bodyValue(e.message)
+               }
             }
 
       }

@@ -2,10 +2,13 @@ package com.orbitalhq.query.runtime.core.gateway
 
 import io.kotest.matchers.shouldBe
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.spring.http.HttpStatusException
 import com.orbitalhq.withBuiltIns
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
+import org.springframework.http.HttpStatus
 import org.springframework.mock.web.reactive.function.server.MockServerRequest
 import reactor.core.publisher.Mono
 
@@ -56,6 +59,46 @@ class RoutedQueryTest {
       val routedQuery = RoutedQuery.build(query, querySrc, request)
       routedQuery.block().arguments.entries.single().value.typedValue.value
          .shouldBe(requestBody)
+   }
+
+   @Test
+   fun `fails with bad request if request body is missing`() {
+      val (query, querySrc) = query(
+         src, """
+
+         @HttpOperation(method = "POST", url = "/films/{filmId}")
+         query findFilm( @RequestBody film : Film ) {
+            find { Film }
+         }
+      """.trimIndent()
+      )
+      val request = MockServerRequest.builder()
+         .body(Mono.empty<String>())
+
+      val routedQuery = RoutedQuery.build(query, querySrc, request)
+      val exception = assertThrows<HttpStatusException> { routedQuery.block() }
+      exception.status.shouldBe(HttpStatus.BAD_REQUEST)
+      exception.message.shouldBe("Expected a request body, but none was provided")
+   }
+
+   @Test
+   fun `fails with bad request if request parameter is missing`() {
+      val (query, querySrc) = query(
+         src, """
+
+         @HttpOperation(method = "GET", url = "/films/{filmId}")
+         query findFilm( @PathVariable("filmId") filmId : FilmId ) {
+            find { Film }
+         }
+      """.trimIndent()
+      )
+      val request = MockServerRequest.builder()
+         .body(Mono.empty<String>())
+
+      val routedQuery = RoutedQuery.build(query, querySrc, request)
+      val exception = assertThrows<HttpStatusException> { routedQuery.block() }
+      exception.status.shouldBe(HttpStatus.BAD_REQUEST)
+      exception.message.shouldBe("""No path variable with name "filmId" available""")
    }
 
 }

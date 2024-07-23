@@ -22,3 +22,4 @@ class VyneQueryServiceExceptionProvider: ExceptionProvider {
    override fun invalidPathException(message: String): RuntimeException = InvalidPathException(message)
 }
 
+class HttpStatusException(val status: HttpStatus, override val message: String): RuntimeException(message)
