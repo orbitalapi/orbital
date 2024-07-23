@@ -1,5 +1,6 @@
 package com.orbitalhq.query.runtime.core.gateway
 
+import com.orbitalhq.spring.http.HttpStatusException
 import lang.taxi.annotations.HttpPathVariable
 import lang.taxi.annotations.HttpRequestBody
 import lang.taxi.query.FactValue
@@ -8,9 +9,11 @@ import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.TypedValue
 import lang.taxi.types.annotation
+import org.springframework.http.HttpStatus
 import org.springframework.web.reactive.function.server.ServerRequest
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.kotlin.core.publisher.switchIfEmpty
 
 /**
  * A query that has matched a route.
@@ -43,12 +46,21 @@ data class RoutedQuery(
 
       private fun extractParameterValueFromRequest(parameter: Parameter, request: ServerRequest): Mono<FactValue> {
          return when {
-            pathVariableName(parameter) != null -> Mono.just(request.pathVariable(pathVariableName(parameter)!!))
-            isRequestBody(parameter) -> request.bodyToMono(String::class.java)
+            pathVariableName(parameter) != null -> {
+               try {
+                  Mono.just(request.pathVariable(pathVariableName(parameter)!!))
+               } catch (e:IllegalArgumentException) {
+                  Mono.error(HttpStatusException(HttpStatus.BAD_REQUEST, e.message!!))
+               }
+            }
+            isRequestBody(parameter) -> {
+               request.bodyToMono(String::class.java)
+                  .switchIfEmpty { Mono.error(HttpStatusException(HttpStatus.BAD_REQUEST, "Expected a request body, but none was provided")) }
+            }
             // TODO : Others, lke query string, etc
 
             // TODO : This should result in a BadRequest, somehow...
-            else -> error("Parameter ${parameter.name} was not provided through the request")
+            else -> Mono.error(HttpStatusException(HttpStatus.BAD_REQUEST,"Parameter ${parameter.name} was not provided through the request"))
          }
             .map { rawValue -> FactValue.Constant(TypedValue(parameter.type, rawValue)) }
       }
