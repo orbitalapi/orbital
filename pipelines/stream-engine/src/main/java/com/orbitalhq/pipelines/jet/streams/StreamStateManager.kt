@@ -147,7 +147,7 @@ class StreamStateMapListener(
 ) :
    EntryAddedListener<String, StreamStatus>, EntryRemovedListener<String, StreamStatus>,
    EntryUpdatedListener<String, StreamStatus> ,
-   StreamStateUpdatesPublisher{
+   StreamStateUpdatesPublisher {
 
    private val stateUpdatesSink = Sinks.many().replay().latest<List<StreamStatus>>()
    override val stateUpdates: Flux<List<StreamStatus>> = stateUpdatesSink.asFlux()
@@ -157,6 +157,7 @@ class StreamStateMapListener(
    }
 
    init {
+      emitCurrentState()
       streamStateCache.addLocalEntryListener(this)
    }
 
