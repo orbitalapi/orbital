@@ -170,8 +170,10 @@ class StreamStateMapListener(
          val streamName = event.value.streamName
          logger.info { "Stream $streamName entered state ${event.value.state}, so submitting to pipeline manager" }
          pipelineManager.startPipelineByName(streamName.fqn())
-         emitCurrentState()
+
       }
+      // Report the status of the new stream, otherwise its state is reported as UNKNOWN in the UI.
+      emitCurrentState()
    }
 
    override fun entryRemoved(event: EntryEvent<String, StreamStatus>) {
