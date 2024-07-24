@@ -22,7 +22,7 @@
 
   let message = isResponse(location.hash) ? location.hash : '#' + location.search;
 
-  console.log("Silent refresh iframe is posting to the parent application, message:", message);
+  console.debug("Silent refresh iframe is posting to the parent application, message:", message);
 
   (window.opener || window.parent).postMessage(message, location.origin);
 </script>
