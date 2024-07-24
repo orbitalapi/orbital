@@ -3,7 +3,7 @@ import {AuthConfig, OAuthErrorEvent, OAuthService} from 'angular-oauth2-oidc';
 import {Router} from '@angular/router';
 import {HttpBackend, HttpClient, HttpErrorResponse, HttpHeaders, HttpParams} from '@angular/common/http';
 import {BehaviorSubject, combineLatest, lastValueFrom, Observable, of, ReplaySubject} from 'rxjs';
-import {filter, map, tap} from 'rxjs/operators';
+import {filter, map} from 'rxjs/operators';
 import {UserInfoService} from '../services/user-info.service';
 import {ENVIRONMENT, Environment} from 'src/app/services/environment';
 
@@ -79,7 +79,8 @@ export class AuthService {
         this.isDoneLoadingSubject$.next(true);
         this.isAuthenticatedSubject$.next(true);
 
-        await this.userInfoService.getUserInfo(true, this.oauthService.getAccessToken()).toPromise();
+        const userInfo$ = this.userInfoService.getUserInfo(true, this.oauthService.getAccessToken())
+        await lastValueFrom(userInfo$)
         this.oauthService.setupAutomaticSilentRefresh();
         this.router.initialNavigation();
       } else {
@@ -218,7 +219,8 @@ export class AuthService {
       .pipe(filter(e => ['token_received'].includes(e.type)))
       .subscribe(async e => {
         console.log(`token_received event ${this.oauthService.getAccessToken()}`);
-        await this.userInfoService.getUserInfo(true, this.oauthService.getAccessToken()).toPromise();
+        const userInfo$ = this.userInfoService.getUserInfo(true, this.oauthService.getAccessToken())
+        await lastValueFrom(userInfo$)
       });
 
     this.oauthService.events
@@ -226,8 +228,14 @@ export class AuthService {
       .subscribe(() => this.router.initialNavigation());
 
     this.oauthService.events
-      .pipe(filter(e => ['token_refresh_error', 'silent_refresh_error'].includes(e.type)))
-      .subscribe(() => {
+      .pipe(
+        // Note: Keeping the silent_refresh_error in here for now, although technically none of the IdP's
+        //       in use are triggering this particular event.
+        //       silent_refresh_timeout is emitted when logout is invoked from Hazelcast's MC,
+        //       but a Flow session is still in use (ORB-492)
+        filter(e => ['token_refresh_error', 'silent_refresh_timeout', 'silent_refresh_error'].includes(e.type)))
+      .subscribe((e) => {
+        console.log(e.type, "calling initLoginFlow()")
         this.oauthService.initLoginFlow()
       });
   }
@@ -266,6 +274,7 @@ export class AuthService {
       redirectUri: securityConfig.redirectUri || currentLocation,
       requireHttps: securityConfig.requireLoginOverHttps,
       useSilentRefresh: securityConfig.refreshTokensDisabled,
+      silentRefreshRedirectUri: `${currentLocation}${slashIfNeeded}silent-refresh.html`,
       clearHashAfterLogin: false,
       strictDiscoveryDocumentValidation: false,
       showDebugInformation: true,
