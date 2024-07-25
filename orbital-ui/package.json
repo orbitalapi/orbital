@@ -86,6 +86,7 @@
     "ngx-http-request-state": "^3.1.0",
     "ngx-markdown": "^17.1.1",
     "ngx-moment": "^6.0.2",
+    "pako": "^2.1.0",
     "plausible-tracker": "^0.3.8",
     "react": "^17.0.2",
     "react-dom": "^17.0.2",

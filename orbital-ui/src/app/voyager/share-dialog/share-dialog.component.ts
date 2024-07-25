@@ -30,11 +30,9 @@ export class ShareDialogComponent {
   readonly form: UntypedFormGroup;
 
   constructor(@Inject(POLYMORPHEUS_CONTEXT)
-              public readonly context: TuiDialogContext<void, SharedSchemaResponse>,) {
+              public readonly context: TuiDialogContext<void, string>,) {
 
-    const href = window.location.origin;
-    const windowLocation = href.endsWith('/') ? href.slice(0, -1) : href
-    const shareUrl = windowLocation + context.data.uri;
+    const shareUrl = context.data
 
     this.form = new UntypedFormGroup({
       shareUrl: new UntypedFormControl(shareUrl)
@@ -43,7 +41,7 @@ export class ShareDialogComponent {
 
 
   get uri(): string {
-    return `${window.location}${this.context.data.uri}`
+    return `${window.location}${this.context.data}`
   }
 
 

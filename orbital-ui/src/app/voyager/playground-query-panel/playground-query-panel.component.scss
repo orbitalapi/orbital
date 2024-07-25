@@ -32,6 +32,15 @@ app-code-editor {
 
 @include thin-splitter();
 
+.stubs-params-header {
+  span {
+    margin-right: 1rem;
+  }
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
 app-query-lineage {
   display: block;
 }

@@ -11,7 +11,7 @@ import {
 import {CommonModule} from '@angular/common';
 import {BehaviorSubject, EMPTY, switchMap} from "rxjs";
 import {ExpandingPanelSetModule} from "../../expanding-panelset/expanding-panel-set.module";
-import {TuiAccordionModule, TuiTabsModule} from "@taiga-ui/kit";
+import {TuiAccordionModule, TuiBadgeModule, TuiTabsModule} from "@taiga-ui/kit";
 import {TuiButtonModule} from "@taiga-ui/core";
 import {AngularSplitModule, IOutputData} from "angular-split";
 import {CodeEditorModule} from "../../code-editor/code-editor.module";
@@ -28,12 +28,13 @@ import {QueryResultsPanelComponent} from "./query-results-panel.component";
 import {ResizeObservableService} from "../../services/resize-observable.service";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {LineageDisplayModule} from "../../lineage-display/lineage-display.module";
+import {TuiChipModule} from "@taiga-ui/experimental";
 
 @Component({
   selector: 'app-playground-query-panel',
   standalone: true,
   providers: [ResizeObservableService],
-  imports: [CommonModule, ExpandingPanelSetModule, TuiAccordionModule, TuiButtonModule, AngularSplitModule, TuiTabsModule, CodeEditorModule, StubPanelComponent, HttpClientModule, JsonViewerModule, QueryConfigPanelComponent, ExpandablePanelComponent, QueryResultsPanelComponent, LineageDisplayModule],
+  imports: [CommonModule, ExpandingPanelSetModule, TuiAccordionModule, TuiButtonModule, AngularSplitModule, TuiTabsModule, CodeEditorModule, StubPanelComponent, HttpClientModule, JsonViewerModule, QueryConfigPanelComponent, ExpandablePanelComponent, QueryResultsPanelComponent, LineageDisplayModule, TuiBadgeModule, TuiChipModule],
   template: `
     <as-split direction="vertical" unit="percent" gutterSize="1">
       <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
@@ -67,7 +68,12 @@ import {LineageDisplayModule} from "../../lineage-display/lineage-display.module
             </ng-template>
           </tui-accordion-item>
           <tui-accordion-item size="s" [(open)]="configPanelExpanded">
-            Stubs and parameters
+            <div class="stubs-params-header">
+                <span>Stubs and parameters</span>
+                <tui-chip appearance="info" *ngIf="queryMessage.stubs?.length > 0">{{ queryMessage.stubs.length | i18nPlural: stubsPluralMap}}</tui-chip>
+                <tui-chip appearance="info" *ngIf="queryMessage.parameters?.length > 0">{{ queryMessage.parameters.length | i18nPlural: paramsPluralMap }} defined</tui-chip>
+            </div>
+
             <ng-template tuiAccordionItemContent>
               <app-query-config-panel [style.height]="expandedPanelHeight"
                                       [(stubs)]="queryMessage.stubs"
@@ -104,7 +110,14 @@ import {LineageDisplayModule} from "../../lineage-display/lineage-display.module
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class PlaygroundQueryPanelComponent implements AfterViewInit {
-
+  stubsPluralMap: {[k: string]: string} = {
+    '=1' : '1 service call stubbed',
+    'other' : '# service calls stubbed'
+  }
+  paramsPluralMap: {[k: string]: string} = {
+    '=1' : '1 parameter',
+    'other' : '# parameters'
+  }
   content = new BehaviorSubject<string>(`query HelloWorld(name: String) { \n find { 'Hello ' + name } \n}`)
 
   constructor(private service: VoyagerService,

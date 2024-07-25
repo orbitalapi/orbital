@@ -4,11 +4,12 @@ import {MatIconModule} from "@angular/material/icon";
 import {TuiHintModule, TuiLinkModule} from "@taiga-ui/core";
 import {openNewSiteAndCancel} from "../toolbar/playground-toolbar.component";
 import {environment} from "../../../voyager-app/environments/environment";
+import {TuiBadgeModule} from "@taiga-ui/kit";
 
 @Component({
   selector: 'app-voyager-sidebar',
   standalone: true,
-  imports: [CommonModule, MatIconModule, TuiLinkModule, TuiHintModule],
+  imports: [CommonModule, MatIconModule, TuiLinkModule, TuiHintModule, TuiBadgeModule],
   template: `
     <button class="icon-toggle-button" (click)="toggleQueryPanel()" [class.active]="showQueryPanel" [tuiHint]="'Toggle query panel'">
       <mat-icon svgIcon="file-search"></mat-icon>
@@ -18,9 +19,16 @@ import {environment} from "../../../voyager-app/environments/environment";
     </button>
 
     <div class="spacer"></div>
-    <button class="icon-toggle-button" *ngIf="showCopyCodeButton" (click)="copyDevCode.emit()" [tuiHint]="'Copy dev code'">
+    <button class="icon-toggle-button button-with-lang-badge" *ngIf="showCopyCodeButton" (click)="copyDevCode.emit('JS')" [tuiHint]="'Copy as JS snippet'">
       <mat-icon svgIcon="code-circle"></mat-icon>
+      <div class="lang-badge">JS</div>
     </button>
+
+    <button class="icon-toggle-button  button-with-lang-badge" *ngIf="showCopyCodeButton" (click)="copyDevCode.emit('JSON')" [tuiHint]="'Copy as JSON'">
+      <mat-icon svgIcon="code-circle"></mat-icon>
+      <div class="lang-badge">JSON</div>
+    </button>
+
 
     <a tuiLink href="https://github.com/orbitalapi/orbital" target="_blank"
        (click)="openNewSite($event, 'https://github.com/orbitalapi/orbital')">
@@ -56,7 +64,7 @@ export class VoyagerSidebarComponent {
   showQueryPanelChange = new EventEmitter<boolean>()
 
   @Output()
-  copyDevCode = new EventEmitter<void>()
+  copyDevCode = new EventEmitter<SnippetType>()
 
   @HostBinding('class') get sideClass() {
     return this.side;
@@ -78,3 +86,5 @@ export class VoyagerSidebarComponent {
     this.showQueryPanelChange.emit(this.showQueryPanel);
   }
 }
+
+export type SnippetType = 'JSON' | 'JS';
