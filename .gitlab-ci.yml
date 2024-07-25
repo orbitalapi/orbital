@@ -151,6 +151,8 @@ build-jvm-develop:
    only:
       - develop
       - release/*
+   except:
+      - tags
    extends: .build-jvm
    variables:
       MAVEN_GOALS: 'clean deploy'
@@ -162,6 +164,7 @@ build-jvm-master:
    stage: build
    only:
       - master
+      - tags
    extends: .build-jvm
    variables:
       MAVEN_GOALS: 'clean deploy'
@@ -235,24 +238,26 @@ regression-test:
    services:
       - docker:dind
    script:
-      - |
-         if [[ "${registry}" == "quay.io/" ]]; then
-           echo $QUAY_IO_PASSWORD | docker login quay.io -u $QUAY_IO_USER --password-stdin
-         else
-           docker login -u vynecd -p $DOCKER_HUB_PASSWORD
-         fi
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
       - PROJECT_VERSION=$(cat build-version.txt)
       - docker buildx create --use
       - docker run --privileged --rm tonistiigi/binfmt --install all # Install the required emulators in order to build ARM images
       - |
-         if [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
+         if [[ -n "$CI_COMMIT_TAG" ]]; then
+            tag="$CI_COMMIT_TAG"
+            versionTag="$CI_COMMIT_TAG"
+         elif [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
            tag="latest"
            versionTag="$PROJECT_VERSION"
          elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
             tag="next"
             versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+         elif [[ "$CI_COMMIT_BRANCH" =~ ^release\/ ]]; then
+            stripped_branch=${CI_COMMIT_BRANCH#release/}
+            tag="$stripped_branch-next"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
          else
-            tag="$CI_COMMIT_BRANCH"
+            tag="$CI_COMMIT_BRANCH-next"
             versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
          fi
          echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
@@ -274,6 +279,9 @@ regression-test:
       -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
          when: never
       -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
+         when: always
+      -  if: $CI_COMMIT_TAG
+         when: always
 #         Always publish if we're on a release branch
       -  if: $CI_COMMIT_BRANCH =~ /^release\//
       -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
