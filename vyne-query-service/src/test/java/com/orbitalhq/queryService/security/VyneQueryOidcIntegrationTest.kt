@@ -6,6 +6,7 @@ import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.JWTClaimType
 import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
+import com.orbitalhq.cockpit.core.content.DefaultContentRepository
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
@@ -100,6 +101,10 @@ class VyneQueryOidcIntegrationTest {
 
    @MockBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
+
+   @MockBean
+   lateinit var cmsService: DefaultContentRepository
+
 
    @Value("\${wiremock.server.baseUrl}")
    private lateinit var wireMockServerBaseUrl: String

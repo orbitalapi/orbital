@@ -12,6 +12,7 @@ import com.orbitalhq.VyneProvider
 import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.WebSocketConfig
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
+import com.orbitalhq.cockpit.core.content.DefaultContentRepository
 import com.orbitalhq.cockpit.core.pipelines.StreamResultsWebsocketPublisher
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.licensing.LicenseManager
@@ -80,6 +81,10 @@ import reactor.kotlin.test.test
 class SavedQueryEndpointIntegrationTest : DatabaseTest() {
    @MockBean
    lateinit var hazelcastInstance: HazelcastInstance
+
+   @MockBean
+   lateinit var cmsService: DefaultContentRepository
+
 
    @MockBean
    lateinit var chatService: OpenAiChatService

@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Profile
  * This excludes beans that are injected via whitelabel solutions
  */
 @Retention(AnnotationRetention.RUNTIME)
-@Profile(OrbitalOnly.ORBITAL)
+@Profile(OrbitalOnly.ORBITAL, "test")
 annotation class OrbitalOnly {
    companion object {
       const val ORBITAL = "orbital"

@@ -5,6 +5,7 @@ import com.jayway.awaitility.Awaitility
 import com.jayway.awaitility.Duration
 import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
+import com.orbitalhq.cockpit.core.content.DefaultContentRepository
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.history.db.*
@@ -80,6 +81,10 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
    }
    @MockBean
    lateinit var chatService: OpenAiChatService
+
+   @MockBean
+   lateinit var cmsService: DefaultContentRepository
+
 
    @MockBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
