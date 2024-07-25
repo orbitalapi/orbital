@@ -14,26 +14,9 @@ import {ExpandablePanelComponent} from "../../expanding-panelset/expandable-pane
   standalone: true,
   imports: [CommonModule, StubPanelComponent, TuiTabsModule, ExpandingPanelSetModule, TuiButtonModule, QueryParmsPanelComponent, TuiBadgeModule, ExpandablePanelComponent],
   template: `
-<!--    <app-expandable-panel title="Stubs and parameters" [isSecondary]="true" [expanded]="expanded" (expandedChange)="setExpanded($event)">-->
-<!--      <ng-container ngProjectAs="header-content">-->
-<!--        <tui-badge *ngIf="stubsAndParamsCount > 0" status="info" [value]="stubsAndParamsCount" size="xs"></tui-badge>-->
-<!--      </ng-container>-->
-<!--      <div class="config-panels">-->
-<!--        <div class="row">-->
-<!--          <tui-tabs [(activeItemIndex)]="activeTabIndex">-->
-<!--            <button tuiTab>STUBS-->
-<!--              <tui-badge size="xs" *ngIf="stubsCount > 0" status="info" [value]="stubsCount"></tui-badge>-->
-<!--            </button>-->
-<!--            <button tuiTab>PARAMETERS-->
-<!--              <tui-badge size="xs" *ngIf="paramsCount > 0" status="info" [value]="paramsCount"></tui-badge>-->
-<!--            </button>-->
-<!--          </tui-tabs>-->
-<!--        </div>-->
-        <app-stub-panel *ngIf="activeTabIndex === 0" [schema]="schema" [stubs]="stubs"
-                        (stubsChange)="stubsChange.emit($event)"></app-stub-panel>
-        <app-query-params-panel *ngIf="activeTabIndex === 1" [(parameters)]="parameters"></app-query-params-panel>
-<!--      </div>-->
-<!--    </app-expandable-panel>-->
+    <app-stub-panel *ngIf="activeTabIndex === 0" [schema]="schema" [stubs]="stubs"
+                    (stubsChange)="stubsChange.emit($event)"></app-stub-panel>
+    <app-query-params-panel *ngIf="activeTabIndex === 1" [(parameters)]="parameters"></app-query-params-panel>
   `,
   styleUrls: ['./query-config-panel.component.scss'],
 })
@@ -61,7 +44,7 @@ export class QueryConfigPanelComponent {
   stubsChange = new EventEmitter<OperationStub[]>()
 
   @Input()
-  parameters:  { [index: string]: any };
+  parameters: { [index: string]: any };
 
   get stubsAndParamsCount() {
     return this.stubsCount + this.paramsCount;
@@ -70,13 +53,14 @@ export class QueryConfigPanelComponent {
   get stubsCount(): number {
     return this.stubs?.length || 0;
   }
+
   get paramsCount(): number {
-    return  this.parameters ? Object.keys(this.parameters).length : 0;
+    return this.parameters ? Object.keys(this.parameters).length : 0;
   }
 
 
   @Output()
-  parameterValuesChange = new EventEmitter< { [index: string]: any } >()
+  parameterValuesChange = new EventEmitter<{ [index: string]: any }>()
 
 
   toggleExpanded() {

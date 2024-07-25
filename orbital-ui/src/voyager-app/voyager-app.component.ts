@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Injector} from '@angular/core';
 import {ParsedSchema, VoyagerService} from 'src/voyager-app/voyager.service';
-import {catchError, debounceTime, filter, map, mergeMap, shareReplay, switchMap, take, tap} from 'rxjs/operators';
+import {catchError, debounceTime, filter, map, mergeMap, shareReplay, switchMap, tap} from 'rxjs/operators';
 import {emptySchema, Schema} from 'src/app/services/schema';
 import {Observable, of, ReplaySubject} from 'rxjs';
 import {ExampleGroups, StubExamples} from 'src/voyager-app/code-examples';
@@ -11,6 +11,8 @@ import {ActivatedRoute, Params} from '@angular/router';
 import {emptyQueryMessage, StubQueryMessage} from "../app/services/query.service";
 import {isNullOrUndefined} from "../app/utils/utils";
 import {Clipboard} from '@angular/cdk/clipboard';
+import * as pako from 'pako';
+import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.component";
 
 @Component({
   selector: 'voyager-app',
@@ -22,7 +24,7 @@ import {Clipboard} from '@angular/cdk/clipboard';
       ></playground-toolbar>
       <div class="container">
         <app-voyager-sidebar [(showDiagram)]="showDiagram" [(showQueryPanel)]="showQueryPanel"
-                             (copyDevCode)="copyDevCode()"/>
+                             (copyDevCode)="copyDevCode($event)"/>
         <as-split direction="horizontal" unit="percent" gutterSize="1">
           <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
             <div class="thin-splitter-gutter-icon"></div>
@@ -144,6 +146,13 @@ export class VoyagerAppComponent {
       );
     this.setCodeFromExample(StubExamples[0].query);
 
+    this.activatedRoute.fragment
+      .pipe(filter(f => f != null))
+      .subscribe(fragment => {
+        const queryMessage = this.unzip(fragment.substring(5))
+        this.setCodeFromExample(queryMessage)
+      })
+
     this.activatedRoute.params
       .pipe(
         filter(params => params['shareSlug'] !== undefined || params['exampleSlug'] !== undefined),
@@ -188,27 +197,42 @@ export class VoyagerAppComponent {
     this.codeUpdated$.next(code);
   }
 
+  private unzip(src: string): StubQueryMessage {
+    const zipped = Uint8Array.from(atob(src), c => c.charCodeAt(0))
+    const decompressed = pako.ungzip(zipped, {to: 'string'})
+    const object = JSON.parse(decompressed) as StubQueryMessage
+    return object
+  }
+
   showShareDialog() {
-    this.codeUpdated$.pipe(
-      take(1),
-      mergeMap((source: string) => {
-        return this.service.getShareUrl(source)
-      }),
-    ).subscribe(result => {
-      this.dialogService.open(
-        new PolymorpheusComponent(ShareDialogComponent, this.injector), {
-          data: result
-        }
-      ).subscribe()
-    })
+    const deflated = pako.gzip(JSON.stringify(this.queryMessage));
+    const base64Encoded = btoa(String.fromCharCode.apply(null, deflated))
+
+    const shareUrl = `${window.location.origin}#pako:${base64Encoded}`
+
+    this.dialogService.open(
+      new PolymorpheusComponent(ShareDialogComponent, this.injector), {
+        data: shareUrl
+      }
+    ).subscribe()
 
   }
 
-  copyDevCode() {
+  copyDevCode(language: SnippetType) {
+    if (language === "JSON") {
+      this.clipboard.copy(JSON.stringify(this.queryMessage, null, 3))
+    } else {
+      this.copyAsJavascriptSnippet(this.queryMessage)
+    }
+
+
+  }
+
+  private copyAsJavascriptSnippet(queryMessage: StubQueryMessage) {
     // We do quite a bit of string manipulation to turn the JSON object
     // into a javascript snippet, where long strings like the query and schema
     // have actual new-lines (instead of the string "\n"), and are quoted in backticks.
-    const snippet = this.createJavascriptSnippet(this.queryMessage)
+    const snippet = this.createJavascriptSnippet(queryMessage)
 
     // Even though the string is now correct, if we copy it to the clipboard as-is,
     // we get the \n output in lines, rather than actual newlines.
@@ -229,7 +253,7 @@ export class VoyagerAppComponent {
     document.body.removeChild(textarea);
   }
 
-  createJavascriptSnippet(queryMessage:StubQueryMessage):string {
+  createJavascriptSnippet(queryMessage: StubQueryMessage): string {
     // We do quite a bit of string manipulation to turn the JSON object
     // into a javascript snippet, where long strings like the query and schema
     // have actual new-lines (instead of the string "\n"), and are quoted in backticks.

@@ -74,9 +74,10 @@ class StubQueryService(private val streamDelay: Duration = Duration.ofMillis(500
             .mapNotNull { it.toRawObject() } as Flux<Any>
       }
       val (taxiQlQuery, _, _) = vyne.parseQuery(query.query)
+      val queryResultType = taxiQlQuery.discoveryType?.type ?: taxiQlQuery.returnType
       return when {
          taxiQlQuery.queryMode == QueryMode.STREAM -> resultFlux
-         Arrays.isArray(taxiQlQuery.returnType.toQualifiedName()) -> resultFlux
+         Arrays.isArray(queryResultType) -> resultFlux
          else -> resultFlux.singleOrEmpty()
       }
    }
