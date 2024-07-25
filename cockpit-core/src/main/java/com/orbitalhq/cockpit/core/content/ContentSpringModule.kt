@@ -1,5 +1,6 @@
 package com.orbitalhq.cockpit.core.content
 
+import com.orbitalhq.spring.config.OrbitalOnly
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -17,6 +18,7 @@ data class ContentSettings(
 @EnableConfigurationProperties(
    ContentSettings::class
 )
+@OrbitalOnly
 class ContentSpringModule {
 
    @Bean
