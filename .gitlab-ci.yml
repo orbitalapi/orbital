@@ -273,6 +273,23 @@ regression-test:
          -t "${registry}${registry_orbital}/${microservice_orbital}:${versionTag}${tag_suffix}"
          .
 
+.tag-docker-image-as-latest:
+   stage: deploy
+   image: docker:latest
+   services:
+      - docker:dind
+   rules:
+      - if: $CI_COMMIT_TAG
+        when: manual
+   script:
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+      - docker pull ${registry}${registry_orbital}/${microservice_orbital}:$CI_COMMIT_TAG
+      - docker tag ${registry}${registry_orbital}/${microservice_orbital} latest
+      - docker push ${registry}${registry_orbital}/${microservice_orbital}:latest
+      - docker pull ${registry}${registry_orbital}/${microservice_orbital}:$CI_COMMIT_TAG-jammy
+      - docker tag ${registry}${registry_orbital}/${microservice_orbital} latest-jammy
+      - docker push ${registry}${registry_orbital}/${microservice_orbital}:latest-jammy
+
 .publish-to-docker-hub:
    extends: .publish-docker
    rules:
@@ -288,7 +305,6 @@ regression-test:
          when: manual
          allow_failure: true
    variables:
-      registry_vyne: vyneco
       registry_orbital: orbitalhq
 
 .publish-to-gitlab-container-registry:
@@ -303,7 +319,6 @@ regression-test:
          when: manual
          allow_failure: true
    variables:
-      registry_vyne: $CI_REGISTRY_IMAGE
       registry_orbital: $CI_REGISTRY_IMAGE
    before_script:
       - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
@@ -314,6 +329,12 @@ publish-orbital-to-docker-hub:
       projectDir: station
       microservice_orbital: orbital
       base_image_tag: alpine
+
+tag-orbital-as-latest:
+   extends: .tag-docker-image-as-latest
+   variables:
+      microservice_orbital: orbital
+      registry_orbital: orbitalhq
 
 publish-orbital-to-docker-hub-mac-m2:
    extends: .publish-to-docker-hub
@@ -329,6 +350,11 @@ publish-query-node-to-docker-hub:
       projectDir: query-node-native
       microservice_orbital: query-node
 
+tag-query-node-as-latest:
+   extends: .tag-docker-image-as-latest
+   variables:
+      microservice_orbital: query-node
+      registry_orbital: orbitalhq
 
 publish-voyager-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
