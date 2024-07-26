@@ -1,5 +1,13 @@
-import {ChangeDetectionStrategy, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {Schema, SchemaMember, Type} from "../services/schema";
+import {
+  ChangeDetectionStrategy,
+  Component, computed,
+  EventEmitter,
+  input,
+  Input,
+  InputSignal,
+  Output, Signal,
+} from '@angular/core';
+import {Schema, SchemaMember, Type} from '../services/schema';
 
 @Component({
   selector: 'app-type-autocomplete-tui',
@@ -12,24 +20,39 @@ import {Schema, SchemaMember, Type} from "../services/schema";
       [tuiTextfieldLabelOutside]="true"
       [valueContent]="value"
       [(ngModel)]="selectedType"
-      (ngModelChange)="handleSelectedTypeChanged($event)">
-        {{label}}
+      (ngModelChange)="handleSelectedTypeChanged($event)"
+      [tuiTextfieldCleaner]="true"
+    >
+      {{ label }}
       <input tuiTextfield [placeholder]="label"/>
       <ng-template #value let-item>
         <div class="type-option">
-          <span class="type-name">{{item.name.shortDisplayName}}</span>
-          <span class="mono-badge small" *ngIf="item.name.namespace">{{item.name.namespace}}</span>
+          <span class="type-name">{{ item.name.shortDisplayName }}</span>
+          <span class="mono-badge small" *ngIf="item.name.namespace">{{ item.name.namespace }}</span>
         </div>
       </ng-template>
       <ng-template tuiDataList>
-        <tui-data-list *ngFor="let item of displayTypes | tuiFilterByInputWith : stringifyTypeName">
-          <button tuiOption [value]="item">
-            <div class="type-option">
-              <span class="type-name">{{item.name.shortDisplayName}}</span>
-              <span class="mono-badge small" *ngIf="item.name.namespace">{{item.name.namespace}}</span>
-            </div>
-          </button>
-        </tui-data-list>
+        <tui-opt-group label="New type(s)">
+          <tui-data-list *ngFor="let item of this.additionalTypes | tuiFilterByInputWith : stringifyTypeName"
+                         [size]="size">
+            <button tuiOption [value]="item">
+              <div class="type-option">
+                <span class="type-name">{{ item.name.shortDisplayName }}</span>
+                <span class="mono-badge small" *ngIf="item.name.namespace">{{ item.name.namespace }}</span>
+              </div>
+            </button>
+          </tui-data-list>
+        </tui-opt-group>
+        <tui-opt-group label="Existing types">
+          <tui-data-list *ngFor="let item of displayTypes() | tuiFilterByInputWith : stringifyTypeName" [size]="size">
+            <button tuiOption [value]="item">
+              <div class="type-option">
+                <span class="type-name">{{ item.name.shortDisplayName }}</span>
+                <span class="mono-badge small" *ngIf="item.name.namespace">{{ item.name.namespace }}</span>
+              </div>
+            </button>
+          </tui-data-list>
+        </tui-opt-group>
       </ng-template>
       <!--              <tui-data-list-wrapper-->
       <!--                      *tuiDataList-->
@@ -42,8 +65,7 @@ import {Schema, SchemaMember, Type} from "../services/schema";
 export class TypeAutocompleteTuiComponent {
   readonly stringifyTypeName = (item: Type): string => item.name.shortDisplayName;
 
-  @Input()
-  schema: Schema;
+  schema: InputSignal<Schema> = input();
 
   @Input()
   label: string = "Select a type";
@@ -57,23 +79,21 @@ export class TypeAutocompleteTuiComponent {
   @Input()
   size: 's' | 'm' | 'l' = 's'
 
-
   @Output()
   selectedTypeChanged = new EventEmitter<SchemaMember>();
 
-  get displayTypes(): Type[] {
-    const additionalTypes = this.additionalTypes || [];
-    return additionalTypes.concat(this.schema?.types || [])
+  displayTypes: Signal<Type[]> = computed(() => {
+    return (this.schema()?.types || [])
       .filter(t => !t.fullyQualifiedName.startsWith("io.vyne")
         && !t.fullyQualifiedName.startsWith("lang.taxi")
         && !t.fullyQualifiedName.startsWith("taxi.stdlib")
         && !t.fullyQualifiedName.startsWith("vyne.vyneQl")
         && !t.fullyQualifiedName.startsWith("Anonymous")
       );
-  }
+  })
 
   handleSelectedTypeChanged($event: Type) {
-    this.selectedTypeChanged.emit(SchemaMember.fromType($event))
+    this.selectedTypeChanged.emit($event ? SchemaMember.fromType($event) : null)
   }
 
 }

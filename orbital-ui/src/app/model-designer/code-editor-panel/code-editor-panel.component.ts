@@ -1,46 +1,47 @@
-import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
+import {Clipboard} from '@angular/cdk/clipboard';
+import {ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Inject, Input, Output} from '@angular/core';
+import {TuiAlertService, TuiNotification} from '@taiga-ui/core';
 import {CompilationMessage, Schema, SchemaMember, Type} from "../../services/schema";
 
 @Component({
     selector: 'app-designer-code-editor-panel',
     template: `
+        <tui-notification *ngIf="disabled" class="onboarding-text" status="neutral" size="s">
+          Once you've provided your data sample, create a Taxi schema here to describe your data
+        </tui-notification>
         <app-panel-header title="Taxi model editor" [isSecondary]="true">
             <div class="spacer"></div>
-
             <app-type-autocomplete-tui
                     class="type-input"
                     [schema]="schema"
                     [additionalTypes]="parsedTypes"
-                    (selectedTypeChanged)="handleSelectedTypeChanged($event)"></app-type-autocomplete-tui>
+                    (selectedTypeChanged)="handleSelectedTypeChanged($event)"
+            ></app-type-autocomplete-tui>
+            <a
+              tuiLink
+              class="button-link"
+              tuiHint="Copy model"
+              tuiHintAppearance="onDark"
+              (click)="copyModel(taxi)"
+            >
+              <img src="assets/img/tabler/copy.svg">
+            </a>
         </app-panel-header>
-
         <as-split gutterSize="5" direction="vertical" unit="pixel">
             <as-split-area size="*">
-                <app-code-editor (contentChange)="taxiChange.emit($event)"></app-code-editor>
+                <app-code-editor (contentChange)="taxi=$event; taxiChange.emit($event)"></app-code-editor>
             </as-split-area>
             <as-split-area size="135">
                 <app-compilation-message-list [compilationMessages]="compilationErrors"></app-compilation-message-list>
             </as-split-area>
         </as-split>
-
-
     `,
     styleUrls: ['./code-editor-panel.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CodeEditorPanelComponent {
-
-
-    @Output()
-    taxiChange = new EventEmitter<string>();
-
     @Input()
     compilationErrors: CompilationMessage[];
-
-    selectedType: Type;
-
-    @Output()
-    selectedTypeChanged = new EventEmitter<string>();
 
     @Input()
     schema: Schema;
@@ -48,21 +49,31 @@ export class CodeEditorPanelComponent {
     @Input()
     parsedTypes: Type[];
 
-    get types(): Type[] {
-      this.parsedTypes.filter(t => t.name.shortDisplayName)
-        const newTypes = this.parsedTypes || [];
-        return newTypes.concat(this.schema?.types || [])
-            .filter(t => !t.fullyQualifiedName.startsWith("io.vyne")
-              && !t.fullyQualifiedName.startsWith("lang.taxi")
-              && !t.fullyQualifiedName.startsWith("taxi.stdlib")
-              && !t.fullyQualifiedName.startsWith("vyne.vyneQl")
-              && !t.fullyQualifiedName.startsWith("Anonymous")
-            )
-            ;
+    @Input()
+    @HostBinding('class.is-disabled')
+    disabled: boolean;
+
+    @Output()
+    selectedTypeChanged = new EventEmitter<SchemaMember>();
+
+    @Output()
+    taxiChange = new EventEmitter<string>();
+
+    taxi: string
+
+    constructor(
+      private clipboard: Clipboard,
+      @Inject(TuiAlertService) private readonly alerts: TuiAlertService,
+    ) {
     }
 
-
     handleSelectedTypeChanged($event: SchemaMember) {
-        this.selectedTypeChanged.emit($event.name.fullyQualifiedName)
+        this.selectedTypeChanged.emit($event)
+    }
+
+    copyModel(query: string) {
+      this.clipboard.copy(query);
+      this.alerts.open('Copied to clipboard', {status: TuiNotification.Success})
+        .subscribe()
     }
 }

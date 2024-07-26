@@ -16,11 +16,11 @@ import {
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {
     TuiButtonModule,
-    TuiDataListModule,
+    TuiDataListModule, TuiHintModule, TuiLinkModule,
     TuiLoaderModule,
     TuiNotificationModule,
     TuiTextfieldControllerModule
-} from "@taiga-ui/core";
+} from '@taiga-ui/core';
 import {ExpandingPanelSetModule} from "../expanding-panelset/expanding-panel-set.module";
 import {CodeEditorModule} from "../code-editor/code-editor.module";
 import {TaxiParserService} from "./taxi-parser.service";
@@ -71,7 +71,9 @@ import { UiCustomisations } from '../../environments/ui-customisations';
         TypeNamedInstanceTreeModule,
         JsonViewerModule,
         TuiDataListModule,
-        TypeAutocompleteTuiModule
+        TypeAutocompleteTuiModule,
+        TuiHintModule,
+        TuiLinkModule
     ]
 })
 export class ModelDesignerModule {

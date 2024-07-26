@@ -4,8 +4,8 @@ import { Component, HostBinding, Input } from '@angular/core';
   selector: 'app-panel-header',
   template: `
     <ng-content select="title-content"></ng-content>
-    <h3 *ngIf="title && !isSecondary">{{title}}</h3>
-    <h4 *ngIf="title && isSecondary">{{title}}</h4>
+    <h3 *ngIf="title && !isSecondary">{{title}} <span *ngIf="helpText" class="help-text">{{helpText}}</span></h3>
+    <h4 *ngIf="title && isSecondary">{{title}} <span *ngIf="helpText" class="help-text">{{helpText}}</span></h4>
     <ng-content></ng-content>
   `,
   styleUrls: ['./panel-header.component.scss']
@@ -18,6 +18,9 @@ export class PanelHeaderComponent {
   @HostBinding('attr.title') get getTitle(): null {
     return null;
   }
+
+  @Input()
+  helpText: string
 
   @Input()
   icon: string

@@ -1,6 +1,17 @@
+@import "../model-designer.component";
+// For the copy button styles
+@import "../../query-panel/query-editor/shared";
+
 :host {
   display: flex;
   flex-direction: column;
+
+  &.is-disabled {
+    *:not(.onboarding-text) {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+  }
 }
 
 app-code-editor {
@@ -15,4 +26,6 @@ app-code-editor {
   width: 20rem;
 }
 
-
+.onboarding-text {
+  @extend %onboarding-text;
+}
