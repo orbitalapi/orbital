@@ -26,8 +26,9 @@ app-panel {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 2rem;
 
-  button {
-    margin-top: 2rem;
+  .onboarding-text {
+    width: 410px;
   }
 }

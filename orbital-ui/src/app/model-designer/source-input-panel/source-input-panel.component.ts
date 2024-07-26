@@ -12,6 +12,7 @@ import {UntypedFormControl} from "@angular/forms";
 import {TuiFileLike} from "@taiga-ui/kit";
 import * as monaco from "monaco-editor";
 import {editor} from "monaco-editor";
+import {Subject} from 'rxjs';
 import {debounceTime} from "rxjs/operators";
 import ITextModel = editor.ITextModel;
 import IStandaloneCodeEditor = editor.IStandaloneCodeEditor;
@@ -25,11 +26,34 @@ import IModelContentChangedEvent = editor.IModelContentChangedEvent;
       <button tuiButton size="s" appearance="outline" *ngIf="editorVisible" (click)="clearContent()">Clear</button>
     </app-panel-header>
     <div class="empty-state" *ngIf="!editorVisible">
+      <tui-notification class="onboarding-text" status="neutral" size="s">
+        Provide a data sample to design a Taxi schema for
+      </tui-notification>
       <tui-input-files
         *ngIf="!fileDropControl.value"
         [formControl]="fileDropControl"
         (reject)="onReject($event)"
+        [maxFileSize]="8*1024*1024"
+        accept="text/csv, application/json, application/xml"
+        link="Choose a CSV, TSV, PSV, JSON or XML file"
+        label="or drop one here"
       ></tui-input-files>
+      <tui-files *ngIf="rejectedFiles$ | async as file">
+        <tui-file
+          state="error"
+          [file]="file"
+          [showDelete]="fileDropControl.enabled"
+          (removed)="clearRejected()"
+        ></tui-file>
+      </tui-files>
+      <tui-files *ngIf="loadingFiles$ | async as file">
+        <tui-file
+          state="loading"
+          [file]="file"
+          [showDelete]="fileDropControl.enabled"
+        ></tui-file>
+      </tui-files>
+      <div>OR</div>
       <button tuiButton appearance="outline" (click)="showEditor()">Start by writing</button>
     </div>
     <div class="editor-container" #codeEditorContainer *ngIf="editorVisible">
@@ -42,6 +66,8 @@ import IModelContentChangedEvent = editor.IModelContentChangedEvent;
 export class SourceInputPanelComponent {
 
     readonly fileDropControl = new UntypedFormControl();
+    readonly rejectedFiles$ = new Subject<TuiFileLike | null>();
+    readonly loadingFiles$ = new Subject<TuiFileLike | null>();
     editorVisible = false;
 
     private monacoEditor: IStandaloneCodeEditor;
@@ -77,6 +103,8 @@ export class SourceInputPanelComponent {
     @Output()
     contentChange = new EventEmitter<string>();
 
+    @Output()
+    contentCleared = new EventEmitter<void>();
 
     constructor(private changeDetector: ChangeDetectorRef) {
         this.monacoModelChanged$.pipe(
@@ -94,15 +122,27 @@ export class SourceInputPanelComponent {
     }
 
     private loadFileContent(fileLike: TuiFileLike) {
+        this.rejectedFiles$.next(null);
+        this.loadingFiles$.next(fileLike);
         const fileReader = new FileReader();
         fileReader.onloadend = () => {
             this.updateContent(fileReader.result as string, true);
+            this.loadingFiles$.next(null);
         }
         fileReader.readAsText(fileLike as File);
     }
 
-    onReject($event: TuiFileLike | TuiFileLike[]) {
+    onReject(file: TuiFileLike | TuiFileLike[]): void {
+      this.rejectedFiles$.next(file as TuiFileLike);
+    }
 
+    clearRejected(): void {
+      this.removeFile();
+      this.rejectedFiles$.next(null);
+    }
+
+    private removeFile(): void {
+      this.fileDropControl.setValue(null);
     }
 
     showEditor() {
@@ -147,8 +187,9 @@ export class SourceInputPanelComponent {
 
     clearContent() {
         this.fileDropControl.setValue(null);
-        this.updateContent(null, true);
+        this.updateContent("", true);
         this.editorVisible = false;
+        this.contentCleared.emit();
         this.changeDetector.markForCheck();
     }
 }

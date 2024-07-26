@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  EventEmitter,
+  EventEmitter, HostBinding,
   Input,
   OnChanges,
   Output,
@@ -18,15 +18,21 @@ import {SourceWithTypeHints} from "../../json-viewer/json-results-view.component
 @Component({
   selector: 'app-designer-parse-result-panel',
   template: `
-        <app-panel-header title="Parse Result" [isSecondary]="true">
-            <div class="spacer"></div>
-            <progress tuiProgressBar size="s" *ngIf="working"></progress>
-        </app-panel-header>
-        <app-json-viewer [json]="sourceWithHints" *ngIf="sourceWithHints" [readOnly]="true"></app-json-viewer>
-        <div class="row center">
-            <tui-notification *ngIf="errorMessage" status="error">{{errorMessage}}</tui-notification>
-        </div>
-
+    <tui-notification *ngIf="disabled" class="onboarding-text" status="neutral" size="s">
+      @if (!taxi && !targetType) {
+        As you edit your Taxi schema above, parsing results will appear here
+      } @else {
+        Select a type from the drop-down in the model editor above to see parsing results
+      }
+    </tui-notification>
+    <app-panel-header title="Parse Result" [isSecondary]="true">
+        <div class="spacer"></div>
+        <progress tuiProgressBar size="s" *ngIf="working"></progress>
+    </app-panel-header>
+    <app-json-viewer [json]="sourceWithHints" *ngIf="sourceWithHints" [readOnly]="true"></app-json-viewer>
+    <div class="row center">
+        <tui-notification *ngIf="errorMessage" status="error">{{errorMessage}}</tui-notification>
+    </div>
     `,
   styleUrls: ['./parse-result-panel.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -41,6 +47,10 @@ export class ParseResultPanelComponent implements OnChanges {
 
   @Output()
   compilationErrorsChanged = new EventEmitter<CompilationMessage[]>();
+
+  @Input()
+  @HostBinding('class.is-disabled')
+  disabled: boolean;
 
   get sourceWithHints(): SourceWithTypeHints {
     if (isNullOrUndefined(this.parseResult?.parseResult?.json)) return null;
@@ -133,6 +143,9 @@ export class ParseResultPanelComponent implements OnChanges {
     }
     if (changes.targetType) {
       this.targetType$.next(changes['targetType'].currentValue)
+    }
+    if (changes.disabled) {
+      this.errorMessage = null;
     }
   }
 }

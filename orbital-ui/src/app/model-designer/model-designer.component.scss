@@ -1,11 +1,22 @@
-app-designer-code-editor-panel {
+:host {
+  display: flex;
+  flex-direction: column;
   height: 100%;
 }
 
+app-designer-source-input-panel,
+app-designer-code-editor-panel,
 app-designer-parse-result-panel {
   height: 100%;
+  position: relative;
 }
 
-app-designer-source-input-panel {
-  height: 100%;
+%onboarding-text {
+  position: absolute;
+  z-index: 1;
+  top: calc(50% - 2rem);
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+  width: 380px;
 }
