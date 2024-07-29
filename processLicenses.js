@@ -311,7 +311,7 @@ async function processMavenDependencies() {
 }
 
 async function processNodeDependencies() {
-   const filePath = path.resolve('orbital-ui/licenses.csv')
+   const filePath = path.resolve('licenses.csv')
    // Read the file
    const data = await fs.readFile(filePath, 'utf8');
    // Parse the dependencies
