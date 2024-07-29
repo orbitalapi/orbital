@@ -1,6 +1,7 @@
 import {NgModule} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {TuiSegmentedModule} from '@taiga-ui/experimental';
+import {DropdownComponent} from '../query-panel/query-editor/query-editor-toolbar/dropdown/dropdown.component';
 import {TabbedResultsViewComponent} from './tabbed-results-view.component';
 import {MatTabsModule} from '@angular/material/tabs';
 import {ObjectViewModule} from '../object-view/object-view.module';
@@ -41,6 +42,7 @@ import {QueryErrorsListComponent} from "../query-errors-list/query-errors-list.c
     TuiHintModule,
     TuiNotificationModule,
     TuiSegmentedModule,
+    DropdownComponent,
   ],
   exports: [TabbedResultsViewComponent],
   declarations: [TabbedResultsViewComponent],

@@ -1,8 +1,7 @@
-import {inject, WritableSignal} from '@angular/core';
+import {inject, Signal, WritableSignal} from '@angular/core';
 import {BehaviorSubject, merge, Observable, of, ReplaySubject, Subject, takeUntil} from 'rxjs';
 import {
   bufferToggle,
-  catchError,
   distinctUntilChanged,
   filter,
   map,
@@ -50,6 +49,7 @@ export type QueryEditorPayload = {
   errorCount: WritableSignal<number>
   isErrorMessageSubscriptionSetup: WritableSignal<boolean>
   isQueryPaused: WritableSignal<boolean>
+  showMaxRecordCountWarning: WritableSignal<boolean>
   isQuerySaveable: WritableSignal<boolean>
   // Observabley stuff...
   results: WritableSignal<ReplaySubject<InstanceLike>>
@@ -61,7 +61,9 @@ export type QueryEditorPayload = {
   queryMetadata: WritableSignal<Observable<RunningQueryStatus>>
   // Use a replay subject, as sometimes the UI hasn't rendered at the time
   // when the event is emitted, but will subscribe shortly after
-  instanceSelected: WritableSignal<ReplaySubject<QueryResultInstanceSelectedEvent>>
+  instanceSelected: WritableSignal<ReplaySubject<QueryResultInstanceSelectedEvent>>,
+  // config
+  config: Signal<AppConfig>
 }
 
 export type QueryLanguage = 'TaxiQL' | 'Text';
@@ -72,7 +74,6 @@ export class QueryEditorState {
   private queryHistoryStoreService = inject(QueryHistoryStoreService)
 
   private schema: Schema
-  private config: AppConfig
   private readonly MAX_QUERY_RECORD_COUNT_DEFAULT: number = 5000;
 
   // Pause stream related stuff
@@ -116,18 +117,18 @@ export class QueryEditorState {
     this.payload.latestQueryStatus.set(null);
     this.payload.queryMetadata.set(null);
     this.payload.queryProfileData.set(null);
-    // Note: using the MAX_QUERY_RECORD_COUNT_DEFAULT in case the server doesn't return a maxQueryRecordCount prop
-    const bufferSize = this.config?.maxQueryRecordCount || this.MAX_QUERY_RECORD_COUNT_DEFAULT
     // Use a replay subject here, so that when users switch between
     // Query Results and Profiler tabs (and the query-editor tabs),
     // the results are still made available
-    this.payload.results.set(new ReplaySubject<InstanceLike>(bufferSize))
-    this.payload.errors.set(new ReplaySubject<StreamQueryErrorEvent>(bufferSize))
+    this.payload.results.set(new ReplaySubject<InstanceLike>())
+    this.payload.errors.set(new ReplaySubject<StreamQueryErrorEvent>())
 
+    // Use a ReplaySubject to allow for the user switching between the tabs in the tabbed-results UI
+    const replayableResults = new ReplaySubject<any>();
     // This bundle of Rx joy allows streaming queries to be paused
     // (the bufferToggle is in effect) and when un-paused, the windowToggle
     // allows the observable to return streaming results as normal
-    this.payload.potentiallyPausedResults.set(merge(
+    const pausableObservable = merge(
       this.payload.results().pipe(
         bufferToggle(
           this.off$,
@@ -140,9 +141,12 @@ export class QueryEditorState {
           this.on$,
           () => this.off$
         ),
-        mergeMap(x=> x)
+        mergeMap(x => x)
       )
-    ))
+    );
+    // Subscribe to the merged observable and push values to the ReplaySubject
+    pausableObservable.subscribe(value => replayableResults.next(value));
+    this.payload.potentiallyPausedResults.set(replayableResults);
     this.toggleStreamPauseState(false);
   }
 
@@ -188,8 +192,21 @@ export class QueryEditorState {
 
     };
 
+    let resultCount = 0;
+    let maxResultExceeded = false;
     this.queryService.websocketQuery(this.payload.query(), this.payload.queryClientId(), ResultMode.SIMPLE)
-      .pipe(takeUntil(this.destroySubject))
+      .pipe(
+        tap(()=> {
+          resultCount++;
+          if (resultCount > (this.payload.config()?.analytics.maxQueryRecordCount || this.MAX_QUERY_RECORD_COUNT_DEFAULT) && !maxResultExceeded) {
+            maxResultExceeded = true;
+            console.log("results exceeded config.analytics.maxQueryRecordCount, pausing")
+            this.toggleStreamPauseState(true)
+            this.payload.showMaxRecordCountWarning.set(true)
+          }
+        }),
+        takeUntil(this.destroySubject),
+      )
       .subscribe({
         next: queryMessageHandler,
         error: queryErrorHandler,
@@ -249,6 +266,7 @@ export class QueryEditorState {
   cancelQuery() {
     const previousState = this.payload.currentState();
     this.payload.currentState.set('Cancelling');
+    this.payload.showMaxRecordCountWarning.set(false);
     let cancelOperation$: Observable<void>;
 
     if (this.payload.latestQueryStatus()) {
@@ -341,6 +359,10 @@ export class QueryEditorState {
 
   toggleStreamPauseState($event: boolean) {
     this.pauseSubj$.next($event);
+    this.payload.isQueryPaused.set($event)
+    if (this.payload.showMaxRecordCountWarning()) {
+      this.payload.showMaxRecordCountWarning.set(false)
+    }
   }
 
   destroy() {

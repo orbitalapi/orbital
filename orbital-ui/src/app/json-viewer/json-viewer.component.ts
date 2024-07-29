@@ -35,7 +35,7 @@ import {Disposable} from "vscode-languageclient";
       <tui-notification *ngIf="showResultsSizeWarning || isResponseLarge" status="warning" class="alert">
         The response is really big.
         <ng-container *ngIf="isResponseLarge">Some features have been disabled.</ng-container>
-        <ng-container *ngIf="showResultsSizeWarning">Only showing [x] number of results.</ng-container>
+        <ng-container *ngIf="showResultsSizeWarning">UI performance may be impacted.</ng-container>
       </tui-notification>
       <div *ngIf="!showResultsSizeWarning && !isResponseLarge" class="spacer"></div>
       <button (click)="applyFormat()" tuiButton size="s" appearance="outline">Format</button>

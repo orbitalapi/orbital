@@ -114,13 +114,6 @@ export class JsonResultsViewComponent {
         json;
       this.allInstancesJson = concatenatedJson;
       this.instancesToJson.set(nextResult as ValueWithTypeName, json)
-      // try to ensure no more than 5000 records (or whatever's set in the appConfig)
-      if (this.instanceJson.length > this.appConfig.maxQueryRecordCount) {
-        this.instanceJson.splice(this.appConfig.maxQueryRecordCount, this.instanceJson.length - this.appConfig.maxQueryRecordCount)
-        const lastJsonRowIndex = this.allInstancesJson.lastIndexOf('\n\n')
-        this.allInstancesJson = this.allInstancesJson.substring(0, lastJsonRowIndex).trim();
-        // Houston, we have a problem - no easy way to remove the "oldest" items in the Map, so leaving for now...
-      }
       this.updateInlineHints()
       this.changeDetector.markForCheck();
     });
