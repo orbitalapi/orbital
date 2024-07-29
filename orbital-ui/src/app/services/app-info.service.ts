@@ -37,9 +37,10 @@ export interface AppConfig {
   analytics: {
     maxPayloadSizeInBytes: number
     persistRemoteCallResponses: boolean
-    pageSize: number,
+    pageSize: number
     persistResults: boolean
-  };
+    maxQueryRecordCount: number
+  }
   licenseStatus: {
     isLicensed: boolean;
     expiresOn: Date
@@ -47,7 +48,6 @@ export interface AppConfig {
   actuatorPath: string;
   pipelineConfig: PipelineConfig;
   featureToggles: FeatureToggles;
-  maxQueryRecordCount: number;
   custom: {[index:string]:any}
 }
 

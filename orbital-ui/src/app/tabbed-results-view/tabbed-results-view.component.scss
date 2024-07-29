@@ -115,6 +115,13 @@ progress {
   }
 }
 
+.download-dropdown {
+  margin-left: 0.5rem;
+  padding-left: 0.1rem;
+  border: 1px solid $gray-200;
+  border-radius: 0.25rem;
+}
+
 .download-menu-option {
   display: flex;
   align-items: center;

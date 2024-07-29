@@ -1,7 +1,7 @@
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
-  Component, computed, DestroyRef, effect, ElementRef,
+  Component, computed, DestroyRef, effect,
   EventEmitter, input,
   Input,
   Output, ViewChild
@@ -109,30 +109,79 @@ enum ViewMode {
         <ng-template #more>
           <tui-svg src="tuiIconMoreHorizontalLarge"></tui-svg>
         </ng-template>
-        <div class="rightside-controls-container">
+        <div class="rightside-controls-container" *ngIf="viewMode === ViewMode.RESULTS">
+          <tui-notification
+            *ngIf="showMaxRecordCountWarning"
+            status="warning"
+            size="s"
+          >
+            Pausing results to prevent UI instability
+          </tui-notification>
           <button
-            *ngIf="isStreamingQuery && isQueryRunning"
+            *ngIf="isQueryRunning || showMaxRecordCountWarning || (!isQueryRunning && isQueryPaused)"
             tuiButton type="button" appearance="outline" size="s"
-            [icon]="isQueryPaused ? tuiIconPlay : tuiIconPause"
-            [tuiHint]="isQueryPaused ? 'Resume the stream on the UI' : 'Pause the stream on the UI'"
+            [icon]="icon"
+            [tuiHint]="hint"
             tuiHintAppearance="onDark"
             (click)="pauseStreamToggled.emit(!isQueryPaused)"
             class="button-small menu-bar-button pause-stream-button"
             [class.is-query-paused]="isQueryPaused"
           >
-            {{ isQueryPaused ? 'Resume stream' : 'Pause stream' }}
+            @if (isQueryRunning) {
+              {{ isQueryPaused || showMaxRecordCountWarning ? 'Resume results' : 'Pause results' }}
+            } @else {
+              Display all results
+            }
+            <ng-template #icon>
+              @if (isQueryPaused || showMaxRecordCountWarning) {
+                <img src="assets/img/tabler/player-play.svg" />
+              } @else {
+                <img src="assets/img/tabler/player-pause.svg" />
+              }
+            </ng-template>
+            <ng-template #hint>
+              @if (isQueryRunning) {
+                {{ isQueryPaused ? 'Resume the results on the UI' : 'Pause the results on the UI' }}
+              } @else {
+                Display all remaining buffered results
+              }
+            </ng-template>
           </button>
-          <tui-hosted-dropdown
-            *ngIf="showResultsPanel && viewMode === ViewMode.RESULTS && downloadSupported"
-            tuiDropdownAlign="left"
-            [content]="downloadDropdown"
-            [(open)]="downloadMenuOpen"
+          <app-dropdown
+            *ngIf="showResultsPanel && downloadSupported"
+            value="Download"
+            class="download-dropdown"
           >
-            <button tuiButton type="button" appearance="outline" [iconRight]="downloadIcon" size="s"
-                    class="button-small menu-bar-button">
-              Download
-            </button>
-          </tui-hosted-dropdown>
+            <tui-data-list>
+              <div class="download-menu-option">
+                <button tuiOption (click)="onDownloadClicked(downloadFileType.JSON)"
+                        [disabled]="!config?.analytics.persistResults">
+                  as JSON
+                </button>
+                <a
+                  *ngIf="!config?.analytics.persistResults"
+                  href="#"
+                  class="link"
+                  (click)="showDisabledPersistResultsConfig($event)"
+                >
+                  Why is this disabled?
+                </a>
+              </div>
+              <button tuiOption (click)="onDownloadClicked(downloadFileType.CSV)">as CSV</button>
+              <div class="download-menu-option">
+                <button tuiOption (click)="onDownloadClicked(downloadFileType.TEST_CASE)"
+                        [disabled]="!config?.analytics.persistRemoteCallResponses || !config?.analytics.persistResults">
+                  as Test Case
+                </button>
+                <a
+                  *ngIf="!config?.analytics.persistRemoteCallResponses || !config?.analytics.persistResults"
+                  href="#"
+                  (click)="showDisabledTestCaseConfig($event)"
+                  class="link"
+                >Why is this disabled?</a>
+              </div>
+            </tui-data-list>
+          </app-dropdown>
         </div>
       </app-panel-header>
       <app-object-view-container
@@ -162,45 +211,8 @@ enum ViewMode {
     ></app-call-explorer>
     <app-query-errors-list
       *ngIf="resultsTabIndex == 4 && viewMode === ViewMode.RESULTS"
-      [errorMessages$]="errorMessages$"></app-query-errors-list>
-    <ng-template #downloadIcon>
-      <tui-svg
-        src="tuiIconChevronDown"
-        class="icon"
-        [class.icon_rotated]="downloadMenuOpen"
-      ></tui-svg>
-    </ng-template>
-    <ng-template #downloadDropdown>
-      <tui-data-list>
-        <div class="download-menu-option">
-          <button tuiOption (click)="onDownloadClicked(downloadFileType.JSON)"
-                  [disabled]="!config?.analytics.persistResults">
-            as JSON
-          </button>
-          <a
-            *ngIf="!config?.analytics.persistResults"
-            href="#"
-            class="link"
-            (click)="showDisabledPersistResultsConfig($event)"
-          >
-            Why is this disabled?
-          </a>
-        </div>
-        <button tuiOption (click)="onDownloadClicked(downloadFileType.CSV)">as CSV</button>
-        <div class="download-menu-option">
-          <button tuiOption (click)="onDownloadClicked(downloadFileType.TEST_CASE)"
-                  [disabled]="!config?.analytics.persistRemoteCallResponses || !config?.analytics.persistResults">
-            as Test Case
-          </button>
-          <a
-            *ngIf="!config?.analytics.persistRemoteCallResponses || !config?.analytics.persistResults"
-            href="#"
-            (click)="showDisabledTestCaseConfig($event)"
-            class="link"
-          >Why is this disabled?</a>
-        </div>
-      </tui-data-list>
-    </ng-template>
+      [errorMessages$]="errorMessages$"
+    ></app-query-errors-list>
   `,
   styleUrls: ['./tabbed-results-view.component.scss']
 })
@@ -218,7 +230,6 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   @Input()
   set isQueryRunning(value: boolean) {
     this._isQueryRunning = value;
-    this.isQueryPaused = false;
     if (value && this.resultsTabIndex === 3) this.resultsTabIndex = 0;
   }
 
@@ -254,6 +265,9 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
 
   @Input()
   onlyShowResultsViewMode: boolean
+
+  @Input()
+  showMaxRecordCountWarning: boolean
 
   queryStartTime = input<Date>()
   hasQueryRun = computed<boolean>(() => !!this.queryStartTime())

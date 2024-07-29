@@ -143,9 +143,6 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
             add: next,
             addIndex: this.isStreamingQuery ? 0 : null
           });
-          if (this.gridApi.paginationGetRowCount() > this.config.maxQueryRecordCount) {
-            this.removeRows(this.gridApi.paginationGetRowCount() - this.config.maxQueryRecordCount)
-          }
         } else {
           console.error('Received an instance before the grid was ready - this record batch will get dropped!');
         }
@@ -265,14 +262,4 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     }
   }
 
-  private removeRows(rowCount: number) {
-    if (this.gridApi) {
-      const rowsTotal = this.config.maxQueryRecordCount;
-      const rowsToCull = []
-      for (let i = rowCount + rowsTotal - 1; i >= rowsTotal; i--) {
-        rowsToCull.push(this.gridApi.getModel().getRow(i).data)
-      }
-      this.gridApi.applyTransactionAsync({ remove: rowsToCull });
-    }
-  }
 }

@@ -42,7 +42,7 @@ export class QueryEditorStoreService {
 
   schema: Schema
 
-  private config: AppConfig;
+  private config: WritableSignal<AppConfig> = signal(null);
 
   constructor(
     private appInfoService: AppInfoService,
@@ -55,7 +55,7 @@ export class QueryEditorStoreService {
   ) {
     appInfoService.getConfig()
       .pipe(takeUntilDestroyed())
-      .subscribe(next => this.config = next);
+      .subscribe(next => this.config.set(next));
 
     typeService.getTypes()
       .pipe(takeUntilDestroyed())
@@ -87,6 +87,7 @@ export class QueryEditorStoreService {
           errorCount: signal(0),
           isErrorMessageSubscriptionSetup: signal(false),
           isQueryPaused: signal(false),
+          showMaxRecordCountWarning: signal(false),
           isQuerySaveable: signal(false),
           // Observables/Subjects
           results: signal(null),
@@ -97,6 +98,7 @@ export class QueryEditorStoreService {
           queryPlanData: signal(null),
           queryMetadata: signal(null),
           instanceSelected: signal(new ReplaySubject<QueryResultInstanceSelectedEvent>(1)),
+          config: this.config
         })
       ]
     })
@@ -137,11 +139,9 @@ export class QueryEditorStoreService {
 
   cancelQuery() {
     this.activeQueryEditorState().cancelQuery()
-    this.pauseQuery(false)
   }
 
   pauseQuery(value: boolean) {
-    this.activeQueryEditorState().payload.isQueryPaused.set(value)
     this.activeQueryEditorState().toggleStreamPauseState(value)
   }
 

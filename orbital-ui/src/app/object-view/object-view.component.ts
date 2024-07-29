@@ -172,17 +172,11 @@ export class ObjectViewComponent extends BaseTypedInstanceViewer {
       const newLength = this.isStreamingQuery ?
         (this.instance as InstanceLike[]).unshift(instance) :
         (this.instance as InstanceLike[]).push(instance);
-      if (newLength > this.appConfig.maxQueryRecordCount) {
-        (this.instance as InstanceLike[]).splice(this.appConfig.maxQueryRecordCount, newLength - this.appConfig.maxQueryRecordCount);
-      }
       const label = this.resultCounter.toString();// Use the index as the label
       const treeData = this.buildTreeData(instance, label, '', instance as ValueWithTypeName);
       this.isStreamingQuery ?
         this.treeDataItems.unshift(treeData) :
         this.treeDataItems.push(treeData);
-      if (this.treeDataItems.length > this.appConfig.maxQueryRecordCount) {
-        this.treeDataItems.splice(this.appConfig.maxQueryRecordCount, this.treeDataItems.length - this.appConfig.maxQueryRecordCount);
-      }
       this.treeDataPages = this.distributeIntoPages(this.treeDataItems, pageSize);
     }));
   }

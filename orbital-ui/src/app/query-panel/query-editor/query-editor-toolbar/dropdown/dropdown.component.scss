@@ -14,6 +14,7 @@
   &.is-open,
   &:active {
     background: $white;
+    color: #000;
   }
 
   &.is-disabled {

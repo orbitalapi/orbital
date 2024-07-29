@@ -32,7 +32,11 @@ data class QueryAnalyticsConfig(
 
    // Mutable for testing
    var writerMaxBatchSize:Int = 2000,
-   var writerMaxDuration:Duration = Duration.ofSeconds(1)
+   var writerMaxDuration:Duration = Duration.ofSeconds(1),
+
+   // The number of results to show in the UI, before result emission
+   // is paused client side and a notification is shown to the user
+   var maxQueryRecordCount: Int = 5000,
 ) {
    companion object {
       private val logger = KotlinLogging.logger {}

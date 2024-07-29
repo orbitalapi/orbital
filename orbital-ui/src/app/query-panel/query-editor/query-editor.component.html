@@ -66,6 +66,7 @@
                                  [isQueryRunning]='state.currentState() === "Running"'
                                  [isStreamingQuery]="isStreamingQuery"
                                  [isQueryPaused]="state.isQueryPaused()"
+                                 [showMaxRecordCountWarning]="state.showMaxRecordCountWarning()"
                                  [queryStartTime]="state.queryStartTime()"
                                  (instanceSelected)='state.valuePanelVisible.set(true); state.instanceSelected().next($event)'
                                  (downloadClicked)='downloadQueryHistory($event.format)'
