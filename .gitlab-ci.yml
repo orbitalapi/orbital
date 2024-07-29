@@ -76,10 +76,12 @@ stages:
       # already completed, so that when we try to grep the output string, we get a tidy predictable output
       - mvn --non-recursive help:evaluate -Dexpression=project.version
       - mvn --non-recursive help:evaluate -Dexpression=project.version | grep -v '\[.*' > build-version.txt
+      # Get the 3rd party license report for usage later
+      - mvn license:aggregate-add-third-party
    artifacts:
       paths:
          - build-version.txt
-
+         - target/generated-sources/license/THIRD-PARTY.txt
          # Be careful!  The each of these jar files can get big.
          # If the total size of all jar files being stored in artifacts
          # exceeds 1GB then builds can fail.
@@ -118,9 +120,12 @@ build-vyne-ui:
       - cd orbital-ui
       - npm ci
       - npm run-script build-prod
+      # Capture 3rd party licenses for checks later
+      - npx license-checker --out licenses.csv --csv --start orbital-ui/
    artifacts:
       paths:
          - station/target/classes/static
+         - licenses.csv
       expire_in: 1 hours
 
 build-voyager-ui:
@@ -482,3 +487,13 @@ trigger-connect-build:
    trigger:
       project: vyne/hazelcast-orbital
       branch: develop
+
+validate-license-compliance:
+   stage: verify
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:18.18
+   ## Temp - remove once we have 100% compliance
+   allow_failure: true
+   script:
+      - node processLicenses.js
+
+
