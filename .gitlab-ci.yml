@@ -121,7 +121,7 @@ build-vyne-ui:
       - npm ci
       - npm run-script build-prod
       # Capture 3rd party licenses for checks later
-      - npx license-checker --out licenses.csv --csv --start orbital-ui/
+      - npx license-checker --out ../licenses.csv --csv
    artifacts:
       paths:
          - station/target/classes/static
