@@ -13,7 +13,7 @@ import java.time.Duration
 private val logger = KotlinLogging.logger {  }
 @ConfigurationProperties(prefix = "vyne.ws")
 data class OrbitalWebSocketConfiguration(
-    val enablePing: Boolean = false,
+    val enablePing: Boolean = true,
     val pingIntervalInMilliSeconds: Long = 30000
 ) {
     fun applyPingConfiguration(socketController: WebSocketController,
