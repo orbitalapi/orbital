@@ -60,7 +60,8 @@ import {SavedQueryWithSource} from '../../../project-import/schema-importer.serv
       <tui-data-list>
         <button tuiOption (click)="copyQuery.emit('query')">Query only</button>
         <button tuiOption (click)="copyQuery.emit('curl')">As cURL statement</button>
-        <button tuiOption (click)="copyQuery.emit('snippet')"
+        <button *ngIf="config?.featureToggles.copyAsCodeEnabled"
+                tuiOption (click)="copyQuery.emit('snippet')"
                 [tuiHint]="!resultType ? 'Available once query has completed' : null"
                 tuiHintAppearance="onDark"
                 [disabled]="!resultType"

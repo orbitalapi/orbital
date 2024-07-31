@@ -57,6 +57,7 @@ export interface FeatureToggles {
   policiesEnabled: boolean;
   queryPlanModeEnabled: boolean;
   serviceLineageDiagramsEnabled: boolean;
+  copyAsCodeEnabled: boolean
 }
 export interface PipelineConfig {
   kibanaUrl: string;
