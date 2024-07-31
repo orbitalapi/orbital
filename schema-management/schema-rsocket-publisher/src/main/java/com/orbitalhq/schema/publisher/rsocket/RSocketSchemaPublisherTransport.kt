@@ -23,11 +23,15 @@ import reactor.core.publisher.Sinks
 import reactor.core.scheduler.Schedulers
 
 
-class RSocketSchemaPublisherTransport(
+
+
+class RSocketSchemaPublisherTransport @JvmOverloads constructor(
    rsocketFactory: SchemaServerRSocketFactory,
    private val objectMapper: ObjectMapper = CBORJackson.defaultMapper
 ) : AsyncSchemaPublisherTransport {
+   @JvmOverloads
    constructor(host: String, port: Int, objectMapper: ObjectMapper = CBORJackson.defaultMapper) : this(TcpAddress(host, port), objectMapper)
+   @JvmOverloads
    constructor(
       address: ClientTransportAddress,
       objectMapper: ObjectMapper = CBORJackson.defaultMapper
