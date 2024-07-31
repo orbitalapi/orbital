@@ -39,6 +39,7 @@ class SchemaPublisherService(
     * Allows for publication of a different type of source (eg.,
     * OpenApi spec), which is transpiled client-side
     */
+   @JvmOverloads
    fun publish(
       packageMetadata: PackageMetadata,
       sources: List<GeneratedTaxiCode>,

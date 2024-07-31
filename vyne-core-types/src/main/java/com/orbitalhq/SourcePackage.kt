@@ -269,6 +269,8 @@ interface PackageMetadata : Serializable {
 
 
    companion object {
+      @JvmStatic
+      @JvmOverloads
       fun from(
          identifier: PackageIdentifier,
          submissionDate: Instant = Instant.now(),
@@ -277,6 +279,8 @@ interface PackageMetadata : Serializable {
          identifier, submissionDate, dependencies
       )
 
+      @JvmStatic
+      @JvmOverloads
       fun from(
          organisation: String,
          name: String,
