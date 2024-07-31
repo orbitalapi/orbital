@@ -34,6 +34,7 @@ import org.jooq.Result
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.ConcurrentSkipListSet
 
 enum class UpsertVerb {
    Insert,
@@ -60,7 +61,19 @@ class JdbcUpsertInvoker(
       private val logger = KotlinLogging.logger {}
    }
 
-   private var tableCheckedAndExists = false
+
+   /**
+    * We have single instance of JdbcUpsertInvoker instantiated by singleton JdbcInvoker bean. Therefore, we need a mechanism
+    * to check to see whether we need to create the underlying relational table for different data connections.
+    */
+   private val tableCheckAndExistsSet = ConcurrentSkipListSet<JdbcConnectorTaxi.Annotations.Table> { o1, o2 ->
+      when {
+         o1 == null && o2 == null -> 0
+         o1 == null && o2 != null -> -1
+         o1 != null && o2 == null -> 1
+         else -> o1.toString().compareTo(o2.toString())
+      }
+   }
 
    override suspend fun invoke(
       service: Service,
@@ -84,9 +97,10 @@ class JdbcUpsertInvoker(
 
       val (connectionConfig, jdbcTemplate) = getConnectionConfigAndTemplate(service)
       val dsl = sqlDsl(tableAnnotation.connectionName)
-      if (!tableCheckedAndExists) {
+
+      if (!tableCheckAndExistsSet.contains(tableAnnotation)) {
          createTableIfNotPresent(operation, tableAnnotation, dsl, jdbcTemplate, connectionConfig)
-         tableCheckedAndExists = true
+         tableCheckAndExistsSet.add(tableAnnotation)
       }
 
       val inputAsList = when (input) {

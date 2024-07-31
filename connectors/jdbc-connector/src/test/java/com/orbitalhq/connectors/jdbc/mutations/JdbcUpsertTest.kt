@@ -1,10 +1,5 @@
 package com.orbitalhq.connectors.jdbc.mutations
 
-import com.winterbe.expekt.should
-import com.zaxxer.hikari.HikariConfig
-import io.kotest.matchers.nulls.shouldNotBeNull
-import io.kotest.matchers.shouldBe
-import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.jdbc.*
 import com.orbitalhq.connectors.jdbc.query.JdbcQueryTestConfig
@@ -15,6 +10,10 @@ import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
+import com.winterbe.expekt.should
+import com.zaxxer.hikari.HikariConfig
+import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.nulls.shouldNotBeNull
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
@@ -31,7 +30,7 @@ class JdbcUpsertTest {
    @Autowired
    lateinit var movieRepository: MovieRepository
 
-   @Autowired
+    @Autowired
    lateinit var jdbcTemplate: JdbcTemplate
 
    lateinit var connectionRegistry: InMemoryJdbcConnectionRegistry
@@ -44,6 +43,68 @@ class JdbcUpsertTest {
          InMemoryJdbcConnectionRegistry(listOf(NamedTemplateConnection("movies", namedParamTemplate, JdbcDriver.H2)))
       connectionFactory = HikariJdbcConnectionFactory(connectionRegistry, HikariConfig())
    }
+
+    @Test
+    fun `if a target table does not exist orbital will create it`(): Unit = runBlocking {
+        val vyne = testVyne(
+            listOf(
+                JdbcConnectorTaxi.schema,
+                VyneQlGrammar.QUERY_TYPE_TAXI,
+                """
+         ${JdbcConnectorTaxi.Annotations.imports}
+         import ${VyneQlGrammar.QUERY_TYPE_NAME}
+         type StudioId inherits Int
+         type StudioName inherits String
+         type StudioCountry inherits String
+         
+         @Table(connection = "movies", schema = "public", table = "STUDIOS")
+         model MovieStudio {
+            @Id ID : StudioId
+            NAME : StudioName
+         }
+         
+         // Use a different name from the spring repository, so that we
+         // can test DDL creation
+         @Table(connection = "movies", schema = "public", table = "STUDIOLOCATION")
+         model MovieStudioLocation {
+            @Id ID : StudioId
+            COUNTRY : StudioCountry
+         }
+
+         @DatabaseService( connection = "movies" )
+         service MovieDb {
+            table studios : MovieStudio[]
+
+            @InsertOperation
+            write operation insertStudio(MovieStudio):MovieStudio
+            
+            table studioLocations : MovieStudioLocation[]
+
+            @InsertOperation
+            write operation insertStudioLocation(MovieStudioLocation):MovieStudioLocation
+         }
+      """
+            )
+        ) {
+            schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)))
+        }
+
+        val dbMetadataService = DatabaseMetadataService(jdbcTemplate, connectionFactory.config("movies") )
+        vyne.query("""
+         given { movie : MovieStudio = { ID : 1 , NAME : "Warner Bros" } }
+         call MovieDb::insertStudio
+         """.trimIndent())
+            .typedObjects()
+
+        vyne.query("""
+         given { movie : MovieStudioLocation = { ID : 1 , COUNTRY : "USA" } }
+         call MovieDb::insertStudioLocation
+         """.trimIndent())
+            .typedObjects()
+
+        dbMetadataService.tableExists(null, "STUDIOS").shouldBeTrue()
+        dbMetadataService.tableExists(null, "STUDIOLOCATION").shouldBeTrue()
+    }
 
    @Test
    fun `can use a TaxiQL statement to insert a row`(): Unit = runBlocking {

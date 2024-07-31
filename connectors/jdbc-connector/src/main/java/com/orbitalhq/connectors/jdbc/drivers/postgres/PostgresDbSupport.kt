@@ -26,12 +26,10 @@ object PostgresDbSupport : DatabaseSupport {
       primaryKeyFields: List<Field<out Any>>,
       generatedFields: List<Field<out Any>>
    ): SqlOperation {
-      // TODO : Support for explicit Insert / Update.
-      // Currently verything is upsert
       val statement = sql.insertInto(DSL.table(DSL.name(actualTableName)), *sqlFields.toTypedArray())
          .valuesOfRows(*rows.toTypedArray())
          .let { insert ->
-            if (primaryKeyFields.isNotEmpty()) {
+            if (primaryKeyFields.isNotEmpty() && verb != UpsertVerb.Insert) {
                insert.onConflict(primaryKeyFields)
                   .doUpdate().setAllToExcluded()
                   .returningResult(generatedFields)
