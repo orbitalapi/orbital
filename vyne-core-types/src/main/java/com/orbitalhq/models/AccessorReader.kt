@@ -889,6 +889,14 @@ class AccessorReader(
 
 
          is LiteralExpression -> TypedInstance.from(returnType, expression.literal.value, schema, source = dataSource)
+         is LiteralArray -> {
+            require(returnType.isCollection) { "Received a LiteralArray, but the type is not an array type - got ${returnType.name.parameterizedName}"}
+            val collectionMembers = expression.members.map { memberExpression ->
+               val member = evaluate(value, schema.type(memberExpression.returnType), memberExpression, schema, nullValues, dataSource, format, resultCache)
+               member
+            }
+            TypedCollection.arrayOf(returnType.collectionType!!,collectionMembers, dataSource)
+         }
          is LambdaExpression -> evaluateLambdaExpression(
             value,
             returnType,

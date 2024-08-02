@@ -4,6 +4,7 @@ import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.schemas.Type
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.Argument
 import lang.taxi.accessors.ProjectionFunctionScope
@@ -76,32 +77,26 @@ object ProjectionFunctionScopeEvaluator {
       }
    }
 
+   /**
+    * Called when an input into a function can't come from the fact bag and
+    * we need to query for it.
+    *
+    * Calls the query engine to search for the requested type
+    */
    private suspend fun queryContextForFact(
       context: InPlaceQueryEngine,
       facts: List<TypedInstance>,
       scopeType: Type
    ): TypedInstance {
+      val findResult = context.only(facts, context.scopedFacts)
+         .findType(scopeType, permittedStrategy = PermittedQueryStrategies.EXCLUDE_BUILDER_AND_MODEL_SCAN)
+         .toList()
+      return when {
+         findResult.isEmpty() -> TypedNull.create(scopeType, source = FailedSearch("Type was not discoverable in the context or available from any service calls"))
+         findResult.size == 1 -> findResult.single()
+         else -> error("Calling queryContextForFact - Expected a single result, but found ${findResult.size}")
+      }
 
-      // 24-Jun-24: The below code existed (along with the TODO),
-      // which suggested that this code was never called.
-      // I need to downgrade the QueryEngine reference to InPlaceQueryEngine
-      // to allow this to be callable from core-types
-      // rather than query-engine.
-
-      // It seems that this code should be reachable
-      // (eg: if an input into a function can't come from the fact bag, and we
-      // need to query for it).
-      // When we come to implement this, it should be simple, as
-      // there's an existing method on QueryContext we need to make implement the interface
-      // All that's outstanding is handling the many-results from results to a single result defined in
-      // the signature.
-//      val fromSearch = context.only(facts, context.scopedFacts)
-//         // Don't do a model scan, since we've already done one in the fact bag search
-//         .find(scopeType.paramaterizedName, permittedStrategy = PermittedQueryStrategies.EXCLUDE_BUILDER_AND_MODEL_SCAN)
-//         .results
-//         .toList()
-
-      TODO("querying a context for a fact as a scoped function isn't yet implemented")
    }
 
    /**

@@ -1,7 +1,7 @@
 package com.orbitalhq.cockpit.core.schemas
 
-import com.orbitalhq.ErrorType
-import com.orbitalhq.JWTClaimType
+import com.orbitalhq.errors.ErrorType
+import com.orbitalhq.AuthClaimType
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.UserType
@@ -25,7 +25,6 @@ import com.orbitalhq.schema.publisher.SchemaPublisherService
 import com.orbitalhq.schemas.taxi.toMessage
 import lang.taxi.annotations.HttpService
 import lang.taxi.generators.avro.AvroAnnotationSchema
-import lang.taxi.generators.avro.AvroMessageAnnotation
 import mu.KotlinLogging
 
 object BuiltInTypesProvider {
@@ -41,7 +40,7 @@ object BuiltInTypesProvider {
          VersionedSource(
             "JwtTypes",
             "0.1.0",
-            JWTClaimType.AuthClaimsTypeDefinition
+            AuthClaimType.AuthClaimsTypeDefinition
          ),
          ErrorType.queryErrorVersionedSource,
          VersionedSource(

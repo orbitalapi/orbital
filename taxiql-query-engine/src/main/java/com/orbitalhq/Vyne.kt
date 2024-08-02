@@ -268,7 +268,7 @@ class Vyne(
    }
 
    private fun userPrincipalFact(fact: FactValue): Boolean {
-      return fact.type.inheritsFrom(this.type(JWTClaimType.AuthClaims.fullyQualifiedName).taxiType)
+      return fact.type.inheritsFrom(this.type(AuthClaimType.AuthClaims.fullyQualifiedName).taxiType)
    }
 
    /**
@@ -455,7 +455,7 @@ class Vyne(
 
 
    fun getPolicy(type: Type): Policy? {
-      return schema.policy(type)
+      return schema.singlePolicyOrNull(type)
    }
 
    suspend fun execute(query: Query): QueryResult {

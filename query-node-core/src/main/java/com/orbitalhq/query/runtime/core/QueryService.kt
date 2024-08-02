@@ -4,18 +4,17 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.orbitalhq.FactSetId
 import com.orbitalhq.FactSets
-import com.orbitalhq.JWTClaimType
-import com.orbitalhq.Vyne
+import com.orbitalhq.AuthClaimType
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.auth.authentication.VyneUser
 import com.orbitalhq.auth.authentication.toVyneUser
+import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.Fact
 import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.Query
 import com.orbitalhq.query.QueryCancelledException
-import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.QueryFailedException
 import com.orbitalhq.query.QueryMode
 import com.orbitalhq.query.QueryResponse
@@ -345,18 +344,18 @@ class QueryService(
                .catch { throwable ->
                   when (throwable) {
                      is SearchFailedException -> {
-                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaProvider.schema))
+                        emit(ErrorType.errorMessage(throwable.message ?: "No message provided", schemaProvider.schema))
                         logger.warn { "Query $queryId failed with a SearchFailedException. ${throwable.message!!}" }
                      }
 
                      is QueryCancelledException -> {
-                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaProvider.schema))
+                        emit(ErrorType.errorMessage(throwable.message ?: "No message provided", schemaProvider.schema))
                         //emit(QueryCancelledType.cancelled(throwable.message ?: "No message provided"))
                         logger.info { "Query $queryId was cancelled" }
                      }
 
                      else -> {
-                        emit(ErrorType.error(throwable.message ?: "No message provided", schemaProvider.schema))
+                        emit(ErrorType.errorMessage(throwable.message ?: "No message provided", schemaProvider.schema))
                         logger.error { "Query $queryId failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}" }
                      }
                   }
@@ -431,7 +430,7 @@ class QueryService(
       schema: Schema,
       parameters: List<lang.taxi.query.Parameter>
    ): String? {
-      val jwtParameter = parameters.firstOrNull { it.type.inheritsFrom(schema.taxiType(JWTClaimType.AuthClaims)) }
+      val jwtParameter = parameters.firstOrNull { it.type.inheritsFrom(schema.taxiType(AuthClaimType.AuthClaims)) }
       return jwtParameter?.type?.qualifiedName
 
    }

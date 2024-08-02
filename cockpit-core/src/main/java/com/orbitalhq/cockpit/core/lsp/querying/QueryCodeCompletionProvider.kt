@@ -12,11 +12,13 @@ import com.orbitalhq.schemas.toTaxiQualifiedName
 import com.orbitalhq.schemas.toVyneQualifiedName
 import lang.taxi.CompilationError
 import lang.taxi.TaxiParser.ArrayMarkerContext
+import lang.taxi.TaxiParser.ExpressionGroupContext
 import lang.taxi.TaxiParser.FactDeclarationContext
 import lang.taxi.TaxiParser.FactListContext
 import lang.taxi.TaxiParser.FunctionCallContext
 import lang.taxi.TaxiParser.GivenBlockContext
 import lang.taxi.TaxiParser.IdentifierContext
+import lang.taxi.TaxiParser.K_Call
 import lang.taxi.TaxiParser.MemberReferenceContext
 import lang.taxi.TaxiParser.MutationContext
 import lang.taxi.TaxiParser.NullableTypeReferenceContext
@@ -25,6 +27,7 @@ import lang.taxi.TaxiParser.QualifiedNameContext
 import lang.taxi.TaxiParser.QueryDirectiveContext
 import lang.taxi.TaxiParser.QueryOrMutationContext
 import lang.taxi.TaxiParser.SingleNamespaceDocumentContext
+import lang.taxi.TaxiParser.ToplevelObjectContext
 import lang.taxi.TaxiParser.TypeReferenceContext
 import lang.taxi.TaxiParser.VariableNameContext
 import lang.taxi.lsp.CompilationResult
@@ -169,7 +172,10 @@ class QueryCodeCompletionProvider(
          }
 
          // Mutations
-         contextAtCursor is QualifiedNameContext && isDefiningMutation(contextAtCursor) -> suggestCallMutationTargets(
+         contextAtCursor is QualifiedNameContext && isDefiningMemberReference(contextAtCursor) -> suggestCallMutationTargets(
+            contextAtCursor, decorators, compilationResult, lastSuccessfulCompilation
+         )
+         contextAtCursor is IdentifierContext && isDefiningMemberReference(contextAtCursor) -> suggestCallMutationTargets(
             contextAtCursor, decorators, compilationResult, lastSuccessfulCompilation
          )
          contextAtCursor is IdentifierContext && isDefiningMutation(contextAtCursor) -> suggestCallMutationTargets(
@@ -197,14 +203,30 @@ class QueryCodeCompletionProvider(
       return completed(completions)
    }
 
+   /**
+    * Indicates if the user is typing A::B
+    */
+   private fun isDefiningMemberReference(contextAtCursor: ParserRuleContext): Boolean {
+      return contextAtCursor.searchUpForRule<MemberReferenceContext>() != null
+   }
+
    private fun isDefiningMutation(contextAtCursor: ParserRuleContext): Boolean {
-      return contextAtCursor.searchUpForRule<MutationContext>() != null
+      if (contextAtCursor.searchUpForRule<MutationContext>() != null) return true
+
+      // because of grammar changes that allowed top-level expressions,
+      // a call statement appears as a expression until the user adds a call target
+      // Therefore, look for an identifier with the text of "call", that is the child of a expression
+      // group sitting directly under the top level object
+      return contextAtCursor is IdentifierContext && contextAtCursor.text == "call" &&
+         contextAtCursor.searchUpForRule<ExpressionGroupContext>() != null
+         && contextAtCursor.searchUpForRule<ExpressionGroupContext>()!!.parent is ToplevelObjectContext
    }
 
    private enum class SuggestServiceOrMember {
       Service,
       Member
    }
+
    private fun suggestCallMutationTargets(
       contextAtCursor: ParserRuleContext,
       decorators: List<CompletionDecorator>,

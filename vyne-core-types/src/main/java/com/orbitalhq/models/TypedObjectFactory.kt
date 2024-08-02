@@ -10,6 +10,8 @@ import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.models.json.JsonParsedStructure
 import com.orbitalhq.models.json.isJson
+import com.orbitalhq.policies.PolicyEngine
+import com.orbitalhq.policies.ScopedPolicyEngine
 import com.orbitalhq.query.AlwaysGoodSpec
 import com.orbitalhq.query.TypedInstanceValidPredicate
 import com.orbitalhq.schemas.*
@@ -60,7 +62,8 @@ class TypedObjectFactory(
     * Generally, set this to false, unless attempting to construct a
     * parameter to a call
     */
-   private val constructClosedParameterTypes: Boolean = false
+   private val constructClosedParameterTypes: Boolean = false,
+   private val policyEngine: ScopedPolicyEngine? = null
 ) : EvaluationValueSupplier, ValueProjector {
 
    companion object {
@@ -117,7 +120,13 @@ class TypedObjectFactory(
          attributeName to lazy {
 
             val fieldValue =
-               xtimed("build field $attributeName ${field.typeDisplayName}") { buildField(field, attributeName) }
+               xtimed("build field $attributeName ${field.typeDisplayName}") { buildField(field, attributeName) }.let { constructedField ->
+                  if (policyEngine != null && inPlaceQueryEngine != null) {
+                     policyEngine.evaluate(constructedField, inPlaceQueryEngine)
+                  } else {
+                     constructedField
+                  }
+               }
 
             if (field.fieldProjection != null) {
 //               val sw = Stopwatch.createStarted()
@@ -1064,7 +1073,7 @@ class TypedObjectFactory(
       val modelFormatSpecPair = formatDetector.getFormatType(type)
       return when {
          attributeValue == null -> TypedNull.create(type, source)
-
+         attributeValue is Expression -> evaluateExpression(attributeValue)
          // Support embedded formats.
          // Eg: A field in a JSON message that contains an XML payload.
          // Or a field in Protobuf that contains JSON, etc etc

@@ -1,7 +1,7 @@
 package com.orbitalhq.connectors.aws.sqs
 
 import com.google.common.cache.CacheBuilder
-import com.orbitalhq.ErrorType
+import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.QualifiedName
@@ -75,7 +75,7 @@ class SqsStreamManager(private val connectionBuilder: SqsConnectionBuilder,
             logger.error(it) { "Error in Sqs listener"  }
             // see the error handling notes for SharedFlow:
             // https://github.com/Kotlin/kotlinx.coroutines/issues/2034
-            this.emit(ErrorType.error(it.message ?: "error in sqs listener", schemaProvider.schema))
+            this.emit(ErrorType.errorMessage(it.message ?: "error in sqs listener", schemaProvider.schema))
          }
          // SharingStarted.WhileSubscribed() means that we unsubscribe when all subscribers have gone away.
          .shareIn(scope, SharingStarted.WhileSubscribed())

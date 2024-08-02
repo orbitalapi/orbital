@@ -1,6 +1,6 @@
 package com.orbitalhq.connectors.aws.sqs
 
-import com.orbitalhq.ErrorType
+import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.Vyne
 import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
@@ -50,16 +50,16 @@ class SqsInvokerTest {
                type MovieTitle inherits String
                type ActorId inherits String
                type ActorName inherits String
-               
+
                model Movie {
                   id : MovieId
                   title : MovieTitle
                }
-               
+
                model Actor {
                    id: ActorId
                    name: ActorName
-              
+
                }
 
                @SqsService( connectionName = "moviesConnection" )
@@ -69,7 +69,7 @@ class SqsInvokerTest {
 
                   @SqsOperation( queue = "$sqsQueue" )
                   write operation publishMovie(Movie):Movie
-                  
+
                    @SqsOperation( queue = "invalidQueueName" )
                   operation streamActorQuery():Stream<Actor>
                }
