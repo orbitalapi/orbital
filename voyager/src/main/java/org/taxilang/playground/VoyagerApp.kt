@@ -112,14 +112,20 @@ class AwsConfig {
 
 
 @Configuration
-@Profile(value = ["local", "local-h2"])
 class WebConfiguration : WebFluxConfigurer {
    override fun addCorsMappings(registry: CorsRegistry) {
-      registry.addMapping("/**").allowedMethods("*")
+      registry.addMapping("/**")
+         .allowedMethods("*")
+         .allowedHeaders("*")
+         .allowedOrigins(
+            "http://localhost:3000",
+            "https://playground.taxilang.org",
+            "https://orbitalhq.com",
+            "https://docs.orbitalhq.com",
+            "https://taxilang.org",
+            "https://docs.taxilang.org",
+         )
    }
-
-   @Bean
-   fun tags() = MetricsTags(listOf("region", "dev"))
 }
 
 
