@@ -52,7 +52,7 @@ class TaxiParserService(private val schemaProvider: SchemaProvider,
 
    }
 
-   private fun parseObject(
+   fun parseObject(
       compositeSchema: TaxiSchema,
       modelParseRequest: ModelParseRequest,
       anonymousTypes: List<Type>
@@ -62,7 +62,7 @@ class TaxiParserService(private val schemaProvider: SchemaProvider,
             throw BadRequestException("Type ${modelParseRequest.targetType} was not found")
          }
          val modelType = compositeSchema.type(modelParseRequest.targetType)
-         val typedInstance =
+         val typedInstance = modelParseRequest.typedInstance ?:
             TypedInstance.from(modelType, modelParseRequest.model, compositeSchema, formatSpecs = formatSpecRegistry.formats)
 
          val (json, typeHints) = TypedInstanceInlayHintProvider().generateHints(typedInstance)
@@ -99,7 +99,9 @@ data class TaxiParseRequest(
 data class ModelParseRequest(
    val model: String,
    val targetType: String,
-   val includeTypeInformation: Boolean
+   val includeTypeInformation: Boolean,
+   // Used when request initiates server-side
+   val typedInstance: TypedInstance? = null
 )
 
 data class ModelParseResult(

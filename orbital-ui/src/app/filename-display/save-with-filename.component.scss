@@ -1,0 +1,29 @@
+@import "src/common";
+
+:host {
+  display: flex;
+  font-size: 0.9rem;
+  align-items: center;
+}
+
+.filename {
+  display: flex;
+  align-items: center;
+  opacity: 0.8;
+  border: 1px solid $slate-300;
+  border-radius: 4px;
+  padding: 0.1rem 0.25rem;
+
+}
+
+.gap-right {
+  margin-right: 0.5rem;
+}
+
+img {
+  width: 20px;
+  margin-right: 0.25rem;
+}
+img.primary {
+  width: unset;
+}

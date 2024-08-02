@@ -17,6 +17,7 @@ import {
 } from '../project-import/schema-importer.service';
 import {ConversationMessage} from './query.service';
 import {SavedQuery} from "./types.service";
+import {QueryEditorState} from "./query-editor.state";
 
 export type LocalStorageQuery = {
   id: number,
@@ -79,6 +80,7 @@ export class QueryPanelStoreService {
     this.queries.set(clonedQueries);
     this.editorStore.updateActiveQueryEditorStateIndex(index)
   }
+
 
   addTab(title: string = '', query: string = '', savedQueryWithSource?: SavedQueryWithSource) {
     const newTab: LocalStorageQuery = {

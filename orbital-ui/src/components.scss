@@ -36,3 +36,27 @@ button.button-small {
 .spacer {
   flex-grow: 1;
 }
+
+.button-link {
+  display: flex;
+  cursor: pointer;
+  padding: 4px;
+
+  &:hover {
+    border-radius: 0.25rem;
+    background: $gray-100;
+  }
+
+  &:active {
+    background: $white;
+  }
+
+  &.is-disabled {
+    opacity: 0.5 !important;
+    pointer-events: none;
+  }
+
+  ::ng-deep > span {
+    line-height: 0.75rem;
+  }
+}

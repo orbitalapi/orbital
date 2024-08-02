@@ -3,7 +3,15 @@ import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from "./language-server.tokens";
 import {MonacoLanguageClient} from "monaco-languageclient";
 import {defer, Observable, Subject} from 'rxjs';
 import {shareReplay} from "rxjs/operators";
-import {createLanguageClient, createWebsocketConnection, performInit, WsTransport} from "./language-server-commons";
+import {
+  createLanguageClient,
+  createWebsocketConnection,
+  DiagnosticsEvent,
+  performInit,
+  WsTransport
+} from "./language-server-commons";
+import {Uri} from "monaco-editor";
+import {Diagnostic} from "vscode-languageclient";
 
 @Injectable({
   providedIn: 'root',
@@ -13,6 +21,7 @@ export class MonacoLanguageServerService {
   readonly websocketClosed$: Subject<CloseEvent> = new Subject();
 
   private languageClient: MonacoLanguageClient;
+  private diagnosticsSubject: Subject<DiagnosticsEvent>
   private webSocket: WebSocket;
   private connection: Promise<[WebSocket, WsTransport]> | null = null;
 
@@ -37,7 +46,7 @@ export class MonacoLanguageServerService {
     this.webSocket.onclose = null;
     try {
       await this.languageClient?.dispose()
-    } catch(e) {
+    } catch (e) {
     }
     this.languageClient = null
   }
@@ -53,6 +62,13 @@ export class MonacoLanguageServerService {
     return this.connection;
   }
 
+  async getDiagnostics$(): Promise<Observable<DiagnosticsEvent>> {
+    if (!this.languageClient) {
+      await this.getLanguageClient();
+    }
+    return this.diagnosticsSubject;
+  }
+
   async getLanguageClient(): Promise<MonacoLanguageClient> {
     if (!this.languageClient) {
       console.log('Creating new language client')
@@ -64,6 +80,11 @@ export class MonacoLanguageServerService {
         this.websocketClosed$.next(event)
       }
       this.languageClient = createLanguageClient(wsTransport);
+      this.diagnosticsSubject = new Subject<{ uri: Uri, diagnostics: Diagnostic[] }>();
+      this.languageClient.onNotification('textDocument/publishDiagnostics', params => {
+        this.diagnosticsSubject.next(params)
+      })
+
     }
     return this.languageClient;
   }

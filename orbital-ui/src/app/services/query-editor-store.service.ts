@@ -65,41 +65,57 @@ export class QueryEditorStoreService {
       });
   }
 
+
+  createTemporaryQuery(): QueryEditorState {
+    return this.createNewQueryState({
+      id: Date.now(), // TODO: use the same randomId() function as queryClientId?
+      tabName: '',
+      isActive: true,
+      savedQueryWithSource: null,
+      query: '',
+      conversationMessages: [],
+    })
+  }
+
+  private createNewQueryState(localStorageQuery: LocalStorageQuery): QueryEditorState {
+    return new QueryEditorState({
+      query: signal(localStorageQuery.query),
+      lastChatGptText: signal(''),
+      conversationMessages: signal(localStorageQuery.conversationMessages),
+      savedQueryWithSource: signal(localStorageQuery.savedQueryWithSource),
+      currentState: signal('Editing'),
+      queryClientId: signal(null),
+      lastQueryResult: signal(null),
+      queryReturnedResults: signal(null),
+      queryStartTime: signal(null),
+      resultType: signal(null),
+      anonymousTypes: signal([]),
+      latestQueryStatus: signal(null),
+      lastErrorMessage: signal(null),
+      valuePanelVisible: signal(false),
+      errorCount: signal(0),
+      isErrorMessageSubscriptionSetup: signal(false),
+      isQueryPaused: signal(false),
+      showMaxRecordCountWarning: signal(false),
+      isQuerySaveable: signal(false),
+      // Observables/Subjects
+      results: signal(null),
+      potentiallyPausedResults: signal(null),
+      errors: signal(null),
+      queryProfileData: signal(null),
+      isProfileDataLoading: signal(null),
+      queryPlanData: signal(null),
+      queryMetadata: signal(null),
+      instanceSelected: signal(new ReplaySubject<QueryResultInstanceSelectedEvent>(1)),
+      config: this.config
+    })
+  }
+
   addQueryEditorState(localStorageQuery: LocalStorageQuery) {
     this.queryEditorStates.update(tabs => {
       return [
         ...tabs,
-        new QueryEditorState({
-          query: signal(localStorageQuery.query),
-          lastChatGptText: signal(''),
-          conversationMessages: signal(localStorageQuery.conversationMessages),
-          savedQueryWithSource: signal(localStorageQuery.savedQueryWithSource),
-          currentState: signal('Editing'),
-          queryClientId: signal(null),
-          lastQueryResult: signal(null),
-          queryReturnedResults: signal(null),
-          queryStartTime: signal(null),
-          resultType: signal(null),
-          anonymousTypes: signal([]),
-          latestQueryStatus: signal(null),
-          lastErrorMessage: signal(null),
-          valuePanelVisible: signal(false),
-          errorCount: signal(0),
-          isErrorMessageSubscriptionSetup: signal(false),
-          isQueryPaused: signal(false),
-          showMaxRecordCountWarning: signal(false),
-          isQuerySaveable: signal(false),
-          // Observables/Subjects
-          results: signal(null),
-          potentiallyPausedResults: signal(null),
-          errors: signal(null),
-          queryProfileData: signal(null),
-          isProfileDataLoading: signal(null),
-          queryPlanData: signal(null),
-          queryMetadata: signal(null),
-          instanceSelected: signal(new ReplaySubject<QueryResultInstanceSelectedEvent>(1)),
-          config: this.config
-        })
+        this.createNewQueryState(localStorageQuery)
       ]
     })
   }
@@ -150,7 +166,7 @@ export class QueryEditorStoreService {
   }
 
   compileQuery() {
-    this.activeQueryEditorState().compileQuery()
+    this.activeQueryEditorState()?.compileQuery()
   }
 
   copyQuery($event: CopyQueryFormat) {

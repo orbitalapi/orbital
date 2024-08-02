@@ -1,17 +1,27 @@
-import {Component, DestroyRef, ElementRef, EventEmitter, Input, OnDestroy, Output, ViewChild} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {debounceTime} from "rxjs/operators";
+import {
+  ChangeDetectionStrategy, ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  ElementRef,
+  EventEmitter,
+  Input,
+  OnDestroy,
+  Output,
+  ViewChild
+} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {debounceTime, filter} from "rxjs/operators";
 import {editor, MarkerSeverity} from 'monaco-editor';
-import {createLanguageClient, createTaxiEditor, createTaxiEditorModel} from "./language-server-commons";
+import {createTaxiEditor, createTaxiEditorModel} from "./language-server-commons";
 import {ITextFileEditorModel} from "@codingame/monaco-vscode-api/monaco";
-import {DidOpenTextDocumentNotification} from "vscode-languageclient";
+import {DiagnosticSeverity, DidOpenTextDocumentNotification} from "vscode-languageclient";
 import {MonacoLanguageClient} from "monaco-languageclient";
 import {
   IStandaloneCodeEditor
 } from "@codingame/monaco-vscode-api/vscode/vs/editor/standalone/browser/standaloneCodeEditor";
 import {buildWorkerDefinition} from 'monaco-editor-workers';
 import {MonacoLanguageServerService} from "./language-server.service";
-import {CompilationMessage} from "../services/schema";
+import {CompilationMessage, CompilationMessageSeverity} from "../services/schema";
 import {isNullOrUndefined} from "../utils/utils";
 import IModelContentChangedEvent = editor.IModelContentChangedEvent;
 import IMarkerData = editor.IMarkerData;
@@ -24,8 +34,17 @@ type WordWrapOptions = 'off' | 'on' | 'wordWrapColumn' | 'bounded';
   selector: 'app-code-editor',
   styleUrls: ['./code-editor.component.scss'],
   template: `
+    <as-split gutterSize="5" direction="vertical" unit="pixel">
+      <as-split-area size="*">
+        <div #codeEditorContainer class="code-editor"></div>
+      </as-split-area>
+      <as-split-area size="135" *ngIf="showCompilationErrors">
+        <app-compilation-message-list [compilationMessages]="compilationMessages"></app-compilation-message-list>
+      </as-split-area>
+    </as-split>
     <div #codeEditorContainer class="code-editor"></div>
-  `
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class CodeEditorComponent implements OnDestroy {
 
@@ -60,6 +79,9 @@ export class CodeEditorComponent implements OnDestroy {
     }
   }
 
+  @Input()
+  showCompilationErrors: boolean = true;
+
   private _compilationMessages: CompilationMessage[];
   /**
    * Set only when not using a language server, and wish
@@ -74,6 +96,9 @@ export class CodeEditorComponent implements OnDestroy {
     this._compilationMessages = value;
     this.updateManualCompilationMessages()
   }
+
+  @Output()
+  compilationMessagesUpdated = new EventEmitter<CompilationMessage[]>();
 
   // private editorTheme = iplastic_theme;
   //
@@ -136,7 +161,8 @@ export class CodeEditorComponent implements OnDestroy {
 
   constructor(
     private languageServerService: MonacoLanguageServerService,
-    private destroyRef: DestroyRef
+    private destroyRef: DestroyRef,
+    private changeDetectorRef: ChangeDetectorRef
   ) {
 
     this.languageServerService.languageServicesInit$
@@ -173,8 +199,36 @@ export class CodeEditorComponent implements OnDestroy {
 
     this.languageClient = await this.languageServerService.getLanguageClient();
 
+
     const {modelRef, model} = await this.createNewMonacoModel();
     this.monacoModel = model;
+    const diagnosticsEvents = await this.languageServerService.getDiagnostics$();
+    diagnosticsEvents.pipe(
+      takeUntilDestroyed(this.destroyRef),
+      filter((event) => {
+        return event.uri == model.textEditorModel.uri.toString();
+      }),
+    ).subscribe(next => {
+      this.compilationMessages = next.diagnostics.map(message => {
+        let severity:CompilationMessageSeverity
+        if (message.severity == DiagnosticSeverity.Error) {
+          severity = "ERROR"
+        } else if (message.severity == DiagnosticSeverity.Warning) {
+          severity = "WARNING"
+        } else {
+          severity = "INFO"
+        }
+        return {
+          char: message.range.start.character + 1,
+          line: message.range.start.line + 1,
+          sourceName: message.source,
+          severity: severity,
+          detailMessage: message.message
+        } as CompilationMessage;
+      })
+      this.compilationMessagesUpdated.emit(this.compilationMessages)
+      this.changeDetectorRef.markForCheck();
+    })
 
     this.monacoEditor = await createTaxiEditor(this.codeEditorContainer.nativeElement, modelRef)
     this.monacoEditor.updateOptions({readOnly: this.readOnly});

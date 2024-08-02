@@ -1,0 +1,10 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+app-policy-code-editor-panel,
+app-policy-query-editor-panel {
+  height: 100%;
+}

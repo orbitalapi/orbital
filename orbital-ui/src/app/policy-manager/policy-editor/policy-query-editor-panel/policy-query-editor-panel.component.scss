@@ -1,0 +1,14 @@
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+
+app-code-editor,
+app-tabbed-results-view {
+  height: 100%;
+}
+
+.spacer {
+  flex-grow: 1;
+}

@@ -149,8 +149,9 @@ export interface CompilationMessage {
   char: number;
   detailMessage: string;
   sourceName: string;
-  severity: 'INFO' | 'WARNING' | 'ERROR';
+  severity: CompilationMessageSeverity;
 }
+export type CompilationMessageSeverity = 'INFO' | 'WARNING' | 'ERROR';
 
 export function groupBySource(messages: CompilationMessage[]): Map<string, CompilationMessage[]> {
   return messages.reduce((acc, message) => {

@@ -9,7 +9,7 @@ import '@codingame/monaco-vscode-theme-defaults-default-extension';
 import '@codingame/monaco-vscode-json-default-extension';
 import getConfigurationServiceOverride from '@codingame/monaco-vscode-configuration-service-override';
 import {initServices, MonacoLanguageClient} from 'monaco-languageclient';
-import {CloseAction, ErrorAction, MessageTransports} from 'vscode-languageclient';
+import {CloseAction, Diagnostic, ErrorAction, MessageTransports} from 'vscode-languageclient';
 import {toSocket, WebSocketMessageReader, WebSocketMessageWriter} from 'vscode-ws-jsonrpc';
 import {Uri} from 'vscode';
 import {
@@ -18,9 +18,11 @@ import {
 import {TAXI_LANGUAGE_ID, taxiLanguageConfiguration, taxiLanguageTokenProvider} from "../code-viewer/taxi-lang.monaco";
 import {iplastic_theme} from "./themes/iplastic";
 import {nanoid} from "nanoid";
+import {Subject} from "rxjs";
 
+export type DiagnosticsEvent = {uri: Uri, diagnostics: Diagnostic[]};
 export const createLanguageClient = (transports: MessageTransports): MonacoLanguageClient => {
-  return new MonacoLanguageClient({
+  const languageClient = new MonacoLanguageClient({
     name: 'Taxi Language',
     clientOptions: {
       // use a language id as a document selector
@@ -40,6 +42,8 @@ export const createLanguageClient = (transports: MessageTransports): MonacoLangu
       }
     }
   });
+
+  return languageClient;
 };
 
 export const createUrl = (hostname: string, port: number, path: string, searchParams: Record<string, any> = {}, secure: boolean = location.protocol === 'https:'): string => {

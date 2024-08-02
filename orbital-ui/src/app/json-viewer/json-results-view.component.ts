@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input } from '@angular/core';
 import { Observable, Subscription } from 'rxjs';
 import { findType, InstanceLike, Schema, Type } from 'src/app/services/schema';
-import { Position, TypePosition } from '../model-designer/taxi-parser.service';
+import {ModelParseResult, Position, TypePosition} from '../model-designer/taxi-parser.service';
 import { AppConfig, AppInfoService } from '../services/app-info.service';
 import { ValueWithTypeName } from '../services/models';
 import { isNullOrUndefined } from '../utils/utils';
@@ -16,6 +16,7 @@ export type SourceWithTypeHints = {
 export function isSourceWithTypeHints(obj: any): obj is SourceWithTypeHints {
   return typeof obj.source === 'string' && Array.isArray(obj.typeHints)
 }
+
 
 @Component({
   selector: 'app-json-results-view',

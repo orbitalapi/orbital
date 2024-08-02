@@ -4,6 +4,7 @@ import {HttpClient} from "@angular/common/http";
 import {QualifiedName} from "./schema";
 import {Observable} from "rxjs";
 import {environment} from "../../environments/environment";
+import {ModelParseResult} from "../model-designer/taxi-parser.service";
 
 
 @Injectable({
@@ -26,4 +27,5 @@ export interface PolicySetupReadiness {
   authenticationConfigured: boolean;
   claims: { [index: string]: any }
   authTokenTypes: QualifiedName[]
+  authTokenInstances: {[index: string]: ModelParseResult}
 }
