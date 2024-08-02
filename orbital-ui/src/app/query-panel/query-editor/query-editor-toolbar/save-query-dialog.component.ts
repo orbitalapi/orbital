@@ -22,7 +22,8 @@ import {VersionedSource} from '../../../services/schema';
 export interface SaveQueryRequestProps {
   query: string,
   previousVersion?: SavedQueryWithSource,
-  existingSavedQueryNames: string[]
+  existingSavedQueryNames: string[],
+  schemaEditBuilder?:  (packageId: SourcePackageDescription, filename: string) => SchemaEdit
 }
 
 @Component({
@@ -146,22 +147,8 @@ export class SaveQueryDialogComponent {
   save() {
     const formData = this.formGroup.getRawValue() as { schemaPackage: SourcePackageDescription, queryName: string }
     const fileName = formData.queryName + '.taxi'
-    const source: VersionedSource = {
-      name: fileName,
-      packageIdentifier: formData.schemaPackage.identifier,
-      content: this.context.data.query,
-      version: formData.schemaPackage.identifier.version,
-    }
-    const schemaEdit: SchemaEdit = {
-      packageIdentifier: formData.schemaPackage.identifier,
-      edits: [
-        {
-          editKind: 'CreateOrReplaceQuery',
-          sources: [source]
-        } as CreateOrReplaceQuery
-      ],
-      dryRun: false
-    }
+    const schemaEdit: SchemaEdit = this.buildSchemaEdit(formData.schemaPackage, fileName)
+
     this.changeRef.markForCheck();
     this.schemaImporterService.submitSchemaEditOperation(schemaEdit)
       .subscribe({
@@ -188,6 +175,29 @@ export class SaveQueryDialogComponent {
       }
       const valueExists = this.context.data.existingSavedQueryNames.includes(control.value)
       return valueExists ? {isExisting: true}: null;
+    }
+  }
+
+  private buildSchemaEdit(schemaPackage: SourcePackageDescription, fileName: string):SchemaEdit {
+    if (this.context.data.schemaEditBuilder) {
+      return this.context.data.schemaEditBuilder(schemaPackage, fileName)
+    } else {
+      const source: VersionedSource = {
+        name: fileName,
+        packageIdentifier: schemaPackage.identifier,
+        content: this.context.data.query,
+        version: schemaPackage.identifier.version,
+      }
+      const schemaEdit: SchemaEdit = {
+        packageIdentifier: schemaPackage.identifier,
+        edits: [
+          {
+            editKind: 'CreateOrReplaceQuery',
+            sources: [source]
+          } as CreateOrReplaceQuery
+        ],
+        dryRun: false
+      }
     }
   }
 }

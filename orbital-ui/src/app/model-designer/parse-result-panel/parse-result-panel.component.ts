@@ -8,7 +8,7 @@ import {
   Output,
   SimpleChanges
 } from '@angular/core';
-import {ModelParseRequest, TaxiParseResult, TaxiParserService} from "../taxi-parser.service";
+import {ModelParseRequest, TaxiParseResult, TaxiParserService, toSourceWithTypeHints} from "../taxi-parser.service";
 import {BehaviorSubject, combineLatest, EMPTY} from "rxjs";
 import {catchError, debounceTime, map, mergeMap} from "rxjs/operators";
 import {isNullOrUndefined} from "util";
@@ -54,10 +54,7 @@ export class ParseResultPanelComponent implements OnChanges {
 
   get sourceWithHints(): SourceWithTypeHints {
     if (isNullOrUndefined(this.parseResult?.parseResult?.json)) return null;
-    return {
-      source: this.parseResult.parseResult.json,
-      typeHints: this.parseResult.parseResult.typeHints
-    }
+    return toSourceWithTypeHints(this.parseResult.parseResult)
   }
 
   get anonymousTypes(): Type[] {

@@ -3,6 +3,7 @@ import {HttpClient} from "@angular/common/http";
 import {CompilationMessage, QualifiedName, Type} from "../services/schema";
 import {Observable} from "rxjs/internal/Observable";
 import {ENVIRONMENT, Environment} from 'src/app/services/environment';
+import {SourceWithTypeHints} from "../json-viewer/json-results-view.component";
 
 @Injectable()
 export class TaxiParserService {
@@ -25,6 +26,12 @@ export interface ModelParseRequest {
   includeTypeInformation: boolean;
 }
 
+export function toSourceWithTypeHints(parseResult: ModelParseResult):SourceWithTypeHints {
+  return {
+    source: parseResult.json,
+    typeHints: parseResult.typeHints
+  }
+}
 export interface TaxiParseResult {
   parseResult: ModelParseResult | null;
   newTypes: Type[]

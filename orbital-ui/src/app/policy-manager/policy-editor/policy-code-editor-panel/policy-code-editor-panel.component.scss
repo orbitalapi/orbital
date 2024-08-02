@@ -1,0 +1,41 @@
+@import "src/common";
+
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+app-code-editor {
+  flex-grow: 1;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+app-json-viewer {
+  min-height: 200px;
+}
+
+tui-accordion {
+  &.expanded {
+    min-height: 250px;
+  }
+}
+tui-accordion-item.accordion-with-panel-header {
+  app-panel-header {
+    border-bottom: none;
+  }
+  ::ng-deep {
+    button.t-header {
+      // To match the panel header
+      background: $gray-50;
+      padding: 0 !important;
+    }
+  }
+}
+
+.code-editor-container {
+  min-height: 100px;
+  flex-grow: 1;
+}

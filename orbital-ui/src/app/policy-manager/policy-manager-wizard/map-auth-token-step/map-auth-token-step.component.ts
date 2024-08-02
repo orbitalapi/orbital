@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import {CommonModule} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -8,17 +8,18 @@ import {
   Output,
   SimpleChanges
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { TuiButtonModule, TuiNotificationModule } from '@taiga-ui/core';
-import { TuiCheckboxBlockModule } from '@taiga-ui/kit';
-import { Observable } from 'rxjs/internal/Observable';
-import { UiCustomisations } from '../../../../environments/ui-customisations';
-import { ConvertSchemaEvent } from '../../../data-source-import/data-source-import.models';
-import { PackagesService, SourcePackageDescription } from '../../../package-viewer/packages.service';
-import { CreateOrReplaceSource, SchemaImporterService } from '../../../project-import/schema-importer.service';
-import { ProjectSelectorModule } from '../../../project-selector/project-selector.module';
-import { PolicySetupReadiness } from '../../../services/policies.service';
-import { SchemaSubmissionResult } from '../../../services/types.service';
+import {FormsModule} from '@angular/forms';
+import {TuiButtonModule, TuiNotificationModule} from '@taiga-ui/core';
+import {TuiCheckboxBlockModule} from '@taiga-ui/kit';
+import {Observable} from 'rxjs/internal/Observable';
+import {UiCustomisations} from '../../../../environments/ui-customisations';
+import {ConvertSchemaEvent} from '../../../data-source-import/data-source-import.models';
+import {PackagesService, SourcePackageDescription} from '../../../package-viewer/packages.service';
+import {CreateOrReplaceSource, SchemaImporterService} from '../../../project-import/schema-importer.service';
+import {ProjectSelectorModule} from '../../../project-selector/project-selector.module';
+import {PolicySetupReadiness} from '../../../services/policies.service';
+import {SchemaSubmissionResult} from '../../../services/types.service';
+import {__values} from "tslib";
 
 @Component({
   selector: 'app-map-auth-token-step',
@@ -46,7 +47,13 @@ import { SchemaSubmissionResult } from '../../../services/types.service';
       (ngModelChange)="projectSelected.emit($event)"
       class="project-selector"
     ></app-project-selector>
+
+    <p [class.is-readonly]="!selectedProject">
+      Select the properties you want included in your auth claims object. These properties can be used in your policies
+    </p>
+
     <div class="checkbox-container" *ngIf="claims" [class.is-readonly]="!selectedProject">
+
       <tui-checkbox-block
         *ngFor="let checkbox of checkboxes; trackBy: key"
         class="checkbox"
@@ -101,7 +108,15 @@ export class MapAuthTokenStepComponent implements OnChanges {
       const claims = changes.claims.currentValue;
       this.checkboxes = Object.keys(claims).sort().map(key => {
         const val = claims[key];
-        const _value = Array.isArray(val) ? '[' + val.join(", ") + ']' : val;
+        const isObject = typeof val === 'object' && !Array.isArray(val) && val !== null;
+        let _value: string;
+        if (Array.isArray(val)) {
+          _value = '[' + val.join(", ") + ']'
+        } else if (isObject) {
+          _value = JSON.stringify(val)
+        } else {
+          _value = val;
+        }
         return {key, value: _value, checked: false}
       })
     }
@@ -118,7 +133,7 @@ export class MapAuthTokenStepComponent implements OnChanges {
         map: this.claims,
         // The user could probably change this
         // TODO: do we need an input field for this?
-        createdTypeName : 'UserCredentials',
+        createdTypeName: 'UserCredentials',
         // This must be the below value
         inheritedTypeName: 'com.orbitalhq.auth.AuthClaims',
         // TODO: is this correct value for fieldsToInclude?
