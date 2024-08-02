@@ -1,6 +1,6 @@
 package com.orbitalhq.cockpit.core.policies
 
-import com.orbitalhq.JWTClaimType
+import com.orbitalhq.AuthClaimType
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.QualifiedName
 import org.springframework.security.authentication.AnonymousAuthenticationToken
@@ -30,7 +30,7 @@ class PolicyConfigService(
       return auth.switchIfEmpty { Mono.just(AnonymousAuthenticationToken("anonymous", "anonymous", listOf(SimpleGrantedAuthority("none")))) }
          .map { authToken ->
             val authTokenTypes = schemaProvider.schema.types
-               .filter { it.inheritsFromTypeNames.contains(JWTClaimType.AuthClaims) }
+               .filter { it.inheritsFromTypeNames.contains(AuthClaimType.AuthClaims) }
                .map { it.name }
             val jwtClaims = when (authToken) {
                is AnonymousAuthenticationToken -> emptyMap()

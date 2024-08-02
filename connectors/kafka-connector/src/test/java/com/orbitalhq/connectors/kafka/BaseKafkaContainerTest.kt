@@ -1,6 +1,6 @@
 package com.orbitalhq.connectors.kafka
 
-import com.orbitalhq.ErrorType
+import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage

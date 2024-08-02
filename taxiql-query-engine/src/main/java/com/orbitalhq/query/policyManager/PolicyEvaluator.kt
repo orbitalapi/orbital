@@ -1,10 +1,18 @@
 package com.orbitalhq.query.policyManager
 
+import com.google.common.annotations.VisibleForTesting
+import com.orbitalhq.models.DataSource
+import com.orbitalhq.models.DataSourceUpdater
+import com.orbitalhq.models.EvaluatedExpression
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.models.ProjectionFunctionScopeEvaluator
+import com.orbitalhq.models.TypedInstanceConverter
+import com.orbitalhq.models.TypedInstanceMapper
+import com.orbitalhq.models.TypedObject
+import com.orbitalhq.schemas.PolicyWithPath
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import lang.taxi.policies.Policy
@@ -19,7 +27,7 @@ import mu.KotlinLogging
  * knows if we're doing an internal or external call.
  */
 data class ExecutionScope(val operationScope: OperationScope, val policyOperationScope: PolicyOperationScope) {
-   fun matches(ruleSet: PolicyRule):Boolean {
+   fun matches(ruleSet: PolicyRule): Boolean {
       val operationScopeMatches = when {
          ruleSet.operationScope == null -> true
          else -> ruleSet.operationScope == operationScope
@@ -32,7 +40,7 @@ data class ExecutionScope(val operationScope: OperationScope, val policyOperatio
    }
 }
 
-class PolicyEvaluator() {
+class PolicyEvaluator {
    companion object {
       private val logger = KotlinLogging.logger {}
    }
@@ -41,13 +49,50 @@ class PolicyEvaluator() {
       val schema = context.schema
       val policyType = getPolicyType(instance, context)
       val policies = findPolicies(schema, policyType)
-      return when {
-         policies.isEmpty() -> instance
-         policies.size == 1 -> {
-            evaluate(policies.single(), instance, context, operationScope)
-         }
-         else -> TODO("Multiple resulting instructions not yet supported")
+      // bail early
+      val evaluationResult = if (policies.isEmpty()) {
+         return instance
+      } else {
+         evaluate(policies, instance, context, operationScope)
       }
+      return evaluationResult
+   }
+
+   private fun evaluate(
+      applicablePolicies: List<PolicyWithPath>,
+      instance: TypedInstance,
+      context: QueryContext,
+      operationScope: ExecutionScope
+   ): TypedInstance {
+      val updates = applicablePolicies.flatMap { policyWithPath ->
+         evaluatePolicyAtPath(policyWithPath, instance, context, operationScope)
+      }
+      if (updates.isEmpty()) {
+         return instance
+      }
+
+      val updatesBySourceValue = updates.groupBy { it.sourceInstance }
+
+      // We've collected all the mutations to our TypedInstance that are the result of policy evaluations.
+      // We now need to apply them.
+      // We use a TypedInstanceConverter - however this doesn't apply conversions on the root object, only
+      // on the attributes.
+      // Therefore, we need to manually apply conversions on the root first.
+      val updatedToRoot = updatesBySourceValue.getOrDefault(instance, emptyList())
+      val updatedRootInstance = MutatingTypedInstanceMapper.applyMutationsToInstance(instance, updatedToRoot)
+
+      val updatedRaw = TypedInstanceConverter(MutatingTypedInstanceMapper(updatesBySourceValue)).convert(updatedRootInstance)
+
+      // Now rebuild the typed instance.
+      // The MutatingTypedInstanceMapper omits any fields that are the result of evaluation (because the input to the
+      // evluation may have been a sensitive value, or been changed by a policy).
+      // By reconstructing the object, expressions are re-evaluated.
+      // Note that the type we use isn't the original type, but the type of the new
+      // root object. This is because a policy may have changed the object (eg., by
+      // using a spread operator to drop off fields).
+      // Otherwise, if we use the old type, we get those fields back, populated as null.
+      val newValue = TypedInstance.from(updatedRootInstance.type, updatedRaw, context.schema, source = instance.source)
+      return newValue
    }
 
    // This is kinda a hack
@@ -61,11 +106,37 @@ class PolicyEvaluator() {
       }
    }
 
-   private fun evaluate(policy: Policy, instance: TypedInstance, context: QueryContext, executionScope: ExecutionScope): TypedInstance {
-      val ruleSet = RuleSetSelector.select(executionScope, policy.rules)
-         ?: return instance
+   private fun evaluatePolicyAtPath(
+      policyWithPath: PolicyWithPath,
+      rootInstance: TypedInstance,
+      context: QueryContext,
+      executionScope: ExecutionScope
+   ): List<PolicyResultMutation> {
+      val policy = policyWithPath.policy
+      val policyRule = RuleSetSelector.select(executionScope, policy.rules)
+         ?: return emptyList()
       logger.debug { "Evaluating policy ${policy.qualifiedName} for executionScope $executionScope" }
 
+      return if (policyWithPath.path.isEmpty()) {
+         val updated = evaluatePolicy(policy, policyRule, rootInstance, context)
+         listOfNotNull(PolicyResultMutation.ifDifferent(policyWithPath.path, rootInstance, updated, policy, policyRule))
+      } else {
+         require(rootInstance is TypedObject) { "Cannot apply policy ${policy.qualifiedName} as provided input of type ${rootInstance.typeName} is not a TypedObject" }
+         val instancesToApplyPolicyTo = rootInstance.getAllAtPath(policyWithPath.path)
+         val mutations = instancesToApplyPolicyTo.mapNotNull { instance ->
+            val updatedValue = evaluatePolicy(policy, policyRule, instance, context)
+            PolicyResultMutation.ifDifferent(policyWithPath.path, instance, updatedValue, policy, policyRule)
+         }
+         mutations
+      }
+   }
+
+   private fun evaluatePolicy(
+      policy: Policy,
+      rule: PolicyRule,
+      instance: TypedInstance,
+      context: QueryContext,
+   ): TypedInstance {
       val inputs = ProjectionFunctionScopeEvaluator.build(
          policy.inputs,
          // Important: Add the fact to a new version of the context's
@@ -78,20 +149,91 @@ class PolicyEvaluator() {
       val facts = FactBag.of(instance, context.schema)
          .withAdditionalScopedFacts(inputs, context.schema)
       val evaluationResult = context
-         .evaluate(ruleSet.expression, facts)
+         .evaluate(rule.expression, facts)
       return evaluationResult
    }
 
 
-   // Design note:  Originally, here we looked at the raw type, so that
-   // policies defined to Foo were also applied to Foo[]
-   // However, since we now recurse through collections, this has been simplified
-   // such that we only look at the type the policy is defined against.
-   // This seems like a better approach, and we can enrich the recursion / introspection
-   // process as required.  Review if this becomes untrue.
-   private fun findPolicies(schema: Schema, type: Type): List<Policy> {
-      return (listOf(schema.policy(type)) /* + type.typeParameters.map { schema.policy(it) } */).filterNotNull()
+   @VisibleForTesting
+   internal fun findPolicies(schema: Schema, type: Type): List<PolicyWithPath> {
+      return schema.findPoliciesForTypeAndDescendants(type)
+   }
+
+   private data class PolicyResultMutation(
+      val path: String, // I don't think we'll need this
+      val sourceInstance: TypedInstance,
+      val updatedInstance: TypedInstance,
+      val policy: Policy,
+      val rule: PolicyRule
+   ) {
+      companion object {
+         fun ifDifferent(
+            path: String,
+            sourceInstance: TypedInstance,
+            updatedInstance: TypedInstance,
+            policy: Policy,
+            rule: PolicyRule
+         ): PolicyResultMutation? {
+            return if (sourceInstance != updatedInstance) {
+               val updatedDataSource = ModifiedByDataPolicySource(
+                  policy.qualifiedName,
+                  rule.operationScope,
+                  rule.policyScope,
+                  updatedInstance.source
+               )
+               val updatedInstanceWithNewDataSource = DataSourceUpdater.update(updatedInstance, updatedDataSource)
+               PolicyResultMutation(path, sourceInstance, updatedInstanceWithNewDataSource, policy, rule)
+            } else null
+         }
+      }
+   }
+
+   private class MutatingTypedInstanceMapper(private val mutations: Map<TypedInstance, List<PolicyResultMutation>>) :
+      TypedInstanceMapper {
+
+      companion object {
+         fun applyMutationsToInstance(
+            typedInstance: TypedInstance,
+            mutations: List<PolicyResultMutation>
+         ): TypedInstance {
+            // TODO : We should be ordering the mutations by order on the policy
+            // I've included the policy in the mutation so that we can do that.
+            // But need to add some mechansim (probably an annotation on the policy)
+            // for expressing order. For now, just log.
+            return when {
+               mutations.isEmpty() -> typedInstance
+               mutations.size == 1 -> mutations.single().updatedInstance
+               else -> {
+                  val mutationToApply = mutations.last()
+                  logger.warn { "Multiple polices defined mutations for type ${typedInstance.type.paramaterizedName} - ${mutations.joinToString { it.policy.qualifiedName }} - however ordering is not yet implemented. Applying the last policy - ${mutationToApply.policy.qualifiedName}" }
+                  mutationToApply.updatedInstance
+               }
+            }
+         }
+      }
+
+      override fun map(typedInstance: TypedInstance): Any? {
+         return when {
+            typedInstance.source is EvaluatedExpression -> null
+            mutations.containsKey(typedInstance) -> {
+               val mutations = mutations.getValue(typedInstance)
+               applyMutationsToInstance(typedInstance, mutations)
+            }
+
+            else -> typedInstance
+         }
+      }
    }
 }
 
 
+class ModifiedByDataPolicySource(
+   val policyName: String,
+   val operationScope: OperationScope?,
+   val policyScope: PolicyOperationScope?,
+   val valueDataSource: DataSource
+) : DataSource {
+   override val name: String = "ModifiedByPolicy"
+   override val id: String = this.hashCode().toString()
+   override val failedAttempts: List<DataSource> = emptyList()
+}

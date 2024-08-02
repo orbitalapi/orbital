@@ -4,7 +4,7 @@ import arrow.core.Either
 import arrow.core.right
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
-import com.orbitalhq.ErrorType
+import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.connectors.StreamErrorMessage
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
@@ -182,7 +182,7 @@ class KafkaStreamManager(
             // see the error handling notes for SharedFlow:
             // https://github.com/Kotlin/kotlinx.coroutines/issues/2034
             val errorMessage = "Error in Kafka connection: ${request.connectionName}, details: ${it.cause?.message}"
-            this.emit(ErrorType.error(errorMessage, schemaProvider.schema, dataSource).right())
+            this.emit(ErrorType.errorMessage(errorMessage, schemaProvider.schema, dataSource).right())
          }
 
          // SharingStarted.WhileSubscribed() means that we unsubscribe when all subscribers have gone away.

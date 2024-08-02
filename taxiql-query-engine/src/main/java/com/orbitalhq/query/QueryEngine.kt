@@ -1,7 +1,7 @@
 package com.orbitalhq.query
 
 import com.google.common.base.Stopwatch
-import com.orbitalhq.ErrorType
+import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.FactSetId
 import com.orbitalhq.FactSetMap
 import com.orbitalhq.FactSets

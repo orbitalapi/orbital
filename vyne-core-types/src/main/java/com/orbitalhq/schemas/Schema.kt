@@ -91,7 +91,7 @@ interface Schema {
       get() = services.flatMap { it.operations }.toSet()
 
 
-   val queryAndTableOperations:Set<RemoteOperation>
+   val queryAndTableOperations: Set<RemoteOperation>
       get() = queryOperations + tableOperations
 
    val queryOperations: Set<QueryOperation>
@@ -119,18 +119,18 @@ interface Schema {
    fun operationsWithReturnTypeContaining(
       requiredType: Type,
       scopes: Set<OperationScope> = setOf(OperationScope.READ_ONLY)
-   ):Set<Pair<Service,RemoteOperation>> {
+   ): Set<Pair<Service, RemoteOperation>> {
       return services.flatMap { service ->
          service.remoteOperations
             .filter { operation -> scopes.contains(operation.operationType) }
             .filter { operation ->
-            val returnType = (operation.returnType.collectionType ?: operation.returnType).taxiType
-            when {
-               returnType.isAssignableTo(requiredType.taxiType) -> true
-               returnType is ObjectType && returnType.referencedTypes.any { it.isAssignableTo(requiredType.taxiType) } -> true
-               else -> false
-            }
-         }.map { service to it }
+               val returnType = (operation.returnType.collectionType ?: operation.returnType).taxiType
+               when {
+                  returnType.isAssignableTo(requiredType.taxiType) -> true
+                  returnType is ObjectType && returnType.referencedTypes.any { it.isAssignableTo(requiredType.taxiType) } -> true
+                  else -> false
+               }
+            }.map { service to it }
       }.toSet()
    }
 
@@ -252,6 +252,7 @@ interface Schema {
    fun serviceOrNull(serviceName: QualifiedName): Service? {
       return if (hasService(serviceName.fullyQualifiedName)) service(serviceName.fullyQualifiedName) else null
    }
+
    fun remoteOperationOrNull(operationName: QualifiedName): RemoteOperation? {
       return if (hasRemoteOperation(operationName)) remoteOperation(operationName).second else null
    }
@@ -266,9 +267,55 @@ interface Schema {
       return typeOrNull(typeName.fullyQualifiedName)
    }
 
-   // CAHCE THIS!
-   fun policy(type: Type): Policy? {
+   @Deprecated("Call policiesForType instead", replaceWith = ReplaceWith("policiesForType"))
+   fun singlePolicyOrNull(type: Type): Policy? {
       return this.policies.firstOrNull { it.targetType.toVyneQualifiedName() == type.qualifiedName }
+   }
+
+   /**
+    * Returns policies for (and including subtypes of) the requested type
+    */
+   fun policiesForType(type: Type): List<Policy> {
+      // TODO : Cache this result
+      return this.policies.filter { policy -> type.taxiType.isAssignableTo(policy.targetType) }
+   }
+
+   /**
+    * Returns policies for all types (and subtypes) within the
+    * provided type - including its attributes
+    */
+   fun findPoliciesForTypeAndDescendants(type: Type): List<PolicyWithPath> {
+      // TODO : Cache this result
+      return recursivelyFindPoliciesForTypeAndDescendants(type, type, path = "")
+   }
+
+   /**
+    * Internal function called by findPoliciesForTypeAndDescendants
+    */
+   private fun recursivelyFindPoliciesForTypeAndDescendants(
+      rootType: Type,
+      typeToCheck: Type,
+      path: String
+   ): List<PolicyWithPath> {
+      val thisTypePolicies = policiesForType(typeToCheck).map {
+         PolicyWithPath(
+            root = rootType,
+            path = path,
+            policy = it,
+            policiedType = type(it.targetType)
+         )
+      }
+      val attributePolicies = typeToCheck.attributes.entries.flatMap { (fieldName, field) ->
+         val nextPath = if (path.isEmpty()) {
+            fieldName
+         } else {
+            "$path.$fieldName"
+         }
+         val fieldType = type(field.type)
+         val unwrappedFieldType = ArrayType.memberTypeIfArray(fieldType.taxiType)
+         recursivelyFindPoliciesForTypeAndDescendants(rootType, type(unwrappedFieldType.toVyneQualifiedName()), nextPath)
+      }
+      return thisTypePolicies + attributePolicies
    }
 
    fun hasOperation(operationName: QualifiedName): Boolean {
@@ -386,7 +433,7 @@ interface Schema {
     * Returns a list of types that are not present in this schema.
     * Considers the type directly passed, as well as any parameter types
     */
-   fun findUnknownTypes(type: lang.taxi.types.Type):List<lang.taxi.types.Type> {
+   fun findUnknownTypes(type: lang.taxi.types.Type): List<lang.taxi.types.Type> {
       val unknownType = if (!this.hasType(type.qualifiedName)) {
          listOf(type)
       } else emptyList()
@@ -396,4 +443,27 @@ interface Schema {
 
 }
 
+/**
+ * The result of asking for policies within a type with attributes.
+ */
+data class PolicyWithPath(
+   /**
+    * The root type that was introspected to find
+    * the policy
+    */
+   val root: Type,
+   /**
+    * The path from the root object
+    * to the attribute that this policy applies to.
+    *
+    * Will be an empty string if the policy applies to the root object
+    */
+   val path: String,
+   val policy: Policy,
+
+   /**
+    * The declared type that the policy applies to
+    */
+   val policiedType: Type
+)
 

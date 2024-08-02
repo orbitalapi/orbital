@@ -17,7 +17,7 @@ object UserType {
          |}""".trimMargin()
 }
 
-object JWTClaimType {
+object AuthClaimType {
    val AuthClaims = "${VyneTypes.NAMESPACE}.auth.AuthClaims".fqn()
    val AuthClaimsTypeDefinition = """namespace ${AuthClaims.namespace} {
          |   model ${AuthClaims.name} {
