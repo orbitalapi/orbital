@@ -14,7 +14,7 @@
    <properties>
       <maven.compiler.source>17</maven.compiler.source>
       <maven.compiler.target>17</maven.compiler.target>
-      <cxf.version>4.0.2</cxf.version>
+      <cxf.version>4.0.4</cxf.version>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
    </properties>
 
