@@ -11,8 +11,13 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
+import org.springframework.security.authentication.AuthenticationServiceException
+import org.springframework.security.authentication.ReactiveAuthenticationManager
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
+import org.springframework.security.core.Authentication
+import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder
+import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthenticationToken
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter
 import org.springframework.security.web.server.SecurityWebFilterChain
@@ -21,6 +26,7 @@ import org.springframework.security.web.server.util.matcher.NegatedServerWebExch
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
+import reactor.core.publisher.Mono
 
 /**
  * Sets up config for supporting authn / authz via OIDC Authorization Code with PKCE flow.
@@ -42,6 +48,7 @@ class OidcAuthorizationPkceConfig {
    companion object {
       private val logger = KotlinLogging.logger {}
    }
+
    @Bean
    fun grantedAuthoritiesExtractor(
       rolesExtractor: JwtRolesExtractor,
@@ -51,6 +58,29 @@ class OidcAuthorizationPkceConfig {
          vyneUserRoleDefinitionRepository,
          rolesExtractor
       )
+   }
+
+   @Bean
+   fun reactiveAuthenticationManager(
+      oidcConfig: FrontEndSecurityConfig,
+      grantedAuthoritiesExtractor: GrantedAuthoritiesExtractor
+   ): ReactiveAuthenticationManager {
+      val jwtDecoder = NimbusReactiveJwtDecoder.withJwkSetUri(oidcConfig.jwksUri).build()
+
+      return ReactiveAuthenticationManager { authentication ->
+         when (authentication) {
+            is BearerTokenAuthenticationToken -> {
+               jwtDecoder.decode(authentication.token)
+                  .map { jwt ->
+                     val jwtAuthenticationConverter = JwtAuthenticationConverter()
+                     jwtAuthenticationConverter.setJwtGrantedAuthoritiesConverter(grantedAuthoritiesExtractor)
+                     jwtAuthenticationConverter.convert(jwt)
+                  }
+                  .map { it as Authentication }
+            }
+            else -> Mono.error(AuthenticationServiceException("Unsupported authentication type"))
+         }
+      }
    }
 
    @Bean
@@ -88,6 +118,7 @@ class OidcAuthorizationPkceConfig {
          .pathMatchers("/api/flow/license").permitAll()
          // All other api end points must be protected.
          .pathMatchers("/api/**").authenticated()
+
          .pathMatchers(
             "/**", // Allow access to any, to support html5 ui routes (eg /types/foo.bar.Baz)
             "/assets/**",
@@ -104,7 +135,7 @@ class OidcAuthorizationPkceConfig {
          // (see spring.security.oauth2.resourceserver.jwt.jwk-set-uri)
          .oauth2ResourceServer { spec ->
             spec.jwt { jwtSpec ->
-jwtSpec.jwkSetUri(oidcConfig.jwksUri)
+               jwtSpec.jwkSetUri(oidcConfig.jwksUri)
             }
          }
          .oauth2ResourceServer()

@@ -121,4 +121,12 @@ class CookieOrHeaderTokenConverter : ServerAuthenticationConverter {
    private fun isParameterTokenSupportedForRequest(request: ServerHttpRequest): Boolean {
       return this.allowUriQueryParameter && HttpMethod.GET == request.method
    }
+
+   fun getTokenFromHeaders(headers: HttpHeaders): String? {
+      val authorizationHeaderToken = resolveFromAuthorizationHeader(headers)
+      val authorizationCookieToken = resolveFromAuthorizationCookie(headers)
+      return listOfNotNull(authorizationHeaderToken, authorizationCookieToken)
+         .distinct()
+         .singleOrNull()
+   }
 }
