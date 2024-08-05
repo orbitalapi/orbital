@@ -64,6 +64,7 @@ object MockTypedInstanceBuilder {
             PrimitiveType.ANY -> "any"
             PrimitiveType.DOUBLE -> 2.0
             PrimitiveType.VOID -> null
+            PrimitiveType.NOTHING -> null
          }
          TypedInstance.from(type, value, schema, source = UndefinedSource)
       }

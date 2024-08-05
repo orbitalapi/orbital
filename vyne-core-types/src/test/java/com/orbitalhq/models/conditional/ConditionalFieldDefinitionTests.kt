@@ -16,7 +16,7 @@ class ConditionalFieldDefinitionTests {
        val testString = "";
       val schema = TaxiSchema.from("""
          model Foo {
-            age : Int by jsgonPath("/age")
+            age : Int by jsonPath("/age")
             ageStr: String by when (this.age)  {
                1 -> "1 year old"
             }

@@ -181,7 +181,7 @@ class VyneSchemaToTaxiSchemaMapper(
             },
             convertAnnotations(type.metadata),
             CompilationUnit.generatedFor(type.fullyQualifiedName),
-            type.inheritsFromTypeNames.map { getOrCreateType(it) }.toSet(),
+            type.inheritsFromTypeNames.map { getOrCreateType(it) }.distinct(),
             getPrimitiveType(type.basePrimitiveTypeName!!.fullyQualifiedName),
             false, // todo - isLenient
             type.typeDoc
@@ -238,7 +238,7 @@ class VyneSchemaToTaxiSchemaMapper(
                      null
                   }
                },
-            type.inheritsFromTypeNames.map { getOrCreateType(it) }.toSet(),
+            type.inheritsFromTypeNames.map { getOrCreateType(it) }.distinct(),
             type.formatAndZoneOffset,
             false,
             if (fields.isEmpty()) TypeKind.Type else TypeKind.Model,

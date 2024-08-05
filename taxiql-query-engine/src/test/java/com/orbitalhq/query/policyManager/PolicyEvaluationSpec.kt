@@ -9,16 +9,19 @@ import com.orbitalhq.firstTypedInstace
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.query.QueryResult
 import com.orbitalhq.rawObjects
 import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.testVyne
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.runBlocking
 import lang.taxi.utils.quotedIfNotAlready
 import org.junit.jupiter.api.assertThrows
-import org.junit.jupiter.api.fail
 
 class PolicyEvaluationSpec : DescribeSpec({
    describe("policy evaluation") {
@@ -41,6 +44,25 @@ class PolicyEvaluationSpec : DescribeSpec({
             operation getManyFilms():Film[]
          }
       """.trimIndent()
+      fun runQueryWithPolicy(
+         policySchema: String,
+         query: String,
+         userRole: String = "ADMIN"
+      ): QueryResult {
+         val (vyne, stub) = testVyne(
+            AuthClaimType.AuthClaimsTypeDefinition,
+            """
+         $baseSchema
+
+         $policySchema
+         """
+         )
+         addStubs(stub, vyne)
+         val user = vyne.userWithRole(userRole)
+         return runBlocking { vyne.addModel(user).query(query) }
+      }
+
+
       it("is possible to suppress a field using a policy") {
          val (vyne, stub) = testVyne(
             AuthClaimType.AuthClaimsTypeDefinition,
@@ -55,43 +77,35 @@ class PolicyEvaluationSpec : DescribeSpec({
          addStubs(stub, vyne)
          val first = vyne.query("""find { Film }""")
             .firstRawObject()
-         first.shouldBe(mapOf("title" to "Star Wars"))
+         // A policy cannot alter structural contracts - only values. So
+         // yearReleased becomes populated with null
+         first.shouldBe(mapOf("title" to "Star Wars", "yearReleased" to null))
       }
 
 
       it("is possible to suppress a field based on a user property") {
-         val (vyne, stub) = testVyne(
-            AuthClaimType.AuthClaimsTypeDefinition,
-            """
-         $baseSchema
-
-
-
-         policy FilterYearReleased against Film (userInfo : UserInfo) -> {
-            read {
-               when {
-                  userInfo.groups.contains( 'ADMIN' ) -> Film
-                  else -> Film as { ... except { yearReleased } }
+         val policy = """
+            policy FilterYearReleased against Film (userInfo : UserInfo) -> {
+               read {
+                  when {
+                     userInfo.groups.contains( 'ADMIN' ) -> Film
+                     else -> Film as { ... except { yearReleased } }
+                  }
                }
-            }
-         }
-         """
-         )
-         addStubs(stub, vyne)
-         val adminUser = vyne.userWithRole("ADMIN")
-         val adminResult = vyne
-            .addModel(adminUser)
-            .query("""find { Film }""")
-            .firstRawObject()
+            }"""
+         val adminResult = runQueryWithPolicy(
+            policy,
+            query = "find { Film }",
+            userRole = "ADMIN"
+         ).firstRawObject()
          adminResult.shouldBe(mapOf("title" to "Star Wars", "yearReleased" to 1978))
 
-         val normalUser = vyne.userWithRole("USER")
-         val normalResult = vyne
-            .removeModel(adminUser)
-            .addModel(normalUser)
-            .query("""find { Film }""")
-            .firstRawObject()
-         normalResult.shouldBe(mapOf("title" to "Star Wars"))
+         val normalResult = runQueryWithPolicy(
+            policy,
+            query = "find { Film }",
+            userRole = "USER"
+         ).firstRawObject()
+         normalResult.shouldBe(mapOf("title" to "Star Wars", "yearReleased" to null))
       }
 
       it("is possible to throw an error from a policy") {
@@ -140,16 +154,6 @@ class PolicyEvaluationSpec : DescribeSpec({
          )
          addStubs(stub, vyne)
          val normalUser = vyne.userWithRole("USER")
-//         val resultWithPolilyApplied = vyne
-//            .addModel(normalUser)
-//            .query("""find { Film }""")
-//            .firstRawObject()
-//         resultWithPolilyApplied.shouldBe(
-//            mapOf(
-//               "title" to "Sta***",
-//               "yearReleased" to 1978
-//            ),
-//         )
 
          val listResultWithPolicyApplied = vyne
             .addModel(normalUser)
@@ -244,8 +248,110 @@ class PolicyEvaluationSpec : DescribeSpec({
          rawObject.shouldBe(mapOf("title" to "Star Wars", "yearReleased" to 1978))
 
       }
+
+      it("can perform a simple projection on a type with a policy applied on a field") {
+         val policy = """
+            policy FilterYearReleased against Title (userInfo : UserInfo) -> {
+               read {
+                  when {
+                     userInfo.groups.contains( 'ADMIN' ) -> Title
+                     else -> "***"
+                  }
+               }
+            }"""
+         val userResult = runQueryWithPolicy(
+            policy,
+            query = """find { Film } as {
+               |name : Title
+               |}
+            """.trimMargin(),
+            userRole = "USER"
+         ).firstRawObject()
+         userResult.shouldBe(mapOf("name" to "***"))
+      }
+
+      it("when attempting to project and use a field that has been removed by a policy then returns null") {
+         val policy = """
+            policy FilterYearReleased against Film (userInfo : UserInfo) -> {
+               read {
+                  when {
+                     userInfo.groups.contains( 'ADMIN' ) -> Film
+                     else -> Film as { ... except { title } }
+                  }
+               }
+            }"""
+         val userResult = runQueryWithPolicy(
+            policy,
+            query = """find { Film } as {
+               |name : Title
+               |}
+            """.trimMargin(),
+            userRole = "USER"
+         ).firstRawObject()
+         userResult.shouldBe(mapOf("name" to null))
+      }
+
+
+      it("does not re-load suppressed data from another service") {
+         val (vyne,stub) = testVyne("""
+            model Film {
+               id : FilmId inherits Int
+               title : Title inherits String
+            }
+            service FilmsApi {
+               operation getAll():Film[]
+               operation getOne(FilmId):Film
+            }
+            policy SuppressTitle against Film {
+               read {
+                  Film as { ... except { title } }
+               }
+            }
+         """.trimIndent())
+         stub.addResponse("getAll",vyne.parseJson("Film[]","""[{"id" : 1, "title" : "Jaws"}, {"id" : 2, "title" : "Aliens"}, {"id" : 3, "title" : "Star Wars"}]"""), modifyDataSource = true)
+         stub.addResponse("getOne", vyne.parseJson("Film","""{"id" : 1, "title" : "Jaws"}"""), modifyDataSource = true)
+
+         val film = vyne.query("""find { Film[] }""")
+            .firstRawObject()
+         film.shouldBe(mapOf("id" to 1, "title" to null))
+         stub.calls["getOne"].shouldBeEmpty()
+         stub.calls["getAll"].shouldHaveSize(1)
+      }
+
+      it("does not re-load suppressed data from another service during a projection") {
+         val (vyne,stub) = testVyne("""
+            model Film {
+               id : FilmId inherits Int
+               title : Title inherits String
+            }
+            service FilmsApi {
+               operation getAll():Film[]
+               operation getOne(FilmId):Film
+            }
+            policy SuppressTitle against Film {
+               read {
+                  Film as { ... except { title } }
+               }
+            }
+         """.trimIndent())
+         stub.addResponse("getAll",vyne.parseJson("Film[]","""[{"id" : 1, "title" : "Jaws"}]"""), modifyDataSource = true)
+         stub.addResponse("getOne", vyne.parseJson("Film","""{"id" : 1, "title" : "Jaws"}"""), modifyDataSource = true)
+
+         val film = vyne.query("""find { Film[] } as {
+            |   name : Title
+            |   id : FilmId
+            |}[]
+         """.trimMargin())
+            .firstRawObject()
+         film.shouldBe(mapOf("name" to null, "id" to 1))
+         stub.calls["getOne"].shouldBeEmpty()
+      }
    }
+
+
 })
+
+
 
 fun Vyne.userWithRole(userId: String, roles: List<String>): TypedInstance {
    val json = """{ "userId" : "$userId", "groups" : [ ${roles.joinToString(",").quotedIfNotAlready()} ]}"""
@@ -267,3 +373,4 @@ fun addStubs(stub: StubService, vyne: Vyne) {
       arrayResponse
    )
 }
+

@@ -38,7 +38,7 @@ class PolicyAwareOperationInvocationServiceDecorator(private val operationServic
       executionScope: ExecutionScope
    ): Flow<TypedInstance> {
       return value.map { t ->
-         applyPolicyInstruction(t, context, executionScope)
+         applyPolicyInstruction(t, context.only(t, context.scopedFacts), executionScope)
       }
    }
 

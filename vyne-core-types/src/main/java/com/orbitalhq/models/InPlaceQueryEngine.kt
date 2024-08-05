@@ -54,8 +54,8 @@ interface InPlaceQueryEngine : FactBag, QueryContextSchemaProvider {
 
    fun withAdditionalFacts(facts: List<TypedInstance>, scopedFacts: List<ScopedFact>): InPlaceQueryEngine
 
-   fun evaluate(expression: Expression, facts: FactBag = FactBag.empty()): TypedInstance
-   fun evaluate(expression: Expression, value:TypedInstance): TypedInstance
+   fun evaluate(expression: Expression, facts: FactBag = FactBag.empty(), source:DataSource = Provided): TypedInstance
+   fun evaluate(expression: Expression, value:TypedInstance, source:DataSource = Provided): TypedInstance
 
    // See ProjectionFunctionScopeEvaluator.queryContextForFact
    // this method will need to be implemented eventually

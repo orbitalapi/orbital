@@ -87,8 +87,8 @@ data class TypedValue private constructor(
          parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
          format: FormatsAndZoneOffset? = null
       ): TypedInstance {
-         if (!type.taxiType.inheritsFromPrimitive) {
-            error("Type ${type.fullyQualifiedName} is not a primitive, cannot be converted")
+         if (!type.taxiType.isScalar) {
+            error("Type ${type.fullyQualifiedName} is not scalar, cannot be converted")
          } else {
             val valueToConvert = if (value is TypedInstance) {
                value.toRawObject()!!
