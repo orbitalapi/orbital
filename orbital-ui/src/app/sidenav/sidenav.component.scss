@@ -3,60 +3,25 @@
 :host {
   position: relative;
   background-color: var(--navbar-bg-color);
-  box-shadow: 2px 0 6px 3px $gray-300;
+  border-right: 1px solid $slate-300;
   z-index: 1;
 }
 
 .side-nav-container {
   width: $sidenav-width;
   height: 100%;
+  margin-top: 0.25rem;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
   transition: width 250ms ease-in-out;
 
-  .logo-container {
-    padding: 2rem 1rem 1rem 1rem;
-    height: 62px;
-
-    > a {
-      position: absolute;
-    }
-  }
-
-  .logo,
-  .logo-icon-only {
-    position: absolute;
-  }
-
-  .logo {
-    width: 180px;
-    transition: opacity 250ms ease-in-out;
-  }
-
-  .logo-icon-only {
-    width: 52px;
-    transition: opacity 250ms ease-in-out, width 250ms ease-in-out, transform 250ms ease-in-out;
-    opacity: 0;
-  }
-
   &.is-collapsed {
     width: $sidenav-width-collapsed;
 
     .label {
       opacity: 0;
-    }
-
-    .logo {
-      opacity: 0;
-      pointer-events: none;
-    }
-
-    .logo-icon-only {
-      opacity: 1;
-      width: 32px;
-      transform: rotate(180deg);
     }
   }
 }
@@ -72,13 +37,21 @@
     text-decoration: none;
     text-align: center;
     padding: 0.6rem;
-    margin: 0.5rem;
+    margin: 0.25rem 0.5rem;
     display: flex;
     align-items: center;
+    border-radius: 0.25rem;
 
     color: var(--navbar-text-color);
+    transition: all ease-in-out 200ms;
 
-    &:hover, &.active {
+    &:hover {
+      color: var(--navbar-text-color-hover);
+      background-color: var(--navbar-bg-color-hover);
+    }
+
+    &.active {
+      transition: all ease-out 100ms;
       color: var(--navbar-text-color-active);
       background-color: var(--navbar-bg-color-active);
     }
@@ -107,7 +80,8 @@
 .app-info {
   font-family: $headings-font;
   font-size: 0.8rem;
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--navbar-text-color);
+  opacity: 0.75;
   margin: 1rem 0 1rem 1.3rem;
   white-space: nowrap;
   position: relative;
@@ -117,7 +91,7 @@
   &.is-collapsed:after {
     position: absolute;
     content: "";
-    background: linear-gradient(90deg, rgba(12, 24, 38, 0) 0%, rgb(12, 24, 38) 100%);
+    background: linear-gradient(to right, rgba(var(--navbar-bg-color-rgb), 0), var(--navbar-bg-color) 100%);
     width: 25px;
     height: 20px;
     right: 20px;
@@ -133,17 +107,19 @@
   border-radius: 100%;
   background: var(--navbar-bg-color);
   cursor: pointer;
-  transition: transform 250ms ease-in 150ms, outline 150ms ease-in-out;
+  transition: transform 250ms ease-in 150ms, outline 150ms ease-in-out, background 150ms ease-in-out;
   z-index: 2;
+  outline: 1px solid $slate-300;
 
   img {
-    @extend .filter-white;
-    opacity: 0.75;
+    @extend .filter-black-ish;
+    opacity: 0.65;
     transition: opacity 150ms ease-in-out;
   }
 
   &:hover {
-    outline: 2px solid $slate-500;
+    outline: 1px solid var(--navbar-text-color);
+    background: var(--navbar-bg-color-hover);
 
     img {
       opacity: 1;

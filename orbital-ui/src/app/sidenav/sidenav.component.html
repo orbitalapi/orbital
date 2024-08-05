@@ -3,12 +3,6 @@
 </div>
 <div class="side-nav-container" [class.is-collapsed]="isCollapsed">
   <div class="sidenav-top">
-    <div class="logo-container">
-      <a routerLink="/">
-        <img class="logo" src="/logo.png">
-        <img class="logo-icon-only" src="/logo-icon-only.png">
-      </a>
-    </div>
     <div *ngFor="let element of sidebarElements$ | async" class="navbar-item" [routerLink]="element.route"
          routerLinkActive="active">
       <a [routerLink]="element.route" routerLinkActive="active" #rla="routerLinkActive"

@@ -1,20 +1,29 @@
 @import "src/common";
 
-.content-wrapper {
+.main-wrapper {
   display: flex;
-  height: 100%
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.content-container {
+  display: flex;
+  width: 100%;
+  min-width: 0; // prevents resize shenanigans in the lineage diagram
+  flex-direction: column;
+  position: relative; // for the progress bar to be positioned correctly
 }
 
 .alerts-container {
   width: 100%;
 }
 
-.app-header-and-content-container {
-  height: 100%;
-  flex-grow: 1;
+$header-bar-height: 53px;
+
+.sidenav-and-content-container {
+  height: calc(100% - $header-bar-height);
   display: flex;
-  flex-direction: column;
-  overflow: auto;
 }
 
 .app-page-content {
@@ -39,6 +48,4 @@
 
 progress {
   position: absolute;
-  width: calc(100% - $sidenav-width);
-  top: 53px;
 }

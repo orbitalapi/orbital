@@ -2,8 +2,15 @@
 
 :host {
   display: flex;
-  background-color: $whiteish;
-  padding: 0.25rem 0.5rem 0.25rem 1rem;
-  border-bottom: 2px solid $slate-200;
+  background-color: var(--header-bg-color);
+  padding: 0.3rem 0.5rem 0.3rem 1rem;
   align-items: center;
+}
+
+.logo-container {
+  margin: 0.25rem 4rem 0 0;
+
+  .logo {
+    width: var(--logo-width);
+  }
 }
