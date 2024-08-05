@@ -594,7 +594,7 @@ class AccessorReader(
          inputs.map { varargInputAccessor ->
             read(
                value,
-               varargType,
+               TypeUtils.mostSpecificType(varargType, schema.type(varargInputAccessor.returnType)),
                varargInputAccessor,
                schema,
                nullValues,
@@ -954,6 +954,7 @@ class AccessorReader(
 
          else -> TODO("Support for expression type ${expression::class.toString()} is not yet implemented")
       }
+
    }
 
    private fun evaluateExtensionFunctionExpression(

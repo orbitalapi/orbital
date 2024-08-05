@@ -65,20 +65,22 @@ object GenericRecordWriter {
       typedInstance.type.attributes.forEach { (fieldName, field) ->
          val fieldValue = typedInstance[fieldName]
 
-         val rawFieldValue = fieldValue.toRawObject()?.let {
+         val rawFieldValue = fieldValue.toRawObject()?.let { rawFieldValue ->
             // for collection methods, we need an array, not a list.
-            if (it is List<*>) {
-               val listType = fieldValue.type.collectionType!!.basePrimitiveTypeName?.let {memberPrimitiveType ->
-                  val jvmType = PrimitiveTypes.getJavaType(schema.type(memberPrimitiveType).taxiType as PrimitiveType)
-                  it.toTypedArray(jvmType)
-               }
+            if (rawFieldValue is List<*>) {
+               val collectionType = fieldValue.type.collectionType!!
 
                // At this point, return either the list of primitives (which get serialized
-               // using the Hazelcast method), or the TypedCollection,
-               // which gets recursed into, then ultimately converted into an array
-               // of portable objects.
-               listType ?: it
-            } else it
+//               // using the Hazelcast method), or the TypedCollection,
+//               // which gets recursed into, then ultimately converted into an array
+//               // of portable objects.
+               if (collectionType.isScalar) {
+                  val jvmType = PrimitiveTypes.getJavaType(schema.type(collectionType.basePrimitiveTypeName!!).taxiType as PrimitiveType)
+                  rawFieldValue.toTypedArray(jvmType)
+               } else {
+                  rawFieldValue
+               }
+            } else rawFieldValue
          }
          val hazelcastFieldType = getHazelcastFieldType(schema.type(field.type).taxiType, format)
          when (hazelcastFieldType) {
@@ -142,7 +144,7 @@ object GenericRecordWriter {
 
    private fun getHazelcastFieldType(type: Type, format: Format): FieldType? {
       return when {
-         type.inheritsFromPrimitive -> {
+         type.isScalar -> {
             return when (type.basePrimitive!!) {
                PrimitiveType.BOOLEAN -> FieldType.BOOLEAN
                PrimitiveType.STRING -> FieldType.UTF
@@ -156,12 +158,13 @@ object GenericRecordWriter {
                PrimitiveType.ANY -> FieldType.CHAR
                PrimitiveType.DOUBLE -> FieldType.DOUBLE
                PrimitiveType.VOID -> null
+               PrimitiveType.NOTHING -> null
             }
          }
 
          Arrays.isArray(type) -> {
             val memberType = type.typeParameters().first()
-            if (memberType.inheritsFromPrimitive) {
+            if (memberType.isScalar) {
                when (memberType.basePrimitive!!) {
                   PrimitiveType.BOOLEAN -> FieldType.BOOLEAN_ARRAY
                   PrimitiveType.STRING -> FieldType.UTF_ARRAY
@@ -175,6 +178,7 @@ object GenericRecordWriter {
                   PrimitiveType.ANY -> FieldType.CHAR_ARRAY
                   PrimitiveType.DOUBLE -> FieldType.DOUBLE_ARRAY
                   PrimitiveType.VOID -> null
+                  PrimitiveType.NOTHING -> null
                }
             } else {
                require(memberType is ObjectType) { "Array member type is neither primitive, nor an ObjectType - found ${memberType::class.simpleName}" }

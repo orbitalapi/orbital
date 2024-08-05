@@ -100,9 +100,9 @@ internal class MapToTypeBuilder(private val schema: Schema) {
          .map { (key, value) ->
             generateField(key, value)
          }
-      val inheritsFrom = setOfNotNull(inheritsFromTypeName?.let { typeName ->
+      val inheritsFrom = listOfNotNull(inheritsFromTypeName?.let { typeName ->
          schema.type(typeName.fqn()).taxiType
-      })
+      }).distinct()
       val type = ObjectType(
          targetTypeName,
          ObjectTypeDefinition(
@@ -153,7 +153,7 @@ internal class MapToTypeBuilder(private val schema: Schema) {
             ObjectType(
                semanticTypeName,
                ObjectTypeDefinition(
-                  inheritsFrom = setOf(baseType),
+                  inheritsFrom = listOf(baseType),
                   compilationUnit = CompilationUnit.unspecified()
                )
             )

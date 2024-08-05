@@ -199,7 +199,7 @@ class JdbcTaxiSchemaGenerator(
       return ObjectType(
          columnTypeName,
          ObjectTypeDefinition(
-            inheritsFrom = setOf(getBasePrimitive(column.type)),
+            inheritsFrom = listOf(getBasePrimitive(column.type)),
             compilationUnit = CompilationUnit.unspecified()
          )
       )

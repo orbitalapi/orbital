@@ -1,7 +1,6 @@
 package com.orbitalhq.query
 
 import com.google.common.cache.CacheBuilder
-import com.orbitalhq.models.DefinedInSchema
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
@@ -14,9 +13,6 @@ import com.orbitalhq.schemas.Type
 import lang.taxi.expressions.Expression
 import lang.taxi.expressions.LiteralExpression
 import lang.taxi.services.OperationScope
-import lang.taxi.services.operations.constraints.ArgumentExpression
-import lang.taxi.services.operations.constraints.ConstantValueExpression
-import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
 import lang.taxi.types.ArgumentSelector
 import mu.KotlinLogging
 

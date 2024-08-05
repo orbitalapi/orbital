@@ -6,12 +6,6 @@ import com.orbitalhq.models.facts.CopyOnWriteFactBag
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onEmpty
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.subscribe
 import kotlinx.coroutines.flow.toList
 import lang.taxi.expressions.ExtensionFunctionExpression
 import lang.taxi.expressions.TypeExpression

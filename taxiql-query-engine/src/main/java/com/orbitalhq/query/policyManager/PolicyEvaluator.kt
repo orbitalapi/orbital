@@ -12,6 +12,7 @@ import com.orbitalhq.models.ProjectionFunctionScopeEvaluator
 import com.orbitalhq.models.TypedInstanceConverter
 import com.orbitalhq.models.TypedInstanceMapper
 import com.orbitalhq.models.TypedObject
+import com.orbitalhq.models.TypedValue
 import com.orbitalhq.schemas.PolicyWithPath
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
@@ -81,17 +82,20 @@ class PolicyEvaluator {
       val updatedToRoot = updatesBySourceValue.getOrDefault(instance, emptyList())
       val updatedRootInstance = MutatingTypedInstanceMapper.applyMutationsToInstance(instance, updatedToRoot)
 
-      val updatedRaw = TypedInstanceConverter(MutatingTypedInstanceMapper(updatesBySourceValue)).convert(updatedRootInstance)
+      val updatedRaw =
+         TypedInstanceConverter(MutatingTypedInstanceMapper(updatesBySourceValue)).convert(updatedRootInstance)
 
       // Now rebuild the typed instance.
       // The MutatingTypedInstanceMapper omits any fields that are the result of evaluation (because the input to the
-      // evluation may have been a sensitive value, or been changed by a policy).
+      // evaluation may have been a sensitive value, or been changed by a policy).
       // By reconstructing the object, expressions are re-evaluated.
-      // Note that the type we use isn't the original type, but the type of the new
-      // root object. This is because a policy may have changed the object (eg., by
-      // using a spread operator to drop off fields).
-      // Otherwise, if we use the old type, we get those fields back, populated as null.
-      val newValue = TypedInstance.from(updatedRootInstance.type, updatedRaw, context.schema, source = instance.source)
+      // Note that we intentionally re-use the original type.
+      // Policies may not alter the structural contract of a type - as doing so would
+      // cause downstream systems to fail.
+      // Therefore, if the policy expression has dropped fields, those fields would now be replaced
+      // by nulls.
+      // This is intentional. See https://projects.notional.uk/articles/ORB-A-25/Policies#consideration-a-policy-cannot-alter-the-types-structural-contract
+      val newValue = TypedInstance.from(instance.type, updatedRaw, context.schema, source = updatedRootInstance.source)
       return newValue
    }
 
@@ -110,7 +114,7 @@ class PolicyEvaluator {
       policyWithPath: PolicyWithPath,
       rootInstance: TypedInstance,
       context: QueryContext,
-      executionScope: ExecutionScope
+      executionScope: ExecutionScope,
    ): List<PolicyResultMutation> {
       val policy = policyWithPath.policy
       val policyRule = RuleSetSelector.select(executionScope, policy.rules)
@@ -148,8 +152,54 @@ class PolicyEvaluator {
       )
       val facts = FactBag.of(instance, context.schema)
          .withAdditionalScopedFacts(inputs, context.schema)
+
+
       val evaluationResult = context
-         .evaluate(rule.expression, facts)
+         .evaluate(rule.expression, facts, instance.source)
+
+      val source = ModifiedByDataPolicySource(
+         policy.qualifiedName, rule.operationScope, rule.policyScope, evaluationResult.source, instance.type
+      )
+      val updatedWithDataSource = DataSourceUpdater.update(evaluationResult, source)
+
+      val upcastResult = reassignType(updatedWithDataSource, instance, context)
+
+      return upcastResult
+   }
+
+   /**
+    * Attempts to up-cast the result of the evaluation
+    * back to the original type, if they're compatible.
+    *
+    * This caters for situations where a policy defined on a scalar
+    * has changed the value, but donwstream consumers (eg., a projection)
+    * expect to be able to find the value by type.
+    */
+   private fun reassignType(
+      evaluationResult: TypedInstance,
+      instance: TypedInstance,
+      context: QueryContext
+   ): TypedInstance {
+      if (evaluationResult == instance) {
+         return evaluationResult
+      }
+
+      if (evaluationResult.type == instance.type) {
+         return evaluationResult
+      }
+
+      if (
+      // both scalars...
+         evaluationResult.type.isScalar && instance.type.isScalar
+         //.. but have the same base type
+         && evaluationResult.type.isAssignableFrom(instance.type)
+      ) {
+         // upcast the result back to whatever type we had to begin with
+         require(evaluationResult is TypedValue) { "Expected a typed value here, given it's a scalar - but got ${evaluationResult::class.simpleName}" }
+         return TypedValue.from(instance.type, evaluationResult.value, false, evaluationResult.source)
+      }
+
+      // Can't do any up-casting
       return evaluationResult
    }
 
@@ -164,7 +214,7 @@ class PolicyEvaluator {
       val sourceInstance: TypedInstance,
       val updatedInstance: TypedInstance,
       val policy: Policy,
-      val rule: PolicyRule
+      val rule: PolicyRule,
    ) {
       companion object {
          fun ifDifferent(
@@ -175,14 +225,18 @@ class PolicyEvaluator {
             rule: PolicyRule
          ): PolicyResultMutation? {
             return if (sourceInstance != updatedInstance) {
-               val updatedDataSource = ModifiedByDataPolicySource(
-                  policy.qualifiedName,
-                  rule.operationScope,
-                  rule.policyScope,
-                  updatedInstance.source
-               )
-               val updatedInstanceWithNewDataSource = DataSourceUpdater.update(updatedInstance, updatedDataSource)
-               PolicyResultMutation(path, sourceInstance, updatedInstanceWithNewDataSource, policy, rule)
+               if (updatedInstance.source !is ModifiedByDataPolicySource) {
+                  error("The data source should've been updated by here")
+               }
+//               val updatedDataSource = ModifiedByDataPolicySource(
+//                  policy.qualifiedName,
+//                  rule.operationScope,
+//                  rule.policyScope,
+//                  updatedInstance.source,
+//                  sourceInstance.type
+//               )
+//               val updatedInstanceWithNewDataSource = DataSourceUpdater.update(updatedInstance, updatedDataSource)
+               PolicyResultMutation(path, sourceInstance, updatedInstance, policy, rule)
             } else null
          }
       }
@@ -231,9 +285,16 @@ class ModifiedByDataPolicySource(
    val policyName: String,
    val operationScope: OperationScope?,
    val policyScope: PolicyOperationScope?,
-   val valueDataSource: DataSource
+   val valueDataSource: DataSource,
+   val originalType: Type,
 ) : DataSource {
    override val name: String = "ModifiedByPolicy"
    override val id: String = this.hashCode().toString()
    override val failedAttempts: List<DataSource> = emptyList()
+
+   init {
+       if (valueDataSource is ModifiedByDataPolicySource) {
+          println()
+       }
+   }
 }

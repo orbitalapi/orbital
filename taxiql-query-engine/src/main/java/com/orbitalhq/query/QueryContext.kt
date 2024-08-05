@@ -6,6 +6,7 @@ import com.google.common.collect.HashMultimap
 import com.orbitalhq.FactSets
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
+import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.InPlaceQueryEngine
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.PermittedQueryStrategies
@@ -522,22 +523,22 @@ data class QueryContext(
 
    }
 
-   override fun evaluate(expression: Expression, facts: FactBag): TypedInstance {
+   override fun evaluate(expression: Expression, facts: FactBag, source: DataSource): TypedInstance {
       return TypedObjectFactory(
          schema.type(expression.returnType),
          facts.withAdditionalScopedFacts(this.scopedFacts, schema),
          schema,
-         source = Provided, // TODO
+         source = source,
          inPlaceQueryEngine = this,
          functionResultCache = this.functionResultCache,
       ).evaluateExpression(expression)
    }
-   override fun evaluate(expression: Expression, value:TypedInstance): TypedInstance {
+   override fun evaluate(expression: Expression, value: TypedInstance, source: DataSource): TypedInstance {
       return TypedObjectFactory(
          schema.type(expression.returnType),
          value,
          schema,
-         source = Provided, // TODO
+         source = source,
          inPlaceQueryEngine = this,
          functionResultCache = this.functionResultCache,
       ).evaluateExpression(expression)
