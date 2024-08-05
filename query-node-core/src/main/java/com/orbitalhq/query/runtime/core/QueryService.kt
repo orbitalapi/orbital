@@ -466,8 +466,7 @@ class QueryService(
          val userAuthTokenFacts = extractAuthTokenFactsFromUser(vyneUser, schema)
          val executionContextFacts = vyneUser.facts(
             extractJwtClaimFactFromQueryParameters(schema, taxiQlQuery.parameters)
-         )
-
+         ) + userAuthTokenFacts
 
          val vyne = vyneProvider.createVyne(executionContextFacts + userAuthTokenFacts, schema, queryOptions)
          val historyWriterEventConsumer = historyWriterProvider.createEventConsumer(queryId, vyne.schema)
@@ -482,7 +481,8 @@ class QueryService(
                arguments = arguments,
                queryOptions = queryOptions,
                querySchema = querySchema,
-               executionContextFacts = executionContextFacts
+               executionContextFacts = executionContextFacts,
+
             )
          } catch (e: lang.taxi.CompilationException) {
             logger.info("The query failed compilation: ${e.message}")
@@ -539,7 +539,7 @@ class QueryService(
       val userAuthSubtypes = schema.types
          .filter { it.inheritsFrom(authClaimsBaseType) && it != authClaimsBaseType}
       return userAuthSubtypes.map { userAuthSubtype ->
-         Fact(userAuthSubtype.paramaterizedName, vyneUser.claims, FactSets.CALLER)
+         Fact(userAuthSubtype.paramaterizedName, vyneUser.claims, FactSets.AUTHENTICATION)
       }
    }
 

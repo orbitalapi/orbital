@@ -10,7 +10,6 @@ import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.InPlaceQueryEngine
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.PermittedQueryStrategies
-import com.orbitalhq.models.Provided
 import com.orbitalhq.models.QueryFailureBehaviour
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
@@ -239,7 +238,7 @@ data class QueryContext(
 
             val mappingQueryEngine = queryEngine.newEngine { existingFacts ->
                // Only retain user info, drop all other facts (like initial state)
-               val newState = existingFacts.retainFactsFromFactSet(setOf(FactSets.CALLER))
+               val newState = existingFacts.retainFactsFromFactSet(setOf(FactSets.AUTHENTICATION))
                newState.put(FactSets.DEFAULT, inputValue)
                newState
             }
