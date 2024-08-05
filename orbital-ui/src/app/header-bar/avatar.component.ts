@@ -11,7 +11,7 @@ import {TuiAlertService, TuiDialogContext, TuiDialogService} from '@taiga-ui/cor
   template: `
     <tui-hosted-dropdown [content]="userMenu">
       <div class="user-container">
-        <tui-avatar [text]="user.username" [rounded]="true" [autoColor]="true" [avatarUrl]="user.profileUrl"
+        <tui-avatar [text]="user.username" [rounded]="true" [autoColor]="false" [avatarUrl]="user.profileUrl"
                     size="s"></tui-avatar>
         <div class="username">{{ user.name || user.username }}</div>
       </div>

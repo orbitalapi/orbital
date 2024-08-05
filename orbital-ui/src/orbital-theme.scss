@@ -10,12 +10,28 @@
 // This file is linked in angular.json, to allow swapping
 // with other themes
 
-
 :root {
-  --navbar-bg-color: #{$midnight-grey};
-  --navbar-text-color: #{$gray-400};
-  --navbar-text-color-active: white;
-  --navbar-bg-color-active: #{$gray-800};
+  --logo-width: 135px;
+
+  --header-bg-color: #{$midnight-grey};
+
+  // Lighter active scheme
+  --navbar-bg-color: #{$slate-200};
+  --navbar-bg-color-rgb: 226, 232, 240; // for use in rgba() css
+  --navbar-text-color: #{$gray-700};
+  --navbar-text-color-hover: #{$slate-800};
+  --navbar-text-color-active: #{$slate-900};
+  --navbar-bg-color-hover: #{$slate-300};
+  --navbar-bg-color-active: #{$slate-50};
+  // Darker active scheme
+  /*
+  --navbar-bg-color: #{$slate-200};
+  --navbar-text-color: #{$gray-700};
+  --navbar-text-color-hover: #{$slate-900};
+  --navbar-text-color-active: #{$slate-50};
+  --navbar-bg-color-hover: #{$gray-300};
+  --navbar-bg-color-active: #{$midnight-grey};
+  */
 
   --app-background-color: #{$body-bg};
 

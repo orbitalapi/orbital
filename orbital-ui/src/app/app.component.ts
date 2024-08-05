@@ -16,23 +16,25 @@ import { DbConnectionService } from "./db-connection-editor/db-importer.service"
   selector: 'app-root',
   template: `
     <tui-root>
-      <div class="content-wrapper">
-        <app-sidenav [appInfo]="appInfo" [customSidebarElements$]="customSidebarElements$"></app-sidenav>
-        <div class="app-header-and-content-container">
-          <app-header-bar></app-header-bar>
-          <progress
-            max="100"
-            tuiProgressBar
-            size='xs'
-            new
-            *ngIf='isLoadingRoute$ | async'
-          ></progress>
-          <div class="alerts-container">
-            <app-system-alert *ngFor="let alert of alerts" [alert]="alert"></app-system-alert>
-          </div>
-          <div class="app-page-content" [ngClass]="{ isLoading: isLoadingRoute$ | async}">
-            <router-outlet></router-outlet>
-            <app-draft-management-bar></app-draft-management-bar>
+      <div class="main-wrapper">
+        <app-header-bar></app-header-bar>
+        <div class="sidenav-and-content-container">
+          <app-sidenav [appInfo]="appInfo" [customSidebarElements$]="customSidebarElements$"></app-sidenav>
+          <div class="content-container">
+            <progress
+              max="100"
+              tuiProgressBar
+              size='xs'
+              new
+              *ngIf='isLoadingRoute$ | async'
+            ></progress>
+            <div class="alerts-container">
+              <app-system-alert *ngFor="let alert of alerts" [alert]="alert"></app-system-alert>
+            </div>
+            <div class="app-page-content" [ngClass]="{ isLoading: isLoadingRoute$ | async}">
+              <router-outlet></router-outlet>
+              <app-draft-management-bar></app-draft-management-bar>
+            </div>
           </div>
         </div>
       </div>

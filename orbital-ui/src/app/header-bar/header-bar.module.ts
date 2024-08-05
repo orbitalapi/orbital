@@ -1,4 +1,5 @@
 import { NgModule } from '@angular/core';
+import {RouterLink} from '@angular/router';
 
 import { HeaderBarComponent } from './header-bar.component';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -37,6 +38,7 @@ import {
     TuiButtonModule,
     TuiAlertModule,
     TuiNotificationModule,
+    RouterLink,
   ],
   exports: [HeaderBarComponent, AvatarComponent],
   declarations: [HeaderBarComponent, AvatarComponent],

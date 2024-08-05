@@ -6,9 +6,14 @@ import {Observable} from "rxjs";
 @Component({
   selector: 'app-header-bar',
   template: `
-      <app-workspace-selector *ngIf="(appConfig$ | async)?.featureToggles.workspacesEnabled"></app-workspace-selector>
-      <div class="spacer"></div>
-      <app-search-bar-container></app-search-bar-container>
+    <div class="logo-container">
+      <a routerLink="/">
+        <img class="logo" src="/logo.png">
+      </a>
+    </div>
+    <app-workspace-selector *ngIf="(appConfig$ | async)?.featureToggles.workspacesEnabled"></app-workspace-selector>
+    <div class="spacer"></div>
+    <app-search-bar-container></app-search-bar-container>
   `,
   styleUrls: ['./header-bar.component.scss']
 })
