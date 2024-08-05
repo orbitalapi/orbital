@@ -3,7 +3,9 @@ package com.orbitalhq.query
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.orbitalhq.FactSetId
 import com.orbitalhq.FactSets
+import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.schemas.QualifiedName
+import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.fqn
 import lang.taxi.accessors.ProjectionFunctionScope
@@ -14,12 +16,28 @@ import mu.KotlinLogging
 import java.util.*
 
 
+@Deprecated("Use TypedInstances instead")
 data class Fact @JvmOverloads constructor(
    val typeName: String,
    val value: Any,
    val factSetId: FactSetId = FactSets.DEFAULT
 ) {
    val qualifiedName = typeName.fqn()
+
+   companion object {
+      fun fromTypedInstance(instance: TypedInstance, factSetId: FactSetId = FactSets.DEFAULT): Fact {
+         return Fact(instance.type.paramaterizedName, instance, factSetId)
+      }
+   }
+
+
+   fun toTypedInstance(schema:Schema):TypedInstance {
+      return if (value is TypedInstance) {
+         value
+      } else {
+         TypedInstance.from(schema.type(typeName), value, schema)
+      }
+   }
 }
 
 // TODO : facts should be QualifiedName -> TypedInstance, but need to get

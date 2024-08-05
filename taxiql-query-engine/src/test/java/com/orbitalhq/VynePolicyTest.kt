@@ -169,7 +169,7 @@ namespace test {
    fun loadsPoliciesForDataType() {
 
       val (vyne, stubService) = testVyne(schema())
-      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.CALLER)
+      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.AUTHENTICATION)
       stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
       stubService.addResponse("findUser", vyne.parseJsonModel("test.User", traderUser))
       stubService.addResponse("listTrades", vyne.parseJsonModel("test.Trade[]", tradeList))
@@ -186,7 +186,7 @@ namespace test {
    @Test
    fun given_policyRestrictsReturnedValue_then_nullIsReturned() {
       val (vyne, stubService) = testVyne(schema())
-      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.CALLER)
+      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.AUTHENTICATION)
       val tradeResponse = vyne.parseJsonModel("test.Trade", trade1)
       stubService.addResponse("getTrade", tradeResponse)
 
@@ -208,7 +208,7 @@ namespace test {
    @Test
    fun given_policyRestrictsDataReturnedInCollection_then_itIsRemovedFromTheCollection() {
       val (vyne, stubService) = testVyne(schema())
-      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.CALLER)
+      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.AUTHENTICATION)
       val tradeResponse = vyne.parseJsonModel("test.Trade[]", tradeList)
       stubService.addResponse("listTrades", tradeResponse)
 
@@ -246,7 +246,7 @@ namespace test {
    @Test
    fun given_policyPermitsData_then_itIsPresentInResponse() = runBlocking {
       val (vyne, stubService) = testVyne(schema())
-      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.CALLER)
+      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.AUTHENTICATION)
       stubService.addResponse("getTrade", vyne.parseJsonModel("test.Trade", trade1))
 
       stubService.addResponse("tokenToUserId", vyne.typedValue("test.UserId", "jimmy123"))
@@ -268,7 +268,7 @@ namespace test {
    @Test
    fun given_policyRestrictsNestedDataType_then_attributeIsReturnedAsNull() {
       val (vyne, stubService) = testVyne(schema())
-      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.CALLER)
+      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.AUTHENTICATION)
       val tradeResponse = vyne.parseJsonModel("test.TradeWrapper", """
           {
              "wrapperText" : "Hello, world",
@@ -300,7 +300,7 @@ namespace test {
    @Test
    fun given_policyFiltersAttributes_then_thoseAttributesAreReturnedAsNull() {
       val (vyne, stubService) = testVyne(schema("filter (counterParty, amount)"))
-      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.CALLER)
+      vyne.addKeyValuePair("test.SessionToken", "aabbcc", FactSets.AUTHENTICATION)
       val tradeResponse = vyne.parseJsonModel("test.Trade", trade2)
       stubService.addResponse("getTrade", tradeResponse)
 

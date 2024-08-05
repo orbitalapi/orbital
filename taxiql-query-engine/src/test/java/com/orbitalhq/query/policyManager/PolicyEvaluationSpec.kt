@@ -1,6 +1,7 @@
 package com.orbitalhq.query.policyManager
 
 import com.orbitalhq.AuthClaimType
+import com.orbitalhq.FactSets
 import com.orbitalhq.Vyne
 import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.errors.OrbitalQueryException
@@ -9,6 +10,7 @@ import com.orbitalhq.firstTypedInstace
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.query.Fact
 import com.orbitalhq.query.QueryResult
 import com.orbitalhq.rawObjects
 import com.orbitalhq.stubbing.StubService
@@ -59,7 +61,7 @@ class PolicyEvaluationSpec : DescribeSpec({
          )
          addStubs(stub, vyne)
          val user = vyne.userWithRole(userRole)
-         return runBlocking { vyne.addModel(user).query(query) }
+         return runBlocking { vyne.query(query, executionContextFacts = setOf(user)) }
       }
 
 
@@ -129,8 +131,7 @@ class PolicyEvaluationSpec : DescribeSpec({
          val user = vyne.userWithRole("USER")
          val exception = assertThrows<OrbitalQueryException> {
             val adminResult = vyne
-               .addModel(user)
-               .query("""find { Film }""")
+               .query("""find { Film }""", executionContextFacts = setOf(user))
                .firstRawObject()
          }
          exception.message.shouldBe("Not Authorized")
@@ -156,8 +157,7 @@ class PolicyEvaluationSpec : DescribeSpec({
          val normalUser = vyne.userWithRole("USER")
 
          val listResultWithPolicyApplied = vyne
-            .addModel(normalUser)
-            .query("""find { Film[] }""")
+            .query("""find { Film[] }""", executionContextFacts = setOf(normalUser))
             .rawObjects()
          listResultWithPolicyApplied.shouldBe(
             listOf(
@@ -194,8 +194,7 @@ class PolicyEvaluationSpec : DescribeSpec({
          addStubs(stub, vyne)
          val normalUser = vyne.userWithRole("USER")
          val normalResult = vyne
-            .addModel(normalUser)
-            .query("""find { Film }""")
+            .query("""find { Film }""", executionContextFacts = setOf(normalUser))
             .firstRawObject()
       }
 
@@ -231,16 +230,16 @@ class PolicyEvaluationSpec : DescribeSpec({
             )
          }
          stubUserHasAcceptedTermsAndConditions(false)
-         val filteredResult = vyne.addModel(vyne.userWithRole("USER"))
-            .query("find { Film }")
+         val filteredResult = vyne
+            .query("find { Film }", executionContextFacts = setOf(vyne.userWithRole("USER")))
             .firstTypedInstace()
 
          filteredResult.value.shouldBeNull()
 
          stubUserHasAcceptedTermsAndConditions(true)
 
-         val unfilteredResult = vyne.addModel(vyne.userWithRole("USER"))
-            .query("find { Film }")
+         val unfilteredResult = vyne
+            .query("find { Film }", executionContextFacts = setOf(vyne.userWithRole("USER")))
             .firstTypedInstace()
 
          val rawObject = unfilteredResult.shouldBeInstanceOf<TypedObject>()
@@ -358,8 +357,8 @@ fun Vyne.userWithRole(userId: String, roles: List<String>): TypedInstance {
    return this.parseJson("UserInfo", json)
 }
 
-fun Vyne.userWithRole(vararg role: String): TypedInstance {
-   return userWithRole("jimmy", role.toList())
+fun Vyne.userWithRole(vararg role: String): Fact {
+   return Fact.fromTypedInstance(userWithRole("jimmy", role.toList()), FactSets.AUTHENTICATION)
 }
 
 fun addStubs(stub: StubService, vyne: Vyne) {

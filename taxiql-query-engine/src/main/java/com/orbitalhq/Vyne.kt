@@ -48,6 +48,7 @@ interface SchemaContainer {
 
 interface ModelContainer : SchemaContainer {
    fun addModel(model: TypedInstance, factSetId: FactSetId = FactSets.DEFAULT): ModelContainer
+   fun addAuth(model: TypedInstance):ModelContainer = addModel(model, FactSets.AUTHENTICATION)
 }
 
 class Vyne(
@@ -87,7 +88,8 @@ class Vyne(
       clientQueryId: String? = null,
       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
       arguments: Map<String, Any?> = emptyMap(),
-      metricsTags: MetricTags = MetricTags.NONE
+      metricsTags: MetricTags = MetricTags.NONE,
+      executionContextFacts: Set<Fact> = emptySet()
    ): QueryResult {
       val (taxiQlQuery, queryOptions, querySchema) = parseQuery(vyneQlQuery)
       return query(
@@ -98,7 +100,8 @@ class Vyne(
          arguments,
          queryOptions = queryOptions,
          metricsTags,
-         querySchema = querySchema
+         querySchema = querySchema,
+         executionContextFacts = executionContextFacts
       )
    }
 
@@ -184,17 +187,28 @@ class Vyne(
       // Anything that was declared with a name in the given {} block
       // is also eligible as a named variable within the query itself,
       // so convert these to scoped facts
-      val namedScopedFacts = additionalFacts.map { (name,value) -> ScopedFact(ProjectionFunctionScope(name,value.type.taxiType), value) }
+      val namedScopedFacts =
+         additionalFacts.map { (name, value) -> ScopedFact(ProjectionFunctionScope(name, value.type.taxiType), value) }
 
       val (expression, amendedTaxiQlQuery, amendedQuerySchema) = queryPlanner.buildQueryExpression(taxiQl, querySchema)
 
+      // Place the auth credentials (if present) as scoped facts.
+      // This ensures that when we create new query contexts, they are carried over
+      val authFacts = executionContextFacts.filter { it.factSetId == FactSets.AUTHENTICATION }
+         .map { it.toTypedInstance(schema) }
+         .mapIndexed { index, typedInstance ->
+            ScopedFact(
+               ProjectionFunctionScope("AuthenticationFact$index", typedInstance.type.taxiType),
+               typedInstance
+            )
+         }
 
       val queryContext = query(
          additionalFacts = additionalFacts.values.toSet(),
          queryId = queryId,
          clientQueryId = clientQueryId,
          eventBroker = eventBroker,
-         scopedFacts = scopedFacts + namedScopedFacts,
+         scopedFacts = scopedFacts + namedScopedFacts + authFacts,
          queryOptions = queryOptions,
          querySchema = amendedQuerySchema
       )
@@ -221,11 +235,12 @@ class Vyne(
 
       // use-cases 1+2 are resolved simply here:
       val constants = taxiQl.facts
-         .filter { it.value !is FactValue.Expression}
+         .filter { it.value !is FactValue.Expression }
          .map { variable ->
-            val argumentValue = executionContextFacts.filter {fact ->
-              fact.qualifiedName == variable.type.toVyneQualifiedName()
-            }.map { fact -> TypedValue(schema.taxiType (fact.qualifiedName), fact.value) }.firstOrNull() ?: variable.resolveValue(arguments)
+            val argumentValue = executionContextFacts.filter { fact ->
+               fact.qualifiedName == variable.type.toVyneQualifiedName()
+            }.map { fact -> TypedValue(schema.taxiType(fact.qualifiedName), fact.value) }.firstOrNull()
+               ?: variable.resolveValue(arguments)
 
             val typedInstance = TypedInstance.from(
                schema.type(argumentValue.fqn.parameterizedName),
@@ -392,6 +407,9 @@ class Vyne(
       formatSpecs
    )
 
+   override fun addAuth(model: TypedInstance): Vyne {
+      return addModel(model, FactSets.AUTHENTICATION)
+   }
    override fun addModel(model: TypedInstance, factSetId: FactSetId): Vyne {
       log().debug("Added model instance to factSet $factSetId: ${model.type.fullyQualifiedName}")
       this.factSets[factSetId].add(model)
@@ -399,7 +417,7 @@ class Vyne(
       return this
    }
 
-   fun removeModel(model: TypedInstance, factSetId: FactSetId = FactSets.DEFAULT):Vyne {
+   fun removeModel(model: TypedInstance, factSetId: FactSetId = FactSets.DEFAULT): Vyne {
       this.factSets[factSetId].remove(model)
       return this
    }
