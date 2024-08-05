@@ -2,9 +2,9 @@ package com.orbitalhq.query.runtime.core
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.orbitalhq.AuthClaimType
 import com.orbitalhq.FactSetId
 import com.orbitalhq.FactSets
-import com.orbitalhq.AuthClaimType
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.auth.authentication.VyneUser
 import com.orbitalhq.auth.authentication.toVyneUser
@@ -62,6 +62,7 @@ import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.CorePublisher
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
+import java.security.Principal
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.Executors
@@ -380,16 +381,22 @@ class QueryService(
          .map { entry -> session.textMessage(entry.toString()) }
 
       session.receive()
-         .subscribe { message ->
+         .flatMap { message -> session.handshakeInfo.principal.defaultIfEmpty(AnonymousAuthenticationToken)
+            .map { auth ->  auth to message }
+         }
+         .subscribe { (auth, message) ->
             val websocketQuery = objectMapper.readValue<WebsocketQuery>(message.payloadAsText)
-
             CoroutineScope(vyneQlDispatcher).launch {
                try {
+                  val nullableAuth = if (auth is AnonymousAuthenticationToken) {
+                     null
+                  } else auth as Authentication
                   getVyneQlQueryStreamingResponse(
                      websocketQuery.query,
                      websocketQuery.resultMode,
                      MediaType.APPLICATION_JSON_VALUE,
-                     clientQueryId = websocketQuery.clientQueryId
+                     clientQueryId = websocketQuery.clientQueryId,
+                     auth = nullableAuth
                   ).onCompletion { error ->
                      if (error == null) {
                         sink.emitComplete(Sinks.EmitFailureHandler.FAIL_FAST)
@@ -447,10 +454,22 @@ class QueryService(
       val (taxiQlQuery, queryOptions, querySchema) = schema.parseQuery(query)
       return monitored(query = taxiQlQuery, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
          logger.info { "[$queryId] using cache ${queryOptions.cachingStrategy}" }
+
+         // TODO : MP - 2-Aug-24
+         // Need to talk to Serhat about this.
+         // Here, we're extracting facts presented in the parameters that extend from the AuthClaims
+         // type. This was to support scenarios where we explcitly want to promote a provided
+         // header (eg a Zoho auth token), to provide downstream to requests.
+         // However, we also need to pull out the user facts for policies
+         // I think using this approach, we end up with duplicates.
+         // Need to work out a better way.
+         val userAuthTokenFacts = extractAuthTokenFactsFromUser(vyneUser, schema)
          val executionContextFacts = vyneUser.facts(
             extractJwtClaimFactFromQueryParameters(schema, taxiQlQuery.parameters)
          )
-         val vyne = vyneProvider.createVyne(executionContextFacts, schema, queryOptions)
+
+
+         val vyne = vyneProvider.createVyne(executionContextFacts + userAuthTokenFacts, schema, queryOptions)
          val historyWriterEventConsumer = historyWriterProvider.createEventConsumer(queryId, vyne.schema)
          val response = try {
             val eventDispatcherForQuery =
@@ -505,6 +524,25 @@ class QueryService(
       }
    }
 
+   /**
+    * Provides the claims in the user token represented as a series of facts for all types
+    * that subtype from the AuthClaimType type.
+    * This allows users who are authoring policies to provide the auth claims about the user as a
+    * TypedInstance.
+    *
+    */
+   private fun extractAuthTokenFactsFromUser(vyneUser: VyneUser?, schema: Schema): List<Fact> {
+      if (vyneUser == null) {
+         return emptyList()
+      }
+      val authClaimsBaseType = schema.type(AuthClaimType.AuthClaims)
+      val userAuthSubtypes = schema.types
+         .filter { it.inheritsFrom(authClaimsBaseType) && it != authClaimsBaseType}
+      return userAuthSubtypes.map { userAuthSubtype ->
+         Fact(userAuthSubtype.paramaterizedName, vyneUser.claims, FactSets.CALLER)
+      }
+   }
+
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
       val vyne = vyneProvider.createVyne()
       val queryEventConsumer = historyWriterProvider.createEventConsumer(query.queryId, vyne.schema)
@@ -552,3 +590,7 @@ data class WebsocketQuery(
    // Default for the UI. TODO : Make the default RAW
    val resultMode: ResultMode = ResultMode.TYPED
 )
+
+private object AnonymousAuthenticationToken : Principal {
+   override fun getName(): String = "Anonymous"
+}
