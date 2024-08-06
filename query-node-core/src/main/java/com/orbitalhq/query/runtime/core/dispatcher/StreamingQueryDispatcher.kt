@@ -5,7 +5,7 @@ import lang.taxi.types.QualifiedName
 import org.reactivestreams.Publisher
 import org.springframework.http.MediaType
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
+import java.security.Principal
 
 interface StreamingQueryDispatcher {
    /**
@@ -26,8 +26,14 @@ interface StreamingQueryDispatcher {
       clientQueryId: String,
       mediaType: String = MediaType.APPLICATION_JSON_VALUE,
       resultMode: ResultMode = ResultMode.RAW,
-      arguments: Map<String, Any?> = emptyMap()
+      arguments: Map<String, Any?> = emptyMap(),
+
+      /**
+       * The principal that sent the request.
+       * It is the dispatchers responsibility to transfer this to the executor.
+       */
+      principal: Principal?
    ): Publisher<Any>
 
-   fun publishResultStream(name: QualifiedName): Flux<Any>
+   fun publishResultStream(name: QualifiedName, principal: Principal?): Flux<Any>
 }

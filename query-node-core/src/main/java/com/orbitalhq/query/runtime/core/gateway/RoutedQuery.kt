@@ -49,18 +49,31 @@ data class RoutedQuery(
             pathVariableName(parameter) != null -> {
                try {
                   Mono.just(request.pathVariable(pathVariableName(parameter)!!))
-               } catch (e:IllegalArgumentException) {
+               } catch (e: IllegalArgumentException) {
                   Mono.error(HttpStatusException(HttpStatus.BAD_REQUEST, e.message!!))
                }
             }
+
             isRequestBody(parameter) -> {
                request.bodyToMono(String::class.java)
-                  .switchIfEmpty { Mono.error(HttpStatusException(HttpStatus.BAD_REQUEST, "Expected a request body, but none was provided")) }
+                  .switchIfEmpty {
+                     Mono.error(
+                        HttpStatusException(
+                           HttpStatus.BAD_REQUEST,
+                           "Expected a request body, but none was provided"
+                        )
+                     )
+                  }
             }
             // TODO : Others, lke query string, etc
 
             // TODO : This should result in a BadRequest, somehow...
-            else -> Mono.error(HttpStatusException(HttpStatus.BAD_REQUEST,"Parameter ${parameter.name} was not provided through the request"))
+            else -> Mono.error(
+               HttpStatusException(
+                  HttpStatus.BAD_REQUEST,
+                  "Parameter ${parameter.name} was not provided through the request"
+               )
+            )
          }
             .map { rawValue -> FactValue.Constant(TypedValue(parameter.type, rawValue)) }
       }

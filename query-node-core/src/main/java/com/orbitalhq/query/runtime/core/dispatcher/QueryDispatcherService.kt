@@ -2,20 +2,15 @@ package com.orbitalhq.query.runtime.core.dispatcher
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.query.ResultMode
-import com.orbitalhq.query.runtime.core.dispatcher.http.HttpQueryDispatcher
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.BadRequestException
 import com.orbitalhq.utils.withQueryId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onEmpty
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.query.TaxiQLQueryString
 import mu.KotlinLogging
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean
 import org.springframework.http.HttpStatus
-import org.springframework.http.HttpStatusCode
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -68,9 +63,10 @@ class QueryDispatcherService(
 
       val actualClientId = clientQueryId ?: UUID.randomUUID().toString()
       val resultFlow = queryDispatcher.dispatchQuery(
-         query,
-         actualClientId,
-         mediaType = contentType
+          query,
+          actualClientId,
+          mediaType = contentType,
+         principal = auth
       )
          .asFlow()
          .onCompletion { throwable ->

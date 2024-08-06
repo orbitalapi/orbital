@@ -10,6 +10,7 @@ import mu.KotlinLogging
 import org.reactivestreams.Publisher
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
+import java.security.Principal
 
 /**
  * Responsible for executing queries received from a saved query with an Http()
@@ -22,7 +23,7 @@ interface RoutedQueryExecutor {
 
    // Routed queries don't currently support streaming.
    // See notes on StreamingQueryDispatcher for considerations when implementing
-   fun handleRoutedQuery(query: RoutedQuery): Publisher<Any>
+   fun handleRoutedQuery(query: RoutedQuery, principal: Principal?): Publisher<Any>
 }
 
 
@@ -49,7 +50,7 @@ class RoutedQueryDispatcherAdaptor(
    }
 
    private val dispatcher:StreamingQueryDispatcher = if (configuredDispatcher != null) {
-      logger.info { "RoutedQueryExecutor created.  Will offload queries to dispatcher of type ${configuredDispatcher!!::class.simpleName}" }
+      logger.info { "RoutedQueryExecutor created.  Will offload queries to dispatcher of type ${configuredDispatcher::class.simpleName}" }
       configuredDispatcher
    } else {
       logger.info { "RoutedQueryExecutor created without a dispatcher.  Queries will be executed locally." }
@@ -57,22 +58,20 @@ class RoutedQueryDispatcherAdaptor(
    }
 
 
-   override fun handleRoutedQuery(query: RoutedQuery): Publisher<Any> {
-      if (dispatcher == null) {
-         error("Cannot dispatch a query without a configured streaming consumer.")
-      }
+   override fun handleRoutedQuery(query: RoutedQuery, principal: Principal?): Publisher<Any> {
       val clientQueryId = Ids.id("routed-query-")
       logger.info { "Received invocation of query ${query.query.name} to route.  Will be routed with queryId $clientQueryId to dispatcher ${dispatcher!!::class.simpleName}" }
       return if (query.query.queryMode == QueryMode.STREAM) {
          dispatcher.publishResultStream(
-              query.query.name
+            query.query.name,principal
          )
       } else {
-         dispatcher!!.dispatchQuery(
-              query.querySrc,
-              clientQueryId,
-              MediaType.APPLICATION_JSON_VALUE,
-              arguments = query.argumentValues
+         dispatcher.dispatchQuery(
+            query.querySrc,
+            clientQueryId,
+            MediaType.APPLICATION_JSON_VALUE,
+            arguments = query.argumentValues,
+            principal = principal
          )
       }
 

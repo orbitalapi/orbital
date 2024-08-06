@@ -1,8 +1,8 @@
 package com.orbitalhq.query.runtime.core.gateway
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.MetricTags
+import com.orbitalhq.query.runtime.core.auth.EmptyAuthenticationToken
 import com.orbitalhq.query.tagsOf
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.consumer.SchemaStore
@@ -20,6 +20,7 @@ import org.springframework.web.reactive.function.server.ServerResponse.status
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
+import java.security.Principal
 import java.time.Instant
 
 /**
@@ -88,30 +89,36 @@ class QueryRouteService(
       }
       logger.info { "Received query invocation on ${request.path()} - matches with query ${query.query.name}" }
       val logDurationsOfIndividualMessages = query.query.queryMode == QueryMode.STREAM
-      val queryResultPublisher = executor.handleRoutedQuery(query)
-         .let {
-            metricsReporter.observeQueryResult(
-               it,
-               Instant.now(),
-               getMetricsTags(query),
-               logDurationsOfIndividualMessages
-            )
+      val principal = request.principal() as Mono<Principal>
+      return principal
+         .defaultIfEmpty(EmptyAuthenticationToken)
+         .flatMap { principal ->
+            val queryResultPublisher = executor.handleRoutedQuery(query, EmptyAuthenticationToken.nullIfEmpty(principal))
+               .let {
+                  metricsReporter.observeQueryResult(
+                     it,
+                     Instant.now(),
+                     getMetricsTags(query),
+                     logDurationsOfIndividualMessages
+                  )
+               }
+
+            val returnServerSentEvents = request.headers().accept().contains(MediaType.TEXT_EVENT_STREAM)
+
+            if (returnServerSentEvents && queryResultPublisher is Flux<*>) {
+               val serverSentEvents = queryResultPublisher.map { message ->
+                  ServerSentEvent.builder<Any>()
+                     .data(message)
+                     .build()
+               }
+               ServerResponse.ok()
+                  .contentType(MediaType.TEXT_EVENT_STREAM)
+                  .body(BodyInserters.fromServerSentEvents(serverSentEvents))
+            } else {
+               ServerResponse.ok().body(queryResultPublisher)
+            }
          }
 
-      val returnServerSentEvents = request.headers().accept().contains(MediaType.TEXT_EVENT_STREAM)
-
-      return if (returnServerSentEvents && queryResultPublisher is Flux<*>) {
-         val serverSentEvents = queryResultPublisher.map { message ->
-            ServerSentEvent.builder<Any>()
-               .data(message)
-               .build()
-         }
-         ServerResponse.ok()
-            .contentType(MediaType.TEXT_EVENT_STREAM)
-            .body(BodyInserters.fromServerSentEvents(serverSentEvents))
-      } else {
-         ServerResponse.ok().body(queryResultPublisher)
-      }
 
       // I have tried and tried and tried.
       // Somewhere in here is the "correct" way to get Spring to return a 4xx instead of a

@@ -23,16 +23,9 @@ public class FunctionRegistrationConfig {
 
    @Bean
    public Function<QueryMessageCborWrapper, CompressedQueryResultWrapper> queryFunction(
-      ServerlessQueryExecutor queryExecutor,
-      ServerlessOverRabbitQueryExecutor rabbitQueryExecutor,
-      @Value("${vyne.consumer.serverless.writeResponsesToQueue:false}") Boolean writeResponsesToQueue
+      ServerlessQueryExecutor queryExecutor
    ) {
-      if (writeResponsesToQueue) {
-         return rabbitQueryExecutor::executeQuery;
-      } else {
-         return queryExecutor::executeQuery;
-      }
-
+      return queryExecutor::executeQuery;
    }
 }
 
