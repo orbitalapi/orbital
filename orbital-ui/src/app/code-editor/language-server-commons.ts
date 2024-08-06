@@ -143,8 +143,15 @@ export const createTaxiEditor = async (htmlElement: HTMLElement, modelRef: IRefe
     // Show error / diagnostic messages even when in read-only mode
     renderValidationDecorations: 'on',
     automaticLayout: true,
-    wordBasedSuggestions: false
+    wordBasedSuggestions: false,
+    fixedOverflowWidgets: true,
+    overflowWidgetsDomNode: document.querySelector('body'),
   });
+
+  // Hack for styling the Monaco tooltips after the styling
+  // disappears when they're positioned correctly with
+  // wordBasedSuggestions and fixedOverflowWidgets above
+  document.querySelector('body').classList.add('monaco-editor');
 
   return Promise.resolve(editor);
 };
