@@ -1,26 +1,23 @@
 package com.orbitalhq.query.runtime.core.dispatcher.http
 
-import com.orbitalhq.auth.schemes.AuthSchemeRepository
-import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
-import com.orbitalhq.http.ServicesConfigRepository
 import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.runtime.CompressedQueryResultWrapper
 import com.orbitalhq.query.runtime.QueryMessage
 import com.orbitalhq.query.runtime.QueryMessageCborWrapper
 import com.orbitalhq.query.runtime.core.dispatcher.StreamingQueryDispatcher
-import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.utils.formatAsFileSize
 import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException.BadGateway
 import org.springframework.web.reactive.function.client.body
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
-import reactor.kotlin.core.publisher.toFlux
+import java.security.Principal
 
 /**
  * Entry point for sending queries to
@@ -50,11 +47,12 @@ class HttpQueryDispatcher(
       clientQueryId: String,
       mediaType: String,
       resultMode: ResultMode,
-      arguments: Map<String, Any?>
+      arguments: Map<String, Any?>,
+      principal: Principal?
    ): Mono<Any> {
       val message = messageFactory.buildQueryMessage(query, clientQueryId, mediaType, resultMode, arguments)
 
-      return dispatchQuery(message)
+      return dispatchQuery(message, principal)
 //         .flatMapIterable { value ->
 //            if (value is Iterable<*>) {
 //               value
@@ -64,17 +62,24 @@ class HttpQueryDispatcher(
 //         }
    }
 
-   override fun publishResultStream(name: QualifiedName): Flux<Any> {
+   override fun publishResultStream(name: QualifiedName, principal: Principal?): Flux<Any> {
       error("Result streaming is not yet supported on the HTTP Query dispatcher")
    }
 
-   fun dispatchQuery(message: QueryMessage): Mono<Any> {
+   fun dispatchQuery(message: QueryMessage, principal: Principal?): Mono<Any> {
       val encodedWrapper = QueryMessageCborWrapper.from(message)
       logger.info { "Dispatching query ${message.clientQueryId} - ${encodedWrapper.size().formatAsFileSize}" }
 
       return webClient.build().post()
          .uri(queryRouterUrl)
          .body(Mono.just(encodedWrapper))
+         .headers { headers ->
+            when(principal) {
+               null -> {} // do nothing
+               is JwtAuthenticationToken -> headers["Authorization"] = "Bearer ${principal.token.tokenValue}"
+               else -> logger.warn { "Unsupported authentication principal for passing through to remote executor: ${principal::class.simpleName}" }
+            }
+         }
          .retrieve()
          .bodyToMono(CompressedQueryResultWrapper::class.java)
          .timed()

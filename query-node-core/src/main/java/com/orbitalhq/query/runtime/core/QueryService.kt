@@ -24,6 +24,7 @@ import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.SearchFailedException
 import com.orbitalhq.query.runtime.FailedSearchResponse
 import com.orbitalhq.query.runtime.QueryServiceApi
+import com.orbitalhq.query.runtime.core.auth.EmptyAuthenticationToken
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.QueryOptions
@@ -381,16 +382,14 @@ class QueryService(
          .map { entry -> session.textMessage(entry.toString()) }
 
       session.receive()
-         .flatMap { message -> session.handshakeInfo.principal.defaultIfEmpty(AnonymousAuthenticationToken)
-            .map { auth ->  auth to message }
+         .flatMap { message -> session.handshakeInfo.principal.defaultIfEmpty(EmptyAuthenticationToken)
+            .map { auth: Principal ->  auth to message }
          }
          .subscribe { (auth, message) ->
             val websocketQuery = objectMapper.readValue<WebsocketQuery>(message.payloadAsText)
             CoroutineScope(vyneQlDispatcher).launch {
                try {
-                  val nullableAuth = if (auth is AnonymousAuthenticationToken) {
-                     null
-                  } else auth as Authentication
+                  val nullableAuth = EmptyAuthenticationToken.nullIfEmpty(auth) as Authentication?
                   getVyneQlQueryStreamingResponse(
                      websocketQuery.query,
                      websocketQuery.resultMode,
@@ -591,6 +590,3 @@ data class WebsocketQuery(
    val resultMode: ResultMode = ResultMode.TYPED
 )
 
-private object AnonymousAuthenticationToken : Principal {
-   override fun getName(): String = "Anonymous"
-}

@@ -8,8 +8,10 @@ import kotlinx.coroutines.runBlocking
 import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
 import org.reactivestreams.Publisher
+import org.springframework.security.core.Authentication
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.security.Principal
 
 
 /**
@@ -35,20 +37,24 @@ class LocalQueryDispatcher(
       clientQueryId: String,
       mediaType: String,
       resultMode: ResultMode,
-      arguments: Map<String, Any?>
+      arguments: Map<String, Any?>,
+      principal: Principal?
    ): Publisher<Any> {
       // Note: This isn't actually a suspend function.
       // All the work happens in the returned Flux<> / Flow<>,
       // we just need to fix the underling signatures.
       logger.info { "Received inbound call to saved query with request id $clientQueryId. Will execute locally" }
+      val auth: Authentication? = if (principal is Authentication) {
+         principal
+      } else null
       val responseEntity = runBlocking {
          queryService.submitVyneQlQuery(
             query,
             resultMode,
             mediaType,
-            null,
+            auth,
             clientQueryId,
-            arguments = arguments
+            arguments = arguments,
          )
       }
       return when (responseEntity.body) {
@@ -58,7 +64,8 @@ class LocalQueryDispatcher(
       }
    }
 
-   override fun publishResultStream(name: QualifiedName): Flux<Any> {
+   override fun publishResultStream(name: QualifiedName, principal: Principal?): Flux<Any> {
+      // TODO: We need to somehow re-apply policies on the result stream here
       return streamResultSubscriptionManager.getResultStream(name.parameterizedName)
    }
 }
