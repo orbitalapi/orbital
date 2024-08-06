@@ -183,6 +183,6 @@ tui-dropdown-box {
   transition: outline 150ms ease-in;
 
   &:hover {
-    outline-color: $primary;
+    outline-color: rgba($primary, 0.5);
   }
 }

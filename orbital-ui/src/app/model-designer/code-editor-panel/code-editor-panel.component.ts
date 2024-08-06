@@ -27,14 +27,7 @@ import {CompilationMessage, Schema, SchemaMember, Type} from "../../services/sch
               <img src="assets/img/tabler/copy.svg">
             </a>
         </app-panel-header>
-        <as-split gutterSize="5" direction="vertical" unit="pixel">
-            <as-split-area size="*">
-                <app-code-editor (contentChange)="taxi=$event; taxiChange.emit($event)"></app-code-editor>
-            </as-split-area>
-            <as-split-area size="135">
-                <app-compilation-message-list [compilationMessages]="compilationErrors"></app-compilation-message-list>
-            </as-split-area>
-        </as-split>
+        <app-code-editor [compilationMessages]="compilationErrors" (contentChange)="taxi=$event; taxiChange.emit($event)"></app-code-editor>
     `,
     styleUrls: ['./code-editor-panel.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

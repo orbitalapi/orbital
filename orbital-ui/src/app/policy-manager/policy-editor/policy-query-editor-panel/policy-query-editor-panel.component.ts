@@ -1,4 +1,4 @@
-import {Component, EventEmitter, Output} from '@angular/core';
+import {Component} from '@angular/core';
 import {CodeEditorModule} from "../../../code-editor/code-editor.module";
 import {ExpandingPanelSetModule} from "../../../expanding-panelset/expanding-panel-set.module";
 import {QueryPanelModule} from "../../../query-panel/query-panel.module";
@@ -8,7 +8,7 @@ import {QueryEditorStoreService} from "../../../services/query-editor-store.serv
 import {QueryEditorPayload, QueryEditorState} from "../../../services/query-editor.state";
 import {TypesService} from "../../../services/types.service";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
-import {CompilationMessage, Schema} from "../../../services/schema";
+import {Schema} from "../../../services/schema";
 import {NgIf} from "@angular/common";
 import {TuiButtonModule} from "@taiga-ui/core";
 
@@ -41,8 +41,6 @@ import {TuiButtonModule} from "@taiga-ui/core";
         <app-code-editor
           [content]="queryState.query()"
           (contentChange)="updateQuery($event)"
-          [showCompilationErrors]="false"
-          (compilationMessagesUpdated)="compilationMessagesUpdated.emit($event)"
         ></app-code-editor>
       </as-split-area>
       <as-split-area>
@@ -72,9 +70,6 @@ export class PolicyQueryEditorPanelComponent {
 
   queryEditorState: QueryEditorState;
   schema: Schema
-
-  @Output()
-  compilationMessagesUpdated = new EventEmitter<CompilationMessage[]>();
 
   get queryState():QueryEditorPayload {
     return this.queryEditorState?.payload

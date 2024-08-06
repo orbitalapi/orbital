@@ -2,10 +2,9 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  DestroyRef, EventEmitter,
+  DestroyRef,
   Inject,
   Injector,
-  Output
 } from '@angular/core';
 import {ExpandingPanelSetModule} from "../../../expanding-panelset/expanding-panel-set.module";
 import {AngularSplitModule} from "angular-split";
@@ -25,7 +24,7 @@ import {
   SaveQueryDialogComponent,
   SaveQueryRequestProps
 } from "../../../query-panel/query-editor/query-editor-toolbar/save-query-dialog.component";
-import {CompilationMessage, VersionedSource} from "../../../services/schema";
+import {VersionedSource} from "../../../services/schema";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {SaveWithFilenameComponent} from "../../../filename-display/save-with-filename.component";
 import {PoliciesService, PolicySetupReadiness} from "../../../services/policies.service";
@@ -55,8 +54,6 @@ import {toSourceWithTypeHints} from "../../../model-designer/taxi-parser.service
     <div class="code-editor-container">
       <app-code-editor
         [content]="source"
-        [showCompilationErrors]="false"
-        (compilationMessagesUpdated)="compilationMessagesUpdated.emit($event)"
         (contentChange)="sourceChange($event)"
       ></app-code-editor>
     </div>
@@ -80,9 +77,6 @@ export class PolicyCodeEditorPanelComponent {
   private policySetup: PolicySetupReadiness;
 
   authTokenOpen = true
-
-  @Output()
-  compilationMessagesUpdated = new EventEmitter<CompilationMessage[]>();
 
   get userTokenWithTypeHints() {
     if (!this.policySetup) return null
