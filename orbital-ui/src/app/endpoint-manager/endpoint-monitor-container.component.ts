@@ -1,9 +1,10 @@
 import {CommonModule} from '@angular/common';
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Injector} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
-import {TuiDialogService,} from '@taiga-ui/core';
-import {TUI_PROMPT, TuiBadgeModule, TuiPromptData, TuiStatus, TuiToggleModule} from '@taiga-ui/kit';
+import {tuiButtonOptionsProvider, TuiDialogService,} from '@taiga-ui/core';
+import {TuiBadgeModule, TuiPromptComponent, TuiPromptData, TuiStatus, TuiToggleModule} from '@taiga-ui/kit';
+import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
 import {combineLatestWith, filter, Observable, of} from 'rxjs';
 import {map, mergeMap, tap} from 'rxjs/operators';
 import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
@@ -86,6 +87,7 @@ export class EndpointMonitorContainerComponent {
     private pipelineService: PipelineService,
     private queryService: QueryService,
     @Inject(TuiDialogService) private readonly dialogs: TuiDialogService,
+    @Inject(Injector) private readonly injector: Injector,
   ) {
     this.endpointName$ = activatedRoute.paramMap.pipe(
       map(paramMap => {
@@ -147,24 +149,30 @@ export class EndpointMonitorContainerComponent {
         if (targetState === 'RUNNING') {
           promptData = {
             content: 'This will enable the data stream, allowing it to start processing any queued data.',
-            yes: `Enable ${savedQuery.name.shortDisplayName}`,
+            yes: `Enable stream`,
             no: 'Cancel'
           }
-          dialogLabel = `Enable ${savedQuery.name.shortDisplayName}?`
+          dialogLabel = `Enable ${savedQuery.name.shortDisplayName}`
         } else {
           promptData = {
             content: 'This will disable the data stream, stopping all processing.<br /><br />Depending on how your data sources are configured, messages may be lost.',
-            yes: `Disable ${savedQuery.name.shortDisplayName}`,
+            yes: `Disable stream`,
             no: 'Cancel'
           }
-          dialogLabel = `Disable ${savedQuery.name.shortDisplayName}?`
+          dialogLabel = `Disable ${savedQuery.name.shortDisplayName}`
         }
-        return this.dialogs.open<boolean>(TUI_PROMPT, {
+        return this.dialogs.open<boolean>(new PolymorpheusComponent(
+          TuiPromptComponent,
+          Injector.create({
+            providers: [tuiButtonOptionsProvider({ appearance: targetState === 'RUNNING' ? 'primary' : 'destructive' })],
+            parent: this.injector,
+          })
+        ),{
           label: dialogLabel,
           size: 's',
           data: promptData,
-          closeable: false,
-          dismissible: false,
+          closeable: true,
+          dismissible: true,
         }).pipe(map(confirmed => {
           return {savedQuery, confirmed}
         }))
