@@ -5,7 +5,7 @@ import {isNullOrUndefined} from "./utils/utils";
 @Component({
     selector: 'app-compilation-message-list',
     template: `
-      <app-panel-header [title]="title" [isSecondary]="true"></app-panel-header>
+      <app-panel-header [title]="title" [isSecondary]="true" [class.has-errors]="hasErrors"></app-panel-header>
       <div *ngIf="!hasErrors" class="grow no-errors subtle">
         <span>There are no problems detected.</span>
       </div>
@@ -14,12 +14,11 @@ import {isNullOrUndefined} from "./utils/utils";
           <tui-accordion-item *ngFor="let messageGroup of compilationMessageGroups" size="s"  [open]="true">
             <div class="accordion-header">
               <img src='assets/img/tabler/align-left.svg'> {{ filenameOnly(messageGroup.source) }}
-              <tui-badge [value]="messageGroup.messages.length" status="primary" size="xs"></tui-badge>
+              <tui-badge [value]="messageGroup.messages.length" size="xs"></tui-badge>
             </div>
-
             <div tuiAccordionItemContent>
               <div class="error-row" *ngFor="let compilationMessage of messageGroup.messages" (click)="messageClicked.emit(compilationMessage)">
-                <img [attr.src]="getSeverityIcon(compilationMessage.severity)" class="filter-error-light">
+                <img [attr.src]="getSeverityIcon(compilationMessage.severity)" [class]="compilationMessage.severity === 'ERROR' ? 'filter-error-light' : 'filter-warning-dark'">
                 <div class="message-line">{{ compilationMessage.detailMessage }}</div>
                 <div class="message-position">[Ln {{ compilationMessage.line }}, Col {{ compilationMessage.char }}]</div>
               </div>
@@ -27,7 +26,6 @@ import {isNullOrUndefined} from "./utils/utils";
           </tui-accordion-item>
         </tui-accordion>
       </div>
-
     `,
     styleUrls: ['./compilation-message-list.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -76,7 +74,8 @@ export class CompilationMessageListComponent {
 
 
     filenameOnly(source: string) {
-        return source.split(']')[1]
+      const filename = source.split(']')[1];
+      return filename?.includes('unknown') ? '' : filename;
     }
 
     getSeverityIcon(severity: "INFO" | "WARNING" | "ERROR"): string {

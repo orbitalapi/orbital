@@ -34,15 +34,21 @@ type WordWrapOptions = 'off' | 'on' | 'wordWrapColumn' | 'bounded';
   selector: 'app-code-editor',
   styleUrls: ['./code-editor.component.scss'],
   template: `
-    <as-split gutterSize="5" direction="vertical" unit="pixel">
+    <as-split
+      gutterSize="7"
+      gutterStep="5"
+      direction="vertical"
+      unit="pixel"
+      gutterDblClickDuration="250"
+      (gutterDblClick)="errorPanelSize < 60 ? errorPanelSize = 250 : errorPanelSize = 50"
+    >
       <as-split-area size="*">
         <div #codeEditorContainer class="code-editor"></div>
       </as-split-area>
-      <as-split-area size="135" *ngIf="showCompilationErrors">
+      <as-split-area [size]="errorPanelSize" minSize="50" maxSize="250" *ngIf="showCompilationErrors">
         <app-compilation-message-list [compilationMessages]="compilationMessages"></app-compilation-message-list>
       </as-split-area>
     </as-split>
-    <div #codeEditorContainer class="code-editor"></div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -159,6 +165,8 @@ export class CodeEditorComponent implements OnDestroy {
   @Output()
   contentChange = new EventEmitter<string>();
 
+  errorPanelSize: number = 135;
+
   constructor(
     private languageServerService: MonacoLanguageServerService,
     private destroyRef: DestroyRef,
@@ -208,6 +216,7 @@ export class CodeEditorComponent implements OnDestroy {
       filter((event) => {
         return event.uri == model.textEditorModel.uri.toString();
       }),
+      debounceTime(100)
     ).subscribe(next => {
       this.compilationMessages = next.diagnostics.map(message => {
         let severity:CompilationMessageSeverity

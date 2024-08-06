@@ -1,4 +1,7 @@
 import {Component} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {BehaviorSubject} from 'rxjs';
+import {debounceTime} from 'rxjs/operators';
 import {CompilationMessage, Schema, SchemaMember, Type} from '../services/schema';
 import {TypesService} from "../services/types.service";
 import {Observable} from "rxjs/internal/Observable";
@@ -17,7 +20,7 @@ import {Observable} from "rxjs/internal/Observable";
             <app-designer-code-editor-panel [schema]="schema$ | async"
                                             [parsedTypes]="parsedTypes"
                                             (selectedTypeChanged)="this.targetType = $event"
-                                            [compilationErrors]="compilationErrors"
+                                            [compilationErrors]="compilationErrors$.value"
                                             (taxiChange)="taxi = $event"
                                             [disabled]="!sourceContent"
             ></app-designer-code-editor-panel>
@@ -31,7 +34,7 @@ import {Observable} from "rxjs/internal/Observable";
             [taxi]="taxi"
             [targetType]="targetType?.name.fullyQualifiedName"
             (parsedTypesChanged)="this.parsedTypes = $event"
-            (compilationErrorsChanged)="this.compilationErrors = $event"
+            (compilationErrorsChanged)="this.compilationErrors$.next($event)"
             [disabled]="!targetType"
         ></app-designer-parse-result-panel>
       </as-split-area>
@@ -40,9 +43,16 @@ import {Observable} from "rxjs/internal/Observable";
   styleUrls: ['./model-designer.component.scss']
 })
 export class ModelDesignerComponent {
+  compilationErrors$: BehaviorSubject<CompilationMessage[]> = new BehaviorSubject([])
 
   constructor(typeService: TypesService) {
-    this.schema$ = typeService.getTypes()
+    this.schema$ = typeService.getTypes().pipe(
+      takeUntilDestroyed()
+    )
+    this.compilationErrors$.pipe(
+      takeUntilDestroyed(),
+      debounceTime(200)
+    )
   }
 
   schema$: Observable<Schema>
