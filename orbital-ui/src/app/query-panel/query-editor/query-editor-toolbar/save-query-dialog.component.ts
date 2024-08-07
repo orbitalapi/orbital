@@ -18,6 +18,7 @@ import {
   SchemaImporterService
 } from '../../../project-import/schema-importer.service';
 import {VersionedSource} from '../../../services/schema';
+import {schema} from "@angular-devkit/core";
 
 export interface SaveQueryRequestProps {
   query: string,
@@ -198,6 +199,7 @@ export class SaveQueryDialogComponent {
         ],
         dryRun: false
       }
+      return schemaEdit
     }
   }
 }
