@@ -15,6 +15,10 @@ import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.queryService.TestSchemaProvider
+import com.orbitalhq.queryService.security.TestRoles.adminUserName
+import com.orbitalhq.queryService.security.TestRoles.platformManagerUser
+import com.orbitalhq.queryService.security.TestRoles.queryRunnerUser
+import com.orbitalhq.queryService.security.TestRoles.viewerUserName
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
@@ -27,7 +31,6 @@ import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.config.TestDiscoveryClientConfig
 import com.winterbe.expekt.should
 import io.kotest.matchers.booleans.shouldBeTrue
-import org.jose4j.jwk.RsaJsonWebKey
 import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -93,9 +96,6 @@ class VyneQueryOidcIntegrationTest {
 
    }
 
-   private var rsaJsonWebKey: RsaJsonWebKey? = null
-   private var jwsBuilder: JWSBuilder? = null
-
    @MockBean
    lateinit var hazelcastInstance: HazelcastInstance
 
@@ -123,6 +123,7 @@ class VyneQueryOidcIntegrationTest {
 
    @MockBean
    lateinit var configService: ConfigService
+
    @MockBean
    lateinit var licenseManager: LicenseManager
 
@@ -139,28 +140,11 @@ class VyneQueryOidcIntegrationTest {
    @MockBean
    lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
-   /**
-    * see "authorisation/user-role-mappings.conf" in resources.
-    */
-   private val adminUserName = "adminUser"
-   private val platformManagerUser = "platformManager"
-   private val queryRunnerUser = "queryExecutor"
-   private val viewerUserName = "viewer"
-
-   private val roles = mapOf(
-      adminUserName to listOf("Admin"),
-      platformManagerUser to listOf("PlatformManager"),
-      queryRunnerUser to listOf("QueryRunner"),
-      viewerUserName to listOf("Viewer"),
-      "userWithoutAnyRoleSetup" to emptyList()
-   )
-
-
    @MockBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 
    @MockBean
-   lateinit var configLoader : WorkspaceConfigLoader
+   lateinit var configLoader: WorkspaceConfigLoader
 
 
    @TestConfiguration
@@ -168,14 +152,14 @@ class VyneQueryOidcIntegrationTest {
    class TestVyneAuthorisationConfig {
       @Bean
       @Primary
-      fun schemaProvider( @Value("\${wiremock.server.baseUrl}") mockServerBaseUrl: String): SchemaProvider {
+      fun schemaProvider(@Value("\${wiremock.server.baseUrl}") mockServerBaseUrl: String): SchemaProvider {
          val source = """
          namespace com.orbitalhq.queryService {
            type AccountId inherits String
            type ContactId inherits String
 
            [[ Custom JwtClaim model which inherits from Orbital's JwtClaim base ]]
-           model CompanyXJwtClaim inherits ${AuthClaimType.AuthClaims.fullyQualifiedName} {
+           model CompanyXJwtClaim inherits ${AuthClaimType.AuthClaimsTypeName.fullyQualifiedName} {
               contactId: ContactId
               accountId: AccountId
             }
@@ -196,8 +180,9 @@ class VyneQueryOidcIntegrationTest {
 
       """.trimIndent()
          val schema = TaxiSchema.from(source, "UserSchema", "0.1.0")
-        return  TestSchemaProvider.withBuiltInsAnd(schema.sources)
+         return TestSchemaProvider.withBuiltInsAnd(schema.sources)
       }
+
       @Bean
       fun schemaStore(): SchemaStore = LocalValidatingSchemaStoreClient()
 
@@ -219,7 +204,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `a viewer user can not execute query`() {
-      val token = setUpLoggedInUser(viewerUserName)
+      val token = getTestAuthToken(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = issueVyneQuery(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
@@ -227,7 +212,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `a user without Query Runner role can not execute query`() {
-      val token = setUpLoggedInUser("userWithoutAnyRoleSetup")
+      val token = getTestAuthToken("userWithoutAnyRoleSetup")
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = issueVyneQuery(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
@@ -235,7 +220,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `a query runner can execute query`() {
-      val token = setUpLoggedInUser(queryRunnerUser)
+      val token = getTestAuthToken(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = issueVyneQuery(headers)
       response.statusCode.is2xxSuccessful.shouldBeTrue()
@@ -243,7 +228,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `a platform manager can not execute query`() {
-      val token = setUpLoggedInUser(platformManagerUser)
+      val token = getTestAuthToken(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = issueVyneQuery(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
@@ -251,7 +236,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `an admin user can execute query`() {
-      val token = setUpLoggedInUser(adminUserName)
+      val token = getTestAuthToken(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = issueVyneQuery(headers)
       response.statusCode.is2xxSuccessful.shouldBeTrue()
@@ -262,7 +247,7 @@ class VyneQueryOidcIntegrationTest {
     */
    @Test
    fun `an admin user can see query history list`() {
-      val token = setUpLoggedInUser(adminUserName)
+      val token = getTestAuthToken(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = listQueryHistory(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
@@ -270,7 +255,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `a platform manager can see query history list`() {
-      val token = setUpLoggedInUser(platformManagerUser)
+      val token = getTestAuthToken(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = listQueryHistory(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
@@ -278,7 +263,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `a query runner can not see query history list`() {
-      val token = setUpLoggedInUser(queryRunnerUser)
+      val token = getTestAuthToken(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = listQueryHistory(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
@@ -286,7 +271,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `a viewer user can not see query history list`() {
-      val token = setUpLoggedInUser(viewerUserName)
+      val token = getTestAuthToken(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = listQueryHistory(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
@@ -310,7 +295,7 @@ class VyneQueryOidcIntegrationTest {
     */
    @Test
    fun `an admin user can see query result`() {
-      val token = setUpLoggedInUser(adminUserName)
+      val token = getTestAuthToken(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getQueryResult(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
@@ -318,7 +303,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `a platform manager can see query result`() {
-      val token = setUpLoggedInUser(platformManagerUser)
+      val token = getTestAuthToken(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getQueryResult(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
@@ -326,7 +311,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `a query runner can not see query result`() {
-      val token = setUpLoggedInUser(queryRunnerUser)
+      val token = getTestAuthToken(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getQueryResult(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
@@ -335,7 +320,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `a viewer user can not query result`() {
-      val token = setUpLoggedInUser(viewerUserName)
+      val token = getTestAuthToken(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getQueryResult(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
@@ -344,7 +329,6 @@ class VyneQueryOidcIntegrationTest {
    /**
     * End get historical query result
     */
-
 
 
    @Test
@@ -366,7 +350,7 @@ class VyneQueryOidcIntegrationTest {
    @Test
    @Ignore
    fun `an admin user can get authentication tokens`() {
-      val token = setUpLoggedInUser(adminUserName)
+      val token = getTestAuthToken(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getAuthenticationTokens(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
@@ -375,7 +359,7 @@ class VyneQueryOidcIntegrationTest {
    @Test
    @Ignore
    fun `a platform manager can get authentication tokens`() {
-      val token = setUpLoggedInUser(platformManagerUser)
+      val token = getTestAuthToken(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getAuthenticationTokens(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
@@ -383,7 +367,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `a query runner can not can get authentication tokens`() {
-      val token = setUpLoggedInUser(queryRunnerUser)
+      val token = getTestAuthToken(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getAuthenticationTokens(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
@@ -391,7 +375,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `a viewer user can not get authentication tokens`() {
-      val token = setUpLoggedInUser(viewerUserName)
+      val token = getTestAuthToken(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getAuthenticationTokens(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
@@ -416,7 +400,7 @@ class VyneQueryOidcIntegrationTest {
    @Test
    @Ignore("removing ability to edit tokens from UI")
    fun `an admin user can delete authentication tokens`() {
-      val token = setUpLoggedInUser(adminUserName)
+      val token = getTestAuthToken(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = deleteAuthenticationToken(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
@@ -425,7 +409,7 @@ class VyneQueryOidcIntegrationTest {
    @Test
    @Ignore("removing ability to edit tokens from UI")
    fun `a platform manager can delete authentication tokens`() {
-      val token = setUpLoggedInUser(platformManagerUser)
+      val token = getTestAuthToken(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = deleteAuthenticationToken(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
@@ -434,7 +418,7 @@ class VyneQueryOidcIntegrationTest {
    @Test
    @Ignore("removing ability to edit tokens from UI")
    fun `a query runner can not delete authentication tokens`() {
-      val token = setUpLoggedInUser(queryRunnerUser)
+      val token = getTestAuthToken(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = deleteAuthenticationToken(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
@@ -443,7 +427,7 @@ class VyneQueryOidcIntegrationTest {
    @Test
    @Ignore("removing ability to edit tokens from UI")
    fun `a viewer user can not delete authentication tokens`() {
-      val token = setUpLoggedInUser(viewerUserName)
+      val token = getTestAuthToken(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = deleteAuthenticationToken(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
@@ -468,7 +452,7 @@ class VyneQueryOidcIntegrationTest {
     */
    @Test
    fun `an admin user can get jdbc connections`() {
-      val token = setUpLoggedInUser(adminUserName)
+      val token = getTestAuthToken(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getJdbcConnections(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
@@ -476,7 +460,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `a platform manager can get jdbc connections`() {
-      val token = setUpLoggedInUser(platformManagerUser)
+      val token = getTestAuthToken(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getJdbcConnections(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
@@ -484,7 +468,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `a query runner can not get jdbc connections`() {
-      val token = setUpLoggedInUser(queryRunnerUser)
+      val token = getTestAuthToken(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getJdbcConnections(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
@@ -492,7 +476,7 @@ class VyneQueryOidcIntegrationTest {
 
    @Test
    fun `a viewer user can not get jdbc connections`() {
-      val token = setUpLoggedInUser(viewerUserName)
+      val token = getTestAuthToken(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = getJdbcConnections(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
@@ -517,7 +501,7 @@ class VyneQueryOidcIntegrationTest {
    @Test
    @Ignore("creating connections from UI is disabled for now")
    fun `an admin user can create jdbc connections`() {
-      val token = setUpLoggedInUser(adminUserName)
+      val token = getTestAuthToken(adminUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = createJdbcConnection(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
@@ -526,7 +510,7 @@ class VyneQueryOidcIntegrationTest {
    @Test
    @Ignore("creating connections from UI is disabled for now")
    fun `a platform manager can create jdbc connections`() {
-      val token = setUpLoggedInUser(platformManagerUser)
+      val token = getTestAuthToken(platformManagerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = createJdbcConnection(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.OK.value()))
@@ -535,7 +519,7 @@ class VyneQueryOidcIntegrationTest {
    @Test
    @Ignore("creating connections from UI is disabled for now")
    fun `a query runner can not create jdbc connections`() {
-      val token = setUpLoggedInUser(queryRunnerUser)
+      val token = getTestAuthToken(queryRunnerUser)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = createJdbcConnection(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
@@ -544,7 +528,7 @@ class VyneQueryOidcIntegrationTest {
    @Test
    @Ignore("creating connections from UI is disabled for now")
    fun `a viewer user can not create jdbc connections`() {
-      val token = setUpLoggedInUser(viewerUserName)
+      val token = getTestAuthToken(viewerUserName)
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = createJdbcConnection(headers)
       response.statusCode.should.be.equal(HttpStatusCode.valueOf(HttpStatus.FORBIDDEN.value()))
@@ -562,11 +546,13 @@ class VyneQueryOidcIntegrationTest {
    @Test
    fun `Claims Can be injected to Query Execution as custom model`() {
       val accountId = "456"
-      val token = setUpLoggedInUser(queryRunnerUser,
+      val token = getTestAuthToken(
+         queryRunnerUser,
+         wireMockServerBaseUrl,
          mapOf(
             "contactId" to "123",
             "accountId" to accountId
-            )
+         )
       )
 
       // Prepare the WireMock to respond for:
@@ -576,12 +562,14 @@ class VyneQueryOidcIntegrationTest {
             .willReturn(
                WireMock.aResponse()
                   .withHeader("Content-Type", "application/json")
-                  .withBody("""
+                  .withBody(
+                     """
                      {
                        "accountName" : "accountFoo",
                        "accountId" : "$accountId"
                       }
-                  """.trimIndent())
+                  """.trimIndent()
+                  )
             )
       )
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -595,24 +583,23 @@ class VyneQueryOidcIntegrationTest {
 
       val response = issueVyneQuery(headers, query)
       response.statusCode.is2xxSuccessful.shouldBeTrue()
-      response.body.should.equal("""
+      response.body.should.equal(
+         """
          {"accountName":"accountFoo","accountId":"456"}
-      """.trimIndent())
+      """.trimIndent()
+      )
    }
 
    /**
     * End Create Jdbc Connection
     */
 
-   private fun setUpLoggedInUser(userName: String, customClaims: Map<String, Any> = emptyMap()): String {
-      val setUpIdpJwt = JWSBuilder.setUpRsaJsonWebKey(userName)
-      this.jwsBuilder = setUpIdpJwt.first
-      this.rsaJsonWebKey = setUpIdpJwt.second
-      JWSBuilder.initialiseIdpServer(wireMockServerBaseUrl, this.jwsBuilder!!, this.rsaJsonWebKey!!)
-      return jwsBuilder!!.build(roles[userName]!!, customClaims).compactSerialization
-   }
+   private fun getTestAuthToken(username: String) = getTestAuthToken(username, wireMockServerBaseUrl)
 
-   private fun issueVyneQuery(headers: HttpHeaders, query: String = "find { com.orbitalhq.Username[] }"): ResponseEntity<String> {
+   private fun issueVyneQuery(
+      headers: HttpHeaders,
+      query: String = "find { com.orbitalhq.Username[] }"
+   ): ResponseEntity<String> {
       val entity = HttpEntity(query, headers)
       return restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
    }
@@ -677,3 +664,38 @@ class VyneQueryOidcIntegrationTest {
 }
 
 
+fun getTestAuthToken(
+   userName: String,
+   authServerUrl: String,
+   customClaims: Map<String, Any> = emptyMap(),
+): String {
+   val (jwsBuilder, rsaJsonWebKey) = JWSBuilder.setUpRsaJsonWebKey(userName)
+   JWSBuilder.initialiseIdpServer(authServerUrl, jwsBuilder, rsaJsonWebKey)
+   return jwsBuilder.build(TestRoles.roles[userName]!!, customClaims).compactSerialization
+}
+
+
+object TestRoles {
+
+   /**
+    * see "authorisation/user-role-mappings.conf" in resources.
+    */
+   val adminUserName = "adminUser"
+   val platformManagerUser = "platformManager"
+   val queryRunnerUser = "queryExecutor"
+   val viewerUserName = "viewer"
+
+   val roles: Map<String, List<String>> = mapOf(
+      adminUserName to listOf("Admin"),
+      platformManagerUser to listOf("PlatformManager"),
+      queryRunnerUser to listOf("QueryRunner"),
+      viewerUserName to listOf("Viewer"),
+      "userWithoutAnyRoleSetup" to emptyList()
+   )
+
+   val adminRoles = roles[adminUserName]
+   val platformManagerRoles = roles[platformManagerUser]
+   val queryRunnerRoles = roles[queryRunnerUser]
+   val viewerRoles = roles[viewerUserName]
+
+}

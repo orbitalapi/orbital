@@ -31,6 +31,7 @@ object ErrorType {
          |   // Empty base type
          |   model Error {}
          |
+         |   @taxi.http.ResponseCode(401)
          |   model NotAuthorizedError inherits Error {
          |     message: ErrorMessage
          |   }

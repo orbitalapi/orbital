@@ -8,6 +8,7 @@ import mu.KotlinLogging
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.security.Principal
 
 
 /**
@@ -30,7 +31,7 @@ class RSocketStreamResultSubscriptionManager(
    private val streamCache = CacheBuilder.newBuilder()
       .build<String, Flux<Any>>()
 
-   override fun getResultStream(streamName: String): Flux<Any> {
+   override fun getResultStream(streamName: String, principal: Principal?): Flux<Any> {
       return streamCache.get(streamName) {
          logger.info { "Creating subscription for result stream $streamName " }
          val (resultStream, connectionStatus) = rSocketConnectionFactory.reconnectingRSocket(

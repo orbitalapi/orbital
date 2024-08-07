@@ -147,12 +147,11 @@ class PolicyEvaluator {
          // fact bag, otherwise we end up in a recursive loop
          // where the inputs aren't available, so we do a search,
          // triggering a service call, which applies the policy, which hits this method, etc etc
-         context.facts.addFact(instance).rootAndScopedFacts(),
+         context.only(emptyList(), context.scopedFacts).addFact(instance).rootAndScopedFacts(),
          context
       )
       val facts = FactBag.of(instance, context.schema)
          .withAdditionalScopedFacts(inputs, context.schema)
-
 
       val evaluationResult = context
          .evaluate(rule.expression, facts, instance.source)
@@ -217,6 +216,7 @@ class PolicyEvaluator {
       val rule: PolicyRule,
    ) {
       companion object {
+         private val logger = KotlinLogging.logger {}
          fun ifDifferent(
             path: String,
             sourceInstance: TypedInstance,
@@ -226,16 +226,8 @@ class PolicyEvaluator {
          ): PolicyResultMutation? {
             return if (sourceInstance != updatedInstance) {
                if (updatedInstance.source !is ModifiedByDataPolicySource) {
-                  error("The data source should've been updated by here")
+                  logger.warn { "Appears that data source has not been amended correctly after applying a data policy - expected that the source would be ModifiedByDataPolicySource but was ${updatedInstance.source::class.simpleName}" }
                }
-//               val updatedDataSource = ModifiedByDataPolicySource(
-//                  policy.qualifiedName,
-//                  rule.operationScope,
-//                  rule.policyScope,
-//                  updatedInstance.source,
-//                  sourceInstance.type
-//               )
-//               val updatedInstanceWithNewDataSource = DataSourceUpdater.update(updatedInstance, updatedDataSource)
                PolicyResultMutation(path, sourceInstance, updatedInstance, policy, rule)
             } else null
          }
@@ -291,10 +283,4 @@ class ModifiedByDataPolicySource(
    override val name: String = "ModifiedByPolicy"
    override val id: String = this.hashCode().toString()
    override val failedAttempts: List<DataSource> = emptyList()
-
-   init {
-       if (valueDataSource is ModifiedByDataPolicySource) {
-          println()
-       }
-   }
 }

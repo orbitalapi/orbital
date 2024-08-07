@@ -10,6 +10,7 @@ import com.orbitalhq.spring.http.HttpStatusException
 import lang.taxi.query.QueryMode
 import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
+import org.reactivestreams.Publisher
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
@@ -104,47 +105,16 @@ class QueryRouteService(
                }
 
             val returnServerSentEvents = request.headers().accept().contains(MediaType.TEXT_EVENT_STREAM)
-
             if (returnServerSentEvents && queryResultPublisher is Flux<*>) {
-               val serverSentEvents = queryResultPublisher.map { message ->
-                  ServerSentEvent.builder<Any>()
-                     .data(message)
-                     .build()
-               }
-               ServerResponse.ok()
-                  .contentType(MediaType.TEXT_EVENT_STREAM)
-                  .body(BodyInserters.fromServerSentEvents(serverSentEvents))
+               DeferredServerResponsePublisher.wrapEventStreamFlux(queryResultPublisher)
+                  } else if (queryResultPublisher is Flux<*>){
+               DeferredServerResponsePublisher.wrapFlux(queryResultPublisher as Flux<out Any>)
+            } else if (queryResultPublisher is Mono<*>){
+               DeferredServerResponsePublisher.wrapMono(queryResultPublisher as Mono<Any>)
             } else {
-               ServerResponse.ok().body(queryResultPublisher)
+               error("Unexpected type of publisher: ${queryResultPublisher::class.simpleName}")
             }
          }
-
-
-      // I have tried and tried and tried.
-      // Somewhere in here is the "correct" way to get Spring to return a 4xx instead of a
-      // 5xx when the query execution fails.
-      // However, nothing seems to work.
-      // The error is thrown from the queryResultFlux defined above.
-      // queryResultFlux.onErrorResume { ... } will catch the error.
-      // However, it's not caught if I try in ServerlessResponse.ok().body(...).onErrorResume { ... },
-      // which is where we need to catch it in order to send back a ServerResponse with an
-      // error code.
-      // You can have a go. I give up.
-//
-//      return Mono.defer {
-//         try {
-//            val queryResultFlux = executor.handleRoutedQuery(query)
-//            ServerResponse.ok().body(queryResultFlux)
-//         } catch(e:Exception) {
-//            TODO()
-//         }
-//      }.onErrorResume { e ->
-//         logger.warn { "Query failed with error ${e.message}" }
-//         ServerResponse.status(HttpStatus.BAD_REQUEST)
-//            .bodyValue(
-//               FailedSearchResponse(e.message ?: "Query failed with exception ${e::class.simpleName}", queryId = "")
-//            )
-//      }
    }
 
    private fun getMetricsTags(query: RoutedQuery): MetricTags {

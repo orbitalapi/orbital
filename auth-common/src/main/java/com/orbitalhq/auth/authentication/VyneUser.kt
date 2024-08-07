@@ -89,7 +89,6 @@ data class VyneUser(
             isAuthenticated = false
          )
    }
-
 }
 
 

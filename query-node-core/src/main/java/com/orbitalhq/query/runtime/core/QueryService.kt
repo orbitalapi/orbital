@@ -25,6 +25,7 @@ import com.orbitalhq.query.SearchFailedException
 import com.orbitalhq.query.runtime.FailedSearchResponse
 import com.orbitalhq.query.runtime.QueryServiceApi
 import com.orbitalhq.query.runtime.core.auth.EmptyAuthenticationToken
+import com.orbitalhq.auth.getAuthClaimsAsFacts
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.QueryOptions
@@ -436,7 +437,7 @@ class QueryService(
       schema: Schema,
       parameters: List<lang.taxi.query.Parameter>
    ): String? {
-      val jwtParameter = parameters.firstOrNull { it.type.inheritsFrom(schema.taxiType(AuthClaimType.AuthClaims)) }
+      val jwtParameter = parameters.firstOrNull { it.type.inheritsFrom(schema.taxiType(AuthClaimType.AuthClaimsTypeName)) }
       return jwtParameter?.type?.qualifiedName
 
    }
@@ -462,7 +463,7 @@ class QueryService(
          // However, we also need to pull out the user facts for policies
          // I think using this approach, we end up with duplicates.
          // Need to work out a better way.
-         val userAuthTokenFacts = extractAuthTokenFactsFromUser(vyneUser, schema)
+         val userAuthTokenFacts = vyneUser.getAuthClaimsAsFacts(schema)
          val executionContextFacts = vyneUser.facts(
             extractJwtClaimFactFromQueryParameters(schema, taxiQlQuery.parameters)
          ) + userAuthTokenFacts
@@ -523,24 +524,7 @@ class QueryService(
       }
    }
 
-   /**
-    * Provides the claims in the user token represented as a series of facts for all types
-    * that subtype from the AuthClaimType type.
-    * This allows users who are authoring policies to provide the auth claims about the user as a
-    * TypedInstance.
-    *
-    */
-   private fun extractAuthTokenFactsFromUser(vyneUser: VyneUser?, schema: Schema): List<Fact> {
-      if (vyneUser == null) {
-         return emptyList()
-      }
-      val authClaimsBaseType = schema.type(AuthClaimType.AuthClaims)
-      val userAuthSubtypes = schema.types
-         .filter { it.inheritsFrom(authClaimsBaseType) && it != authClaimsBaseType}
-      return userAuthSubtypes.map { userAuthSubtype ->
-         Fact(userAuthSubtype.paramaterizedName, vyneUser.claims, FactSets.AUTHENTICATION)
-      }
-   }
+
 
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
       val vyne = vyneProvider.createVyne()

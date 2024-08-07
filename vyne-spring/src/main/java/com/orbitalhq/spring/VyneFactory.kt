@@ -29,11 +29,24 @@ import org.springframework.beans.factory.FactoryBean
 // To make testing easier
 class SimpleVyneProvider(private val vyne: Vyne) : VyneProvider {
    override fun createVyne(facts: Set<Fact>): Vyne {
-      return vyne
+      if (facts.isEmpty()) {
+         return vyne
+      } else {
+         val clone = vyne.clone()
+         facts.forEach { clone.addModel(it.toTypedInstance(clone.schema), it.factSetId) }
+         return clone
+      }
+
    }
 
    override fun createVyne(facts: Set<Fact>, schema: Schema, queryOptions: QueryOptions): Vyne {
-      return vyne
+      if (facts.isEmpty()) {
+         return vyne
+      } else {
+         val clone = vyne.clone(schema)
+         facts.forEach { clone.addModel(it.toTypedInstance(clone.schema), it.factSetId) }
+         return clone
+      }
    }
 }
 

@@ -1,16 +1,15 @@
 package com.orbitalhq.pipelines.jet.streams
 
 import com.google.common.cache.CacheBuilder
-import com.hazelcast.core.HazelcastInstance
-import com.orbitalhq.pipelines.jet.api.transport.hazelcast.HazelcastTopicSinkSpec
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
-import com.orbitalhq.schemas.fqn
+import com.orbitalhq.schema.api.SchemaProvider
 import mu.KotlinLogging
 import org.springframework.messaging.handler.annotation.DestinationVariable
 import org.springframework.messaging.handler.annotation.MessageMapping
+import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Controller
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Sinks
+import java.security.Principal
 
 /**
  * Service which exposes results from persistent streams over RSocket on request,
@@ -28,46 +27,28 @@ import reactor.core.publisher.Sinks
  */
 @Controller
 class StreamResultsService(
-   private val hazelcastInstance: HazelcastInstance,
-): StreamResultStreamProvider {
-   private val resultFeedCache = CacheBuilder.newBuilder()
-      .build<String, Flux<Any>>()
+   private val hazelcastObserver: HazelcastStreamResultObserver,
+   private val authorizationDecorator: ResultStreamAuthorizationDecorator,
+   private val schemaProvider: SchemaProvider
+) : StreamResultStreamProvider {
 
    companion object {
       private val logger = KotlinLogging.logger {}
    }
 
-   val cacheSize:Long
+   val cacheSize: Long
       get() {
-         return resultFeedCache.size()
+         return hazelcastObserver.cacheSize
       }
 
    @MessageMapping("stream-results/{streamName}")
-   override fun getResultStream(@DestinationVariable("streamName") streamName: String): Flux<Any> {
-      return resultFeedCache.get(streamName) {
-         logger.debug { "Building RSocket result emitter for stream $streamName" }
-         val topic = hazelcastInstance.getTopic<Any>(HazelcastTopicSinkSpec.topicNameForStream(streamName.fqn()))
-         // We are using multicast here as there might be multiple subscribers that might want to consume the same end point.
-         // Using unicast here blows up the second subscriber to a given streamName.
-         val sink = Sinks.many().multicast().onBackpressureBuffer<Any>()
-
-         val subscriptionId = topic.addMessageListener { messageEvent ->
-            val messagePayload = messageEvent.messageObject
-            sink.tryEmitNext(messagePayload)
-         }
-         logger.info { "subscribed to HZ topic for stream $streamName, subscription id => $subscriptionId" }
-         val flux = sink.asFlux()
-            .doFinally { signal ->
-               val currentSubscriberCount = sink.currentSubscriberCount()
-               logger.debug { "Result flux for stream $streamName destroyed because signal ${signal.name} received, current subscriber count => $currentSubscriberCount" }
-               if (currentSubscriberCount == 0) {
-                  resultFeedCache.invalidate(streamName)
-                  logger.debug { "Removing the Hz topic subscription for $streamName subscription id $subscriptionId" }
-                  // We need to unregister our topic listener, otherwise we keep getting data even though the sink is disposed.
-                  topic.removeMessageListener(subscriptionId)
-               }
-            }
-         flux
+   override fun getResultStream(@DestinationVariable("streamName") streamName: String, principal: Principal?): Flux<Any> {
+      val rawStream = hazelcastObserver.getResultStream(streamName)
+      return if (principal != null && principal is Authentication) {
+         authorizationDecorator.applyPolicies(rawStream, streamName, principal, schemaProvider.schema)
+      } else {
+         rawStream
       }
+
    }
 }

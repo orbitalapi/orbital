@@ -48,7 +48,7 @@ interface SchemaContainer {
 
 interface ModelContainer : SchemaContainer {
    fun addModel(model: TypedInstance, factSetId: FactSetId = FactSets.DEFAULT): ModelContainer
-   fun addAuth(model: TypedInstance):ModelContainer = addModel(model, FactSets.AUTHENTICATION)
+   fun addAuth(model: TypedInstance): ModelContainer = addModel(model, FactSets.AUTHENTICATION)
 }
 
 class Vyne(
@@ -62,6 +62,14 @@ class Vyne(
       if (schemas.size > 1) {
          error("Passing multiple schemas into Vyne is not supported anymore.  Pass a single composite schema")
       }
+   }
+
+   fun clone(schema: Schema = this.schema): Vyne {
+      return Vyne(
+         listOf(schema),
+         queryEngineFactory, formatSpecs,
+         queryPlanner
+      )
    }
 
    private val factSets: FactSetMap = FactSetMap.create()
@@ -166,6 +174,21 @@ class Vyne(
       val querySchema: Schema
    )
 
+   private fun authFactsToScopedFacts(factsToFilter: Set<Fact>): List<ScopedFact> {
+      val factsAsTypedInstances = factsToFilter.filter { it.factSetId == FactSets.AUTHENTICATION }
+         .map { it.toTypedInstance(schema) }
+      return authFactsToScopedFacts(factsAsTypedInstances)
+   }
+   private fun authFactsToScopedFacts(facts: Collection<TypedInstance>): List<ScopedFact> {
+      return facts
+         .mapIndexed { index, typedInstance ->
+            ScopedFact(
+               ProjectionFunctionScope("AuthenticationFact$index", typedInstance.type.taxiType),
+               typedInstance
+            )
+         }
+   }
+
    @VisibleForTesting
    internal fun buildContextAndExpression(
       taxiQl: TaxiQlQuery,
@@ -194,14 +217,7 @@ class Vyne(
 
       // Place the auth credentials (if present) as scoped facts.
       // This ensures that when we create new query contexts, they are carried over
-      val authFacts = executionContextFacts.filter { it.factSetId == FactSets.AUTHENTICATION }
-         .map { it.toTypedInstance(schema) }
-         .mapIndexed { index, typedInstance ->
-            ScopedFact(
-               ProjectionFunctionScope("AuthenticationFact$index", typedInstance.type.taxiType),
-               typedInstance
-            )
-         }
+      val authFacts = authFactsToScopedFacts(executionContextFacts)
 
       val queryContext = query(
          additionalFacts = additionalFacts.values.toSet(),
@@ -283,7 +299,7 @@ class Vyne(
    }
 
    private fun userPrincipalFact(fact: FactValue): Boolean {
-      return fact.type.inheritsFrom(this.type(AuthClaimType.AuthClaims.fullyQualifiedName).taxiType)
+      return fact.type.inheritsFrom(this.type(AuthClaimType.AuthClaimsTypeName.fullyQualifiedName).taxiType)
    }
 
    /**
@@ -331,7 +347,23 @@ class Vyne(
       ScopedFact(ProjectionFunctionScope(parameter.name, parameter.type), argValue)
    }
 
-   suspend fun evaluate(taxiExpression: String, returnType: Type): TypedInstance {
+   /**
+    * Used for performing standalone policy evaluation - ie.,
+    * outside the scope of a query.
+    *
+    * Normally, you don't need this
+    */
+   fun buildStandalonePolicyEvaluationScope(): QueryContext {
+      val queryContext = queryEngine()
+         .queryContext(
+            queryId = Ids.id("queryId"),
+            clientQueryId = null,
+            scopedFacts = authFactsToScopedFacts(factSets[FactSets.AUTHENTICATION])
+         )
+      return queryContext
+   }
+
+   fun evaluate(taxiExpression: String, returnType: Type): TypedInstance {
       val (schemaWithType, expressionType) = this.schema.compileExpression(taxiExpression, returnType)
 
       val queryContext = queryEngine(schema = schemaWithType)
@@ -410,6 +442,7 @@ class Vyne(
    override fun addAuth(model: TypedInstance): Vyne {
       return addModel(model, FactSets.AUTHENTICATION)
    }
+
    override fun addModel(model: TypedInstance, factSetId: FactSetId): Vyne {
       log().debug("Added model instance to factSet $factSetId: ${model.type.fullyQualifiedName}")
       this.factSets[factSetId].add(model)

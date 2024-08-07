@@ -1,6 +1,7 @@
 package com.orbitalhq.query.runtime
 
 import reactor.core.publisher.Flux
+import java.security.Principal
 
 /**
  * Component responsible for publishing the results of a streaming query.
@@ -15,5 +16,5 @@ import reactor.core.publisher.Flux
  *
  */
 interface StreamResultStreamProvider {
-   fun getResultStream(streamName: String): Flux<Any>
+   fun getResultStream(streamName: String,principal: Principal?): Flux<Any>
 }

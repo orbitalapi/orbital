@@ -1,6 +1,7 @@
 package com.orbitalhq.pipelines.jet.streams
 
 import com.hazelcast.test.TestHazelcastInstanceFactory
+import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.pipelines.jet.api.transport.hazelcast.HazelcastTopicSinkSpec
 import com.orbitalhq.schemas.fqn
 import io.kotest.matchers.shouldBe
@@ -12,12 +13,16 @@ class StreamResultsServiceTest {
    @Test
    fun `publishes results to flux`() {
       val hazelcastInstance = TestHazelcastInstanceFactory().newHazelcastInstance()
-      val service = StreamResultsService(hazelcastInstance)
+      val service = StreamResultsService(
+         HazelcastStreamResultObserver(hazelcastInstance),
+         mock { },
+         mock { }
+      )
       val streamName = "com.foo.TestStream"
 
       val topic = hazelcastInstance.getTopic<Any>(HazelcastTopicSinkSpec.topicNameForStream(streamName.fqn()))
 
-      service.getResultStream(streamName)
+      service.getResultStream(streamName, principal = null)
          .test()
          .expectSubscription()
          .then {

@@ -29,4 +29,4 @@ object QueryErrors {
  * base type for all taxi initiated errors
  * see: https://projects.notional.uk/youtrack/articles/ORB-A-27/Error-Handling
  */
-open class OrbitalQueryException(message: String, error: TypedInstance) : RuntimeException(message)
+open class OrbitalQueryException(message: String?, val error: TypedInstance) : RuntimeException(message)
