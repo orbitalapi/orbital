@@ -150,7 +150,7 @@ export const createTaxiEditor = async (htmlElement: HTMLElement, modelRef: IRefe
 
   // Hack for styling the Monaco tooltips after the styling
   // disappears when they're positioned correctly with
-  // wordBasedSuggestions and fixedOverflowWidgets above
+  // fixedOverflowWidgets and overflowWidgetsDomNode above
   document.querySelector('body').classList.add('monaco-editor');
 
   return Promise.resolve(editor);
