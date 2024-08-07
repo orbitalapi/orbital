@@ -31,7 +31,7 @@ interface VyneUserJpaRepository : JpaRepository<VyneUser,UserOrbitalId>{
       id: String,
       issuer: String,
       username: String,
-      email: String,
+      email: String?,
       profileUrl: String?,
       name: String?
    ): Int

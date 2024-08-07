@@ -9,6 +9,7 @@ import com.orbitalhq.schemas.Schema
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import reactor.core.publisher.Flux
+import java.security.Principal
 
 /**
  * An implementation of the VyneClient that uses a remote Vyne instance instead of an embedded one. Runs the queries
@@ -17,11 +18,11 @@ import reactor.core.publisher.Flux
 open class RemoteVyneClient(
    protected val queryService: RemoteVyneQueryService
 ) : VyneClient {
-   override fun <T : Any> queryWithType(query: String, type: Class<T>, metricsTags: MetricTags): Flux<T> {
+   override fun <T : Any> queryWithType(query: String, type: Class<T>, metricsTags: MetricTags, principal: Principal?): Flux<T> {
       return queryService.queryWithType(query, type)
    }
 
-   override fun queryAsTypedInstance(query: TaxiQLQueryString, metricsTags: MetricTags): Flux<TypedInstance> {
+   override fun queryAsTypedInstance(query: TaxiQLQueryString, metricsTags: MetricTags, principal: Principal?): Flux<TypedInstance> {
       TODO("Not implemented yet")
    }
 
@@ -36,7 +37,7 @@ class RemoteVyneClientWithSchema(queryService: RemoteVyneQueryService, private v
    override val schema: Schema
       get() = schemaStore.schemaSet.schema
 
-   override fun <T : Any> queryWithType(query: String, type: Class<T>, metricsTags: MetricTags): Flux<T> {
+   override fun <T : Any> queryWithType(query: String, type: Class<T>, metricsTags: MetricTags, principal: Principal?): Flux<T> {
       return queryService.queryWithType(query, type, schema)
    }
 }
