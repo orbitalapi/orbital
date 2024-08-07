@@ -15,6 +15,14 @@
    </properties>
 
    <dependencies>
+      <!-- not sure why this is needed, but tests are failing with
+      Caused by: java.lang.ClassNotFoundException: jakarta.websocket.Endpoint
+      -->
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-websocket</artifactId>
+         <scope>test</scope>
+      </dependency>
       <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>testcontainers</artifactId>

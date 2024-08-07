@@ -3,6 +3,7 @@ package com.orbitalhq.embedded
 import com.orbitalhq.VyneClient
 import com.orbitalhq.VyneClientWithSchema
 import com.orbitalhq.VyneProvider
+import com.orbitalhq.auth.getAuthClaimsAsFacts
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.MetricTags
 import com.orbitalhq.query.QueryContext
@@ -17,6 +18,7 @@ import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import reactor.core.publisher.Flux
 import reactor.kotlin.core.publisher.toFlux
+import java.security.Principal
 import java.util.*
 
 /**
@@ -26,13 +28,25 @@ import java.util.*
 open class EmbeddedVyneClient(
    private val vyneProvider: VyneProvider
 ) : VyneClient {
-   override fun <T : Any> queryWithType(query: String, type: Class<T>, metricsTags: MetricTags): Flux<T> {
+   override fun <T : Any> queryWithType(
+      query: String,
+      type: Class<T>,
+      metricsTags: MetricTags,
+      principal: Principal?
+   ): Flux<T> {
       return runBlocking {
+         val vyne = vyneProvider.createVyne()
+         val authClaims = principal.getAuthClaimsAsFacts(vyne.schema)
          return@runBlocking if (type == TypedInstance::class.java) {
-            val flow = vyneProvider.createVyne().query(query, metricsTags = metricsTags).results as Flow<T>
+            val flow = vyneProvider.createVyne()
+               .query(query, metricsTags = metricsTags, executionContextFacts = authClaims.toSet()).results as Flow<T>
             flow.asFlux()
          } else {
-            val flow = vyneProvider.createVyne().query(query, metricsTags = metricsTags).rawResults as Flow<T>
+            val flow = vyneProvider.createVyne().query(
+               query,
+               metricsTags = metricsTags,
+               executionContextFacts = authClaims.toSet()
+            ).rawResults as Flow<T>
             flow.asFlux()
          }
       }
@@ -44,7 +58,11 @@ open class EmbeddedVyneClient(
    }
 
 
-   override fun queryAsTypedInstance(query: TaxiQLQueryString, metricsTags: MetricTags): Flux<TypedInstance> {
+   override fun queryAsTypedInstance(
+      query: TaxiQLQueryString,
+      metricsTags: MetricTags,
+      principal: Principal?
+   ): Flux<TypedInstance> {
       // This is obviously not correct.
       // We're run blocking, and then wrapping a list to a flux, it's all sorts of level of messed up
       // But, it works. We REALLY need to get this async shit sorted out.

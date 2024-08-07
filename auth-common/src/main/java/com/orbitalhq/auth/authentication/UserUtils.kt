@@ -57,7 +57,8 @@ fun vyneUserFromClaims(claims: Map<String, Any>, authorities: Collection<Granted
       id = mandatoryClaim(JwtStandardClaims.Sub),
       issuer = mandatoryClaim(JwtStandardClaims.Issuer),
       username = getPreferredUserDisplayName(claims),
-      email = mandatoryClaim(JwtStandardClaims.Email, JwtStandardClaims.ClientId),
+      // Not provided for service accounts
+      email = claim(JwtStandardClaims.Email),
       profileUrl = claim(JwtStandardClaims.PictureUrl) ?: claim(PropelAuthJwtTokenClaims.PictureUrl),
       name = claim(JwtStandardClaims.Name),
       grantedAuthorities = VyneGrantedAuthority.from(authorities.map { it.authority }),

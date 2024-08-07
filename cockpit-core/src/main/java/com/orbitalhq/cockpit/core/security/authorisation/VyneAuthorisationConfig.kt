@@ -98,7 +98,20 @@ data class VyneOpenIdpConnectConfig(
     * (ie., ${issuerUrl}/.well-known/openid-configuration)
     * However, some IDP's use a custom discovery url. (Azure).
     */
-   val oidcDiscoveryUrl: String?
+   val oidcDiscoveryUrl: String?,
+
+   /**
+    * Defines the clientId for the role
+    * that Orbital uses to execute streaming queries
+    * and background tasks that are executed without a user context
+    */
+   val executorRoleClientId: String? = null,
+   /**
+    * Defines the clientSecret for the role
+    * that Orbital uses to execute streaming queries
+    * and background tasks that are executed without a user context
+    */
+   val executorRoleClientSecret: String? = null
 
 ) {
    init {

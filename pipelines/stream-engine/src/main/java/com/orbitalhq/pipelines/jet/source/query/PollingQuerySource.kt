@@ -7,6 +7,8 @@ import com.hazelcast.logging.ILogger
 import com.hazelcast.spring.context.SpringAware
 import com.orbitalhq.VyneClient
 import com.orbitalhq.VyneProvider
+import com.orbitalhq.auth.EmptyAuthenticationToken
+import com.orbitalhq.auth.authentication.ExecutionPrincipalAuthenticationService
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.pipelines.jet.api.transport.MessageContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.MessageSourceWithGroupId
@@ -29,9 +31,14 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactor.asFlux
+import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.runBlocking
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.stereotype.Component
 import reactor.core.Disposable
+import reactor.core.publisher.Mono
+import java.util.Optional
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
 
@@ -55,7 +62,12 @@ class PollingQuerySourceBuilder : PipelineSourceBuilder<PollingQueryInputSpec> {
       inputType: Type?
    ): BatchSource<MessageContentProvider> {
       return SourceBuilder.batch("query-poll") { context ->
-         QueryBufferingPipelineContext(context.logger(), pipelineSpec, context.jobId(), QueryBufferingPipelineContext.BufferMode.Batch)
+         QueryBufferingPipelineContext(
+            context.logger(),
+            pipelineSpec,
+            context.jobId(),
+            QueryBufferingPipelineContext.BufferMode.Batch
+         )
       }
          .fillBufferFn { context: QueryBufferingPipelineContext, buffer: SourceBuffer<MessageContentProvider> ->
             context.drainTo(buffer)
@@ -80,7 +92,7 @@ class QueryBufferingPipelineContext(
    val logger: ILogger,
    val pipelineSpec: PipelineSpec<out TaxiQlQueryPipelineTransportSpec, *>,
    val jobId: Long,
-   val mode:BufferMode
+   val mode: BufferMode
 ) {
    enum class BufferMode {
       Stream, Batch;
@@ -88,11 +100,22 @@ class QueryBufferingPipelineContext(
 
    private lateinit var queryJob: Job
    private lateinit var querySubscription: Disposable
+
    @PostConstruct
    fun runQuery() {
       val scope = CoroutineScope(Dispatchers.Default)
       queryJob = scope.launch {
-         querySubscription = vyneClient.query<TypedInstance>(pipelineSpec.input.query,  tagsOf().queryStream(pipelineSpec.name).tags())
+         val principalOrEmpty = if (executionPrincipalAuthenticationService.isPresent) {
+            executionPrincipalAuthenticationService.get().loadPrincipal()
+         } else {
+            Mono.just(EmptyAuthenticationToken)
+         }.awaitSingle()
+         val principal = EmptyAuthenticationToken.nullIfEmpty(principalOrEmpty)
+         querySubscription = vyneClient.query<TypedInstance>(
+            pipelineSpec.input.query,
+            tagsOf().queryStream(pipelineSpec.name).tags(),
+            principal
+         )
             .map {
                TypedInstanceContentProvider(
                   it,
@@ -110,6 +133,8 @@ class QueryBufferingPipelineContext(
                   logger.warning("Failed to append query result to the result queue.  Is the buffer full? Current size is ${queue.size}")
                }
             }
+
+
       }
    }
 
@@ -120,6 +145,9 @@ class QueryBufferingPipelineContext(
          queryJob.cancelAndJoin()
       }
    }
+
+   @Resource
+   lateinit var executionPrincipalAuthenticationService: Optional<ExecutionPrincipalAuthenticationService>
 
    @Resource
    lateinit var vyneClient: VyneClient

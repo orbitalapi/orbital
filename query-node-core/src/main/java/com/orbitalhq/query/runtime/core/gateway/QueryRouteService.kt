@@ -2,7 +2,7 @@ package com.orbitalhq.query.runtime.core.gateway
 
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.MetricTags
-import com.orbitalhq.query.runtime.core.auth.EmptyAuthenticationToken
+import com.orbitalhq.auth.EmptyAuthenticationToken
 import com.orbitalhq.query.tagsOf
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.consumer.SchemaStore
@@ -10,12 +10,9 @@ import com.orbitalhq.spring.http.HttpStatusException
 import lang.taxi.query.QueryMode
 import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
-import org.reactivestreams.Publisher
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
-import org.springframework.http.codec.ServerSentEvent
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.server.*
 import org.springframework.web.reactive.function.server.ServerResponse.status
 import reactor.core.publisher.Flux

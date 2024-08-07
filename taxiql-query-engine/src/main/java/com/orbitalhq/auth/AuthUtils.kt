@@ -3,8 +3,11 @@ package com.orbitalhq.auth
 import com.orbitalhq.AuthClaimType
 import com.orbitalhq.FactSets
 import com.orbitalhq.auth.authentication.VyneUser
+import com.orbitalhq.auth.authentication.toVyneUser
 import com.orbitalhq.query.Fact
 import com.orbitalhq.schemas.Schema
+import org.springframework.security.core.Authentication
+import java.security.Principal
 
 /**
  * Provides the claims in the user token represented as a series of facts for all types
@@ -19,8 +22,16 @@ fun VyneUser?.getAuthClaimsAsFacts(schema: Schema): List<Fact> {
    }
    val authClaimsBaseType = schema.type(AuthClaimType.AuthClaimsTypeName)
    val userAuthSubtypes = schema.types
-      .filter { it.inheritsFrom(authClaimsBaseType) && it != authClaimsBaseType}
+      .filter { it.inheritsFrom(authClaimsBaseType) && it != authClaimsBaseType }
    return userAuthSubtypes.map { userAuthSubtype ->
       Fact(userAuthSubtype.paramaterizedName, this.claims, FactSets.AUTHENTICATION)
    }
+}
+
+fun Principal?.getAuthClaimsAsFacts(schema: Schema): List<Fact> {
+   if (this == null) {
+      return emptyList()
+   }
+   return (this as Authentication).toVyneUser()
+      .getAuthClaimsAsFacts(schema)
 }

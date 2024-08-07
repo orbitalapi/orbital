@@ -24,7 +24,7 @@ import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.SearchFailedException
 import com.orbitalhq.query.runtime.FailedSearchResponse
 import com.orbitalhq.query.runtime.QueryServiceApi
-import com.orbitalhq.query.runtime.core.auth.EmptyAuthenticationToken
+import com.orbitalhq.auth.EmptyAuthenticationToken
 import com.orbitalhq.auth.getAuthClaimsAsFacts
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
 import com.orbitalhq.schema.api.SchemaProvider

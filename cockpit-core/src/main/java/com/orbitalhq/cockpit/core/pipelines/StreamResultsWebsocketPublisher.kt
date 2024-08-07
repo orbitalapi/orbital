@@ -2,7 +2,7 @@ package com.orbitalhq.cockpit.core.pipelines
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
-import com.orbitalhq.query.runtime.core.auth.EmptyAuthenticationToken
+import com.orbitalhq.auth.EmptyAuthenticationToken
 import com.orbitalhq.query.runtime.core.gateway.WebsocketQueryRouteMatchingService
 import com.orbitalhq.spring.http.NotFoundException
 import com.orbitalhq.spring.http.websocket.OrbitalWebSocketConfiguration

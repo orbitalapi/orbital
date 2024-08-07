@@ -1,10 +1,5 @@
-package com.orbitalhq.query.runtime.core.auth
+package com.orbitalhq.auth
 
-import com.orbitalhq.AuthClaimType
-import com.orbitalhq.FactSets
-import com.orbitalhq.auth.authentication.VyneUser
-import com.orbitalhq.query.Fact
-import com.orbitalhq.schemas.Schema
 import java.security.Principal
 
 

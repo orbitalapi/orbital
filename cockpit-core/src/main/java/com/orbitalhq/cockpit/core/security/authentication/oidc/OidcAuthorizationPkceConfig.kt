@@ -5,6 +5,7 @@ import com.orbitalhq.auth.authorisation.VyneUserRoleDefinitionRepository
 import com.orbitalhq.cockpit.core.lsp.LanguageServerConfig
 import com.orbitalhq.cockpit.core.security.FrontEndSecurityConfig
 import com.orbitalhq.cockpit.core.security.authorisation.JwtRolesExtractor
+import com.orbitalhq.cockpit.core.security.authorisation.VyneOpenIdpConnectConfig
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -26,6 +27,7 @@ import org.springframework.security.web.server.util.matcher.NegatedServerWebExch
 import org.springframework.security.web.server.util.matcher.ServerWebExchangeMatchers
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
+import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
 
 /**
@@ -47,6 +49,28 @@ import reactor.core.publisher.Mono
 class OidcAuthorizationPkceConfig {
    companion object {
       private val logger = KotlinLogging.logger {}
+   }
+
+   @Bean
+   @ConditionalOnProperty("vyne.security.openIdp.executorRoleClientId",  matchIfMissing = false)
+   fun executionPrincipalAuthService(
+      securityConfig: VyneOpenIdpConnectConfig,
+      authenticationManager: ReactiveAuthenticationManager,
+      webClientBuilder: WebClient.Builder
+   ): OAuthExecutionPrincipalAuthService? {
+
+      require(securityConfig.executorRoleClientId != null) { "Expected vyne.security.openIdp.executorRoleClientId to be set" }
+      require(securityConfig.executorRoleClientSecret != null)
+      { "vyne.security.openIdp.executorRoleClientSecret must be set when vyne.security.openIdp.executorRoleClientId is provided" }
+      return OAuthExecutionPrincipalAuthService(
+         webClientBuilder.build(),
+         securityConfig.executorRoleClientId,
+         securityConfig.executorRoleClientSecret,
+         // TODO : Fix this - either pass it in, or
+         // load it from .well-known/openid-configuration
+         "${securityConfig.issuerUrl!!}/protocol/openid-connect/token",
+         authenticationManager
+      )
    }
 
    @Bean
@@ -78,6 +102,7 @@ class OidcAuthorizationPkceConfig {
                   }
                   .map { it as Authentication }
             }
+
             else -> Mono.error(AuthenticationServiceException("Unsupported authentication type"))
          }
       }

@@ -47,7 +47,7 @@ data class VyneUser(
    // The users preferred username.  Used for display, does not necessarily
    // guarantee that can be used to identify the user.
    val username: UserDisplayName,
-   val email: String,
+   val email: String?,
    @Column(name = "profile_url")
    val profileUrl: String? = null,
    val name: UserFullDisplayName? = null,
