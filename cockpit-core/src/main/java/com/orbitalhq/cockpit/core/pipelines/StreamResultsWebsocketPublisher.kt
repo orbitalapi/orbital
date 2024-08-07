@@ -2,6 +2,7 @@ package com.orbitalhq.cockpit.core.pipelines
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
+import com.orbitalhq.query.runtime.core.auth.EmptyAuthenticationToken
 import com.orbitalhq.query.runtime.core.gateway.WebsocketQueryRouteMatchingService
 import com.orbitalhq.spring.http.NotFoundException
 import com.orbitalhq.spring.http.websocket.OrbitalWebSocketConfiguration
@@ -51,11 +52,17 @@ class StreamResultsWebsocketPublisher(
       val query = routeMatchingService.getQuery(queryPath)
          ?: return notFound
 
-      val flux: Flux<Any> = streamResultSubscriptionManager.getResultStream(query.name.parameterizedName)
-      val outbound = flux.map { event ->
-         val json = objectMapper.writeValueAsString(event)
-         session.textMessage(json)
-      }
+      val outbound = session.handshakeInfo.principal.defaultIfEmpty(EmptyAuthenticationToken)
+         .flatMapMany { principalOrEmpty ->
+            val principal = if (principalOrEmpty is EmptyAuthenticationToken) null else principalOrEmpty
+            val flux: Flux<Any> = streamResultSubscriptionManager.getResultStream(query.name.parameterizedName,principal)
+            flux.map { event ->
+               val json = objectMapper.writeValueAsString(event)
+               session.textMessage(json)
+            }
+         }
+
+
       return orbitalWebSocketConfiguration.applyPingConfiguration(this, session, outbound)
    }
 }

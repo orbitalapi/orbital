@@ -46,7 +46,7 @@ class PolicyConfigService(
          .map { authToken ->
             val schema = schemaProvider.schema
             val authTokenTypes = schema.types
-               .filter { it.inheritsFromTypeNames.contains(AuthClaimType.AuthClaims) }
+               .filter { it.inheritsFromTypeNames.contains(AuthClaimType.AuthClaimsTypeName) }
             val jwtClaims = when (authToken) {
                is AnonymousAuthenticationToken -> emptyMap()
                is JwtAuthenticationToken -> authToken.token.claims

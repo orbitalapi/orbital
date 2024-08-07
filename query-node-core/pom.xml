@@ -14,6 +14,11 @@
    <dependencies>
       <dependency>
          <groupId>org.taxilang</groupId>
+         <artifactId>taxi-stdlib-annotations</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
          <artifactId>taxi-to-openapi-plugin</artifactId>
          <version>${taxi.version}</version>
       </dependency>

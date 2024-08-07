@@ -16,7 +16,7 @@ fun VyneUser?.facts(jwtClaimType: String? = null): Set<Fact> {
          )
       } else emptySet()
       setOf(
-         Fact(UserType.USERNAME.fullyQualifiedName, this.username, FactSets.AUTHENTICATION)
+         Fact(UserType.UsernameTypeName.fullyQualifiedName, this.username, FactSets.AUTHENTICATION)
       ) + claimFact
    }
 }

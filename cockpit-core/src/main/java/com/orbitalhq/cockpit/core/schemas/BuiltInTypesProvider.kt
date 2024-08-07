@@ -35,7 +35,7 @@ object BuiltInTypesProvider {
          VersionedSource(
             "UserTypes",
             "0.1.0",
-            UserType.USERNAME_TYPEDEF
+            UserType.UsernameTypeDefinition
          ),
          VersionedSource(
             "JwtTypes",

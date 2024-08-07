@@ -25,7 +25,7 @@ import java.security.Principal
  */
 class LocalQueryDispatcher(
    private val queryService: QueryService,
-   private val streamResultSubscriptionManager: StreamResultStreamProvider
+   private val streamResultSubscriptionManager: StreamResultStreamProvider,
 ) : StreamingQueryDispatcher {
 
    companion object {
@@ -48,24 +48,34 @@ class LocalQueryDispatcher(
          principal
       } else null
       val responseEntity = runBlocking {
-         queryService.submitVyneQlQuery(
-            query,
-            resultMode,
-            mediaType,
-            auth,
-            clientQueryId,
-            arguments = arguments,
-         )
+         try {
+            queryService.submitVyneQlQuery(
+               query,
+               resultMode,
+               mediaType,
+               auth,
+               clientQueryId,
+               arguments = arguments,
+            )
+         } catch (e:Exception) {
+            throw e
+         }
+
       }
       return when (responseEntity.body) {
-         is Flux<*> -> responseEntity.body!! as Flux<Any>
-         is Mono<*> -> responseEntity.body!! as Mono<Any>
+         is Flux<*> -> {
+            (responseEntity.body!! as Flux<Any>).doOnError { error ->
+               Flux.error<Any>(error)
+            }
+         }
+         is Mono<*> -> (responseEntity.body!! as Mono<Any>) /*.doOnError {
+            TODO()
+         }*/
          else -> error("Unhandled usecase: ${responseEntity.body::class.simpleName}")
       }
    }
 
    override fun publishResultStream(name: QualifiedName, principal: Principal?): Flux<Any> {
-      // TODO: We need to somehow re-apply policies on the result stream here
-      return streamResultSubscriptionManager.getResultStream(name.parameterizedName)
+      return streamResultSubscriptionManager.getResultStream(name.parameterizedName,principal)
    }
 }

@@ -11,16 +11,16 @@ object VyneTypes {
 }
 
 object UserType {
-   val USERNAME = "${VyneTypes.NAMESPACE}.Username".fqn()
-   val USERNAME_TYPEDEF = """namespace ${USERNAME.namespace} {
-         |   type ${USERNAME.name} inherits String
+   val UsernameTypeName = "${VyneTypes.NAMESPACE}.Username".fqn()
+   val UsernameTypeDefinition = """namespace ${UsernameTypeName.namespace} {
+         |   type ${UsernameTypeName.name} inherits String
          |}""".trimMargin()
 }
 
 object AuthClaimType {
-   val AuthClaims = "${VyneTypes.NAMESPACE}.auth.AuthClaims".fqn()
-   val AuthClaimsTypeDefinition = """namespace ${AuthClaims.namespace} {
-         |   model ${AuthClaims.name} {
+   val AuthClaimsTypeName = "${VyneTypes.NAMESPACE}.auth.AuthClaims".fqn()
+   val AuthClaimsTypeDefinition = """namespace ${AuthClaimsTypeName.namespace} {
+         |   model ${AuthClaimsTypeName.name} {
          |
          |   }
          |}""".trimMargin()

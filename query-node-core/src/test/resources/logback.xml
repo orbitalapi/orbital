@@ -13,9 +13,7 @@
     <!--<logger level="trace" name="org.springframework.data.hazelcast" />-->
     <!--<logger level="trace" name="com" />-->
 
-   <logger level="DEBUG" name="io.vyne" />
-   <logger level="DEBUG" name="com.rabbitmq" />
-   <logger level="DEBUG" name="reactor.rabbitmq" />
+   <logger level="DEBUG" name="com.orbitalhq" />
 	<root level="INFO">
 		<appender-ref ref="console" />
 	</root>

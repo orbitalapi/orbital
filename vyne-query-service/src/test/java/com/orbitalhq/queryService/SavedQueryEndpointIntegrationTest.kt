@@ -19,6 +19,9 @@ import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.pipelines.jet.streams.HazelcastStreamResultObserver
+import com.orbitalhq.pipelines.jet.streams.ResultStreamAuthorizationDecorator
+import com.orbitalhq.pipelines.jet.streams.StreamResultsService
 import com.orbitalhq.query.runtime.core.dispatcher.local.RSocketStreamResultSubscriptionManager
 import com.orbitalhq.query.runtime.core.gateway.QueryRouteService
 import com.orbitalhq.schema.api.SchemaProvider
@@ -54,7 +57,6 @@ import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
-import org.springframework.http.HttpStatusCode
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
@@ -98,8 +100,11 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
    @MockBean
    lateinit var schemaEditorService: SchemaEditorService
 
+   @Autowired
+   lateinit var streamSubscriptionManager: StreamResultsService
+
    @MockBean
-   lateinit var streamSubscriptionManager: RSocketStreamResultSubscriptionManager
+   lateinit var hazelcastStreamResultObserver: HazelcastStreamResultObserver
 
    @MockBean
    lateinit var configService: ConfigService
@@ -158,7 +163,13 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
    }
 
    @TestConfiguration
-   @Import(TestDiscoveryClientConfig::class, WebSocketConfig::class, StreamResultsWebsocketPublisher::class)
+   @Import(
+      TestDiscoveryClientConfig::class,
+      WebSocketConfig::class,
+      StreamResultsWebsocketPublisher::class,
+      StreamResultsService::class,
+      ResultStreamAuthorizationDecorator::class
+   )
    class SpringConfig {
 
       @MockBean
@@ -255,7 +266,7 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
    @Test
    fun `can stream streaming query over http endpoint using SSE`() {
       val sink = Sinks.many().unicast().onBackpressureBuffer<Any>()
-      whenever(streamSubscriptionManager.getResultStream(any())).thenReturn(sink.asFlux())
+      whenever(hazelcastStreamResultObserver.getResultStream(any())).thenReturn(sink.asFlux())
 
       val client = WebClient.builder()
          .baseUrl("http://localhost:$randomServerPort")
@@ -278,7 +289,7 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
    @Test
    fun `can stream streaming query over websocket`() {
       val publisherSink = Sinks.many().unicast().onBackpressureBuffer<Any>()
-      whenever(streamSubscriptionManager.getResultStream(any())).thenReturn(publisherSink.asFlux())
+      whenever(hazelcastStreamResultObserver.getResultStream(any())).thenReturn(publisherSink.asFlux())
       val objectMapper = ObjectMapper()
       val client = HttpClient(CIO) {
          install(WebSockets)
@@ -340,7 +351,7 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
    @Test
    fun `websocket query exposed with the wrong url prefix is not found`() {
       val publisherSink = Sinks.many().unicast().onBackpressureBuffer<Any>()
-      whenever(streamSubscriptionManager.getResultStream(any())).thenReturn(publisherSink.asFlux())
+      whenever(hazelcastStreamResultObserver.getResultStream(any())).thenReturn(publisherSink.asFlux())
 
       val client = HttpClient(CIO) {
          install(WebSockets)
