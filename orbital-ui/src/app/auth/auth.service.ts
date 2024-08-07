@@ -195,13 +195,19 @@ export class AuthService {
         });
       });
     } else {
-      return this.oauthService.revokeTokenAndLogout().then(
-        success => console.log('logout successful!'),
-        error => {
-          console.log(error)
-          return error
-        }
-      );
+      if (this._securityConfig.refreshTokensDisabled) {
+        // this property is potentially a special case for Hazelcast MC's IdP setup
+        this.oauthService.redirectUriAsPostLogoutRedirectUriFallback = false;
+        this.oauthService.logOut();
+      } else {
+        return this.oauthService.revokeTokenAndLogout().then(
+          success => console.log('logout successful!'),
+          error => {
+            console.log(error)
+            return error
+          }
+        );
+      }
     }
   }
 
