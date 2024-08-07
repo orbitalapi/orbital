@@ -78,8 +78,19 @@ export const createWebsocketConnection = (url: string): Promise<[WebSocket, WsTr
     };
 
     webSocket.onerror = (err) => {
+      if (webSocket.readyState == 1) {
+        console.log('ws normal error: ' + err.type);
+      }
       reject(err);
     };
+
+    webSocket.onclose = (event) => {
+      if (event.code == 3001) {
+        console.log('ws closed', event);
+      } else {
+        console.log('ws connection error', event);
+      }
+    }
   });
 }
 
