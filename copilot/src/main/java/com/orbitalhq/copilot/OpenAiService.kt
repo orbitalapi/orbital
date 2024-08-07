@@ -292,6 +292,7 @@ data class OpenAiChatRequest(
 data class OpenAiChatMessage(
    val role: Role,
    val content: String,
+   val refusal: Any? = null
 ) {
    enum class Role {
       system, user, assistant
