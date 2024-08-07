@@ -97,7 +97,7 @@ export class QueryEditorStoreService {
       isErrorMessageSubscriptionSetup: signal(false),
       isQueryPaused: signal(false),
       showMaxRecordCountWarning: signal(false),
-      isQuerySaveable: signal(false),
+      isQuerySaveable: signal(true), // NOTE: set this back to false when featureToggles.queryPlanModeEnabled is set to true/removed
       // Observables/Subjects
       results: signal(null),
       potentiallyPausedResults: signal(null),
@@ -166,7 +166,9 @@ export class QueryEditorStoreService {
   }
 
   compileQuery() {
-    this.activeQueryEditorState()?.compileQuery()
+    if (this.config()?.featureToggles.queryPlanModeEnabled) {
+      this.activeQueryEditorState()?.compileQuery()
+    }
   }
 
   copyQuery($event: CopyQueryFormat) {

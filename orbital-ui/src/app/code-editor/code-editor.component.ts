@@ -213,9 +213,7 @@ export class CodeEditorComponent implements OnDestroy {
     const diagnosticsEvents = await this.languageServerService.getDiagnostics$();
     diagnosticsEvents.pipe(
       takeUntilDestroyed(this.destroyRef),
-      filter((event) => {
-        return event.uri == model.textEditorModel.uri.toString();
-      }),
+      filter(event => event.uri === model.textEditorModel.uri.toString()),
       debounceTime(100)
     ).subscribe(next => {
       this.compilationMessages = next.diagnostics.map(message => {
