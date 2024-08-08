@@ -21,7 +21,7 @@ export class MonacoLanguageServerService {
   readonly websocketClosed$: Subject<CloseEvent> = new Subject();
 
   private languageClient: MonacoLanguageClient;
-  private diagnosticsSubject: Subject<DiagnosticsEvent>
+  private diagnosticsSubject: Subject<DiagnosticsEvent> = new Subject<{ uri: Uri, diagnostics: Diagnostic[] }>();
   private webSocket: WebSocket;
   private connection: Promise<[WebSocket, WsTransport]> | null = null;
 
@@ -57,7 +57,13 @@ export class MonacoLanguageServerService {
     // In future, we may want to make this an observable that cleans up when
     // all subscribers have gone away, and handles reconnects.
     if (!this.connection) {
-      this.connection = createWebsocketConnection(this.languageServerWsAddress);
+      try {
+        this.connection = createWebsocketConnection(this.languageServerWsAddress);
+      } catch (error) {
+        // TODO: re-utilise websocketClosed$ so it can inform the code-editor that something pear has happened
+        console.error('Failed to establish WebSocket connection:', error);
+      }
+
     }
     return this.connection;
   }
@@ -80,7 +86,6 @@ export class MonacoLanguageServerService {
         this.websocketClosed$.next(event)
       }
       this.languageClient = createLanguageClient(wsTransport);
-      this.diagnosticsSubject = new Subject<{ uri: Uri, diagnostics: Diagnostic[] }>();
       this.languageClient.onNotification('textDocument/publishDiagnostics', params => {
         this.diagnosticsSubject.next(params)
       })
