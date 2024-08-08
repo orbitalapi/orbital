@@ -286,7 +286,7 @@
       <dependency>
          <groupId>org.jetbrains.kotlin</groupId>
          <artifactId>kotlin-script-runtime</artifactId>
-         <version>1.9.24</version>
+         <version>${kotlin.version}</version>
          <scope>compile</scope>
       </dependency>
    </dependencies>
@@ -696,8 +696,8 @@
                      <licenseMerge>Hazelcast Community License|The Hazelcast Community License
                      </licenseMerge>
                      <licenseMerge>Common Public License 1.0|CPL</licenseMerge>
-                     <licenseMerge>GNU Library General Public License v2 only|GNU Lesser Public License|GNU Library General Public License v2.1 or later</licenseMerge>
-                     <licenseMerge>BSD-2-Clause|The (New) BSD License|BSD 2-Clause License|The New BSD License|The BSD License|Revised BSD</licenseMerge>
+                     <licenseMerge>GNU Library General Public License v2 only|GNU Library General Public License v2.1 or later</licenseMerge>
+                     <licenseMerge>BSD-2-Clause|The (New) BSD License|BSD 2-Clause License|The New BSD License|The BSD License|Revised BSD|The BSD 2-Clause License</licenseMerge>
                      <licenseMerge>Creative Commons Zero v1.0 Universal|Public Domain, per Creative Commons CC0</licenseMerge>
                      <licenseMerge>BSD-3-Clause|3-Clause BSD License|BSD</licenseMerge>
                      <licenseMerge>Eclipse Public License - v 1.0|EPL 1.0|Eclipse Public License, Version 1.0</licenseMerge>

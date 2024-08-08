@@ -485,8 +485,6 @@ trigger-connect-build:
 validate-license-compliance:
    stage: verify
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:18.18
-   ## Temp - remove once we have 100% compliance
-   allow_failure: true
    script:
       - node processLicenses.js
 

@@ -6,7 +6,6 @@ import com.orbitalhq.connectors.config.jdbc.JdbcUrlBuilder
 import com.orbitalhq.connectors.jdbc.UpsertVerb
 import com.orbitalhq.connectors.jdbc.drivers.h2.H2DatabaseSupport
 import com.orbitalhq.connectors.jdbc.drivers.mssql.MssqlDbSupport
-import com.orbitalhq.connectors.jdbc.drivers.mysql.MySqlDbSupport
 import com.orbitalhq.connectors.jdbc.drivers.postgres.PostgresDbSupport
 import com.orbitalhq.connectors.jdbc.drivers.redshift.RedshiftDatabaseSupport
 import com.orbitalhq.connectors.jdbc.drivers.snowflake.SnowflakeDatabaseSupport
@@ -64,7 +63,6 @@ interface DatabaseSupport {
             JdbcDriver.H2 -> H2DatabaseSupport
             JdbcDriver.POSTGRES -> PostgresDbSupport
             JdbcDriver.MSSQL -> MssqlDbSupport
-            JdbcDriver.MYSQL -> MySqlDbSupport
             JdbcDriver.REDSHIFT -> RedshiftDatabaseSupport
             JdbcDriver.SNOWFLAKE -> SnowflakeDatabaseSupport
          }
