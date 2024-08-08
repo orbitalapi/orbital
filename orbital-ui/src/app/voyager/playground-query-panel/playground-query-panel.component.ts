@@ -203,6 +203,9 @@ export class PlaygroundQueryPanelComponent implements AfterViewInit {
           this.changeDetector.markForCheck();
         },
         error: err => {
+          this.queryResultsExpanded = true;
+          this.queryPlanExpanded = false;
+          this.configPanelExpanded = false;
           this.queryResult = JSON.stringify(err.error, null, 3);
           this.changeDetector.markForCheck();
         }

@@ -32,20 +32,12 @@ import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.compon
           <as-split-area [size]="35" [order]="0">
             <div class="panel-with-header">
               <app-panel-header title="Schema"></app-panel-header>
-              <as-split direction="vertical" unit="pixel">
-                <as-split-area size="*">
-                  <app-code-editor
-                    class="flex-grow"
-                    [content]="content"
-                    wordWrap="on"
-                    (contentChange)="codeUpdated$.next($event)">
-                  </app-code-editor>
-                </as-split-area>
-                <as-split-area [size]="200" *ngIf="(parsedSchema$ | async)?.hasErrors">
-                  <app-compilation-message-list
-                    [compilationMessages]="(parsedSchema$ | async).messages"></app-compilation-message-list>
-                </as-split-area>
-              </as-split>
+              <app-code-editor
+                class="flex-grow"
+                [content]="content"
+                wordWrap="on"
+                (contentChange)="codeUpdated$.next($event)">
+              </app-code-editor>
             </div>
           </as-split-area>
           <as-split-area *ngIf="showQueryPanel" [order]="1">
