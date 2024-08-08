@@ -1,11 +1,11 @@
 package org.taxilang.playground
 
 import com.orbitalhq.playground.StubQueryService
+import com.orbitalhq.query.TaxiJacksonModule
 import io.micrometer.cloudwatch2.CloudWatchConfig
 import io.micrometer.cloudwatch2.CloudWatchMeterRegistry
 import io.micrometer.core.instrument.Clock
 import io.micrometer.core.instrument.MeterRegistry
-import com.orbitalhq.query.TaxiJacksonModule
 import mu.KotlinLogging
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
@@ -16,6 +16,8 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
+import org.springframework.security.config.web.server.ServerHttpSecurity
+import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.web.client.RestTemplate
 import org.springframework.web.reactive.config.CorsRegistry
 import org.springframework.web.reactive.config.WebFluxConfigurer
@@ -134,3 +136,22 @@ data class MetricsTags(val tags: List<String>)
 @Configuration
 @EnableJpaRepositories
 class JpaConfig
+
+@Configuration
+class UnsecureConfig {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+   @Bean
+   fun springWebFilterChainNoAuthentication(http: ServerHttpSecurity): SecurityWebFilterChain? {
+      logger.warn { "Authentication is disabled" }
+      return http
+         .csrf().disable()
+         .cors().disable()
+         .headers().disable()
+         .authorizeExchange()
+         .anyExchange().permitAll()
+         .and()
+         .build()
+   }
+}
