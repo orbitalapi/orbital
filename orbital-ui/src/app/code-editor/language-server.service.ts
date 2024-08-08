@@ -57,13 +57,7 @@ export class MonacoLanguageServerService {
     // In future, we may want to make this an observable that cleans up when
     // all subscribers have gone away, and handles reconnects.
     if (!this.connection) {
-      try {
-        this.connection = createWebsocketConnection(this.languageServerWsAddress);
-      } catch (error) {
-        // TODO: re-utilise websocketClosed$ so it can inform the code-editor that something pear has happened
-        console.error('Failed to establish WebSocket connection:', error);
-      }
-
+      this.connection = createWebsocketConnection(this.languageServerWsAddress);
     }
     return this.connection;
   }
@@ -78,7 +72,13 @@ export class MonacoLanguageServerService {
   async getLanguageClient(): Promise<MonacoLanguageClient> {
     if (!this.languageClient) {
       console.log('Creating new language client')
-      const [websocket, wsTransport] = await this.createLanguageServerWebsocketTransport()
+      let websocket: WebSocket, wsTransport: WsTransport;
+      try {
+        [websocket, wsTransport] = await this.createLanguageServerWebsocketTransport()
+      } catch (error) {
+        // TODO: re-utilise websocketClosed$ so it can inform the code-editor that something pear has happened
+        console.error('Failed to establish WebSocket connection:', error);
+      }
       this.webSocket = websocket;
       this.webSocket.onclose = async (event) => {
         console.warn('language server web socket closed...', event)
