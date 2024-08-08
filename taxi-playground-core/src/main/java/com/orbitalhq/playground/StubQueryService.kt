@@ -1,5 +1,9 @@
 package com.orbitalhq.playground
 
+import com.orbitalhq.PackageMetadata
+import com.orbitalhq.SourcePackage
+import com.orbitalhq.VersionedSource
+import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.formats.csv.CsvAnnotationSpec
 import com.orbitalhq.formats.xml.XmlAnnotationSpec
 import com.orbitalhq.models.TypedCollection
@@ -11,6 +15,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
+import lang.taxi.annotations.HttpService
 import lang.taxi.query.QueryMode
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.Arrays
@@ -23,8 +28,17 @@ class StubQueryService(private val streamDelay: Duration = Duration.ofMillis(500
       val builtInTypes: String = listOf(
          VyneQlGrammar.QUERY_TYPE_TAXI,
          CsvAnnotationSpec.taxi,
-         XmlAnnotationSpec.taxi
+         XmlAnnotationSpec.taxi,
+         ErrorType.ErrorTypeDefinition,
+         HttpService.asTaxi()
       ).joinToString("\n")
+
+      val builtInTypesSourcePackage = SourcePackage(
+         PackageMetadata.from("org.taxilang", "taxiql", "0.1.0"),
+         listOf(
+            VersionedSource.sourceOnly(builtInTypes)
+         )
+      )
    }
 
 

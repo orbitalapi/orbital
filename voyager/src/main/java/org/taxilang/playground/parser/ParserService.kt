@@ -3,7 +3,7 @@ package org.taxilang.playground.parser
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
-import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.playground.StubQueryService
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import lang.taxi.CompilationMessage
 import lang.taxi.errors
@@ -13,20 +13,6 @@ import org.springframework.web.bind.annotation.RestController
 
 @RestController
 class ParserService {
-   private val buildInTypes = listOf(
-      SourcePackage(
-         PackageMetadata.from("org.taxilang", "taxiql", "0.1.0"),
-         listOf(
-            VersionedSource(
-               "TaxiQL",
-               version = "0.1.0",
-               VyneQlGrammar.QUERY_TYPE_TAXI
-            )
-         ),
-         additionalSources = emptyMap()
-      )
-
-   )
    @PostMapping("/api/schema/parse")
    fun parseToSchema(@RequestBody source: String): ParsedSchema {
       val packages = listOf(
@@ -37,7 +23,7 @@ class ParserService {
             ),
             additionalSources = emptyMap()
          )
-      ) + buildInTypes
+      ) + StubQueryService.builtInTypesSourcePackage
       val (messages, schema) = TaxiSchema.compiled(packages)
       return ParsedSchema(schema, messages)
    }
