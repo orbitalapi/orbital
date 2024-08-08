@@ -49,7 +49,7 @@ class ContentSpringModule {
                iconUrl = "/assets/img/tabler/building-lighthouse.svg",
                action = ContentCardAction(
                   "Visit Playground",
-                  route = listOf("https://voyager.orbitalhq.com")
+                  route = listOf("https://playground.taxilang.org")
                )
             ),
          )
