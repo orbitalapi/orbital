@@ -139,11 +139,6 @@
          <version>${hazelcast.version}</version>
       </dependency>
       <dependency>
-         <groupId>com.hazelcast.jet</groupId>
-         <artifactId>hazelcast-jet-s3</artifactId>
-         <version>${hazelcast.version}</version>
-      </dependency>
-      <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-actuator</artifactId>
       </dependency>
@@ -237,11 +232,6 @@
          <classifier>test</classifier>
       </dependency>
 
-      <dependency>
-         <groupId>com.hazelcast.jet</groupId>
-         <artifactId>hazelcast-jet-kafka</artifactId>
-         <version>${hazelcast.version}</version>
-      </dependency>
       <dependency>
          <groupId>org.springframework.kafka</groupId>
          <artifactId>spring-kafka-test</artifactId>

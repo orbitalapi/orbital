@@ -3,10 +3,8 @@ package com.orbitalhq.pipelines.jet.sink
 import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec
-import com.orbitalhq.pipelines.jet.sink.aws.s3.AwsS3SinkBuilder
 import com.orbitalhq.pipelines.jet.sink.http.TaxiOperationSinkBuilder
 import com.orbitalhq.pipelines.jet.sink.jdbc.JdbcSinkBuilder
-import com.orbitalhq.pipelines.jet.sink.kafka.KafkaSinkBuilder
 import com.orbitalhq.pipelines.jet.sink.list.ListSinkBuilder
 import com.orbitalhq.pipelines.jet.sink.log.LoggingSinkBuilder
 import com.orbitalhq.pipelines.jet.sink.redshift.RedshiftSinkBuilder
@@ -40,10 +38,8 @@ class PipelineSinkProvider(
                StreamSinkBuilder(),
                ListSinkBuilder(),
                TaxiOperationSinkBuilder(),
-               KafkaSinkBuilder(kafkaConnectionRegistry),
                RedshiftSinkBuilder(),
                JdbcSinkBuilder(),
-               AwsS3SinkBuilder(awsConnectionRegistry),
                LoggingSinkBuilder()
 
             )

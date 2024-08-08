@@ -11,7 +11,6 @@ import com.orbitalhq.pipelines.jet.source.fixed.FixedItemsSourceBuilder
 import com.orbitalhq.pipelines.jet.source.fixed.ItemStreamSourceBuilder
 import com.orbitalhq.pipelines.jet.source.fixed.ScheduledSourceBuilder
 import com.orbitalhq.pipelines.jet.source.http.poll.PollingTaxiOperationSourceBuilder
-import com.orbitalhq.pipelines.jet.source.kafka.KafkaSourceBuilder
 import com.orbitalhq.pipelines.jet.source.query.PollingQuerySourceBuilder
 import com.orbitalhq.pipelines.jet.source.query.StreamingQuerySourceBuilder
 
@@ -41,7 +40,6 @@ class PipelineSourceProvider(
                PollingTaxiOperationSourceBuilder(),
                S3SourceBuilder(),
                SqsS3SourceBuilder(),
-               KafkaSourceBuilder(kafkaConnectionRegistry),
                PollingQuerySourceBuilder(),
                StreamingQuerySourceBuilder(),
                FileWatcherStreamSourceBuilder()

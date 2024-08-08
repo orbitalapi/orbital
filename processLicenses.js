@@ -135,7 +135,7 @@ const whitelist = {
          spdxCode: '',
          url: 'http://golang.org/LICENSE'
       },
-      {
+      /*{
          licenseName: 'GNU Library General Public License v2 only',
          spdxCode: 'LGPL-2.0-only',
          url: 'https://www.gnu.org/licenses/old-licenses/lgpl-2.0.html'
@@ -144,7 +144,9 @@ const whitelist = {
          licenseName: 'GNU Library General Public License v2 or later',
          spdxCode: 'LGPL-2.0-or-later',
          url: 'https://www.gnu.org/licenses/old-licenses/lgpl-2.0.html'
-      },
+      },*/
+
+      /*
       {
          licenseName: 'GNU Lesser General Public License v2.1 only',
          spdxCode: 'LGPL-2.1-only',
@@ -165,11 +167,12 @@ const whitelist = {
          spdxCode: 'LGPL-3.0-or-later',
          url: 'https://www.gnu.org/licenses/lgpl-3.0.html'
       },
-      {
+      */
+    /*  {
          licenseName: 'Hazelcast Community License',
          spdxCode: '',
          url: 'https://hazelcast.com/hazelcast-community-license/'
-      },
+      },*/
       {
          licenseName: 'Common Public License 1.0',
          spdxCode: 'CPL-1.0',
@@ -286,8 +289,25 @@ const whitelist = {
          license: 'Apache 2.0',
          rationale: 'Malformed package.json - part of the Apache 2.0 taiga-ui package',
          relatedLinks: []
+      },
+      {
+         project: 'org.hibernate.common:hibernate-commons-annotations',
+         license: 'LGPL 2.1',
+         rationale: 'LGPL only requires republication of modified LGPL source code. Hibernate and JBoss make this very clear specifically with relation to use of Hibernate in commerical applications',
+         relatedLinks: [
+            'https://developer.jboss.org/docs/DOC-15788#:~:text=be%20free%20software.-,Can%20I%20embed%20Hibernate%20in%20my%20commercial%20application%3F,Hibernate%20binary%20has%20no%20restrictions.',
+            'https://hibernate.org/community/license/'
+         ]
+      },
+      {
+         project: 'org.hibernate.orm:hibernate-core',
+         license: 'LGPL 2.1',
+         rationale: 'LGPL only requires republication of modified LGPL source code. Hibernate and JBoss make this very clear specifically with relation to use of Hibernate in commerical applications',
+         relatedLinks: [
+            'https://developer.jboss.org/docs/DOC-15788#:~:text=be%20free%20software.-,Can%20I%20embed%20Hibernate%20in%20my%20commercial%20application%3F,Hibernate%20binary%20has%20no%20restrictions.',
+            'https://hibernate.org/community/license/'
+         ]
       }
-
    ]
 }
 
