@@ -1,6 +1,6 @@
 import { AsyncPipe, CommonModule, TitleCasePipe } from '@angular/common';
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component} from '@angular/core';
-import { TuiNotificationModule } from '@taiga-ui/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject} from '@angular/core';
+import {TuiAlertService, TuiNotificationModule} from '@taiga-ui/core';
 import { TuiBadgeModule } from '@taiga-ui/kit';
 import {Observable, switchMap} from 'rxjs';
 import { ConnectionStatusComponent } from '../data-source-manager/connection-status/connection-status.component';
@@ -12,7 +12,6 @@ import {
   PipelineService, StreamServerStatusEvent,
 } from "../pipelines/pipelines.service";
 import {map, tap} from 'rxjs/operators';
-import {ConnectionStatus} from "../db-connection-editor/db-importer.service";
 import {TuiStatus} from "@taiga-ui/kit/types";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 
@@ -88,7 +87,8 @@ export class EndpointListComponent {
     private activeRoute: ActivatedRoute,
     private pipelineService: PipelineService,
     private schemaNotificationService: SchemaNotificationService,
-    private changeDetector: ChangeDetectorRef
+    private changeDetector: ChangeDetectorRef,
+    @Inject(TuiAlertService) private readonly alertService: TuiAlertService,
   ) {
     this.queries$ = this.schemaNotificationService.createSchemaNotificationsSubscription()
       .pipe(
@@ -119,6 +119,11 @@ export class EndpointListComponent {
         error: err => {
           console.log(err)
           this.websocketConnectionError = 'Unable to fetch stream statuses'
+          this.alertService
+            .open('Server disconnected, please refresh the browser to reconnect',
+              {status: 'warning', autoClose: false, hasIcon: true, hasCloseButton: false }
+            )
+            .subscribe()
           changeDetector.markForCheck();
         }
       });

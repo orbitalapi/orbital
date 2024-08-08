@@ -19,6 +19,7 @@ import {Diagnostic} from "vscode-languageclient";
 export class MonacoLanguageServerService {
   readonly languageServicesInit$: Observable<void>
   readonly websocketClosed$: Subject<CloseEvent> = new Subject();
+  readonly websocketTerminallyClosed$: Subject<void> = new Subject();
 
   private languageClient: MonacoLanguageClient;
   private diagnosticsSubject: Subject<DiagnosticsEvent> = new Subject<{ uri: Uri, diagnostics: Diagnostic[] }>();
@@ -76,8 +77,8 @@ export class MonacoLanguageServerService {
       try {
         [websocket, wsTransport] = await this.createLanguageServerWebsocketTransport()
       } catch (error) {
-        // TODO: re-utilise websocketClosed$ so it can inform the code-editor that something pear has happened
         console.error('Failed to establish WebSocket connection:', error);
+        this.websocketTerminallyClosed$.next()
       }
       this.webSocket = websocket;
       this.webSocket.onclose = async (event) => {

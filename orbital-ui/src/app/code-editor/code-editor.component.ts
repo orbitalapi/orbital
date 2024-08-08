@@ -3,13 +3,14 @@ import {
   Component,
   DestroyRef,
   ElementRef,
-  EventEmitter,
+  EventEmitter, Inject,
   Input,
   OnDestroy,
   Output,
   ViewChild
 } from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {TuiAlertService} from '@taiga-ui/core';
 import {debounceTime, filter} from "rxjs/operators";
 import {editor, MarkerSeverity} from 'monaco-editor';
 import {createTaxiEditor, createTaxiEditorModel} from "./language-server-commons";
@@ -170,7 +171,8 @@ export class CodeEditorComponent implements OnDestroy {
   constructor(
     private languageServerService: MonacoLanguageServerService,
     private destroyRef: DestroyRef,
-    private changeDetectorRef: ChangeDetectorRef
+    private changeDetectorRef: ChangeDetectorRef,
+    @Inject(TuiAlertService) private readonly alertService: TuiAlertService,
   ) {
 
     this.languageServerService.languageServicesInit$
@@ -249,6 +251,16 @@ export class CodeEditorComponent implements OnDestroy {
     this.languageServerService.websocketClosed$
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(async (closeEvent) => this.reconnect(closeEvent))
+
+    this.languageServerService.websocketTerminallyClosed$
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(async (closeEvent) => {
+        this.alertService
+          .open('Server disconnected, please refresh the browser to reconnect',
+            {status: 'warning', autoClose: false, hasIcon: true, hasCloseButton: false }
+          )
+          .subscribe()
+      })
 
     this.updateActionsOnEditor()
   }
