@@ -9,9 +9,9 @@
 
 .tabs-container {
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   align-items: center;
-  margin-left: 0.76rem;
+  padding-left: 0.76rem;
   background: $gray-100;
 
   .add-tab-button {
@@ -95,5 +95,8 @@
       }
     }
   }
+}
 
+::ng-deep tui-hint {
+  max-width: 600px !important;
 }

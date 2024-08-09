@@ -700,6 +700,7 @@ export interface VersionedSource {
   id?: string;
   contentHash?: string;
   packageIdentifier?: PackageIdentifier
+  path?: string
 }
 
 
