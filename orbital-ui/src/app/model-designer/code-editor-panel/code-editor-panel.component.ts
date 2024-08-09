@@ -30,6 +30,7 @@ import {CompilationMessage, Schema, SchemaMember, Type} from "../../services/sch
         <app-code-editor
           [compilationMessages]="compilationErrors"
           [showCompilationProblemsPanel]="true"
+          [setFocus]="!disabled"
           (contentChange)="taxi=$event; taxiChange.emit($event)"
         ></app-code-editor>
     `,

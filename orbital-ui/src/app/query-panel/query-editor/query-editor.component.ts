@@ -11,7 +11,7 @@ import {
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {TuiAlertService, TuiDialogService, TuiNotification} from '@taiga-ui/core';
 import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
-import {editor, KeyCode, KeyMod} from 'monaco-editor';
+import {editor, IPosition, KeyCode, KeyMod} from 'monaco-editor';
 import {QueryEditorPayload} from '../../services/query-editor.state';
 import {QueryHistorySummary, QueryResult, QueryService} from '../../services/query.service';
 import {isQueryResult} from '../result-display/BaseQueryResultComponent';
@@ -95,6 +95,9 @@ export class QueryEditorComponent {
 
   @Output()
   onCopyQuery = new EventEmitter<CopyQueryFormat>();
+
+  @Output()
+  cursorPositionChanged = new EventEmitter<IPosition>();
 
   showCopilot: boolean
 

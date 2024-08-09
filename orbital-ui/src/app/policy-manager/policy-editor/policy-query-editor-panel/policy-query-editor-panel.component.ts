@@ -41,6 +41,7 @@ import {TuiButtonModule} from "@taiga-ui/core";
         <app-code-editor
           [content]="queryState.query()"
           [showCompilationProblemsPanel]="true"
+          [setFocus]="false"
           (contentChange)="updateQuery($event)"
         ></app-code-editor>
       </as-split-area>

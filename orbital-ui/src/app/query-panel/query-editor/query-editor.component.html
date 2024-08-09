@@ -47,6 +47,8 @@
                 [content]="state.query()"
                 [showCompilationProblemsPanel]="true"
                 (contentChange)="queryChanged.emit($event)"
+                [cursorPosition]="state.lastCursorPosition()"
+                (cursorPositionChanged)="cursorPositionChanged.emit($event)"
                 #editor
               ></app-code-editor>
             </div>

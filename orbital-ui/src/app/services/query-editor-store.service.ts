@@ -3,6 +3,7 @@ import {computed, Inject, Injectable, Injector, Signal, signal, WritableSignal} 
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {TuiAlertService, TuiDialogService, TuiNotification} from '@taiga-ui/core';
 import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
+import {IPosition} from 'monaco-editor';
 import {ReplaySubject} from 'rxjs';
 import {copyQueryAs, CopyQueryFormat} from '../query-panel/query-editor/QueryFormatter';
 import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
@@ -65,7 +66,6 @@ export class QueryEditorStoreService {
       });
   }
 
-
   createTemporaryQuery(): QueryEditorState {
     return this.createNewQueryState({
       id: Date.now(), // TODO: use the same randomId() function as queryClientId?
@@ -74,6 +74,7 @@ export class QueryEditorStoreService {
       savedQueryWithSource: null,
       query: '',
       conversationMessages: [],
+      lastCursorPosition: {lineNumber: 1, column: 1}
     })
   }
 
@@ -98,6 +99,7 @@ export class QueryEditorStoreService {
       isQueryPaused: signal(false),
       showMaxRecordCountWarning: signal(false),
       isQuerySaveable: signal(true), // NOTE: set this back to false when featureToggles.queryPlanModeEnabled is set to true/removed
+      lastCursorPosition: signal(localStorageQuery.lastCursorPosition),
       // Observables/Subjects
       results: signal(null),
       potentiallyPausedResults: signal(null),
@@ -107,6 +109,7 @@ export class QueryEditorStoreService {
       queryPlanData: signal(null),
       queryMetadata: signal(null),
       instanceSelected: signal(new ReplaySubject<QueryResultInstanceSelectedEvent>(1)),
+      // Config passed in
       config: this.config
     })
   }
@@ -191,5 +194,9 @@ export class QueryEditorStoreService {
       this.alerts.open('Copied to clipboard', {status: TuiNotification.Success})
         .subscribe()
     }
+  }
+
+  updateLastCursorPosition(position: IPosition) {
+    this.activeQueryEditorState().payload.lastCursorPosition.set(position);
   }
 }
