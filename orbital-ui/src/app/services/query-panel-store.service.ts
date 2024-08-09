@@ -9,6 +9,7 @@ import {
   untracked,
   WritableSignal
 } from '@angular/core';
+import {IPosition} from 'monaco-editor';
 import {isNullOrUndefined} from '../utils/utils';
 import {QueryEditorStoreService} from './query-editor-store.service';
 import {
@@ -17,7 +18,6 @@ import {
 } from '../project-import/schema-importer.service';
 import {ConversationMessage} from './query.service';
 import {SavedQuery} from "./types.service";
-import {QueryEditorState} from "./query-editor.state";
 
 export type LocalStorageQuery = {
   id: number,
@@ -26,6 +26,7 @@ export type LocalStorageQuery = {
   savedQueryWithSource: SavedQueryWithSource,
   query: string,
   conversationMessages: ConversationMessage[],
+  lastCursorPosition: IPosition
 }
 
 const PERSISTED_QUERIES_LOCAL_STORAGE_KEY: string = 'persistedQueries'
@@ -90,6 +91,7 @@ export class QueryPanelStoreService {
       savedQueryWithSource,
       query,
       conversationMessages: [],
+      lastCursorPosition: {lineNumber: 1, column: 1}
     }
     runInInjectionContext(this.injector, () => {
       this.editorStore.addQueryEditorState(newTab)
@@ -131,6 +133,11 @@ export class QueryPanelStoreService {
   deleteChatHistory() {
     this.updateConversationMessages([]);
     this.editorStore.resetConversationMessages()
+  }
+
+  updateCursorPosition(position: IPosition) {
+    this.patchQuery('lastCursorPosition', position)
+    this.editorStore.updateLastCursorPosition(position)
   }
 
   private updateConversationMessages(conversationMessages: ConversationMessage[]) {

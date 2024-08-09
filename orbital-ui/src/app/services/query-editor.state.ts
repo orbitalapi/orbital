@@ -1,4 +1,5 @@
 import {inject, Signal, WritableSignal} from '@angular/core';
+import {IPosition} from 'monaco-editor';
 import {BehaviorSubject, merge, Observable, of, ReplaySubject, Subject, takeUntil} from 'rxjs';
 import {
   bufferToggle,
@@ -51,6 +52,7 @@ export type QueryEditorPayload = {
   isQueryPaused: WritableSignal<boolean>
   showMaxRecordCountWarning: WritableSignal<boolean>
   isQuerySaveable: WritableSignal<boolean>
+  lastCursorPosition: WritableSignal<IPosition>
   // Observabley stuff...
   results: WritableSignal<ReplaySubject<InstanceLike>>
   potentiallyPausedResults: WritableSignal<Observable<InstanceLike>>

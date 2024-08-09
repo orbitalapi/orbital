@@ -1,9 +1,9 @@
 import {
   ChangeDetectionStrategy, ChangeDetectorRef,
   Component,
-  DestroyRef,
+  DestroyRef, effect,
   ElementRef,
-  EventEmitter, Inject,
+  EventEmitter, Inject, input,
   Input,
   OnDestroy,
   Output,
@@ -12,7 +12,7 @@ import {
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {TuiAlertService} from '@taiga-ui/core';
 import {debounceTime, filter} from "rxjs/operators";
-import {editor, MarkerSeverity} from 'monaco-editor';
+import {editor, IPosition, MarkerSeverity} from 'monaco-editor';
 import {createTaxiEditor, createTaxiEditorModel} from "./language-server-commons";
 import {ITextFileEditorModel} from "@codingame/monaco-vscode-api/monaco";
 import {DiagnosticSeverity, DidOpenTextDocumentNotification} from "vscode-languageclient";
@@ -166,6 +166,12 @@ export class CodeEditorComponent implements OnDestroy {
   @Output()
   contentChange = new EventEmitter<string>();
 
+  cursorPosition = input<IPosition>()
+  setFocus = input<boolean>(true)
+
+  @Output()
+  cursorPositionChanged = new EventEmitter<IPosition>();
+
   errorPanelSize: number = 135;
 
   constructor(
@@ -186,6 +192,15 @@ export class CodeEditorComponent implements OnDestroy {
     ).subscribe(async(e) => {
       this.updateContent(this.monacoModel.textEditorModel.getValue());
     })
+
+    effect(() => {
+      if (this.cursorPosition()) {
+        this.monacoEditor?.setPosition(this.cursorPosition())
+      }
+      if (this.setFocus()) {
+        this.monacoEditor?.focus()
+      }
+    });
   }
 
   async ngOnDestroy() {
@@ -208,7 +223,6 @@ export class CodeEditorComponent implements OnDestroy {
     }
 
     this.languageClient = await this.languageServerService.getLanguageClient();
-
 
     const {modelRef, model} = await this.createNewMonacoModel();
     this.monacoModel = model;
@@ -241,6 +255,17 @@ export class CodeEditorComponent implements OnDestroy {
 
     this.monacoEditor = await createTaxiEditor(this.codeEditorContainer.nativeElement, modelRef)
     this.monacoEditor.updateOptions({readOnly: this.readOnly});
+    if (this.cursorPosition()) {
+      this.monacoEditor.setPosition(this.cursorPosition())
+    }
+    this.monacoEditor.onDidChangeCursorPosition((event) => {
+      if (event.source !== 'model') {
+        this.cursorPositionChanged.emit(event.position)
+      }
+    })
+    if (this.setFocus()) {
+      this.monacoEditor.focus()
+    }
 
     if (!isNullOrUndefined(this.compilationMessages)) {
       this.updateManualCompilationMessages();

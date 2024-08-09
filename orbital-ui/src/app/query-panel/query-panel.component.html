@@ -69,4 +69,5 @@
   (onQuerySaved)="queryPanelStore.onQuerySaved($event)"
   (onSavedQuerySelected)="queryPanelStore.onSavedQuerySelected($event)"
   (onCopyQuery)="editorStore.copyQuery($event)"
+  (cursorPositionChanged)="queryPanelStore.updateCursorPosition($event)"
 ></app-query-editor>
