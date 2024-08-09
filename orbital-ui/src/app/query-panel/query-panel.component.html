@@ -14,7 +14,19 @@
                       [moreContent]='more'
   >
     <ng-container *ngFor="let query of queryPanelStore.queries(); index as i; trackBy: queryPanelStore.getTabId">
-      <button *tuiItem tuiTab class="tab-button">
+      <button
+        *tuiItem
+        tuiTab
+        class="tab-button"
+        [tuiHint]="longHint"
+        tuiHintAppearance="onDark"
+        tuiHintDirection="top"
+      >
+        <ng-template #longHint>
+          <div class="long-hint">
+            {{!query.savedQueryWithSource ? 'Query unsaved' : query.savedQueryWithSource.sourceFile.packageIdentifier.unversionedId + '/' + query.savedQueryWithSource.sourceFile.name}}
+          </div>
+        </ng-template>
         {{query.tabName}}
         <img
           *ngIf="query.savedQueryWithSource?.savedQuery.httpEndpoint || query.savedQueryWithSource?.savedQuery.websocketOperation"
