@@ -8,7 +8,9 @@
     <div class="code-viewer-container">
       <as-split direction="vertical" unit="pixel">
         <as-split-area size="*">
-          <app-code-editor class="code-editor" [content]="sourceContent"
+          <app-code-editor class="code-editor"
+                           [content]="sourceContent"
+                           [showCompilationProblemsPanel]="showCompilationProblemsPanel"
                            [compilationMessages]="selectedSource?.errors"
                            [readOnly]="true"
           ></app-code-editor>

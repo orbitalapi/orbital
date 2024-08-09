@@ -38,6 +38,9 @@ export class CodeViewerComponent {
   }
 
   @Input()
+  showCompilationProblemsPanel: boolean = false;
+
+  @Input()
   get sources(): ParsedSource[] | VersionedSource[] | FileTreeNode[] {
     return this._sources;
   }

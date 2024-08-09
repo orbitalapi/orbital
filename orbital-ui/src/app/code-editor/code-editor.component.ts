@@ -46,7 +46,7 @@ type WordWrapOptions = 'off' | 'on' | 'wordWrapColumn' | 'bounded';
       <as-split-area size="*">
         <div #codeEditorContainer class="code-editor"></div>
       </as-split-area>
-      <as-split-area [size]="errorPanelSize" minSize="50" maxSize="250" *ngIf="showCompilationErrors">
+      <as-split-area [size]="errorPanelSize" minSize="50" maxSize="250" *ngIf="showCompilationProblemsPanel">
         <app-compilation-message-list [compilationMessages]="compilationMessages"></app-compilation-message-list>
       </as-split-area>
     </as-split>
@@ -87,7 +87,7 @@ export class CodeEditorComponent implements OnDestroy {
   }
 
   @Input()
-  showCompilationErrors: boolean = true;
+  showCompilationProblemsPanel: boolean = false;
 
   private _compilationMessages: CompilationMessage[];
   /**

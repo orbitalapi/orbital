@@ -36,7 +36,9 @@ import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.compon
                 class="flex-grow"
                 [content]="content"
                 wordWrap="on"
-                (contentChange)="codeUpdated$.next($event)">
+                [showCompilationProblemsPanel]="true"
+                (contentChange)="codeUpdated$.next($event)"
+              >
               </app-code-editor>
             </div>
           </as-split-area>
