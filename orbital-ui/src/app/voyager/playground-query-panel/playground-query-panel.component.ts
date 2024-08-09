@@ -52,8 +52,10 @@ import {TuiChipModule} from "@taiga-ui/experimental";
 
         </app-panel-header>
         <app-code-editor
-          [content]="content.getValue()" (contentChange)="content.next($event)"
           wordWrap="on"
+          [content]="content.getValue()"
+          [showCompilationProblemsPanel]="true"
+          (contentChange)="content.next($event)"
         >
         </app-code-editor>
       </as-split-area>

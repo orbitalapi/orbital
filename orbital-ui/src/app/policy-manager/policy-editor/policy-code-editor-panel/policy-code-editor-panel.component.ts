@@ -54,6 +54,7 @@ import {toSourceWithTypeHints} from "../../../model-designer/taxi-parser.service
     <div class="code-editor-container">
       <app-code-editor
         [content]="source"
+        [showCompilationProblemsPanel]="true"
         (contentChange)="sourceChange($event)"
       ></app-code-editor>
     </div>
@@ -85,7 +86,7 @@ export class PolicyCodeEditorPanelComponent {
   }
   get userTokenTypeName():string {
     if (!this.policySetup) return null
-    const firstKey =  Object.keys(this.policySetup.authTokenInstances)[0]
+    const firstKey =  Object.keys(this.policySetup.authTokenInstances)?.[0]
 
     return firstKey;
   }

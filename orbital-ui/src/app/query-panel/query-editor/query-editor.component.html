@@ -45,6 +45,7 @@
                 class='code-editor'
                 [actions]='customActions'
                 [content]="state.query()"
+                [showCompilationProblemsPanel]="true"
                 (contentChange)="queryChanged.emit($event)"
                 #editor
               ></app-code-editor>

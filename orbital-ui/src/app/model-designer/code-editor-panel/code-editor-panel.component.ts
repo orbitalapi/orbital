@@ -27,7 +27,11 @@ import {CompilationMessage, Schema, SchemaMember, Type} from "../../services/sch
               <img src="assets/img/tabler/copy.svg">
             </a>
         </app-panel-header>
-        <app-code-editor [compilationMessages]="compilationErrors" (contentChange)="taxi=$event; taxiChange.emit($event)"></app-code-editor>
+        <app-code-editor
+          [compilationMessages]="compilationErrors"
+          [showCompilationProblemsPanel]="true"
+          (contentChange)="taxi=$event; taxiChange.emit($event)"
+        ></app-code-editor>
     `,
     styleUrls: ['./code-editor-panel.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
