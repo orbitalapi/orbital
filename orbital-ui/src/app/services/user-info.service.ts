@@ -1,9 +1,10 @@
 import {Inject, Injectable} from '@angular/core';
 import {HttpClient, HttpHeaders} from '@angular/common/http';
-import {BehaviorSubject, Observable, of} from 'rxjs';
+import {BehaviorSubject, Observable, of, throwError} from 'rxjs';
 
-import {map, shareReplay} from 'rxjs/operators';
+import {catchError, map, shareReplay} from 'rxjs/operators';
 import {ENVIRONMENT, Environment} from 'src/app/services/environment';
+import {Router} from "@angular/router";
 
 @Injectable({
   providedIn: 'root'
@@ -29,23 +30,25 @@ export class UserInfoService {
    */
   getUserInfo(refresh: boolean = false, accessToken: string | null = null): Observable<VyneUser> {
     if (refresh) {
-      if (accessToken) {
-        let header = 'Bearer ' + accessToken;
-        let headers = new HttpHeaders().set('Authorization', header);
-        return this.httpClient.get<VyneUser>(`${this.environment.serverUrl}/api/user`, {headers: headers})
-          .pipe(map(vyneUser => {
+      const headers = accessToken ?
+        new HttpHeaders().set('Authorization', 'Bearer ' + accessToken)
+        : undefined;
+      return this.httpClient.get<VyneUser>(`${this.environment.serverUrl}/api/user`, {headers})
+        .pipe(
+          catchError(error => {
+            this.userInfo$.next(null);
+            return throwError(() => error)
+          }),
+          map(vyneUser => {
             this.userInfo$.next(vyneUser);
             return this.userInfo$.getValue();
-          }));
-      } else {
-        return this.httpClient.get<VyneUser>(`${this.environment.serverUrl}/api/user`)
-          .pipe(map(vyneUser => {
-            this.userInfo$.next(vyneUser);
-            return this.userInfo$.getValue();
-          }));
-      }
+          }),
+
+        );
+    } else {
+      return this.userInfo$;
     }
-    return this.userInfo$;
+
   }
 
   updateUserInfo(vyneUser: VyneUser) {
@@ -54,6 +57,7 @@ export class UserInfoService {
 }
 
 export type AuthenticationType = 'Oidc' | 'Saml'
+
 export interface VyneUser {
   userId: string;
   username: string;
