@@ -12,6 +12,7 @@ import reactor.core.publisher.Mono
 @RestController
 class ActiveQueryController(private val monitor: ActiveQueryMonitor) {
    @GetMapping("/api/query/active")
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewActiveQueries}')")
    fun liveQueries(): Map<String, RunningQueryStatus> {
       return monitor.runningQueries()
    }
@@ -29,7 +30,7 @@ class ActiveQueryController(private val monitor: ActiveQueryMonitor) {
 
    @DeleteMapping("/api/query/active/clientId/{id}")
    @PreAuthorize("hasAuthority('${VynePrivileges.CancelQuery}')")
-   fun cancelQueryByClientQueryId(
+   suspend fun cancelQueryByClientQueryId(
       @PathVariable("id") clientQueryId: String
    ) : Mono<Void> {
       if (!monitor.cancelQueryByClientQueryId(clientQueryId)) {

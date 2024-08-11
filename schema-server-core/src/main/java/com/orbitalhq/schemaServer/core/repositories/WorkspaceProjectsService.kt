@@ -11,10 +11,12 @@ import com.orbitalhq.schemaServer.packages.PackageType
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
 import com.orbitalhq.schemaServer.repositories.*
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
+import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.BadRequestException
 import com.orbitalhq.toVynePackageIdentifier
 import lang.taxi.packages.TaxiPackageLoader
 import mu.KotlinLogging
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -30,8 +32,9 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) {
       private val logger = KotlinLogging.logger {}
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping("/api/repositories")
-   fun listRepositoriesAsJson(): String {
+   suspend fun listRepositoriesAsJson(): String {
       return configRepo.safeConfigJson()
    }
 
@@ -40,6 +43,7 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) {
       return configRepo.load()
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @PostMapping("/api/repositories/file")
    fun createFileRepository(@RequestBody request: CreateFileProjectStoreRequest): Mono<ModifyWorkspaceResponse> {
       val fileSpec = request.toRepositorySpec()
@@ -58,6 +62,7 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) {
    }
 
    @PostMapping("/api/repositories/file", params = ["test"])
+   @PreAuthorize("hasAuthority('${VynePrivileges.TestConnections}')")
    fun testFileProjectStore(@RequestBody request: FileProjectStoreTestRequest): Mono<FileProjectTestResponse> {
       return configRepo.validateProjectExists(request)
          .subscribeOn(Schedulers.boundedElastic())
@@ -65,6 +70,7 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) {
 
 
    @PostMapping("/api/repositories/git")
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    fun createGitProjectStore(@RequestBody request: GitProjectStoreChangeRequest): Mono<ModifyWorkspaceResponse> {
       val config = request.toRepositorySpec()
       return try {
@@ -81,6 +87,7 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) {
    }
 
    @PostMapping("/api/repositories/git", params = ["test"])
+   @PreAuthorize("hasAuthority('${VynePrivileges.TestConnections}')")
    fun testGitConnection(@RequestBody request: GitConnectionTestRequest): Mono<GitConnectionTestResult> {
       return Mono.just(GitUtils.testConnection(request.uri))
          .map { testResult ->

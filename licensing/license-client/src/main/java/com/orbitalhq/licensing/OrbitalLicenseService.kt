@@ -1,8 +1,10 @@
 package com.orbitalhq.licensing
 
 import arrow.core.getOrElse
+import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.config.OrbitalOnly
 import mu.KotlinLogging
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -20,7 +22,8 @@ class OrbitalLicenseService(
    val licenseUpdated = licenseUpdatedSink.asFlux()
 
    @PostMapping("/api/license")
-   fun submitLicense(@RequestBody licenseJson: String): LicenseWithUsage {
+   @PreAuthorize("hasAuthority('${VynePrivileges.ModifyLicense}')")
+   suspend fun submitLicense(@RequestBody licenseJson: String): LicenseWithUsage {
       val validationResult = validator.readAndValidateLicense(licenseJson)
       val validatedLicense = validationResult.getOrElse { exception -> throw exception }
       return licenseManager.submitValidatedLicense(validatedLicense)

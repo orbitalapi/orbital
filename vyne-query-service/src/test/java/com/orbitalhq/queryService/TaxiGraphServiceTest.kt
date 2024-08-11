@@ -5,6 +5,7 @@ import com.orbitalhq.cockpit.core.schemas.TaxiGraphService
 import com.orbitalhq.cockpit.core.schemas.TypeLineageService
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import kotlinx.coroutines.runBlocking
 import org.apache.commons.io.IOUtils
 import org.junit.Test
 
@@ -25,7 +26,7 @@ class TaxiGraphServiceTest {
 
    """.trimIndent()
    @Test
-   fun when_producingTaxiGraphSchema_that_verticesAreFiltered() {
+   fun when_producingTaxiGraphSchema_that_verticesAreFiltered():Unit = runBlocking {
       val fullSchema = IOUtils.toString(this::class.java.getResourceAsStream("/schema.taxi"))
       val schemaProvider = SimpleSchemaProvider(TaxiSchema.from(fullSchema))
       val service = TaxiGraphService(

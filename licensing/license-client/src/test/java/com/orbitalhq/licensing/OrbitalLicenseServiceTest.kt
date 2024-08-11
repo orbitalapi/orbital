@@ -5,6 +5,7 @@ import arrow.core.right
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.whenever
+import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.BeforeEach
@@ -28,7 +29,7 @@ class OrbitalLicenseServiceTest {
    }
 
    @Test
-   fun `submitting a valid license updates the license`() {
+   fun `submitting a valid license updates the license`():Unit = runBlocking {
       val validLicense = validLicense()
       whenever(validator.readAndValidateLicense(any<String>())).thenReturn(validLicense.right())
       val response = licenseService.submitLicense("{ this isn't checked }")
@@ -37,7 +38,7 @@ class OrbitalLicenseServiceTest {
    }
 
    @Test
-   fun `submitting an invalid license throws an error`() {
+   fun `submitting an invalid license throws an error`():Unit = runBlocking {
       whenever(validator.readAndValidateLicense(any<String>())).thenReturn(InvalidLicenseException("Validation failed").left())
       val exception = assertThrows<InvalidLicenseException> {
          licenseService.submitLicense("{ this isn't checked }")
@@ -45,7 +46,7 @@ class OrbitalLicenseServiceTest {
    }
 
    @Test
-   fun `can fetch license`() {
+   fun `can fetch license`():Unit = runBlocking {
       val validLicense = validLicense()
       whenever(validator.readAndValidateLicense(any<String>())).thenReturn(validLicense.right())
       licenseService.submitLicense("{ this isn't checked }")

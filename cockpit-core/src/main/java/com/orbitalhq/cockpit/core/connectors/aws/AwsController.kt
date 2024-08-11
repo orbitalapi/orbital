@@ -7,7 +7,9 @@ import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.registry.ConnectorConfigurationSummary
 import com.orbitalhq.connectors.registry.MutableConnectionRegistry
+import com.orbitalhq.security.VynePrivileges
 import mu.KotlinLogging
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -19,6 +21,7 @@ private val logger = KotlinLogging.logger { }
 @RestController
 class AwsController(val registry: AwsConnectionRegistry) {
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.TestConnections}')")
    @PostMapping("/api/packages/{packageUri}/connections/aws", params = ["test=true"])
    fun testConnection(@RequestBody connectionConfig: AwsConnectionConfiguration): Mono<Unit> {
       return S3AsyncConnection.test(connectionConfig)
@@ -29,6 +32,7 @@ class AwsController(val registry: AwsConnectionRegistry) {
          }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
    @PostMapping("/api/packages/{packageUri}/connections/aws")
    fun createConnection(
       @RequestBody connectionConfig: AwsConnectionConfiguration,

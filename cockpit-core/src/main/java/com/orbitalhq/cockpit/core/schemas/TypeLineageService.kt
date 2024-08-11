@@ -10,7 +10,9 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.ServiceLineage
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.fqn
+import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.utils.orElse
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
@@ -23,8 +25,9 @@ data class ServiceLineageForType(
 @RestController
 class TypeLineageService(private val schemaProvider: SchemaProvider) {
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping("/api/services/{serviceName}/lineage")
-   fun getLineageGraphForService(@PathVariable("serviceName") serviceName: String): SchemaGraph {
+   suspend fun getLineageGraphForService(@PathVariable("serviceName") serviceName: String): SchemaGraph {
       val schema = schemaProvider.schema
       val service = schema.service(serviceName)
       val thisServiceLineage = service.lineage?.let { serviceLineage -> service.name to serviceLineage }
@@ -96,8 +99,9 @@ class TypeLineageService(private val schemaProvider: SchemaProvider) {
       )
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping("/api/types/{typeName}/lineage")
-   fun getLineageGraphForType(@PathVariable("typeName") typeName: String): SchemaGraph {
+   suspend fun getLineageGraphForType(@PathVariable("typeName") typeName: String): SchemaGraph {
       val lineage = getLineageForType(typeName)
       val nodes = mutableSetOf<SchemaGraphNode>()
       val links = mutableSetOf<SchemaGraphLink>()

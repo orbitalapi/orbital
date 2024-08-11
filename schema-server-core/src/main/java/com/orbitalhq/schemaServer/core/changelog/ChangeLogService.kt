@@ -5,7 +5,9 @@ import com.orbitalhq.UriSafePackageIdentifier
 import com.orbitalhq.schema.publisher.SchemaUpdatedMessage
 import com.orbitalhq.schemaServer.changelog.ChangeLogEntry
 import com.orbitalhq.schemaServer.core.config.SchemaUpdateNotifier
+import com.orbitalhq.security.VynePrivileges
 import mu.KotlinLogging
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
@@ -31,11 +33,14 @@ class ChangeLogService(
       }
    }
 
+
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewChangelog}')")
    @GetMapping("/api/changelog")
    fun getChangelog(): Mono<List<ChangeLogEntry>> {
       return Mono.just(changeLog.reversed())
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewChangelog}')")
    @GetMapping("/api/changelog/{packageName}")
    fun getChangelog(@PathVariable("packageName") packageName: UriSafePackageIdentifier): Mono<List<ChangeLogEntry>> {
       val unversionedIdentifier = PackageIdentifier.uriSafeIdToUnversionedIdentifier(packageName)

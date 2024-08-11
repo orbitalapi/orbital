@@ -1,3 +1,5 @@
+@file:Suppress("ConstPropertyName")
+
 package com.orbitalhq.security
 
 import mu.KotlinLogging
@@ -22,52 +24,66 @@ import mu.KotlinLogging
 typealias GrantedAuthorityName = String
 
 object VynePrivileges {
-   const val RunQuery = "RUN_QUERY"
-   const val CancelQuery = "CANCEL_QUERY"
-   const val ViewQueryHistory = "VIEW_HISTORIC_QUERY_LIST"
-   const val ViewHistoricQueryResults = "VIEW_HISTORIC_QUERY_RESULT"
+   @Deprecated("Use BROWSE_SCHEMA instead.", ReplaceWith("BROWSE_SCHEMA"))
    const val BrowseCatalog = "BROWSE_CATALOG"
    const val BrowseSchema = "BROWSE_SCHEMA"
-   const val EditSchema = "EDIT_SCHEMA"
-   const val ViewCaskDefinitions = "VIEW_CASK_DEFINITIONS"
-   const val EditCaskDefinitions = "EDIT_CASK_DEFINITIONS"
-   const val ViewPipelines = "VIEW_PIPELINES"
-   const val EditPipelines = "EDIT_PIPELINES"
-   const val ViewAuthenticationTokens = "VIEW_AUTHENTICATION_TOKENS"
-   const val EditAuthenticationTokens = "EDIT_AUTHENTICATION_TOKENS"
-   const val ViewConnections = "VIEW_CONNECTIONS"
-   const val EditConnections = "EDIT_CONNECTIONS"
-   const val ViewUsers = "VIEW_USERS"
-   const val EditUsers = "EDIT_USERS"
+   const val CancelQuery = "CANCEL_QUERY"
    const val CreateWorkspace = "CREATE_WORKSPACE"
-   const val ViewWorkspaces = "VIEW_WORKSPACES"
+   const val EditAuthenticationTokens = "EDIT_AUTHENTICATION_TOKENS"
+   const val EditCaskDefinitions = "EDIT_CASK_DEFINITIONS"
+   const val EditConnections = "EDIT_CONNECTIONS"
+   const val EditPipelines = "EDIT_PIPELINES"
+   const val EditSchema = "EDIT_SCHEMA"
+   const val EditUsers = "EDIT_USERS"
    const val ModifyWorkspaceMembership = "MODIFY_WORKSPACE_MEMBERSHIP"
+   const val ModifyLicense = "MODIFY_LICENSE"
+   const val RunQuery = "RUN_QUERY"
+   const val TestConnections = "TEST_CONNECTIONS"
+   const val ViewActiveQueries = "VIEW_ACTIVE_QUERIES"
+   const val ViewAuthenticationTokens = "VIEW_AUTHENTICATION_TOKENS"
+   @Deprecated("Casks are no longer a thing")
+   const val ViewCaskDefinitions = "VIEW_CASK_DEFINITIONS"
+   const val ViewChangelog = "VIEW_CHANGELOG"
+   const val ViewConnections = "VIEW_CONNECTIONS"
+   const val ViewHistoricQueryResults = "VIEW_HISTORIC_QUERY_RESULT"
+   const val ViewLoaderStatus = "VIEW_LOADER_STATUS"
    const val ViewMetrics = "VIEW_METRICS"
+   const val ViewPipelines = "VIEW_PIPELINES"
+   const val ViewQueryHistory = "VIEW_HISTORIC_QUERY_LIST"
+   const val ViewUsers = "VIEW_USERS"
+   const val ViewWorkspaces = "VIEW_WORKSPACES"
+
 }
 
 
 enum class VyneGrantedAuthority(val constantValue: GrantedAuthorityName) {
-   RunQuery(VynePrivileges.RunQuery),
-   CancelQuery(VynePrivileges.CancelQuery),
-   ViewQueryHistory(VynePrivileges.ViewQueryHistory),
-   ViewHistoricQueryResults(VynePrivileges.ViewHistoricQueryResults),
+   @Deprecated("Use BrowseSchema instead.", ReplaceWith("BrowseSchema"))
    BrowseCatalog(VynePrivileges.BrowseCatalog),
    BrowseSchema(VynePrivileges.BrowseSchema),
-   EditSchema(VynePrivileges.EditSchema),
-   ViewCaskDefinitions(VynePrivileges.ViewCaskDefinitions),
-   EditCaskDefinitions(VynePrivileges.EditCaskDefinitions),
-   ViewPipelines(VynePrivileges.ViewPipelines),
-   EditPipelines(VynePrivileges.EditPipelines),
-   ViewAuthenticationTokens(VynePrivileges.ViewAuthenticationTokens),
-   EditAuthenticationTokens(VynePrivileges.EditAuthenticationTokens),
-   ViewConnections(VynePrivileges.ViewConnections),
-   EditConnections(VynePrivileges.EditConnections),
-   ViewUsers(VynePrivileges.ViewUsers),
-   EditUsers(VynePrivileges.EditUsers),
+   CancelQuery(VynePrivileges.CancelQuery),
    CreateWorkspace(VynePrivileges.CreateWorkspace),
-   ViewWorkspaces(VynePrivileges.ViewWorkspaces),
+   EditAuthenticationTokens(VynePrivileges.EditAuthenticationTokens),
+   EditCaskDefinitions(VynePrivileges.EditCaskDefinitions),
+   EditConnections(VynePrivileges.EditConnections),
+   EditPipelines(VynePrivileges.EditPipelines),
+   EditSchema(VynePrivileges.EditSchema),
+   EditUsers(VynePrivileges.EditUsers),
    ModifyWorkspaceMembership(VynePrivileges.ModifyWorkspaceMembership),
-   ViewMetrics(VynePrivileges.ViewMetrics);
+   ModifyLicense(VynePrivileges.ModifyLicense),
+   RunQuery(VynePrivileges.RunQuery),
+   TestConnections(VynePrivileges.TestConnections),
+   ViewActiveQueries(VynePrivileges.ViewActiveQueries),
+   ViewAuthenticationTokens(VynePrivileges.ViewAuthenticationTokens),
+   ViewCaskDefinitions(VynePrivileges.ViewCaskDefinitions),
+   ViewChangelog(VynePrivileges.ViewChangelog),
+   ViewConnections(VynePrivileges.ViewConnections),
+   ViewHistoricQueryResults(VynePrivileges.ViewHistoricQueryResults),
+   ViewLoaderStatus(VynePrivileges.ViewLoaderStatus),
+   ViewMetrics(VynePrivileges.ViewMetrics),
+   ViewPipelines(VynePrivileges.ViewPipelines),
+   ViewQueryHistory(VynePrivileges.ViewQueryHistory),
+   ViewUsers(VynePrivileges.ViewUsers),
+   ViewWorkspaces(VynePrivileges.ViewWorkspaces);
 
    companion object {
       private val byConstant = values().associateBy { it.constantValue }
