@@ -5,6 +5,7 @@ import com.orbitalhq.cockpit.core.NotAuthorizedException
 import com.orbitalhq.cockpit.core.security.VyneUserJpaRepository
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
+import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.NotFoundException
 import jakarta.validation.constraints.NotEmpty
 import kotlinx.coroutines.Dispatchers
@@ -12,6 +13,7 @@ import kotlinx.coroutines.reactor.awaitSingleOrNull
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import org.springframework.data.repository.findByIdOrNull
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.*
@@ -62,7 +64,7 @@ class WorkspaceService(
 
 
    @PostMapping("/api/workspaces/{organisationId}")
-//    @PreAuthorize("hasAuthority('${VynePrivileges.CreateWorkspace}')")
+   @PreAuthorize("hasAuthority('${VynePrivileges.CreateWorkspace}')")
    suspend fun createWorkspace(
       @AuthenticationPrincipal auth: Mono<Authentication>,
       @RequestBody @Valid request: CreateWorkspaceRequest
@@ -106,7 +108,7 @@ class WorkspaceService(
       val roles: Set<WorkspaceRole>
    )
 
-   //    @PreAuthorize("hasAuthority('${VynePrivileges.ModifyWorkspaceMembership}')")
+   @PreAuthorize("hasAuthority('${VynePrivileges.ModifyWorkspaceMembership}')")
    @PostMapping("/api/workspaces/{organisationId}/{workspaceId}/members")
    suspend fun addMemberToWorkspace(
       @AuthenticationPrincipal auth: Mono<Authentication>,
@@ -153,7 +155,7 @@ class WorkspaceService(
    }
 
    @GetMapping("/api/workspaces/{organisationId}/{workspaceId}/members")
-//    @PreAuthorize("hasAuthority('${VynePrivileges.ViewWorkspaces}')")
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewWorkspaces}')")
    suspend fun getWorkspaceMembers(
       @AuthenticationPrincipal auth: Mono<Authentication>,
       @PathVariable("workspaceId") workspaceId: Long
@@ -167,11 +169,13 @@ class WorkspaceService(
       return workspaceMembershipRepository.findAllByWorkspaceId(workspaceId)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewLoaderStatus}')")
    @GetMapping("/api/workspace/status")
-   fun getCurrentWorkspaceStatus(): LoaderStatus {
+   suspend fun getCurrentWorkspaceStatus(): LoaderStatus {
       return this._currentWorkspaceStatus
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewWorkspaces}')")
    @GetMapping("/api/workspaces/{organisationId}")
    suspend fun getWorkspacesForUser(
       @AuthenticationPrincipal auth: Mono<Authentication>,

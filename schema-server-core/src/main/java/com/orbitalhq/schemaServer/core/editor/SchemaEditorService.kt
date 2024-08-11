@@ -17,11 +17,13 @@ import com.orbitalhq.schemas.SavedQuery
 import com.orbitalhq.schemas.taxi.asSavedQuery
 import com.orbitalhq.schemas.taxi.toMessage
 import com.orbitalhq.schemas.toVyneQualifiedName
+import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.BadRequestException
 import lang.taxi.errors
 import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
 import org.http4k.quoted
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -48,6 +50,7 @@ class SchemaEditorService(
       }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @PostMapping("/api/repository/changeset/create")
    fun createChangeset(
       @RequestBody request: StartChangesetRequest
@@ -61,6 +64,7 @@ class SchemaEditorService(
          }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @PostMapping("/api/repository/queries")
    fun saveQuery(@RequestBody request: SaveQueryRequest): Mono<SavedQuery> {
       return Mono.just(request)
@@ -97,6 +101,7 @@ class SchemaEditorService(
          }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @PostMapping("/api/repository/changeset/add")
    fun addChangesToChangeset(
       @RequestBody request: AddChangesToChangesetRequest
@@ -110,6 +115,7 @@ class SchemaEditorService(
       return loader.addChangesToChangeset(request.changesetName, request.edits)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @PostMapping("/api/repository/changeset/finalize")
    fun finalizeChangeset(
       @RequestBody request: FinalizeChangesetRequest
@@ -120,6 +126,7 @@ class SchemaEditorService(
    }
 
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @PutMapping("/api/repository/changeset/update")
    fun updateChangeset(
       @RequestBody request: UpdateChangesetRequest
@@ -129,6 +136,7 @@ class SchemaEditorService(
       return loader.updateChangeset(request.changesetName, request.newChangesetName)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @PostMapping("/api/repository/changesets")
    fun getAvailableChangesets(
       @RequestBody request: GetAvailableChangesetsRequest
@@ -137,6 +145,7 @@ class SchemaEditorService(
       return loader.getAvailableChangesets()
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @PostMapping("/api/repository/changesets/active")
    fun setActiveChangeset(
       @RequestBody request: SetActiveChangesetRequest
@@ -146,6 +155,7 @@ class SchemaEditorService(
    }
 
    // TODO What to do about this method
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @PostMapping("/api/repository/editable/sources")
    fun submitEdits(
       @RequestBody request: SchemaEditRequest

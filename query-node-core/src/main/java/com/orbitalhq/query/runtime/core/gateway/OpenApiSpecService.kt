@@ -1,7 +1,9 @@
 package com.orbitalhq.query.runtime.core.gateway
 
 import com.orbitalhq.schema.api.SchemaProvider
+import com.orbitalhq.security.VynePrivileges
 import org.springframework.http.MediaType
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RestController
@@ -13,8 +15,9 @@ class OpenApiSpecService(
    private val queryRouteService: QueryRouteService
 ) {
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping("/api/q/meta/{queryName}/oas", produces = ["text/yaml"])
-   fun getApiSpecForSavedQuery(@PathVariable("queryName") queryName: String): String {
+   suspend fun getApiSpecForSavedQuery(@PathVariable("queryName") queryName: String): String {
       val routableQuery = queryRouteService.routes.firstOrNull { query ->
          query.query.name.fullyQualifiedName == queryName
       } ?: error("No query matched the provided route")

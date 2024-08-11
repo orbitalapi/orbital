@@ -11,9 +11,11 @@ import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecyc
 import com.orbitalhq.schemaServer.core.repositories.toRepositorySpec
 import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
+import com.orbitalhq.security.VynePrivileges
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.web.bind.annotation.PathVariable
@@ -33,118 +35,120 @@ class WorkspaceSchemaService(
    private val eventDispatcher: ProjectSpecLifecycleEventDispatcher,
 
    /**
-     * This is the thing that loads the HOCON from disk.
-     * Even though things like actual project/repository config is
-     * being persisted in the db, settings like where to check out git repos, and
-     * sync frequency still come from this file.
-     *
-     * In time, this could probably do with some seperation.
-     */
-    private val schemaConfigLoader: WorkspaceConfigLoader
+    * This is the thing that loads the HOCON from disk.
+    * Even though things like actual project/repository config is
+    * being persisted in the db, settings like where to check out git repos, and
+    * sync frequency still come from this file.
+    *
+    * In time, this could probably do with some seperation.
+    */
+   private val schemaConfigLoader: WorkspaceConfigLoader
 ) {
 
-    companion object {
-        private val logger = KotlinLogging.logger {}
-    }
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
 
 
-    @PostMapping("/api/workspaces/{orgId}/{workspaceId}/repos/file")
-    suspend fun addFileRepositoryToWorkspace(
-        @PathVariable("orgId") organisationId: Long,
-        @PathVariable("workspaceId") workspaceId: Long,
-        @AuthenticationPrincipal auth: Mono<Authentication>,
-        @RequestBody request: CreateFileProjectStoreRequest
-    ): WorkspaceSchemaSpec = withContext(Dispatchers.IO) {
-        val authentication = auth.requireIsAuthenticated()
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
+   @PostMapping("/api/workspaces/{orgId}/{workspaceId}/repos/file")
+   suspend fun addFileRepositoryToWorkspace(
+      @PathVariable("orgId") organisationId: Long,
+      @PathVariable("workspaceId") workspaceId: Long,
+      @AuthenticationPrincipal auth: Mono<Authentication>,
+      @RequestBody request: CreateFileProjectStoreRequest
+   ): WorkspaceSchemaSpec = withContext(Dispatchers.IO) {
+      val authentication = auth.requireIsAuthenticated()
 
-        val spec = doAddFileRepoToWorkspace(organisationId, workspaceId, authentication, request)
-        logger.info { "WorkspaceSchemaSpec ${spec.id} created by user ${authentication.name}" }
-        spec
-    }
+      val spec = doAddFileRepoToWorkspace(organisationId, workspaceId, authentication, request)
+      logger.info { "WorkspaceSchemaSpec ${spec.id} created by user ${authentication.name}" }
+      spec
+   }
 
-    internal fun doAddFileRepoToWorkspace(
-        organisationId: Long,
-        workspaceId: Long,
-        auth: Authentication,
-        request: CreateFileProjectStoreRequest
-    ): WorkspaceSchemaSpec {
-        val filePackageSpec = request.toRepositorySpec()
-        val description = filePackageSpec.packageIdentifier!!.id
-        logger.info { "User ${auth.name} is adding a new file repository $description to org/workspace ${organisationId}/${workspaceId} " }
-        val configAsHoconString = filePackageSpec.toHocon().getSafeConfigString()
-        val (schemaConfig, saved) = saveRepositorySpec(
-            configAsHoconString, organisationId, workspaceId, WorkspaceSchemaSpec.SchemaSpecKind.File,
-            description
-        )
+   internal fun doAddFileRepoToWorkspace(
+      organisationId: Long,
+      workspaceId: Long,
+      auth: Authentication,
+      request: CreateFileProjectStoreRequest
+   ): WorkspaceSchemaSpec {
+      val filePackageSpec = request.toRepositorySpec()
+      val description = filePackageSpec.packageIdentifier!!.id
+      logger.info { "User ${auth.name} is adding a new file repository $description to org/workspace ${organisationId}/${workspaceId} " }
+      val configAsHoconString = filePackageSpec.toHocon().getSafeConfigString()
+      val (schemaConfig, saved) = saveRepositorySpec(
+         configAsHoconString, organisationId, workspaceId, WorkspaceSchemaSpec.SchemaSpecKind.File,
+         description
+      )
 
-        logger.info { "Sending File repo added event for repository at $description" }
-        eventDispatcher.fileRepositorySpecAdded(
-            FileSpecAddedEvent(
-                filePackageSpec, schemaConfig.fileConfigOrDefault
-            )
-        )
+      logger.info { "Sending File repo added event for repository at $description" }
+      eventDispatcher.fileRepositorySpecAdded(
+         FileSpecAddedEvent(
+            filePackageSpec, schemaConfig.fileConfigOrDefault
+         )
+      )
 
-        return saved
-    }
+      return saved
+   }
 
-    private fun saveRepositorySpec(
-        configAsHoconString: String,
-        organisationId: Long,
-        workspaceId: Long,
-        specKind: WorkspaceSchemaSpec.SchemaSpecKind,
-        description: String
-    ): Pair<WorkspaceConfig, WorkspaceSchemaSpec> {
-        val schemaConfig = schemaConfigLoader.load()
+   private fun saveRepositorySpec(
+      configAsHoconString: String,
+      organisationId: Long,
+      workspaceId: Long,
+      specKind: WorkspaceSchemaSpec.SchemaSpecKind,
+      description: String
+   ): Pair<WorkspaceConfig, WorkspaceSchemaSpec> {
+      val schemaConfig = schemaConfigLoader.load()
 
-        val saved = workspaceSchemaSpecRepository.save(
-            WorkspaceSchemaSpec(
-                id = 0,
-                WorkspaceSchemaSpec.SchemaSpecKind.File,
-                configAsHoconString
-            )
-        )
-        logger.info { "Workspace schema spec ${saved.id} created for $specKind repository $description in org/workspace ${organisationId}/${workspaceId} " }
-        return Pair(schemaConfig, saved)
-    }
+      val saved = workspaceSchemaSpecRepository.save(
+         WorkspaceSchemaSpec(
+            id = 0,
+            WorkspaceSchemaSpec.SchemaSpecKind.File,
+            configAsHoconString
+         )
+      )
+      logger.info { "Workspace schema spec ${saved.id} created for $specKind repository $description in org/workspace ${organisationId}/${workspaceId} " }
+      return Pair(schemaConfig, saved)
+   }
 
-    @PostMapping("/api/workspaces/{orgId}/{workspaceId}/repos/git")
-    suspend fun addGitRepositoryToWorkspace(
-        @PathVariable("orgId") organisationId: Long,
-        @PathVariable("workspaceId") workspaceId: Long,
-        @AuthenticationPrincipal auth: Mono<Authentication>,
-        @RequestBody request: GitProjectStoreChangeRequest
-    ): WorkspaceSchemaSpec = withContext(Dispatchers.IO) {
-        val authentication = auth.requireIsAuthenticated()
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
+   @PostMapping("/api/workspaces/{orgId}/{workspaceId}/repos/git")
+   suspend fun addGitRepositoryToWorkspace(
+      @PathVariable("orgId") organisationId: Long,
+      @PathVariable("workspaceId") workspaceId: Long,
+      @AuthenticationPrincipal auth: Mono<Authentication>,
+      @RequestBody request: GitProjectStoreChangeRequest
+   ): WorkspaceSchemaSpec = withContext(Dispatchers.IO) {
+      val authentication = auth.requireIsAuthenticated()
 
-        val spec = doAddGitRepoToWorkspace(organisationId, workspaceId, authentication, request)
-        logger.info { "WorkspaceSchemaSpec ${spec.id} created by user ${authentication.name}" }
-        spec
-    }
+      val spec = doAddGitRepoToWorkspace(organisationId, workspaceId, authentication, request)
+      logger.info { "WorkspaceSchemaSpec ${spec.id} created by user ${authentication.name}" }
+      spec
+   }
 
-    internal fun doAddGitRepoToWorkspace(
-        organisationId: Long,
-        workspaceId: Long,
-        auth: Authentication,
-        request: GitProjectStoreChangeRequest
-    ): WorkspaceSchemaSpec {
-        val gitRepoConfig = request.toRepositorySpec()
-        logger.info { "User ${auth.name} is adding a new git repository ${gitRepoConfig.redactedUri} to org/workspace ${organisationId}/${workspaceId} " }
+   internal fun doAddGitRepoToWorkspace(
+      organisationId: Long,
+      workspaceId: Long,
+      auth: Authentication,
+      request: GitProjectStoreChangeRequest
+   ): WorkspaceSchemaSpec {
+      val gitRepoConfig = request.toRepositorySpec()
+      logger.info { "User ${auth.name} is adding a new git repository ${gitRepoConfig.redactedUri} to org/workspace ${organisationId}/${workspaceId} " }
 
-        val (schemaConfig, saved) = saveRepositorySpec(
-            gitRepoConfig.toHocon().getSafeConfigString(),
-            organisationId,
-            workspaceId,
-            WorkspaceSchemaSpec.SchemaSpecKind.Git,
-            gitRepoConfig.redactedUri
-        )
+      val (schemaConfig, saved) = saveRepositorySpec(
+         gitRepoConfig.toHocon().getSafeConfigString(),
+         organisationId,
+         workspaceId,
+         WorkspaceSchemaSpec.SchemaSpecKind.Git,
+         gitRepoConfig.redactedUri
+      )
 
-        logger.info { "Sending Git repo added event for repository at ${gitRepoConfig.redactedUri}" }
-        eventDispatcher.gitRepositorySpecAdded(
-            GitSpecAddedEvent(
-                gitRepoConfig, schemaConfig.gitConfigOrDefault
-            )
-        )
+      logger.info { "Sending Git repo added event for repository at ${gitRepoConfig.redactedUri}" }
+      eventDispatcher.gitRepositorySpecAdded(
+         GitSpecAddedEvent(
+            gitRepoConfig, schemaConfig.gitConfigOrDefault
+         )
+      )
 
-        return saved
-    }
+      return saved
+   }
 }

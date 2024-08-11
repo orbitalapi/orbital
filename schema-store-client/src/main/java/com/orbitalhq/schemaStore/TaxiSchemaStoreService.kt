@@ -8,7 +8,9 @@ import com.orbitalhq.schema.publisher.ExpiringSourcesStore
 import com.orbitalhq.schema.publisher.KeepAlivePackageSubmission
 import com.orbitalhq.schema.publisher.KeepAliveStrategyMonitor
 import com.orbitalhq.schema.publisher.SourceSubmissionResponse
+import com.orbitalhq.security.VynePrivileges
 import mu.KotlinLogging
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestMethod
@@ -75,6 +77,7 @@ class TaxiSchemaStoreService(
          }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @RequestMapping(method = [RequestMethod.POST])
    fun submitSources(@RequestBody submission: KeepAlivePackageSubmission): Mono<SourceSubmissionResponse> {
       val updateMessage = taxiSchemaStoreWatcher
@@ -84,12 +87,14 @@ class TaxiSchemaStoreService(
       return Mono.just(SourceSubmissionResponse.fromEither(result))
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @RequestMapping(method = [RequestMethod.GET])
    fun listSchemas(
    ): Mono<SchemaSet> {
       return Mono.just(validatingStore.schemaSet)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @RequestMapping(path = ["/raw"], method = [RequestMethod.GET])
    fun listRawSchema(): String {
       return validatingStore.schemaSet.rawSchemaStrings.joinToString("\n")

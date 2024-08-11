@@ -15,11 +15,13 @@ import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.toVyneSources
 import com.orbitalhq.schemas.toVyneQualifiedName
+import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.NotFoundException
 import lang.taxi.annotations.HttpOperation
 import lang.taxi.annotations.WebsocketOperation
 import lang.taxi.generators.SourceFormatter
 import org.springframework.http.ResponseEntity
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestParam
@@ -35,13 +37,15 @@ class SchemaService(
 ) {
    private val formatDetector = FormatDetector(modelFormatSpecs)
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping(path = ["/api/schemas/raw"])
-   fun listRawSchema(): String {
+   suspend fun listRawSchema(): String {
       return schemaProvider.sourceContent.joinToString("\n")
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping("/api/schemas/summary")
-   fun getSchemaStateSummary(): SchemaUpdatedNotification {
+   suspend fun getSchemaStateSummary(): SchemaUpdatedNotification {
       val schemaSet = schemaStore.schemaSet
       return SchemaUpdatedNotification(
          schemaSet.id,
@@ -51,8 +55,9 @@ class SchemaService(
       )
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping(path = ["/api/schemas"])
-   fun getVersionedSchemas(): List<VersionedSource> {
+   suspend fun getVersionedSchemas(): List<VersionedSource> {
       return if (schemaProvider is ParsedSourceProvider) {
          schemaProvider.versionedSources.sortedBy { it.name }
       } else {
@@ -60,8 +65,9 @@ class SchemaService(
       }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping("/api/schemas/queries")
-   fun getSavedQueries(): List<SavedQuery> {
+   suspend fun getSavedQueries(): List<SavedQuery> {
       return schemaProvider.schema.asTaxiSchema().taxi.queries
          .map { query ->
             SavedQuery(
@@ -74,15 +80,17 @@ class SchemaService(
          }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping("/api/schemas/queries/{name}")
-   fun getSavedQuery(@PathVariable("name") queryName: String): SavedQuery {
+   suspend fun getSavedQuery(@PathVariable("name") queryName: String): SavedQuery {
       return getSavedQueries()
          .firstOrNull { it.name.parameterizedName == queryName }
          ?: throw NotFoundException("No query $queryName found")
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping(path = ["/api/types/{typeName}"])
-   fun getType(@PathVariable typeName: String): ResponseEntity<Type>? {
+   suspend fun getType(@PathVariable typeName: String): ResponseEntity<Type>? {
       val schema = schemaProvider.schema
       return if (schema.hasType(typeName)) {
          ResponseEntity.ok(schema.type(typeName))
@@ -91,14 +99,16 @@ class SchemaService(
       }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping(path = ["/api/services/{serviceName}"])
-   fun getService(@PathVariable("serviceName") serviceName: String): Service {
+   suspend fun getService(@PathVariable("serviceName") serviceName: String): Service {
       return schemaProvider.schema
          .service(serviceName)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping(path = ["/api/services/{serviceName}/{operationName}"])
-   fun getOperation(
+   suspend fun getOperation(
       @PathVariable("serviceName") serviceName: String,
       @PathVariable("operationName") operationName: String
    ): RemoteOperation {
@@ -107,8 +117,9 @@ class SchemaService(
          .remoteOperation(operationName)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping(path = ["/api/types"])
-   fun getTypes(): Schema {
+   suspend fun getTypes(): Schema {
       return schemaProvider.schema
    }
 
@@ -117,9 +128,10 @@ class SchemaService(
     * Returns a schema comprised of types, and the types they reference.
     * Optionally, also includes Taxi primitives
     */
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping(path = ["/api/schema"], params = ["members"])
    @Deprecated("Is this still called?")
-   fun getTypes(
+   suspend fun getTypes(
       @RequestParam("members") memberNames: List<String>,
       @RequestParam("includePrimitives", required = false) includePrimitives: Boolean = false
    ): Schema {
@@ -128,8 +140,9 @@ class SchemaService(
       return result
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping(path = ["/api/schema"], params = ["members", "includeTaxi"])
-   fun getTaxi(
+   suspend fun getTaxi(
       @RequestParam("members") memberNames: List<String>,
       @RequestParam("includePrimitives", required = false) includePrimitives: Boolean = false
    ): SchemaWithTaxi {
@@ -148,27 +161,31 @@ class SchemaService(
       return SchemaWithTaxi(schema, taxi)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping("/api/schema/tree")
-   fun getSchemaTree(): List<SchemaTreeNode> {
+   suspend fun getSchemaTree(): List<SchemaTreeNode> {
       val schema = schemaProvider.schema
       return SchemaTreeUtils.getRootNodes(schema)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping("/api/schema/tree", params = ["node"])
-   fun getSchemaTree(@RequestParam("node") parentQualifiedName: String): List<SchemaTreeNode> {
+   suspend fun getSchemaTree(@RequestParam("node") parentQualifiedName: String): List<SchemaTreeNode> {
       val schema = schemaProvider.schema
       val parentFqn = parentQualifiedName.fqn()
       return SchemaTreeUtils.getChildNodes(parentFqn, schema)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping(path = ["/api/schema/annotations"])
-   fun listAllAnnotations(): Mono<List<QualifiedName>> {
+   suspend fun listAllAnnotations(): Mono<List<QualifiedName>> {
       val schema = this.schemaProvider.schema
       return Mono.just(schema.metadataTypes + schema.dynamicMetadata)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping(path = ["/api/types/{typeName}/modelFormats"])
-   fun getModelFormatSpecs(@PathVariable("typeName") typeName: String): Set<QualifiedName> {
+   suspend fun getModelFormatSpecs(@PathVariable("typeName") typeName: String): Set<QualifiedName> {
       val schema = schemaProvider.schema
       if (!schema.hasType(typeName)) {
          throw NotFoundException("Type $typeName was not found in this schema")

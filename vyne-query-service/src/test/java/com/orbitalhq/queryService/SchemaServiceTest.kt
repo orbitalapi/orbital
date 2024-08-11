@@ -16,6 +16,7 @@ import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.toParsedPackages
+import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
 
@@ -90,7 +91,7 @@ class SchemaServiceTest {
    }
 
    @Test
-   fun `can fetch service`() {
+   fun `can fetch service`():Unit = runBlocking {
       val service = schemaService.getService("MultipleInvocationService")
       service.lineage.should.not.be.`null`
       service.lineage!!.consumes.should.equal(
@@ -109,7 +110,7 @@ class SchemaServiceTest {
    }
 
    @Test
-   fun `returns saved queries`() {
+   fun `returns saved queries`():Unit = runBlocking {
       val querySrc = """query FindFilm(id:FilmId) {
             find { Film(FilmId == id) }
          }"""

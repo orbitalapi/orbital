@@ -10,6 +10,8 @@ import com.orbitalhq.connectors.kafka.registry.test
 import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.registry.ConnectorConfigurationSummary
 import com.orbitalhq.connectors.registry.MutableConnectionRegistry
+import com.orbitalhq.security.VynePrivileges
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -21,8 +23,9 @@ class KafkaConnectorService(
 ) {
 
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.TestConnections}')")
    @PostMapping("/api/packages/{packageUri}/connections/message-broker", params = ["test=true"])
-   fun testConnection(@RequestBody connectionConfig: KafkaConnectionConfiguration): ConnectionStatus {
+   suspend fun testConnection(@RequestBody connectionConfig: KafkaConnectionConfiguration): ConnectionStatus {
       ConnectorUtils.assertAllParametersPresent(
          KafkaConnection.parameters, connectionConfig.connectionParameters
       )
@@ -31,8 +34,9 @@ class KafkaConnectorService(
          .getOrElse { ConnectionStatus.error(it) }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
    @PostMapping("/api/packages/{packageUri}/connections/message-broker")
-   fun createConnection(@RequestBody connectionConfig: KafkaConnectionConfiguration,
+   suspend fun createConnection(@RequestBody connectionConfig: KafkaConnectionConfiguration,
                         @PathVariable("packageUri") packageUri: String): ConnectorConfigurationSummary {
       testConnection(connectionConfig)
       val packageIdentifier = PackageIdentifier.fromUriSafeId(packageUri)

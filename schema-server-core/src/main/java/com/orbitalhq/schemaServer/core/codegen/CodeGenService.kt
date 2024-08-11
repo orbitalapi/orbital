@@ -1,10 +1,12 @@
 package com.orbitalhq.schemaServer.core.codegen
 
 import com.orbitalhq.schema.consumer.SchemaStore
+import com.orbitalhq.security.VynePrivileges
 import lang.taxi.generators.TaxiProjectEnvironment
 import lang.taxi.generators.typescript.TypeScriptGenerator
 import lang.taxi.packages.TaxiPackageProject
 import mu.KotlinLogging
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
@@ -19,6 +21,7 @@ class CodeGenService(
       private val logger = KotlinLogging.logger {}
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping("/api/taxonomy/typescript")
    fun getTypeScriptTaxonomy(): Mono<String> {
       return Mono.create { sink ->

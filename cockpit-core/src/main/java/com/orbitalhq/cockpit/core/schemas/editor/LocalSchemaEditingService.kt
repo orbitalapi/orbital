@@ -23,6 +23,7 @@ import com.orbitalhq.schemas.*
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.schemas.taxi.filtered
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
+import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.BadRequestException
 import lang.taxi.CompilationError
 import lang.taxi.CompilationException
@@ -35,6 +36,7 @@ import lang.taxi.types.ImportableToken
 import lang.taxi.types.Type
 import mu.KotlinLogging
 import org.springframework.http.MediaType
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
 import java.util.*
@@ -69,6 +71,7 @@ class LocalSchemaEditingService(
     * Instead, this approach is intended to provide small edits to source files.
     */
    @PostMapping("/api/schemas/edits")
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    fun submitSchemaEditOperation(
       @RequestBody edit: SchemaEdit
    ): Mono<SchemaSubmissionResult> {
@@ -196,6 +199,7 @@ class LocalSchemaEditingService(
     */
    @Deprecated("use submitSchemaEditOperation instead")
    @PostMapping("/api/schemas/edit", consumes = [MediaType.APPLICATION_JSON_VALUE])
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    fun submitEditedSchema(
       @RequestBody editedSchema: EditedSchema,
       @RequestParam("packageIdentifier") rawPackageIdentifier: String,
@@ -327,6 +331,7 @@ class LocalSchemaEditingService(
       "/api/schema/taxi/{packageIdentifier}",
       consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE]
    )
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    fun submit(
       @RequestBody taxi: String,
       @RequestParam("validate", required = false) validateOnly: Boolean = false,

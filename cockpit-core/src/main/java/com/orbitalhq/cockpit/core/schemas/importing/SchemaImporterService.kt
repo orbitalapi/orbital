@@ -1,6 +1,8 @@
 package com.orbitalhq.cockpit.core.schemas.importing
 
 import com.orbitalhq.cockpit.core.schemas.editor.SchemaSubmissionResult
+import com.orbitalhq.security.VynePrivileges
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestParam
@@ -15,6 +17,7 @@ class SchemaImporterService(
    // TODO : What's the relationship between this and the schema-store-api?
    // Should probably either align the two api's or remove one.
    // Looks like schema-store-api isn't used anywhere.
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @PostMapping(path = ["/api/schemas/import"])
    fun submitSchema(
       @RequestBody request: SchemaConversionRequest,

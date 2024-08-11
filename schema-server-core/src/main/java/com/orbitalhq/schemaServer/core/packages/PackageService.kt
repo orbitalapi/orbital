@@ -16,8 +16,10 @@ import com.orbitalhq.schemaServer.packages.PackageWithDescription
 import com.orbitalhq.schemaServer.packages.SourcePackageDescription
 import com.orbitalhq.schemas.DefaultPartialSchema
 import com.orbitalhq.schemas.PartialSchema
+import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.NotFoundException
 import mu.KotlinLogging
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
@@ -38,6 +40,7 @@ class PackageService(
       private val logger = KotlinLogging.logger {}
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping("/api/packages/{packageUri}")
    fun loadPackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<PackageWithDescription> {
       val packageIdentifier = PackageIdentifier.fromUriSafeId(packageUri)
@@ -53,6 +56,7 @@ class PackageService(
       )
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @DeleteMapping("/api/packages/{packageUri}")
    fun removePackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<Unit> {
       logger.info { "Received request to delete source package $packageUri" }
@@ -92,10 +96,13 @@ class PackageService(
       )
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewLoaderStatus}')")
    @GetMapping("/api/projectLoaders/unhealthy")
-   fun getUnhealthyProjectLoaders(): List<UnhealthyLoaderWithStatus> {
+   suspend fun getUnhealthyProjectLoaders(): List<UnhealthyLoaderWithStatus> {
       return this.repositoryManager.unhealthyLoaders
    }
+
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping("/api/packages")
    fun listPackages(): Mono<List<SourcePackageDescription>> {
       val packages = schemaStore.schemaSet.parsedPackages.map { parsedPackage ->
@@ -129,6 +136,7 @@ class PackageService(
       )
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping("/api/packages/{packageUri}/schema")
    fun getPartialSchemaForPackage(@PathVariable("packageUri") packageUri: UriSafePackageIdentifier): Mono<PartialSchema> {
       val packageIdentifier = PackageIdentifier.fromUriSafeId(packageUri)

@@ -18,6 +18,8 @@ import com.orbitalhq.schemas.Relationship
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.security.VynePrivileges
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -55,8 +57,9 @@ class TaxiGraphService(
 ) {
 
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @PostMapping("/api/schemas/taxi-graph")
-   fun submitSchema(@RequestBody taxiDef: String): SchemaGraph {
+   suspend fun submitSchema(@RequestBody taxiDef: String): SchemaGraph {
 
       val schema: TaxiSchema = TaxiSchema.from(taxiDef)
       val graph = VyneGraphBuilder(schema, vyneCacheConfiguration.vyneGraphBuilderCache).build()
@@ -66,8 +69,9 @@ class TaxiGraphService(
    }
 
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @RequestMapping(value = ["/api/nodes/{elementType}/{nodeName}/links"])
-   fun getLinksFromNode(
+   suspend fun getLinksFromNode(
       @PathVariable("elementType") elementType: ElementType,
       @PathVariable("nodeName") nodeName: String
    ): SchemaGraph {
@@ -79,8 +83,9 @@ class TaxiGraphService(
       return schemaGraph(edges, schema)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @RequestMapping(value = ["/api/types/{typeName}/links"])
-   fun getLinksFromType(@PathVariable("typeName") typeName: String): SchemaGraph {
+   suspend fun getLinksFromType(@PathVariable("typeName") typeName: String): SchemaGraph {
 
       val schema: Schema = schemaProvider.schema
       val graph = VyneGraphBuilder(schema, vyneCacheConfiguration.vyneGraphBuilderCache).buildDisplayGraph()
@@ -95,18 +100,21 @@ class TaxiGraphService(
       return schemaGraph(edges, schema)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @RequestMapping(value = ["/api/datasources"])
-   fun getImmediateDataSources() =
+   suspend fun getImmediateDataSources() =
       Algorithms.getImmediatelyDiscoverableTypes(schemaProvider.schema).map { it.fullyQualifiedName }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @RequestMapping(value = ["/api/types/annotation/{annotation}"])
-   fun getTypesWithAnnotation(@PathVariable("annotation") annotation: String): List<String> {
+   suspend fun getTypesWithAnnotation(@PathVariable("annotation") annotation: String): List<String> {
       val schema: Schema = schemaProvider.schema
       return Algorithms.findAllTypesWithAnnotation(schema, annotation)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @RequestMapping(value = ["/api/types/operations/{typeName}"])
-   fun findAllFunctionsWithArgumentOrReturnValueForType(@PathVariable("typeName") typeName: String): OperationQueryResult {
+   suspend fun findAllFunctionsWithArgumentOrReturnValueForType(@PathVariable("typeName") typeName: String): OperationQueryResult {
       val schema: Schema = schemaProvider.schema
       val graphSearchResult = Algorithms.findAllFunctionsWithArgumentOrReturnValueForType(schema, typeName)
       // Find the services that have declared they consume this type via another service.
@@ -120,8 +128,9 @@ class TaxiGraphService(
       return graphSearchResult.copy(results = graphSearchResult.results + lineageSearchResult)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @RequestMapping(value = ["/api/types/annotation/operations/{annotation}"])
-   fun findAllFunctionsWithArgumentOrReturnValueForAnnotation(@PathVariable("annotation") annotation: String): List<OperationQueryResult> {
+   suspend fun findAllFunctionsWithArgumentOrReturnValueForAnnotation(@PathVariable("annotation") annotation: String): List<OperationQueryResult> {
       val schema: Schema = schemaProvider.schema
       return Algorithms.findAllFunctionsWithArgumentOrReturnValueForAnnotation(schema, annotation)
    }
@@ -135,8 +144,9 @@ class TaxiGraphService(
       return SchemaGraph(schemaGraphNodes, schemaGraphLinks)
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @RequestMapping(value = ["/api/graph"], method = [RequestMethod.GET])
-   fun getGraph(
+   suspend fun getGraph(
       @RequestParam("startingFrom", required = false) startNode: String?,
       @RequestParam("distance", required = false) distance: Int?
    ): SchemaGraph {

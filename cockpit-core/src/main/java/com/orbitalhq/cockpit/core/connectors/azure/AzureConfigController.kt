@@ -6,7 +6,9 @@ import com.orbitalhq.connectors.azure.blob.registry.AzureStorageConnection
 import com.orbitalhq.connectors.azure.blob.registry.AzureStorageConnectorConfiguration
 import com.orbitalhq.connectors.azure.blob.registry.AzureStoreConnectionFileRegistry
 import com.orbitalhq.connectors.registry.ConnectorConfigurationSummary
+import com.orbitalhq.security.VynePrivileges
 import mu.KotlinLogging
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RestController
@@ -16,6 +18,7 @@ private val logger = KotlinLogging.logger { }
 
 @RestController
 class AzureConfigController(private val registry: AzureStoreConnectionFileRegistry) {
+   @PreAuthorize("hasAuthority('${VynePrivileges.TestConnections}')")
    @PostMapping("/api/connections/azure_storage", params = ["test=true"])
    fun testConnection(@RequestBody connectionConfig: AzureStorageConnectorConfiguration): Mono<Unit> {
       ConnectorUtils.assertAllParametersPresent(
@@ -28,6 +31,7 @@ class AzureConfigController(private val registry: AzureStoreConnectionFileRegist
       }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")
    @PostMapping("/api/connections/azure_storage")
    fun createConnection(@RequestBody connectionConfig: AzureStorageConnectorConfiguration): Mono<ConnectorConfigurationSummary> {
       TODO("Needs migrating - don't think this is used")
