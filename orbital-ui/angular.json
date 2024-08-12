@@ -33,6 +33,7 @@
             ],
             "assets": [
               "src/silent-refresh.html",
+              "src/auth_error.html",
               "src/favicon-32x32.png",
               "src/assets",
               {

@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="./favicon-32x32.png" rel="icon" type="image/png">
+  <title>Orbital</title>
+  <style>
+    html,
+    body {
+      height: 100%;
+      margin: 0;
+    }
+
+    body {
+      background: #0c1826;
+      color: #FFF;
+      font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif
+    }
+
+    .container {
+      display: flex;
+      height: 100%;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .logo {
+      width: 240px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <img class="logo" src="/assets/img/orbital_logo_white.svg" alt="Orbital logo"/>
+  <p id="output"></p>
+</div>
+
+<script>
+  // Get the query string from the URL
+  const queryString = window.location.search;
+
+  // Create a URLSearchParams object
+  const urlParams = new URLSearchParams(queryString);
+
+  // Get the value of the 'message' parameter
+  const message = urlParams.get('message');
+
+  // Output the message on the page
+  document.getElementById('output').textContent = message;
+
+</script>
+</body>
+</html>
