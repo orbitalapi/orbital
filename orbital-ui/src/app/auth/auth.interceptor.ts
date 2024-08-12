@@ -54,16 +54,21 @@ export class DefaultOAuthInterceptor implements HttpInterceptor {
     return next.handle(req)
       .pipe(
         catchError(err => {
-             console.log(this.authService.tokenEndPoint())
-             if (err instanceof HttpErrorResponse && err.status === HttpStatusCode.Unauthorized) {
-               console.log("doing silent refresh");
-               return this.authService.doSilentRefresh();
-             }
-             return this.errorHandler.handleError(err);
+          console.log(this.authService.tokenEndPoint())
+          if (err instanceof HttpErrorResponse && err.status === HttpStatusCode.Unauthorized) {
+            if (err.error.path === '/api/user') {
+              // This error more than likely occurred in the cloud, so we send the user to
+              // a page notifying them they're not authorised to use the current cloud
+              // instance (ie. they don't belong to the correct organisation)
+              window.location.href = `auth_error.html?message=${err.error.message}`
+            } else {
+              console.log("doing silent refresh");
+              return this.authService.doSilentRefresh();
             }
-        )
+          }
+          return this.errorHandler.handleError(err);
+        })
       );
-
   }
 
 }
