@@ -80,6 +80,7 @@ export class QueryPanelStoreService {
     clonedQueries[index].isActive = true;
     this.queries.set(clonedQueries);
     this.editorStore.updateActiveQueryEditorStateIndex(index)
+    this.editorStore.updateLastCursorPosition(this.activeQuery().lastCursorPosition)
   }
 
 
@@ -137,7 +138,6 @@ export class QueryPanelStoreService {
 
   updateCursorPosition(position: IPosition) {
     this.patchQuery('lastCursorPosition', position)
-    this.editorStore.updateLastCursorPosition(position)
   }
 
   private updateConversationMessages(conversationMessages: ConversationMessage[]) {
