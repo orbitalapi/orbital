@@ -21,7 +21,7 @@
   [partialSchema$]="partialSchema$"
   [schema]="schema"
   [allowTryItOut]="true"
-  [readme]="parsedPackage.readme"
+  [readme]="parsedPackage?.readme"
 ></app-schema-member-type-explorer>
 <app-changelog-list *ngIf="activeTabIndex == 1" [changeLogEntries]="changelogEntries | async"></app-changelog-list>
 <app-code-viewer
