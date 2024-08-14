@@ -73,3 +73,37 @@ app-schema-diagram {
   flex-direction: column;
   overflow: auto;
 }
+
+:host ::ng-deep {
+  markdown {
+    ul {
+      list-style: disc;
+    }
+
+    ol {
+      list-style: decimal;
+    }
+  }
+
+  .code-toolbar {
+    position: relative;
+
+    &:hover {
+      .toolbar-item > button {
+        opacity: 1 !important;
+      }
+    }
+
+    .toolbar {
+      position: absolute;
+      top: 0;
+      right: 0;
+      padding: 1rem;
+
+      .toolbar-item > button {
+        opacity: 0.75;
+        cursor: pointer;
+      }
+    }
+  }
+}

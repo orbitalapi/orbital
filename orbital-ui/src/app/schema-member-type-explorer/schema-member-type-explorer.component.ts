@@ -1,5 +1,7 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
+import {ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import Prism from 'prismjs'
+import 'prismjs/plugins/toolbar/prism-toolbar';
 import { BehaviorSubject, combineLatest, Observable, of, ReplaySubject } from 'rxjs';
 import { filter, map, startWith, tap } from 'rxjs/operators';
 import {
@@ -11,6 +13,7 @@ import {
   Type,
   VersionedSource
 } from 'src/app/services/schema';
+import {QueryPanelStoreService} from '../services/query-panel-store.service';
 import { combineAndCloneWithPartialSchema, SchemaSubmissionResult } from '../services/types.service';
 import { SchemaEditOperation } from '../project-import/schema-importer.service';
 import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
@@ -20,6 +23,7 @@ import {
   buildLinksForType,
   buildOperationLinks, findServiceAssociatedWithOperation
 } from '../schema-diagram/schema-diagram/schema-chart-builder';
+import {taxi} from '../utils/prism.languages';
 
 @Component({
   selector: 'app-schema-member-type-explorer',
@@ -72,7 +76,11 @@ import {
                                                       (updateDeferred)="handleSchemaEditOperation($event.schemaEditOperation, $event.member, selectedOperation)"
                                   ></app-operation-view>
                                   <div *ngIf="!selectedModel && !selectedOperation">
+                                    @if (readme) {
+                                      <markdown [data]="readme" class="markdown-body" [disableSanitizer]="true"/>
+                                    } @else {
                                       Select a schema member from the panel on the left to view here.
+                                    }
                                   </div>
                               </div>
                           </div>
@@ -130,6 +138,9 @@ export class SchemaMemberTypeExplorerComponent {
   }
 
   @Input()
+  readme: string
+
+  @Input()
   working: boolean = false;
 
   @Input()
@@ -154,7 +165,8 @@ export class SchemaMemberTypeExplorerComponent {
   constructor(
     private detectorRef: ChangeDetectorRef,
     private router: Router,
-    private activatedRoute: ActivatedRoute
+    private activatedRoute: ActivatedRoute,
+    private queryPanelStoreService: QueryPanelStoreService,
   ) {
     this.combinedSchema$ = combineLatest([
       this.schema$,
@@ -175,7 +187,38 @@ export class SchemaMemberTypeExplorerComponent {
     )
     if (this.editable)
       this.clearQueryParams();
+
+    Prism.languages.taxi = taxi
+
+    Prism.plugins.toolbar.registerButton('run-code', (env) => {
+      if (env.language === 'taxi') {
+        const button = document.createElement('button');
+        button.innerHTML = 'Run code in query editor';
+        button.addEventListener('click', () => this.gotoQueryEditor(env.code))
+        return button
+      } else {
+        return null
+      }
+    });
   }
+
+  // TODO: leaving this until whatever we're doing with rendering diagrams in the markdown component is resolved
+  /*ngOnInit() {
+    const originalCodeRenderer = this.markdownService.renderer.code;
+    this.markdownService.options.gfm = true;
+    const yup = true
+    this.markdownService.renderer.code = (code: string, infostring: string | undefined, escaped: boolean) => {
+      return `
+        <a (click)="this.gotoQueryEditor(code)" class="taxi-link">${infostring}</a>
+        <!-- NOTE: this is the <app-code-editor> but renamed to avoid collisions -->
+        <markdown-code-editor class="code-editor"
+                         content="${code}"
+                         readOnly="${yup}"
+        ></markdown-code-editor>
+      `
+      //return `<h3>${infostring}</h3><pre class="language-${infostring}" tabindex="0">${originalCodeRenderer(code, infostring, escaped)}</pre>`
+    };
+  }*/
 
   get hasCodeView(): boolean {
     return this._partialSchema && "sourcePackage" in this._partialSchema;
@@ -322,6 +365,11 @@ export class SchemaMemberTypeExplorerComponent {
       queryParamsHandling: 'merge',
       replaceUrl: true
     });
+  }
+
+  private gotoQueryEditor(query) {
+    this.queryPanelStoreService.addTab('', query)
+    this.router.navigate(['/query/editor']);
   }
 
   protected readonly of = of;

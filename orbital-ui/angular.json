@@ -56,6 +56,8 @@
               "path": "./custom-webpack.config.js"
             },
             "styles": [
+              "node_modules/github-markdown-css/github-markdown.css",
+              "node_modules/prismjs/themes/prism.min.css",
               "node_modules/@taiga-ui/core/styles/taiga-ui-theme.less",
               "node_modules/@taiga-ui/core/styles/taiga-ui-fonts.less",
               "node_modules/@taiga-ui/styles/taiga-ui-global.less",
@@ -66,7 +68,8 @@
             "scripts": [
               "node_modules/marked/marked.min.js",
               "node_modules/prismjs/prism.js",
-              "node_modules/prismjs/components/prism-json.js"
+              "node_modules/prismjs/plugins/toolbar/prism-toolbar.min.js",
+              "node_modules/prismjs/components/prism-json.min.js"
             ],
             "aot": false,
             "vendorChunk": true,

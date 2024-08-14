@@ -52,11 +52,11 @@ export interface PackageWithDescription {
 export interface ParsedPackage {
   metadata: PackageMetadata;
   sources: ParsedSource[];
-
   additionalSources: {[index: string]: VersionedSource[]}
   isValid: boolean;
   identifier: PackageIdentifier;
   sourcesWithErrors: ParsedSource[];
+  readme: string;
 }
 
 export interface PackageMetadata {

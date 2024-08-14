@@ -263,7 +263,7 @@ export class CodeEditorComponent implements OnDestroy {
         this.cursorPositionChanged.emit(event.position)
       }
     })
-    if (this.setFocus()) {
+    if (this.setFocus() && !this.readOnly) {
       this.monacoEditor.focus()
     }
 
