@@ -56,7 +56,7 @@ export interface ParsedPackage {
   isValid: boolean;
   identifier: PackageIdentifier;
   sourcesWithErrors: ParsedSource[];
-  readme: string;
+  readme: VersionedSource | null;
 }
 
 export interface PackageMetadata {

@@ -36,7 +36,8 @@ data class PackageWithDescription(
             ParsedPackage(
                PackageMetadata.from(packageIdentifier),
                emptyList(),
-               emptyMap()
+               emptyMap(),
+               readme = null
             ),
             SourcePackageDescription(
                packageIdentifier,

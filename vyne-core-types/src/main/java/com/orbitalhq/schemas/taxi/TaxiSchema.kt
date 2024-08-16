@@ -447,7 +447,7 @@ class TaxiSchema(
       }
 
       private fun List<VersionedSource>.asDummySourcePackages(): List<SourcePackage> {
-         return listOf(SourcePackage(PackageMetadata.from(VyneTypes.NAMESPACE, "dummy", "0.1.0"), this, emptyMap()))
+         return listOf(SourcePackage(PackageMetadata.from(VyneTypes.NAMESPACE, "dummy", "0.1.0"), this, emptyMap(), null))
       }
    }
 }

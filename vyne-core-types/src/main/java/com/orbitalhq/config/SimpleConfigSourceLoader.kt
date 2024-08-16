@@ -18,7 +18,8 @@ class SimpleConfigSourceLoader(
    private val sourcePackage = SourcePackage(
       PackageMetadata.from(packageIdentifier),
       sources,
-      emptyMap()
+      emptyMap(),
+      null
    )
 
    override fun load(): List<SourcePackage> {
