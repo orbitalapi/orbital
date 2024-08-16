@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit
 class SearchController(val searchIndexRepository: SearchIndexRepository, private val schemaProvider: SchemaProvider) {
    @GetMapping("/api/search", params = ["query"])
    @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
-   fun search(@RequestParam("query") query: String): List<SearchResult> {
+   suspend fun search(@RequestParam("query") query: String): List<SearchResult> {
       val stopWatch = Stopwatch.createStarted()
       val result: List<SearchResult> = searchIndexRepository.search(query, schemaProvider.schema)
       log().info("Search for term $query took ${stopWatch.elapsed(TimeUnit.MILLISECONDS)}ms and found ${result.size} results")
