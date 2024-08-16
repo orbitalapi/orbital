@@ -5,7 +5,6 @@ import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
-import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.Fact
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.caching.StateStoreProvider
@@ -105,7 +104,8 @@ class VyneFactory(
             stateStoreProvider = stateStoreProvider,
             queryMetricsReporter = metricsReporter
          ),
-         queryPlanner = queryPlanner
+         queryPlanner = queryPlanner,
+         formatSpecs = formatSpecRegistry.formats
       )
       facts.forEach { fact ->
          val typedInstance = fact.toTypedInstance(schema)
