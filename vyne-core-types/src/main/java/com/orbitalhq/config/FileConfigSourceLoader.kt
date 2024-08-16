@@ -5,6 +5,7 @@ import com.orbitalhq.*
 import com.orbitalhq.utils.files.ReactiveFileSystemMonitor
 import com.orbitalhq.utils.files.ReactiveWatchingFileSystemMonitor
 import lang.taxi.packages.GlobPattern
+import lang.taxi.packages.TaxiSourcesLoader
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
@@ -30,6 +31,7 @@ class FileConfigSourceLoader(
 
    companion object {
       private val logger = KotlinLogging.logger {}
+
       // For testing really.
       val LOCAL_PACKAGE_IDENTIFIER = PackageIdentifier(
          "local", "local", "0.1.0"
@@ -58,7 +60,7 @@ class FileConfigSourceLoader(
          }
    }
 
-   override fun saveConfig(updated: Config):ResultWithMessage {
+   override fun saveConfig(updated: Config): ResultWithMessage {
       val configWithPlaceholderQuotesRemoved = updated.getSafeConfigString()
       if (!Files.exists(configFilePath)) {
          if (configFilePath.parent != null) {
@@ -72,7 +74,7 @@ class FileConfigSourceLoader(
       return ResultWithMessage.SUCCESS
    }
 
-   override fun save(source: VersionedSource):ResultWithMessage  {
+   override fun save(source: VersionedSource): ResultWithMessage {
       val path = if (glob == null) {
          require(source.name == configFilePath.toFile().name) { "This writer can only write to ${configFilePath.fileName}" }
          configFilePath
@@ -109,10 +111,15 @@ class FileConfigSourceLoader(
             SourcePackage(
                PackageMetadata.from(packageIdentifier),
                sources,
-               emptyMap()
+               emptyMap(),
+               getReadme(configFilePath)
             )
          )
       }
+   }
+
+   private fun getReadme(configFilePath: Path): VersionedSource? {
+      return TaxiSourcesLoader.findReadme(configFilePath)?.asVersionedSource()
    }
 
    private fun getSources(configFilePath: Path): List<VersionedSource> {

@@ -76,7 +76,7 @@ class TaxiSchemaValidator(
                   .map { it.third }
                ParsedSource(versionedSource, errors)
             }
-            ParsedPackage(sourcePackage.packageMetadata, parsedSources, sourcePackage.additionalSources)
+            ParsedPackage(sourcePackage.packageMetadata, parsedSources, sourcePackage.additionalSources, sourcePackage.readme)
          }
          if (errors.isNotEmpty()) {
             logger.error("Schema contained compilation exception: \n${errors.joinToString("\n")}")

@@ -80,7 +80,7 @@ interface Schema {
          // and flattens / combines them into a map, based on the source type
          val loadedSources = this.packages.flatMap { sourcePackage ->
             sourcePackage.additionalSources.map { (sourcesType, sources) ->
-               sourcesType to SourcePackage(sourcePackage.packageMetadata, sources, emptyMap())
+               sourcesType to SourcePackage(sourcePackage.packageMetadata, sources, emptyMap(), null)
             }
          }.groupBy({ it.first }, { it.second })
          return loadedSources

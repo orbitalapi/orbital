@@ -58,6 +58,8 @@ data class SourcePackage(
     * Additional sources (eg., config, pipelines, extensions, etc).
     */
    val additionalSources: Map<SourcesType, List<VersionedSource>> = emptyMap(),
+
+   val readme: VersionedSource? = null
 ) : Serializable {
    val identifier = packageMetadata.identifier
 
@@ -95,7 +97,8 @@ data class SourcePackage(
          return SourcePackage(
             packageMetadata = originalPackage.packageMetadata,
             sources = generatedTaxiSources,
-            additionalSources = additionalSources
+            additionalSources = additionalSources,
+            readme = null
          )
       }
       fun asTranspiledPackage(packageMetadata: PackageMetadata, originalSources: List<VersionedSource>, generatedTaxiSources: List<VersionedSource>, sourceMap: SourceMap = SourceMap.EMPTY):SourcePackage {
@@ -108,7 +111,8 @@ data class SourcePackage(
          return SourcePackage(
             packageMetadata = packageMetadata,
             sources = generatedTaxiSources,
-            additionalSources
+            additionalSources,
+            readme = null
          )
       }
 
@@ -131,7 +135,9 @@ data class SourcePackage(
           * Additional sources that are found in the path globs are relativized to this
           * path, to avoid leaking full filepaths
           */
-         relativeTo: Path?
+         relativeTo: Path?,
+
+         readme: VersionedSource?
       ): SourcePackage {
          val additionalSources = additionalSourcesPathGlobs.associate { (sourceType, pathGlob) ->
             val sources = pathGlob.mapEachDirectoryEntry { path ->
@@ -150,7 +156,7 @@ data class SourcePackage(
             }.values.toList()
             sourceType to sources
          }
-         return SourcePackage(packageMetadata, sources, additionalSources)
+         return SourcePackage(packageMetadata, sources, additionalSources, readme)
       }
    }
 }
@@ -236,7 +242,8 @@ data class ParsedPackage(
     * Additional sources (eg., config, pipelines, extensions, etc).
     * These aren't actively loaded, and it's left to the appropriate extensions to pull these in
     */
-   val additionalSources: Map<SourcesType, List<VersionedSource>>
+   val additionalSources: Map<SourcesType, List<VersionedSource>>,
+   val readme: VersionedSource? = null
 ) : Serializable {
    val isValid = sources.all { it.isValid }
    val identifier = metadata.identifier
@@ -246,7 +253,8 @@ data class ParsedPackage(
       return SourcePackage(
          metadata,
          sources.map { it.source },
-         this.additionalSources
+         this.additionalSources,
+         this.readme
       )
    }
 }
@@ -327,7 +335,8 @@ fun TaxiPackageSources.asSourcePackage(): SourcePackage {
       this.project.toPackageMetadata(),
       this.versionedSources(relativeTo = this.project.sourceRootPath),
       this.pathGlobs(),
-      relativeTo = this.project.packageRootPath
+      relativeTo = this.project.packageRootPath,
+      readme = this.readme?.asVersionedSource()
    )
 }
 

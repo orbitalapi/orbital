@@ -183,7 +183,8 @@ data class SchemaSet private constructor(
             ParsedPackage(
                sourcePackage.packageMetadata,
                sourcePackage.sourcesWithPackageIdentifier.map { src -> ParsedSource(src) },
-               sourcePackage.additionalSources
+               sourcePackage.additionalSources,
+               sourcePackage.readme
 
             )
          }
