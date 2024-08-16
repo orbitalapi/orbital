@@ -28,6 +28,7 @@ fun getPreferredUserDisplayName(claims: Map<String, Any>): String {
       hasClaims(PropelAuthJwtTokenClaims.FirstName, PropelAuthJwtTokenClaims.LastName) -> concatClaims(PropelAuthJwtTokenClaims.FirstName, PropelAuthJwtTokenClaims.LastName)
       // Fallback. Providers like Cognito don't actually server PerferredUserName unless explicitly configured to do so
       hasClaims(JwtStandardClaims.Email) -> claims[JwtStandardClaims.Email]!! as String
+      hasClaims(JwtStandardClaims.Sub) -> claims[JwtStandardClaims.Sub] !! as String
       else -> error("Could not infer username from provided claims: $claims")
    }
 }
