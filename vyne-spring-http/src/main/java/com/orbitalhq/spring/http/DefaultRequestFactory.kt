@@ -1,9 +1,9 @@
 package com.orbitalhq.spring.http
 
 import com.google.common.collect.ArrayListMultimap
-import com.google.common.collect.ListMultimap
-import com.google.common.collect.Multimaps
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.format.FormatDetector
+import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.schemas.RemoteOperation
 import lang.taxi.annotations.HttpHeader
 import lang.taxi.annotations.HttpRequestBody
@@ -17,7 +17,10 @@ interface HttpRequestFactory {
    fun buildRequestQueryParams(operation: RemoteOperation): MultiValueMap<String, String>? = null
 }
 
-class DefaultRequestFactory : HttpRequestFactory {
+class DefaultRequestFactory(private val formatSpecs: List<ModelFormatSpec>) : HttpRequestFactory {
+   init {
+      logger.info { "created" }
+   }
    companion object {
       private val logger = KotlinLogging.logger {}
 
@@ -31,8 +34,12 @@ class DefaultRequestFactory : HttpRequestFactory {
       // be improved, using name / position?  (note that parameters don't appear to be ordered in the list).
 
       val requestBodyParamType = operation.parameters[requestBodyParamIdx].type
+
       val requestBodyTypedInstance = parameters.first { it.type.name == requestBodyParamType.name }
-      return HttpEntity(requestBodyTypedInstance.toRawObject(), headers)
+      val httpBody = FormatDetector.get(formatSpecs).getFormatType(requestBodyParamType)?.let {
+         it.second.serializer.write(requestBodyTypedInstance.toRawObject(), it.first, 0)
+      } ?: requestBodyTypedInstance.toRawObject()
+      return HttpEntity(httpBody, headers)
 
    }
 

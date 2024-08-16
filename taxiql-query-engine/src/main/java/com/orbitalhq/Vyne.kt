@@ -11,10 +11,29 @@ import com.orbitalhq.models.facts.CopyOnWriteFactBag
 import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.models.json.addKeyValuePair
-import com.orbitalhq.query.*
+import com.orbitalhq.query.Fact
+import com.orbitalhq.query.MetricTags
+import com.orbitalhq.query.MutatingQueryExpression
+import com.orbitalhq.query.ProjectedExpression
+import com.orbitalhq.query.Projection
+import com.orbitalhq.query.ProjectionAnonymousTypeProvider
+import com.orbitalhq.query.Query
+import com.orbitalhq.query.QueryContext
+import com.orbitalhq.query.QueryContextEventBroker
+import com.orbitalhq.query.QueryEngineFactory
+import com.orbitalhq.query.QueryExpression
+import com.orbitalhq.query.QueryMode
+import com.orbitalhq.query.QueryResult
+import com.orbitalhq.query.QuerySchema
+import com.orbitalhq.query.StatefulQueryEngine
 import com.orbitalhq.query.graph.Algorithms
 import com.orbitalhq.query.planner.QueryPlanner
-import com.orbitalhq.schemas.*
+import com.orbitalhq.schemas.CompositeSchema
+import com.orbitalhq.schemas.QueryOptions
+import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.Service
+import com.orbitalhq.schemas.SimpleSchema
+import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.taxi.TaxiSchemaAggregator
 import com.orbitalhq.schemas.taxi.compileExpression
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
@@ -29,7 +48,7 @@ import lang.taxi.query.Parameter
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.TypedValue
-import java.util.*
+import java.util.UUID
 
 enum class NodeTypes {
    ATTRIBUTE,
@@ -262,7 +281,8 @@ class Vyne(
                schema.type(argumentValue.fqn.parameterizedName),
                argumentValue.value,
                schema,
-               source = Provided
+               source = Provided,
+               formatSpecs = this.formatSpecs
             )
             ScopedFact(ProjectionFunctionScope(variable.name, typedInstance.type.taxiType), typedInstance)
 //            variable.name to typedInstance

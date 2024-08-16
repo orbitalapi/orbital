@@ -3,9 +3,6 @@ package com.orbitalhq.query.runtime.executor
 import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
-import io.micrometer.core.instrument.MeterRegistry
 import com.orbitalhq.SourcePackageHasher
 import com.orbitalhq.Vyne
 import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
@@ -29,6 +26,9 @@ import com.orbitalhq.spring.http.DefaultRequestFactory
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.spring.invokers.RestTemplateInvoker
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
+import io.micrometer.core.instrument.MeterRegistry
 import mu.KotlinLogging
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.stereotype.Component
@@ -134,7 +134,7 @@ class StandaloneVyneFactory(
          schemaProvider,
          builder,
          AuthWebClientCustomizer.forTokens(message.authTokens, oneTimeRefreshTokenReset = true),
-         DefaultRequestFactory()
+         DefaultRequestFactory(FormatSpecRegistry.default().formats)
       )
    }
 

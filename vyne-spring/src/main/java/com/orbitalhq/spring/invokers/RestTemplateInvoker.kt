@@ -56,7 +56,7 @@ import java.util.concurrent.atomic.AtomicInteger
 class RestTemplateInvoker(
    val schemaProvider: SchemaProvider,
    private val webClientFactory: WebClientFactory,
-   private val requestFactory: HttpRequestFactory = DefaultRequestFactory(),
+   private val requestFactory: HttpRequestFactory = DefaultRequestFactory(FormatSpecRegistry.default().formats),
    val formats: FormatSpecRegistry = FormatSpecRegistry.default(),
 ) : OperationInvoker {
    private val logger = KotlinLogging.logger {}
@@ -65,7 +65,7 @@ class RestTemplateInvoker(
       schemaProvider: SchemaProvider,
       webClientBuilder: WebClient.Builder,
       authRequestCustomizer: AuthWebClientCustomizer,
-      requestFactory: HttpRequestFactory = DefaultRequestFactory()
+      requestFactory: HttpRequestFactory = DefaultRequestFactory(FormatSpecRegistry.default().formats)
    )
       : this(
       schemaProvider,
