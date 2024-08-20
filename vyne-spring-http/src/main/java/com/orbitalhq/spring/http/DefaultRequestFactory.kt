@@ -4,17 +4,20 @@ import com.google.common.collect.ArrayListMultimap
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.models.format.ModelFormatSpec
+import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
 import lang.taxi.annotations.HttpHeader
+import lang.taxi.annotations.HttpQueryVariable
 import lang.taxi.annotations.HttpRequestBody
 import mu.KotlinLogging
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
+import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
 
 interface HttpRequestFactory {
    fun buildRequestBody(operation: RemoteOperation, parameters: List<TypedInstance>): HttpEntity<*>
-   fun buildRequestQueryParams(operation: RemoteOperation): MultiValueMap<String, String>? = null
+   fun buildRequestQueryParams(parametersAndValues: List<Pair<Parameter, TypedInstance>>): MultiValueMap<String, String>? = null
 }
 
 class DefaultRequestFactory(private val formatSpecs: List<ModelFormatSpec>) : HttpRequestFactory {
@@ -40,6 +43,24 @@ class DefaultRequestFactory(private val formatSpecs: List<ModelFormatSpec>) : Ht
          it.second.serializer.write(requestBodyTypedInstance.toRawObject(), it.first, 0)
       } ?: requestBodyTypedInstance.toRawObject()
       return HttpEntity(httpBody, headers)
+
+   }
+
+   override fun buildRequestQueryParams(parametersAndValues: List<Pair<Parameter, TypedInstance>>): MultiValueMap<String, String>? {
+      val queryParamsAndValues = parametersAndValues
+         .filter { parameterAndValue -> parameterAndValue.first.hasMetadata(HttpQueryVariable.NAME) }
+
+      return if (queryParamsAndValues.isEmpty()) {
+         null
+      } else {
+         val queryParamMultiMap =  LinkedMultiValueMap<String, String>()
+         queryParamsAndValues
+            .filter { it.second.value != null }
+            .forEach { queryParamsAndValue ->
+               queryParamMultiMap.add(queryParamsAndValue.first.name!!, queryParamsAndValue.second.value!!.toString())
+            }
+         queryParamMultiMap
+      }
 
    }
 

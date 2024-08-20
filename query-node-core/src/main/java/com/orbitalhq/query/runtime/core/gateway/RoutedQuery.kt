@@ -1,7 +1,9 @@
 package com.orbitalhq.query.runtime.core.gateway
 
 import com.orbitalhq.spring.http.HttpStatusException
+import lang.taxi.annotations.HttpHeader
 import lang.taxi.annotations.HttpPathVariable
+import lang.taxi.annotations.HttpQueryVariable
 import lang.taxi.annotations.HttpRequestBody
 import lang.taxi.query.FactValue
 import lang.taxi.query.Parameter
@@ -14,6 +16,7 @@ import org.springframework.web.reactive.function.server.ServerRequest
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.switchIfEmpty
+import kotlin.jvm.optionals.getOrNull
 
 /**
  * A query that has matched a route.
@@ -54,6 +57,23 @@ data class RoutedQuery(
                }
             }
 
+            queryVariableName(parameter) != null -> {
+               try {
+                  Mono.just(request.queryParam(queryVariableName(parameter)!!).getOrNull())
+               } catch (e: IllegalArgumentException) {
+                  Mono.error(HttpStatusException(HttpStatus.BAD_REQUEST, e.message!!))
+               }
+            }
+
+            headerVariableName(parameter) != null -> {
+               try {
+                  val headerValue = request.headers().firstHeader(headerVariableName(parameter))
+                  Mono.just(headerValue)
+               } catch (e: IllegalArgumentException) {
+                  Mono.error(HttpStatusException(HttpStatus.BAD_REQUEST, e.message!!))
+               }
+            }
+
             isRequestBody(parameter) -> {
                request.bodyToMono(String::class.java)
                   .switchIfEmpty {
@@ -84,6 +104,14 @@ data class RoutedQuery(
 
       private fun pathVariableName(parameter: Parameter): String? {
          return parameter.annotation(HttpPathVariable.NAME)?.let { it.defaultParameterValue?.toString() }
+      }
+
+      private fun queryVariableName(parameter: Parameter): String? {
+         return parameter.annotation(HttpQueryVariable.NAME)?.let { it.defaultParameterValue?.toString() }
+      }
+
+      private fun headerVariableName(parameter: Parameter): String? {
+         return parameter.annotation(HttpHeader.NAME)?.let { it.parameters["name"]?.toString() }
       }
    }
 }

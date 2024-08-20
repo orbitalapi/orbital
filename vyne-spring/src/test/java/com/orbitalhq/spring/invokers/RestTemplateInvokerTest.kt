@@ -34,7 +34,6 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import io.kotest.matchers.types.shouldNotBeInstanceOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -807,6 +806,36 @@ namespace vyne {
    }
 
    @Test
+   fun `can resolve query variables from facts`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people")
+            operation listPeople(@taxi.http.QueryVariable(value = "apiKey") apiKey:ApiKey):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+      )
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+
+      }
+      vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""")
+         .rawObjects()
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/people?apiKey=hello", request.path)
+         assertEquals(HttpMethod.GET.name(), request.method)
+      }
+   }
+
+   @Test
    fun `request body is populated on request`(): Unit = runBlocking {
       val vyne = testVyne(
          """
@@ -1021,6 +1050,39 @@ namespace vyne {
       """.trimMargin()
          )
             .rawObjects()
+      }
+   }
+
+   @Test
+   fun `can use HttpIgnoreErrors to return result from responses with Http error status`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people?apiKey={apiKey}")
+            @HttpIgnoreErrors(responseCodes = ["5xx"])
+            operation listPeople(apiKey:ApiKey):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+      )
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+            .setResponseCode(501)
+
+      }
+
+      vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""")
+         .rawObjects()
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/people?apiKey=hello", request.path)
+         assertEquals(HttpMethod.GET.name(), request.method)
       }
    }
 

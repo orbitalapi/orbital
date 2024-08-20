@@ -1,9 +1,9 @@
 package com.orbitalhq.query.runtime.core.gateway
 
-import io.kotest.matchers.shouldBe
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.http.HttpStatusException
 import com.orbitalhq.withBuiltIns
+import io.kotest.matchers.shouldBe
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import org.junit.Test
@@ -17,6 +17,8 @@ class RoutedQueryTest {
       model Film {
          filmId : FilmId inherits String
       }
+      
+      type CorrelationId inherits String
    """.trimIndent()
 
    @Test
@@ -39,6 +41,52 @@ class RoutedQueryTest {
       routedQuery.block().arguments.entries.single().value.typedValue.value
          .shouldBe("123")
    }
+
+    @Test
+    fun `converts query variables to facts`() {
+        val (query, querySrc) = query(
+            src, """
+
+         @HttpOperation(method = "GET", url = "/films")
+         query findFilm( @taxi.http.QueryVariable("filmId") filmId : FilmId ) {
+            find { Film( FilmId == filmId ) }
+         }
+      """.trimIndent()
+        )
+
+        val request = MockServerRequest.builder()
+            .queryParam("filmId", "123")
+            .build()
+
+        val routedQuery = RoutedQuery.build(query, querySrc, request)
+        routedQuery.block().arguments.entries.single().value.typedValue.value
+            .shouldBe("123")
+    }
+
+    @Test
+    fun `converts http header variables to facts`() {
+        val (query, querySrc) = query(
+            src, """
+
+         @HttpOperation(method = "GET", url = "/films/{filmId}")
+         query findFilm( @PathVariable("filmId") filmId : FilmId, @taxi.http.HttpHeader(name = "x-api-request-id" ) correlationId: CorrelationId) {
+            find { Film( FilmId == filmId ) }
+         }
+      """.trimIndent()
+        )
+
+        val request = MockServerRequest.builder()
+            .pathVariable("filmId", "123")
+            .header("x-api-request-id", "request-365")
+            .build()
+
+        val routedQuery = RoutedQuery.build(query, querySrc, request)
+        routedQuery.block().arguments.entries.toList()[0].value.typedValue.value
+            .shouldBe("123")
+
+        routedQuery.block().arguments.entries.toList()[1].value.typedValue.value
+            .shouldBe("request-365")
+    }
 
    @Test
    fun `converts request body to facts`() {

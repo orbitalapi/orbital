@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.google.common.base.MoreObjects
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.VyneTypes
+import com.orbitalhq.annotations.http.HttpIgnoreErrorsAnnotationSchema
 import com.orbitalhq.annotations.http.HttpRetryAnnotationSchema
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.RemoteCall
@@ -426,6 +427,16 @@ fun RemoteOperation.retrySpec(): VyneHttpRetrySpec? {
    }
 }
 
+fun RemoteOperation.ignoreErrorsSpec(): VyneHttpIgnoreErrorsSpec? {
+   return if (hasMetadata(HttpIgnoreErrorsAnnotationSchema.NAME)) {
+      val annotation = firstMetadata(HttpIgnoreErrorsAnnotationSchema.NAME)
+      val responseCodes = annotation.params["responseCodes"] as List<String>
+      VyneHttpIgnoreErrorsSpec(responseCodes.toSet())
+   } else {
+      null
+   }
+}
+
 data class VyneHttpOperation(val httpOperationMetadata: Metadata, val url: String, val method: String)
 data class VyneHttpRetrySpec(val responseCodes: Set<Int>, val retrySpec: RetryBackoffSpec) {
    fun toLogString() {
@@ -435,6 +446,27 @@ data class VyneHttpRetrySpec(val responseCodes: Set<Int>, val retrySpec: RetryBa
          .add("minBackoff", retrySpec.minBackoff)
          .add("maxBackoff", retrySpec.maxBackoff)
          .add("jitter", retrySpec.jitterFactor)
+   }
+}
+
+class VyneHttpIgnoreErrorsSpec(httpStatusCodes: Set<String>) {
+   private val statusCodeRanges: Set<ClosedRange<Int>>
+   private val statusCodes: Set<Int>
+   init {
+      statusCodeRanges = httpStatusCodes
+          .filter { statusCode -> statusCode.endsWith("XX", true) }
+          .map { statusCodeRange ->
+             val start = statusCodeRange[0].digitToInt() * 100
+             val end = (statusCodeRange[0].digitToInt() + 1)* 100
+             (start..end)
+          }.toSet()
+
+      statusCodes = httpStatusCodes.filterNot { statusCode -> statusCode.endsWith("XX", true) }
+         .mapNotNull { statusCode -> statusCode.toIntOrNull() }
+         .toSet()
+   }
+   fun match(httpStatusCode: Int): Boolean {
+      return statusCodeRanges.any { range -> range.contains(httpStatusCode) } || statusCodes.contains(httpStatusCode)
    }
 }
 
