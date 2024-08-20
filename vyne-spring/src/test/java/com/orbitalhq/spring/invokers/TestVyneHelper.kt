@@ -1,6 +1,7 @@
 package com.orbitalhq.spring.invokers
 
 import com.orbitalhq.Vyne
+import com.orbitalhq.annotations.http.HttpIgnoreErrorsAnnotationSchema
 import com.orbitalhq.annotations.http.HttpRetryAnnotationSchema
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
 import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCachingInvokerProvider
@@ -15,9 +16,9 @@ enum class Invoker {
 }
 
 fun testVyne(schema: String, invoker: Invoker): Vyne {
-   val schemeWithRetryImport = StringBuilder().appendLine(HttpRetryAnnotationSchema.imports).appendLine(schema).toString()
+   val schemeWithRetryImport = StringBuilder().appendLine(HttpRetryAnnotationSchema.imports).appendLine(HttpIgnoreErrorsAnnotationSchema.imports).appendLine(schema).toString()
    val schemas = listOf(
-      HttpRetryAnnotationSchema.schema, schemeWithRetryImport)
+      HttpRetryAnnotationSchema.schema, HttpIgnoreErrorsAnnotationSchema.schema, schemeWithRetryImport)
    return com.orbitalhq.testVyne(schemas) { taxi ->
       val restTemplateInvoker = RestTemplateInvoker(
          webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),

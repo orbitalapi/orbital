@@ -1,12 +1,12 @@
 package com.orbitalhq.cockpit.core.schemas
 
-import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.AuthClaimType
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.UserType
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.VyneTypes
+import com.orbitalhq.annotations.http.HttpIgnoreErrorsAnnotationSchema
 import com.orbitalhq.annotations.http.HttpRetryAnnotationSchema
 import com.orbitalhq.cockpit.core.catalog.DataOwnerAnnotations
 import com.orbitalhq.connectors.aws.dynamodb.DynamoConnectorTaxi
@@ -18,6 +18,7 @@ import com.orbitalhq.connectors.hazelcast.HazelcastTaxi
 import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi
 import com.orbitalhq.connectors.kafka.KafkaConnectorTaxi
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnector
+import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.formats.csv.CsvAnnotationSpec
 import com.orbitalhq.formats.xml.XmlAnnotationSpec
 import com.orbitalhq.query.VyneQlGrammar
@@ -117,6 +118,11 @@ object BuiltInTypesProvider {
             "AvroFormat",
             "0.1.0",
             AvroAnnotationSchema.taxi
+         ),
+         VersionedSource(
+            "HttpIgnoreErrorsAnnotationSchema",
+            "0.1.0",
+            HttpIgnoreErrorsAnnotationSchema.schema
          ),
       ),
       emptyMap()

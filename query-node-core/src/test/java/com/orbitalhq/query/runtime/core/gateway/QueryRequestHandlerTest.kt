@@ -76,7 +76,8 @@ class QueryRequestHandlerTest {
    @Autowired
    lateinit var queryExecutor: RoutedQueryExecutor
 
-
+   @Autowired
+   lateinit var mockWebServerRule: MockWebServerRule
 
 
     @Autowired
@@ -88,10 +89,11 @@ class QueryRequestHandlerTest {
       schemaStore.setSchema(schema)
 
       Awaitility.await().atMost(60000, TimeUnit.SECONDS).until<Boolean> { handler.routes.isNotEmpty() }
-
+       val orbitalHttpQueryCorrelationId = "correlationId-1"
       val result = webClient.post()
          .uri("/api/q/csv")
          .contentType(MediaType.parseMediaType("text/csv"))
+          .header("x-api-correlationId", orbitalHttpQueryCorrelationId)
          .body(BodyInserters.fromValue("givenName,surname\nfoo,bar"))
          .exchange()
          .expectStatus().isOk
@@ -99,6 +101,7 @@ class QueryRequestHandlerTest {
 
       val responseBody = result.responseBody.blockLast()
       responseBody["status"].should.equal("OK")
+       mockWebServerRule.takeRequest().headers["x-api-correlationId"]!!.should.equal(orbitalHttpQueryCorrelationId)
    }
 
 
@@ -116,6 +119,11 @@ class QueryRequestHandlerTest {
            metricsReporter: QueryMetricsReporter
        ): QueryRouteService {
            return QueryRouteService(schemaStore, queryExecutor, metricsReporter = metricsReporter)
+       }
+
+       @Bean
+       fun mockWebServerRule(): MockWebServerRule {
+           return this.server
        }
 
        @Bean
@@ -144,14 +152,18 @@ class QueryRequestHandlerTest {
          model RestResponse {
            status: ResponseStatus inherits String
          }
+         
+         type CorrelationId inherits String
         
         service CsvConsumerApi {
            @taxi.http.HttpOperation(method = "POST", url = "http://localhost:${server.port}/csv")
-           write operation saveCsv(@taxi.http.RequestBody CsvModel): RestResponse
+           write operation saveCsv(@taxi.http.RequestBody CsvModel, 
+                                   @taxi.http.HttpHeader(name = "x-api-correlationId") correlationId: CorrelationId 
+                                   ): RestResponse
         }
         
         @taxi.http.HttpOperation(method = "POST", url = "/api/q/csv")
-        query CsvQuery(@taxi.http.RequestBody csvModel: CsvModel) {
+        query CsvQuery(@taxi.http.RequestBody csvModel: CsvModel,  @taxi.http.HttpHeader(name = "x-api-correlationId") correlationId: CorrelationId ) {
            given { csvModel }
            call CsvConsumerApi::saveCsv
         }

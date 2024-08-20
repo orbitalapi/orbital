@@ -1,34 +1,34 @@
 package com.orbitalhq.query.runtime.core.gateway
 
-import com.nhaarman.mockito_kotlin.mock
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
-import org.junit.Ignore
 import org.junit.Test
 import org.springframework.http.HttpMethod
+import org.springframework.mock.http.server.reactive.MockServerHttpRequest
 import org.springframework.mock.web.reactive.function.server.MockServerRequest
+import org.springframework.mock.web.server.MockServerWebExchange
 import org.springframework.test.web.reactive.server.WebTestClient
 import org.springframework.web.reactive.function.server.ServerRequest
-import org.springframework.web.server.ServerWebExchange
 import java.net.URI
 
 
 class QueryRouterTest {
 
+    private lateinit var webTestClient: WebTestClient
    val src = """
       model Film {
          filmId : FilmId inherits String
       }
+      
    """.trimIndent()
 
    @Test
-   @Ignore("I couldn't work out how to get MockServerRequest to work - keeps thrown No Exchange")
    fun `matches query with path variable`() {
       val query = query(
          src,
          """
          @HttpOperation(method = "GET", url = "/films/{filmId}")
-         query findFilm( @PathVariable("filmId") filmId : FilmId ) {
+         query findFilm(@PathVariable("filmId") filmId : FilmId, @QueryVariable("pageSize") pageSize: Int ) {
             find { Film( FilmId == filmId ) }
          }
       """.trimIndent()
@@ -41,6 +41,7 @@ class QueryRouterTest {
       router.getQuery(post("/films/123")).shouldBeNull()
 
       router.getQuery(get("/films/123"))!!.name.fullyQualifiedName.shouldBe("findFilm")
+       router.getQuery(get("/films/123?pageSize=100"))!!.name.fullyQualifiedName.shouldBe("findFilm")
    }
 
 
@@ -48,12 +49,14 @@ class QueryRouterTest {
       return MockServerRequest.builder()
          .uri(URI.create(path))
          .method(HttpMethod.POST)
+          .exchange(MockServerWebExchange.builder(MockServerHttpRequest.post(path).build()).build())
          .build()
    }
    private fun get(path: String): ServerRequest {
       return MockServerRequest.builder()
          .uri(URI.create(path))
          .method(HttpMethod.GET)
+          .exchange(MockServerWebExchange.builder(MockServerHttpRequest.get(path).build()).build())
          .build()
    }
 }

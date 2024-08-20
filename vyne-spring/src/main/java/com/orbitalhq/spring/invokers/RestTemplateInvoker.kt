@@ -20,6 +20,7 @@ import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.httpOperationMetadata
+import com.orbitalhq.schemas.ignoreErrorsSpec
 import com.orbitalhq.schemas.retrySpec
 import com.orbitalhq.spring.hasHttpMetadata
 import com.orbitalhq.spring.http.DefaultRequestFactory
@@ -105,7 +106,7 @@ class RestTemplateInvoker(
       logger.info { "Operation ${operation.name} resolves to $absoluteUrl" }
       val typeInstanceParameters = parameters.map { it.second }
       val httpEntity = requestFactory.buildRequestBody(operation, typeInstanceParameters)
-      val queryParams = requestFactory.buildRequestQueryParams(operation)
+      val queryParams = requestFactory.buildRequestQueryParams(parameters)
 
       val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl, uriVariables)
 
@@ -201,18 +202,25 @@ class RestTemplateInvoker(
                if (retrySpec != null && retrySpec.responseCodes.contains(clientResponse.statusCode().value())) {
                   return@flatMapMany Mono.error(RestRetryException("retry", clientResponse.statusCode().value()))
                }
-               return@flatMapMany clientResponse.bodyToMono<String>()
-                  .switchIfEmpty(Mono.just(""))
-                  .map { responseBody ->
-                     val remoteCall = remoteCall(responseBody = responseBody, failed = true)
-                     eventDispatcher.reportRemoteOperationInvoked(OperationResult.from(parameters, remoteCall), queryId)
-                     throw OperationInvocationException(
-                        "http error ${clientResponse.statusCode()} from url $expandedUri - $responseBody",
-                        clientResponse.statusCode().value(),
-                        remoteCall,
-                        parameters
-                     )
-                  }
+
+               val httpIgnoreErrorSpec = operation.ignoreErrorsSpec()
+               if (httpIgnoreErrorSpec == null || !httpIgnoreErrorSpec.match(clientResponse.statusCode().value())) {
+                  return@flatMapMany clientResponse.bodyToMono<String>()
+                     .switchIfEmpty(Mono.just(""))
+                     .map { responseBody ->
+                        val remoteCall = remoteCall(responseBody = responseBody, failed = true)
+                        eventDispatcher.reportRemoteOperationInvoked(
+                           OperationResult.from(parameters, remoteCall),
+                           queryId
+                        )
+                        throw OperationInvocationException(
+                           "http error ${clientResponse.statusCode()} from url $expandedUri - $responseBody",
+                           clientResponse.statusCode().value(),
+                           remoteCall,
+                           parameters
+                        )
+                     }
+               }
             }
 
             reportEstimatedResults(eventDispatcher, operation, clientResponse.headers())
