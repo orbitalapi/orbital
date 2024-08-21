@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, ViewChild } from '@angular/core';
 import { findSchemaMember, Schema, Service } from 'src/app/services/schema';
 import { Observable } from 'rxjs/internal/Observable';
-import { SchemaDiagramComponent } from 'src/app/schema-diagram/schema-diagram/schema-diagram.component';
-import { LinkKind } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
+import { SchemaDiagramComponent } from 'src/app/schema-diagram/schema-diagram.component';
+import { LinkKind } from 'src/app/schema-diagram/schema-chart-builder';
 
 @Component({
   selector: 'app-lineage-node-diagram',

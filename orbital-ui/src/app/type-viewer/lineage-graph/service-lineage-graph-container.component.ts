@@ -14,7 +14,7 @@ import {
   buildLinksForType,
   collectionOperations,
   collectLinks
-} from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
+} from 'src/app/schema-diagram/schema-chart-builder';
 import {
   LineageNodeDiagramComponent
 } from 'src/app/type-viewer/lineage-graph/lineage-node-diagram/lineage-node-diagram.component';

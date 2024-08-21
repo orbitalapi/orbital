@@ -1,5 +1,5 @@
-import {findSchemaMember, Schema, SchemaMember, SchemaMemberKind, ServiceMember, Type} from '../../services/schema';
-import { Edge, EdgeMarkerType, MarkerType, Node, XYPosition } from 'reactflow';
+import {findSchemaMember, Schema, SchemaMember, SchemaMemberKind, ServiceMember, Type} from '../services/schema';
+import { Edge, EdgeMarkerType, MarkerType, Node, XYPosition } from '@xyflow/react';
 import {
   buildSchemaNode, collectAllLinks,
   collectionOperations,
@@ -10,16 +10,16 @@ import {
   MemberWithLinks,
   LinkKind
 } from './schema-chart-builder';
-import { colors } from 'src/app/schema-diagram/schema-diagram/tailwind.colors';
+import { colors } from 'src/app/schema-diagram/tailwind.colors';
 import { CSSProperties } from 'react';
 import {
   typeColor,
   modelColor,
   serviceColor,
   lineageDependencyColor
-} from 'src/app/schema-diagram/schema-diagram/diagram-nodes/schema-node-container';
-import { AppendLinksHandler, SchemaMemberClickHandler } from 'src/app/schema-diagram/schema-diagram/schema-flow.react';
-import { isNullOrUndefined } from "../../utils/utils";
+} from 'src/app/schema-diagram/diagram-nodes/schema-node-container';
+import { AppendLinksHandler, SchemaMemberClickHandler } from 'src/app/schema-diagram/schema-flow.react';
+import { isNullOrUndefined } from "../utils/utils";
 
 export const HORIZONTAL_GAP = 50;
 
@@ -133,39 +133,6 @@ export class SchemaChartController {
     }
   }
 
-
-  private calculatePosition(positionForNewNode: RelativeNodePosition | XYPosition | null): XYPosition {
-    if (!positionForNewNode) {
-      return {
-        x: 50,
-        y: 50
-      }
-    }
-
-    if (!isRelativeNodePosition(positionForNewNode)) {
-      // Must be a XYPosition
-      return positionForNewNode;
-    }
-
-    const currentNode = this.currentNodesById.get(positionForNewNode.node.id)
-    // Typedef suggests position should be a property, but that's not what I'm seeing
-    // at runtime.
-    const currentPosition = currentNode.position;
-    let xDelta;
-    if (positionForNewNode.direction === 'left') {
-      // Ideally, we'd know the width of the new node.
-      // When positioning to the left, it *should* be newNode.width + horizontalGap.
-      // However, at this stage, the node isn't drawn / measured. So, use the current node as a guesstimate
-      xDelta = (currentNode.width + HORIZONTAL_GAP) * -1;
-    } else {
-      xDelta = currentNode.width + HORIZONTAL_GAP;
-    }
-    return {
-      x: currentPosition.x + xDelta,
-      y: currentPosition.y
-    }
-  }
-
   private buildEdge(sourceNode: Node<MemberWithLinks>, sourceHandleId: string, sourceSchemaKind: SchemaMemberKind, targetNode: Node<MemberWithLinks>, targetHandleId: string, targetSchemaKind: SchemaMemberKind, linkKind: LinkKind, linkId?: string): Edge {
     let label: string;
     let markerStart, markerEnd: EdgeMarkerType;
@@ -207,7 +174,7 @@ export class SchemaChartController {
       style.strokeDasharray = '5,5';
     }
     style.stroke = lineColor;
-    style.transition = "opacity 150ms ease-in-out"
+    style.transition = "all 500ms ease-in-out, opacity 250ms ease-in-out"
     const edgeParams: EdgeParams = {
       sourceCanFloat: sourceSchemaKind === 'TYPE',
       targetCanFloat: targetSchemaKind === 'TYPE' ,

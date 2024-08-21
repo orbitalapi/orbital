@@ -36,7 +36,7 @@ export class BaseSearchResultComponent {
       case 'FIELD':
         return 'Field';
       case 'SERVICE':
-        return result.serviceKind;
+        return result.serviceKind || 'Service';
       default:
         return '?';
     }

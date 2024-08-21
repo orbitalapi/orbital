@@ -1,14 +1,15 @@
 import * as React from 'react';
 import styled from 'styled-components';
-import { ComponentType, useCallback, useEffect, useState } from 'react';
-import ReactFlow, {
-  ConnectionMode, ControlButton, Controls, Edge, EdgeProps, EdgeTypes, FitViewOptions,
+import { useCallback, useEffect, useState } from 'react';
+import {
+  ReactFlow,
+  ConnectionMode, ControlButton, Controls, Edge, EdgeTypes, FitViewOptions,
   Node,
   ReactFlowProvider,
   useEdgesState,
   useNodesState, useReactFlow, useStoreApi,
-  useUpdateNodeInternals
-} from 'reactflow';
+  useUpdateNodeInternals, useNodesInitialized, Background, BackgroundVariant
+} from '@xyflow/react';
 import { ElementRef } from '@angular/core';
 import * as ReactDOM from 'react-dom';
 import ModelNode from './diagram-nodes/model-node';
@@ -20,17 +21,16 @@ import {
   Schema,
   SchemaMember,
   SchemaMemberNamed, SchemaMemberKind
-} from '../../services/schema';
-import { Observable, Subject } from 'rxjs';
-import { Link, LinkKind, MemberWithLinks } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
-import { applyElkLayout } from 'src/app/schema-diagram/schema-diagram/elk-chart-layout';
-import FloatingEdge from 'src/app/schema-diagram/schema-diagram/diagram-nodes/floating-edge';
+} from '../services/schema';
+import {Observable, Subject} from 'rxjs';
+import {EdgeParams, Link, LinkKind, MemberWithLinks} from 'src/app/schema-diagram/schema-chart-builder';
+import { applyElkLayout } from 'src/app/schema-diagram/elk-chart-layout';
+import FloatingEdge from 'src/app/schema-diagram/diagram-nodes/floating-edge';
 import { toPng } from 'html-to-image';
-import DownloadIcon from 'src/app/schema-diagram/schema-diagram/icons/download-icon';
-import FullScreenIcon from 'src/app/schema-diagram/schema-diagram/icons/fullscreen-icon';
-import MinimizeIcon from 'src/app/schema-diagram/schema-diagram/icons/minimize-icon';
+import DownloadIcon from 'src/app/schema-diagram/icons/download-icon';
+import FullScreenIcon from 'src/app/schema-diagram/icons/fullscreen-icon';
+import MinimizeIcon from 'src/app/schema-diagram/icons/minimize-icon';
 import { colors } from './tailwind.colors';
-import {isNullOrUndefined} from "../../utils/utils";
 
 export type NodeType = 'Model' | 'Service';
 type ReactComponentFunction = ({ data }: { data: any }) => JSX.Element
@@ -41,8 +41,8 @@ const nodeTypes: NodeMap = {
   'Service': ApiNode
 };
 
-const edgeTypes: EdgeTypes = {
-  'floating': FloatingEdge as ComponentType<EdgeProps>
+const edgeTypes = {
+  'floating': FloatingEdge
 };
 
 interface SchemaFlowDiagramProps {
@@ -50,7 +50,9 @@ interface SchemaFlowDiagramProps {
   width: number;
   height: number;
   linkKinds: LinkKind[];
-  clickHandler: Subject<SchemaMember>;
+  clickHandler$: Subject<ClickHandlerPayload>;
+  memberUpdatedHandler$: Subject<Set<string>>
+  fullScreenClickHandler$: Subject<boolean>
   isNavigable: boolean;
 }
 
@@ -59,7 +61,7 @@ export interface SchemaAndRequiredMembersProps {
   memberNames: string[];
 }
 
-const fitViewOptions: FitViewOptions = { padding: 0.15, includeHiddenNodes: true, duration: 1500 };
+const fitViewOptions: FitViewOptions = { padding: 0.2, includeHiddenNodes: true, duration: 1000 };
 let previousDimensions: {width?: number, height?: number};
 
 function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
@@ -70,14 +72,14 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
 
   const instance = useReactFlow();
 
-  const [awaitingLayout, setAwaitingLayout] = useState(false);
+  const nodesInitialized = useNodesInitialized();
   const [awaitingRefit, setAwaitingRefit] = useState<'immediate' | 'delayed'>();
 
   const [schema, setSchema] = useState<Schema>(emptySchema);
   const [requiredMembers, setRequiredMembers] = useState<string[]>([]);
   const updateNodeInternals = useUpdateNodeInternals();
 
-  const appendNodesAndEdgesForLinks = (props: AppendLinksProps) => {
+  const appendNodesAndEdgesForLinks = (memberUpdatedHandler: Subject<Set<string>>, props: AppendLinksProps) => {
     const newMemberNames = new Set<string>(requiredMembers);
     props.links.forEach(link => {
       newMemberNames.add(arrayMemberTypeNameOrTypeNameFromName(link.sourceNodeName).fullyQualifiedName);
@@ -85,6 +87,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
     });
     setSchema(schema);
     setRequiredMembers(Array.from(newMemberNames));
+    memberUpdatedHandler.next(newMemberNames)
   };
 
   useEffect(() => {
@@ -98,59 +101,56 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   }, []); // Note for non-react devs:  Passing [] as deps means this useEffect() only runs on mount / unmount
 
   useEffect(() => {
-    if (awaitingLayout) {
-      const readyForLayout = nodes.length > 0 && nodes.every(node => !isNullOrUndefined((node.width) && !isNullOrUndefined(node.height)));
-      if (!readyForLayout) {
-        return;
-      }
+    if (nodesInitialized) {
       console.log('Performing layout');
-
-      applyElkLayout(nodes, edges)
-        .then(result => {
+      applyElkLayout(instance.getNodes(), instance.getEdges())
+        .then(async result => {
+          setNodes(result)
           if (result.length === 1) {
+            // This is mostly to avoid the silly animation when the component starts up
             const node = result[0];
-            instance.fitBounds({x: node.position.x, y: node.position.y, width: node.width, height: node.height}, {padding: fitViewOptions.padding})
+            instance.updateNode(node.id, {hidden: true})
+            await instance.fitBounds({x: node.position.x, y: node.position.y, width: node.measured?.width, height: node.measured?.height}, {padding: fitViewOptions.padding})
+            instance.updateNode(node.id, {hidden: false})
             setAwaitingRefit(null);
           } else {
             setAwaitingRefit('delayed');
           }
-          setAwaitingLayout(false);
-          setNodes(result);
         });
     }
+  }, [nodesInitialized] );
+
+  useEffect(() => {
     if (awaitingRefit) {
-      setTimeout(() => {
-        instance.fitView({...fitViewOptions, duration: awaitingRefit === 'immediate' ? 0 : fitViewOptions.duration});
+      setTimeout(async () => {
+        await instance.fitView({ ...fitViewOptions, duration: awaitingRefit === 'immediate' ? 0 : fitViewOptions.duration });
       }, 30)
       setAwaitingRefit(null);
     }
-  }, );
+  }, [awaitingRefit] );
 
   useEffect(() => {
-    if (!schema || !requiredMembers?.length) {
+    if (!schema?.types.length || !requiredMembers) {
       return;
     }
     console.log('Required members or hash of schema has changed: ', requiredMembers, schema.hash);
 
-    const clickHandler = (schemaMember: SchemaMember) => props.clickHandler.next(schemaMember);
+    const clickHandler = (event: ClickHandlerPayload) => props.clickHandler$.next(event);
 
     const buildResult = new SchemaChartController(schema, nodes, edges, requiredMembers)
       .build({
         autoAppendLinks: true,
         layoutAlgo: 'full',
-        appendLinksHandler: appendNodesAndEdgesForLinks,
+        appendLinksHandler: (event) => appendNodesAndEdgesForLinks(props.memberUpdatedHandler$, event),
         clickHandler,
         isNavigable: props.isNavigable
       });
     setNodes(buildResult.nodes);
     console.log("buildResult.nodesRequiringUpdate", buildResult.nodesRequiringUpdate);
     buildResult.nodesRequiringUpdate.forEach(node => updateNodeInternals(node.id));
-    setEdges(buildResult.edges.filter(edge => {
+    setEdges(buildResult.edges.filter((edge: Edge<EdgeParams>) => {
       return props.linkKinds.includes(edge.data.linkKind);
     }));
-
-    console.log('Requesting layout');
-    setAwaitingLayout(true);
   }, [requiredMembers.join(','), schema.hash]);
 
   function downloadImage() {
@@ -183,7 +183,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   // Highlight edges and nodes that are linked to those edges emanating from the hovered node
   const onNodeMouseEnter = useCallback(
     (_, node: Node) => {
-      const { edges, getNodes } = store.getState();
+      const { edges, nodes } = store.getState();
       const id = node.id;
       let hasChange = false;
       const activeEdges = [];
@@ -207,11 +207,11 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
         setEdges(mappedEdges);
       }
 
-      if (getNodes().length <= 2) return;
+      if (nodes.length <= 2) return;
 
       // If the node doesn't interact with the edge, then make it opaque
       hasChange = false;
-      const filteredNodes = getNodes().map(node => {
+      const filteredNodes = nodes.map(node => {
         let targetOpacity = 1;
         if (!activeEdges.filter(edge => node.id === edge.source || node.id === edge.target).length && node.id !== id) {
           hasChange = true;
@@ -232,11 +232,11 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
 
   const onEdgeMouseEnter = useCallback(
     (_, edge: Edge) => {
-      const { edges, getNodes } = store.getState();
+      const { edges, nodes } = store.getState();
       const id = edge.id;
       let hasChange = false;
 
-      const mappedNodes = getNodes().map(node => {
+      const mappedNodes = nodes.map(node => {
         let targetOpacity = 1;
         if (node.id !== edge.source && node.id !== edge.target) {
           hasChange = true;
@@ -273,8 +273,8 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   );
 
   const onEdgeOrNodeMouseLeave = useCallback((_, edge: Edge | Node) => {
-    const { edges, getNodes } = store.getState();
-    const mappedNodes = getNodes().map(node => {
+    const { edges, nodes } = store.getState();
+    const mappedNodes = nodes.map(node => {
       return {
         ...node,
         style: {
@@ -289,12 +289,40 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
         style: {
           ...edge.style,
           opacity: 1
-        }
+        },
       };
     });
     setNodes(mappedNodes);
     setEdges(mappedEdges);
   }, [setEdges, setNodes, store]);
+
+  const onNodeDragStart = useCallback((_, node: Node) => {
+    const { edges } = store.getState();
+    const mappedEdges = edges.map(edge => {
+      return {
+        ...edge,
+        style: {
+          ...edge.style,
+          transition: 'opacity 250ms ease-in-out'
+        }
+      };
+    });
+    setEdges(mappedEdges);
+  }, [setEdges, store]);
+
+  const onNodeDragStop = useCallback((_, node: Node) => {
+    const { edges } = store.getState();
+    const mappedEdges = edges.map(edge => {
+      return {
+        ...edge,
+        style: {
+          ...edge.style,
+          transition: 'transform 500ms ease-in-out, opacity 250ms ease-in-out'
+        }
+      };
+    });
+    setEdges(mappedEdges);
+  }, [setEdges, store]);
 
   return (<div className={isFullScreen ? 'fullscreen' : ''} style={styleProps}>
     <ReactFlow
@@ -303,7 +331,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
-      edgeTypes={edgeTypes}
+      edgeTypes={edgeTypes as EdgeTypes}
       onNodesChange={onNodesChange}
       onEdgesChange={onEdgesChange}
       connectionMode={ConnectionMode.Loose}
@@ -311,6 +339,8 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       onNodeMouseLeave={onEdgeOrNodeMouseLeave}
       onEdgeMouseEnter={onEdgeMouseEnter}
       onEdgeMouseLeave={onEdgeOrNodeMouseLeave}
+      onNodeDragStart={onNodeDragStart}
+      onNodeDragStop={onNodeDragStop}
     >
       <Controls
         showInteractive={false}
@@ -321,10 +351,12 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
         <ControlButton title={!isFullScreen ? 'maximise view' : 'minimise view'} onClick={() => {
           setFullScreen(!isFullScreen)
           setAwaitingRefit('immediate');
+          props.fullScreenClickHandler$.next(!isFullScreen)
         }}>
           {ToggleFullScreenButton}
         </ControlButton>
       </Controls>
+      <Background color="#ccc" variant={BackgroundVariant.Dots} />
     </ReactFlow>
   </div>);
 }
@@ -337,7 +369,7 @@ export const SchemaDiagramContainer = styled.div`
     width: calc(100% - 2rem);
     height: calc(100% - 2rem);
     z-index: 2000;
-    background-color: white;
+    background-color: ${colors.slate['50']};
     border: 1px solid ${colors.slate['300']};
     border-radius: 4px;
     box-shadow: rgba(0, 0, 0, 0.35) 0 5px 15px;
@@ -357,8 +389,9 @@ function SchemaFlowDiagramWithProvider(props) {
 
 
 export type SchemaMemberClickProps = SchemaMember | { name: SchemaMemberNamed, type: SchemaMemberKind }
-export type SchemaMemberClickHandler = (SchemaMemberClickProps) => void;
-export type AppendLinksHandler = (AppendLinksProps) => void;
+export type ClickHandlerPayload = {member: SchemaMemberClickProps, command: 'navigate' | 'delete'}
+export type SchemaMemberClickHandler = (event: ClickHandlerPayload) => void;
+export type AppendLinksHandler = (event: AppendLinksProps) => void;
 
 export interface AppendLinksProps {
   nodeRequestingLink: Node<MemberWithLinks>;
@@ -377,7 +410,9 @@ export class SchemaFlowWrapper {
     width: number = 1800,
     height: number = 1200,
     linkKinds: LinkKind[] = ['entity'],
-    clickHandler: Subject<SchemaMemberClickProps>,
+    clickHandler$: Subject<ClickHandlerPayload>,
+    memberUpdatedHandler$: Subject<Set<string>>,
+    fullScreenClickHandler$: Subject<boolean>,
     isNavigable: boolean
   ) {
     ReactDOM.render(
@@ -386,7 +421,9 @@ export class SchemaFlowWrapper {
         width,
         height,
         linkKinds,
-        clickHandler,
+        clickHandler$,
+        memberUpdatedHandler$,
+        fullScreenClickHandler$,
         isNavigable
       } as SchemaFlowDiagramProps),
       elementRef.nativeElement

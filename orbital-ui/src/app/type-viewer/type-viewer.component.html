@@ -79,7 +79,12 @@
         other data available.</p>
       <p class="help-text">The data shown here is discoverable by {{UiCustomisations.productName}} using a query, and knowing the value of
         a {{type.name.shortDisplayName}}. </p>
-      <app-schema-diagram [schema$]="schema$" [displayedMembers]="requiredMembers" [memberNameNavigable]="editable"></app-schema-diagram>
+      <app-schema-diagram
+        [schema$]="schema$"
+        [displayedMembers]="[type.name.fullyQualifiedName]"
+        [memberNameNavigable]="editable"
+        hasBorder="true"
+      ></app-schema-diagram>
       <!--      <app-type-link-graph-container [member]="schemaMember"-->
       <!--                                     *ngIf="chartDisplayMode === 'links'"></app-type-link-graph-container>-->
     </div>

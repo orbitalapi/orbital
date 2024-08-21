@@ -27,7 +27,9 @@ import { LineageGraphModule } from '../type-viewer/lineage-graph/lineage-graph.m
         </section>
         <section *ngIf="service">
           <app-schema-diagram [schema$]="schema$"
-                              [displayedMembers]="[service.name.parameterizedName]"></app-schema-diagram>
+                              [displayedMembers]="[service.name.parameterizedName]"
+                              hasBorder="true"
+          ></app-schema-diagram>
         </section>
 
         <section *ngIf="service">

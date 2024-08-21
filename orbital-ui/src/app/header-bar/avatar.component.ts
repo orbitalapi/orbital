@@ -77,6 +77,7 @@ export class AvatarComponent {
   errorMessage: string;
 
   showDialog(content: PolymorpheusContent<TuiDialogContext>): void {
+    this.errorMessage = null;
     this.dialogs.open(content, {size: 's', label: 'Logout'}).subscribe();
   }
 
@@ -87,7 +88,7 @@ export class AvatarComponent {
       console.log('Performing OIDC logout');
       const logoutConfirmation = await this.authService.logoutOidc();
       if (logoutConfirmation instanceof HttpErrorResponse) {
-        this.errorMessage = logoutConfirmation.error['error_description'] || logoutConfirmation.message
+        this.errorMessage = logoutConfirmation.error?.['error_description'] || logoutConfirmation.message
       }
       this.isLoggingOut = false;
     } else if (this.user.authenticationType === 'Saml') {

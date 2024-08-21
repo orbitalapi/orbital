@@ -1,7 +1,7 @@
-import { Handle, Node, Position } from 'reactflow';
+import { Handle, Node, Position } from '@xyflow/react';
 import { HandleIds, Link, MemberWithLinks } from '../schema-chart-builder';
 import * as React from 'react';
-import { AppendLinksProps } from 'src/app/schema-diagram/schema-diagram/schema-flow.react';
+import { AppendLinksProps } from 'src/app/schema-diagram/schema-flow.react';
 
 export interface LinkHandleProps {
   node: Node<MemberWithLinks>,
@@ -23,6 +23,7 @@ export function LinkHandle(props: LinkHandleProps) {
   const ourLinks = props.links.filter(link => link.sourceNodeId === props.node.id || link.targetNodeId === props.node.id)
   if (ourLinks.length === 0) {
     console.error(`Incorrect links were passed to a handle - there were no links present for node id ${props.node.id}, instead the following links were present:`, props.links)
+    return <></>;
   }
 
   const handleId = props.node.id === ourLinks[0].sourceNodeId ? ourLinks[0].sourceHandleId : ourLinks[0].targetHandleId;

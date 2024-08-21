@@ -1,20 +1,20 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { SchemaDiagramComponent } from './schema-diagram/schema-diagram.component';
-import { FullscreenToggleModule } from '../fullscreen-toggle/fullscreen-toggle.module';
+import { SchemaDiagramComponent } from './schema-diagram.component';
 import { MatIconModule, MatIconRegistry } from '@angular/material/icon';
 import { DomSanitizer } from '@angular/platform-browser';
 import { MatButtonModule } from '@angular/material/button';
+import {SchemaMultiSelectComponent} from './schema-multi-select.component';
 
 @NgModule({
   declarations: [
-    SchemaDiagramComponent
+    SchemaDiagramComponent,
   ],
   imports: [
     CommonModule,
-    FullscreenToggleModule,
     MatIconModule,
-    MatButtonModule
+    MatButtonModule,
+    SchemaMultiSelectComponent
   ],
   exports: [
     SchemaDiagramComponent

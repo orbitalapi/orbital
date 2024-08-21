@@ -1,9 +1,10 @@
-import { moduleMetadata } from "@storybook/angular";
-import { CommonModule } from "@angular/common";
-import { BrowserModule } from "@angular/platform-browser";
-import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
-import { SchemaDiagramModule } from "./schema-diagram.module";
-import { FILMS_SCHEMA } from "./films-schema";
+import {provideAnimations} from '@angular/platform-browser/animations';
+import {applicationConfig, moduleMetadata} from '@storybook/angular';
+import {CommonModule} from '@angular/common';
+import {TuiRootModule} from '@taiga-ui/core';
+import {of} from 'rxjs';
+import {SchemaDiagramModule} from './schema-diagram.module';
+import {FILMS_SCHEMA} from './films-schema';
 
 export default {
   title: "Schema Diagram",
@@ -13,91 +14,87 @@ export default {
       declarations: [],
       imports: [
         CommonModule,
-        BrowserModule,
-        BrowserAnimationsModule,
+        TuiRootModule,
         SchemaDiagramModule,
       ],
+    }),
+    applicationConfig({
+      providers: [provideAnimations()],
     }),
   ],
 };
 
 export const ShowAModel = () => {
   return {
-    template: `<div style="padding: 40px; width: 1200px; height: 1200px;">
-<app-schema-diagram [schema]="schema" [displayedMembers]="types"></app-schema-diagram>
-    </div>`,
+    template: `<tui-root>
+        <div style="padding: 20px; width: 1000px; height: 1200px;">
+            <app-schema-diagram [schema$]="schema" [displayedMembers]="displayedMembers"></app-schema-diagram>
+        </div>
+    </tui-root>`,
     props: {
-      schema: FILMS_SCHEMA,
-      types: ["film.Film"],
+      schema: of(FILMS_SCHEMA),
+      displayedMembers: ["film.Film"],
     },
   };
 };
+ShowAModel.storyName = "show a model";
 
-ShowAModel.story = {
-  name: "show a model",
-};
-
-export const ShowAQueryService = () => {
+export const ShowAType = () => {
   return {
-    template: `<div style="padding: 40px; width: 1200px; height: 1200px;">
-<app-schema-diagram [schema]="schema" [displayedMembers]="types"></app-schema-diagram>
-    </div>`,
+    template: `<tui-root>
+        <div style="padding: 20px; width: 1200px; height: 1200px;">
+            <app-schema-diagram [schema$]="schema" [displayedMembers]="displayedMembers"></app-schema-diagram>
+        </div>
+    </tui-root>`,
     props: {
-      schema: FILMS_SCHEMA,
-      types: ["actor.ActorService"],
+      schema: of(FILMS_SCHEMA),
+      displayedMembers: ["taxi.http.PathVariable"],
     },
   };
 };
-
-ShowAQueryService.story = {
-  name: "show a query service",
-};
-
-export const ShowAnApiService = () => {
-  return {
-    template: `<div style="padding: 40px; width: 1200px; height: 1200px;">
-<app-schema-diagram [schema]="schema" [displayedMembers]="types"></app-schema-diagram>
-    </div>`,
-    props: {
-      schema: FILMS_SCHEMA,
-      types: ["io.vyne.films.idlookup.IdLookupService"],
-    },
-  };
-};
-
-ShowAnApiService.story = {
-  name: "show an api service",
-};
+ShowAType.storyName = "show a type";
 
 export const ShowAKafkaService = () => {
   return {
-    template: `<div style="padding: 40px; width: 1200px; height: 1200px;">
-<app-schema-diagram [schema]="schema" [displayedMembers]="types"></app-schema-diagram>
-    </div>`,
+    template: `<tui-root>
+        <div style="padding: 20px; width: 1200px; height: 1200px;">
+            <app-schema-diagram [schema$]="schema" [displayedMembers]="displayedMembers"></app-schema-diagram>
+        </div>
+    </tui-root>`,
     props: {
-      schema: FILMS_SCHEMA,
-      types: ["io.vyne.films.announcements.KafkaService"],
+      schema: of(FILMS_SCHEMA),
+      displayedMembers: ["io.vyne.demos.films.KafkaPublisher"],
     },
   };
 };
-
-ShowAKafkaService.story = {
-  name: "show a kafka service",
-};
+ShowAKafkaService.storyName = "show a kafka service";
 
 export const ShowAllServices = () => {
-  const services = FILMS_SCHEMA.services.map((s) => s.name.fullyQualifiedName);
   return {
-    template: `<div style="padding: 40px; width: 1200px; height: 1200px;">
-<app-schema-diagram [schema]="schema" [displayedMembers]="types"></app-schema-diagram>
-    </div>`,
+    template: `<tui-root>
+        <div style="padding: 20px; width: 1200px; height: 1200px;">
+            <app-schema-diagram [schema$]="schema" [displayedMembers]="displayedMembers"></app-schema-diagram>
+        </div>
+    </tui-root>`,
     props: {
-      schema: FILMS_SCHEMA,
-      types: services,
+      schema: of(FILMS_SCHEMA),
+      displayedMembers: 'services'
     },
   };
 };
+ShowAllServices.storyName = "show all services";
 
-ShowAllServices.story = {
-  name: "show all services",
+export const ShowEverything = () => {
+  return {
+    template: `<tui-root>
+        <div style="padding: 20px; width: 1200px; height: 1200px;">
+            <app-schema-diagram [schema$]="schema" [displayedMembers]="displayedMembers"></app-schema-diagram>
+        </div>
+    </tui-root>`,
+    props: {
+      schema: of(FILMS_SCHEMA),
+      displayedMembers: 'everything'
+    },
+  };
 };
+ShowEverything.storyName = "show everything";

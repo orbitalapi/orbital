@@ -1,0 +1,9 @@
+@import "src/common";
+
+.multi-select {
+  width: 100%;
+}
+
+.badge {
+  @extend %type-badge;
+}
