@@ -11,9 +11,9 @@ import {
   ServiceMember,
   splitOperationQualifiedName,
   Type
-} from '../../services/schema';
+} from '../services/schema';
 import {AppendLinksHandler, NodeType, SchemaMemberClickHandler} from './schema-flow.react';
-import {Edge, Node, Position, XYPosition} from 'reactflow';
+import {Edge, Node, Position, XYPosition} from '@xyflow/react';
 import {CSSProperties} from 'react';
 
 export function getNodeKind(member: SchemaMember): NodeType {
@@ -24,7 +24,7 @@ export function getNodeKind(member: SchemaMember): NodeType {
   }
 }
 
-export interface EdgeParams {
+export type EdgeParams = {
   sourceCanFloat: boolean;
   targetCanFloat: boolean;
   label: string;
@@ -129,15 +129,17 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
   const typeNodeId = getNodeId('TYPE', typeName);
   const consumingOperations: Link[] = [];
 
-  const type = findType(schema, typeName.parameterizedName);
-  if (type.isPrimitive) {
-    // Don't build links on primitives.
-    // Something that returns Int isn't descriptive enough for linking
-    return {
-      outputs: [],
-      inputs: []
-    };
-  }
+  try {
+    const type = findType(schema, typeName.parameterizedName);
+    if (type?.isPrimitive) {
+      // Don't build links on primitives.
+      // Something that returns Int isn't descriptive enough for linking
+      return {
+        outputs: [],
+        inputs: []
+      };
+    }
+  } catch (e) {}
 
   // When building links for a type, we could either be linking to a model directly,
   // or to a field within another model.  (As determined by the parent input).
@@ -445,7 +447,6 @@ export function buildSchemaNode(schema: Schema, member: SchemaMember, operations
     id: getNodeId(member.kind, member.name),
     draggable: true,
     selectable: true,
-
     data: {
       member,
       links,
@@ -459,7 +460,7 @@ export function buildSchemaNode(schema: Schema, member: SchemaMember, operations
 }
 
 
-export interface MemberWithLinks {
+export type MemberWithLinks = {
   member: SchemaMember;
   links: Links;
   appendNodesHandler: AppendLinksHandler;

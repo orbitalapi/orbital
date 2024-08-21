@@ -409,7 +409,7 @@ export function prepareSchema(schema: Schema): Schema {
 
 
 export function combineAndCloneWithPartialSchema(schemaToClone: Schema, partialSchema: PartialSchema): Schema {
-  let clonedSchema: Schema = JSON.parse(JSON.stringify(schemaToClone));
+  let clonedSchema: Schema = JSON.parse(JSON.stringify(schemaToClone || {types: [], services: []}));
   clonedSchema.types = [...clonedSchema.types, ...partialSchema.types];
   clonedSchema.services = [...clonedSchema.services, ...partialSchema.services];
   clonedSchema.hash = clonedSchema.hash ?? new Date().getTime();

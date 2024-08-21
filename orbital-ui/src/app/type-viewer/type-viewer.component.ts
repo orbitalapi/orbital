@@ -158,10 +158,6 @@ export class TypeViewerComponent {
     this.changeDetector.markForCheck();
   }
 
-  get requiredMembers(): string[] {
-    return [this.type.name.fullyQualifiedName];
-  }
-
   contents: Contents;
 
   get hasAttributes() {

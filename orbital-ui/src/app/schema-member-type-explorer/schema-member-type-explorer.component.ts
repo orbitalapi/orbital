@@ -22,7 +22,7 @@ import {
   buildLinksForModelWithAttributes,
   buildLinksForType,
   buildOperationLinks, findServiceAssociatedWithOperation
-} from '../schema-diagram/schema-diagram/schema-chart-builder';
+} from '../schema-diagram/schema-chart-builder';
 import {taxi} from '../utils/prism.languages';
 
 @Component({

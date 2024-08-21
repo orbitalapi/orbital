@@ -1,6 +1,13 @@
 import * as React from 'react';
-import { Node, Position } from 'reactflow';
-import { Operation, QueryOperation, Service, StreamOperation, TableOperation } from '../../../services/schema';
+import {Node, Position} from '@xyflow/react';
+import {
+  Operation,
+  QueryOperation,
+  SchemaMemberNamed,
+  Service,
+  StreamOperation,
+  TableOperation
+} from '../../services/schema';
 import { SchemaNodeContainer } from './schema-node-container';
 import { Links, MemberWithLinks, ServiceLinks } from '../schema-chart-builder';
 import { LinkHandle } from './link-handle';
@@ -20,10 +27,12 @@ function ApiNode(node: Node<MemberWithLinks>) {
   const operationClickHandler = (event, operation:OperationLike) => {
     event.preventDefault();
     event.stopPropagation();
-
     node.data.clickHandler({
-      name: operation,
-      type: 'OPERATION'
+      member: {
+        name: operation as SchemaMemberNamed,
+        type: 'OPERATION'
+      },
+      command: 'navigate'
     })
   }
   function NoArgOperation(props: { operation: OperationLike, operationLinks: Links }) {
@@ -37,10 +46,9 @@ function ApiNode(node: Node<MemberWithLinks>) {
               <a href="#" onClick={(event) => operationClickHandler(event, operation)}>{operation.qualifiedName.shortDisplayName}</a> :
               <>{operation.qualifiedName.shortDisplayName}</>
             }
-        </div>
-
-      </td>
-      <td>
+          </div>
+        </td>
+        <td>
           <div className={'handle-container'}>
             {operation.returnTypeName.shortDisplayName}
             <LinkHandle node={node} links={operationLinks.outputs} position={Position.Right}></LinkHandle>
@@ -112,7 +120,7 @@ function ApiNode(node: Node<MemberWithLinks>) {
       return <></>
     } else {
       return <tr>
-        <th colSpan={2}>
+        <th colSpan={3}>
           <div className={'version-tags'}>
             {service.version.map(version => {
               return <div id={'version.version'} className={'version-tag'}>{version.version}</div>
@@ -128,7 +136,7 @@ function ApiNode(node: Node<MemberWithLinks>) {
       case 'API':
         return 'assets/img/chart-icons/api-icon.svg';
       case 'Database':
-        return 'assets/img/chart-icons/database-icon.svg';
+        return 'assets/img/tabler/database.svg';
       case 'Kafka' :
         return 'assets/img/chart-icons/kafka-icon.svg';
       default: {
@@ -138,40 +146,47 @@ function ApiNode(node: Node<MemberWithLinks>) {
     }
   }
 
-  const clickHandler = (event) => {
+  const navigateClickHandler = (event) => {
     event.stopPropagation();
     event.preventDefault();
-    node.data.clickHandler(node.data.member);
+    node.data.clickHandler({member: node.data.member, command: 'navigate'});
+  }
+  const deleteClickHandler = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    node.data.clickHandler({member: node.data.member, command: 'delete'});
   }
   return (
     <SchemaNodeContainer>
-      <div className={'node-icon-outer-container'}>
+      {/*<div className={'node-icon-outer-container'}>
         <div className={'node-icon-container'}>
           <img src={getIcon()}></img>
         </div>
-      </div>
-
-
+      </div>*/}
       <table className={'service'}>
         <thead>
-        <tr className={'small-heading'}>
-          <th colSpan={3}>{service.serviceKind || 'Service'}</th>
-        </tr>
-        <tr className={'member-name'}>
-          <th colSpan={3}>
-            <div className={'handle-container'}>
-              {/*For services, there's really only inbound links when we're mapping lineage*/}
-              <LinkHandle node={node} links={node.data.links.inputs} position={Position.Left} allowConnectionToFloat></LinkHandle>
-              {node.data.isNavigable ?
-                <a href='#' onClick={(event) => clickHandler(event)}>{node.data.member.name.shortDisplayName}</a> :
-                <>{node.data.member.name.shortDisplayName}</>
-              }
-              <LinkHandle node={node} links={node.data.links.inputs} position={Position.Right}  allowConnectionToFloat></LinkHandle>
-            </div>
-          </th>
-        </tr>
-        <VersionTags></VersionTags>
-
+          <tr>
+            <th colSpan={3}>
+              <div className={'header handle-container'}>
+                {/*For services, there's really only inbound links when we're mapping lineage*/}
+                <LinkHandle node={node} links={node.data.links.inputs} position={Position.Left}
+                            allowConnectionToFloat></LinkHandle>
+                <div className={'left-content'}>
+                  {node.data.isNavigable ?
+                    <a href="#"
+                       onClick={(event) => navigateClickHandler(event)}>{node.data.member.name.shortDisplayName}</a> :
+                    <>{node.data.member.name.shortDisplayName}</>
+                  }
+                  <span className={'badge service'}><img className={'service-icon'} src={getIcon()}></img>{service.serviceKind || 'Service'}</span>
+                </div>
+                <img className={'delete-btn'} onClick={(event) => deleteClickHandler(event)}
+                     src="assets/img/tabler/trash.svg"/>
+                <LinkHandle node={node} links={node.data.links.inputs} position={Position.Right}
+                            allowConnectionToFloat></LinkHandle>
+              </div>
+            </th>
+          </tr>
+          {/*<VersionTags></VersionTags>*/}
         </thead>
         <tbody>
         {service.operations.length > 0 &&

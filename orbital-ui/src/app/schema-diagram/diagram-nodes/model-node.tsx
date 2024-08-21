@@ -1,6 +1,7 @@
 import * as React from 'react';
-import { Node, Position } from 'reactflow';
+import {Node, Position} from '@xyflow/react';
 import { Type } from 'src/app/services/schema';
+import {ClickHandlerPayload} from '../schema-flow.react';
 import { SchemaNodeContainer } from './schema-node-container';
 import { collectLinks, MemberWithLinks, ModelLinks } from '../schema-chart-builder';
 import { LinkHandle } from './link-handle';
@@ -12,11 +13,12 @@ function ModelNode(node: Node<MemberWithLinks>) {
 
   const modelLinks = links.inputs.concat(links.outputs);
 
-  const clickHandler = (event) => {
-    node.data.clickHandler(node.data.member);
+  const clickHandler = (event, command: ClickHandlerPayload['command']) => {
+    node.data.clickHandler({member: node.data.member, command});
     event.preventDefault();
     event.stopPropagation();
   }
+
   const heading = type.isScalar ? 'Type' : 'Model';
   const typeClass = type.isScalar ? 'type' : '';
 
@@ -24,21 +26,22 @@ function ModelNode(node: Node<MemberWithLinks>) {
     <SchemaNodeContainer>
       <table className={typeClass}>
         <thead>
-        <tr className={'small-heading'}>
-          <th colSpan={2}>{heading}</th>
-        </tr>
-        <tr className={'member-name'}>
-          <th colSpan={2}>
-            <div className={'handle-container'}>
-              <LinkHandle node={node} links={modelLinks} position={Position.Left} allowConnectionToFloat></LinkHandle>
-              {node.data.isNavigable ?
-                <a href='#' onClick={(event) => clickHandler(event)}>{node.data.member.name.shortDisplayName}</a> :
-                <>{node.data.member.name.shortDisplayName}</>
-              }
-              <LinkHandle node={node} links={modelLinks} position={Position.Right}  allowConnectionToFloat></LinkHandle>
-            </div>
-          </th>
-        </tr>
+          <tr>
+            <th colSpan={2}>
+              <div className={'header handle-container'}>
+                <LinkHandle node={node} links={modelLinks} position={Position.Left} allowConnectionToFloat></LinkHandle>
+                <div className={'left-content'}>
+                  {node.data.isNavigable ?
+                    <a href="#" onClick={(event) => clickHandler(event, 'navigate')}>{node.data.member.name.shortDisplayName}</a> :
+                    <span className={'member-name'}>{node.data.member.name.shortDisplayName}</span>
+                  }
+                  <span className={'badge ' + heading.toLowerCase()}>{heading}</span>
+                </div>
+                <img className={'delete-btn'} onClick={(event) => clickHandler(event, 'delete')} src="assets/img/tabler/trash.svg"/>
+                <LinkHandle node={node} links={modelLinks} position={Position.Right} allowConnectionToFloat></LinkHandle>
+              </div>
+            </th>
+          </tr>
         </thead>
         <tbody>
         {Object.keys(type.attributes).map(fieldName => {
@@ -47,7 +50,7 @@ function ModelNode(node: Node<MemberWithLinks>) {
             <td>
               <div className={'handle-container'}>
                 {fieldName}
-                <LinkHandle node={node} links={fieldLinks} position={Position.Left}  allowConnectionToFloat></LinkHandle>
+                <LinkHandle node={node} links={fieldLinks} position={Position.Left} allowConnectionToFloat></LinkHandle>
               </div>
             </td>
             <td>

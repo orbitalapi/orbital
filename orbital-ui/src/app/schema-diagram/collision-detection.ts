@@ -1,5 +1,5 @@
 import { Box, System, Vector } from 'detect-collisions';
-import { Node } from 'reactflow';
+import { Node } from '@xyflow/react';
 import { HORIZONTAL_GAP } from './schema-chart.controller';
 
 export class CollisionDetector {
@@ -13,7 +13,7 @@ export class CollisionDetector {
 
     nodes.forEach(node => {
       try {
-        const box = new Box(node.position, node.width, node.height);
+        const box = new Box(node.position, node.measured?.width, node.measured?.height);
         this.boxToNode.set(box, node);
         this.nodeToBox.set(node.id, box);
         this.physics.insert(box);

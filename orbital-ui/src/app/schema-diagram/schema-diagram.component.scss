@@ -1,0 +1,47 @@
+@import "src/common";
+
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+.wrapper {
+  position: relative;
+  min-height: 500px;
+  flex-grow: 1;
+  width: 100%;
+  background: $gray-50;
+
+  &.has-border {
+    border-radius: 0.25rem;
+    border: 1px solid $gray-200;
+  }
+}
+
+.toolbar {
+  position: absolute;
+  top: 0.5rem;
+  right: 1rem;
+  left: 1rem;
+  z-index: 2;
+
+  &.is-full-screen {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    left: 1.5rem;
+    z-index: 2001;
+  }
+}
+
+::ng-deep {
+  .react-flow__node {
+    &:not(.dragging) {
+      transition: transform 0.5s ease-in-out, opacity 0.25s ease-in-out;
+    }
+  }
+
+  .react-flow__edge-textwrapper {
+    transition: transform 0.5s ease-in-out, opacity 0.25s ease-in-out;
+  }
+}

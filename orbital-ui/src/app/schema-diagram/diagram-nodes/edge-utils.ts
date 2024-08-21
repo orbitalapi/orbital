@@ -1,5 +1,5 @@
-import { internalsSymbol, Node, Position } from 'reactflow';
-import { HandleIds } from 'src/app/schema-diagram/schema-diagram/schema-chart-builder';
+import {Node, Position} from '@xyflow/react';
+import {HandleIds, MemberWithLinks} from 'src/app/schema-diagram/schema-chart-builder';
 
 // This whole file taken from : https://reactflow.dev/docs/examples/edges/simple-floating-edges/
 
@@ -38,16 +38,16 @@ function getCoords(nodeA: Node, nodeAHandleId: string, nodeB: Node, canFloat: bo
   return [x, y, position];
 }
 
-function findHandle(node: Node, handleId: string) {
-  return node[internalsSymbol].handleBounds.source.find(
+function findHandle(node, handleId: string) {
+  return node.internals.handleBounds.source.find(
     (h) => h.id === handleId
   );
 
 }
 
-function getHandleCoordsByPosition(node: Node, handleId: string, handlePosition: Position.Left | Position.Right, canFloat: boolean) {
+function getHandleCoordsByPosition(node, handleId: string, handlePosition: Position.Left | Position.Right, canFloat: boolean) {
   const handleIdWithPosition = canFloat ? HandleIds.appendPositionToHandleId(handleId, handlePosition) : handleId;
-  const handle = node[internalsSymbol].handleBounds.source.find(
+  const handle = node.internals.handleBounds.source.find(
     (h) => h.id === handleIdWithPosition
   );
 
@@ -76,16 +76,16 @@ function getHandleCoordsByPosition(node: Node, handleId: string, handlePosition:
       break;
   }
 
-  const x = node.positionAbsolute.x + handle.x + offsetX;
-  const y = node.positionAbsolute.y + handle.y + offsetY;
+  const x = node.internals.positionAbsolute.x + handle.x + offsetX;
+  const y = node.internals.positionAbsolute.y + handle.y + offsetY;
 
   return [x, y];
 }
 
 function getNodeCenter(node) {
   return {
-    x: node.positionAbsolute.x + node.width / 2,
-    y: node.positionAbsolute.y + node.height / 2,
+    x: node.internals.positionAbsolute.x + node.measured?.width / 2,
+    y: node.internals.positionAbsolute.y + node.measured?.height / 2,
   };
 }
 
