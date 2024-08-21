@@ -17,7 +17,10 @@ import org.springframework.security.authentication.ReactiveAuthenticationManager
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.core.Authentication
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder
+import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder
 import org.springframework.security.oauth2.server.resource.authentication.BearerTokenAuthenticationToken
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverterAdapter
@@ -30,6 +33,7 @@ import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
 
+private val logger = KotlinLogging.logger {  }
 /**
  * Sets up config for supporting authn / authz via OIDC Authorization Code with PKCE flow.
  *
@@ -47,10 +51,6 @@ import reactor.core.publisher.Mono
 // see: https://github.com/spring-projects/spring-security/issues/12821
 @EnableReactiveMethodSecurity(useAuthorizationManager = false)
 class OidcAuthorizationPkceConfig {
-   companion object {
-      private val logger = KotlinLogging.logger {}
-   }
-
    @Bean
    @ConditionalOnProperty("vyne.security.openIdp.executorRoleClientId",  matchIfMissing = false)
    fun executionPrincipalAuthService(
@@ -85,12 +85,22 @@ class OidcAuthorizationPkceConfig {
    }
 
    @Bean
+   fun jwtDecoder(securityConfig: VyneOpenIdpConnectConfig, oidcConfig: FrontEndSecurityConfig): ReactiveJwtDecoder {
+      val jwtDecoder = NimbusReactiveJwtDecoder.withJwkSetUri(oidcConfig.jwksUri).build()
+      return securityConfig.audience?.let { audience ->
+         logger.info { "Adding AudienceValidator for expected audience => $audience" }
+         val validator = AudienceValidator(audience)
+         // note - JwtTimestampValidator  is the default validator, so we need to pass along with Audience validator.
+         jwtDecoder.setJwtValidator(DelegatingOAuth2TokenValidator(validator, JwtTimestampValidator()))
+         jwtDecoder
+      } ?: jwtDecoder
+   }
+
+   @Bean
    fun reactiveAuthenticationManager(
-      oidcConfig: FrontEndSecurityConfig,
+      jwtDecoder: ReactiveJwtDecoder,
       grantedAuthoritiesExtractor: GrantedAuthoritiesExtractor
    ): ReactiveAuthenticationManager {
-      val jwtDecoder = NimbusReactiveJwtDecoder.withJwkSetUri(oidcConfig.jwksUri).build()
-
       return ReactiveAuthenticationManager { authentication ->
          when (authentication) {
             is BearerTokenAuthenticationToken -> {
@@ -114,9 +124,10 @@ class OidcAuthorizationPkceConfig {
       languageServerConfig: LanguageServerConfig,
       @Value("\${management.endpoints.web.base-path:/actuator}") actuatorPath: String,
       grantedAuthoritiesExtractor: GrantedAuthoritiesExtractor,
-      oidcConfig: FrontEndSecurityConfig
+      oidcConfig: FrontEndSecurityConfig,
+      jwtDecoder: ReactiveJwtDecoder
    ): SecurityWebFilterChain {
-      logger.info { "Using OIDC Authentication" }
+      logger.info { "Using OIDC Authentication => $oidcConfig" }
       http
          .securityMatcher {
             NegatedServerWebExchangeMatcher(
@@ -160,7 +171,7 @@ class OidcAuthorizationPkceConfig {
          // (see spring.security.oauth2.resourceserver.jwt.jwk-set-uri)
          .oauth2ResourceServer { spec ->
             spec.jwt { jwtSpec ->
-               jwtSpec.jwkSetUri(oidcConfig.jwksUri)
+               jwtSpec.jwtDecoder(jwtDecoder)
             }
          }
          .oauth2ResourceServer()

@@ -77,6 +77,7 @@ profile
       "vyne.security.openIdp.enabled=true",
       "vyne.security.open-idp.issuer-url=http://localhost:\${wiremock.server.port}",
       "vyne.security.open-idp.client-id=vyne-spa",
+      "vyne.security.open-idp.audience=https://host/api",
       "wiremock.server.baseUrl=http://localhost:\${wiremock.server.port}",
       "logging.level.org.springframework.security=DEBUG",
       "vyne.analytics.persistResults=true",

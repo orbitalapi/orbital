@@ -111,7 +111,14 @@ data class VyneOpenIdpConnectConfig(
     * that Orbital uses to execute streaming queries
     * and background tasks that are executed without a user context
     */
-   val executorRoleClientSecret: String? = null
+   val executorRoleClientSecret: String? = null,
+   /**
+    * Expected audience (aud) value in the provided Jwt token
+    * By default this value is null which means that audience verification is disabled.
+    * When Populated a custom OAuth2TokenValidator will be instantiated to verify Jwt token's aud
+    * value against this.
+    */
+   val audience: String? = null
 
 ) {
    init {
