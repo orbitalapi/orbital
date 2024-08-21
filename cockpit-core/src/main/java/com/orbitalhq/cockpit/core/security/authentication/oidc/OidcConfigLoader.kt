@@ -10,6 +10,10 @@ import com.orbitalhq.cockpit.core.security.authorisation.VyneOpenIdpConnectConfi
 import mu.KotlinLogging
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.security.oauth2.core.OAuth2Error
+import org.springframework.security.oauth2.core.OAuth2TokenValidator
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
+import org.springframework.security.oauth2.jwt.Jwt
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.toEntity
 import reactor.core.publisher.Mono
@@ -117,3 +121,13 @@ data class OpenIdConfiguration(
    val authorizationEndpoint: String?,
    val userinfoEndpoint: String?
 )
+
+class AudienceValidator(private val expectedAudience: String) : OAuth2TokenValidator<Jwt> {
+   override fun validate(jwt: Jwt): OAuth2TokenValidatorResult {
+      return if (jwt.audience.contains(expectedAudience)) {
+         OAuth2TokenValidatorResult.success()
+      } else {
+         OAuth2TokenValidatorResult.failure(OAuth2Error("ORB_AUTH_001", "Unexpected audience values ${jwt.audience}", null))
+      }
+   }
+}
