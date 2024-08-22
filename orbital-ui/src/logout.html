@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script>
+    const keysToClear = [
+      'nonce',
+      'expires_at',
+      'id_token_expires_at',
+      'access_token_stored_at',
+      'id_token_stored_at',
+      'id_token',
+      'access_token',
+      'PKCE_verifier',
+      'session_state',
+      'id_token_claims_obj',
+      'granted_scopes'
+    ];
+
+    async function fetchIssuerUrl() {
+      try {
+        const response = await fetch(`${document.location.origin}/api/security/config`);
+        if (!response.ok) {
+          throw new Error('Network response was not ok ' + response.statusText);
+        }
+        const data = await response.json();
+        const issuerUrl = data.issuerUrl;
+
+        // Use the issuerUrl here
+        console.log('Issuer URL:', issuerUrl);
+
+        return issuerUrl;
+      } catch (error) {
+        console.error('There was a problem with the fetch operation:', error);
+      }
+    }
+
+    window.onload = async function() {
+      // Clear all specified cookies
+      keysToClear.forEach(key => {
+        sessionStorage.removeItem(key);
+      });
+      const issuerUrl = await fetchIssuerUrl();
+      // redirect back to the issuerUrl
+      window.location.href = issuerUrl;
+    }
+  </script>
+</head>
+<body>
+</body>
+</html>
+
