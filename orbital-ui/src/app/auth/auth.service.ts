@@ -53,7 +53,6 @@ export class AuthService {
     return this._securityConfig;
   }
 
-
   constructor(
     @Inject(ENVIRONMENT) private environment: Environment,
     private oauthService: OAuthService,
@@ -81,7 +80,7 @@ export class AuthService {
 
         const userInfo$ = this.userInfoService.getUserInfo(true, this.oauthService.getAccessToken())
         await lastValueFrom(userInfo$)
-        this.oauthService.setupAutomaticSilentRefresh();
+        this.oauthService.setupAutomaticSilentRefresh({}, this.isPropelAuth ? 'access_token' : null);
         this.router.initialNavigation();
       } else {
         await this.userInfoService.getUserInfo(true).toPromise();
@@ -160,7 +159,7 @@ export class AuthService {
     // NOTE: this code has been extracted out of the revokeTokenAndLogout method from
     //       OAuthService class as AWS Cognito doesn't allow an access_token to be revoked,
     //       but the angular-oauth2-oidc library insists on doing that
-    if (this.oauthService.issuer.toLowerCase().includes('cognito')) {
+    if (this.isCognito) {
       let revokeEndpoint = this.oauthService.revocationEndpoint;
       let refreshToken = this.oauthService.getRefreshToken();
       let clientId = this.oauthService.clientId;
@@ -200,13 +199,34 @@ export class AuthService {
         this.oauthService.redirectUriAsPostLogoutRedirectUriFallback = false;
         this.oauthService.logOut();
       } else {
-        return this.oauthService.revokeTokenAndLogout().then(
-          success => console.log('logout successful!'),
-          error => {
-            console.log(error)
-            return error
-          }
-        );
+        // special case for PropelAuth
+        if (this.isPropelAuth) {
+          return new Promise((resolve, reject) => {
+            const headers = new HttpHeaders({
+              'Content-Type': 'application/json',
+            });
+            const body = JSON.stringify({
+              refresh_token: this.oauthService.getRefreshToken(),
+            });
+            this.http.post(`${this.oauthService.issuer}/api/backend/v1/logout`, body, {headers})
+              .subscribe((res: any) => {
+                sessionStorage.clear()
+                window.location.href = this.oauthService.issuer
+              }, (err) => {
+                resolve(err);
+              });
+          });
+        } else {
+          return this.oauthService.revokeTokenAndLogout().then(
+            success => {
+              console.log('logout successful!')
+            },
+            error => {
+              console.log(error)
+              return error
+            }
+          );
+        }
       }
     }
   }
@@ -289,6 +309,14 @@ export class AuthService {
 
   private loadFrontendConfig(): Observable<FrontEndSecurityConfig> {
     return this.http.get<FrontEndSecurityConfig>(`${this.environment.serverUrl}/api/security/config`);
+  }
+
+  private get isPropelAuth(): boolean {
+    return this.oauthService.issuer.toLowerCase().includes('propelauth')
+  }
+
+  private get isCognito(): boolean {
+    return this.oauthService.issuer.toLowerCase().includes('cognito')
   }
 
 }
