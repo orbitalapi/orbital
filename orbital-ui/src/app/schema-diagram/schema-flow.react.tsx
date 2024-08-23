@@ -65,11 +65,26 @@ export interface SchemaAndRequiredMembersProps {
 const fitViewOptions: FitViewOptions = { padding: 0.2, includeHiddenNodes: true, duration: 1000 };
 let previousDimensions: {width?: number, height?: number};
 
+const useEscapeKey = (onEscape) => {
+  useEffect(() => {
+    const handleEsc = (event) => {
+      if (event.keyCode === 27)
+        onEscape();
+    };
+    window.addEventListener('keydown', handleEsc);
+
+    return () => {
+      window.removeEventListener('keydown', handleEsc);
+    };
+  }, []);
+}
+
 function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   const store = useStoreApi();
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [isFullScreen, setFullScreen] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isShiftKeyPressed, setIsShiftKeyPressed] = useState(false);
   const [layoutDirection, setLayoutDirection] = useState<'DOWN' | 'RIGHT'>('RIGHT');
 
   const instance = useReactFlow();
@@ -101,6 +116,20 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       subscription.unsubscribe();
     };
   }, []); // Note for non-react devs:  Passing [] as deps means this useEffect() only runs on mount / unmount
+
+  useEffect(() => {
+    const handleShift = (event) => {
+      if (event.keyCode === 16)
+        setIsShiftKeyPressed(true)
+    };
+    window.addEventListener('keydown', handleShift);
+    window.addEventListener('keyup', () => setIsShiftKeyPressed(false));
+
+    return () => {
+      window.removeEventListener('keydown', handleShift);
+      window.removeEventListener('keyup', () => setIsShiftKeyPressed(false));
+    };
+  }, []);
 
   useEffect(() => {
     if (nodesInitialized) {
@@ -155,6 +184,12 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
     }));
   }, [requiredMembers.join(','), schema.hash]);
 
+  useEscapeKey(() => {
+    setAwaitingRefit('immediate');
+    props.fullScreenClickHandler$.next(false)
+    setIsFullScreen(false)
+  })
+
   function switchLayoutDirection() {
     setLayoutDirection(layoutDirection === 'DOWN' ? 'RIGHT' : 'DOWN')
   }
@@ -189,6 +224,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   // Highlight edges and nodes that are linked to those edges emanating from the hovered node
   const onNodeMouseEnter = useCallback(
     (_, node: Node) => {
+      if (isShiftKeyPressed) return; // we don't want to change the appearance on screen as it's annoying for the user if they're trying to select multiple nodes
       const { edges, nodes } = store.getState();
       const id = node.id;
       let hasChange = false;
@@ -233,7 +269,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       })
       if (hasChange) setNodes(filteredNodes);
     },
-    [setEdges, setNodes, store]
+    [setEdges, setNodes, store, isShiftKeyPressed]
   );
 
   const onEdgeMouseEnter = useCallback(
@@ -330,6 +366,13 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
     setEdges(mappedEdges);
   }, [setEdges, store]);
 
+  const onNodesDelete = useCallback(( nodes: Node[]) => {
+    const filteredMembers = requiredMembers.filter(
+      member => !nodes.some(node => node.id.split('-')[1] === member)
+    );
+    props.memberUpdatedHandler$.next(new Set(filteredMembers))
+  }, [requiredMembers]);
+
   return (<div className={isFullScreen ? 'fullscreen' : ''} style={styleProps}>
     <ReactFlow
       connectOnClick={false}
@@ -347,6 +390,10 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       onEdgeMouseLeave={onEdgeOrNodeMouseLeave}
       onNodeDragStart={onNodeDragStart}
       onNodeDragStop={onNodeDragStop}
+      onNodesDelete={onNodesDelete}
+      multiSelectionKeyCode={['Shift']}
+      selectionKeyCode={['Shift']}
+      deleteKeyCode={['Backspace', 'Delete']}
     >
       <Controls
         showInteractive={false}
@@ -358,7 +405,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
           <DownloadIcon />
         </ControlButton>
         <ControlButton title={!isFullScreen ? 'maximise view' : 'minimise view'} onClick={() => {
-          setFullScreen(!isFullScreen)
+          setIsFullScreen(!isFullScreen)
           setAwaitingRefit('immediate');
           props.fullScreenClickHandler$.next(!isFullScreen)
         }}>
