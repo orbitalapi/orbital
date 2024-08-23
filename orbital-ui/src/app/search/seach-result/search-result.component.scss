@@ -3,7 +3,7 @@
 .search-item {
   display: flex;
   flex-direction: column;
-  margin-bottom: 0.5rem;
+  margin: 0.25rem 0;
 }
 
 ::ng-deep {
@@ -25,10 +25,8 @@
   .type-doc {
     font-size: 0.9rem;
     color: lighten($body, 5%);
-    margin: 0.5rem 0;
-    text-overflow: ellipsis;
-    white-space: break-spaces;
-    overflow: hidden;
+    margin: 0 0.35rem -1rem 0.35rem;
+    border-bottom: 1px dotted $gray-200;
 
     .matchedText {
       border-bottom: 2px solid $vyne-primary;

@@ -1,4 +1,5 @@
 import {NgModule} from '@angular/core';
+import {MarkdownModule} from 'ngx-markdown';
 import {SearchResultComponent} from './seach-result/search-result.component';
 import {CommonModule} from '@angular/common';
 import {SearchResultListComponent} from './search-result-list/search-result-list.component';
@@ -10,7 +11,19 @@ import {FormsModule} from "@angular/forms";
 import {TuiLetModule, TuiValueChangesModule} from "@taiga-ui/cdk";
 
 @NgModule({
-    imports: [CommonModule, RouterModule, TuiComboBoxModule, TuiTextfieldControllerModule, TuiInputModule, FormsModule, TuiDataListWrapperModule, TuiLetModule, TuiValueChangesModule, TuiDataListModule],
+  imports: [
+    CommonModule,
+    RouterModule,
+    TuiComboBoxModule,
+    TuiTextfieldControllerModule,
+    TuiInputModule,
+    FormsModule,
+    TuiDataListWrapperModule,
+    TuiLetModule,
+    TuiValueChangesModule,
+    TuiDataListModule,
+    MarkdownModule.forRoot()
+  ],
     exports: [SearchBarContainerComponent,
         SearchResultComponent,
         SearchResultListComponent],

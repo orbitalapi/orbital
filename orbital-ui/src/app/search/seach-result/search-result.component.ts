@@ -12,7 +12,7 @@ import {BaseSearchResultComponent} from './base-search-result-component';
           <span class="badge" [ngClass]="memberTypeForCSS(result)">{{ memberType(result) }}</span>
         </div>
         <div><span class="mono-badge fully-qualified-name" [innerHtml]="qualifiedName"></span></div>
-        <p *ngIf="typeDoc" class="type-doc" [innerHtml]="typeDoc"></p>
+        <markdown *ngIf="typeDoc" class="type-doc" [data]="typeDoc"></markdown>
       </div>
     `
 })
