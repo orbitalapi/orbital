@@ -36,7 +36,7 @@ export function applyElkLayout(nodes: Node[], edges: Edge[], layoutDirection: 'D
       // 'elk.direction': width > height ? 'RIGHT' : 'UP',
       'elk.direction': layoutDirection,
       // 'layered.edgeRouting.splines.mode': 'CONSERVATIVE',
-      'spacing.nodeNode': '40',
+      'spacing.nodeNode': '80',
       'spacing.componentComponent': '80',
       'spacing.nodeNodeBetweenLayers': '100',
       // EXAMPLES >>> https://rtsys.informatik.uni-kiel.de/elklive/examples.html?e=general%2Fspacing%2Fcomponents

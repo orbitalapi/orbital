@@ -36,8 +36,12 @@
 
 ::ng-deep {
   .react-flow__node {
+    &.selected {
+      box-shadow: rgb(0 0 0 / 40%) 0 2px 14px 0;
+    }
+
     &:not(.dragging) {
-      transition: transform 0.5s ease-in-out, opacity 0.25s ease-in-out;
+      transition: transform 0.5s ease-in-out, opacity 0.25s ease-in-out, box-shadow 150ms ease-in-out;
     }
   }
 
