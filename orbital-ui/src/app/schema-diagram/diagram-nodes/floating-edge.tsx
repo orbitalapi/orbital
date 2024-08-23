@@ -54,7 +54,8 @@ function SimpleFloatingEdge({ source, target, markerEnd, style, data, sourceHand
             fontSize: 10,
             fontWeight: 500,
             borderRadius: 2,
-            color: style.stroke
+            color: style.stroke,
+            display: data.label === undefined ? 'none' : 'block'
           }}
           className="nodrag nopan"
         >
