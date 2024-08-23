@@ -5,7 +5,7 @@ import ELK, { ElkExtendedEdge, ElkNode } from 'elkjs';
 import { RelativeNodeXyPosition } from './schema-chart.controller';
 // import { Worker } from 'elkjs/lib/elk-worker';
 
-export function applyElkLayout(nodes: Node[], edges: Edge[]): Promise<Node[]> {
+export function applyElkLayout(nodes: Node[], edges: Edge[], layoutDirection: 'DOWN' | 'RIGHT'): Promise<Node[]> {
   const nodeMap: { [index: string]: Node } = {};
   const elkNodes = nodes.map(node => {
     nodeMap[node.id] = node;
@@ -34,6 +34,7 @@ export function applyElkLayout(nodes: Node[], edges: Edge[]): Promise<Node[]> {
       'crossingMinimization.semiInteractive': 'true',
       //'separateConnectedComponents': 'false',
       // 'elk.direction': width > height ? 'RIGHT' : 'UP',
+      'elk.direction': layoutDirection,
       // 'layered.edgeRouting.splines.mode': 'CONSERVATIVE',
       'spacing.nodeNode': '40',
       'spacing.componentComponent': '80',

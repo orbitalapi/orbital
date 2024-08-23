@@ -14,6 +14,7 @@ import { ElementRef } from '@angular/core';
 import * as ReactDOM from 'react-dom';
 import ModelNode from './diagram-nodes/model-node';
 import ApiNode from './diagram-nodes/api-service-node';
+import LayoutDirectionIcon from './icons/layout-direction-icon';
 import { SchemaChartController } from './schema-chart.controller';
 import {
   arrayMemberTypeNameOrTypeNameFromName,
@@ -69,6 +70,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isFullScreen, setFullScreen] = useState(false);
+  const [layoutDirection, setLayoutDirection] = useState<'DOWN' | 'RIGHT'>('RIGHT');
 
   const instance = useReactFlow();
 
@@ -103,7 +105,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   useEffect(() => {
     if (nodesInitialized) {
       console.log('Performing layout');
-      applyElkLayout(instance.getNodes(), instance.getEdges())
+      applyElkLayout(instance.getNodes(), instance.getEdges(), layoutDirection)
         .then(async result => {
           setNodes(result)
           if (result.length === 1) {
@@ -118,7 +120,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
           }
         });
     }
-  }, [nodesInitialized] );
+  }, [nodesInitialized, layoutDirection] );
 
   useEffect(() => {
     if (awaitingRefit) {
@@ -152,6 +154,10 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       return props.linkKinds.includes(edge.data.linkKind);
     }));
   }, [requiredMembers.join(','), schema.hash]);
+
+  function switchLayoutDirection() {
+    setLayoutDirection(layoutDirection === 'DOWN' ? 'RIGHT' : 'DOWN')
+  }
 
   function downloadImage() {
     toPng(document.querySelector<HTMLElement>('.react-flow__viewport'), {
@@ -345,6 +351,9 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       <Controls
         showInteractive={false}
       >
+        <ControlButton onClick={switchLayoutDirection} title={"switch layout direction"}>
+          <LayoutDirectionIcon layoutDirection={layoutDirection} />
+        </ControlButton>
         <ControlButton onClick={downloadImage} title={"download image"}>
           <DownloadIcon />
         </ControlButton>
