@@ -30,7 +30,7 @@ export interface ExpendableProducersConsumers {
 
 export type ExpandableSearchResult = SearchResult & ExpendableProducersConsumers;
 
-export type SearchEntryType = 'TYPE' | 'FIELD' | 'POLICY' | 'SERVICE' | 'OPERATION' | 'ANNOTATION' | 'UNKNOWN';
+export type SearchEntryType = 'TYPE' | 'MODEL' | 'FIELD' | 'POLICY' | 'SERVICE' | 'OPERATION' | 'ANNOTATION' | 'UNKNOWN';
 
 export interface SearchMatch {
   field: SearchField;
