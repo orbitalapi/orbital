@@ -1,14 +1,10 @@
 package com.orbitalhq.connectors.jdbc.drivers
 
+import com.orbitalhq.connectors.config.jdbc.DatabaseDriverName
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
+import com.orbitalhq.connectors.config.jdbc.JdbcMetadataParams
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlBuilder
 import com.orbitalhq.connectors.jdbc.UpsertVerb
-import com.orbitalhq.connectors.jdbc.drivers.h2.H2DatabaseSupport
-import com.orbitalhq.connectors.jdbc.drivers.mssql.MssqlDbSupport
-import com.orbitalhq.connectors.jdbc.drivers.postgres.PostgresDbSupport
-import com.orbitalhq.connectors.jdbc.drivers.redshift.RedshiftDatabaseSupport
-import com.orbitalhq.connectors.jdbc.drivers.snowflake.SnowflakeDatabaseSupport
 import com.orbitalhq.connectors.jdbc.sql.dml.SqlOperation
 import com.orbitalhq.schemas.AttributeName
 import lang.taxi.types.PrimitiveType
@@ -21,6 +17,16 @@ import org.jooq.RowN
 
 private val logger = KotlinLogging.logger {}
 interface DatabaseSupport {
+   val driverName: DatabaseDriverName
+   val jdbcDriverMetadata: JdbcMetadataParams
+
+   /**
+    * Indicates this is used internally within Orbital, and not
+    * surfaced on the UI
+    */
+   val isInternalDriver: Boolean
+      get() = false
+
    fun jdbcUrlBuilder(): JdbcUrlBuilder
 
    /**
@@ -58,19 +64,23 @@ interface DatabaseSupport {
    }
 
    companion object {
-      fun forDriver(driver: JdbcDriver): DatabaseSupport {
-         return when (driver) {
-            JdbcDriver.H2 -> H2DatabaseSupport
-            JdbcDriver.POSTGRES -> PostgresDbSupport
-            JdbcDriver.MSSQL -> MssqlDbSupport
-            JdbcDriver.REDSHIFT -> RedshiftDatabaseSupport
-            JdbcDriver.SNOWFLAKE -> SnowflakeDatabaseSupport
+      val defaultDriverRegistry = DatabaseDriverRegistry.withBuiltInDrivers()
+
+      val drivers:List<DatabaseSupport>
+         get() {
+            return defaultDriverRegistry.drivers
          }
+
+      fun forDriverName(driverName: DatabaseDriverName): DatabaseSupport {
+         return defaultDriverRegistry.getDatabaseDriver(driverName)
+      }
+      fun register(databaseSupport: DatabaseSupport) {
+         defaultDriverRegistry.addDriver(databaseSupport)
       }
    }
 }
 
 val JdbcConnectionConfiguration.databaseSupport: DatabaseSupport
    get() {
-      return DatabaseSupport.forDriver(this.jdbcDriver)
+      return DatabaseSupport.forDriverName(this.driverName)
    }

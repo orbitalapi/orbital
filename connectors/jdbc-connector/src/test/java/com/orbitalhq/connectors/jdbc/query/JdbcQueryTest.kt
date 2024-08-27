@@ -3,7 +3,6 @@ package com.orbitalhq.connectors.jdbc.query
 import com.winterbe.expekt.should
 import com.zaxxer.hikari.HikariConfig
 import com.orbitalhq.stubbing.StubService
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.jdbc.NamedTemplateConnection
 import com.orbitalhq.connectors.jdbc.*
 import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
@@ -46,7 +45,7 @@ class JdbcQueryTest {
    fun setup() {
       val namedParamTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
       connectionRegistry =
-         InMemoryJdbcConnectionRegistry(listOf(NamedTemplateConnection("movies", namedParamTemplate, JdbcDriver.H2)))
+         InMemoryJdbcConnectionRegistry(listOf(NamedTemplateConnection("movies", namedParamTemplate, "H2")))
       connectionFactory = HikariJdbcConnectionFactory(connectionRegistry, HikariConfig())
    }
 

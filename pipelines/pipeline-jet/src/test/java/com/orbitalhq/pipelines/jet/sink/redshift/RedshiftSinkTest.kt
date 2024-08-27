@@ -1,7 +1,6 @@
 package com.orbitalhq.pipelines.jet.sink.redshift
 
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.jdbc.buildUrlAndCredentials
 import com.orbitalhq.connectors.jdbc.drivers.redshift.RedshiftJdbcUrlBuilder
 import com.orbitalhq.pipelines.jet.BaseJetIntegrationTest
@@ -63,7 +62,7 @@ class RedshiftSinkTest : BaseJetIntegrationTest() {
 
       val connection = DefaultJdbcConnectionConfiguration.forParams(
          "test-connection",
-         JdbcDriver.REDSHIFT,
+         "REDSHIFT",
          connectionParameters = mapOf(
 
             RedshiftJdbcUrlBuilder.Parameters.HOST to "redshift-cluster-1.cofg7uy6ctz3.eu-west-1.redshift.amazonaws.com",

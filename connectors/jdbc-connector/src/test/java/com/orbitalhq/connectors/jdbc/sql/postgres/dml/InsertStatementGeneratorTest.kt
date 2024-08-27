@@ -1,6 +1,5 @@
 package com.orbitalhq.connectors.jdbc.sql.postgres.dml
 
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi
@@ -17,7 +16,7 @@ import org.junit.Test
 class InsertStatementGeneratorTest {
    val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
       "postgres",
-      JdbcDriver.POSTGRES,
+      "POSTGRES",
       JdbcUrlAndCredentials("jdbc:postgresql://localhost:49229/test", "username", "password")
    )
 
@@ -40,8 +39,8 @@ class InsertStatementGeneratorTest {
         service DealStreamService {
             operation streamUpdatedDeals() : Stream<UpdatedDeal>
         }
-        
-      
+
+
         @com.orbitalhq.jdbc.Table(schema = "public", table = "TracerDeal", connection = "postgres")
         closed parameter model TracerDeal {
             @Id
@@ -49,7 +48,7 @@ class InsertStatementGeneratorTest {
             amount: UpdatedDealAmount
             drawdown_date: UpdatedDealDrawdownDate
         }
-        
+
         @DatabaseService(connection="movies")
         service TracerBulletService {
             @UpsertOperation
@@ -76,8 +75,8 @@ class InsertStatementGeneratorTest {
         sql.withoutWhitespace().should.equal(
             """insert into "TracerDeal" ("id", "amount", "drawdown_date")
 values (
-  123, 
-  2500.25, 
+  123,
+  2500.25,
   date '2024-01-01'
 )
 on conflict ("id")

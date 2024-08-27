@@ -2,7 +2,6 @@ package com.orbitalhq.connectors.jdbc.sql.postgres.dml
 
 import com.winterbe.expekt.should
 import io.kotest.core.spec.style.DescribeSpec
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.sql.dml.SelectStatementGenerator
@@ -18,7 +17,7 @@ class SelectStatementGeneratorTest : DescribeSpec({
    describe("select statement generation") {
       val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
          "postgres",
-         JdbcDriver.POSTGRES,
+         "POSTGRES",
          JdbcUrlAndCredentials("jdbc:postgresql://localhost:49229/test", "username", "password")
       )
 

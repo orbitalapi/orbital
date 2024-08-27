@@ -1,6 +1,5 @@
 package com.orbitalhq.connectors.jdbc.query
 
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.jdbc.HikariJdbcConnectionFactory
 import com.orbitalhq.connectors.jdbc.JdbcConnectionFactory
 import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi
@@ -76,7 +75,7 @@ class JdbcQueryWithJoinsTest {
    fun setup() {
       val namedParamTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
       connectionRegistry =
-         InMemoryJdbcConnectionRegistry(listOf(NamedTemplateConnection("movies", namedParamTemplate, JdbcDriver.H2)))
+         InMemoryJdbcConnectionRegistry(listOf(NamedTemplateConnection("movies", namedParamTemplate, "H2")))
       connectionFactory = HikariJdbcConnectionFactory(connectionRegistry, HikariConfig())
 
       movieRepository.saveAll(
@@ -157,7 +156,7 @@ class JdbcQueryWithJoinsTest {
           type LoanApplicationName inherits String
           model Deal {
             loanApplicationId: LoanApplicationId
-            loanApplicationName: LoanApplicationName 
+            loanApplicationName: LoanApplicationName
           }
           model DealResponse {
             deals : Deal[]
@@ -166,32 +165,32 @@ class JdbcQueryWithJoinsTest {
          service Deals {
             operation getDeals():DealResponse
          }
-         
+
         @Table(connection = "movies", table = "LOAN", schema = "public")
         model Loan {
-            @Id 
+            @Id
             LOAN_ID : LoanId inherits String
             LOAN_APPLICATION_ID : LoanApplicationId
          }
-         
-         @DatabaseService(connection = "movies") 
+
+         @DatabaseService(connection = "movies")
          service LoanService {
              table loans: Loan[]
          }
-         
+
          @Table(connection = "movies", schema = "public", table = "REPAYMENT" )
          closed model Repayment {
-             @Id 
+             @Id
              REPAYMENT_ID: RepaymentId inherits String
              LOAN_ID: LoanId
          }
 
-         @DatabaseService(connection = "movies") 
+         @DatabaseService(connection = "movies")
          service RepaymentService {
              table repayments: Repayment[]
          }
-          
-         
+
+
       """.trimIndent()
 
       val (vyne, stub) = testVyneWithStub(

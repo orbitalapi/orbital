@@ -1,8 +1,8 @@
 package com.orbitalhq.connectors.jdbc
 
 import com.orbitalhq.connectors.IConnectionParameter
+import com.orbitalhq.connectors.config.jdbc.DatabaseDriverName
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlBuilder
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -16,7 +16,7 @@ import java.sql.DatabaseMetaData
 data class NamedTemplateConnection(
    override val connectionName: String,
    val template: NamedParameterJdbcTemplate,
-   override val jdbcDriver: JdbcDriver = JdbcDriver.H2
+   override val jdbcDriver: DatabaseDriverName = "H2"
 ) : JdbcConnectionConfiguration {
    private val metadata: DatabaseMetaData by lazy {
 

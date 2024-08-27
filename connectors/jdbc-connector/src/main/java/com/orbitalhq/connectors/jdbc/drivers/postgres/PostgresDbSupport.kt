@@ -1,5 +1,7 @@
 package com.orbitalhq.connectors.jdbc.drivers.postgres
 
+import com.orbitalhq.connectors.config.jdbc.DatabaseDriverName
+import com.orbitalhq.connectors.config.jdbc.JdbcMetadataParams
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlBuilder
 import com.orbitalhq.connectors.jdbc.UpsertVerb
 import com.orbitalhq.connectors.jdbc.drivers.DatabaseSupport
@@ -13,7 +15,9 @@ import org.jooq.RowN
 import org.jooq.impl.DSL
 
 object PostgresDbSupport : DatabaseSupport {
+   override val driverName: DatabaseDriverName = "POSTGRES"
    private val logger = KotlinLogging.logger {}
+   override val jdbcDriverMetadata: JdbcMetadataParams = JdbcMetadataParams()
    override fun jdbcUrlBuilder(): JdbcUrlBuilder = PostgresJdbcUrlBuilder()
 
    override fun buildUpsertStatement(

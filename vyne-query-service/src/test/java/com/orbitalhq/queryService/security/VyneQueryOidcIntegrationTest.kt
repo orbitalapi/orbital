@@ -9,7 +9,6 @@ import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvi
 import com.orbitalhq.cockpit.core.content.DefaultContentRepository
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
@@ -45,7 +44,13 @@ import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
-import org.springframework.http.*
+import org.springframework.http.HttpEntity
+import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
+import org.springframework.http.HttpStatusCode
+import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.PostgreSQLContainer
@@ -648,7 +653,7 @@ class VyneQueryOidcIntegrationTest {
    private fun createJdbcConnection(headers: HttpHeaders): ResponseEntity<String> {
       val entity = HttpEntity(
          DefaultJdbcConnectionConfiguration(
-            "foo", JdbcDriver.H2, mapOf(
+            "foo", "H2", mapOf(
                Pair("catalog", "dsda"), Pair("username", "foo"), Pair("password", "bar")
             )
          ),

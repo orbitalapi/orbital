@@ -2,7 +2,6 @@ package com.orbitalhq.connectors.jdbc.sql.postgres.ddl
 
 import com.winterbe.expekt.should
 import io.kotest.matchers.shouldBe
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.*
@@ -40,7 +39,7 @@ class PostgresTableGeneratorTest {
       password = postgreSQLContainer.password
       connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
          "postgres",
-         JdbcDriver.POSTGRES,
+         "POSTGRES",
          JdbcUrlAndCredentials(jdbcUrl, username, password)
       )
       connectionFactory = SimpleJdbcConnectionFactory()

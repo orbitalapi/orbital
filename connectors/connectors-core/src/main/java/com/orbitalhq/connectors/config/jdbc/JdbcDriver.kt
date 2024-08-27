@@ -2,48 +2,6 @@ package com.orbitalhq.connectors.config.jdbc
 
 
 /**
- * Enum of supported Jdbc drivers.
- */
-enum class JdbcDriver(
-   val metadata: JdbcMetadataParams = JdbcMetadataParams(),
-   /**
-    * Indicates this is used internally within Orbital, and not
-    * surfaced on the UI
-    */
-   val internal: Boolean = false
-) {
-   H2(
-      metadata = JdbcMetadataParams(
-         tableListSchemaPattern = "PUBLIC"
-      ),
-      internal = true
-   ),
-   POSTGRES(
-      metadata = JdbcMetadataParams().copy(
-         tableTypesToListTables = arrayOf("TABLE")
-      )
-   ),
-   MSSQL(
-      metadata = JdbcMetadataParams().copy(
-         tableTypesToListTables = arrayOf("TABLE")
-      )
-   ),
-   SNOWFLAKE(
-      metadata = JdbcMetadataParams().copy(
-         tableTypesToListTables = arrayOf("TABLE")
-      )
-   ),
-   REDSHIFT(
-      metadata = JdbcMetadataParams().copy(
-         tableTypesToListTables = arrayOf("TABLE")
-      )
-   );
-//   MYSQL(displayName = "MySQL", driverName = "com.mysql.jdbc.Driver");
-
-}
-
-
-/**
  * This class provides a way to capture the subtle
  * differences between each JDBC driver implementation
  * when fetching metadata.
@@ -60,7 +18,7 @@ data class JdbcMetadataParams(
     * whereas for H2 it's null.
     * Null is a valid option, and indicates not to perform a filter.
     */
-   val tableTypesToListTables: Array<String>? = null,
+   val tableTypesToListTables: Array<String>? =  arrayOf("TABLE"),
 
    /**
     * When iterating the results of metaData.getTables(...)

@@ -8,6 +8,8 @@ import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.jdbc.HikariJdbcConnectionFactory
 import com.orbitalhq.connectors.jdbc.JdbcConnectionFactory
 import com.orbitalhq.connectors.jdbc.JdbcInvoker
+import com.orbitalhq.connectors.jdbc.drivers.DatabaseDriverRegistry
+import com.orbitalhq.connectors.jdbc.drivers.DatabaseSupport
 import com.orbitalhq.connectors.jdbc.registry.JdbcConnectionRegistry
 import com.orbitalhq.connectors.jdbc.registry.SourceLoaderJdbcConnectionRegistry
 import com.orbitalhq.schema.api.SchemaProvider
@@ -19,6 +21,10 @@ import org.springframework.context.annotation.Configuration
 @EnableConfigurationProperties(VyneConnectionsConfig::class)
 class JdbcConnectionConfig {
 
+   @Bean
+   fun driverRegistry(): DatabaseDriverRegistry {
+      return DatabaseSupport.defaultDriverRegistry
+   }
 
    @Bean
    fun jdbcConnectionRegistry(config: SourceLoaderConnectorsRegistry): JdbcConnectionRegistry {

@@ -5,7 +5,6 @@ import io.kotest.matchers.maps.shouldHaveKeys
 import io.kotest.matchers.shouldBe
 import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.cbor.Cbor
@@ -69,7 +68,7 @@ class SourceLoaderConnectorsRegistryTest {
                      "port" to "2003",
                      "username" to "jack"
                   ),
-                  jdbcDriver = JdbcDriver.POSTGRES
+                  jdbcDriver = "POSTGRES",
                ),
                "connection-2" to DefaultJdbcConnectionConfiguration(
                   connectionName = "connection-2",
@@ -80,7 +79,7 @@ class SourceLoaderConnectorsRegistryTest {
                      "port" to "2003",
                      "username" to "jack"
                   ),
-                  jdbcDriver = JdbcDriver.POSTGRES
+                  jdbcDriver = "POSTGRES",
                )
             ),
             kafka = mapOf(

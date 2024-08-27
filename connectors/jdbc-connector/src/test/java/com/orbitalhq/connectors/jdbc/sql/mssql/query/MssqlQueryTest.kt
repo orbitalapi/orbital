@@ -1,7 +1,5 @@
 package com.orbitalhq.connectors.jdbc.sql.mssql.query
 
-import com.orbitalhq.stubbing.StubService
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.HikariJdbcConnectionFactory
@@ -12,6 +10,7 @@ import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
 import com.winterbe.expekt.should
@@ -61,7 +60,7 @@ class MssqlQueryTest {
       mssqlContainer.waitingFor(Wait.forListeningPort())
       val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
          "movies",
-         JdbcDriver.MSSQL,
+         "MSSQL",
          JdbcUrlAndCredentials(
             mssqlContainer.getJdbcUrl(),
             mssqlContainer.username,

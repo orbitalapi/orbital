@@ -1,6 +1,5 @@
 package com.orbitalhq.connectors.jdbc.mutations
 
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.jdbc.*
 import com.orbitalhq.connectors.jdbc.query.JdbcQueryTestConfig
 import com.orbitalhq.connectors.jdbc.query.MovieRepository
@@ -40,7 +39,7 @@ class JdbcUpsertTest {
    fun setup() {
       val namedParamTemplate = NamedParameterJdbcTemplate(jdbcTemplate)
       connectionRegistry =
-         InMemoryJdbcConnectionRegistry(listOf(NamedTemplateConnection("movies", namedParamTemplate, JdbcDriver.H2)))
+         InMemoryJdbcConnectionRegistry(listOf(NamedTemplateConnection("movies", namedParamTemplate, "H2")))
       connectionFactory = HikariJdbcConnectionFactory(connectionRegistry, HikariConfig())
    }
 
@@ -56,13 +55,13 @@ class JdbcUpsertTest {
          type StudioId inherits Int
          type StudioName inherits String
          type StudioCountry inherits String
-         
+
          @Table(connection = "movies", schema = "public", table = "STUDIOS")
          model MovieStudio {
             @Id ID : StudioId
             NAME : StudioName
          }
-         
+
          // Use a different name from the spring repository, so that we
          // can test DDL creation
          @Table(connection = "movies", schema = "public", table = "STUDIOLOCATION")
@@ -77,7 +76,7 @@ class JdbcUpsertTest {
 
             @InsertOperation
             write operation insertStudio(MovieStudio):MovieStudio
-            
+
             table studioLocations : MovieStudioLocation[]
 
             @InsertOperation

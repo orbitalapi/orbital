@@ -1,6 +1,5 @@
 package com.orbitalhq.connectors.jdbc.sql.mssql.dml
 
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.sql.dml.SelectStatementGenerator
@@ -18,7 +17,7 @@ class MssqlSelectStatementGeneratorTest : DescribeSpec({
    describe("select statement generation") {
      val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
          "mssql",
-         JdbcDriver.MSSQL,
+         "MSSQL",
          JdbcUrlAndCredentials(
             "jdbc:sqlserver://localhost:14330;database=fake",
             "sa", "PaSSw0rd"

@@ -1,9 +1,11 @@
 package com.orbitalhq.connectors.jdbc.sql.mssql.mutations
 
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
-import com.orbitalhq.connectors.jdbc.*
+import com.orbitalhq.connectors.jdbc.HikariJdbcConnectionFactory
+import com.orbitalhq.connectors.jdbc.JdbcConnectionFactory
+import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi
+import com.orbitalhq.connectors.jdbc.JdbcInvoker
 import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import com.orbitalhq.connectors.jdbc.sql.mssql.query.MovieRepository
 import com.orbitalhq.connectors.jdbc.sql.mssql.query.MsSQLQueryTestConfig
@@ -53,7 +55,7 @@ class MssqlUpsertTest {
       mssqlContainer.waitingFor(Wait.forListeningPort())
       val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
          "movies",
-         JdbcDriver.MSSQL,
+         "MSSQL",
          JdbcUrlAndCredentials(
             mssqlContainer.getJdbcUrl(),
             mssqlContainer.username,

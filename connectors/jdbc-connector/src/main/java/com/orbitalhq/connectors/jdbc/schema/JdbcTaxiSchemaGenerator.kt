@@ -97,7 +97,7 @@ class JdbcTaxiSchemaGenerator(
                fields.toSet(),
                annotations = setOf(
                   JdbcConnectorTaxi.Annotations.table(
-                     tableMetadata.schema.name,
+                     tableMetadata.schema.name ?: tableMetadata.schema.catalogName,
                      tableMetadata.name,
                      connectionName,
                   ).asAnnotation(schema.taxi)

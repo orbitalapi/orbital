@@ -1,8 +1,10 @@
 package com.orbitalhq.connectors.jdbc.drivers.mssql
 
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
+import com.orbitalhq.connectors.config.jdbc.JdbcMetadataParams
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlBuilder
 import com.orbitalhq.connectors.jdbc.UpsertVerb
+import com.orbitalhq.connectors.config.jdbc.DatabaseDriverName
 import com.orbitalhq.connectors.jdbc.drivers.DatabaseSupport
 import com.orbitalhq.connectors.jdbc.sql.dml.SqlBatch
 import com.orbitalhq.connectors.jdbc.sql.dml.SqlOperation
@@ -17,6 +19,9 @@ import org.jooq.Table
 import org.jooq.impl.DSL.*
 
 object MssqlDbSupport : DatabaseSupport {
+   override val driverName: DatabaseDriverName = "MSSQL"
+   override val jdbcDriverMetadata = JdbcMetadataParams()
+
    override fun jdbcUrlBuilder(): JdbcUrlBuilder = MssqlJdbcUrlBuilder()
 
    override fun schemaName(connectionConfiguration: JdbcConnectionConfiguration): String? {
@@ -85,6 +90,6 @@ object MssqlDbSupport : DatabaseSupport {
 
 }
 
-private fun  Map<String, Any?>.withoutPrimaryKeys(primaryKeyFields: List<Field<out Any>>):Map<String,Any?> {
+private fun Map<String, Any?>.withoutPrimaryKeys(primaryKeyFields: List<Field<out Any>>): Map<String, Any?> {
    return this.filter { (fieldName, _) -> primaryKeyFields.none { it.name == fieldName } }
 }

@@ -3,7 +3,6 @@ package com.orbitalhq.connectors.jdbc.schema
 import com.google.common.io.Resources
 import com.orbitalhq.connectors.jdbc.DatabaseMetadataService
 import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.SimpleJdbcConnectionFactory
@@ -45,7 +44,7 @@ class ComplexTaxiSchemaGeneratorTest {
    fun `generates complex schema`() {
       val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
          "postgres",
-         JdbcDriver.POSTGRES,
+         "POSTGRES",
          JdbcUrlAndCredentials(jdbcUrl, username, password)
       )
       val template = SimpleJdbcConnectionFactory()

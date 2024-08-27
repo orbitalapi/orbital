@@ -9,7 +9,6 @@ import com.orbitalhq.auth.schemes.AuthTokens
 import com.orbitalhq.auth.tokens.AuthConfig
 import com.orbitalhq.connectors.config.ConnectionsConfig
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.http.ServicesConfig
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromByteArray
@@ -44,7 +43,7 @@ class QueryMessageTest {
             jdbc = mapOf(
                "my-db" to DefaultJdbcConnectionConfiguration(
                   "my-db",
-                  JdbcDriver.POSTGRES,
+                  "POSTGRES",
                   connectionParameters = mapOf("username" to "Hello")
                )
             ),

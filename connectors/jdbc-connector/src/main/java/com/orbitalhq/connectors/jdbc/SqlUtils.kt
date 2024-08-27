@@ -41,7 +41,7 @@ object SqlUtils {
    }
 }
 
-internal fun JdbcConnectionConfiguration.sqlBuilder(): DSLContext {
+fun JdbcConnectionConfiguration.sqlBuilder(): DSLContext {
    val credentials = this.buildUrlAndCredentials()
    return DSL.using(
       JDBCUtils.dialect(credentials.url)

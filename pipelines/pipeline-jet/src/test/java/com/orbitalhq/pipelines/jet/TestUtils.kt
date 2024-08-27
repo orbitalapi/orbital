@@ -3,7 +3,6 @@ package com.orbitalhq.pipelines.jet
 import com.orbitalhq.VersionedTypeReference
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.jdbc.SqlUtils
 import com.orbitalhq.connectors.jdbc.drivers.postgres.PostgresJdbcUrlBuilder
 import com.orbitalhq.schemas.Type
@@ -164,7 +163,7 @@ class PostgresSQLContainerFacade(private val postgreSQLContainer: PostgreSQLCont
 
       connection = DefaultJdbcConnectionConfiguration.forParams(
          "test-connection",
-         JdbcDriver.POSTGRES,
+         "POSTGRES",
          connectionParameters = mapOf(
             PostgresJdbcUrlBuilder.Parameters.HOST to host,
             PostgresJdbcUrlBuilder.Parameters.PORT to port,

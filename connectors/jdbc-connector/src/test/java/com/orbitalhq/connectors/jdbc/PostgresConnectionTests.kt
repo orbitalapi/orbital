@@ -1,9 +1,9 @@
 package com.orbitalhq.connectors.jdbc
 
 import com.orbitalhq.connectors.ConnectionSucceeded
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
+import com.orbitalhq.connectors.jdbc.drivers.postgres.PostgresDbSupport
 import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.query.VyneQlGrammar
@@ -55,14 +55,14 @@ class PostgresConnectionTests {
    fun `can upsert into Postgres with BigInt Primary Key`(): Unit = runBlocking {
       val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
          "postgres",
-         JdbcDriver.POSTGRES,
+         PostgresDbSupport.driverName,
          JdbcUrlAndCredentials(jdbcUrl, username, password)
       )
       val template = SimpleJdbcConnectionFactory()
          .jdbcTemplate(connectionDetails)
 
       val connectionRegistry =
-         InMemoryJdbcConnectionRegistry(listOf(NamedTemplateConnection("movies", template, JdbcDriver.POSTGRES)))
+         InMemoryJdbcConnectionRegistry(listOf(NamedTemplateConnection("movies", template, "POSTGRES")))
      val  connectionFactory = HikariJdbcConnectionFactory(connectionRegistry, HikariConfig())
       val (vyne, stub) = testVyneWithStub(
          listOf(
@@ -84,7 +84,7 @@ class PostgresConnectionTests {
         service DealStreamService {
             operation streamUpdatedDeals() : Stream<UpdatedDeal>
         }
-        
+
         @Table(connection="movies", schema="public", table="deal")
         closed parameter model TracerDeal {
             @Id
@@ -92,7 +92,7 @@ class PostgresConnectionTests {
             amount: UpdatedDealAmount
             drawdown_date: UpdatedDealDrawdownDate
         }
-        
+
         @DatabaseService(connection="movies")
         service TracerBulletService {
             @UpsertOperation
@@ -139,26 +139,26 @@ class PostgresConnectionTests {
    fun `testing connection with valid credentials returns true`() {
       val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
          "postgres",
-         JdbcDriver.POSTGRES,
+         PostgresDbSupport.driverName,
          JdbcUrlAndCredentials(jdbcUrl, username, password)
       )
       val template = SimpleJdbcConnectionFactory()
          .jdbcTemplate(connectionDetails)
       val metadataService = DatabaseMetadataService(template.jdbcTemplate, connectionDetails)
-      metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery).get().should.equal(ConnectionSucceeded)
+      metadataService.testConnection(PostgresDbSupport.jdbcDriverMetadata.testQuery).get().should.equal(ConnectionSucceeded)
    }
 
    @Test
    fun `testing connection with valid location but invalid credentials returns false`() {
       val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
          "postgres",
-         JdbcDriver.POSTGRES,
+         PostgresDbSupport.driverName,
          JdbcUrlAndCredentials(jdbcUrl, "wrongUser", "wrongPassword")
       )
       val template = SimpleJdbcConnectionFactory()
          .jdbcTemplate(connectionDetails)
       val metadataService = DatabaseMetadataService(template.jdbcTemplate, connectionDetails)
-      val error = metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery)
+      val error = metadataService.testConnection(PostgresDbSupport.jdbcDriverMetadata.testQuery)
          .get()
       error.should.equal("Could not connect to the database: PSQLException : FATAL: role \"wrongUser\" does not exist")
    }
@@ -167,13 +167,13 @@ class PostgresConnectionTests {
    fun `testing connection with invalid location returns false`() {
       val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
          "postgres",
-         JdbcDriver.POSTGRES,
+         PostgresDbSupport.driverName,
          JdbcUrlAndCredentials("jdbc:postgresql://wronghost:9999", "wrongUser", "wrongPassword")
       )
       val template = SimpleJdbcConnectionFactory()
          .jdbcTemplate(connectionDetails)
       val metadataService = DatabaseMetadataService(template.jdbcTemplate, connectionDetails)
-      val error = metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery)
+      val error = metadataService.testConnection(PostgresDbSupport.jdbcDriverMetadata.testQuery)
          .get().toString()
       error.trim().should.equal("Could not connect to the database: PSQLException : Unable to parse URL jdbc:postgresql://wronghost:9999")
    }
@@ -182,13 +182,13 @@ class PostgresConnectionTests {
    fun `can list metadata from postgres database`() {
       val connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
          "postgres",
-         JdbcDriver.POSTGRES,
+         PostgresDbSupport.driverName,
          JdbcUrlAndCredentials(jdbcUrl, username, password)
       )
       val template = SimpleJdbcConnectionFactory()
          .jdbcTemplate(connectionDetails)
       val metadataService = DatabaseMetadataService(template.jdbcTemplate, connectionDetails)
-      metadataService.testConnection(JdbcDriver.POSTGRES.metadata.testQuery).get().should.equal(ConnectionSucceeded)
+      metadataService.testConnection(PostgresDbSupport.jdbcDriverMetadata.testQuery).get().should.equal(ConnectionSucceeded)
       val tables = metadataService.listTables()
       tables.should.have.size(2)
       tables.should.contain(

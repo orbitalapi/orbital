@@ -4,7 +4,6 @@ import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.config.ConfigFileLocationConventions
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.schema.consumer.ProjectManagerConfigSourceLoader
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
 import com.orbitalhq.schemaServer.core.file.FileChangeDetectionMethod
@@ -72,7 +71,7 @@ class SourceLoaderConnectorsRegistryTest : BaseGitTest() {
          PackageIdentifier.fromId("taxi/sample/0.3.0"),
          DefaultJdbcConnectionConfiguration(
             "testConfig",
-            JdbcDriver.POSTGRES,
+            "POSTGRES",
             emptyMap()
          )
       )
@@ -117,7 +116,7 @@ class SourceLoaderConnectorsRegistryTest : BaseGitTest() {
          PackageIdentifier.fromId("taxi/sample/0.3.0"),
          DefaultJdbcConnectionConfiguration(
             "testConfig",
-            JdbcDriver.POSTGRES,
+            "POSTGRES",
             emptyMap()
          )
       )
@@ -169,7 +168,7 @@ class SourceLoaderConnectorsRegistryTest : BaseGitTest() {
          PackageIdentifier.fromId("taxi/sample/0.3.0"),
          DefaultJdbcConnectionConfiguration(
             "testConfig",
-            JdbcDriver.POSTGRES,
+            "POSTGRES",
             emptyMap()
          )
       )

@@ -5,10 +5,10 @@ import com.winterbe.expekt.should
 import com.orbitalhq.connectors.ConnectionSucceeded
 import com.orbitalhq.connectors.jdbc.DatabaseMetadataService
 import com.orbitalhq.connectors.jdbc.JdbcColumn
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.jdbc.JdbcIndex
 import com.orbitalhq.connectors.jdbc.JdbcTable
 import com.orbitalhq.connectors.jdbc.NamedTemplateConnection
+import com.orbitalhq.connectors.jdbc.drivers.h2.H2DatabaseSupport
 import com.orbitalhq.utils.get
 import org.junit.Before
 import org.junit.Test
@@ -42,7 +42,7 @@ class DatabaseMetadataServiceTest {
 
    @Test
    fun `can test connection`() {
-      connectionBuilder.testConnection(JdbcDriver.H2.metadata.testQuery).get().should.equal(ConnectionSucceeded)
+      connectionBuilder.testConnection(H2DatabaseSupport.jdbcDriverMetadata.testQuery).get().should.equal(ConnectionSucceeded)
    }
 
    @Test

@@ -3,7 +3,6 @@ package com.orbitalhq.connectors.kafka
 import com.jayway.awaitility.Awaitility
 import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.connectors.StreamErrorPublisher
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.HikariJdbcConnectionFactory
@@ -55,7 +54,7 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
       jdbcConnectionRegistry.register(
          JdbcUrlCredentialsConnectionConfiguration(
             "postgres",
-            JdbcDriver.POSTGRES,
+            "POSTGRES",
             JdbcUrlAndCredentials(jdbcUrl, username, password)
          )
       )
@@ -117,7 +116,12 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
          )
       ) { schema ->
          val kafkaStreamManager =
-            KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry, meterRegistry = SimpleMeterRegistry())
+            KafkaStreamManager(
+               connectionRegistry,
+               SimpleSchemaProvider(schema),
+               formatRegistry = formatRegistry,
+               meterRegistry = SimpleMeterRegistry()
+            )
          listOf(
             JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),
             KafkaInvoker(kafkaStreamManager, mock { }, StreamErrorPublisher())
@@ -206,7 +210,12 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
          )
       ) { schema ->
          val kafkaStreamManager =
-            KafkaStreamManager(connectionRegistry, SimpleSchemaProvider(schema), formatRegistry = formatRegistry, meterRegistry = SimpleMeterRegistry())
+            KafkaStreamManager(
+               connectionRegistry,
+               SimpleSchemaProvider(schema),
+               formatRegistry = formatRegistry,
+               meterRegistry = SimpleMeterRegistry()
+            )
          listOf(
             JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),
             KafkaInvoker(kafkaStreamManager, mock {}, StreamErrorPublisher())
