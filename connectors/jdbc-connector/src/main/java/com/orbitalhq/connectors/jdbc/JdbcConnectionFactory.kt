@@ -28,7 +28,7 @@ interface JdbcConnectionFactory {
    fun config(connectionName: String): JdbcConnectionConfiguration
 
    fun dsl(connectionConfiguration: JdbcConnectionConfiguration): DSLContext {
-      DatabaseSupport.forDriver(connectionConfiguration.jdbcDriver)
+      DatabaseSupport.forDriverName(connectionConfiguration.jdbcDriver)
       val dialect = JDBCUtils.dialect(connectionConfiguration.buildUrlAndCredentials().url)
       val datasource = dataSource(connectionConfiguration)
       return DSL.using(

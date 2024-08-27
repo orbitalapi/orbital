@@ -9,6 +9,7 @@ import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.*
 import com.orbitalhq.connectors.jdbc.registry.JdbcConnectionRegistry
 import com.orbitalhq.connections.ConnectionStatus
+import com.orbitalhq.connectors.jdbc.drivers.DatabaseDriverRegistry
 import com.orbitalhq.connectors.registry.ConnectorConfigurationSummary
 import com.orbitalhq.connectors.registry.MutableConnectionRegistry
 import com.orbitalhq.schema.api.SchemaProvider
@@ -45,6 +46,7 @@ class JdbcConnectorService(
    private val connectionRegistry: JdbcConnectionRegistry,
    private val schemaProvider: SchemaProvider,
    private val schemaEditor: LocalSchemaEditingService,
+   private val driverRegistry: DatabaseDriverRegistry,
 ) {
 
    // Have moved much of this to ConnectionsService
@@ -191,7 +193,7 @@ class JdbcConnectorService(
    @PostMapping("/api/packages/{packageUri}/connections/jdbc", params = ["test=true"])
    fun testConnection(@RequestBody connectionConfig: JdbcConnectionConfiguration): Mono<ConnectionStatus> {
       logger.info("Testing connection: $connectionConfig")
-      return JdbcHealthCheckProvider.testConnection(connectionConfig)
+      return JdbcHealthCheckProvider.testConnection(connectionConfig, driverRegistry)
    }
 
    @PreAuthorize("hasAuthority('${VynePrivileges.EditConnections}')")

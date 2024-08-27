@@ -3,6 +3,8 @@ package com.orbitalhq.cockpit.core
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.licensing.License
 import com.orbitalhq.licensing.LicenseManager
+import com.orbitalhq.plugins.LoadedPlugin
+import com.orbitalhq.plugins.PluginLoader
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer
@@ -21,7 +23,8 @@ class ConfigService(
    licenseManager: LicenseManager,
    @Value("\${management.endpoints.web.base-path:/actuator}") actuatorPath: String,
    val featureToggles: FeatureTogglesConfig,
-   val customSettings: CustomSettings
+   val customSettings: CustomSettings,
+   val pluginLoader: PluginLoader,
 ) {
 
    private val configSummary =
@@ -30,7 +33,8 @@ class ConfigService(
          LicenseStatus.from(licenseManager.license),
          actuatorPath,
          featureToggles,
-         customSettings.custom
+         customSettings.custom,
+         pluginLoader.loadedPlugins
       )
 
    @GetMapping("/api/config")
@@ -45,7 +49,8 @@ data class ConfigSummary(
    val licenseStatus: LicenseStatus,
    val actuatorPath: String,
    val featureToggles: FeatureTogglesConfig,
-   val custom: Map<String,Any>
+   val custom: Map<String,Any>,
+   val loadedPlugins: List<LoadedPlugin>
 )
 
 /**

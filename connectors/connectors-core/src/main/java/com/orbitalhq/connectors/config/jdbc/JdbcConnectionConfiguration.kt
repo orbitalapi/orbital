@@ -16,7 +16,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class DefaultJdbcConnectionConfiguration(
    override val connectionName: String,
-   override val jdbcDriver: JdbcDriver,
+   override val jdbcDriver: DatabaseDriverName,
    // connectionParameters must be typed as Map<String,String> (rather than <String,Any>
    // as the Hocon persistence library we're using can't deserialize values from disk into
    // an Any.  If this causes issues, we'll need to wrap the deserialization to coerce numbers from strings.
@@ -25,7 +25,7 @@ data class DefaultJdbcConnectionConfiguration(
    companion object {
       fun forParams(
          connectionName: String,
-         driver: JdbcDriver,
+         driver: DatabaseDriverName,
          connectionParameters: Map<IConnectionParameter, String>
       ): DefaultJdbcConnectionConfiguration {
          return DefaultJdbcConnectionConfiguration(
@@ -55,11 +55,15 @@ data class DefaultJdbcConnectionConfiguration(
 @JsonDeserialize(`as` = DefaultJdbcConnectionConfiguration::class)
 interface JdbcConnectionConfiguration : ConnectorConfiguration {
    override val connectionName: String
-   val jdbcDriver: JdbcDriver
+
+   /**
+    * Exists for backwards compatibility of everyone's connections.conf files
+    */
+   val jdbcDriver: DatabaseDriverName
    fun buildUrlAndCredentials(urlBuilder: JdbcUrlBuilder): JdbcUrlAndCredentials
 
-   override val driverName: String
-      get() = jdbcDriver.name
+   override val driverName: DatabaseDriverName
+      get() = jdbcDriver
    override val type: ConnectorType
       get() = ConnectorType.JDBC
 

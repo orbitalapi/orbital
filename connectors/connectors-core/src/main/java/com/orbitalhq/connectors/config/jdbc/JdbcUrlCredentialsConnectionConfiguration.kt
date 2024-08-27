@@ -8,7 +8,7 @@ import com.orbitalhq.connectors.IConnectionParameter
  */
 data class JdbcUrlCredentialsConnectionConfiguration(
    override val connectionName: String,
-   override val jdbcDriver: JdbcDriver,
+   override val jdbcDriver: DatabaseDriverName,
    val urlAndCredentials: JdbcUrlAndCredentials,
    val params: Map<IConnectionParameter, String> = emptyMap()
 ) : JdbcConnectionConfiguration {

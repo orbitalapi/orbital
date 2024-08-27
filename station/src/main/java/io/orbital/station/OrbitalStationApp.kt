@@ -8,6 +8,8 @@ import com.orbitalhq.cockpit.core.security.VyneUserConfig
 import com.orbitalhq.copilot.CopilotSpringModule
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.licensing.LicenseConfig
+import com.orbitalhq.plugins.PluginLoader
+import com.orbitalhq.plugins.PluginLoaderInitializer
 import com.orbitalhq.schemaServer.core.VersionedSourceLoader
 import com.orbitalhq.schemaServer.core.config.WorkspaceSettings
 import com.orbitalhq.spring.config.DiscoveryClientConfig
@@ -31,6 +33,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
+import java.nio.file.Paths
 
 @SpringBootApplication(
    scanBasePackageClasses = [OrbitalStationApp::class, VersionedSourceLoader::class],
@@ -49,7 +52,7 @@ import org.springframework.context.annotation.Import
    WorkspaceSettings::class,
    DatabaseConfig::class,
 
-)
+   )
 @Import(
    HttpAuthConfig::class,
    ApplicationContextProvider::class,
@@ -65,11 +68,31 @@ class OrbitalStationApp {
    companion object {
       @JvmStatic
       fun main(args: Array<String>) {
+         // Before starting spring, load any plugins so that scanning is effective
+         val pluginLoader: PluginLoader = loadPlugins(args)
+
          val app = SpringApplication(OrbitalStationApp::class.java)
          app.setBannerMode(Banner.Mode.OFF)
          app.setAdditionalProfiles(OrbitalOnly.ORBITAL)
+         app.addInitializers(PluginLoaderInitializer(pluginLoader))
          app.run(*args)
       }
+
+      private fun loadPlugins(args: Array<String>): PluginLoader {
+         val pluginPathsFromArgs = args.filter { it.startsWith("--vyne.plugins.path") }
+            .map { Paths.get(it.split("=")[1]) }
+
+         val defaultPluginPaths = listOf(
+            Paths.get("plugins.conf"),
+            Paths.get(System.getProperty("user.home"), ".orbital/plugins.conf"),
+         )
+
+         val pluginLoader = PluginLoader(pluginPathsFromArgs + defaultPluginPaths)
+         pluginLoader.loadPlugins()
+         return pluginLoader
+      }
+
+
    }
 
 

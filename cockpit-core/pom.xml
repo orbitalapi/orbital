@@ -27,6 +27,11 @@
    <dependencies>
       <dependency>
          <groupId>com.orbitalhq</groupId>
+         <artifactId>plugin-loader</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>taxi-playground-core</artifactId>
          <version>${project.version}</version>
       </dependency>

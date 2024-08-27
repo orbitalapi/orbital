@@ -144,6 +144,8 @@
       <module>policy-evaluator</module>
       <module>avro-message-format</module>
       <module>test-utils</module>
+      <module>plugin-api</module>
+      <module>plugin-loader</module>
    </modules>
    <scm>
       <developerConnection>scm:git:git@gitlab.com:vyne/vyne.git</developerConnection>

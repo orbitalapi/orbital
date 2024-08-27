@@ -1,7 +1,6 @@
 package com.orbitalhq.pipelines.jet.sink.jdbc
 
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.jdbc.buildUrlAndCredentials
 import com.orbitalhq.connectors.jdbc.drivers.snowflake.SnowflakeJdbcUrlBuilder
 import com.orbitalhq.pipelines.jet.BaseJetIntegrationTest
@@ -59,7 +58,7 @@ class JdbcSnowflakeSinkTest : BaseJetIntegrationTest() {
 
       val connection = DefaultJdbcConnectionConfiguration.forParams(
          "test-connection",
-         JdbcDriver.SNOWFLAKE,
+         "SNOWFLAKE",
          connectionParameters = mapOf(
             SnowflakeJdbcUrlBuilder.Parameters.ACCOUNT to "hw62117.eu-west-1",
             SnowflakeJdbcUrlBuilder.Parameters.USERNAME to "anthonycowan",

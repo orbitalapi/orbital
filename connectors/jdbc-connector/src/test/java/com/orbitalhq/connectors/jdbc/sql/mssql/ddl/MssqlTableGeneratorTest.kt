@@ -1,6 +1,5 @@
 package com.orbitalhq.connectors.jdbc.sql.mssql.ddl
 
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.DatabaseMetadataService
@@ -42,7 +41,7 @@ class MssqlTableGeneratorTest {
       mssqlContainer.waitingFor(Wait.forListeningPort())
       connectionDetails = JdbcUrlCredentialsConnectionConfiguration(
          "mssql",
-         JdbcDriver.MSSQL,
+         "MSSQL",
          JdbcUrlAndCredentials(
             "${mssqlContainer.getJdbcUrl()};Database=Northwind",
             mssqlContainer.username,

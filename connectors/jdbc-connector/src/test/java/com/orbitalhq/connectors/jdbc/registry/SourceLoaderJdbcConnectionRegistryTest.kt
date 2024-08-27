@@ -1,13 +1,13 @@
 package com.orbitalhq.connectors.jdbc.registry
 
 import com.google.common.io.Resources
-import com.winterbe.expekt.should
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
-import com.orbitalhq.connectors.config.jdbc.JdbcDriver
+import com.orbitalhq.connectors.jdbc.drivers.postgres.PostgresDbSupport
 import com.orbitalhq.connectors.jdbc.drivers.postgres.PostgresJdbcUrlBuilder
+import com.winterbe.expekt.should
 import org.apache.commons.io.FileUtils
 import org.junit.Rule
 import org.junit.Test
@@ -35,7 +35,7 @@ class SourceLoaderJdbcConnectionRegistryTest {
       val registry = buildRegistry(configFile)
       val connection = DefaultJdbcConnectionConfiguration.forParams(
          "test-db-connection",
-         JdbcDriver.POSTGRES,
+         PostgresDbSupport.driverName,
          connectionParameters = mapOf(
             PostgresJdbcUrlBuilder.Parameters.HOST to "localhost",
 //            PostgresJdbcUrlBuilder.Parameters.PORT to "localhost", // omit port, so it defaults
@@ -77,7 +77,7 @@ class SourceLoaderJdbcConnectionRegistryTest {
       val registry = buildRegistry(configFile)
       val connection = DefaultJdbcConnectionConfiguration.forParams(
          "third-connection",
-         JdbcDriver.POSTGRES,
+         PostgresDbSupport.driverName,
          connectionParameters = mapOf(
             PostgresJdbcUrlBuilder.Parameters.HOST to "our-third-db-server",
             PostgresJdbcUrlBuilder.Parameters.PORT to "2003",

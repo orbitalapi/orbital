@@ -47,7 +47,7 @@ class PolicyEvaluator {
    }
 
    fun evaluate(instance: TypedInstance, context: QueryContext, operationScope: ExecutionScope): TypedInstance {
-      val schema = context.schema
+       val schema = context.schema
       val policyType = getPolicyType(instance, context)
       val policies = findPolicies(schema, policyType)
       // bail early
