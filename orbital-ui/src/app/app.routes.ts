@@ -21,13 +21,13 @@ export const APP_ROUTES = RouterModule.forRoot(
       path: 'catalog',
       loadChildren: () => import('./data-catalog/data-catalog.module').then(m => m.DataCatalogModule),
       canActivate: [AuthGuard],
-      data: {requiredAuthority: VynePrivileges.BrowseCatalog}
+      data: {requiredAuthority: VynePrivileges.BrowseSchema}
     },
     {
       path: 'services',
       loadChildren: () => import('./service-view/service-view.routes').then(m => m.serviceViewRoutes),
       canActivate: [AuthGuard],
-      data: {requiredAuthority: VynePrivileges.BrowseCatalog},
+      data: {requiredAuthority: VynePrivileges.BrowseSchema},
       title: `${UiCustomisations.productName}: Services`
     },
     {

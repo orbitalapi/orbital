@@ -38,7 +38,7 @@ export class SidenavComponent implements OnInit {
       // iconActive: 'outline-explore-active.svg',
       route: 'catalog',
       testId: 'data-catalog-sidebar',
-      requiredAuthority: VynePrivileges.BrowseCatalog
+      requiredAuthority: VynePrivileges.BrowseSchema
     },
     {
       title: 'Projects',

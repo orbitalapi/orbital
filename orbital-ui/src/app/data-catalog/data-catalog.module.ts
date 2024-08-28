@@ -55,14 +55,14 @@ import { UiCustomisations } from '../../environments/ui-customisations';
         path: 'browse',
         component: TypeListComponent,
         canActivate: [AuthGuard],
-        data: { requiredAuthority: VynePrivileges.BrowseCatalog },
+        data: { requiredAuthority: VynePrivileges.BrowseSchema },
         title: `${UiCustomisations.productName}: Catalog`
       },
       {
         path: ':typeName',
         component: TypeViewerContainerComponent,
         canActivate: [AuthGuard],
-        data: { requiredAuthority: VynePrivileges.BrowseCatalog },
+        data: { requiredAuthority: VynePrivileges.BrowseSchema },
         title: `${UiCustomisations.productName}: Catalog`
       }
     ])

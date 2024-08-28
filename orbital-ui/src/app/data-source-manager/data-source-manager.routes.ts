@@ -45,13 +45,13 @@ export const dataSourceManagerRoutes: Route[] = [
             path: 'services/:serviceName',
             component: ServiceViewContainerComponent,
             canActivate: [AuthGuard],
-            data: { requiredAuthority: VynePrivileges.BrowseCatalog },
+            data: { requiredAuthority: VynePrivileges.BrowseSchema },
           },
           {
             path: 'services/:serviceName/:operationName',
             component: OperationViewContainerComponent,
             canActivate: [AuthGuard],
-            data: { requiredAuthority: VynePrivileges.BrowseCatalog },
+            data: { requiredAuthority: VynePrivileges.BrowseSchema },
           },
           {
             path: ':packageUri/:connectionName',

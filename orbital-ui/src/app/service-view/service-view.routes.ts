@@ -9,14 +9,14 @@ export const serviceViewRoutes = [
     path: ':serviceName',
     component: ServiceViewContainerComponent,
     canActivate: [AuthGuard],
-    data: { requiredAuthority: VynePrivileges.BrowseCatalog },
+    data: { requiredAuthority: VynePrivileges.BrowseSchema },
     title: `${UiCustomisations.productName}: Service`
   },
   {
     path: ':serviceName/:operationName',
     component: OperationViewContainerComponent,
     canActivate: [AuthGuard],
-    data: { requiredAuthority: VynePrivileges.BrowseCatalog },
+    data: { requiredAuthority: VynePrivileges.BrowseSchema },
     title: `${UiCustomisations.productName}: Service`
   },
 ]

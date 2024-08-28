@@ -85,7 +85,6 @@ export enum VynePrivileges {
   CancelQuery = 'CancelQuery',
   ViewQueryHistory = 'ViewQueryHistory',
   ViewHistoricQueryResults = 'ViewHistoricQueryResults',
-  BrowseCatalog = 'BrowseCatalog',
   BrowseSchema = 'BrowseSchema',
   EditSchema = 'EditSchema',
   ViewCaskDefinitions = 'ViewCaskDefinitions',
