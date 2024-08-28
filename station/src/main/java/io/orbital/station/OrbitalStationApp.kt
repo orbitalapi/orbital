@@ -80,11 +80,11 @@ class OrbitalStationApp {
 
       private fun loadPlugins(args: Array<String>): PluginLoader {
          val pluginPathsFromArgs = args.filter { it.startsWith("--vyne.plugins.path") }
-            .map { Paths.get(it.split("=")[1]) }
+            .map { it.split("=")[1] }
 
          val defaultPluginPaths = listOf(
-            Paths.get("plugins.conf"),
-            Paths.get(System.getProperty("user.home"), ".orbital/plugins.conf"),
+            Paths.get("plugins.conf").toAbsolutePath().toString(),
+            Paths.get(System.getProperty("user.home"), ".orbital/plugins.conf").toAbsolutePath().toString(),
          )
 
          val pluginLoader = PluginLoader(pluginPathsFromArgs + defaultPluginPaths)
