@@ -10,6 +10,8 @@ import com.orbitalhq.schemas.Relationship
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.utils.ImmutableEquality
 import es.usc.citius.hipster.model.impl.WeightedNode
+import lang.taxi.expressions.Expression
+import lang.taxi.expressions.FunctionExpression
 
 
 /**
@@ -112,11 +114,11 @@ data class EvaluatedPathSet(
                // add a flat cost-per-discovery here.
                // TODO : We should work out the actual discovery cost.
                // We're working on an assumption of 1-hop per param, which often isn't the case.
-               val operation = fromState.instanceValue as RemoteOperation?
-               if (operation == null) {
+               val operationOrExpression = fromState.instanceValue
+               if (operationOrExpression !is RemoteOperation) {
                   action.defaultCost
                } else {
-                  val parametersNotCurrentlyKnown = operation.parameters.filter { parameter -> !facts.hasFactOfType(parameter.type) }
+                  val parametersNotCurrentlyKnown = operationOrExpression.parameters.filter { parameter -> !facts.hasFactOfType(parameter.type) }
                   parametersNotCurrentlyKnown.size * LinkType.OPERATION_INVOCATION.defaultCost
                }
             }

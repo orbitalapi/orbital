@@ -24,6 +24,7 @@ import com.orbitalhq.query.graph.edges.OperationParameterEdgeEvaluator
 import com.orbitalhq.query.graph.edges.QueryBuildingEvaluator
 import com.orbitalhq.query.graph.edges.RequiresParameterEdgeEvaluator
 import com.orbitalhq.query.graph.operationInvocation.DefaultOperationInvocationService
+import com.orbitalhq.query.graph.edges.ExpressionEvaluator
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationEvaluator
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.query.policyManager.DatasourceAwareOperationInvocationServiceDecorator
@@ -139,6 +140,7 @@ interface QueryEngineFactory {
             EnumSynonymEdgeEvaluator(),
             QueryBuildingEvaluator(),
             ArrayMappingAttributeEvaluator(),
+            ExpressionEvaluator(),
             operationInvocationEdgeEvaluator
          )
       }

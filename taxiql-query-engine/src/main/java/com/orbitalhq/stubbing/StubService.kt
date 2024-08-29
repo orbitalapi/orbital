@@ -11,6 +11,7 @@ import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedInstanceConverter
 import com.orbitalhq.models.json.Jackson
+import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.HttpHeaders
 import com.orbitalhq.query.QueryContextEventDispatcher
@@ -291,6 +292,11 @@ class StubService(
    ): StubService {
       this.flowHandlers[stubOperationKey] = handler
       return this
+   }
+   fun addResponse(stubOperationKey: String, json: String) {
+      val operation = schema!!.operations.first { it.name == stubOperationKey }
+      val response = parseJson(schema!!, operation.returnType.paramaterizedName, json)
+      addResponse(stubOperationKey, response)
    }
 
    fun addResponse(

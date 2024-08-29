@@ -63,6 +63,8 @@ object GraphDisplayUtils {
          .replace("-", "")
          .replace("@", "")
          .replace("$", "")
+         .replace(",", "")
+         .replace(" ", "")
    }
 }
 

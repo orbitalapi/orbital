@@ -37,10 +37,10 @@ fun WeightedNode<Relationship, Element, Double>.simplifyPath(): SimplifiedPath {
 }
 
 
-private fun WeightedNode<Relationship, Element, Double>.simplify(): Pair<LinkType,Any>? {
+private fun WeightedNode<Relationship, Element, Double>.simplify(): Pair<LinkType, Any>? {
    return if (this.previousNode() == null) {
       LinkType.START_POINT to this.state().value
-   } else when(this.action()) {
+   } else when (this.action()) {
       Relationship.IS_ATTRIBUTE_OF -> null
       Relationship.HAS_ATTRIBUTE -> LinkType.OBJECT_NAVIGATION to this.state().value
       Relationship.IS_TYPE_OF -> null
@@ -49,12 +49,16 @@ private fun WeightedNode<Relationship, Element, Double>.simplify(): Pair<LinkTyp
       Relationship.REQUIRES_PARAMETER -> null
       Relationship.IS_PARAMETER_ON -> null
       Relationship.IS_INSTANCE_OF -> null
-      Relationship.PROVIDES -> LinkType.OPERATION_INVOCATION to (this.previousNode().state().value.toString() + " returns " + this.state().value)
+      Relationship.PROVIDES -> LinkType.OPERATION_INVOCATION to (this.previousNode()
+         .state().value.toString() + " returns " + this.state().value)
+
       Relationship.EXTENDS_TYPE -> null
       Relationship.CAN_POPULATE -> LinkType.PARAM_POPULATION to this.state().value
-      Relationship.CAN_CONSTRUCT_QUERY ->   LinkType.PARAM_POPULATION to this.state().value
+      Relationship.CAN_CONSTRUCT_QUERY -> LinkType.PARAM_POPULATION to this.state().value
       Relationship.IS_SYNONYM_OF -> null
       Relationship.CAN_ARRAY_MAP_TO -> null
+      Relationship.EVALUATES_RETURNING -> LinkType.OPERATION_INVOCATION to (this.previousNode()
+         .state().value.toString() + " returns " + this.state().value)
    }
 }
 
