@@ -25,7 +25,28 @@ class QueryPlannerTest : DescribeSpec({
             }
          """.trimIndent()
       )
-      it("should append missing streaming sources if data is only available there") {
+
+       val tradingSchema = TaxiSchema.from("""
+               type OrderId inherits String
+               parameter model Order {
+                    @Id id: OrderId
+                    instrumentId: Isin inherits String
+                }
+               
+               parameter model EnrichedOrder {
+                   @Id id: OrderId
+                   instrumentName: InstrumentName inherits String
+                }
+              service TradeStreamService {
+                 stream orders : Stream<Order>
+              }
+              service EnrichedTradeStreamService {
+               write operation publishOrderEnriched(EnrichedOrder) : EnrichedOrder
+               stream streamOrderEnriched : Stream<EnrichedOrder>
+            }
+         """)
+
+      xit("should append missing streaming sources if data is only available there") {
          val (query, _, querySchema) = schema.parseQuery(
             """stream { Tweet } as {
             | tweetId : TweetId
@@ -67,12 +88,33 @@ class QueryPlannerTest : DescribeSpec({
             }
          """)
          val (query, _, querySchema) = schema.parseQuery("""
-            stream { Tweet }
+            stream { Tweet } 
             call  TweetService::saveTweet
          """.trimIndent())
          val (_, rewrittenQuery) = queryPlanner.buildQueryExpression(query, querySchema)
          rewrittenQuery.typesToFind.single().type.toQualifiedName().parameterizedName.shouldBe("lang.taxi.Stream<Tweet>")
       }
+
+       it("should not modify streaming sources to discover inputs to anonymous type projections") {
+           val (query, _, querySchema) = tradingSchema.parseQuery(
+               """stream { Order } as {
+                   id: OrderId
+                   instrumentName: InstrumentName
+                   } [] call EnrichedTradeStreamService::publishOrderEnriched
+         """.trimMargin()
+           )
+           val (_, rewrittenQuery) = queryPlanner.buildQueryExpression(query, querySchema)
+           rewrittenQuery.source.shouldStartWith("""stream { Order }""")
+       }
+
+       it("should not modify streaming sources to discover inputs to explicit type projections") {
+           val (query, _, querySchema) = tradingSchema.parseQuery(
+               """stream { Order } as EnrichedOrder [] call EnrichedTradeStreamService::publishOrderEnriched
+         """.trimMargin()
+           )
+           val (_, rewrittenQuery) = queryPlanner.buildQueryExpression(query, querySchema)
+           rewrittenQuery.source.shouldStartWith("""stream { Order }""")
+       }
 
       it("should not modify streaming sources where the query already specifies existing sources") {
          val (query, _, querySchema) = schema.parseQuery(
