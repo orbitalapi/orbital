@@ -61,6 +61,49 @@ class QueryExpressionBuilder(private val queryPlanner: QueryPlanner) {
             // Here, we rewrite the discovery type from Stream<A> to Stream<A|B>
             // as if the user had written:
             // stream { A | B }
+            /** Below is commented out as it has unwanted side effects. Consider:
+            model Order {
+               @Id
+               orderId: OrderId
+               traderId: TraderId
+               isin: Isin
+            }
+
+            model EnrichedOrder {
+               @Id
+               orderId: OrderId
+               traderName: TraderName
+               ticker: Ticker
+               tickSize: TickSize
+            }
+
+            service OrderService {
+               stream orders : Stream<Order>
+            }
+
+            service EnrichedOrdersService {
+               write operation publishOrderEnriched(EnrichedOrder) : EnrichedOrder
+               stream streamOrderEnriched : Stream<EnrichedOrder>
+            }
+
+            serviceOrderEnrichmentServices {
+              // Bunch of Rest endpoints to provide Trader Details for a given traderId, Instrument details (ticker, tick size, issuer etc.) for a given instrumentId
+            }
+
+            In this scenario the usual intent is to pull the stream of orders, enrich them (i.e. transform then into EnrichedOrders) and publish the enriched orders to another kafka topic, hz or persist them into a table
+            The interesting bit in this schema is the following stream operation that pulls EnrichedOrders:
+
+            stream streamOrderEnriched : Stream<EnrichedOrder>
+
+            When such operation exists, query re-writing yields unexpected actions. For instance, given:
+
+            stream { Order } as EnrichedOrder[] call EnrichedTradeStreamService::publishOrderEnriched
+
+            below commented code re-writes the query as stream { Order | EnrichedOrder } and hence triggers stream subscriptions to both Orders and EnrichedOrders.
+            Same issue occurs with a matching anonymous query as well:
+            stream { Order } as { ...fields from EnrichedOrder }[] call EnrichedTradeStreamService::publishOrderEnriched
+
+
             StreamType.isStreamTypeName(discoveryType.typeName) && queryMetadata.minimumStreamOperations.size > 1 -> {
                val amendedTaxiQL = appendMissingStreamSourcesToTaxiQL(queryMetadata, discoveryType, taxiQl)
                if (amendedTaxiQL == taxiQl.source) {
@@ -73,6 +116,7 @@ class QueryExpressionBuilder(private val queryPlanner: QueryPlanner) {
 
                }
             }
+            **/
 
             else -> schema.type(discoveryType.typeName.toVyneQualifiedName())
          }
