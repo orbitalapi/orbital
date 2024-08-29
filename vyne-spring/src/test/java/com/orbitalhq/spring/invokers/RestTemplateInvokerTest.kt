@@ -823,7 +823,6 @@ namespace vyne {
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
             .setBody("""[ { "name" : "Jimmy" }]""")
-
       }
       vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""")
          .rawObjects()
@@ -834,6 +833,42 @@ namespace vyne {
          assertEquals(HttpMethod.GET.name(), request.method)
       }
    }
+
+   @Test
+   fun `does not use primitives to populate query params`() = runBlocking{
+      val vyne = testVyne(
+         """
+            type ApiKey inherits String
+            model Person {
+               name : Name inherits String
+            }
+
+            service PersonService {
+               @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people")
+               operation listPeople(
+                  @taxi.http.QueryVariable(value = "apiKey") apiKey: ApiKey,
+                  // This should not be populated
+                  @taxi.http.QueryVariable(value = "sortOrder") sortOrder: String?
+               ):Person[]
+            }
+         """, invoker = Invoker.RestTemplate
+      )
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+      }
+      vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""")
+         .rawObjects()
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/people?apiKey=hello", request.path)
+         assertEquals(HttpMethod.GET.name(), request.method)
+      }
+
+   }
+
 
    @Test
    fun `request body is populated on request`(): Unit = runBlocking {
