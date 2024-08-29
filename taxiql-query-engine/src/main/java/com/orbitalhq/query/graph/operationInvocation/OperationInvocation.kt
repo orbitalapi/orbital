@@ -110,18 +110,19 @@ class DefaultOperationInvocationService(
          // Filter out the params that we've already been provided
          .filter { requiredParam -> providedParamValues.none { (providedParam, _) -> requiredParam == providedParam } }
          .map { requiredParam ->
-            val preferredParam = candidateParamValues.firstOrNull { it.type.resolvesSameAs(requiredParam.type) }
+            val preferredParam = candidateParamValues.firstOrNull { it.type.isAssignableTo(requiredParam.type) }
             when {
+               requiredParam.type.isPrimitive -> {
+                  logger.warn { "Operation ${operation.qualifiedName} has a parameter ${requiredParam.name} with type ${requiredParam.type} - constructing requests with primtiive types is not supported - use a semantic type instead" }
+                  requiredParam to TypedNull.create(requiredParam.type)
+               }
                preferredParam != null -> requiredParam to preferredParam
                preferredParamsByType.containsKey(requiredParam.type) -> requiredParam to preferredParamsByType.getValue(
                   requiredParam.type
                )
 
                context.hasFactOfType(requiredParam.type) -> requiredParam to context.getFact(requiredParam.type)
-               requiredParam.type.isPrimitive -> {
-                  logger.warn { "Operation ${operation.qualifiedName} has a parameter ${requiredParam.name} with type ${requiredParam.type} - constructing requests with primtiive types is not supported - use a semantic type instead" }
-                  requiredParam to TypedNull.create(requiredParam.type)
-               }
+
 
                else -> {
                   val queryNode = QuerySpecTypeNode(requiredParam.type)
