@@ -9,7 +9,8 @@ enum class LinkType(val defaultCost: Double) {
    START_POINT(defaultCost = 0.0),
    OBJECT_NAVIGATION(defaultCost = 0.01),
    PARAM_POPULATION(defaultCost = 0.01),
-   OPERATION_INVOCATION(defaultCost = 5.0)
+   OPERATION_INVOCATION(defaultCost = 5.0),
+   EXPRESSION_EVALUATION(defaultCost = 0.1),
 }
 
 enum class Relationship(
@@ -55,6 +56,7 @@ enum class Relationship(
    CAN_CONSTRUCT_QUERY("Can construct query", LinkType.PARAM_POPULATION),
    IS_INSTANCE_OF("Is instanceOfType of", LinkType.OBJECT_NAVIGATION),
    PROVIDES("provides", LinkType.OPERATION_INVOCATION),
+   EVALUATES_RETURNING("evaluates returning", LinkType.EXPRESSION_EVALUATION),
    EXTENDS_TYPE("extends", LinkType.OBJECT_NAVIGATION),
    // We don't penalize Is Can Populate, as we want to try the same value on different services.
    // Penalizing this edge will discourage repeat attempts to use the same value in different places

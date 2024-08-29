@@ -10,12 +10,16 @@ import com.orbitalhq.query.SearchGraphExclusion
 import com.orbitalhq.query.excludedValues
 import com.orbitalhq.query.graph.edges.EvaluatableEdge
 import com.orbitalhq.schemas.*
+import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.StrategyPerformanceProfiler
 import es.usc.citius.hipster.graph.GraphEdge
 import es.usc.citius.hipster.graph.HipsterDirectedGraph
+import lang.taxi.expressions.Expression
+import lang.taxi.expressions.FunctionExpression
+import lang.taxi.expressions.TypeExpression
 import lang.taxi.services.OperationScope
 import mu.KotlinLogging
-import java.util.*
+import kotlin.math.exp
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
 
@@ -42,7 +46,9 @@ enum class ElementType {
    QUERY_SPEC,
 
    // Only used for constructing display graphs
-   SERVICE;
+   SERVICE,
+
+   EXPRESSION;
 }
 
 @Deprecated("Do we still need this?")
@@ -90,6 +96,7 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
    override fun hashCode(): Int {
       return cachedHashCode
    }
+
    fun graphNode(): Element {
 //      return if (this.elementType == ElementType.INSTANCE) {
 //         val typeName = (value as TypedInstance).type.name.fullyQualifiedName
@@ -123,6 +130,10 @@ data class Element(val value: Any, val elementType: ElementType, val instanceVal
 fun Type.asElement(): Element = type(this)
 fun type(name: String): Element {
    return Element(name, ElementType.TYPE)
+}
+
+fun expression(expression: Expression): Element {
+   return Element(expression.asTaxi(), ElementType.EXPRESSION, expression)
 }
 
 fun type(type: Type): Element {
@@ -326,16 +337,10 @@ class VyneGraphBuilder(
          type.inherits.forEach { inheritedType ->
             addConnection(typeNode, type(inheritedType), Relationship.EXTENDS_TYPE)
          }
-// MP 16-Apr-23 - Formatted types are no longer a thing.
-//         type.unformattedTypeName?.let { unformattedType ->
-//            // A formatted value can be populated by it's unformatted value,
-//            // and vice versa
-//            // Note: Is CanPopulate the right relationship here? Might need another one.
-//            val unformattedTypeNode = type(unformattedType.parameterizedName)
-//            addConnection(typeNode, unformattedTypeNode, Relationship.CAN_POPULATE)
-//            addConnection(unformattedTypeNode, typeNode, Relationship.CAN_POPULATE)
-//         }
 
+         if (type.hasExpression) {
+            connections.addAll(buildExpressionTypeConnections(type, typeNode))
+         }
          //if (!type.isClosed) {
          type.attributes.map { (attributeName, attributeType) ->
             val attributeQualifiedName = attributeFqn(typeFullyQualifiedName, attributeName)
@@ -359,9 +364,38 @@ class VyneGraphBuilder(
       return connections
    }
 
+   private fun buildExpressionTypeConnections(
+      type: Type,
+      typeNode: Element
+   ): List<GraphConnection> {
+      val connections = mutableListOf<GraphConnection>()
+      val expression = type.expression!!
+      val expressionNode = expression(expression)
+//      connections.addConnection(expressionNode, typeNode, Relationship.EVALUATES_RETURNING)
+
+      if (expression is FunctionExpression) {
+         expression.inputs
+            .filterIsInstance<TypeExpression>()
+            .forEach { typeExpression ->
+               val paramNode = parameter(typeExpression.type.toVyneQualifiedName().parameterizedName)
+               connections.addConnection(expressionNode, paramNode, Relationship.REQUIRES_PARAMETER)
+               connections.addConnection(paramNode, expressionNode, Relationship.IS_PARAMETER_ON)
+            }
+      }
+      // Build the resulting instance.
+      // It connects to it's type, but also to the attributes that are
+      // now traversable, as we have an actual instance of the thing
+      // Use the actual type provided  (not the return type of the expression), as
+      // the expression may return something less specific (eg: type SomethingRich = concat(A,B))
+      val resultInstanceFqn = type.qualifiedName.parameterizedName
+      connections.addAll(buildProvidedInstancesConnections(resultInstanceFqn, schema, expressionNode, providesReslationship = Relationship.EVALUATES_RETURNING))
+      return connections
+   }
+
    private fun attributeFqn(typeFullyQualifiedName: String, attributeName: AttributeName): String {
       return "$typeFullyQualifiedName/$attributeName"
    }
+
 
    private fun buildServiceConnections(
       schema: Schema,
@@ -486,7 +520,8 @@ class VyneGraphBuilder(
       instanceFqn: String,
       schema: Schema,
       provider: Element? = null,
-      value: TypedInstance? = null
+      value: TypedInstance? = null,
+      providesReslationship: Relationship = Relationship.PROVIDES
    ): List<GraphConnection> {
       val connections = mutableListOf<GraphConnection>()
       fun addConnection(fromEdge: Element, toEdge: Element, relationship: Relationship) {
@@ -501,7 +536,7 @@ class VyneGraphBuilder(
          providedInstance(instanceFqn)
       }
       if (provider != null) {
-         addConnection(provider, providedInstance, Relationship.PROVIDES)
+         addConnection(provider, providedInstance, providesReslationship)
       }
 
       val type = schema.type(instanceFqn)
@@ -815,7 +850,12 @@ class VyneGraphBuilder(
       connections.addConnection(memberInstance, parameter(type.name.parameterizedName), Relationship.CAN_POPULATE)
       connections.addConnection(memberInstance, type(type), Relationship.IS_INSTANCE_OF)
       val nestedConnections = type.attributes.entries.flatMap { (fieldName, field) ->
-         buildProvidedInstanceAttributeConnections(field.type.parameterizedName, fieldName, providedInstanceMember, schema.type(field.type))
+         buildProvidedInstanceAttributeConnections(
+            field.type.parameterizedName,
+            fieldName,
+            providedInstanceMember,
+            schema.type(field.type)
+         )
       }
 
       return connections + nestedConnections
