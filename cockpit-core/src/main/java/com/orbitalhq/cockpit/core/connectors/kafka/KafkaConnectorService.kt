@@ -11,6 +11,8 @@ import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.registry.ConnectorConfigurationSummary
 import com.orbitalhq.connectors.registry.MutableConnectionRegistry
 import com.orbitalhq.security.VynePrivileges
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -41,7 +43,12 @@ class KafkaConnectorService(
       testConnection(connectionConfig)
       val packageIdentifier = PackageIdentifier.fromUriSafeId(packageUri)
       val connectionEditor = connectionRegistry as MutableConnectionRegistry<KafkaConnectionConfiguration>
-      val result = connectionRegistry.register(packageIdentifier,connectionConfig)
+      // Move the blockCall to the I/O dispatcher ...
+      // Otherwsie we get:
+      // block()/blockFirst()/blockLast() are blocking, which is not supported in thread reactor-http-epoll-11
+      val result = withContext(Dispatchers.IO) {
+         connectionRegistry.register(packageIdentifier,connectionConfig)
+      }
       return ConnectorConfigurationSummary(packageIdentifier,connectionConfig, messages = result.messages)
    }
 }

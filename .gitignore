@@ -230,5 +230,7 @@ fallback-license.json
 /historyPersistenceQueue9023/
 /historyPersistenceQueue9024/
 
+workspace.conf
+
 license-report.md
 licenses.csv
