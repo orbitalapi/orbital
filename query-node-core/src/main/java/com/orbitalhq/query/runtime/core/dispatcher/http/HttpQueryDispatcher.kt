@@ -5,6 +5,7 @@ import com.orbitalhq.query.runtime.CompressedQueryResultWrapper
 import com.orbitalhq.query.runtime.QueryMessage
 import com.orbitalhq.query.runtime.QueryMessageCborWrapper
 import com.orbitalhq.query.runtime.core.dispatcher.StreamingQueryDispatcher
+import com.orbitalhq.query.runtime.core.gateway.RoutedQueryResponse
 import com.orbitalhq.utils.formatAsFileSize
 import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
@@ -49,10 +50,10 @@ class HttpQueryDispatcher(
       resultMode: ResultMode,
       arguments: Map<String, Any?>,
       principal: Principal?
-   ): Mono<Any> {
+   ): RoutedQueryResponse {
       val message = messageFactory.buildQueryMessage(query, clientQueryId, mediaType, resultMode, arguments)
 
-      return dispatchQuery(message, principal)
+      return RoutedQueryResponse(dispatchQuery(message, principal), emptyMap())
 //         .flatMapIterable { value ->
 //            if (value is Iterable<*>) {
 //               value

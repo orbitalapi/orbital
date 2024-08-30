@@ -3,7 +3,6 @@ package com.orbitalhq.query
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.RawObjectMapper
 import com.orbitalhq.models.TypeNamedInstanceMapper
 import com.orbitalhq.models.TypedInstance
@@ -12,15 +11,7 @@ import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onStart
-import java.time.Duration
-import java.time.Instant
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class QueryResult(
@@ -48,7 +39,10 @@ data class QueryResult(
     * Should include any anonymous types etc., not present in the main schema
     */
    @field:JsonIgnore
-   val schema: Schema
+   val schema: Schema,
+
+   @field:JsonIgnore
+   override val responseHeaders: Map<String, List<String>>? = null
 ) : QueryResponse {
    override val queryResponseId: String = queryId
    val duration = profilerOperation?.duration

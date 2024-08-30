@@ -22,7 +22,9 @@ data class FailedSearchResponse(
    override val clientQueryId: String? = null,
 
    @field:JsonIgnore
-   override val responseType: Type? = null
+   override val responseType: Type? = null,
+   @field:JsonIgnore
+   override val responseHeaders: Map<String, List<String>>? = null
 
 
 ) : FailedQueryResponse {

@@ -4,17 +4,12 @@ import com.orbitalhq.errors.QueryErrors
 import com.orbitalhq.models.EvaluationValueSupplier
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
-import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.functions.NamedFunctionInvoker
 import com.orbitalhq.models.functions.functionFailed
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
-import com.orbitalhq.schemas.toVyneQualifiedName
 import lang.taxi.functions.FunctionAccessor
-import lang.taxi.functions.stdlib.Errors
-import lang.taxi.functions.stdlib.StdLib
-import lang.taxi.functions.stdlib.Throw
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
 
@@ -41,7 +36,10 @@ object Throw : NamedFunctionInvoker {
          failWithException("Attempted to call throw() without passing an exception to throw")
       }
 
-      val exception = QueryErrors.toException(error, schema)
+
+      val responseHeaders = objectFactory.inPlaceQueryEngine?.populateResponseHeaders() ?: emptyMap()
+
+      val exception = QueryErrors.toException(error, schema, responseHeaders)
       throw exception
    }
 

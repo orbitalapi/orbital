@@ -6,11 +6,9 @@ import com.orbitalhq.errors.OrbitalQueryException
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.json.Jackson
-import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.fqn
 import lang.taxi.annotations.HttpService
 import lang.taxi.annotations.HttpService.Companion.RESPONSE_BODY_TYPE_NAME
-import lang.taxi.types.ObjectType
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 
@@ -86,7 +84,10 @@ object HttpErrorResponse {
       exception: OrbitalQueryException,
       objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
 
-   ): Pair<HttpStatus, Any> {
-      return getErrorCodeAndPayload(exception.error, objectMapper)
+   ): OrbitalQueryExceptionHttpInfo {
+      val (status, body) = getErrorCodeAndPayload(exception.error, objectMapper)
+      return OrbitalQueryExceptionHttpInfo(status, body, exception.responseHeaders)
    }
+
+   data class OrbitalQueryExceptionHttpInfo(val status: HttpStatus, val body: Any, val responseHeaders: Map<String, List<String>>)
 }

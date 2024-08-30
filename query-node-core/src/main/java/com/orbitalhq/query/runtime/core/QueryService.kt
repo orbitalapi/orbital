@@ -113,6 +113,13 @@ class QueryService(
          .header("x-vyne-query-id", queryResult.queryId)
          .header("x-vyne-client-query-id", queryResult.clientQueryId)
          .header(HttpHeaders.CONTENT_TYPE, contentType)
+         .headers { httpHeaders ->
+            queryResult.responseHeaders?.forEach { (t, u) ->
+               u.forEach { headerValue ->
+                  httpHeaders.add(t, headerValue)
+               }
+            }
+         }
          .body(body)
    }
 

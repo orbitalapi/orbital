@@ -6,10 +6,8 @@ import com.orbitalhq.errors.QueryErrors
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.testVyne
 import io.kotest.core.spec.style.DescribeSpec
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import lang.taxi.annotations.HttpService
-import org.springframework.http.HttpStatus
 
 class HttpErrorResponseTest : DescribeSpec({
    describe("Converting exceptions to http responses") {
@@ -82,8 +80,8 @@ import taxi.http.ResponseBody
    ).first
 }
 
-private fun Vyne.getErrorCodeAndPayload(typeName: String, errorJson: String): Pair<HttpStatus, Any> {
+private fun Vyne.getErrorCodeAndPayload(typeName: String, errorJson: String): HttpErrorResponse.OrbitalQueryExceptionHttpInfo {
    val error = this.parseJson(typeName, errorJson)
-   val exception = QueryErrors.toException(error, this.schema)
+   val exception = QueryErrors.toException(error, this.schema, mapOf())
    return HttpErrorResponse.getErrorCodeAndPayload(exception)
 }

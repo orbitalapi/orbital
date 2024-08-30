@@ -1,12 +1,11 @@
 package com.orbitalhq.errors
 
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.schemas.Schema
 
 object QueryErrors {
-   fun toException(error: TypedInstance, schema: Schema): OrbitalQueryException {
+   fun toException(error: TypedInstance, schema: Schema, responseHeaders: Map<String, List<String>>): OrbitalQueryException {
       // TODO ... here we should convert to the appropriate
       // OrbitalQueryException subtype defined below, falling back to a
       // OrbitalQueryException if none exist
@@ -20,7 +19,7 @@ object QueryErrors {
 
       }
       return when (error.type.paramaterizedName) {
-         else -> OrbitalQueryException(errorMessage, error)
+         else -> OrbitalQueryException(errorMessage, error, responseHeaders)
       }
 
    }
@@ -29,4 +28,4 @@ object QueryErrors {
  * base type for all taxi initiated errors
  * see: https://projects.notional.uk/youtrack/articles/ORB-A-27/Error-Handling
  */
-open class OrbitalQueryException(message: String?, val error: TypedInstance) : RuntimeException(message)
+open class OrbitalQueryException(message: String?, val error: TypedInstance, val responseHeaders: Map<String, List<String>>) : RuntimeException(message)

@@ -5,6 +5,7 @@ import lang.taxi.annotations.HttpHeader
 import lang.taxi.annotations.HttpPathVariable
 import lang.taxi.annotations.HttpQueryVariable
 import lang.taxi.annotations.HttpRequestBody
+import lang.taxi.annotations.HttpResponseHeader
 import lang.taxi.query.FactValue
 import lang.taxi.query.Parameter
 import lang.taxi.query.TaxiQLQueryString
@@ -85,7 +86,10 @@ data class RoutedQuery(
                      )
                   }
             }
-            // TODO : Others, lke query string, etc
+
+            responseHeaderName(parameter) != null -> {
+               Mono.justOrEmpty(null)
+            }
 
             // TODO : This should result in a BadRequest, somehow...
             else -> Mono.error(
@@ -112,6 +116,10 @@ data class RoutedQuery(
 
       private fun headerVariableName(parameter: Parameter): String? {
          return parameter.annotation(HttpHeader.NAME)?.let { it.parameters["name"]?.toString() }
+      }
+
+      private fun responseHeaderName(parameter: Parameter): String? {
+         return parameter.annotation(HttpResponseHeader.NAME)?.let { it.defaultParameterValue?.toString() }
       }
    }
 }

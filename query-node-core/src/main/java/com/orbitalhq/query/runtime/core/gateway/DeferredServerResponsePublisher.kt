@@ -1,7 +1,6 @@
 package com.orbitalhq.query.runtime.core.gateway
 
 import com.orbitalhq.errors.OrbitalQueryException
-import com.orbitalhq.schemas.Schema
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
@@ -29,14 +28,23 @@ object DeferredServerResponsePublisher {
     * @param source The source Flux to be wrapped.
     * @return A Mono<ServerResponse> that will emit a response based on the source Flux.
     */
-   fun wrapFlux(source: Flux<out Any>): Mono<ServerResponse> {
+   fun wrapFlux(source: Flux<out Any>, responseHeaders: Map<String, List<String>>): Mono<ServerResponse> {
       return deferErrorUntilFirstResponse(source) { safeFlux ->
          // Return an OK response with the remaining flux as the body
-         ServerResponse.ok().body(safeFlux)
+         ServerResponse
+            .ok()
+            .headers {
+               responseHeaders.forEach { responseHeader ->
+                  responseHeader.value.forEach { responseHeaderValue ->
+                     it.add(responseHeader.key, responseHeaderValue)
+                  }
+               }
+            }
+            .body(safeFlux)
       }
    }
 
-   fun wrapEventStreamFlux(source: Flux<out Any>): Mono<ServerResponse> {
+   fun wrapEventStreamFlux(source: Flux<out Any>, responseHeaders: Map<String, List<String>>): Mono<ServerResponse> {
       return deferErrorUntilFirstResponse(source) { safeFlux ->
          val serverSentEvents = safeFlux.map { message ->
             ServerSentEvent.builder<Any>()
@@ -45,6 +53,13 @@ object DeferredServerResponsePublisher {
          }
          ServerResponse.ok()
             .contentType(MediaType.TEXT_EVENT_STREAM)
+            .headers {
+               responseHeaders.forEach { responseHeader ->
+                  responseHeader.value.forEach { responseHeaderValue ->
+                     it.add(responseHeader.key, responseHeaderValue)
+                  }
+               }
+            }
             .body(BodyInserters.fromServerSentEvents(serverSentEvents))
       }
    }
@@ -69,8 +84,15 @@ object DeferredServerResponsePublisher {
       when (error) {
          // Handle OrbitalQueryException with custom status
          is OrbitalQueryException -> {
-            val (statusCode, errorBody) = HttpErrorResponse.getErrorCodeAndPayload(error)
+            val (statusCode, errorBody, responseHeaders) = HttpErrorResponse.getErrorCodeAndPayload(error)
             ServerResponse.status(statusCode)
+               .headers { headersConsumer ->
+                  responseHeaders.forEach { (name, values) ->
+                     values.forEach { value ->
+                        headersConsumer.add(name, value)
+                     }
+                  }
+               }
                .bodyValue(errorBody)
          }
          // Handle other exceptions as internal server errors
@@ -79,9 +101,18 @@ object DeferredServerResponsePublisher {
             .bodyValue(error.message ?: "A ${error::class.simpleName} was thrown")
       }
 
-   fun wrapMono(mono: Mono<Any>): Mono<out ServerResponse> {
+   fun wrapMono(mono: Mono<Any>, responseHeaders: Map<String, List<String>>): Mono<out ServerResponse> {
       return mono.flatMap { value ->
-         ServerResponse.ok().bodyValue(value)
+         ServerResponse
+            .ok()
+            .headers {
+               responseHeaders.forEach { responseHeader ->
+                  responseHeader.value.forEach { responseHeaderValue ->
+                     it.add(responseHeader.key, responseHeaderValue)
+                  }
+               }
+            }
+            .bodyValue(value)
       }.onErrorResume { handleError(it) }
    }
 }

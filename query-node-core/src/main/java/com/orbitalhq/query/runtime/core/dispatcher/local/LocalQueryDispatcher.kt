@@ -4,10 +4,10 @@ import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.query.runtime.core.dispatcher.StreamingQueryDispatcher
+import com.orbitalhq.query.runtime.core.gateway.RoutedQueryResponse
 import kotlinx.coroutines.runBlocking
 import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
-import org.reactivestreams.Publisher
 import org.springframework.security.core.Authentication
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -39,7 +39,7 @@ class LocalQueryDispatcher(
       resultMode: ResultMode,
       arguments: Map<String, Any?>,
       principal: Principal?
-   ): Publisher<Any> {
+   ): RoutedQueryResponse {
       // Note: This isn't actually a suspend function.
       // All the work happens in the returned Flux<> / Flow<>,
       // we just need to fix the underling signatures.
@@ -62,7 +62,8 @@ class LocalQueryDispatcher(
          }
 
       }
-      return when (responseEntity.body) {
+      val responseHeaders = responseEntity.headers.map { it.key to it.value}.toMap()
+      val response =  when (responseEntity.body) {
          is Flux<*> -> {
             (responseEntity.body!! as Flux<Any>).doOnError { error ->
                Flux.error<Any>(error)
@@ -73,6 +74,8 @@ class LocalQueryDispatcher(
          }*/
          else -> error("Unhandled usecase: ${responseEntity.body::class.simpleName}")
       }
+
+      return RoutedQueryResponse(response, responseHeaders)
    }
 
    override fun publishResultStream(name: QualifiedName, principal: Principal?): Flux<Any> {
