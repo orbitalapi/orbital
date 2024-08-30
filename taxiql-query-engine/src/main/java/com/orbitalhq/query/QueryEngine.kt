@@ -1,11 +1,11 @@
 package com.orbitalhq.query
 
 import com.google.common.base.Stopwatch
-import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.FactSetId
 import com.orbitalhq.FactSetMap
 import com.orbitalhq.FactSets
 import com.orbitalhq.ModelContainer
+import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.DataSource
@@ -301,7 +301,6 @@ class StatefulQueryEngine(
       // We're capturing metrics inside projections
       // as for streaming queries, this is where the bulk of the work happens.
       // This doesn't lead to nested metrics, as only streaming queries are propogating their metrics tags
-      val startTime = Instant.now()
       val isProjectingCollection =
          context.facts.isNotEmpty() && context.facts.stream().allMatch { it is TypedCollection }
 
@@ -395,6 +394,7 @@ class StatefulQueryEngine(
          paramValues
       )
 
+
       return QueryResult(
          spec,
          resultFlow,
@@ -404,7 +404,8 @@ class StatefulQueryEngine(
          queryId = context.queryId,
          responseType = spec.type,
          onCancelRequestHandler = { context.requestCancel() },
-         schema = schema
+         schema = schema,
+         responseHeaders = searchContext.populateResponseHeaders()
       )
    }
 
@@ -607,7 +608,8 @@ class StatefulQueryEngine(
          clientQueryId = context.clientQueryId,
          responseType = queryResult.querySpec.type,
          onCancelRequestHandler = { context.requestCancel() },
-         schema = schema
+         schema = schema,
+         responseHeaders = context.populateResponseHeaders()
       )
 
    }

@@ -2,10 +2,13 @@ package com.orbitalhq.query.runtime.core.gateway
 
 import com.jayway.awaitility.Awaitility
 import com.nhaarman.mockito_kotlin.*
+import com.orbitalhq.AuthClaimType
 import com.orbitalhq.AuthClaimType.AuthClaimsTypeDefinition
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.VyneProvider
+import com.orbitalhq.errors.ErrorType
+import com.orbitalhq.errors.ErrorType.ErrorTypeDefinition
 import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.metrics.QueryMetricsReporter
@@ -28,6 +31,8 @@ import com.orbitalhq.spring.SimpleVyneProvider
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.spring.invokers.RestTemplateInvoker
 import com.winterbe.expekt.should
+import io.kotest.matchers.shouldBe
+import org.hamcrest.CoreMatchers
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -50,6 +55,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.security.Principal
+import java.time.Duration
 import java.util.concurrent.TimeUnit
 
 //@SpringBootTest
@@ -83,17 +89,28 @@ class QueryRequestHandlerTest {
     @Autowired
     lateinit var schemaProvider: SchemaProvider
 
+    companion object {
+        const val CsvQueryEndPoint = "/api/q/csv"
+        const val FilmRatingQueryEndPoint = "/api/q/films"
+        const val CorrelationHeaderName = "x-api-correlationId"
+        const val StreamProvidersQueryEndPoint = "/api/q/streamProviders"
+    }
+
    @Test
    fun `can send csv in payload and project and get a json response back as part of vyne http endpoint query`() {
        val schema = schemaProvider.schema
-      schemaStore.setSchema(schema)
+       schemaStore.setSchema(schema)
+       mockWebServerRule.prepareResponse { response ->
+           //Response is not important as the operation returns void in the schema.
+           response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody("""{ "status" : "OK" }""")
+       }
 
       Awaitility.await().atMost(60000, TimeUnit.SECONDS).until<Boolean> { handler.routes.isNotEmpty() }
        val orbitalHttpQueryCorrelationId = "correlationId-1"
-      val result = webClient.post()
-         .uri("/api/q/csv")
+       val result = webClient.post()
+         .uri(CsvQueryEndPoint)
          .contentType(MediaType.parseMediaType("text/csv"))
-          .header("x-api-correlationId", orbitalHttpQueryCorrelationId)
+          .header(CorrelationHeaderName, orbitalHttpQueryCorrelationId)
          .body(BodyInserters.fromValue("givenName,surname\nfoo,bar"))
          .exchange()
          .expectStatus().isOk
@@ -101,8 +118,69 @@ class QueryRequestHandlerTest {
 
       val responseBody = result.responseBody.blockLast()
       responseBody["status"].should.equal("OK")
-       mockWebServerRule.takeRequest().headers["x-api-correlationId"]!!.should.equal(orbitalHttpQueryCorrelationId)
+       mockWebServerRule.takeRequest().headers[CorrelationHeaderName]!!.should.equal(orbitalHttpQueryCorrelationId)
    }
+
+    @Test
+    fun `can accept value through request headers and echo them back in response headers`() {
+        val schema = schemaProvider.schema
+        schemaStore.setSchema(schema)
+        mockWebServerRule.prepareResponse { response ->
+            //Response is not important as the operation returns void in the schema.
+            response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+                .setBody("""{ "filmId" : 1, "rating": "Good" }""")
+        }
+
+        val orbitalHttpQueryCorrelationId = "film-rating-query-1"
+
+        val result = webClient.get()
+            .uri("$FilmRatingQueryEndPoint/1")
+            .header(CorrelationHeaderName, orbitalHttpQueryCorrelationId)
+            .exchange()
+            .expectStatus().isOk
+            .expectHeader().value(CorrelationHeaderName, CoreMatchers.`is`(orbitalHttpQueryCorrelationId))
+            .expectHeader().value("Content-Type", CoreMatchers.`is`("application/json"))
+            .expectHeader().value("x-vyne-query-id", CoreMatchers.startsWith("routed"))
+            .expectHeader().value("x-vyne-client-query-id", CoreMatchers.startsWith("routed"))
+            .expectHeader().value("filmId", CoreMatchers.`is`("1"))
+            .returnResult<Map<String, Any>>()
+
+        val responseBody = result.responseBody.blockLast()
+        responseBody["rating"].should.equal("Good")
+        mockWebServerRule.takeRequest()
+    }
+
+    @Test
+    fun `can still return response headers in case there is a policy error`() {
+        val schema = schemaProvider.schema
+        schemaStore.setSchema(schema)
+        mockWebServerRule.prepareResponse { response ->
+            //Response is not important as the operation returns void in the schema.
+            response
+                .setHeader("Content-Type", MediaType.APPLICATION_JSON)
+                .setBody("""{ "filmId" : 1, "provider": "Disney" }""")
+        }
+
+        val orbitalHttpQueryCorrelationId = "stream-provider-query-1"
+
+        val result = webClient
+            .mutate()
+            .responseTimeout(Duration.ofMinutes(30000))
+            .build()
+            .get()
+            .uri("$StreamProvidersQueryEndPoint/1")
+            .header(CorrelationHeaderName, orbitalHttpQueryCorrelationId)
+            .exchange()
+            .expectStatus().isUnauthorized
+            .expectHeader().value(CorrelationHeaderName, CoreMatchers.`is`(orbitalHttpQueryCorrelationId))
+            .expectHeader().value("Content-Type", CoreMatchers.`is`("text/plain;charset=UTF-8"))
+            .expectHeader().value("filmId", CoreMatchers.`is`("1"))
+            .returnResult<String>()
+
+        result.responseBody.blockLast().shouldBe("Not Authorized")
+        mockWebServerRule.takeRequest()
+
+    }
 
 
    @SpringBootApplication
@@ -135,14 +213,13 @@ class QueryRequestHandlerTest {
        @Bean
        @Primary
        fun schemaProvider(): SchemaProvider {
-           server.prepareResponse { response ->
-               //Response is not important as the operation returns void in the schema.
-               response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody("""{ "status" : "OK" }""")
-           }
+
            return SimpleSchemaProvider(
                TaxiSchema.fromStrings(
-                   listOf(AuthClaimsTypeDefinition,
+                   listOf(AuthClaimsTypeDefinition, ErrorTypeDefinition,
                        """
+         type CorrelationId inherits String
+         type FilmId inherits Int                  
          @com.orbitalhq.formats.Csv
          model CsvModel {
            givenName : FirstName inherits String
@@ -153,20 +230,72 @@ class QueryRequestHandlerTest {
            status: ResponseStatus inherits String
          }
          
-         type CorrelationId inherits String
-        
+         model Film {
+           filmId: FilmId 
+         }
+         
+         model FilmRating {
+           filmId: FilmId 
+           rating: Rating inherits String
+         }
+         
+         model StreamProvider {
+           filmId: FilmId
+           provider: ProviderName inherits String
+         }
+         
+         policy AllAccessStreamProviders against StreamProvider (filmId : FilmId) -> {
+            read {
+               when {
+                  filmId == 2 -> StreamProvider
+                  else -> throw( (NotAuthorizedError) { message: 'Not Authorized' })
+               }
+            }
+         }
+         
         service CsvConsumerApi {
            @taxi.http.HttpOperation(method = "POST", url = "http://localhost:${server.port}/csv")
            write operation saveCsv(@taxi.http.RequestBody CsvModel, 
-                                   @taxi.http.HttpHeader(name = "x-api-correlationId") correlationId: CorrelationId 
+                                   @taxi.http.HttpHeader(name = "x-api-correlationId") correlationId: CorrelationId
                                    ): RestResponse
         }
         
-        @taxi.http.HttpOperation(method = "POST", url = "/api/q/csv")
-        query CsvQuery(@taxi.http.RequestBody csvModel: CsvModel,  @taxi.http.HttpHeader(name = "x-api-correlationId") correlationId: CorrelationId ) {
+        service FilmRatingsApi {
+               @taxi.http.HttpOperation(method = "GET", url = "http://localhost:${server.port}/{filmId}")
+               operation filmRating(@taxi.http.PathVariable("fimlId") filmId: FilmId): FilmRating
+        }
+        
+        service StreamProvidersApi {
+           @taxi.http.HttpOperation(method = "GET", url = "http://localhost:${server.port}/streaming/{filmId}")
+               operation filmRating(@taxi.http.PathVariable("fimlId") filmId: FilmId): StreamProvider
+        }
+        
+        @taxi.http.HttpOperation(method = "POST", url = "$CsvQueryEndPoint")
+        query CsvQuery(
+         @taxi.http.RequestBody csvModel: CsvModel, 
+         @taxi.http.HttpHeader(name = "$CorrelationHeaderName") correlationId: CorrelationId) {
            given { csvModel }
            call CsvConsumerApi::saveCsv
         }
+        
+        @taxi.http.HttpOperation(method = "GET", url = "$FilmRatingQueryEndPoint/{filmId}")
+        query FilmRatingQuery(
+             @taxi.http.PathVariable("filmId") filmId: FilmId,
+             @taxi.http.HttpHeader(name = "$CorrelationHeaderName") correlationId: CorrelationId,
+             @taxi.http.ResponseHeader("$CorrelationHeaderName") correlationId: CorrelationId,
+             @taxi.http.ResponseHeader("filmId") filmId: FilmId) {
+              given { filmId}
+              find { FilmRating }   
+            }    
+        @taxi.http.HttpOperation(method = "GET", url = "$StreamProvidersQueryEndPoint/{filmId}")
+        query FilmRatingQuery(
+             @taxi.http.PathVariable("filmId") filmId: FilmId,
+             @taxi.http.HttpHeader(name = "$CorrelationHeaderName") correlationId: CorrelationId,
+             @taxi.http.ResponseHeader("$CorrelationHeaderName") correlationId: CorrelationId,
+             @taxi.http.ResponseHeader("filmId") filmId: FilmId) {
+              given { filmId }
+              find { StreamProvider }   
+            }      
       """.trimIndent())
                )
            )

@@ -67,7 +67,7 @@ class QueryDispatcherService(
           actualClientId,
           mediaType = contentType,
          principal = auth
-      )
+      ).publisher
          .asFlow()
          .onCompletion { throwable ->
             if (throwable == null) {

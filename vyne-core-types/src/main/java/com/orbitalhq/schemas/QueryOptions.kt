@@ -3,6 +3,8 @@ package com.orbitalhq.schemas
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.models.json.Jackson
+import lang.taxi.annotations.HttpResponseHeader
+import lang.taxi.query.Parameter
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.annotation
 
@@ -72,7 +74,12 @@ object QueryOptionParameterKeys {
          }
       }
    }
-
+   
+   fun httpResponseParameters(taxiQlQuery: TaxiQlQuery): List<Parameter> {
+      return taxiQlQuery.parameters.filter { parameter ->
+         parameter.annotation(HttpResponseHeader.NAME) != null
+      }
+   }
 }
 
 data class QueryOptions(
@@ -111,7 +118,9 @@ data class QueryOptions(
    /**
     * Streaming Queries might require an id which will be used to manage streaming subscriptions downstream (e.g. Setting the consumer group Ids for Kafka)
     */
-   val streamConsumerId: String? = null
+   val streamConsumerId: String? = null,
+
+   val responseHeaders: List<Parameter > = emptyList()
 ) {
 
    /**
@@ -141,16 +150,18 @@ data class QueryOptions(
    companion object {
       fun default() = QueryOptions()
 
-      fun fromQuery(query: TaxiQlQuery): QueryOptions {
+      fun fromQuery(query: TaxiQlQuery, taxiQlQuery: TaxiQlQuery): QueryOptions {
          val cachingStrategy: CachingStrategy = QueryOptionParameterKeys.cacheStrategy(query)
          val (useStateStore, stateStoreConnectionName) = QueryOptionParameterKeys.stateStoreConnectionName(query)
          val streamConsumerId = QueryOptionParameterKeys.streamConsumerId(query)
+         val responseHeaders = QueryOptionParameterKeys.httpResponseParameters(taxiQlQuery)
          return QueryOptions(
             omitNulls = query.annotation("OmitNulls") != null,
             cachingStrategy = cachingStrategy,
             stateStoreConnectionName = stateStoreConnectionName,
             useStateStore = useStateStore,
-            streamConsumerId = streamConsumerId
+            streamConsumerId = streamConsumerId,
+            responseHeaders = responseHeaders
          )
       }
    }

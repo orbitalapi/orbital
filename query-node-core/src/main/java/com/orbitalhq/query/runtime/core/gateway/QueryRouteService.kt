@@ -94,22 +94,24 @@ class QueryRouteService(
             val queryResultPublisher = executor.handleRoutedQuery(query, EmptyAuthenticationToken.nullIfEmpty(principal))
                .let {
                   metricsReporter.observeQueryResult(
-                     it,
+                     it.publisher,
                      Instant.now(),
                      getMetricsTags(query),
                      logDurationsOfIndividualMessages
-                  )
+                  ) to it.responseHeaders
                }
 
+            val responseStream = queryResultPublisher.first
+            val responseHeaders = queryResultPublisher.second
             val returnServerSentEvents = request.headers().accept().contains(MediaType.TEXT_EVENT_STREAM)
-            if (returnServerSentEvents && queryResultPublisher is Flux<*>) {
-               DeferredServerResponsePublisher.wrapEventStreamFlux(queryResultPublisher)
-                  } else if (queryResultPublisher is Flux<*>){
-               DeferredServerResponsePublisher.wrapFlux(queryResultPublisher as Flux<out Any>)
-            } else if (queryResultPublisher is Mono<*>){
-               DeferredServerResponsePublisher.wrapMono(queryResultPublisher as Mono<Any>)
+            if (returnServerSentEvents && responseStream is Flux<*>) {
+               DeferredServerResponsePublisher.wrapEventStreamFlux(responseStream, responseHeaders)
+                  } else if (responseStream is Flux<*>){
+               DeferredServerResponsePublisher.wrapFlux(responseStream as Flux<out Any>, responseHeaders)
+            } else if (responseStream is Mono<*>){
+               DeferredServerResponsePublisher.wrapMono(responseStream as Mono<Any>, responseHeaders)
             } else {
-               error("Unexpected type of publisher: ${queryResultPublisher::class.simpleName}")
+               error("Unexpected type of publisher: ${responseStream::class.simpleName}")
             }
          }
    }

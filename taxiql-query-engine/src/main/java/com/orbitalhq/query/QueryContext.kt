@@ -41,9 +41,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.merge
 import lang.taxi.accessors.ProjectionFunctionScope
+import lang.taxi.annotations.HttpResponseHeader
 import lang.taxi.expressions.Expression
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.types.VoidType
+import lang.taxi.types.annotation
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
@@ -541,6 +543,17 @@ data class QueryContext(
          inPlaceQueryEngine = this,
          functionResultCache = this.functionResultCache,
       ).evaluateExpression(expression)
+   }
+
+    override fun populateResponseHeaders(): Map<String, List<String>> {
+      return queryOptions.responseHeaders.mapNotNull { parameter ->
+         val orbitalType = schema.type(parameter.type)
+         val headerValue = facts.getFactOrNull(orbitalType)?.toRawObject()
+         headerValue?.let {
+            val paramName =  parameter.annotation(HttpResponseHeader.NAME)!!.defaultParameterValue.toString()!!
+            paramName to listOf(it.toString())
+         }
+      }.toMap()
    }
 }
 

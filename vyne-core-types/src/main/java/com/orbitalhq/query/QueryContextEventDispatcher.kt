@@ -39,4 +39,5 @@ interface QueryContextEventDispatcher {
  */
 interface QueryContextSchemaProvider {
    val schema: Schema
+   fun populateResponseHeaders(): Map<String, List<String>>
 }

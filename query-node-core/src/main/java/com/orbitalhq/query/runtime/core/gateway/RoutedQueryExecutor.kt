@@ -1,9 +1,9 @@
 package com.orbitalhq.query.runtime.core.gateway
 
+import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.query.runtime.core.dispatcher.StreamingQueryDispatcher
 import com.orbitalhq.query.runtime.core.dispatcher.local.LocalQueryDispatcher
-import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.utils.Ids
 import lang.taxi.query.QueryMode
 import mu.KotlinLogging
@@ -23,8 +23,10 @@ interface RoutedQueryExecutor {
 
    // Routed queries don't currently support streaming.
    // See notes on StreamingQueryDispatcher for considerations when implementing
-   fun handleRoutedQuery(query: RoutedQuery, principal: Principal?): Publisher<Any>
+   fun handleRoutedQuery(query: RoutedQuery, principal: Principal?): RoutedQueryResponse
 }
+
+data class RoutedQueryResponse(val publisher: Publisher<Any>, val responseHeaders: Map<String, List<String>>)
 
 
 /**
@@ -58,13 +60,13 @@ class RoutedQueryDispatcherAdaptor(
    }
 
 
-   override fun handleRoutedQuery(query: RoutedQuery, principal: Principal?): Publisher<Any> {
+   override fun handleRoutedQuery(query: RoutedQuery, principal: Principal?): RoutedQueryResponse {
       val clientQueryId = Ids.id("routed-query-")
       logger.info { "Received invocation of query ${query.query.name} to route.  Will be routed with queryId $clientQueryId to dispatcher ${dispatcher!!::class.simpleName}" }
       return if (query.query.queryMode == QueryMode.STREAM) {
-         dispatcher.publishResultStream(
+         RoutedQueryResponse(dispatcher.publishResultStream(
             query.query.name,principal
-         )
+         ), emptyMap())
       } else {
          dispatcher.dispatchQuery(
             query.querySrc,

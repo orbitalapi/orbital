@@ -40,4 +40,6 @@ interface QueryResponse {
    val responseType: Type?
    val responseTypeName: String?
 
+   val responseHeaders: Map<String, List<String>>?
+
 }

@@ -1,6 +1,7 @@
 package com.orbitalhq.query.runtime.core.dispatcher
 
 import com.orbitalhq.query.ResultMode
+import com.orbitalhq.query.runtime.core.gateway.RoutedQueryResponse
 import lang.taxi.types.QualifiedName
 import org.reactivestreams.Publisher
 import org.springframework.http.MediaType
@@ -33,7 +34,7 @@ interface StreamingQueryDispatcher {
        * It is the dispatchers responsibility to transfer this to the executor.
        */
       principal: Principal?
-   ): Publisher<Any>
+   ): RoutedQueryResponse
 
    fun publishResultStream(name: QualifiedName, principal: Principal?): Flux<Any>
 }
