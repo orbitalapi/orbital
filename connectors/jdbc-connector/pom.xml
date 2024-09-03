@@ -24,6 +24,11 @@
          <type>test-jar</type>
       </dependency>
       <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-test</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>schema-server-core</artifactId>
          <version>${project.version}</version>
