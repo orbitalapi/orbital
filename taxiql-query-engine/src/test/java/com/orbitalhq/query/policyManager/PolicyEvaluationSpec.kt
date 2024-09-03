@@ -29,8 +29,12 @@ class PolicyEvaluationSpec : DescribeSpec({
    describe("policy evaluation") {
       val baseSchema = """
          type DvdReleaseDate inherits Int
+         type Sensitive
+
+         type Title inherits String, Sensitive
+
          model Film {
-            title : Title inherits String
+            title : Title
             yearReleased : YearReleased inherits Int
          }
 
@@ -46,6 +50,7 @@ class PolicyEvaluationSpec : DescribeSpec({
             operation getManyFilms():Film[]
          }
       """.trimIndent()
+
       fun runQueryWithPolicy(
          policySchema: String,
          query: String,
@@ -173,6 +178,67 @@ class PolicyEvaluationSpec : DescribeSpec({
          )
       }
 
+      it("applies a policy when the supplied value is null") {
+         val (vyne, stub) = testVyne(
+            AuthClaimType.AuthClaimsTypeDefinition,
+            """
+         $baseSchema
+
+         policy FilterFilmTitle against Title (userInfo : UserInfo) -> {
+            read {
+               when {
+                  userInfo.groups.contains( 'ADMIN' ) -> Title
+                  else -> null
+               }
+            }
+         }
+         """
+         )
+         addStubs(stub, vyne)
+         stub.addResponse("getOneFilm", """{ "title" : null, "yearReleased" : 1978 }""")
+         val listResultWithoutPolicyApplied = vyne
+            .query("""find { Film }""", executionContextFacts = setOf(vyne.userWithRole("ADMIN")))
+            .firstRawObject()
+            .shouldBe(mapOf("title" to null, "yearReleased" to 1978))
+
+         val listResultWithPolicyApplied = vyne
+            .query("""find { Film }""", executionContextFacts = setOf(vyne.userWithRole("USER")))
+            .firstRawObject()
+            .shouldBe(mapOf("title" to null, "yearReleased" to 1978))
+
+      }
+
+      it("applies a policy defined against a base type and the supplied value is null") {
+         val (vyne, stub) = testVyne(
+            AuthClaimType.AuthClaimsTypeDefinition,
+            """
+         $baseSchema
+
+         policy FilterFilmTitle against Sensitive (userInfo : UserInfo) -> {
+            read {
+               when {
+                  userInfo.groups.contains( 'ADMIN' ) -> Sensitive
+                  else -> null
+               }
+            }
+         }
+         """
+         )
+         addStubs(stub, vyne)
+         stub.addResponse("getOneFilm", """{ "title" : null, "yearReleased" : 1978 }""")
+         val listResultWithoutPolicyApplied = vyne
+            .query("""find { Film }""", executionContextFacts = setOf(vyne.userWithRole("ADMIN")))
+            .firstRawObject()
+            .shouldBe(mapOf("title" to null, "yearReleased" to 1978))
+
+         val listResultWithPolicyApplied = vyne
+            .query("""find { Film }""", executionContextFacts = setOf(vyne.userWithRole("USER")))
+            .firstRawObject()
+            .shouldBe(mapOf("title" to null, "yearReleased" to 1978))
+
+      }
+
+
 
 
       it("when applying a policy that modifies an input to an expression, the expression is impacted") {
@@ -292,7 +358,8 @@ class PolicyEvaluationSpec : DescribeSpec({
 
 
       it("does not re-load suppressed data from another service") {
-         val (vyne,stub) = testVyne("""
+         val (vyne, stub) = testVyne(
+            """
             model Film {
                id : FilmId inherits Int
                title : Title inherits String
@@ -306,9 +373,17 @@ class PolicyEvaluationSpec : DescribeSpec({
                   Film as { ... except { title } }
                }
             }
-         """.trimIndent())
-         stub.addResponse("getAll",vyne.parseJson("Film[]","""[{"id" : 1, "title" : "Jaws"}, {"id" : 2, "title" : "Aliens"}, {"id" : 3, "title" : "Star Wars"}]"""), modifyDataSource = true)
-         stub.addResponse("getOne", vyne.parseJson("Film","""{"id" : 1, "title" : "Jaws"}"""), modifyDataSource = true)
+         """.trimIndent()
+         )
+         stub.addResponse(
+            "getAll",
+            vyne.parseJson(
+               "Film[]",
+               """[{"id" : 1, "title" : "Jaws"}, {"id" : 2, "title" : "Aliens"}, {"id" : 3, "title" : "Star Wars"}]"""
+            ),
+            modifyDataSource = true
+         )
+         stub.addResponse("getOne", vyne.parseJson("Film", """{"id" : 1, "title" : "Jaws"}"""), modifyDataSource = true)
 
          val film = vyne.query("""find { Film[] }""")
             .firstRawObject()
@@ -318,7 +393,8 @@ class PolicyEvaluationSpec : DescribeSpec({
       }
 
       it("does not re-load suppressed data from another service during a projection") {
-         val (vyne,stub) = testVyne("""
+         val (vyne, stub) = testVyne(
+            """
             model Film {
                id : FilmId inherits Int
                title : Title inherits String
@@ -332,15 +408,22 @@ class PolicyEvaluationSpec : DescribeSpec({
                   Film as { ... except { title } }
                }
             }
-         """.trimIndent())
-         stub.addResponse("getAll",vyne.parseJson("Film[]","""[{"id" : 1, "title" : "Jaws"}]"""), modifyDataSource = true)
-         stub.addResponse("getOne", vyne.parseJson("Film","""{"id" : 1, "title" : "Jaws"}"""), modifyDataSource = true)
+         """.trimIndent()
+         )
+         stub.addResponse(
+            "getAll",
+            vyne.parseJson("Film[]", """[{"id" : 1, "title" : "Jaws"}]"""),
+            modifyDataSource = true
+         )
+         stub.addResponse("getOne", vyne.parseJson("Film", """{"id" : 1, "title" : "Jaws"}"""), modifyDataSource = true)
 
-         val film = vyne.query("""find { Film[] } as {
+         val film = vyne.query(
+            """find { Film[] } as {
             |   name : Title
             |   id : FilmId
             |}[]
-         """.trimMargin())
+         """.trimMargin()
+         )
             .firstRawObject()
          film.shouldBe(mapOf("name" to null, "id" to 1))
          stub.calls["getOne"].shouldBeEmpty()
@@ -349,7 +432,6 @@ class PolicyEvaluationSpec : DescribeSpec({
 
 
 })
-
 
 
 fun Vyne.userWithRole(userId: String, roles: List<String>): TypedInstance {

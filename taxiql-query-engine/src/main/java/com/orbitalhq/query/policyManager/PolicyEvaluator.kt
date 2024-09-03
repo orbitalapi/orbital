@@ -11,6 +11,7 @@ import com.orbitalhq.query.QueryContext
 import com.orbitalhq.models.ProjectionFunctionScopeEvaluator
 import com.orbitalhq.models.TypedInstanceConverter
 import com.orbitalhq.models.TypedInstanceMapper
+import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.TypedValue
 import com.orbitalhq.schemas.PolicyWithPath
@@ -194,8 +195,11 @@ class PolicyEvaluator {
          && evaluationResult.type.isAssignableFrom(instance.type)
       ) {
          // upcast the result back to whatever type we had to begin with
-         require(evaluationResult is TypedValue) { "Expected a typed value here, given it's a scalar - but got ${evaluationResult::class.simpleName}" }
-         return TypedValue.from(instance.type, evaluationResult.value, false, evaluationResult.source)
+         return when (evaluationResult) {
+            is TypedValue -> TypedValue.from(instance.type, evaluationResult.value, false, evaluationResult.source)
+            is TypedNull -> TypedNull.create(instance.type, evaluationResult.source)
+            else -> error("Expected either a TypedValue or TypedNull here, given it's a scalar - but got ${evaluationResult::class.simpleName}" )
+         }
       }
 
       // Can't do any up-casting
