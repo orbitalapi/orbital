@@ -39,7 +39,7 @@ class ReactiveWatchingFileSystemMonitor(
 
    override fun resume() {
       logger.debug { "Resuming event publication for  ${path.toFile().canonicalPath}" }
-     suspendedEvents.resume()
+      suspendedEvents.resume()
    }
 
    override fun stop() {
@@ -119,9 +119,10 @@ class ReactiveWatchingFileSystemMonitor(
                if (events.isEmpty()) {
                   key.reset()
                   continue
+               } else {
+                  suspendedEvents.publish(events)
+                  key.reset()
                }
-               suspendedEvents.publish(events)
-               key.reset()
             }
          } catch (e: ClosedWatchServiceException) {
             logger.warn(e) { "Watch service was closed. ${e.message}" }

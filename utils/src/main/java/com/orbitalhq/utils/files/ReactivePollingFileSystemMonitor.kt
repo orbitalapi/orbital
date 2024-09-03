@@ -39,7 +39,7 @@ class ReactivePollingFileSystemMonitor(
          FileFilterUtils.suffixFileFilter(".taxi")
       )
       val filter: IOFileFilter = FileFilterUtils.or(directories, taxiFiles)
-         .or(FileFilterUtils.nameFileFilter("taxi.conf"))
+         .or(FileFilterUtils.suffixFileFilter(".conf"))
       observer = FileAlterationObserver(rootPath.toFile(), filter).apply {
          addListener(object : FileAlterationListener {
             override fun onStart(observer: FileAlterationObserver) {
@@ -59,15 +59,15 @@ class ReactivePollingFileSystemMonitor(
             }
 
             override fun onFileCreate(file: File) {
-               emitChangeEvent(directory, FileSystemChangeEventType.FileCreated)
+               emitChangeEvent(file, FileSystemChangeEventType.FileCreated)
             }
 
             override fun onFileChange(file: File) {
-               emitChangeEvent(directory, FileSystemChangeEventType.FileChanged)
+               emitChangeEvent(file, FileSystemChangeEventType.FileChanged)
             }
 
             override fun onFileDelete(file: File) {
-               emitChangeEvent(directory, FileSystemChangeEventType.FileDeleted)
+               emitChangeEvent(file, FileSystemChangeEventType.FileDeleted)
             }
 
             override fun onStop(observer: FileAlterationObserver) {

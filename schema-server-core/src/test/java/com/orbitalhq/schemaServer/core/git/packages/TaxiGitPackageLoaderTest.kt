@@ -261,7 +261,7 @@ class TaxiGitPackageLoaderTest {
             it.message.shouldContain("No taxi.conf file found at ")
             true
          }
-         // Now restore the file, to ensure the loader goes greent
+         // Now restore the file, to ensure the loader goes green
          .then {
             deployTestProjectToRemoteGitPath(update = true)
             remoteRepo.add().addFilepattern("taxi.conf").call()

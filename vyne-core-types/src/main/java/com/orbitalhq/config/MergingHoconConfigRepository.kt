@@ -1,11 +1,13 @@
 package com.orbitalhq.config
 
 import arrow.core.Either
+import com.google.common.base.Throwables
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.SourcePackage
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigException
 import com.typesafe.config.ConfigFactory
 import com.typesafe.config.ConfigParseOptions
 import com.typesafe.config.ConfigResolveOptions
@@ -62,6 +64,7 @@ abstract class MergingHoconConfigRepository<T : Any>(
 
    override val configUpdated = configUpdatedSink.asFlux()
 
+
    companion object {
       private object CacheKey
 
@@ -94,7 +97,7 @@ abstract class MergingHoconConfigRepository<T : Any>(
       .build(object : CacheLoader<CacheKey, T>() {
          override fun load(key: CacheKey): T {
             val loadedSources = configRepo.loadAll()
-            return if (loadedSources.isEmpty()) {
+            val config =  if (loadedSources.isEmpty()) {
                logger.info { "($loaderTypeName) - Loaders returned no config sources, so starting with an empty one." }
                emptyConfig()
             } else {
@@ -107,8 +110,9 @@ abstract class MergingHoconConfigRepository<T : Any>(
                      val config = readConfig(hoconSource, fallback)
                      ConfigSource(sourcePackage.identifier, config, typedConfig, null)
                   } catch (e: Exception) {
-                     logger.error(e) { "($loaderTypeName) - Parsing the config from source package ${sourcePackage.packageMetadata.identifier.id} failed: ${e.message}" }
-                     val errorMessage = e.message ?: e.cause?.message
+                     val rootCauseMessage = Throwables.getRootCause(e).message
+                     val errorMessage = "Parsing the config from source package ${sourcePackage.packageMetadata.identifier.id} failed: $rootCauseMessage"
+                     logger.error(e) { "($loaderTypeName) -  $errorMessage"}
                      val sourceName = if (sourcePackage.sources.size == 1) sourcePackage.sources.first().name else null
                      ConfigSource(sourcePackage.identifier, null, null, errorMessage, sourceName)
                   }
@@ -122,13 +126,32 @@ abstract class MergingHoconConfigRepository<T : Any>(
                if (healthConfig.isEmpty()) {
                   emptyConfig()
                } else {
-                  val mergedHealthyConfig = healthConfig.reduce { acc, config ->
-                     // when merging, "config" values beat "acc" values.
-                     config.withFallback(acc)
-                  }.resolve()
-                  extract(mergedHealthyConfig)
+                  try {
+                     val mergedHealthyConfig = healthConfig.reduce { acc, config ->
+                        // when merging, "config" values beat "acc" values.
+                        config.withFallback(acc)
+                     }.resolve() as Config
+                     extract(mergedHealthyConfig)
+                  } catch (e:Exception) {
+                     val errorMessage = Throwables.getRootCause(e).message ?: "A ${e::class.simpleName} exception occurred"
+                     if (e is ConfigException) {
+                        val matchedSourcePackage = loadedSources.firstOrNull { sourcePackage -> sourcePackage.sources
+                           .filter { it.path != null }
+                           .any { sourceFile -> sourceFile.path == e.origin().url()?.toURI()?.path } }
+                           ?.let { sourcePackage ->
+                              _configSources = _configSources + ConfigSource(sourcePackage.identifier, null, null, errorMessage, e.origin().url()?.toURI()?.path)
+                              sourcePackage
+                           }
+                        if (matchedSourcePackage == null) {
+                           logger.error { "Could not find a source package for error reported in file ${e.origin().description()} - This error will not be displayed in the UI" }
+                        }
+                     }
+                     logger.error { "Failed to read hocon file: ${e.message}" }
+                     emptyConfig()
+                  }
                }
             }
+            return config
          }
       })
 
@@ -222,3 +245,8 @@ private object FakeResolver : ConfigResolver {
 
 }
 
+data class ConfigRepositoryHealthStatus(
+   val errors: List<String>
+) {
+   val isHealthy: Boolean = errors.isEmpty()
+}
