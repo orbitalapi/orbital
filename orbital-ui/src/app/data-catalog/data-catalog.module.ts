@@ -23,7 +23,7 @@ import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/hea
 import { TuiProgressModule, TuiStepperModule, TuiTabsModule } from '@taiga-ui/kit';
 import { SchemaDiagramModule } from 'src/app/schema-diagram/schema-diagram.module';
 import { UiCustomisations } from '../../environments/ui-customisations';
-
+import markedAlert from 'marked-alert'
 
 @NgModule({
   declarations: [DataCatalogSearchComponent, DataCatalogSearchResultCardComponent, DataCatalogContainerComponent],
@@ -33,7 +33,9 @@ import { UiCustomisations } from '../../environments/ui-customisations';
     MatInputModule,
     MatSelectModule,
     MatTableModule,
-    MarkdownModule.forRoot(),
+    MarkdownModule.forRoot({
+      markedExtensions: [markedAlert()]
+    }),
     RouterModule,
     FormsModule,
     ReactiveFormsModule,
