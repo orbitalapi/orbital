@@ -171,13 +171,13 @@ class QueryRequestHandlerTest {
             .uri("$StreamProvidersQueryEndPoint/1")
             .header(CorrelationHeaderName, orbitalHttpQueryCorrelationId)
             .exchange()
-            .expectStatus().isUnauthorized
+            .expectStatus().isBadRequest
             .expectHeader().value(CorrelationHeaderName, CoreMatchers.`is`(orbitalHttpQueryCorrelationId))
-            .expectHeader().value("Content-Type", CoreMatchers.`is`("text/plain;charset=UTF-8"))
+            .expectHeader().value("Content-Type", CoreMatchers.`is`("application/json"))
             .expectHeader().value("filmId", CoreMatchers.`is`("1"))
-            .returnResult<String>()
+            .returnResult<Map<String, Any>>()
 
-        result.responseBody.blockLast().shouldBe("Not Authorized")
+        result.responseBody.blockLast().shouldBe(mapOf("errorCode" to "E1234", "message" to "You didn't say the magic word"))
         mockWebServerRule.takeRequest()
 
     }
@@ -244,11 +244,23 @@ class QueryRequestHandlerTest {
            provider: ProviderName inherits String
          }
          
+         model BadPermissionsError inherits com.orbitalhq.errors.Error {
+           @taxi.http.ResponseBody
+           error: {
+             errorCode: String
+             message: String
+           }
+         }
+         
          policy AllAccessStreamProviders against StreamProvider (filmId : FilmId) -> {
             read {
                when {
                   filmId == 2 -> StreamProvider
-                  else -> throw( (NotAuthorizedError) { message: 'Not Authorized' })
+                  else -> throw( (BadPermissionsError) 
+                                  { error: 
+                                    { errorCode: 'E1234', message: "You didn't say the magic word" }
+                                  }
+                                )
                }
             }
          }
