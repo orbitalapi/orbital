@@ -10,15 +10,17 @@ import com.orbitalhq.schemas.fqn
 import lang.taxi.annotations.HttpService
 import lang.taxi.annotations.HttpService.Companion.RESPONSE_BODY_TYPE_NAME
 import mu.KotlinLogging
+import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
+import org.springframework.http.MediaType.APPLICATION_JSON_VALUE
 
+private val logger = KotlinLogging.logger {}
 object HttpErrorResponse {
-   private val logger = KotlinLogging.logger {}
-   fun getErrorCodeAndPayload(
-      error: TypedInstance,
+   private fun getOrbitalQueryExceptionHttpInfo(
+      exception: OrbitalQueryException,
       objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   ): Pair<HttpStatus, Any> {
-
+   ): OrbitalQueryExceptionHttpInfo {
+      val error = exception.error
       val responseCode = if (error.type.hasMetadata(HttpService.RESPONSE_CODE_TYPE_NAME.fqn())) {
          val metadata = error.type.getMetadata(HttpService.RESPONSE_CODE_TYPE_NAME.fqn())
          metadata.params["value"]?.let {
@@ -28,24 +30,30 @@ object HttpErrorResponse {
          HttpStatus.BAD_REQUEST
       }
 
-      val payload = getErrorPayload(error, objectMapper)
-      return responseCode to payload
+      val (payload, responseHeaders) = getErrorPayload(error, objectMapper, exception.responseHeaders)
+      return OrbitalQueryExceptionHttpInfo(responseCode, payload, responseHeaders)
    }
 
-   private fun getErrorPayload(error: TypedInstance, objectMapper: ObjectMapper): Any {
+   private fun getErrorPayload(error: TypedInstance,
+                               objectMapper: ObjectMapper,
+                               responseHeaders: Map<String, List<String>>): Pair<Any, Map<String, List<String>>> {
 
-      fun jsonIfObject(value: Any?):String {
+      fun jsonIfObject(value: Any?, responseHeaders: Map<String, List<String>>): Pair<String, Map<String, List<String>>> {
          return when (value) {
             is String,
             is Int,
-            is Boolean -> value.toString()
-            else -> objectMapper.writeValueAsString(value)
+            is Boolean -> value.toString() to responseHeaders
+            else -> {
+               val responseHeadersWithContentType = mapOf(HttpHeaders.CONTENT_TYPE to listOf(APPLICATION_JSON_VALUE))
+               objectMapper.writeValueAsString(value) to responseHeadersWithContentType + responseHeaders
+            }
          }
       }
 
       // If the entire error is tagged as ResponseBody, just JSON the whole thing
       if (error.type.hasMetadata(RESPONSE_BODY_TYPE_NAME.fqn())) {
-         return jsonIfObject(error.toRawObject())
+
+         return jsonIfObject(error.toRawObject(), responseHeaders)
       }
 
       val responseBodyAttributes = error.type.getAttributesWithAnnotation(RESPONSE_BODY_TYPE_NAME.fqn())
@@ -54,7 +62,7 @@ object HttpErrorResponse {
       }
       responseBodyAttributes.entries.singleOrNull()?.let { (fieldName, field) ->
          val field = (error as TypedObject)[fieldName]
-         return jsonIfObject(field.toRawObject())
+         return jsonIfObject(field.toRawObject(), responseHeaders)
       }
 
       if (error is TypedObject) {
@@ -64,7 +72,7 @@ object HttpErrorResponse {
             error.type.attributes.entries.filter { (a, b ) -> b.type.parameterizedName == ErrorType.ErrorMessageQualifiedName.parameterizedName }
          if (errorMessageAttributes.isEmpty()) {
             logger.warn { "Error type ${error.type.paramaterizedName} has no way of exposing an error message or body. Either add a @ResponseBody annotation to the type, one of it's fields, or define an attribute of type ${ErrorType.ErrorMessageQualifiedName.parameterizedName}" }
-            return error.type.name.shortDisplayName
+            return error.type.name.shortDisplayName to responseHeaders
          }
          if (errorMessageAttributes.size > 1) {
             logger.warn { "Error type ${error.type.paramaterizedName} has multiple attributed of type ${ErrorType.ErrorMessageQualifiedName.parameterizedName}, expected just one. Picking one." }
@@ -73,11 +81,11 @@ object HttpErrorResponse {
 
 
          val errorMessage = error[errorMessageFieldName].toRawObject()
-         return jsonIfObject(errorMessage)
+         return jsonIfObject(errorMessage, responseHeaders)
       }
 
       // Last ditch, just JSONify the whole object
-      return jsonIfObject(error.toRawObject())
+      return jsonIfObject(error.toRawObject(), responseHeaders)
    }
 
    fun getErrorCodeAndPayload(
@@ -85,8 +93,7 @@ object HttpErrorResponse {
       objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
 
    ): OrbitalQueryExceptionHttpInfo {
-      val (status, body) = getErrorCodeAndPayload(exception.error, objectMapper)
-      return OrbitalQueryExceptionHttpInfo(status, body, exception.responseHeaders)
+      return  getOrbitalQueryExceptionHttpInfo(exception, objectMapper)
    }
 
    data class OrbitalQueryExceptionHttpInfo(val status: HttpStatus, val body: Any, val responseHeaders: Map<String, List<String>>)
