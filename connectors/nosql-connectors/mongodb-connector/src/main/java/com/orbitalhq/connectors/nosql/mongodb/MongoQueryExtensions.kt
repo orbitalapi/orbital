@@ -1,6 +1,7 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
 import lang.taxi.query.DiscoveryType
+import lang.taxi.types.Field
 import lang.taxi.types.ObjectType
 import lang.taxi.types.Type
 
@@ -23,6 +24,15 @@ fun Type.getCollectionName(): String {
    val collectionAnnotationWrapper = MongoConnector.Annotations.Collection.from(collectionAnnotation)
    return collectionAnnotationWrapper.collectionName
 }
+
+fun ObjectType.IdFields(): List<Field> {
+   return this.allFields.filter { it.annotations.any { annotation -> annotation.name == "Id" } }
+}
+
+fun Field.IdField(): Boolean{
+   return this.annotations.any { annotation -> annotation.name == "Id" }
+}
+
 
 object MongoQueryHelpers {
     fun getCollectionNames(

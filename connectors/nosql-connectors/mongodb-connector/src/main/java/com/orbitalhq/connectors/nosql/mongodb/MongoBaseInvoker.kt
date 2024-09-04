@@ -12,10 +12,13 @@ import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.SqlExchange
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.AttributeName
+import com.orbitalhq.schemas.OperationInvocationException
+import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.Type
+import com.orbitalhq.schemas.fqn
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.query.TaxiQlQuery
@@ -39,7 +42,7 @@ abstract class MongoBaseInvoker(
 
 
    private fun objectIdField(vyneType: Type): AttributeName? {
-      val idFields = vyneType.getAttributesWithAnnotation(MongoConnector.Annotations.ObjectIdAnnotationName)
+      val idFields = vyneType.getAttributesWithAnnotation("Id".fqn())
       require(idFields.isEmpty() || idFields.size == 1)
       return if (idFields.isEmpty()) {
          null
@@ -63,6 +66,43 @@ abstract class MongoBaseInvoker(
       return OperationResult.fromTypedInstances(
          parameters,
          remoteCall
+      )
+   }
+
+   protected fun mapError(error: Throwable,
+                        service: Service,
+                        operation: RemoteOperation,
+                         parameters: List<Pair<Parameter, TypedInstance>>,
+                        criteria: String,
+                        mongoHosts: String,
+                        elapsed: Duration,
+                        recordCount: Int,
+                        verb: String = "Query"
+   ): Throwable {
+      val remoteCall = RemoteCall(
+      service = service.name,
+      address = mongoHosts,
+      operation = operation.name,
+      responseTypeName = operation.returnType.name,
+      requestBody = criteria,
+      durationMs = elapsed.toMillis(),
+      timestamp = Instant.now(),
+      // If we implement streaming database queries, this will change
+      responseMessageType = ResponseMessageType.FULL,
+      // Feels like capturing the results are a bad idea.  Can revisit if there's a use-case
+      response = error.message,
+      exchange = SqlExchange(
+         sql = criteria,
+         recordCount = recordCount,
+         verb = verb
+      ),
+
+      )
+      return OperationInvocationException(
+         "Failed to invoke service ${operation.name} at url $mongoHosts - ${error.message ?: "No message in instance of ${error::class.simpleName}"}",
+         0,
+         remoteCall,
+         parameters
       )
    }
 
@@ -133,7 +173,7 @@ abstract class MongoBaseInvoker(
          fun(mongoMap: Map<*, *>): Map<*, *> {
             val hashMap = mongoMap as HashMap<String, Any?>
             hashMap.remove(MongoIdField)?.let { objectId ->
-               hashMap[idField] = objectId.toString()
+               hashMap[idField] = if (objectId is ObjectId)  objectId.toString() else objectId
             }
             return hashMap
          }
@@ -157,7 +197,9 @@ abstract class MongoBaseInvoker(
          }
          val mongoFieldName = if (idField == name) MongoIdField else name
          val mongoValue = if (mongoFieldName == MongoIdField)  {
-           value?.let { ObjectId(it.toString()) }
+           value?.let {
+              it
+           }
          } else value
          mongoFieldName to mongoValue
       }.toMap()
