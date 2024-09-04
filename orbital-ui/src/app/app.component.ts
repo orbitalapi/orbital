@@ -112,6 +112,7 @@ export class AppComponent implements OnInit {
         }
         isFirstSchemaUpdate = false;
         this.updateProjectsWithErrorsNotifications();
+        this.updateDataSourcesWithErrorsNotifications();
       });
 
     this.updateProjectsWithErrorsNotifications();
@@ -131,20 +132,26 @@ export class AppComponent implements OnInit {
         }
       })
 
+
+  }
+
+  private updateDataSourcesWithErrorsNotifications() {
     this.dbService.getConnections(false)
-        .subscribe(connectionListResponse => {
-          if (connectionListResponse.definitionsWithErrors.length > 0) {
-            this.alerts.push({
-              id: 'connection-config-errors',
-              severity: "Error",
-              message: `Your data sources cannot be loaded`,
-              actionLabel: 'See details',
-              handler: () => {
-                this.router.navigate(["data-source-manager", "problems"]);
-              }
-            })
-          }
-        })
+      .subscribe(connectionListResponse => {
+        if (connectionListResponse.definitionsWithErrors.length > 0) {
+          this.addAlertIfNotPresent({
+            id: 'connection-config-errors',
+            severity: "Error",
+            message: `Your data sources cannot be loaded`,
+            actionLabel: 'See details',
+            handler: () => {
+              this.router.navigate(["data-source-manager", "problems"]);
+            }
+          })
+        } else {
+          this.removeAlertById('connection-config-errors')
+        }
+      })
   }
 
   private updateProjectsWithErrorsNotifications() {
