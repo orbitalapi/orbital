@@ -19,7 +19,6 @@ class ServicesConfigRepository(
 
    override fun emptyConfig(): ServicesConfig = ServicesConfig.DEFAULT
 
-
    init {
       if (!Files.exists(configFilePath) && createConfigFileIfMissing) {
          logger.info { "Using a file based service mapping, but no config file found at $path so writing a default file" }

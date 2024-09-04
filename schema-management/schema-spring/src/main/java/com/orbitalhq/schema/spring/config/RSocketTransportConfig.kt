@@ -43,7 +43,7 @@ class RSocketTransportConfig {
     */
    @Bean
    fun schemaServerRSocketFactory(
-      discoveryClient: DiscoveryClient,
+      discoveryClient: OrbitalInternalDiscoveryClient,
    ): SchemaServerRSocketFactory {
       val addressSupplier = DiscoveryClientAddressSupplier.forTcpAddresses(
          discoveryClient,
@@ -72,6 +72,18 @@ class RSocketTransportConfig {
 
 
    }
-
-
 }
+
+/**
+ * Marker interface to differentiate a discovery client that
+ * only exposes server-based services.conf services (excluding
+ * things defined in projects).
+ *
+ * Use this for internal services within Orbital.
+ *
+ * This class helps with documenting clarity / intent, but
+ * was forced because of a circular dependency creating the other discovery client, as
+ * as Project-based discovery client (SourceLoaderDiscoveryClient) needs
+ * a schema ... our schemas use RSocketSchemaStore ... which needs a discovery client
+ */
+interface OrbitalInternalDiscoveryClient : DiscoveryClient

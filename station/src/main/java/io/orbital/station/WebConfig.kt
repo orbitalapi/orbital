@@ -9,6 +9,7 @@ import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.query.TaxiJacksonModule
 import com.orbitalhq.query.VyneJacksonModule
 import com.orbitalhq.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
+import com.orbitalhq.spring.config.LoadBalancerFilterFunction
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer
@@ -78,9 +79,8 @@ class WebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigurer {
    ): WebClientCustomizer {
       return WebClientCustomizer { webClientBuilder ->
          webClientBuilder.filter(
-            ConditionallyLoadBalancedExchangeFilterFunction.onlyKnownHosts(
-               discoveryClient.services,
-               loadBalancingFilterFunction
+            LoadBalancerFilterFunction(
+               discoveryClient,
             )
          )
       }
