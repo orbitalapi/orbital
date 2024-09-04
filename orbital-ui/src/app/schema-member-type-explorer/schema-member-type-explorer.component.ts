@@ -189,9 +189,10 @@ export class SchemaMemberTypeExplorerComponent {
       this.clearQueryParams();
 
     Prism.languages.taxi = taxi
+    Prism.languages.taxiql = taxi
 
     Prism.plugins.toolbar.registerButton('run-code', (env) => {
-      if (env.language === 'taxi') {
+      if (env.language === 'taxiql') {
         const button = document.createElement('button');
         button.innerHTML = 'Run code in query editor';
         button.addEventListener('click', () => this.gotoQueryEditor(env.code))
