@@ -1,6 +1,7 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
 import com.orbitalhq.connectors.getTypesToFind
+import com.orbitalhq.connectors.nosql.mongodb.MongoBaseInvoker.Companion.MongoIdField
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.schemas.AttributeName
@@ -38,7 +39,7 @@ class MongoCriteriaGenerator(private val taxiSchema: TaxiDocument) {
                 // which more often than not is an Operator Constraint.
                 // (Which can nest mulitple operator constratins under it)
                 require(discoveryType.constraints.size == 1) { "Expected to find a single constraint (which could be a compound operation expression).  Instead, found ${discoveryType.constraints.size}" }
-                val collectionName = typesToCollectionNames[type]!!
+
                 buildMongoConstraint(
                     type,
                     discoveryType.constraints.single(),
@@ -133,7 +134,7 @@ class MongoCriteriaGenerator(private val taxiSchema: TaxiDocument) {
         type: ObjectType
     ): Criteria {
         val fieldReference = getSingleField(type, lhs.type)
-        val fieldName = fieldReference.path.single().name
+        val fieldName = if (fieldReference.path.single().IdField()) MongoIdField else  fieldReference.path.single().name
         val condition = when (operator) {
             FormulaOperator.Equal -> Criteria.where(fieldName).`is`(rhs.value)
             FormulaOperator.NotEqual -> Criteria.where(fieldName).ne(rhs.value)
@@ -175,7 +176,7 @@ class MongoCriteriaGenerator(private val taxiSchema: TaxiDocument) {
          val attributeNameForId = idField(typedInstance.type)
 
          return if (attributeNameForId != null && typedInstance[attributeNameForId].value != null) {
-            val query = Query().addCriteria(Criteria.where(attributeNameForId).`is`(typedInstance[attributeNameForId].value))
+            val query = Query().addCriteria(Criteria.where(MongoIdField).`is`(typedInstance[attributeNameForId].value))
             val update = Update.fromDocument(Document(documentMap))
             query to update
          } else {

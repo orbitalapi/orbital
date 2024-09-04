@@ -52,7 +52,18 @@ class MongoReadOnlyQueryInvoker(
             Query().addCriteria(criterias.first()),
             Map::class.java,
             typesToCollectionNames.values.first()
-         )
+         ).onErrorMap { error ->
+            mapError(error,
+               service,
+               operation,
+               parameters,
+               if (criterias.isNotEmpty()) criterias.first().toString() else SelectAllCriteria,
+               mongoConnectionConfig.connectionString.hosts.joinToString(),
+               stopwatch.elapsed(),
+               recordCount = -1
+               )
+
+         }
       }
       val elapsed = stopwatch.elapsed()
       logger.withQueryId(queryId).debug { "Mongo Query completed in $elapsed" }
@@ -69,4 +80,7 @@ class MongoReadOnlyQueryInvoker(
       eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
       return convertToTypedInstances(resultFlux, query, schema, operationResult.asOperationReferenceDataSource())
    }
+
+
+
 }

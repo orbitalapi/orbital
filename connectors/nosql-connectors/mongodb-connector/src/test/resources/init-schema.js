@@ -55,3 +55,49 @@ db.users.insertOne({
    email: "minerva.mcgonagall@gmail.com",
    age: 57
 });
+
+db.films.insertOne({
+   _id: 1,
+   name: "Star Wars"
+});
+
+db.films.insertOne({
+   _id: 2,
+   name: "Death in Venice"
+});
+
+db.films.insertOne({
+   _id: 3,
+   name: "Stalker"
+});
+
+db.compositeIds.insertOne({
+   _id: {
+      key1: 1,
+      key2: "foo"
+   },
+   name: "Composite Id 1"
+});
+
+db.compositeIds.insertOne({
+   _id: {
+      key1: 2,
+      key2: "bar"
+   },
+   name: "Composite Id 2"
+});
+
+db.ratings.insertOne({
+   _id: "goodRating",
+   name: "Good"
+});
+
+db.ratings.insertOne({
+   _id: "BadRating",
+   name: "Bad"
+});
+
+db.ratings.insertOne({
+   _id: "mediocreRating",
+   name: "Mediocre"
+});

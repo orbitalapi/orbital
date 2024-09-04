@@ -56,9 +56,57 @@ class MongoReadOnlyQueryInvokerTest: MongoDbTestcontainer() {
             table user : User[]
             table mongoUsers: UserWithObjectId[]
          }
+         
+         @Collection(connection = "usersMongo", collection = "films")
+         model FilmsWithIntObjectId {
+            @Id
+            id: FilmId inherits Int
+            name: FilmName inherits String
+         }
+         
+         @MongoService( connection = "usersMongo" )
+         service FilmsDb {
+            table films : FilmsWithIntObjectId[]
+         }
+         
+         @Collection(connection = "usersMongo", collection = "compositeIds")
+         model ModelWithMongoCompositeId {
+            @Id
+            id: MongoKey
+            name: CompositeModelName inherits String
+         }
+         
+         model MongoKey {
+            key1: FirstKey inherits Int
+            key2: SecondKey inherits String
+         }
+         
+         @MongoService( connection = "usersMongo" )
+         service CompositeDb {
+            table composites : ModelWithMongoCompositeId[]
+         }
+         
+         @Collection(connection = "usersMongo", collection = "ratings")
+         model RatingsWithStringMongoId {
+            @Id
+            id: RatingId inherits String
+            name: RatingName inherits String
+         }
+         
+         @MongoService( connection = "usersMongo" )
+         service RatingsDocument {
+            table ratings : RatingsWithStringMongoId[]
+         }
       """
    )
 
+   /***
+    * _id: {
+    *       key1: 1,
+    *       key2: "foo"
+    *    },
+    *    name: "Composite Id 1"
+    */
 
    @BeforeEach
    fun setup() {
@@ -163,6 +211,30 @@ class MongoReadOnlyQueryInvokerTest: MongoDbTestcontainer() {
             "nickname" to "The Slayer",
             "email" to "harry.potter@gmail.com",
             "age" to 11))
+   }
+
+   @Test
+   fun `can fetch data from mongodb with Integer _id fields`(): Unit = runBlocking  {
+      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      val result = vyne.query("""find { FilmsWithIntObjectId[]( FilmId == 1 ) } """)
+         .typedObjects()
+      result.should.have.size(1)
+      result.first().toRawObject()
+         .should.equal(mapOf(
+            "id" to 1,
+            "name" to "Star Wars"))
+   }
+
+   @Test
+   fun `can fetch data from mongodb with String _id field`(): Unit = runBlocking  {
+      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      val result = vyne.query("""find { RatingsWithStringMongoId[]( RatingId == "goodRating" ) }""")
+         .typedObjects()
+      result.should.have.size(1)
+      result.first().toRawObject()
+         .should.equal(mapOf(
+            "id" to "goodRating",
+            "name" to "Good"))
    }
 
 
