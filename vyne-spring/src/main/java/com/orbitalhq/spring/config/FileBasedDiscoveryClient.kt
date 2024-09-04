@@ -2,6 +2,7 @@ package com.orbitalhq.spring.config
 
 import com.orbitalhq.http.ServicesConfig
 import com.orbitalhq.http.ServicesConfigRepository
+import com.orbitalhq.schema.spring.config.OrbitalInternalDiscoveryClient
 import mu.KotlinLogging
 import org.springframework.cloud.client.DefaultServiceInstance
 import org.springframework.cloud.client.ServiceInstance
@@ -47,7 +48,8 @@ abstract class BaseConfigDiscoveryClient : DiscoveryClient {
  *
  * If the file doesn't exist on startup, a default file is created.
  */
-class FileBasedDiscoveryClient(private val configRepository: ServicesConfigRepository) : BaseConfigDiscoveryClient(), Closeable {
+class FileBasedDiscoveryClient(private val configRepository: ServicesConfigRepository) : BaseConfigDiscoveryClient(), Closeable,
+   OrbitalInternalDiscoveryClient {
    constructor(path: Path) : this(ServicesConfigRepository(path))
 
    companion object {
@@ -65,7 +67,7 @@ class FileBasedDiscoveryClient(private val configRepository: ServicesConfigRepos
       fun serviceInstance(serviceId: String, serviceConfiguration: Map<String, String>): DefaultServiceInstance {
          val url = serviceConfiguration[urlParameter]
          if (url == null) {
-            val message = "Service $serviceId does not porivde a $urlParameter parameter"
+            val message = "Service $serviceId does not provide a $urlParameter parameter"
             logger.error { message }
             error(message)
          }
@@ -99,10 +101,19 @@ class FileBasedDiscoveryClient(private val configRepository: ServicesConfigRepos
       return configRepository.load()
    }
 
-
    override fun description(): String = "File based discovery client using config at ${configRepository.path}"
    override fun close() {
       configRepository.stopWatching()
+   }
+}
+
+class SourceLoaderDiscoveryClient(private val servicesRegistry: SourceLoaderServicesRegistry)  : BaseConfigDiscoveryClient(), Closeable {
+   override fun servicesConfig(): ServicesConfig {
+      return servicesRegistry.typedConfig()
+   }
+
+   override fun description(): String = "Discovery client using services.conf from projects"
+   override fun close() {
    }
 }
 

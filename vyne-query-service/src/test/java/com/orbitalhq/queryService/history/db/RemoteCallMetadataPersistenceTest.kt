@@ -8,7 +8,12 @@ import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvi
 import com.orbitalhq.cockpit.core.content.DefaultContentRepository
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.history.QueryAnalyticsConfig
-import com.orbitalhq.history.db.*
+import com.orbitalhq.history.db.LineageRecordRepository
+import com.orbitalhq.history.db.QueryHistoryDbWriter
+import com.orbitalhq.history.db.QueryHistoryRecordRepository
+import com.orbitalhq.history.db.QueryResultRowRepository
+import com.orbitalhq.history.db.QuerySankeyChartRowRepository
+import com.orbitalhq.history.db.RemoteCallResponseRepository
 import com.orbitalhq.history.rest.QueryHistoryService
 import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.http.emptyResponse
@@ -84,7 +89,6 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
 
    @MockBean
    lateinit var cmsService: DefaultContentRepository
-
 
    @MockBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider

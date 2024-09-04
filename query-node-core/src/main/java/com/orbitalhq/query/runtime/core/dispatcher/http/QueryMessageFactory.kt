@@ -1,7 +1,9 @@
 package com.orbitalhq.query.runtime.core.dispatcher.http
 
 import com.orbitalhq.auth.schemes.AuthSchemeRepository
+import com.orbitalhq.config.HoconConfigRepository
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
+import com.orbitalhq.http.ServicesConfig
 import com.orbitalhq.http.ServicesConfigRepository
 import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.runtime.QueryMessage
@@ -15,7 +17,7 @@ import org.springframework.web.reactive.function.client.WebClient
  */
 @Component
 class QueryMessageFactory(
-   private val servicesRepository: ServicesConfigRepository,
+   private val servicesRepository: HoconConfigRepository<ServicesConfig>,
    private val authTokenRepository: AuthSchemeRepository,
    private val connectionsConfigProvider: SourceLoaderConnectorsRegistry,
    private val schemaProvider: SchemaProvider,
@@ -33,7 +35,7 @@ class QueryMessageFactory(
          sourcePackages = schemaProvider.schema.packages,
          connections = connectionsConfigProvider.load(),
          authTokens = authTokenRepository.getAllTokens(),
-         services = servicesRepository.load(),
+         services = servicesRepository.typedConfig(),
          resultMode, mediaType, clientQueryId,
          arguments
       )
