@@ -2,24 +2,28 @@ package com.orbitalhq.schemaServer.core.repositories
 
 import com.google.common.annotations.VisibleForTesting
 import com.orbitalhq.PackageIdentifier
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
-import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
+import com.orbitalhq.schemaServer.core.git.GitProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitUtils
 import com.orbitalhq.schemaServer.packages.AvroPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.PackageType
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
-import com.orbitalhq.schemaServer.repositories.*
+import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
+import com.orbitalhq.schemaServer.repositories.FileProjectStoreTestRequest
+import com.orbitalhq.schemaServer.repositories.FileProjectTestResponse
+import com.orbitalhq.schemaServer.repositories.GitConnectionTestRequest
+import com.orbitalhq.schemaServer.repositories.GitConnectionTestResult
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.BadRequestException
-import com.orbitalhq.toVynePackageIdentifier
-import lang.taxi.packages.TaxiPackageLoader
 import mu.KotlinLogging
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
+import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.RequestBody
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
@@ -55,6 +59,15 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) {
          }
       }
    }
+
+   @PostMapping("/api/workspace/projects/{projectId}")
+   fun createFileProject(
+      @PathVariable("projectId") projectId: String,
+      @RequestParam("format") packageType: PackageType,
+   ) {
+
+   }
+
 
    @VisibleForTesting
    fun removeFileRepository(repositoryPath: Path, packageIdentifier: PackageIdentifier): List<PackageIdentifier> {
@@ -101,8 +114,8 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) {
    }
 }
 
-fun GitProjectStoreChangeRequest.toRepositorySpec(): GitProjectStoreSpec {
-   return GitProjectStoreSpec(
+fun GitProjectStoreChangeRequest.toRepositorySpec(): GitProjectSpec {
+   return GitProjectSpec(
       this.name,
       this.uri,
       this.branch,
@@ -111,7 +124,7 @@ fun GitProjectStoreChangeRequest.toRepositorySpec(): GitProjectStoreSpec {
    )
 }
 
-fun CreateFileProjectStoreRequest.toRepositorySpec(): FileSystemPackageSpec {
+fun CreateFileProjectStoreRequest.toRepositorySpec(): FileProjectSpec {
    val packageIdentifier = when (this.loader.packageType) {
       PackageType.Taxi -> this.newProjectIdentifier
 
@@ -122,7 +135,7 @@ fun CreateFileProjectStoreRequest.toRepositorySpec(): FileSystemPackageSpec {
    }
 
 
-   return FileSystemPackageSpec(
+   return FileProjectSpec(
       Paths.get(path),
       isEditable = isEditable,
       packageIdentifier = packageIdentifier,

@@ -7,11 +7,11 @@ class GitRepositoryConfigTest : DescribeSpec({
 
    describe("redacting urls") {
       it("doesn't modify urls without user info") {
-         GitProjectStoreSpec.redactUrl("http://foo.com/a/b/c?foo=bar#123")
+         GitProjectSpec.redactUrl("http://foo.com/a/b/c?foo=bar#123")
             .shouldBe("http://foo.com/a/b/c?foo=bar#123")
       }
       it("redacts user info") {
-         GitProjectStoreSpec.redactUrl("http://marty:password@foo.com/a/b/c?foo=bar#123")
+         GitProjectSpec.redactUrl("http://marty:password@foo.com/a/b/c?foo=bar#123")
             .shouldBe("http://mar***@foo.com/a/b/c?foo=bar#123")
 
       }

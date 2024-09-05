@@ -18,7 +18,7 @@ import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
 import com.orbitalhq.schema.publisher.loaders.SchemaSourcesAdaptor
 import com.orbitalhq.schema.publisher.loaders.SetActiveChangesetResponse
 import com.orbitalhq.schema.publisher.loaders.UpdateChangesetResponse
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoader
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageWriter
 import com.orbitalhq.utils.RetryFailOnSerializeEmitHandler
@@ -43,7 +43,7 @@ private val logger = KotlinLogging.logger { }
 
 class GitSchemaPackageLoader(
    val workingDir: Path,
-   override val config: GitProjectStoreSpec,
+   override val config: GitProjectSpec,
    adaptor: SchemaSourcesAdaptor,
    // visible for testing
    val fileMonitor: ReactiveFileSystemMonitor = ReactiveWatchingFileSystemMonitor(workingDir, listOf(".git")),
@@ -72,7 +72,7 @@ class GitSchemaPackageLoader(
       }
       val pathWithGitRepo = workingDir.resolve(safePath).normalize()
       filePackageLoader = FileSystemPackageLoader(
-         config = FileSystemPackageSpec(
+         config = FileProjectSpec(
             pathWithGitRepo,
             config.loader,
          ),

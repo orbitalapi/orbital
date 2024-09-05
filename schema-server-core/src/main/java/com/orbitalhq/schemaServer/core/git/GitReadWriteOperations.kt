@@ -17,7 +17,7 @@ import java.util.*
  */
 class GitReadWriteOperations(
     workingDir: File,
-    private val config: GitProjectStoreSpec,
+    private val config: GitProjectSpec,
     private val hostingProviderRegistry: GitHostingProviderRegistry = GitHostingProviderRegistry()
 ) : GitPollOperations(workingDir, config) {
 

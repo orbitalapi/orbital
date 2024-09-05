@@ -118,6 +118,6 @@ interface GitRepositoryConnectionConfig {
 
    val redactedUrl: String
       get() {
-         return GitProjectStoreSpec.redactUrl(this.uri)
+         return GitProjectSpec.redactUrl(this.uri)
       }
 }

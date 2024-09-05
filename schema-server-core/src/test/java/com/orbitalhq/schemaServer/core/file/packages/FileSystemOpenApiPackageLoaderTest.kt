@@ -3,7 +3,7 @@ package com.orbitalhq.schemaServer.core.file.packages
 import com.google.common.io.Resources
 import com.winterbe.expekt.should
 import com.orbitalhq.PackageIdentifier
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import org.junit.Test
 import reactor.kotlin.test.test
@@ -18,7 +18,7 @@ class FileSystemOpenApiPackageLoaderTest : BaseFileSystemPackageLoaderTest() {
             .toURI()
       )
 
-      val packageSpec = FileSystemPackageSpec(
+      val packageSpec = FileProjectSpec(
          specPath,
          OpenApiPackageLoaderSpec(
             identifier = PackageIdentifier(

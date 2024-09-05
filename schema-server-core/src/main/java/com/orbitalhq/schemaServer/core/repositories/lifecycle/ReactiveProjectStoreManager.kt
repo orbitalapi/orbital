@@ -7,7 +7,7 @@ import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
 import com.orbitalhq.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
 import com.orbitalhq.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoader
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader
@@ -63,7 +63,7 @@ class ReactiveProjectStoreManager(
          if (projectPath != null) {
             manager.addLoader(
                FileSystemPackageLoader(
-                  FileSystemPackageSpec(projectPath, isEditable = isEditable),
+                  FileProjectSpec(projectPath, isEditable = isEditable),
                   TaxiSchemaSourcesAdaptor(),
                   ReactiveWatchingFileSystemMonitor(projectPath)
                )

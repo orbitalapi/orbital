@@ -10,11 +10,10 @@ import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.schema.consumer.ProjectManagerConfigSourceLoader
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
 import com.orbitalhq.schemaServer.core.file.FileChangeDetectionMethod
-import com.orbitalhq.schemaServer.core.file.deployProject
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
-import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
+import com.orbitalhq.schemaServer.core.git.GitProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
-import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
+import com.orbitalhq.schemaServer.core.git.WorkspaceGitProjectConfig
 import com.orbitalhq.schemaServer.core.git.GitWriterDecorator
 import com.orbitalhq.schemaServer.core.git.packages.BaseGitTest
 import com.orbitalhq.schemaServer.core.repositories.InMemoryWorkspaceConfigLoader
@@ -31,7 +30,6 @@ import io.kotest.matchers.file.shouldBeAFile
 import io.kotest.matchers.file.shouldExist
 import io.kotest.matchers.maps.shouldBeEmpty
 import io.kotest.matchers.maps.shouldContainKey
-import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import lang.taxi.packages.TaxiProjectLoader
 import org.junit.After
@@ -400,10 +398,10 @@ jdbc {
 //      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
       val loader = InMemoryWorkspaceConfigLoader(
          WorkspaceConfig(
-            git = GitSchemaRepositoryConfig(
+            git = WorkspaceGitProjectConfig(
                checkoutRoot = localRepoDir.root.toPath(),
                repositories = listOf(
-                  GitProjectStoreSpec(
+                  GitProjectSpec(
                      "test-git-repo",
                      uri = remoteRepoDir.root.toURI().toASCIIString(),
                      branch = "master",

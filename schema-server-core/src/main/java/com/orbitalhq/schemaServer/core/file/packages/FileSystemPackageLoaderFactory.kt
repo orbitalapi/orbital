@@ -2,8 +2,8 @@ package com.orbitalhq.schemaServer.core.file.packages
 
 import com.orbitalhq.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
 import com.orbitalhq.schemaServer.core.file.FileChangeDetectionMethod
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
-import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
+import com.orbitalhq.schemaServer.core.file.WorkspaceFileProjectConfig
 import com.orbitalhq.utils.files.ReactiveFileSystemMonitor
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
 import com.orbitalhq.utils.files.ReactiveWatchingFileSystemMonitor
@@ -23,7 +23,7 @@ class FileSystemPackageLoaderFactory(
    // pass the config in the build method, rather than the constructor,
    // as it allows for the config to change
    // (eg., be modified on disk), without having to destroy this class
-   fun build(config: FileSystemSchemaRepositoryConfig, spec: FileSystemPackageSpec): FileSystemPackageLoader {
+   fun build(config: WorkspaceFileProjectConfig, spec: FileProjectSpec): FileSystemPackageLoader {
       // Sometimes we're passed a file (ie., taxi.conf), and sometimes it's the directory.
       // In all cases, we want the directory
       val pathToWatch = if (Files.isDirectory(spec.path)) {

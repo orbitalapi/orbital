@@ -5,7 +5,7 @@ import com.orbitalhq.schemaServer.core.file.FileChangeDetectionMethod
 import com.orbitalhq.schemaServer.core.file.deployProject
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
-import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
+import com.orbitalhq.schemaServer.core.git.WorkspaceGitProjectConfig
 import com.orbitalhq.schemaServer.core.publisher.SourceWatchingSchemaPublisher
 import com.orbitalhq.schemaServer.core.repositories.InMemoryWorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceProjectsService
@@ -167,7 +167,7 @@ class GitRepositoryIntegrationTest : BaseGitTest() {
       //      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
       val loader = InMemoryWorkspaceConfigLoader(
          WorkspaceConfig(
-               git = GitSchemaRepositoryConfig(
+               git = WorkspaceGitProjectConfig(
                   checkoutRoot = localRepoDir.root.toPath(),
                )
          ),

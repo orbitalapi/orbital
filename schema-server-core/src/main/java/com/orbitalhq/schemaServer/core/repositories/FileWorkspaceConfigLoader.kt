@@ -12,10 +12,10 @@ import com.orbitalhq.schema.publisher.loaders.ProjectTransportConfig
 import com.orbitalhq.schemaServer.core.adaptors.InstantHoconSupport
 import com.orbitalhq.schemaServer.core.adaptors.PackageLoaderSpecHoconSupport
 import com.orbitalhq.schemaServer.core.adaptors.UriHoconSupport
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
-import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
-import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
+import com.orbitalhq.schemaServer.core.file.WorkspaceFileProjectConfig
+import com.orbitalhq.schemaServer.core.git.GitProjectSpec
+import com.orbitalhq.schemaServer.core.git.WorkspaceGitProjectConfig
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecRemovedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.GitSpecAddedEvent
@@ -241,9 +241,9 @@ class FileWorkspaceConfigLoader(
       return original.copy(file = updatedFileConfig)
    }
 
-   override fun addFileSpec(fileSpec: FileSystemPackageSpec): ModifyWorkspaceResponse {
+   override fun addFileSpec(fileSpec: FileProjectSpec): ModifyWorkspaceResponse {
       val current = this.typedConfig() // Don't call load, as we want the original, not the one we resolve paths with
-      val currentFileConfig = current.file ?: FileSystemSchemaRepositoryConfig()
+      val currentFileConfig = current.file ?: WorkspaceFileProjectConfig()
 
       if (currentFileConfig.projects.any { it.path == fileSpec.path }) {
          return ModifyWorkspaceResponse(ModifyProjectResponseStatus.Failed, "${fileSpec.path} already exists")
@@ -268,7 +268,7 @@ class FileWorkspaceConfigLoader(
       return ModifyWorkspaceResponse(ModifyProjectResponseStatus.Ok)
    }
 
-   private fun verifyProjectExists(fileSpec: FileSystemPackageSpec): PackageIdentifier {
+   private fun verifyProjectExists(fileSpec: FileProjectSpec): PackageIdentifier {
       return when (fileSpec.loader) {
          is TaxiPackageLoaderSpec -> verifyTaxiProjectExists(fileSpec)
          is OpenApiPackageLoaderSpec -> verifyOpenApiProjectExists(fileSpec)
@@ -277,13 +277,13 @@ class FileWorkspaceConfigLoader(
 
    }
 
-   private fun verifyOpenApiProjectExists(fileSpec: FileSystemPackageSpec): PackageIdentifier {
+   private fun verifyOpenApiProjectExists(fileSpec: FileProjectSpec): PackageIdentifier {
       require(fileSpec.path.exists()) { "No OpenAPI spec found at ${fileSpec.path}" }
       // What else do we need to check?
       return (fileSpec.loader as OpenApiPackageLoaderSpec).identifier
    }
 
-   private fun verifyTaxiProjectExists(fileSpec: FileSystemPackageSpec): PackageIdentifier {
+   private fun verifyTaxiProjectExists(fileSpec: FileProjectSpec): PackageIdentifier {
       val projectPath = makeRelativeToConfigFile(fileSpec.path)
 
       val project = TaxiPackageLoader.forDirectoryContainingTaxiFile(projectPath).load()
@@ -293,7 +293,7 @@ class FileWorkspaceConfigLoader(
       return project.identifier.toVynePackageIdentifier()
    }
 
-   private fun createProjectIfNotExists(fileSpec: FileSystemPackageSpec): PackageIdentifier {
+   private fun createProjectIfNotExists(fileSpec: FileProjectSpec): PackageIdentifier {
       // We don't create openAPI projects
       if (fileSpec.loader is OpenApiPackageLoaderSpec) {
          return verifyOpenApiProjectExists(fileSpec)
@@ -327,9 +327,9 @@ class FileWorkspaceConfigLoader(
 
    }
 
-   override fun addGitSpec(gitSpec: GitProjectStoreSpec): ModifyWorkspaceResponse {
+   override fun addGitSpec(gitSpec: GitProjectSpec): ModifyWorkspaceResponse {
       val current = this.typedConfig() // Don't call load, as we want the original, not the one we resolve paths with
-      val currentGitConfig = current.git ?: GitSchemaRepositoryConfig()
+      val currentGitConfig = current.git ?: WorkspaceGitProjectConfig()
       if (currentGitConfig.repositories.any { it.name == gitSpec.name }) {
          return ModifyWorkspaceResponse(
             ModifyProjectResponseStatus.Failed,

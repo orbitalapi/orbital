@@ -1,8 +1,6 @@
 package com.orbitalhq.schemaServer.core.repositories.lifecycle
 
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoader
-import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader
 
 /**
