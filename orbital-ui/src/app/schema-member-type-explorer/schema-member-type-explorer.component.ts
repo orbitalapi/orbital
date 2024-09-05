@@ -1,9 +1,9 @@
-import {ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import {ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {ActivatedRoute, Router} from '@angular/router';
 import Prism from 'prismjs'
 import 'prismjs/plugins/toolbar/prism-toolbar';
-import { BehaviorSubject, combineLatest, Observable, of, ReplaySubject } from 'rxjs';
-import { filter, map, startWith, tap } from 'rxjs/operators';
+import {BehaviorSubject, combineLatest, Observable, of, ReplaySubject} from 'rxjs';
+import {filter, map, startWith, tap} from 'rxjs/operators';
 import {
   Message,
   Operation,
@@ -14,9 +14,9 @@ import {
   VersionedSource
 } from 'src/app/services/schema';
 import {QueryPanelStoreService} from '../services/query-panel-store.service';
-import { combineAndCloneWithPartialSchema, SchemaSubmissionResult } from '../services/types.service';
-import { SchemaEditOperation } from '../project-import/schema-importer.service';
-import { CodeViewerFlexBoxMode } from '../code-viewer/code-viewer.component';
+import {combineAndCloneWithPartialSchema, SchemaSubmissionResult} from '../services/types.service';
+import {SchemaEditOperation} from '../project-import/schema-importer.service';
+import {CodeViewerFlexBoxMode} from '../code-viewer/code-viewer.component';
 import {
   Links,
   buildLinksForModelWithAttributes,
@@ -24,97 +24,99 @@ import {
   buildOperationLinks, findServiceAssociatedWithOperation
 } from '../schema-diagram/schema-chart-builder';
 import {taxi} from '../utils/prism.languages';
+import {MarkdownService} from "ngx-markdown";
+import {CustomMarkdownRenderer} from "../markdown-utils/markdown-custom-renderer";
 
 @Component({
   selector: 'app-schema-member-type-explorer',
   template: `
-      <div class="main-content">
-          <tui-tabs [(activeItemIndex)]="activeTabIndex" *ngIf="hasCodeView" class="schema-source-tabs">
-              <button tuiTab>
-                  <img src="assets/img/tabler/table.svg" class="icon">
-                  Schema
-              </button>
-              <button tuiTab>
-                  <img src="assets/img/tabler/code.svg" class="icon">
-                  Source
-              </button>
-          </tui-tabs>
-          <as-split direction="horizontal" unit="pixel" *ngIf="activeTabIndex === 0">
-              <as-split-area size="260" maxSize="260">
-                  <app-schema-member-tree [partialSchema$]="partialSchema$" #schemaEntryTable
-                                          (modelSelected)="onModelSelected($event)"
-                                          (operationSelected)="onOperationSelected($event)"
-                                          (resetSelection)="onResetMemberSelection()"
-                  ></app-schema-member-tree>
-              </as-split-area>
-              <as-split-area size="*">
-                  <as-split direction="horizontal">
-                      <as-split-area [size]="selectedOperation ? 100 : 50">
-                          <div class="documentation-content-container">
-                              <div class="documentation-content">
-                                  <app-type-viewer *ngIf="selectedModel"
-                                                   [type]="selectedModel"
-                                                   [schema]="schema"
-                                                   [partialSchema]="partialSchema"
-                                                   [showUsages]="false"
-                                                   [showContentsList]="false"
-                                                   [anonymousTypes]="partialSchema?.types"
-                                                   commitMode="explicit"
-                                                   [editable]="editable"
-                                                   [schemaMemberNavigable]="!editable"
-                                                   (newTypeCreated)="handleNewTypeCreated($event, selectedModel)"
-                                                   (typeUpdated)="handleSchemaEditOperation($event.schemaEditOperation, $event.member, selectedModel)"
-                                  ></app-type-viewer>
-                                  <app-operation-view *ngIf="selectedOperation"
-                                                      [operation]="selectedOperation"
-                                                      [schema]="schema"
-                                                      [allowTryItOut]="allowTryItOut"
-                                                      [editable]="editable"
-                                                      [schemaMemberNavigable]="!editable"
-                                                      commitMode="explicit"
-                                                      (newTypeCreated)="handleNewTypeCreated($event, selectedOperation)"
-                                                      (updateDeferred)="handleSchemaEditOperation($event.schemaEditOperation, $event.member, selectedOperation)"
-                                  ></app-operation-view>
-                                  <div *ngIf="!selectedModel && !selectedOperation">
-                                    @if (readme) {
-                                      <markdown [data]="readme" class="markdown-body" [disableSanitizer]="true"/>
-                                    } @else {
-                                      Select a schema member from the panel on the left to view here.
-                                    }
-                                  </div>
-                              </div>
-                          </div>
-                      </as-split-area>
-                      <as-split-area *ngIf="selectedModel || selectedOperation" size="50">
-                          <app-schema-diagram
-                                  [schema$]="combinedSchema$"
-                                  [displayedMembers]="editable ? availableMemberLinks : [selectedModel ? selectedModel.name.fullyQualifiedName : selectedOperation.memberQualifiedName.fullyQualifiedName]"
-                                  [memberNameNavigable]="!editable"
-                          ></app-schema-diagram>
-                      </as-split-area>
-                  </as-split>
-              </as-split-area>
+    <div class="main-content">
+      <tui-tabs [(activeItemIndex)]="activeTabIndex" *ngIf="hasCodeView" class="schema-source-tabs">
+        <button tuiTab>
+          <img src="assets/img/tabler/table.svg" class="icon">
+          Schema
+        </button>
+        <button tuiTab>
+          <img src="assets/img/tabler/code.svg" class="icon">
+          Source
+        </button>
+      </tui-tabs>
+      <as-split direction="horizontal" unit="pixel" *ngIf="activeTabIndex === 0">
+        <as-split-area size="260" maxSize="260">
+          <app-schema-member-tree [partialSchema$]="partialSchema$" #schemaEntryTable
+                                  (modelSelected)="onModelSelected($event)"
+                                  (operationSelected)="onOperationSelected($event)"
+                                  (resetSelection)="onResetMemberSelection()"
+          ></app-schema-member-tree>
+        </as-split-area>
+        <as-split-area size="*">
+          <as-split direction="horizontal">
+            <as-split-area [size]="selectedOperation ? 100 : 50">
+              <div class="documentation-content-container">
+                <div class="documentation-content">
+                  <app-type-viewer *ngIf="selectedModel"
+                                   [type]="selectedModel"
+                                   [schema]="schema"
+                                   [partialSchema]="partialSchema"
+                                   [showUsages]="false"
+                                   [showContentsList]="false"
+                                   [anonymousTypes]="partialSchema?.types"
+                                   commitMode="explicit"
+                                   [editable]="editable"
+                                   [schemaMemberNavigable]="!editable"
+                                   (newTypeCreated)="handleNewTypeCreated($event, selectedModel)"
+                                   (typeUpdated)="handleSchemaEditOperation($event.schemaEditOperation, $event.member, selectedModel)"
+                  ></app-type-viewer>
+                  <app-operation-view *ngIf="selectedOperation"
+                                      [operation]="selectedOperation"
+                                      [schema]="schema"
+                                      [allowTryItOut]="allowTryItOut"
+                                      [editable]="editable"
+                                      [schemaMemberNavigable]="!editable"
+                                      commitMode="explicit"
+                                      (newTypeCreated)="handleNewTypeCreated($event, selectedOperation)"
+                                      (updateDeferred)="handleSchemaEditOperation($event.schemaEditOperation, $event.member, selectedOperation)"
+                  ></app-operation-view>
+                  <div *ngIf="!selectedModel && !selectedOperation" appCaptureLocalNavigation>
+                    @if (readme) {
+                      <markdown [data]="readme" class="markdown-body" [disableSanitizer]="true"/>
+                    } @else {
+                      Select a schema member from the panel on the left to view here.
+                    }
+                  </div>
+                </div>
+              </div>
+            </as-split-area>
+            <as-split-area *ngIf="selectedModel || selectedOperation" size="50">
+              <app-schema-diagram
+                [schema$]="combinedSchema$"
+                [displayedMembers]="editable ? availableMemberLinks : [selectedModel ? selectedModel.name.fullyQualifiedName : selectedOperation.memberQualifiedName.fullyQualifiedName]"
+                [memberNameNavigable]="!editable"
+              ></app-schema-diagram>
+            </as-split-area>
           </as-split>
-          <app-code-viewer
-                  *ngIf="activeTabIndex === 1"
-                  class='code-editor'
-                  [sources]="versionedSources"
-                  [flexboxMode]="codeViewerFlexBoxMode"
-          ></app-code-viewer>
-      </div>
-      <div class="error-message-box" *ngIf="saveResultMessage && saveResultMessage.severity === 'FAILURE'">
-          {{ saveResultMessage.message }}
-      </div>
-      <div class="button-bar" *ngIf="editable">
-          <button tuiButton appearance="secondary" size="m" (click)="cancelConfig.emit()" [showLoader]="working">
-              Cancel
-          </button>
-          <button tuiButton size="m" (click)="savePendingEdits()" [showLoader]="working">Save</button>
-      </div>
+        </as-split-area>
+      </as-split>
+      <app-code-viewer
+        *ngIf="activeTabIndex === 1"
+        class='code-editor'
+        [sources]="versionedSources"
+        [flexboxMode]="codeViewerFlexBoxMode"
+      ></app-code-viewer>
+    </div>
+    <div class="error-message-box" *ngIf="saveResultMessage && saveResultMessage.severity === 'FAILURE'">
+      {{ saveResultMessage.message }}
+    </div>
+    <div class="button-bar" *ngIf="editable">
+      <button tuiButton appearance="secondary" size="m" (click)="cancelConfig.emit()" [showLoader]="working">
+        Cancel
+      </button>
+      <button tuiButton size="m" (click)="savePendingEdits()" [showLoader]="working">Save</button>
+    </div>
   `,
   styleUrls: ['./schema-member-type-explorer.component.scss'],
 })
-export class SchemaMemberTypeExplorerComponent {
+export class SchemaMemberTypeExplorerComponent  {
 
   activeTabIndex: number = 0;
 
@@ -167,10 +169,12 @@ export class SchemaMemberTypeExplorerComponent {
     private router: Router,
     private activatedRoute: ActivatedRoute,
     private queryPanelStoreService: QueryPanelStoreService,
+    private markdownService: MarkdownService,
+    private customMarkdownRenderer: CustomMarkdownRenderer
   ) {
     this.combinedSchema$ = combineLatest([
       this.schema$,
-      this.partialSchema$.pipe(startWith({ types: [], services: [] } as PartialSchema))
+      this.partialSchema$.pipe(startWith({types: [], services: []} as PartialSchema))
     ]).pipe(
       filter(([schema, partialSchema]) => {
         return !this.editable || (this.editable && !!partialSchema.types.length && !!partialSchema.services.length)
@@ -201,25 +205,11 @@ export class SchemaMemberTypeExplorerComponent {
         return null
       }
     });
-  }
 
-  // TODO: leaving this until whatever we're doing with rendering diagrams in the markdown component is resolved
-  /*ngOnInit() {
-    const originalCodeRenderer = this.markdownService.renderer.code;
-    this.markdownService.options.gfm = true;
-    const yup = true
-    this.markdownService.renderer.code = (code: string, infostring: string | undefined, escaped: boolean) => {
-      return `
-        <a (click)="this.gotoQueryEditor(code)" class="taxi-link">${infostring}</a>
-        <!-- NOTE: this is the <app-code-editor> but renamed to avoid collisions -->
-        <markdown-code-editor class="code-editor"
-                         content="${code}"
-                         readOnly="${yup}"
-        ></markdown-code-editor>
-      `
-      //return `<h3>${infostring}</h3><pre class="language-${infostring}" tabindex="0">${originalCodeRenderer(code, infostring, escaped)}</pre>`
-    };
-  }*/
+    this.markdownService.renderer.code = (code: string, language: string, escaped: boolean):string => {
+      return this.customMarkdownRenderer.code(code, language, escaped)
+    }
+  }
 
   get hasCodeView(): boolean {
     return this._partialSchema && "sourcePackage" in this._partialSchema;
@@ -353,8 +343,8 @@ export class SchemaMemberTypeExplorerComponent {
     // Use a set here to make the array unique
     const availableMemberLinks = [...new Set(
       [selectedTypeName]
-      .concat(links.inputs.map(input => input.sourceNodeName.fullyQualifiedName))
-      .concat(links.outputs.map(output => output.targetNodeName.fullyQualifiedName)))
+        .concat(links.inputs.map(input => input.sourceNodeName.fullyQualifiedName))
+        .concat(links.outputs.map(output => output.targetNodeName.fullyQualifiedName)))
     ]
     console.log("availableLinkages", availableMemberLinks);
     return availableMemberLinks;
@@ -362,7 +352,7 @@ export class SchemaMemberTypeExplorerComponent {
 
   private clearQueryParams() {
     this.router.navigate([], {
-      queryParams: { selectedMember: null },
+      queryParams: {selectedMember: null},
       queryParamsHandling: 'merge',
       replaceUrl: true
     });
