@@ -2,8 +2,8 @@ package com.orbitalhq.schemaServer.core.repositories
 
 import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.PackageIdentifier
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
-import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
+import com.orbitalhq.schemaServer.core.file.WorkspaceFileProjectConfig
 import com.orbitalhq.schemaServer.core.file.deployProject
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecRemovedEvent
@@ -91,10 +91,10 @@ class FileWorkspaceConfigLoaderTest {
 
    private fun writeWorkspaceConfWithProjectPaths(vararg paths: Path): String {
       val projects = paths.map { path ->
-         FileSystemPackageSpec(path = path)
+         FileProjectSpec(path = path)
       }
       val workspace = WorkspaceConfig(
-         file = FileSystemSchemaRepositoryConfig(
+         file = WorkspaceFileProjectConfig(
             projects = projects
          )
       )
@@ -106,7 +106,7 @@ class FileWorkspaceConfigLoaderTest {
    @Test
    fun `adding a new project with relative path is created relative to workspace file`() {
       loader.addFileSpec(
-         FileSystemPackageSpec(
+         FileProjectSpec(
             path = Paths.get("test-project"),
             packageIdentifier = PackageIdentifier.fromId("com.foo/test/1.0.0")
          )
@@ -118,7 +118,7 @@ class FileWorkspaceConfigLoaderTest {
    @Test
    fun `adding a new project with relative path defining taxi conf path is created relative to workspace file`() {
       loader.addFileSpec(
-         FileSystemPackageSpec(
+         FileProjectSpec(
             path = Paths.get("test-project/taxi.conf"),
             packageIdentifier = PackageIdentifier.fromId("com.foo/test/1.0.0")
          )
@@ -135,7 +135,7 @@ class FileWorkspaceConfigLoaderTest {
 
       // This is an existing project, so we don't pass the identifier
       val update = loader.addFileSpec(
-         FileSystemPackageSpec(
+         FileProjectSpec(
             path = Paths.get("test-project"),
          )
       )
@@ -150,7 +150,7 @@ class FileWorkspaceConfigLoaderTest {
 
       // This is an existing project, so we don't pass the identifier
       val update = loader.addFileSpec(
-         FileSystemPackageSpec(
+         FileProjectSpec(
             path = projectHome.toPath().toAbsolutePath()
          )
       )
@@ -160,7 +160,7 @@ class FileWorkspaceConfigLoaderTest {
    @Test
    fun `adding a new project with absolute path is created in the correct location`() {
       loader.addFileSpec(
-         FileSystemPackageSpec(
+         FileProjectSpec(
             path = projectFolder.toPath().resolve("test-project"),
             packageIdentifier = PackageIdentifier.fromId("com.foo/test/1.0.0")
          )
@@ -172,7 +172,7 @@ class FileWorkspaceConfigLoaderTest {
    @Test
    fun `adding a new project with absolute path referencing taxi conf path is created in the correct location`() {
       loader.addFileSpec(
-         FileSystemPackageSpec(
+         FileProjectSpec(
             path = projectFolder.toPath().resolve("test-project/taxi.conf"),
             packageIdentifier = PackageIdentifier.fromId("com.foo/test/1.0.0")
          )

@@ -7,7 +7,7 @@ import com.orbitalhq.VersionedSource
 import com.orbitalhq.schema.publisher.PublisherType
 import com.orbitalhq.schema.publisher.loaders.*
 import com.orbitalhq.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.utils.files.FileSystemChangeEvent
 import com.orbitalhq.utils.files.ReactiveFileSystemMonitor
 import lang.taxi.packages.TaxiPackageProject
@@ -24,16 +24,16 @@ import java.time.Duration
 import kotlin.io.path.readBytes
 
 class FileSystemPackageLoader(
-   override val config: FileSystemPackageSpec,
-   private val adaptor: SchemaSourcesAdaptor,
-   private val fileMonitor: ReactiveFileSystemMonitor,
-   private val eventThrottleSize: Int = 100,
-   private val eventThrottleDuration: Duration = Duration.ofMillis(50),
+    override val config: FileProjectSpec,
+    private val adaptor: SchemaSourcesAdaptor,
+    private val fileMonitor: ReactiveFileSystemMonitor,
+    private val eventThrottleSize: Int = 100,
+    private val eventThrottleDuration: Duration = Duration.ofMillis(50),
 
    // Allows things like Git (which is a proxy for this)
    // to act as the decorator to the underlying transport, and
    // do things like filter out uris etc
-   private val transportDecorator: SchemaPackageTransport? = null
+    private val transportDecorator: SchemaPackageTransport? = null
 ) : SchemaPackageTransport, LoaderExposingTaxiProject {
 
    companion object {

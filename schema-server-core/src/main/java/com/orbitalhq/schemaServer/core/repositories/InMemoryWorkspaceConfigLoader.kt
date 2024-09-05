@@ -3,8 +3,8 @@ package com.orbitalhq.schemaServer.core.repositories
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
-import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
+import com.orbitalhq.schemaServer.core.git.GitProjectSpec
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.GitSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
@@ -53,7 +53,7 @@ class InMemoryWorkspaceConfigLoader(
       return jacksonObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(config)
    }
 
-   override fun addFileSpec(fileSpec: FileSystemPackageSpec): ModifyWorkspaceResponse {
+   override fun addFileSpec(fileSpec: FileProjectSpec): ModifyWorkspaceResponse {
       config = config.copy(
          file = config.file!!.copy(
             projects = config.file!!.projects.concat(fileSpec)
@@ -63,7 +63,7 @@ class InMemoryWorkspaceConfigLoader(
       return ModifyWorkspaceResponse(ModifyProjectResponseStatus.Ok)
    }
 
-   override fun addGitSpec(gitSpec: GitProjectStoreSpec): ModifyWorkspaceResponse {
+   override fun addGitSpec(gitSpec: GitProjectSpec): ModifyWorkspaceResponse {
       config = config.copy(
          git = config.gitConfigOrDefault.copy(
             repositories = config.gitConfigOrDefault.repositories.concat(gitSpec)

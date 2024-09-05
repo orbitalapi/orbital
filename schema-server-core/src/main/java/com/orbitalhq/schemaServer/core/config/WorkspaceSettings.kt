@@ -1,8 +1,8 @@
 package com.orbitalhq.schemaServer.core.config
 
 import com.orbitalhq.schema.publisher.ProjectLoaderManager
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
-import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
+import com.orbitalhq.schemaServer.core.file.WorkspaceFileProjectConfig
 import com.orbitalhq.schemaServer.core.git.SimpleGitRepositoryConnectionConfig
 import com.orbitalhq.schemaServer.core.repositories.FileWorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.GitWorkspaceConfigLoader
@@ -16,7 +16,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.net.URL
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
@@ -97,8 +96,8 @@ class WorkspaceLoaderConfig {
             logger.info { "A single-project workspace has been configured for ${workspaceConfig.projectFile}. Ignoring any other config from ${workspaceConfig.configFile}" }
             return InMemoryWorkspaceConfigLoader(
                WorkspaceConfig(
-                  FileSystemSchemaRepositoryConfig(
-                     projects = listOf(FileSystemPackageSpec(workspaceConfig.projectFile, isEditable = true)),
+                  WorkspaceFileProjectConfig(
+                     projects = listOf(FileProjectSpec(workspaceConfig.projectFile, isEditable = true)),
                   )
                ),
                eventDispatcher

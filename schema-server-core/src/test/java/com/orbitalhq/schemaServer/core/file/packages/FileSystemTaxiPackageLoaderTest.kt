@@ -2,7 +2,7 @@ package com.orbitalhq.schemaServer.core.file.packages
 
 import com.winterbe.expekt.should
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.file.deployProject
 import org.junit.Test
 import reactor.kotlin.test.test
@@ -14,7 +14,7 @@ class FileSystemTaxiPackageLoaderTest : BaseFileSystemPackageLoaderTest() {
    @Test
    fun `can load a taxi package from disk`() {
       projectHome.deployProject("sample-project")
-      val packageSpec = FileSystemPackageSpec(
+      val packageSpec = FileProjectSpec(
          projectHome.root.toPath(),
          TaxiPackageLoaderSpec
       )

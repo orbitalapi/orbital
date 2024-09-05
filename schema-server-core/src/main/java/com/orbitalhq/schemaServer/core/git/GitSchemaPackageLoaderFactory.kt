@@ -21,7 +21,7 @@ class GitSchemaPackageLoaderFactory(
    ) {
    private val logger = KotlinLogging.logger {}
 
-   fun build(config: GitSchemaRepositoryConfig, spec: GitProjectStoreSpec): GitSchemaPackageLoader {
+   fun build(config: WorkspaceGitProjectConfig, spec: GitProjectSpec): GitSchemaPackageLoader {
       val rootPath = config.checkoutRoot ?: Paths.get("./gitWorkingDir")
       val workingDir = rootPath.resolve(spec.name + "/")
       logger.info { "Building a git package loader for git repo at  ${spec.uri} checking out to $workingDir, polling ${config.pollFrequency}" }

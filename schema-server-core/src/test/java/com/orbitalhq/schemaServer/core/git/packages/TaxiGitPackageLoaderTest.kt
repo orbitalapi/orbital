@@ -5,13 +5,12 @@ import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
 import com.orbitalhq.schemaServer.core.file.deployProject
-import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
+import com.orbitalhq.schemaServer.core.git.GitProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldStartWith
 import org.eclipse.jgit.api.Git
 import org.junit.Before
 import org.junit.Rule
@@ -50,7 +49,7 @@ class TaxiGitPackageLoaderTest {
    fun `can load a taxi package from a git repo`() {
       deployTestProjectToRemoteGitPath()
       val checkoutRoot = localRepoDir.root.toPath()
-      val config = GitProjectStoreSpec(
+      val config = GitProjectSpec(
          "local-test",
          uri = remoteRepoDir.root.toURI().toASCIIString(),
          branch = "master",
@@ -108,7 +107,7 @@ class TaxiGitPackageLoaderTest {
 
 
       val checkoutRoot = localRepoDir.root.toPath()
-      val config = GitProjectStoreSpec(
+      val config = GitProjectSpec(
          "local-test",
          uri = remoteRepoDir.root.toURI().toASCIIString(),
          branch = "master",
@@ -149,7 +148,7 @@ class TaxiGitPackageLoaderTest {
    fun `loader is healthy if everything syncs well`() {
       deployTestProjectToRemoteGitPath()
       val checkoutRoot = localRepoDir.root.toPath()
-      val config = GitProjectStoreSpec(
+      val config = GitProjectSpec(
          "local-test",
          uri = remoteRepoDir.root.toURI().toASCIIString(),
          branch = "master",
@@ -189,7 +188,7 @@ class TaxiGitPackageLoaderTest {
    fun `loader is unhealthy if bad git url`() {
       deployTestProjectToRemoteGitPath()
       val checkoutRoot = localRepoDir.root.toPath()
-      val config = GitProjectStoreSpec(
+      val config = GitProjectSpec(
          "local-test",
          uri = "http://badgiturl.nope/", // <---- This is the test -- we can't sync from here, everythign should fail
          branch = "master",
@@ -232,7 +231,7 @@ class TaxiGitPackageLoaderTest {
       remoteRepo.commit().apply { message = "deleting taxi.conf" }.call()
 
       val checkoutRoot = localRepoDir.root.toPath()
-      val config = GitProjectStoreSpec(
+      val config = GitProjectSpec(
          "local-test",
          uri = remoteRepoDir.root.toURI().toASCIIString(),
          branch = "master",

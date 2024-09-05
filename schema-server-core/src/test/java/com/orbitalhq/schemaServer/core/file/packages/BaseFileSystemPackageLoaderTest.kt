@@ -1,7 +1,7 @@
 package com.orbitalhq.schemaServer.core.file.packages
 
 import com.orbitalhq.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
 import org.junit.Rule
 import org.junit.rules.TemporaryFolder
@@ -16,7 +16,7 @@ open class BaseFileSystemPackageLoaderTest {
    @JvmField
    val projectHome = TemporaryFolder()
 
-   protected fun buildLoader(packageSpec: FileSystemPackageSpec): Pair<ReactivePollingFileSystemMonitor, FileSystemPackageLoader> {
+   protected fun buildLoader(packageSpec: FileProjectSpec): Pair<ReactivePollingFileSystemMonitor, FileSystemPackageLoader> {
       val fileMonitor = ReactivePollingFileSystemMonitor(
          packageSpec.path,
          Duration.ofDays(100L) // Poll Manually

@@ -4,10 +4,10 @@ import com.google.common.io.Resources
 import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
-import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
-import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
+import com.orbitalhq.schemaServer.core.file.WorkspaceFileProjectConfig
+import com.orbitalhq.schemaServer.core.git.GitProjectSpec
+import com.orbitalhq.schemaServer.core.git.WorkspaceGitProjectConfig
 import com.orbitalhq.schemaServer.core.repositories.FileWorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
@@ -40,19 +40,19 @@ class ConfigTest {
    @Test
    fun `can read and write a full config`() {
       val config = WorkspaceConfig(
-         file = FileSystemSchemaRepositoryConfig(
+         file = WorkspaceFileProjectConfig(
             projects = listOf(
-               FileSystemPackageSpec(
+               FileProjectSpec(
                   path = Paths.get("/a/b/c/project"),
                   isEditable = true
                )
 
             )
          ),
-         git = GitSchemaRepositoryConfig(
+         git = WorkspaceGitProjectConfig(
             checkoutRoot = Paths.get("/my/git/root"),
             repositories = listOf(
-               GitProjectStoreSpec(
+               GitProjectSpec(
                   "my-git-project",
                   "https://github.com/something.git",
                   branch = "master"

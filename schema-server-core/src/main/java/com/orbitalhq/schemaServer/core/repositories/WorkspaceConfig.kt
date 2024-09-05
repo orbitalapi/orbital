@@ -2,10 +2,10 @@ package com.orbitalhq.schemaServer.core.repositories
 
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
-import com.orbitalhq.schemaServer.core.file.FileSystemSchemaRepositoryConfig
-import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
-import com.orbitalhq.schemaServer.core.git.GitSchemaRepositoryConfig
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
+import com.orbitalhq.schemaServer.core.file.WorkspaceFileProjectConfig
+import com.orbitalhq.schemaServer.core.git.GitProjectSpec
+import com.orbitalhq.schemaServer.core.git.WorkspaceGitProjectConfig
 import com.orbitalhq.schemaServer.repositories.FileProjectStoreTestRequest
 import com.orbitalhq.schemaServer.repositories.FileProjectTestResponse
 import reactor.core.publisher.Flux
@@ -17,8 +17,8 @@ import java.nio.file.Path
  * the various locations that taxi projects are loaded from
  */
 data class WorkspaceConfig(
-   val file: FileSystemSchemaRepositoryConfig? = null,
-   val git: GitSchemaRepositoryConfig? = null
+   val file: WorkspaceFileProjectConfig? = null,
+   val git: WorkspaceGitProjectConfig? = null
 ) {
    fun repoCountDescription(): String {
       val fileRepos = file?.projects?.size ?: 0
@@ -26,8 +26,8 @@ data class WorkspaceConfig(
       return "$fileRepos file repositories and $gitRepos git repositories"
    }
 
-   val gitConfigOrDefault:GitSchemaRepositoryConfig = git ?: GitSchemaRepositoryConfig.default()
-   val fileConfigOrDefault:FileSystemSchemaRepositoryConfig = file ?: FileSystemSchemaRepositoryConfig()
+   val gitConfigOrDefault:WorkspaceGitProjectConfig = git ?: WorkspaceGitProjectConfig.default()
+   val fileConfigOrDefault:WorkspaceFileProjectConfig = file ?: WorkspaceFileProjectConfig()
 }
 
 enum class ModifyProjectResponseStatus {
@@ -47,9 +47,9 @@ data class ModifyWorkspaceResponse(
 interface WorkspaceConfigLoader {
    fun load(createDefaultIfAbsent: Boolean = true): WorkspaceConfig
    fun safeConfigJson(): String
-   fun addFileSpec(fileSpec: FileSystemPackageSpec): ModifyWorkspaceResponse
+   fun addFileSpec(fileSpec: FileProjectSpec): ModifyWorkspaceResponse
 
-   fun addGitSpec(gitSpec: GitProjectStoreSpec): ModifyWorkspaceResponse
+   fun addGitSpec(gitSpec: GitProjectSpec): ModifyWorkspaceResponse
    fun removeGitRepository(repositoryName: String, packageIdentifier: PackageIdentifier): List<PackageIdentifier>
    fun removeFileRepository(repositoryPath: Path, packageIdentifier: PackageIdentifier): List<PackageIdentifier>
    fun removePushedRepository(identifier: PackageIdentifier): List<PackageIdentifier>

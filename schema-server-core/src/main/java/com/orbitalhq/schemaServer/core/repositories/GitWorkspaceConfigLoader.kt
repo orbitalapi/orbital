@@ -5,9 +5,9 @@ import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schema.publisher.ProjectLoaderManager
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schemaServer.core.config.WorkspaceGitSettings
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitFileLoaderStatus
-import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
+import com.orbitalhq.schemaServer.core.git.GitProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitRef
 import com.orbitalhq.schemaServer.core.git.GitRepoSync
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
@@ -110,11 +110,11 @@ class GitWorkspaceConfigLoader(
       return fileConfigLoader.safeConfigJson()
    }
 
-   override fun addFileSpec(fileSpec: FileSystemPackageSpec): ModifyWorkspaceResponse {
+   override fun addFileSpec(fileSpec: FileProjectSpec): ModifyWorkspaceResponse {
       return fileConfigLoader.addFileSpec(fileSpec)
    }
 
-   override fun addGitSpec(gitSpec: GitProjectStoreSpec): ModifyWorkspaceResponse {
+   override fun addGitSpec(gitSpec: GitProjectSpec): ModifyWorkspaceResponse {
      return try {
          fileConfigLoader.addGitSpec(gitSpec)
       } catch (e: Exception) {

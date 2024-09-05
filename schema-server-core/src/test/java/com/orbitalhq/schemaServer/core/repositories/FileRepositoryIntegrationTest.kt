@@ -8,9 +8,9 @@ import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.rsocket.CBORJackson
-import com.orbitalhq.schemaServer.core.file.FileSystemPackageSpec
+import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
-import com.orbitalhq.schemaServer.core.git.GitProjectStoreSpec
+import com.orbitalhq.schemaServer.core.git.GitProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.publisher.SourceWatchingSchemaPublisher
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
@@ -60,7 +60,7 @@ class FileRepositoryIntegrationTest {
 
       val projectFolder = folder.newFolder().toPath()
       loader.addFileSpec(
-         FileSystemPackageSpec(
+         FileProjectSpec(
             path = projectFolder,
             packageIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
          )
@@ -83,7 +83,7 @@ class FileRepositoryIntegrationTest {
          FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher, projectManager = mock { })
 
       loader.addFileSpec(
-         FileSystemPackageSpec(
+         FileProjectSpec(
             path = openApiSpec.toPath(),
             loader = OpenApiPackageLoaderSpec(
                identifier = PackageIdentifier.fromId("com/foo/1.0.0"),
@@ -179,7 +179,7 @@ class FileRepositoryIntegrationTest {
    fun `configure a file repository at runtime and when files are changes then schema updates are emitted`() {
       val (repositoryService, repositoryManager, schemaClient) = setupServices()
 
-      
+
       repositoryManager.use {
          // First, create the new repository
          val projectFolder = folder.newFolder()
@@ -571,7 +571,7 @@ class FileRepositoryIntegrationTest {
       val workerThreadOne = Thread {
          repeat(100) {
             schemaRepository.addFileSpec(
-               FileSystemPackageSpec(
+               FileProjectSpec(
                   folder.resolve("project-1/").toPath(),
                   loader = TaxiPackageLoaderSpec,
                   packageIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
@@ -589,7 +589,7 @@ class FileRepositoryIntegrationTest {
       val workerThreadTwo = Thread {
          repeat(100) {
             schemaRepository.addFileSpec(
-               FileSystemPackageSpec(
+               FileProjectSpec(
                   folder.resolve("project-1/").toPath(),
                   loader = TaxiPackageLoaderSpec,
                   packageIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
@@ -606,7 +606,7 @@ class FileRepositoryIntegrationTest {
       val workerThreadThree = Thread {
          repeat(100) {
             schemaRepository.addGitSpec(
-               GitProjectStoreSpec(
+               GitProjectSpec(
                   "test-repo-2",
                   "https://github.com/test/repo2",
                   "master",
@@ -678,14 +678,14 @@ class FileRepositoryIntegrationTest {
 
    private fun createFourRepositories(schemaRepository: FileWorkspaceConfigLoader) {
       schemaRepository.addGitSpec(
-         GitProjectStoreSpec(
+         GitProjectSpec(
             "test-repo-1",
             "https://github.com/test/repo1",
             "master",
          )
       )
       schemaRepository.addGitSpec(
-         GitProjectStoreSpec(
+         GitProjectSpec(
             "test-repo-2",
             "https://github.com/test/repo2",
             "master",
@@ -693,7 +693,7 @@ class FileRepositoryIntegrationTest {
       )
 
       schemaRepository.addFileSpec(
-         FileSystemPackageSpec(
+         FileProjectSpec(
             folder.resolve("project-1/").toPath(),
             loader = TaxiPackageLoaderSpec,
             packageIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
@@ -702,7 +702,7 @@ class FileRepositoryIntegrationTest {
 
 
       schemaRepository.addFileSpec(
-         FileSystemPackageSpec(
+         FileProjectSpec(
             folder.resolve("project-2/").toPath(),
             loader = TaxiPackageLoaderSpec,
             packageIdentifier = PackageIdentifier.fromId("com/bar/1.0.0")

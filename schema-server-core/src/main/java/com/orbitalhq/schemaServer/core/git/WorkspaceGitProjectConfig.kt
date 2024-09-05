@@ -13,13 +13,17 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 
-data class GitSchemaRepositoryConfig(
-    val checkoutRoot: Path = Paths.get("./.orbital/gitProjects/"),
-    val pollFrequency: Duration = Duration.ofSeconds(30),
-    val repositories: List<GitProjectStoreSpec> = emptyList(),
+/**
+ * Models the configuration options for defining git projects within a workspace (workspace.conf file)
+ * This class models the git {} block inside a workspace.conf configuration file
+ */
+data class WorkspaceGitProjectConfig(
+   val checkoutRoot: Path = Paths.get("./orbital/workspace/projects/"),
+   val pollFrequency: Duration = Duration.ofSeconds(30),
+   val repositories: List<GitProjectSpec> = emptyList(),
 ) {
    companion object {
-      fun default():GitSchemaRepositoryConfig = GitSchemaRepositoryConfig()
+      fun default():WorkspaceGitProjectConfig = WorkspaceGitProjectConfig()
    }
 }
 
@@ -32,7 +36,11 @@ data class GitSshAuth(
    val passphrase: String? = null,
 )
 
-data class GitProjectStoreSpec(
+/**
+ * Models the configuration of a workspace project
+ * that is loaded from git.
+ */
+data class GitProjectSpec(
    override val name: String,
 
    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)

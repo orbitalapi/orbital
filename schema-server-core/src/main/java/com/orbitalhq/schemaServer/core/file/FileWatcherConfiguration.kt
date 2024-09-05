@@ -6,6 +6,7 @@ import com.orbitalhq.schema.publisher.loaders.ProjectTransportConfig
 import com.orbitalhq.schemaServer.packages.PackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
 import java.nio.file.Path
+import java.nio.file.Paths
 import java.time.Duration
 
 /**
@@ -15,7 +16,7 @@ import java.time.Duration
  * providing an adaptor that converts OpenAPI to Taxi, etc)
  *
  */
-data class FileSystemPackageSpec(
+data class FileProjectSpec(
    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
    val path: Path,
    val loader: PackageLoaderSpec = TaxiPackageLoaderSpec,
@@ -33,12 +34,22 @@ data class FileSystemPackageSpec(
 
 }
 
-data class FileSystemSchemaRepositoryConfig(
+/**
+ * Configuration for how Orbital reads file-based projects into a workspace.
+ * This class models the file {} block inside a workspace.conf configuration file
+ */
+data class WorkspaceFileProjectConfig(
    val changeDetectionMethod: FileChangeDetectionMethod = FileChangeDetectionMethod.WATCH,
    val pollFrequency: Duration = Duration.ofSeconds(5L),
    val recompilationFrequencyMillis: Duration = Duration.ofMillis(3000L),
    val incrementVersionOnChange: Boolean = false,
-   val projects: List<FileSystemPackageSpec> = emptyList()
+   val projects: List<FileProjectSpec> = emptyList(),
+   /**
+    * If the user creates or imports new projects via the UI, they will be created under
+    * this directory.
+    * Projects defined in the `projects` variable do not need to be under here.
+    */
+   val newProjectsPath: Path = Paths.get("./orbital/workspace/projects")
 )
 
 enum class FileChangeDetectionMethod {
