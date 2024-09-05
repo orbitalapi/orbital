@@ -343,7 +343,7 @@ export interface Operation extends SchemaMemberNamed, Functional, RemoteOperatio
 }
 
 export type TypeKind = 'Model' | 'Type';
-export type ServiceKind = 'API' | 'Database' | 'Kafka';
+export type ServiceKind = 'API' | 'Database' | 'Kafka' | 'Mongo';
 export type OperationKind = 'ApiCall' | 'Query' | 'Stream' | 'Table';
 
 export interface Version {

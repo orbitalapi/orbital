@@ -120,6 +120,8 @@ export class DataSourceTreeComponent implements OnInit {
         return 'assets/img/data-source-icons/kafka-icon.svg'
       case 'API' :
         return 'assets/img/chart-icons/api-icon.svg'
+      case 'Mongo':
+        return 'assets/img/chart-icons/mongodb-icon.svg'
       default :
         return 'assets/img/chart-icons/api-icon.svg'
     }
@@ -134,6 +136,7 @@ export class DataSourceTreeComponent implements OnInit {
         //return 'assets/img/tabler/chart-arrows.svg'
         return 'assets/img/tabler/mail.svg'
       case 'ApiCall' :
+        return 'assets/img/tabler/arrows-right-left.svg'
       case 'Query' :
       default :
         return 'assets/img/tabler/file-description.svg'
