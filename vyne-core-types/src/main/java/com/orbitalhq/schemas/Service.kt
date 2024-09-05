@@ -241,7 +241,8 @@ data class ServiceLineage(
 enum class ServiceKind : Serializable {
    API,
    Database,
-   Kafka;
+   Kafka,
+   Mongo;
 
    companion object {
 
@@ -264,6 +265,7 @@ enum class ServiceKind : Serializable {
             serviceMetadata.containsMetadata("${VyneTypes.NAMESPACE}.kafka.KafkaService") -> Kafka
             serviceMetadata.containsMetadata("${VyneTypes.NAMESPACE}.jdbc.DatabaseService") -> Database
             serviceMetadata.containsMetadata("${VyneTypes.NAMESPACE}.aws.dynamo.DynamoService") -> Database
+            serviceMetadata.containsMetadata("${VyneTypes.NAMESPACE}.mongo.MongoService") -> Mongo
             allOperationMetadata.containsMetadata(HttpOperation.NAME) -> API
             else -> null
          }

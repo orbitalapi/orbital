@@ -21,6 +21,12 @@ class MongoDbInvoker(
     connectionFactory: MongoConnectionFactory,
     schemaProvider: SchemaProvider
 ) : OperationInvoker {
+
+    companion object {
+        init {
+            MongoConnector.registerConnectionUsage()
+        }
+    }
     private val batchWriteCacheProvider = BatchWriteCacheProvider()
     private val readOnlyInvoker = MongoReadOnlyQueryInvoker(connectionFactory, schemaProvider)
     private val upsertInvoker = MongoMutatingQueryInvoker(connectionFactory, schemaProvider)

@@ -2,6 +2,8 @@ package com.orbitalhq.connectors.nosql.mongodb
 
 import com.orbitalhq.VyneTypes
 import com.orbitalhq.annotations.AnnotationWrapper
+import com.orbitalhq.connections.ConnectionUsageMetadataRegistry
+import com.orbitalhq.connections.ConnectionUsageRegistration
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnector.Annotations.BatchDurationAttribute
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnector.Annotations.BatchSizeAttribute
 import com.orbitalhq.schemas.fqn
@@ -10,6 +12,11 @@ import lang.taxi.types.Annotation
 import lang.taxi.types.QualifiedName
 
 object MongoConnector {
+   fun registerConnectionUsage() {
+      ConnectionUsageMetadataRegistry.register(
+         ConnectionUsageRegistration(Annotations.MongoOperation.NAME.fqn(), "connection")
+      )
+   }
    object Annotations {
       internal val namespace = "${VyneTypes.NAMESPACE}.mongo"
       val UpsertOperationAnnotationName = "${namespace}.UpsertOperation".fqn()
