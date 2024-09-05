@@ -91,8 +91,10 @@ class JdbcUpsertInvoker(
       val (connectionConfig, jdbcTemplate) = getConnectionConfigAndTemplate(service)
       val dsl = sqlDsl(tableAnnotation.connectionName)
 
-      // Create underlying table if required.
-      tableCheckAndExistsMap.getOrPut(tableAnnotation) {
+      // Create underlying table if required. The entire method invocation is performed atomically, so the function is applied at most once per key.
+      // Some attempted update operations on this map by other threads may be blocked while computation is in progress,
+      // so the computation should be short and simple, and must not attempt to update any other mappings of this map.
+      tableCheckAndExistsMap.computeIfAbsent(tableAnnotation) {
          createTableIfNotPresent(operation, tableAnnotation, dsl, jdbcTemplate, connectionConfig)
          tableAnnotation
       }
