@@ -5,7 +5,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { DataCatalogSearchResultCardComponent } from './search/data-catalog-search-result-card.component';
-import { MarkdownModule } from 'ngx-markdown';
+import {MarkdownModule, MARKED_OPTIONS} from 'ngx-markdown';
 import { RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { MatIconModule } from '@angular/material/icon';
@@ -24,6 +24,7 @@ import { TuiProgressModule, TuiStepperModule, TuiTabsModule } from '@taiga-ui/ki
 import { SchemaDiagramModule } from 'src/app/schema-diagram/schema-diagram.module';
 import { UiCustomisations } from '../../environments/ui-customisations';
 import markedAlert from 'marked-alert'
+import {CustomMarkdownRenderer} from "../markdown-utils/markdown-custom-renderer";
 
 @NgModule({
   declarations: [DataCatalogSearchComponent, DataCatalogSearchResultCardComponent, DataCatalogContainerComponent],
@@ -34,7 +35,16 @@ import markedAlert from 'marked-alert'
     MatSelectModule,
     MatTableModule,
     MarkdownModule.forRoot({
-      markedExtensions: [markedAlert()]
+      markedOptions: {
+        provide: MARKED_OPTIONS,
+        useFactory: (renderer: CustomMarkdownRenderer) => {
+          return {
+            renderer
+          }
+        },
+        deps: [CustomMarkdownRenderer]
+      },
+      markedExtensions: [markedAlert()],
     }),
     RouterModule,
     FormsModule,

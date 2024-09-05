@@ -13,6 +13,9 @@ import {CodeViewerModule} from "../code-viewer/code-viewer.module";
 import { OperationViewComponent } from '../operation-view/operation-view.component';
 import { SchemaDiagramModule } from '../schema-diagram/schema-diagram.module';
 import markedAlert from "marked-alert";
+import {
+  CaptureLocalNavigationDirective
+} from "src/app/markdown-utils/capture-local-navigation.directive";
 
 
 @NgModule({
@@ -42,6 +45,7 @@ import markedAlert from "marked-alert";
     MarkdownModule.forRoot({
       markedExtensions: [markedAlert()]
     }),
+    CaptureLocalNavigationDirective,
   ]
 })
 export class SchemaMemberTypeExplorerModule {

@@ -1,0 +1,38 @@
+/**
+This component is inside a ngx-markdown component, which pollutes the global CSS rules with .markdown {} rules.
+As a result, the inner chart gets a number of css properties inherited unintentionally.
+We simply unset them here, so the child's component css takes precedence.
+ */
+::ng-deep {
+  .markdown-body {
+    font-family: unset;
+    table {
+      overflow: unset;
+      width: unset;
+      display: block;
+      max-width: unset;
+
+      th {
+        font-weight: unset;
+        border: unset;
+      }
+
+      td > :last-child {
+        margin-bottom: unset;
+      }
+
+      td {
+        border: unset;
+      }
+
+      tr {
+        border-top: unset;
+        background-color: unset;
+      }
+
+      tr:nth-child(2n) {
+        background-color: unset;
+      }
+    }
+  }
+}
