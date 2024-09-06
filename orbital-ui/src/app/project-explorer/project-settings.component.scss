@@ -1,5 +1,10 @@
-tui-notification {
-  margin-top: 1rem;
+@import "src/common";
+
+app-git-config,
+app-file-config {
+  border-bottom: 1px solid $gray-200;
+  display: block;
+  margin-bottom: 1rem;
 }
 
 :host {

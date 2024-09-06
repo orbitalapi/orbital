@@ -1,48 +1,39 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {ControlContainer, NgModelGroup, ReactiveFormsModule} from '@angular/forms';
+import {ControlContainer, FormsModule, NgModelGroup} from '@angular/forms';
 import {AvroPackageLoaderSpec} from "../project-import.models";
 import {UiCustomisations} from "../../../environments/ui-customisations";
 import {PackageIdentifierInputComponent} from "../../package-identifier-input/package-identifier-input.component";
-import {CovalentCommonModule} from "@covalent/core/common";
-import {NgIf} from "@angular/common";
-import {TuiButtonModule, TuiErrorModule, TuiLoaderModule, TuiNotificationModule} from '@taiga-ui/core';
-import {TuiInputModule} from "@taiga-ui/kit";
-import {fileExtensionValidator} from './file-extension-validator';
+import {FilePathOrUploadComponent} from './file-path-or-upload.component';
 
 @Component({
   selector: 'app-avro-package-config',
   viewProviders: [{provide: ControlContainer, useExisting: NgModelGroup}],
   standalone: true,
   imports: [
+    FilePathOrUploadComponent,
     PackageIdentifierInputComponent,
-    CovalentCommonModule,
-    NgIf,
-    TuiButtonModule,
-    TuiInputModule,
-    TuiLoaderModule,
-    TuiNotificationModule,
-    ReactiveFormsModule,
-    TuiErrorModule
+    FormsModule
   ],
   template: `
     <div class='form-row'>
       <div class='form-item-description-container'>
-        <h3>Path to Avro spec file</h3>
+        <h3>Avro spec file</h3>
         <div class='help-text'>
           <p>{{ pathLabel }} </p>
         </div>
       </div>
       <div class='form-element'>
-        <div class='row'>
-          <div style='flex-grow: 1;'>
-            <tui-input [ngModel]='path' class='flex-grow' (ngModelChange)="onPathChanged($event)" (focusout)="validatePath()"
-                       name='pathToTaxi' required [readOnly]='!editable'>
-              Path
-              <span class="tui-required"></span>
-            </tui-input>
-            <tui-error [error]="errorMessage"/>
-          </div>
-        </div>
+        <app-file-path-or-upload
+          [editable]="editable"
+          [mode]="projectType === 'file' ? 'upload' : 'path'"
+          [filesAccepted]="['.avsc']"
+          [path]="path"
+          (pathChanged)="onPathChanged($event)"
+          (fileChanged)="fileChange.emit($event)"
+          uploadLabel="choose an .avsc file"
+          fileExtensionErrorLabel="Invalid file extension. Allowed extension is: .avsc"
+        >
+        </app-file-path-or-upload>
       </div>
     </div>
 
@@ -66,6 +57,8 @@ import {fileExtensionValidator} from './file-extension-validator';
   styleUrl: './avro-package-config.component.scss'
 })
 export class AvroPackageConfigComponent {
+  @Input()
+  projectType: 'file' | 'git' = 'file';
 
   @Input()
   packageSpec: AvroPackageLoaderSpec
@@ -79,26 +72,16 @@ export class AvroPackageConfigComponent {
   @Output()
   pathChange = new EventEmitter<string>();
 
-  @Input()
-  projectType: 'file' | 'git' = 'file';
+  @Output()
+  fileChange = new EventEmitter<string>();
 
   errorMessage: string;
 
   get pathLabel(): string {
     if (this.projectType === 'file') {
-      return 'Specify the path to your Avro avsc spec file'
+      return 'Select your Avro avsc spec file'
     } else {
-      return 'Specify the path (from the root of the git repository) to the Avro avsc spec file';
-    }
-  }
-
-  validatePath(): void {
-    const validator = fileExtensionValidator(['avsc']);
-    const validationResult = validator({ value: this.path } as any);
-    if (validationResult && validationResult.invalidFileExtension) {
-      this.errorMessage = 'Invalid file extension. Only *.avsc files are allowed.';
-    } else {
-      this.errorMessage = null;
+      return 'Path from the root of the git repository to the Avro spec file';
     }
   }
 

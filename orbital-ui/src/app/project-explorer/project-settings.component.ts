@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Input } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  computed,
+  Inject,
+  input,
+} from '@angular/core';
 import { SourcePackageDescription } from 'src/app/package-viewer/packages.service';
 import { SchemaImporterService } from 'src/app/project-import/schema-importer.service';
 import { Message } from 'src/app/services/schema';
@@ -9,13 +16,11 @@ import {Router} from "@angular/router";
 @Component({
   selector: 'app-project-settings',
   template: `
-      <app-git-config *ngIf="packageDescription?.publisherType === 'GitRepo'" [editable]="false"
-                      [gitConfig]="packageDescription.packageConfig"></app-git-config>
-      <app-file-config *ngIf="packageDescription?.publisherType === 'FileSystem'" [editable]="false"
-                       [fileSystemPackageConfig]="packageDescription.packageConfig"></app-file-config>
-
-      <ng-container *ngIf="canRemove">
-          <hr>
+      <app-git-config *ngIf="packageDescription()?.publisherType === 'GitRepo'" [editable]="false"
+                      [gitConfig]="packageDescription().packageConfig"></app-git-config>
+      <app-file-config *ngIf="packageDescription()?.publisherType === 'FileSystem'" [editable]="false"
+                       [fileSystemPackageConfig]="packageDescription().packageConfig"></app-file-config>
+      <ng-container *ngIf="canRemove()">
           <h3>Danger zone</h3>
           <button tuiButton appearance="secondary-destructive" [showLoader]="working" (click)="confirmRemoval()">
               Remove this project...
@@ -31,8 +36,7 @@ import {Router} from "@angular/router";
 })
 export class ProjectSettingsComponent {
 
-  @Input()
-  packageDescription: SourcePackageDescription;
+  packageDescription = input<SourcePackageDescription>();
   working = false;
   deleteResultMessage: Message;
 
@@ -45,10 +49,10 @@ export class ProjectSettingsComponent {
   ) {
   }
 
-  get canRemove() {
-    return !this.packageDescription.identifier.id.startsWith('io.vyne/core-types');
+  canRemove = computed(() => {
+    return !this.packageDescription()?.identifier.id.startsWith('com.orbitalhq/core-types');
     // return this.packageDescription.publisherType !== 'Pushed';
-  }
+  })
 
   confirmRemoval() {
     this.dialogService
@@ -57,7 +61,7 @@ export class ProjectSettingsComponent {
         data: {
           content: `When you remove a project, any data sources and data types within the project are also removed.` +
             ` As a result, queries might stop working, and data may become unavailable.</br>` +
-            `The project is removed from your workspace, but isn't deleted from ${this.packageDescription.publisherType === 'GitRepo' ? 'git' : 'disk'},` +
+            `The project is removed from your workspace, but isn't deleted from ${this.packageDescription().publisherType === 'GitRepo' ? 'git' : 'disk'},` +
             ` so you can always add it again later.`,
           yes: 'Remove',
           no: 'Cancel',
@@ -70,7 +74,7 @@ export class ProjectSettingsComponent {
 
   removeRepository() {
     this.working = true;
-    this.service.removeRepository(this.packageDescription)
+    this.service.removeRepository(this.packageDescription())
       .subscribe({
         next: result => {
           this.alertService.open('Project was successfully removed', {status: 'success', autoClose: 5000 })

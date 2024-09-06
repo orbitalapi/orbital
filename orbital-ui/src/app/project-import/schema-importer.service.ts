@@ -1,12 +1,7 @@
 import {Injectable} from '@angular/core';
 import {VyneServicesModule} from '../services/vyne-services.module';
-import {HttpClient} from '@angular/common/http';
-import {
-  FileSystemPackageSpec,
-  GitHostingProvider,
-  GitRepositoryConfig,
-  PackageLoaderSpec
-} from './project-import.models';
+import {HttpClient, HttpParams} from '@angular/common/http';
+import {FileSystemPackageSpec, GitRepositoryConfig, LoadablePackageType} from './project-import.models';
 import {ConvertSchemaEvent} from '../data-source-import/data-source-import.models';
 import {environment} from '../../environments/environment';
 import {Observable} from 'rxjs/internal/Observable';
@@ -73,17 +68,26 @@ export class SchemaImporterService {
 
   }
 
-  addNewGitRepository(request: GitRepositoryConfig): Observable<GitProjectStoreChangeRequest> {
+  addNewGitRepository(request: GitRepositoryConfig): Observable<ModifyWorkspaceResponse> {
     if (this.appConfig.featureToggles.workspacesEnabled) {
 
     } else {
-      return this.httpClient.post<GitProjectStoreChangeRequest>(`${environment.serverUrl}/api/repositories/git`, request)
+      return this.httpClient.post<ModifyWorkspaceResponse>(`${environment.serverUrl}/api/repositories/git`, request)
     }
-
   }
 
-  addNewFileRepository(request: FileSystemPackageSpec): Observable<CreateFileProjectStoreRequest> {
-    return this.httpClient.post<CreateFileProjectStoreRequest>(`${environment.serverUrl}/api/repositories/file`, request)
+  uploadProject(uriSafeProjectId: string, parameters: {format: LoadablePackageType, defaultNamespace?: string, serviceBasePath?: string}, payload: string): Observable<ModifyWorkspaceResponse> {
+    const params = Object.keys(parameters).reduce(
+      (httpParams, key) => {
+        return parameters[key] !== undefined ? httpParams.append(key, parameters[key]) : httpParams
+      },
+      new HttpParams()
+    );
+    return this.httpClient.post<ModifyWorkspaceResponse>(`${environment.serverUrl}/api/workspace/projects/${uriSafeProjectId}`, payload, {params});
+  }
+
+  addNewFileRepository(request: FileSystemPackageSpec): Observable<ModifyWorkspaceResponse> {
+    return this.httpClient.post<ModifyWorkspaceResponse>(`${environment.serverUrl}/api/repositories/file`, request)
   }
 
 
@@ -241,28 +245,12 @@ export interface SavedQueryWithSource {
   sourceFile: VersionedSource
 }
 
-export type GitProjectStoreChangeRequest = {
-  name: string,
-  uri: string,
-  branch: string,
-  path: string,
-  pullRequestConfig: GitUpdateFlowConfig,
-  isEditable: boolean,
-  loader: PackageLoaderSpec
+export type ModifyWorkspaceResponse = {
+  status: ModifyProjectResponseStatus
+  message?: string
 }
 
-export type GitUpdateFlowConfig = {
-  branchPrefix: string,
-  hostingProvider: GitHostingProvider
-}
-
-export type CreateFileProjectStoreRequest = {
-  path: string,
-  isEditable: boolean,
-  loader: PackageLoaderSpec,
-  newProjectIdentifier: PackageIdentifier
-}
-
+export type ModifyProjectResponseStatus = 'Ok' | 'Warning' | 'Failed'
 
 /**
  * Converts a SavedQuery to a SavedQueryWithSource, or something resembling it.

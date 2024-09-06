@@ -1,4 +1,7 @@
+import {NgIf} from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
+import {FormsModule} from '@angular/forms';
+import {TuiComboBoxModule, TuiInputModule, TuiSelectModule} from '@taiga-ui/kit';
 import {UiCustomisations} from '../../../environments/ui-customisations';
 import {
   AvroPackageLoaderSpec,
@@ -11,8 +14,10 @@ import {
 import {isNullOrUndefined} from 'src/app/utils/utils';
 import {GitConnectionTestResult, SchemaImporterService} from 'src/app/project-import/schema-importer.service';
 import {Message} from 'src/app/services/schema';
-import {TuiAlertService, TuiNotification} from "@taiga-ui/core";
+import {TuiAlertService, TuiButtonModule, TuiDataListModule, TuiNotificationModule} from '@taiga-ui/core';
 import {Router} from "@angular/router";
+import {AvroPackageConfigComponent} from './avro-package-config.component';
+import {OpenApiPackageConfigComponent} from './open-api-package-config.component';
 
 
 export const projectTypeToString = (item: LoadablePackageType) => {
@@ -26,213 +31,226 @@ export const projectTypeToString = (item: LoadablePackageType) => {
 
 @Component({
   selector: 'app-git-config',
+  standalone: true,
   styleUrls: ['./git-config.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [
+    FormsModule,
+    TuiInputModule,
+    TuiButtonModule,
+    NgIf,
+    TuiComboBoxModule,
+    TuiDataListModule,
+    TuiSelectModule,
+    OpenApiPackageConfigComponent,
+    AvroPackageConfigComponent,
+    TuiNotificationModule
+  ],
   template: `
-      <div class="form-header-text">
-          <p>Connect {{ UiCustomisations.productName }} to a Git repository to add individual OpenAPI schemas, or entire
-              Taxi projects</p>
-      </div>
-      <form #gitForm="ngForm">
-          <div class="form-container">
-              <div class="form-body">
-                  <div class="form-row">
-                      <div class="form-item-description-container">
-                          <h3>Repository URL</h3>
-                          <div class="help-text">
-                              <p>
-                                  Provide the repository URL - https:// is recommended.
-                              </p>
-                              <p>
-                                  Gitlab and Github personal access tokens are supported.
-                              </p>
-                          </div>
-                      </div>
-                      <div class="form-element">
-                          <div class="row">
-                            <tui-input [(ngModel)]="gitConfig.uri" (change)="updateRepositoryName($event)" required
-                                       name="gitUri"
-                                       [readOnly]="!editable"
-                                       class="flex-grow"
-                            >
-                              Repository URL
-                              <span class="tui-required"></span>
-                            </tui-input>
-                              <button tuiButton appearance="outline" size="m"
-                                      [disabled]="testingConnection || !gitConfig.uri"
-                                      [showLoader]="testingConnection" (click)="testConnection()">Test connection
-                              </button>
-                          </div>
-                          <div class="test-result-box error-message"
-                               *ngIf="!testingConnection && connectionTestResult && !connectionTestResult.successful">{{ connectionTestResult.errorMessage }}
-                          </div>
-                          <div class="test-result-box success-message"
-                               *ngIf="!testingConnection && connectionTestResult && connectionTestResult.successful ">
-                              Connection tested successfully
-                          </div>
-                      </div>
-                  </div>
-                  <div class="form-row">
-                      <div class="form-item-description-container">
-                          <h3>Repository name</h3>
-                          <div class="help-text">
-                              The repository name. We'll guess this from the URL, or you can pick something meaningful.
-                          </div>
-                      </div>
-                      <div class="form-element">
-                          <tui-input [(ngModel)]="gitConfig.name" name="repositoryName" required [readOnly]="!editable">
-                            Repository name
-                            <span class="tui-required"></span>
-                          </tui-input>
-                      </div>
-                  </div>
-                  <div class="form-row">
-                      <div class="form-item-description-container">
-                          <h3>Branch</h3>
-                          <div class="help-text">
-                              <p>
-                                  The branch to monitor
-                              </p>
-                          </div>
-                      </div>
-                      <div class="form-element">
-                          <div style="flex-grow: 1">
-                              <tui-combo-box
-                                      [readOnly]="!editable || availableBranches === null"
-                                      [(ngModel)]="gitConfig.branch" name="branch" required>
-                                Branch
-                                <span class="tui-required"></span>
-                                  <tui-data-list *tuiDataList>
-                                      <button tuiOption *ngFor="let branchName of availableBranches"
-                                              [value]="branchName">{{ branchName }}
-                                      </button>
-                                  </tui-data-list>
-                              </tui-combo-box>
-                              <p *ngIf="availableBranches === null" class="help-text" style="width: 100%">Test your git
-                                  connection to see a list of available branches</p>
-                          </div>
-                      </div>
-                  </div>
-                  <div class="form-row">
-                      <div class="form-item-description-container">
-                          <h3>Project type</h3>
-                          <div class="help-text">
-                              Git repositories can contain full Taxi projects, or individual API specs.
-                          </div>
-                      </div>
-                      <div class="form-element">
-                          <tui-select
-                                  [stringify]="stringifyProjectType"
-                                  [ngModel]="gitConfig.loader.packageType"
-                                  [readOnly]="!editable"
-                                  (ngModelChange)="selectedProjectTypeChanged($event)"
-                                  name="project-type" required
-                          >
-                              Project type
-                              <tui-data-list *tuiDataList>
-                                  <button tuiOption value="Taxi">{{ stringifyProjectType('Taxi') }}</button>
-                                  <button tuiOption value="OpenApi">{{ stringifyProjectType('OpenApi') }}</button>
-                                  <button tuiOption value="Avro">{{ stringifyProjectType('Avro') }}</button>
-                              </tui-data-list>
-                          </tui-select>
-                      </div>
-                  </div>
-                  <ng-container *ngIf="gitConfig.loader.packageType === 'OpenApi'">
-                      <app-open-api-package-config [openApiPackageSpec]="openApiPackageSpec"
-                                                   projectType="git"
-                                                   [editable]="editable"
-                                                   [(path)]="gitConfig.path"
-                                                   ngModelGroup="openApiForm"
-                      ></app-open-api-package-config>
-                  </ng-container>
-                  <ng-container *ngIf="gitConfig.loader.packageType === 'Avro'">
-                      <app-avro-package-config [packageSpec]="avroPackageSpec"
-                                               projectType="git"
-                                               [editable]="editable"
-                                               [(path)]="gitConfig.path"
-                                               ngModelGroup="avroForm"
-                      ></app-avro-package-config>
-
-                  </ng-container>
-
-                  <ng-container *ngIf="gitConfig.loader.packageType === 'Taxi'">
-                      <div class="form-row">
-                          <div class="form-item-description-container">
-                              <h3>Path to taxi project</h3>
-                              <div class="help-text">
-                                  Specify the path (from the root of the git repository) to the directory containing a
-                                  <code>taxi.conf</code> file
-                              </div>
-                          </div>
-                          <div class="form-element">
-                              <div class="row">
-                                  <div style="flex-grow: 1;">
-                                      <tui-input [(ngModel)]="gitConfig.path" class="flex-grow" name="pathToTaxi"
-                                                 [readOnly]="!editable"
-                                                 required>
-                                        Path
-                                        <span class="tui-required"></span>
-                                      </tui-input>
-                                      <p class="help-text" style="width: 100%;">We'll look for a Taxi config file at
-                                          <code>{{ expectedTaxiConfLocation }}</code></p>
-                                  </div>
-                              </div>
-
-                          </div>
-                      </div>
-<!--                      <div class="form-row disabled">-->
-<!--                          <div class="form-item-description-container">-->
-<!--                              <h3>Enable edits and pull requests</h3>-->
-<!--                              <div class="help-text">-->
-<!--                                  <p>-->
-<!--                                      If enabled, edits can be made through the {{ UiCustomisations.productName }} UI,-->
-<!--                                      which-->
-<!--                                      will result in Pull requests being opened-->
-<!--                                  </p>-->
-<!--                              </div>-->
-<!--                          </div>-->
-<!--                          <div class="form-element">-->
-<!--                              <tui-checkbox [(ngModel)]="gitConfig.isEditable" name="editable" required-->
-<!--                                            [readOnly]="!editable"-->
-<!--                                            (change)="onEditableChanged($event)"></tui-checkbox>-->
-<!--                          </div>-->
-<!--                      </div>-->
-                      <div class="form-row" *ngIf="gitConfig.isEditable && gitConfig.pullRequestConfig">
-                          <div class="form-item-description-container">
-                              <h3>Prefix for pull requests</h3>
-                              <div class="help-text">
-                                  <p>
-                                      Edits will be made on a branch, and then a pull request raised. Pull requests and
-                                      branches
-                                      will have this prefix
-                                  </p>
-                              </div>
-                          </div>
-                          <div class="form-element">
-                              <tui-input [(ngModel)]="gitConfig.pullRequestConfig.branchPrefix" [readOnly]="!editable"
-                                         name="branchPrefix">
-                                  Prefix
-                              </tui-input>
-                          </div>
-                      </div>
-                  </ng-container>
+    <div class="form-header-text">
+      <p>Connect {{ UiCustomisations.productName }} to a Git repository to add individual OpenAPI schemas, or entire
+        Taxi projects</p>
+    </div>
+    <form #gitForm="ngForm">
+      <div class="form-container">
+        <div class="form-body">
+          <div class="form-row">
+            <div class="form-item-description-container">
+              <h3>Repository URL</h3>
+              <div class="help-text">
+                <p>
+                  Provide the repository URL - https:// is recommended.
+                </p>
+                <p>
+                  Gitlab and Github personal access tokens are supported.
+                </p>
               </div>
+            </div>
+            <div class="form-element">
+              <div class="row">
+                <tui-input [(ngModel)]="gitConfig.uri" (change)="updateRepositoryName($event)" required
+                           name="gitUri"
+                           [readOnly]="!editable"
+                           class="flex-grow"
+                >
+                  Repository URL
+                  <span class="tui-required"></span>
+                </tui-input>
+                <button tuiButton appearance="outline" size="m"
+                        [disabled]="testingConnection || !gitConfig.uri"
+                        [showLoader]="testingConnection" (click)="testConnection()">Test connection
+                </button>
+              </div>
+              <div class="test-result-box error-message"
+                   *ngIf="!testingConnection && connectionTestResult && !connectionTestResult.successful">{{ connectionTestResult.errorMessage }}
+              </div>
+              <div class="test-result-box success-message"
+                   *ngIf="!testingConnection && connectionTestResult && connectionTestResult.successful ">
+                Connection tested successfully
+              </div>
+            </div>
           </div>
-      </form>
-      <div class="form-button-bar" *ngIf="editable">
-          <button
-                  tuiButton
-                  appearance="secondary"
-                  [size]="'m'"
-                  (click)="goBackOnboarding.emit()"
-          >Cancel
-          </button>
-          <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()" [disabled]="gitForm.invalid">Create
-          </button>
+          <div class="form-row">
+            <div class="form-item-description-container">
+              <h3>Repository name</h3>
+              <div class="help-text">
+                The repository name. We'll guess this from the URL, or you can pick something meaningful.
+              </div>
+            </div>
+            <div class="form-element">
+              <tui-input [(ngModel)]="gitConfig.name" name="repositoryName" required [readOnly]="!editable">
+                Repository name
+                <span class="tui-required"></span>
+              </tui-input>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-item-description-container">
+              <h3>Branch</h3>
+              <div class="help-text">
+                <p>
+                  The branch to monitor
+                </p>
+              </div>
+            </div>
+            <div class="form-element">
+              <div style="flex-grow: 1">
+                <tui-combo-box
+                  [readOnly]="!editable || availableBranches === null"
+                  [(ngModel)]="gitConfig.branch" name="branch" required>
+                  Branch
+                  <span class="tui-required"></span>
+                  <tui-data-list *tuiDataList>
+                    <button tuiOption *ngFor="let branchName of availableBranches"
+                            [value]="branchName">{{ branchName }}
+                    </button>
+                  </tui-data-list>
+                </tui-combo-box>
+                <p *ngIf="availableBranches === null" class="help-text" style="width: 100%">Test your git
+                  connection to see a list of available branches</p>
+              </div>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-item-description-container">
+              <h3>Project type</h3>
+              <div class="help-text">
+                Git repositories can contain full Taxi projects, or individual API specs.
+              </div>
+            </div>
+            <div class="form-element">
+              <tui-select
+                [stringify]="stringifyProjectType"
+                [ngModel]="gitConfig.loader.packageType"
+                [readOnly]="!editable"
+                (ngModelChange)="selectedProjectTypeChanged($event)"
+                name="project-type" required
+              >
+                Project type
+                <tui-data-list *tuiDataList>
+                  <button tuiOption value="Taxi">{{ stringifyProjectType('Taxi') }}</button>
+                  <button tuiOption value="OpenApi">{{ stringifyProjectType('OpenApi') }}</button>
+                  <button tuiOption value="Avro">{{ stringifyProjectType('Avro') }}</button>
+                </tui-data-list>
+              </tui-select>
+            </div>
+          </div>
+          <ng-container *ngIf="gitConfig.loader.packageType === 'OpenApi'">
+            <app-open-api-package-config [openApiPackageSpec]="openApiPackageSpec"
+                                         projectType="git"
+                                         [editable]="editable"
+                                         [(path)]="gitConfig.path"
+                                         ngModelGroup="openApiForm"
+            ></app-open-api-package-config>
+          </ng-container>
+          <ng-container *ngIf="gitConfig.loader.packageType === 'Avro'">
+            <app-avro-package-config [packageSpec]="avroPackageSpec"
+                                     projectType="git"
+                                     [editable]="editable"
+                                     [(path)]="gitConfig.path"
+                                     ngModelGroup="avroForm"
+            ></app-avro-package-config>
+
+          </ng-container>
+
+          <ng-container *ngIf="gitConfig.loader.packageType === 'Taxi'">
+            <div class="form-row">
+              <div class="form-item-description-container">
+                <h3>Path to taxi project</h3>
+                <div class="help-text">
+                  Specify the path (from the root of the git repository) to the directory containing a
+                  <code>taxi.conf</code> file
+                </div>
+              </div>
+              <div class="form-element">
+                <div class="row">
+                  <div style="flex-grow: 1;">
+                    <tui-input [(ngModel)]="gitConfig.path" class="flex-grow" name="pathToTaxi"
+                               [readOnly]="!editable"
+                               required>
+                      Path
+                      <span class="tui-required"></span>
+                    </tui-input>
+                    <p class="help-text" style="width: 100%;">We'll look for a Taxi config file at
+                      <code>{{ expectedTaxiConfLocation }}</code></p>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+            <!--                      <div class="form-row disabled">-->
+            <!--                          <div class="form-item-description-container">-->
+            <!--                              <h3>Enable edits and pull requests</h3>-->
+            <!--                              <div class="help-text">-->
+            <!--                                  <p>-->
+            <!--                                      If enabled, edits can be made through the {{ UiCustomisations.productName }} UI,-->
+            <!--                                      which-->
+            <!--                                      will result in Pull requests being opened-->
+            <!--                                  </p>-->
+            <!--                              </div>-->
+            <!--                          </div>-->
+            <!--                          <div class="form-element">-->
+            <!--                              <tui-checkbox [(ngModel)]="gitConfig.isEditable" name="editable" required-->
+            <!--                                            [readOnly]="!editable"-->
+            <!--                                            (change)="onEditableChanged($event)"></tui-checkbox>-->
+            <!--                          </div>-->
+            <!--                      </div>-->
+            <div class="form-row" *ngIf="gitConfig.isEditable && gitConfig.pullRequestConfig">
+              <div class="form-item-description-container">
+                <h3>Prefix for pull requests</h3>
+                <div class="help-text">
+                  <p>
+                    Edits will be made on a branch, and then a pull request raised. Pull requests and
+                    branches
+                    will have this prefix
+                  </p>
+                </div>
+              </div>
+              <div class="form-element">
+                <tui-input [(ngModel)]="gitConfig.pullRequestConfig.branchPrefix" [readOnly]="!editable"
+                           name="branchPrefix">
+                  Prefix
+                </tui-input>
+              </div>
+            </div>
+          </ng-container>
+        </div>
       </div>
-      <tui-notification [status]="saveResultMessage.severity.toLowerCase()" *ngIf="saveResultMessage">
-          {{ saveResultMessage.message }}
-      </tui-notification>
+    </form>
+    <div class="form-button-bar" *ngIf="editable">
+      <button
+        tuiButton
+        appearance="secondary"
+        [size]="'m'"
+        (click)="goBackOnboarding.emit()"
+      >Cancel
+      </button>
+      <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()" [disabled]="gitForm.invalid">Create
+      </button>
+    </div>
+    <tui-notification [status]="saveResultMessage.severity.toLowerCase()" *ngIf="saveResultMessage">
+      {{ saveResultMessage.message }}
+    </tui-notification>
   `
 })
 export class GitConfigComponent {

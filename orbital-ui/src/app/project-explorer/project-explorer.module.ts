@@ -1,6 +1,8 @@
 import {NgModule} from '@angular/core';
 import {ChangelogTimelineComponent} from '../changelog/changelog-timeline.component';
 import { ProjectImportComponent } from '../project-import/project-import.component';
+import {FileConfigComponent} from '../project-import/project-source-config/file-config.component';
+import {GitConfigComponent} from '../project-import/project-source-config/git-config.component';
 import { AuthGuard } from '../services/auth.guard';
 import { VynePrivileges } from '../services/user-info.service';
 import {ProjectExplorerComponent} from './project-explorer.component';
@@ -31,7 +33,6 @@ import {TuiTabsModule} from '@taiga-ui/kit';
 import {SchemaMemberTypeExplorerModule} from 'src/app/schema-member-type-explorer/schema-member-type-explorer.module';
 import {ChangesetSelectorModule} from '../changeset-selector/changeset-selector.module';
 import {ProjectSettingsComponent} from './project-settings.component';
-import {ProjectSourceConfigModule} from 'src/app/project-import/project-source-config/project-source-config.module';
 import {ExpandingPanelSetModule} from "../expanding-panelset/expanding-panel-set.module";
 import {UiCustomisations} from '../../environments/ui-customisations';
 import {ProjectErrorListComponent} from './project-error-list.component';
@@ -40,77 +41,78 @@ import {RequiresAuthorityDirective} from "../requires-authority.directive";
 
 
 @NgModule({
-    imports: [
-        CommonModule,
-        MatMenuModule,
-        MatButtonModule,
-        SearchModule,
-        MatToolbarModule,
-        CodeViewerModule,
-        MatProgressBarModule,
-        MatStepperModule,
-        MatFormFieldModule,
-        MatSelectModule,
-        ReactiveFormsModule,
-        CovalentHighlightModule,
-        MatListModule,
-        MatIconModule,
-        MatInputModule,
-        HeaderBarModule,
-        RouterModule,
-        PackageViewerModule,
-        ChangelogModule,
-        SchemaMemberTypeExplorerModule,
-        SimpleBadgeListModule,
-        TuiButtonModule,
-        ProjectSourceConfigModule,
-        RouterModule.forChild([
-            {
-                path: 'project-import',
-                component: ProjectImportComponent,
-                canActivate: [AuthGuard],
-                data: {requiredAuthority: VynePrivileges.EditSchema}
-            },
-            {
-                path: '',
-                component: ProjectExplorerContainerComponent,
-                children: [
-                    {
-                        path: '',
-                        component: ProjectSummaryViewComponent,
-                        title: `${UiCustomisations.productName}: Projects`
-                    },
-                    {
-                        path: 'problems',
-                        component: ProjectErrorListComponent,
-                        title: `${UiCustomisations.productName}: Projects`
-                    },
-                    {
-                        path: ':packageName',
-                        component: ProjectExplorerComponent,
-                        title: `${UiCustomisations.productName}: Projects`
-                    },
-                    {
-                        path: ':packageName/:selectedTab',
-                        component: ProjectExplorerComponent,
-                        title: `${UiCustomisations.productName}: Projects`
-                    },
-                    {
-                        path: ':packageName/:selectedTab/**',
-                        component: ProjectExplorerComponent,
-                        title: `${UiCustomisations.productName}: Projects`
-                    }
-                ]
-            },
-        ]),
-        TuiTabsModule,
-        ChangesetSelectorModule,
-        TuiNotificationModule,
-        ExpandingPanelSetModule,
-        HeaderComponentLayoutModule,
-        ChangelogTimelineComponent,
-        RequiresAuthorityDirective,
-    ],
+  imports: [
+    CommonModule,
+    MatMenuModule,
+    MatButtonModule,
+    SearchModule,
+    MatToolbarModule,
+    CodeViewerModule,
+    MatProgressBarModule,
+    MatStepperModule,
+    MatFormFieldModule,
+    MatSelectModule,
+    ReactiveFormsModule,
+    CovalentHighlightModule,
+    MatListModule,
+    MatIconModule,
+    MatInputModule,
+    HeaderBarModule,
+    RouterModule,
+    PackageViewerModule,
+    ChangelogModule,
+    SchemaMemberTypeExplorerModule,
+    SimpleBadgeListModule,
+    TuiButtonModule,
+    RouterModule.forChild([
+      {
+        path: 'project-import',
+        component: ProjectImportComponent,
+        canActivate: [AuthGuard],
+        data: { requiredAuthority: VynePrivileges.EditSchema }
+      },
+      {
+        path: '',
+        component: ProjectExplorerContainerComponent,
+        children: [
+          {
+            path: '',
+            component: ProjectSummaryViewComponent,
+            title: `${UiCustomisations.productName}: Projects`
+          },
+          {
+            path: 'problems',
+            component: ProjectErrorListComponent,
+            title: `${UiCustomisations.productName}: Projects`
+          },
+          {
+            path: ':packageName',
+            component: ProjectExplorerComponent,
+            title: `${UiCustomisations.productName}: Projects`
+          },
+          {
+            path: ':packageName/:selectedTab',
+            component: ProjectExplorerComponent,
+            title: `${UiCustomisations.productName}: Projects`
+          },
+          {
+            path: ':packageName/:selectedTab/**',
+            component: ProjectExplorerComponent,
+            title: `${UiCustomisations.productName}: Projects`
+          }
+        ]
+      },
+    ]),
+    TuiTabsModule,
+    ChangesetSelectorModule,
+    TuiNotificationModule,
+    ExpandingPanelSetModule,
+    HeaderComponentLayoutModule,
+    ChangelogTimelineComponent,
+    RequiresAuthorityDirective,
+    GitConfigComponent,
+    FileConfigComponent,
+  ],
     exports: [ProjectExplorerComponent, ProjectSummaryViewComponent],
   declarations: [ProjectExplorerComponent, ProjectExplorerContainerComponent, ProjectSummaryViewComponent, ProjectSettingsComponent, ProjectErrorListComponent],
   providers: [],

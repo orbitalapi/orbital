@@ -1,9 +1,8 @@
+import {CommonModule} from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
-import {HttpErrorResponse} from '@angular/common/http';
-import {of} from 'rxjs';
-import {catchError, debounceTime, switchMap} from 'rxjs/operators';
+import {FormsModule} from '@angular/forms';
+import {TuiSelectModule} from '@taiga-ui/kit';
 import {projectTypeToString} from 'src/app/project-import/project-source-config/git-config.component';
-import {UiCustomisations} from '../../../environments/ui-customisations';
 import {
   AvroPackageLoaderSpec,
   FileSystemPackageSpec,
@@ -11,16 +10,19 @@ import {
   OpenApiPackageLoaderSpec,
   TaxiPackageLoaderSpec
 } from '../project-import.models';
-import {isNullOrUndefined} from 'src/app/utils/utils';
 import {Message} from 'src/app/services/schema';
 import {FileRepositoryTestResponse, SchemaImporterService} from 'src/app/project-import/schema-importer.service';
-import {TuiAlertService} from "@taiga-ui/core";
+import {TuiAlertService, TuiButtonModule, TuiDataListModule, TuiNotificationModule} from '@taiga-ui/core';
 import {Router} from "@angular/router";
+import {AvroPackageConfigComponent} from './avro-package-config.component';
+import {OpenApiPackageConfigComponent} from './open-api-package-config.component';
+import {TaxiPackageConfigComponent} from './taxi-package-config.component';
 
 @Component({
   selector: 'app-file-config',
+  standalone: true,
   template: `
-    <div class='form-header-text'>
+    <div class='form-header-text' *ngIf="editable">
       <p>Read projects directly from the local machine.</p>
       <tui-notification status='warning'>Disk based projects are great for getting started and dev-local
         experiments,
@@ -34,7 +36,7 @@ import {Router} from "@angular/router";
             <div class='form-item-description-container'>
               <h3>Project type</h3>
               <div class='help-text'>
-                Git repositories can contain full Taxi projects, or individual API specs.
+                Add either a full Taxi project, or individual API specs
               </div>
             </div>
             <div class='form-element'>
@@ -54,101 +56,30 @@ import {Router} from "@angular/router";
               </tui-select>
             </div>
           </div>
-          <app-open-api-package-config *ngIf="fileSystemPackageConfig.loader.packageType ==='OpenApi'"
-                                       [openApiPackageSpec]='openApiPackageSpec'
-                                       [projectType]="'file'"
-                                       [editable]="editable"
-                                       [(path)]='fileSystemPackageConfig.path'
-                                       ngModelGroup="openApiForm"
+          <app-taxi-package-config
+            *ngIf="fileSystemPackageConfig.loader.packageType === 'Taxi'"
+            [fileSystemPackageConfig]="fileSystemPackageConfig"
+            [editable]="editable"
+            ngModelGroup="taxiForm"
+          ></app-taxi-package-config>
+          <app-open-api-package-config
+            *ngIf="fileSystemPackageConfig.loader.packageType ==='OpenApi'"
+            [openApiPackageSpec]='openApiPackageSpec'
+            [projectType]="'file'"
+            [editable]="editable"
+            [(path)]='fileSystemPackageConfig.path'
+            (fileChange)="filePayload = $event"
+            ngModelGroup="openApiForm"
           ></app-open-api-package-config>
           <app-avro-package-config
             *ngIf="fileSystemPackageConfig.loader.packageType === 'Avro'"
             [packageSpec]="avroPackageSpec"
+            [projectType]="'file'"
             [editable]="editable"
             [(path)]='fileSystemPackageConfig.path'
+            (fileChange)="filePayload = $event"
             ngModelGroup="avroForm"
           ></app-avro-package-config>
-          <ng-container *ngIf="fileSystemPackageConfig.loader.packageType === 'Taxi'">
-            <div class='form-row'>
-              <div class='form-item-description-container'>
-                <h3>Project path</h3>
-                <div class='help-text'>
-                  <p>
-                    Specify the path to the directory containing a <code>taxi.conf</code> file.
-                  </p>
-                </div>
-              </div>
-              <div class='form-element'>
-                <div class='row'>
-                  <div style='flex-grow: 1;'>
-                    <tui-input [ngModel]='fileSystemPackageConfig.path' class='flex-grow'
-                               name='pathToTaxi' required [readOnly]='!editable'
-                               (ngModelChange)='filePathUpdated($event)'>
-                      Path
-                    </tui-input>
-                    <div style='display: flex; margin-top: 0.5rem'>
-                      <tui-loader [showLoader]='true' size='s'
-                                  *ngIf='editable && !filePathTestResult && fileSystemPackageConfig.path'
-                                  [textContent]="'Checking for a taxi project file at ' + expectedTaxiConfLocation"
-                      ></tui-loader>
-                      <tui-notification *ngIf='filePathTestResult?.exists' status='success'>
-                        Great - we've found project {{ filePathTestResult.identifier.id }} there
-                      </tui-notification>
-                      <div style='display: flex; width: 100%; align-items: center;'
-                           *ngIf='filePathTestResult && !filePathTestResult.exists && !filePathTestResult.errorMessage'>
-                        <tui-notification style='flex-grow: 1'
-                                          status='info'>
-                          Can't find a project at {{ expectedTaxiConfLocation }}
-                        </tui-notification>
-                        <button tuiButton size='s' appearance='outline' style='margin-left: 1rem'
-                                (click)='createNewProject()'>Create new project
-                        </button>
-                      </div>
-                      <div style='display: flex; width: 100%; align-items: center;'
-                           *ngIf='filePathTestResult && filePathTestResult.errorMessage'>
-                        <tui-notification style='flex-grow: 1'
-                                          status='error'>
-                          {{ filePathTestResult.errorMessage }}
-                        </tui-notification>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class='form-row' *ngIf='creatingNewProject'>
-              <div class='form-item-description-container'>
-                <h3>Package identifier</h3>
-                <div class='help-text'>
-                  All schemas in {{ UiCustomisations.productName }} need a Package Identifier - similar
-                  to npm or maven
-                  co-ordinates
-                </div>
-              </div>
-              <div class='form-element'>
-                <div tuiGroup>
-                  <app-package-identifier-input
-                    ngModelGroup="taxiCoordinates"
-                    [(packageIdentifier)]="fileSystemPackageConfig.newProjectIdentifier"
-                    [editable]="editable"></app-package-identifier-input>
-                </div>
-              </div>
-            </div>
-            <div class='form-row'>
-              <div class='form-item-description-container'>
-                <h3>Enable edits</h3>
-                <div class='help-text'>
-                  <p>
-                    If enabled, edits can be made through the {{ UiCustomisations.productName }} UI
-                  </p>
-                </div>
-              </div>
-              <div class='form-element'>
-                <tui-checkbox [(ngModel)]='fileSystemPackageConfig.isEditable' name='editable'
-                              required [readOnly]='!editable'></tui-checkbox>
-              </div>
-            </div>
-          </ng-container>
         </div>
       </div>
     </form>
@@ -160,7 +91,7 @@ import {Router} from "@angular/router";
         (click)="goBackOnboarding.emit()"
       >Cancel
       </button>
-      <button tuiButton [showLoader]='working' [size]="'m'" (click)='doCreate()' [disabled]='fileForm.invalid || !filePathIsValid'>
+      <button tuiButton [showLoader]='working' [size]="'m'" (click)='doCreate()' [disabled]='fileForm.invalid'>
         Create
       </button>
     </div>
@@ -169,77 +100,43 @@ import {Router} from "@angular/router";
     </tui-notification>
   `,
   styleUrls: ['./file-config.component.scss'],
+  imports: [
+    TuiNotificationModule,
+    FormsModule,
+    TuiSelectModule,
+    TuiDataListModule,
+    TaxiPackageConfigComponent,
+    OpenApiPackageConfigComponent,
+    AvroPackageConfigComponent,
+    TuiButtonModule,
+    CommonModule
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FileConfigComponent {
-
-  get filePathIsValid():Boolean {
-    const foundFile = this.filePathTestResult && this.filePathTestResult.exists && !this.filePathTestResult.errorMessage
-    return foundFile || this.creatingNewProject
-  }
-
-  readonly stringifyProjectType = projectTypeToString;
   @Input()
   fileSystemPackageConfig: FileSystemPackageSpec = new FileSystemPackageSpec();
   @Input()
   editable: boolean = true;
-  @Output()
-  localFileAdded: EventEmitter<void> = new EventEmitter()
   @Input()
   isOnboardingMode: boolean;
   @Output()
   goBackOnboarding: EventEmitter<void> = new EventEmitter();
+  @Output()
+  localFileAdded: EventEmitter<void> = new EventEmitter()
+
+  readonly stringifyProjectType = projectTypeToString;
+  filePathTestResult: FileRepositoryTestResponse;
   working = false;
   saveResultMessage: Message;
+  filePayload: string;
 
-  creatingNewProject: boolean = false;
-
-  filePathTestResult: FileRepositoryTestResponse;
-  private filePathChanged$ = new EventEmitter<string>();
-
-  constructor(private changeDetector: ChangeDetectorRef,
-              private schemaService: SchemaImporterService,
-              private alertsService: TuiAlertService,
-              private router: Router
-  ) {
-    this.filePathChanged$
-      .pipe(
-        debounceTime(500),
-        // distinctUntilChanged(),
-        switchMap((path: string) => {
-          return schemaService.testFileConnection({path}).pipe(
-            catchError((err: HttpErrorResponse) => of({
-              exists: false,
-              path: '',
-              identifier: null,
-              errorMessage: err.error.message ? err.error.message : 'An error occurred checking the path'
-            } as FileRepositoryTestResponse))
-          );
-        })
-      )
-      .subscribe(result => {
-        this.filePathTestResult = result;
-        if (result.exists) {
-          this.creatingNewProject = false;
-          this.fileSystemPackageConfig.newProjectIdentifier = null;
-        }
-        this.changeDetector.markForCheck();
-      });
-  }
-
-  get expectedTaxiConfLocation(): string | null {
-    if (isNullOrUndefined(this.fileSystemPackageConfig.path)) {
-      return null;
-    } else {
-      let separator;
-      if (this.fileSystemPackageConfig.path.includes("/")) {
-        separator = this.fileSystemPackageConfig.path.endsWith('/') ? '' : '/';
-      } else {
-        separator = this.fileSystemPackageConfig.path.endsWith('\\') ? '' : '\\';
-      }
-      return this.fileSystemPackageConfig.path + separator + 'taxi.conf';
-    }
-  }
+  constructor(
+    private changeDetector: ChangeDetectorRef,
+    private schemaService: SchemaImporterService,
+    private alertsService: TuiAlertService,
+    private router: Router
+  ) {}
 
   get avroPackageSpec():AvroPackageLoaderSpec | null {
     const packageType = this.fileSystemPackageConfig.loader?.packageType;
@@ -249,6 +146,7 @@ export class FileConfigComponent {
       return null;
     }
   }
+
   get openApiPackageSpec(): OpenApiPackageLoaderSpec | null {
     const packageType = this.fileSystemPackageConfig.loader?.packageType;
     if (packageType === 'OpenApi') {
@@ -259,6 +157,7 @@ export class FileConfigComponent {
   }
 
   selectedProjectTypeChanged(projectType: LoadablePackageType) {
+    this.saveResultMessage = null;
     switch (projectType) {
       case 'Taxi':
         this.fileSystemPackageConfig.loader = new TaxiPackageLoaderSpec();
@@ -269,60 +168,76 @@ export class FileConfigComponent {
       case "Avro":
         this.fileSystemPackageConfig.loader = new AvroPackageLoaderSpec();
     }
+    delete this.fileSystemPackageConfig.newProjectIdentifier
     this.changeDetector.markForCheck();
   }
 
   doCreate() {
-    console.log(JSON.stringify(this.fileSystemPackageConfig, null, 2));
     this.working = true;
     this.saveResultMessage = null;
-    this.schemaService.addNewFileRepository(this.fileSystemPackageConfig)
-      .subscribe(result => {
-          this.localFileAdded.emit();
-          this.working = false;
-          if (!this.isOnboardingMode) {
-            this.alertsService.open(
-              'The local disk repository was added successfully',
-              {status: 'success' }
-            ).subscribe()
-            this.router.navigate(['projects']);
-          } else {
-            this.saveResultMessage = {
-              message: 'The local disk repository was added successfully',
-              severity: 'SUCCESS'
-            };
-          }
-          this.changeDetector.markForCheck();
-        },
-        error => {
-          console.log(JSON.stringify(error));
-          this.working = false;
-          this.saveResultMessage = {
-            message: `There was a problem adding the local disk repository: ${error.error.message}`,
-            severity: 'ERROR'
-          };
-          this.changeDetector.markForCheck();
+    if (this.fileSystemPackageConfig.loader.packageType === 'Taxi') {
+      this.schemaService.addNewFileRepository(this.fileSystemPackageConfig)
+        .subscribe({
+          next: (result) => this.creationSuccess(result),
+          error: (error) => this.creationError(error)
         });
+    } else if (this.fileSystemPackageConfig.loader.packageType === 'OpenApi') {
+      const {identifier: {organisation, name, version}, defaultNamespace, packageType, serviceBasePath} = (this.fileSystemPackageConfig.loader as OpenApiPackageLoaderSpec)
+      const uriSafeProjectId = `${organisation}:${name}:${version}`
+      this.schemaService.uploadProject(
+        uriSafeProjectId,
+        {
+          format: packageType,
+          defaultNamespace,
+          serviceBasePath
+        },
+        this.filePayload
+      ).subscribe({
+        next: (result) => this.creationSuccess(result),
+        error: (error) => this.creationError(error)
+      });
+    } else if (this.fileSystemPackageConfig.loader.packageType === 'Avro') {
+      const {identifier: {organisation, name, version}, packageType} = (this.fileSystemPackageConfig.loader as AvroPackageLoaderSpec)
+      const uriSafeProjectId = `${organisation}:${name}:${version}`
+      this.schemaService.uploadProject(
+        uriSafeProjectId,
+        {
+          format: packageType,
+        },
+        this.filePayload
+      ).subscribe({
+        next: (result) => this.creationSuccess(result),
+        error: (error) => this.creationError(error)
+      });
+    }
   }
 
-  filePathUpdated(value: string) {
-    this.fileSystemPackageConfig.path = value;
-    this.filePathChanged$.emit(value);
-    this.filePathTestResult = null;
+  private creationSuccess(result) {
+    this.localFileAdded.emit();
+    this.working = false;
+    if (!this.isOnboardingMode) {
+      this.alertsService.open(
+        'The local disk repository was added successfully',
+        { status: 'success' }
+      ).subscribe()
+      this.router.navigate(['projects']);
+    } else {
+      this.saveResultMessage = {
+        message: 'The local disk repository was added successfully',
+        severity: 'SUCCESS'
+      };
+    }
+    this.changeDetector.markForCheck();
   }
 
-  createNewProject() {
-    this.creatingNewProject = true;
-    this.fileSystemPackageConfig.newProjectIdentifier = {
-      name: null,
-      organisation: null,
-      version: null,
-      id: null,
-      unversionedId: null
-
+  private creationError(error) {
+    console.log(JSON.stringify(error));
+    this.working = false;
+    this.saveResultMessage = {
+      message: `There was a problem adding the local disk repository: ${error.error.message}`,
+      severity: 'ERROR'
     };
     this.changeDetector.markForCheck();
   }
 
-  protected readonly UiCustomisations = UiCustomisations;
 }

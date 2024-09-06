@@ -34,7 +34,7 @@ import IModelContentChangedEvent = editor.IModelContentChangedEvent;
         [formControl]="fileDropControl"
         (reject)="onReject($event)"
         [maxFileSize]="8*1024*1024"
-        accept="text/csv, application/json, application/xml"
+        accept=".csv, .tsv, .psv, .json, .xml"
         link="Choose a CSV, TSV, PSV, JSON or XML file"
         label="or drop one here"
       ></tui-input-files>
