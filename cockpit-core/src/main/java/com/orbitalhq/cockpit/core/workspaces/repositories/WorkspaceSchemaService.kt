@@ -9,7 +9,7 @@ import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.GitSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.core.repositories.toRepositorySpec
-import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
+import com.orbitalhq.schemaServer.repositories.AddFileProjectRequest
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
 import com.orbitalhq.security.VynePrivileges
 import kotlinx.coroutines.Dispatchers
@@ -56,7 +56,7 @@ class WorkspaceSchemaService(
       @PathVariable("orgId") organisationId: Long,
       @PathVariable("workspaceId") workspaceId: Long,
       @AuthenticationPrincipal auth: Mono<Authentication>,
-      @RequestBody request: CreateFileProjectStoreRequest
+      @RequestBody request: AddFileProjectRequest
    ): WorkspaceSchemaSpec = withContext(Dispatchers.IO) {
       val authentication = auth.requireIsAuthenticated()
 
@@ -69,7 +69,7 @@ class WorkspaceSchemaService(
       organisationId: Long,
       workspaceId: Long,
       auth: Authentication,
-      request: CreateFileProjectStoreRequest
+      request: AddFileProjectRequest
    ): WorkspaceSchemaSpec {
       val filePackageSpec = request.toRepositorySpec()
       val description = filePackageSpec.packageIdentifier!!.id

@@ -205,12 +205,15 @@ class FileWorkspaceConfigLoader(
       return if (path.isAbsolute) {
          path
       } else {
-         configFilePath.parent.resolve(path)
+         configFilePath.toAbsolutePath().parent.resolve(path)
       }
    }
 
    private fun resolveRelativePaths(original: WorkspaceConfig): WorkspaceConfig {
-      val updatedFileConfig = original.file?.let { fileConfig ->
+      // MP: 06-Sep-24: Changed from original.file -> original.fileConfigOrDefault
+      // We need to make newPaths relative to the location of the file, and this is the
+      // only / best place to do it.
+      val updatedFileConfig = original.fileConfigOrDefault.let { fileConfig ->
          val resolvedPaths = fileConfig.projects
             .map { packageSpec ->
                val relativePath = makeRelativeToConfigFile(packageSpec.path)
@@ -233,10 +236,8 @@ class FileWorkspaceConfigLoader(
                } else {
                   packageSpec.copy(path = relativePath)
                }
-
-
             }
-         fileConfig.copy(projects = resolvedPaths)
+         fileConfig.copy(projects = resolvedPaths, newProjectsPath = makeRelativeToConfigFile(fileConfig.newProjectsPath))
       }
       return original.copy(file = updatedFileConfig)
    }

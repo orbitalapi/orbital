@@ -1,23 +1,27 @@
 package com.orbitalhq.schemaServer.core.repositories
 
+import com.google.common.io.Resources
 import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.core.file.deployProject
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
+import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
+import com.orbitalhq.schemaServer.packages.PackageType
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
-import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
+import com.orbitalhq.schemaServer.repositories.AddFileProjectRequest
 import com.orbitalhq.schemaServer.repositories.FileProjectStoreTestRequest
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
-import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.spring.http.BadRequestException
 import com.winterbe.expekt.should
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.file.shouldExist
 import io.kotest.matchers.shouldBe
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.springframework.util.LinkedMultiValueMap
 import reactor.test.StepVerifier
 
 
@@ -80,7 +84,7 @@ class WorkspaceProjectsServiceTest {
 
       StepVerifier.create(
          workspaceProjectsService.createFileRepository(
-            CreateFileProjectStoreRequest(
+            AddFileProjectRequest(
                folder.canonicalPath, true,
                loader = TaxiPackageLoaderSpec,
                newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
@@ -102,7 +106,7 @@ class WorkspaceProjectsServiceTest {
    fun `cannot add a duplicate file repository`() {
       val folder = folder.newFolder("project")
 
-      val request = CreateFileProjectStoreRequest(
+      val request = AddFileProjectRequest(
          folder.canonicalPath,
          true,
          loader = TaxiPackageLoaderSpec,
@@ -126,7 +130,7 @@ class WorkspaceProjectsServiceTest {
    fun `cannot add a duplicate file repository with differing editable`() {
       val folder = folder.newFolder("project")
 
-      val request = CreateFileProjectStoreRequest(
+      val request = AddFileProjectRequest(
          folder.canonicalPath, true,
          loader = TaxiPackageLoaderSpec,
          newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
@@ -154,7 +158,7 @@ class WorkspaceProjectsServiceTest {
       // use resolve, to ensure the repository creates the directory
       val folder = folder.root.resolve("project/")
 
-      val request = CreateFileProjectStoreRequest(
+      val request = AddFileProjectRequest(
          folder.canonicalPath, true,
          loader = TaxiPackageLoaderSpec,
          newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
@@ -198,5 +202,45 @@ class WorkspaceProjectsServiceTest {
       gitRepo.branch.should.equal("master")
    }
 
+
+   @Test
+   fun `can submit an open api project`() {
+      val result = workspaceProjectsService.uploadProject(
+         "com.foo:test:1.0.0",
+         PackageType.OpenApi,
+         LinkedMultiValueMap(
+            mapOf(OpenApiPackageLoaderSpec::defaultNamespace.name to listOf("com.foo.test"))
+         ),
+         Resources.toByteArray(Resources.getResource("open-api/petstore-expanded.yaml"))
+      ).block()
+      result!!.status.shouldBe(ModifyProjectResponseStatus.Ok)
+      val yamlFile = folder.root.resolve("orbital/workspace/projects/com/foo/test/spec.oas.yaml")
+      yamlFile.shouldExist()
+      yamlFile.readText().shouldBe(Resources.getResource("open-api/petstore-expanded.yaml").readText())
+
+      val repositoryConfig = workspaceProjectsService.listRepositories()
+      repositoryConfig
+         .file!!.projects.should.have.size(1)
+   }
+
+   @Test
+   fun `can submit an avro project`() {
+      val result = workspaceProjectsService.uploadProject(
+         "com.foo:test:1.0.0",
+         PackageType.Avro,
+         LinkedMultiValueMap(
+            emptyMap()
+         ),
+         Resources.toByteArray(Resources.getResource("avro/addressBook.avsc"))
+      ).block()
+      result!!.status.shouldBe(ModifyProjectResponseStatus.Ok)
+      val avroFile = folder.root.resolve("orbital/workspace/projects/com/foo/test/spec.avsc")
+      avroFile.shouldExist()
+      avroFile.readText().shouldBe(Resources.getResource("avro/addressBook.avsc").readText())
+
+      val repositoryConfig = workspaceProjectsService.listRepositories()
+      repositoryConfig
+         .file!!.projects.should.have.size(1)
+   }
 
 }

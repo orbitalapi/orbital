@@ -26,7 +26,7 @@ data class GitConnectionTestResult(
 
 )
 
-data class CreateFileProjectStoreRequest(
+data class AddFileProjectRequest(
    val path: String,
    val isEditable: Boolean,
    val loader: PackageLoaderSpec = TaxiPackageLoaderSpec,

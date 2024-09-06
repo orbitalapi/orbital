@@ -11,7 +11,7 @@ import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
-import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
+import com.orbitalhq.schemaServer.repositories.AddFileProjectRequest
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
 import io.kotest.matchers.nulls.shouldNotBeNull
 import org.junit.jupiter.api.BeforeEach
@@ -55,7 +55,7 @@ class WorkspaceSchemaServiceTest : DatabaseTest() {
     @Test
     fun `adding a new file repo gets persisted to disk`() {
         val added = service.doAddFileRepoToWorkspace(
-            1,2, authForUserId("marty"), CreateFileProjectStoreRequest(
+            1,2, authForUserId("marty"), AddFileProjectRequest(
                 "path/to/repo",
                 true,
                 TaxiPackageLoaderSpec,

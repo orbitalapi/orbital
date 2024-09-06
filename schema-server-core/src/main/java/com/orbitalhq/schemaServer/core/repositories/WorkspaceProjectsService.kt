@@ -5,11 +5,12 @@ import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitUtils
+import com.orbitalhq.schemaServer.core.repositories.upload.ProjectUploadHandler
 import com.orbitalhq.schemaServer.packages.AvroPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.PackageType
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
-import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
+import com.orbitalhq.schemaServer.repositories.AddFileProjectRequest
 import com.orbitalhq.schemaServer.repositories.FileProjectStoreTestRequest
 import com.orbitalhq.schemaServer.repositories.FileProjectTestResponse
 import com.orbitalhq.schemaServer.repositories.GitConnectionTestRequest
@@ -19,6 +20,7 @@ import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.BadRequestException
 import mu.KotlinLogging
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.util.MultiValueMap
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -31,7 +33,10 @@ import java.nio.file.Path
 import java.nio.file.Paths
 
 @RestController
-class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) {
+class WorkspaceProjectsService(
+   private val configRepo: WorkspaceConfigLoader,
+   private val projectUploadHandlers: List<ProjectUploadHandler> = ProjectUploadHandler.DEFAULT
+   ) {
    companion object {
       private val logger = KotlinLogging.logger {}
    }
@@ -47,9 +52,10 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) {
       return configRepo.load()
    }
 
+   @Deprecated("Deprecated as a REST API - internal calls to the method are fine - This approach is awkward for users around file handling - use uploadProject instead")
    @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @PostMapping("/api/repositories/file")
-   fun createFileRepository(@RequestBody request: CreateFileProjectStoreRequest): Mono<ModifyWorkspaceResponse> {
+   fun createFileRepository(@RequestBody request: AddFileProjectRequest): Mono<ModifyWorkspaceResponse> {
       val fileSpec = request.toRepositorySpec()
       return Mono.just(configRepo.addFileSpec(fileSpec)).map {
          if (it.status == ModifyProjectResponseStatus.Failed) {
@@ -60,11 +66,35 @@ class WorkspaceProjectsService(private val configRepo: WorkspaceConfigLoader) {
       }
    }
 
+   /**
+    * Allows users to upload a project or spec which will get created as a
+    * project within the workspace.
+    *
+    * A new project directory is created on the server, and the contents are saved there
+    */
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @PostMapping("/api/workspace/projects/{projectId}")
-   fun createFileProject(
-      @PathVariable("projectId") projectId: String,
+   fun uploadProject(
+      @PathVariable("projectId") uriSafeProjectId: String,
       @RequestParam("format") packageType: PackageType,
-   ) {
+      @RequestParam parameters: MultiValueMap<String, String>,
+      @RequestBody payload: ByteArray
+   ): Mono<ModifyWorkspaceResponse> {
+      logger.info { "Attempting to import $packageType project $uriSafeProjectId" }
+      val packageIdentifier = PackageIdentifier.fromUriSafeId(uriSafeProjectId)
+      val workspaceProjectsRoot = configRepo.load()
+         .fileConfigOrDefault
+         .newProjectsPath
+
+      val projectRoot = workspaceProjectsRoot.resolve(packageIdentifier.unversionedId.replace(".","/"))
+      logger.info { "Project $uriSafeProjectId will be saved to $projectRoot" }
+      projectRoot.toFile().mkdirs()
+
+      val uploadHandler = projectUploadHandlers.firstOrNull { it.packageType == packageType }
+         ?: throw BadRequestException("Upload of projects with format of $packageType is not supported")
+
+      val createProjectRequest = uploadHandler.processUpload(packageIdentifier, parameters.toMap(), payload, projectRoot)
+      return createFileRepository(createProjectRequest)
 
    }
 
@@ -124,7 +154,7 @@ fun GitProjectStoreChangeRequest.toRepositorySpec(): GitProjectSpec {
    )
 }
 
-fun CreateFileProjectStoreRequest.toRepositorySpec(): FileProjectSpec {
+fun AddFileProjectRequest.toRepositorySpec(): FileProjectSpec {
    val packageIdentifier = when (this.loader.packageType) {
       PackageType.Taxi -> this.newProjectIdentifier
 
