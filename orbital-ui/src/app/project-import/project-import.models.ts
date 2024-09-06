@@ -32,17 +32,18 @@ export class GitPullRequestConfig {
   public branchPrefix: string = 'schema-updates/';
   public hostingProvider: GitHostingProvider = 'Github';
 }
-
 export type GitHostingProvider = 'Github' | 'Gitlab';
+
 export class TaxiPackageLoaderSpec implements PackageLoaderSpec {
   readonly packageType = 'Taxi';
 }
+
 export class OpenApiPackageLoaderSpec implements PackageLoaderSpec {
   readonly packageType = 'OpenApi'
   identifier: PackageIdentifier = {
     name: null,
     organisation: null,
-    version: null,
+    version: '1.0.0',
     id: null,
     unversionedId: null
   }
@@ -55,8 +56,9 @@ export class AvroPackageLoaderSpec  implements PackageLoaderSpec  {
   identifier: PackageIdentifier = {
     name: null,
     organisation: null,
-    version: null,
+    version: '1.0.0',
     id: null,
     unversionedId: null
   }
 }
+

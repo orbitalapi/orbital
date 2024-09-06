@@ -1,23 +1,32 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {TuiInputModule} from '@taiga-ui/kit';
 import {OpenApiPackageLoaderSpec} from 'src/app/project-import/project-import.models';
-import {ControlContainer, NgModelGroup} from '@angular/forms';
+import {ControlContainer, FormsModule, NgModelGroup, ReactiveFormsModule} from '@angular/forms';
 import {UiCustomisations} from '../../../environments/ui-customisations';
-import {fileExtensionValidator} from './file-extension-validator';
+import {PackageIdentifierInputComponent} from '../../package-identifier-input/package-identifier-input.component';
+import {FilePathOrUploadComponent} from './file-path-or-upload.component';
 
 @Component({
   selector: 'app-open-api-package-config',
+  standalone: true,
   template: `
     <div class="form-row">
       <div class="form-item-description-container">
-        <h3>Path to Open API spec file</h3>
-        <div class="help-text">{{pathLabel}}</div>
+        <h3>OpenAPI spec file</h3>
+        <div class="help-text">{{ pathLabel }}</div>
       </div>
       <div class="form-element">
-        <tui-input [ngModel]="path" (ngModelChange)="onPathChanged($event)" (focusout)="validatePath()" required name="path" [readOnly]="!editable">
-          Path
-          <span class="tui-required"></span>
-        </tui-input>
-        <tui-error [error]="errorMessage"/>
+        <app-file-path-or-upload
+          [editable]="editable"
+          [mode]="projectType === 'file' ? 'upload' : 'path'"
+          [filesAccepted]="['.json', '.yaml']"
+          [path]="path"
+          (pathChanged)="onPathChanged($event)"
+          (fileChanged)="fileChange.emit($event)"
+          uploadLabel="choose a .json or .yaml file"
+          fileExtensionErrorLabel="Invalid file extension. Allowed extensions are: .json and .yaml"
+        >
+        </app-file-path-or-upload>
       </div>
     </div>
     <div class="form-row">
@@ -67,20 +76,17 @@ import {fileExtensionValidator} from './file-extension-validator';
     </div>
   `,
   styleUrls: ['./open-api-package-config.component.scss'],
-  viewProviders: [{provide: ControlContainer, useExisting: NgModelGroup}]
+  imports: [
+    FilePathOrUploadComponent,
+    PackageIdentifierInputComponent,
+    TuiInputModule,
+    FormsModule
+  ],
+  viewProviders: [{ provide: ControlContainer, useExisting: NgModelGroup }]
 })
 export class OpenApiPackageConfigComponent {
-
   @Input()
   projectType: 'file' | 'git' = 'file';
-
-  get pathLabel(): string {
-    if (this.projectType === 'file') {
-      return 'Specify the path to your Open API spec file'
-    } else {
-      return 'Specify the path (from the root of the git repository) to the OpenAPI spec file';
-    }
-  }
 
   @Input()
   openApiPackageSpec: OpenApiPackageLoaderSpec;
@@ -94,21 +100,20 @@ export class OpenApiPackageConfigComponent {
   @Output()
   pathChange = new EventEmitter<string>();
 
-  errorMessage: string;
+  @Output()
+  fileChange = new EventEmitter<string>();
+
+  get pathLabel(): string {
+    if (this.projectType === 'file') {
+      return 'Select your OpenAPI spec file'
+    } else {
+      return 'Path from the root of the git repository to the OpenAPI spec file';
+    }
+  }
 
   onPathChanged(value: string) {
     this.path = value;
     this.pathChange.emit(value);
-  }
-
-  validatePath(): void {
-    const validator = fileExtensionValidator(['json', 'yaml']);
-    const validationResult = validator({ value: this.path } as any);
-    if (validationResult && validationResult.invalidFileExtension) {
-      this.errorMessage = 'Invalid file extension. Only *.json and *.yaml files are allowed.';
-    } else {
-      this.errorMessage = null;
-    }
   }
 
   protected readonly UiCustomisations = UiCustomisations;
