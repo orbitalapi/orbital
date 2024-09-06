@@ -77,7 +77,7 @@ import {showAlertForMessage} from "../alert-with-dismiss/alert-with-dismiss.comp
     </div>
     <tui-notification
       [status]="schemaSaveResultMessage.severity.toLowerCase()"
-      *ngIf="schemaSaveResultMessage"
+      *ngIf="schemaSaveResultMessage && schemaSaveResultMessage.severity === 'FAILURE'"
       class="notification-error"
       (close)="schemaSaveResultMessage = null"
     >
