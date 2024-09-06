@@ -20,6 +20,7 @@ data class WorkspaceConfig(
    val file: WorkspaceFileProjectConfig? = null,
    val git: WorkspaceGitProjectConfig? = null
 ) {
+
    fun repoCountDescription(): String {
       val fileRepos = file?.projects?.size ?: 0
       val gitRepos = git?.repositories?.size ?: 0

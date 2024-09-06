@@ -13,6 +13,7 @@ import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
 import com.winterbe.expekt.should
+import io.kotest.matchers.equality.shouldBeEqualToIgnoringFields
 import io.kotest.matchers.shouldBe
 import org.apache.commons.io.IOUtils
 import org.junit.Rule
@@ -33,7 +34,9 @@ class ConfigTest {
          eventDispatcher = mock { },
          projectManager = mock {  })
          .load()
-      empty.file.should.be.`null`
+      // MP 06-Sep-24: We now populate the file with defaults,
+      // as we need to make the paths relative to the config file.
+//      empty.file.should.be.`null`
       empty.git.should.be.`null`
    }
 
@@ -46,8 +49,8 @@ class ConfigTest {
                   path = Paths.get("/a/b/c/project"),
                   isEditable = true
                )
-
-            )
+            ),
+            newProjectsPath = Paths.get("/opt/var/orbital/projects")
          ),
          git = WorkspaceGitProjectConfig(
             checkoutRoot = Paths.get("/my/git/root"),
@@ -76,7 +79,7 @@ class ConfigTest {
    fun `file paths in config file are treated as relative if not explicitly absolute`() {
       val configFile = Resources.getResource("config-files/with-relative-path.conf")
          .toURI()
-      val targetConfigFile = folder.newFile("server.conf")
+      val targetConfigFile = folder.newFile("workspace.conf")
       IOUtils.copy(configFile.toURL().openStream(), targetConfigFile.outputStream())
 
       val configRepo = FileWorkspaceConfigLoader(targetConfigFile.toPath(),
@@ -86,6 +89,7 @@ class ConfigTest {
       val path = config.file!!.projects[0].path
 
       path.should.equal(folder.root.resolve("path/to/project").toPath())
+      config.file!!.newProjectsPath.shouldBe(folder.root.resolve("orbital/workspace/projects").toPath())
    }
 
    @Test

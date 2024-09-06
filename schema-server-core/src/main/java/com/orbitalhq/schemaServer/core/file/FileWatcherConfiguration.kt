@@ -49,7 +49,7 @@ data class WorkspaceFileProjectConfig(
     * this directory.
     * Projects defined in the `projects` variable do not need to be under here.
     */
-   val newProjectsPath: Path = Paths.get("./orbital/workspace/projects")
+   val newProjectsPath: Path = Paths.get("orbital/workspace/projects")
 )
 
 enum class FileChangeDetectionMethod {

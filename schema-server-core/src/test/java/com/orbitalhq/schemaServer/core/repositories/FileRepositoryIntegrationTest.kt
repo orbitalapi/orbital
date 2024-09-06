@@ -19,7 +19,7 @@ import com.orbitalhq.schemaServer.packages.AvroPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
-import com.orbitalhq.schemaServer.repositories.CreateFileProjectStoreRequest
+import com.orbitalhq.schemaServer.repositories.AddFileProjectRequest
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.schemaStore.TaxiSchemaValidator
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
@@ -107,7 +107,7 @@ class FileRepositoryIntegrationTest {
 
 
          repositoryService.createFileRepository(
-            CreateFileProjectStoreRequest(
+            AddFileProjectRequest(
                projectFolder.canonicalPath,
                true,
                loader = SoapPackageLoaderSpec(
@@ -152,7 +152,7 @@ class FileRepositoryIntegrationTest {
          Resources.copy(Resources.getResource("avro/addressBook.avsc"), targetFile.outputStream())
 
          workspaceProjectsService.createFileRepository(
-            CreateFileProjectStoreRequest(
+            AddFileProjectRequest(
                projectFolder.canonicalPath,
                true,
                loader = AvroPackageLoaderSpec(
@@ -184,7 +184,7 @@ class FileRepositoryIntegrationTest {
          // First, create the new repository
          val projectFolder = folder.newFolder()
          repositoryService.createFileRepository(
-            CreateFileProjectStoreRequest(
+            AddFileProjectRequest(
                projectFolder.canonicalPath,
                true,
                loader = TaxiPackageLoaderSpec,
@@ -224,7 +224,7 @@ class FileRepositoryIntegrationTest {
          val projectFolder = folder.newFolder()
          val packageIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
          repositoryService.createFileRepository(
-            CreateFileProjectStoreRequest(
+            AddFileProjectRequest(
                projectFolder.canonicalPath,
                true,
                loader = TaxiPackageLoaderSpec,
@@ -282,7 +282,7 @@ class FileRepositoryIntegrationTest {
          val projectFolder = folder.newFolder()
          val packageIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
          workspaceService.createFileRepository(
-            CreateFileProjectStoreRequest(
+            AddFileProjectRequest(
                projectFolder.canonicalPath,
                true,
                loader = TaxiPackageLoaderSpec,
@@ -419,7 +419,7 @@ class FileRepositoryIntegrationTest {
 
          val path = Resources.getResource("additional-sources").toURI().toPath()
          workspaceProjectsService.createFileRepository(
-            CreateFileProjectStoreRequest(
+            AddFileProjectRequest(
                path = path.absolutePathString(),
                isEditable = false
             )
@@ -462,7 +462,7 @@ class FileRepositoryIntegrationTest {
       // First, create the project, and write some source.
       val projectFolder = folder.newFolder("my-project")
       setupWorkspaceProjectsService.createFileRepository(
-         CreateFileProjectStoreRequest(
+         AddFileProjectRequest(
             projectFolder.canonicalPath,
             true,
             loader = TaxiPackageLoaderSpec,
