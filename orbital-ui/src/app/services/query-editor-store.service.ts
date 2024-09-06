@@ -42,6 +42,8 @@ export class QueryEditorStoreService {
   })
 
   schema: Schema
+  // this is used to ensure certain operations occur only when the query editor is active
+  isQueryEditorActive: boolean
 
   private config: WritableSignal<AppConfig> = signal(null);
 
@@ -62,7 +64,9 @@ export class QueryEditorStoreService {
       .pipe(takeUntilDestroyed())
       .subscribe(schema => {
         this.schema = schema;
-        this.compileQuery();
+        if (this.isQueryEditorActive) {
+          this.compileQuery();
+        }
       });
   }
 

@@ -2,8 +2,8 @@ import { DatePipe } from '@angular/common';
 import { Component, Inject, OnInit } from '@angular/core';
 import { NavigationEnd, RouteConfigLoadEnd, RouteConfigLoadStart, Router } from '@angular/router';
 import { TuiAlertService } from '@taiga-ui/core';
-import { BehaviorSubject, EMPTY, Observable, Subject, switchMap, takeUntil } from 'rxjs';
-import {catchError, filter, map, throttleTime} from 'rxjs/operators';
+import {BehaviorSubject, EMPTY, interval, Observable, Subject, switchMap, takeUntil, throttle} from 'rxjs';
+import {catchError, filter, map} from 'rxjs/operators';
 import { UiCustomisations } from '../environments/ui-customisations';
 import { PackagesService } from './package-viewer/packages.service';
 import { AppInfo, AppInfoService } from './services/app-info.service';
@@ -92,7 +92,12 @@ export class AppComponent implements OnInit {
 
     this.schemaNotificationService.createSchemaNotificationsSubscription()
       .pipe(
-        throttleTime(1000)
+        // Apply throttle only for notifications without errors
+        throttle((schemaUpdateNotification) =>
+          schemaUpdateNotification.sourceNamesWithErrors.length > 0
+            ? EMPTY
+            : interval(5000) // This is 5 seconds to account for the server sending down lots of updates when a seemingly atomic update has been made on the UI
+        )
       )
       .subscribe(schemaUpdateNotification => {
         let message: string;
