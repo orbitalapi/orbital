@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import {RouterLink} from '@angular/router';
 import { TuiButtonModule } from '@taiga-ui/core';
 import { TuiBlockStatusModule } from '@taiga-ui/layout';
 import { UiCustomisations } from '../../../../environments/ui-customisations';
@@ -7,7 +8,7 @@ import { UiCustomisations } from '../../../../environments/ui-customisations';
 @Component({
   selector: 'app-write-policy-step',
   standalone: true,
-  imports: [CommonModule, TuiButtonModule, TuiBlockStatusModule],
+  imports: [CommonModule, TuiButtonModule, TuiBlockStatusModule, RouterLink],
   template: `
     <tui-block-status>
       <img tuiSlot="top" src="assets/img/illustrations/settings-28.svg">
@@ -16,6 +17,7 @@ import { UiCustomisations } from '../../../../environments/ui-customisations';
       <a tuiButton appearance="secondary" [href]="UiCustomisations.docsLinks.dataPolicies" target="_blank">
         Learn more
       </a>
+      <p>Or put the new UserCredentials model you just created to use in the <a routerLink="/policies/editor">policy editor</a> now!</p>
     </tui-block-status>
   `,
   styleUrls: ['./write-policy-step.component.scss']

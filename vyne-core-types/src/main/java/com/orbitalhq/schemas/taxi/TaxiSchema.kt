@@ -479,9 +479,8 @@ private fun lang.taxi.sources.SourceCode.toVyneSource(packageIdentifier: Package
       log().debug("Constructing VersionedSource without a PackageIdentifier can cause errors with edits")
    }
    val packageIdentifierToUse = packageIdentifier ?: sourceNamePackageIdentifier
-
    return VersionedSource(
-      this.sourceName,
+      sourceName,
       packageIdentifier?.version ?: VersionedSource.DEFAULT_VERSION.toString(),
       this.content,
       packageIdentifierToUse,

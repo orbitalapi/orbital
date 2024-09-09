@@ -13,10 +13,16 @@ button.button-small {
   font-weight: 400;
 
   border-radius: 4px;
+  transition: opacity 150ms ease-in-out;
 
   img {
     width: 1rem;
     margin-right: 0.5rem;
+  }
+
+  &.is-disabled {
+    opacity: 0.5 !important;
+    pointer-events: none;
   }
 }
 

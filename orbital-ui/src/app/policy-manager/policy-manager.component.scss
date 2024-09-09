@@ -1,4 +1,5 @@
 @import "src/common";
+@import "src/tables";
 
 :host {
   display: flex;
@@ -17,6 +18,20 @@ app-header-component-layout {
   height: 100%;
 }
 
+.policy-list {
+  @include orbital-table();
+  @include orbital-table-with-selectable-rows();
+}
+
 .lock-icon {
   margin-right: 0.5rem;
 }
+
+.policy-icon {
+  opacity: 0.1;
+
+  &.has-policy {
+    opacity: 1;
+  }
+}
+

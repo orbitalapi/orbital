@@ -58,7 +58,6 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
           </tbody>
         </table>
       </div>
-
     </app-header-component-layout>
   `,
   styleUrls: ['./endpoint-list.component.scss'],

@@ -65,7 +65,7 @@ export const SchemaNodeContainer = styled.div`
     font-weight: normal;
     padding: 2px 4px;
     font-size: 0.6rem;
-    margin-left: 0.75rem;
+    margin-left: 0.5rem;
     align-self: center;
     text-transform: capitalize;
     border-radius: 4px;

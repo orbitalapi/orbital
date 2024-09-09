@@ -193,6 +193,7 @@ export class QueryEditorComponent {
         size: 'l',
         data: {
           query: this.state.query(),
+          label: 'query',
           previousVersion: this.state.savedQueryWithSource(),
           existingSavedQueryNames: this.existingSavedQueryNames
         } as SaveQueryRequestProps,

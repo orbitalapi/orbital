@@ -1,8 +1,6 @@
 import {NgModule} from '@angular/core';
 import {ChangelogTimelineComponent} from '../changelog/changelog-timeline.component';
 import { ProjectImportComponent } from '../project-import/project-import.component';
-import {FileConfigComponent} from '../project-import/project-source-config/file-config.component';
-import {GitConfigComponent} from '../project-import/project-source-config/git-config.component';
 import { AuthGuard } from '../services/auth.guard';
 import { VynePrivileges } from '../services/user-info.service';
 import {ProjectExplorerComponent} from './project-explorer.component';
@@ -110,8 +108,6 @@ import {RequiresAuthorityDirective} from "../requires-authority.directive";
     HeaderComponentLayoutModule,
     ChangelogTimelineComponent,
     RequiresAuthorityDirective,
-    GitConfigComponent,
-    FileConfigComponent,
   ],
     exports: [ProjectExplorerComponent, ProjectSummaryViewComponent],
   declarations: [ProjectExplorerComponent, ProjectExplorerContainerComponent, ProjectSummaryViewComponent, ProjectSettingsComponent, ProjectErrorListComponent],

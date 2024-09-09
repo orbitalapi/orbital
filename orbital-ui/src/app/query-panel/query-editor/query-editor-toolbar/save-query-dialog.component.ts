@@ -22,6 +22,7 @@ import {schema} from "@angular-devkit/core";
 
 export interface SaveQueryRequestProps {
   query: string,
+  label: string,
   previousVersion?: SavedQueryWithSource,
   existingSavedQueryNames: string[],
   schemaEditBuilder?:  (packageId: SourcePackageDescription, filename: string) => SchemaEdit
@@ -30,7 +31,7 @@ export interface SaveQueryRequestProps {
 @Component({
   selector: 'app-save-query-dialog',
   template: `
-    <app-header-component-layout title="Save query">
+    <app-header-component-layout [title]="'Save ' + context.data.label">
       <tui-notification *ngIf="!hasEditablePackages"
                         status="error"
       >
@@ -41,7 +42,7 @@ export interface SaveQueryRequestProps {
         <app-project-selector formControlName="schemaPackage"
                               [disabled]="!hasEditablePackages"
                               [packages]="editablePackages"
-                              prompt="Select a project to save the query to"
+                              [prompt]="'Select a project to save the ' + context.data.label + ' to'"
         >
         </app-project-selector>
         <tui-error
@@ -50,7 +51,7 @@ export interface SaveQueryRequestProps {
         ></tui-error>
         <tui-input formControlName="queryName"
         >
-          Query name
+          {{context.data.label}} name
           <input [disableControl]="!hasEditablePackages"
                  tuiTextfield
           />
@@ -113,7 +114,7 @@ export class SaveQueryDialogComponent {
   constructor(private packagesService: PackagesService,
               private schemaImporterService: SchemaImporterService,
               @Inject(POLYMORPHEUS_CONTEXT)
-              private readonly context: TuiDialogContext<SavedQueryWithSource, SaveQueryRequestProps>,
+              readonly context: TuiDialogContext<SavedQueryWithSource, SaveQueryRequestProps>,
               private changeRef: ChangeDetectorRef,
   ) {
     this.formGroup = new UntypedFormGroup({
