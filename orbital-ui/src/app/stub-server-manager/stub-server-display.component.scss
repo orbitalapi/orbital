@@ -1,0 +1,36 @@
+@import "src/common";
+@import "src/tables";
+
+:host {
+  display: flex;
+  flex-direction: column;
+  margin-left: 2rem;
+}
+
+.table {
+  @include orbital-table();
+  @include links();
+  font-size: 0.9rem;
+}
+section {
+  margin-bottom: 2rem;
+  .subheader {
+    margin-bottom: 1rem;
+    display: block;
+  }
+}
+.header-text {
+  display: flex;
+  align-items: center;
+
+  h2 {
+    margin: 0.5rem 0 1rem 0;
+  }
+}
+
+.copyButton {
+  img {
+    width: 16px;
+    margin-left: 0.5rem;
+  }
+}

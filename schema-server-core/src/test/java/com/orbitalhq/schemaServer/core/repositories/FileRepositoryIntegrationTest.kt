@@ -95,7 +95,7 @@ class FileRepositoryIntegrationTest {
 
    @Test
    fun `can add a soap spec`() {
-      val (repositoryService, repositoryManager, schemaClient) = setupServices()
+      val (repositoryService, repositoryManager, schemaClient) = setupServices(folder)
 
       repositoryManager.use {
          // First, create the new repository
@@ -141,7 +141,7 @@ class FileRepositoryIntegrationTest {
 
    @Test
    fun `can add an avro spec as a workspace project`() {
-      val (workspaceProjectsService, reactiveProjectStoreManager, schemaClient) = setupServices()
+      val (workspaceProjectsService, reactiveProjectStoreManager, schemaClient) = setupServices(folder)
 
       reactiveProjectStoreManager.use {
          // First, create the new repository
@@ -177,7 +177,7 @@ class FileRepositoryIntegrationTest {
    @Test
    @FlakeyOnBuildServer
    fun `configure a file repository at runtime and when files are changes then schema updates are emitted`() {
-      val (repositoryService, repositoryManager, schemaClient) = setupServices()
+      val (repositoryService, repositoryManager, schemaClient) = setupServices(folder)
 
 
       repositoryManager.use {
@@ -217,7 +217,7 @@ class FileRepositoryIntegrationTest {
    @Test
    @Disabled("Test passes on its own but not when run with others - cannot work out why")
    fun `after removing project changes to sources in the removed project do not trigger schema updates`() {
-      val (repositoryService, repositoryManager, schemaClient) = setupServices()
+      val (repositoryService, repositoryManager, schemaClient) = setupServices(folder)
 
       repositoryManager.use {
          // First, create the new repository
@@ -276,7 +276,7 @@ class FileRepositoryIntegrationTest {
    @Test
    @Disabled("Test passes on its own but not when run with others - cannot work out why")
    fun `after removing project by editing workspace conf file then schema is updated`() {
-      val (workspaceService, repositoryManager, schemaClient, loader) = setupServices()
+      val (workspaceService, repositoryManager, schemaClient, loader) = setupServices(folder)
       repositoryManager.use {
          // First, create the new repository
          val projectFolder = folder.newFolder()
@@ -352,43 +352,46 @@ class FileRepositoryIntegrationTest {
       val d: FileWorkspaceConfigLoader
    )
 
-   private fun setupServices(): TestServices {
-      // Setup: Loading the config from disk
-      val configFile = folder.newFolder().resolve("workspace.conf")
-      val eventDispatcher = ProjectStoreLifecycleManager()
+   companion object {
+      fun setupServices(rootFolder: File): TestServices {
+         // Setup: Loading the config from disk
+         val configFile = rootFolder.newFolder().resolve("workspace.conf")
+         val eventDispatcher = ProjectStoreLifecycleManager()
 
-      // Setup: Building the file repository, which should
-      // create new repositories as config is added
-      val repositoryManager = ReactiveProjectStoreManager(
-         FileSystemPackageLoaderFactory(),
-         GitSchemaPackageLoaderFactory(),
-         eventDispatcher, eventDispatcher, eventDispatcher
-      )
-
-      val loader = FileWorkspaceConfigLoader(
-         configFile.toPath(),
-         eventDispatcher = eventDispatcher,
-         projectManager = repositoryManager
-      )
-      val workspaceProjectsService = WorkspaceProjectsService(loader)
-
-
-      // Setup: A SchemaStoreClient, which will
-      // compile the taxi as it's discovered / changed
-      val schemaClient = LocalValidatingSchemaStoreClient(
-         schemaValidator = TaxiSchemaValidator(
-            listOf(
-               TaxiSourceConverter,
-               SoapWsdlSourceConverter,
-            )
+         // Setup: Building the file repository, which should
+         // create new repositories as config is added
+         val repositoryManager = ReactiveProjectStoreManager(
+            FileSystemPackageLoaderFactory(),
+            GitSchemaPackageLoaderFactory(),
+            eventDispatcher, eventDispatcher, eventDispatcher
          )
 
-      )
-      val sourceWatchingSchemaPublisher = SourceWatchingSchemaPublisher(
-         schemaClient,
-         eventDispatcher
-      )
-      return TestServices(workspaceProjectsService, repositoryManager, schemaClient, loader)
+         val loader = FileWorkspaceConfigLoader(
+            configFile.toPath(),
+            eventDispatcher = eventDispatcher,
+            projectManager = repositoryManager
+         )
+         val workspaceProjectsService = WorkspaceProjectsService(loader)
+
+
+         // Setup: A SchemaStoreClient, which will
+         // compile the taxi as it's discovered / changed
+         val schemaClient = LocalValidatingSchemaStoreClient(
+            schemaValidator = TaxiSchemaValidator(
+               listOf(
+                  TaxiSourceConverter,
+                  SoapWsdlSourceConverter,
+               )
+            )
+         )
+         val sourceWatchingSchemaPublisher = SourceWatchingSchemaPublisher(
+            schemaClient,
+            eventDispatcher
+         )
+         return TestServices(workspaceProjectsService, repositoryManager, schemaClient, loader)
+      }
+
+
    }
 
    @Test

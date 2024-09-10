@@ -4,6 +4,7 @@ import com.orbitalhq.auth.authentication.VyneUser
 import com.orbitalhq.cockpit.core.query.QueryInsightUtils
 import com.orbitalhq.connectors.registry.RawConnectionsConnectorConfig
 import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
+import com.orbitalhq.nebula.NebulaSpringModule
 import com.orbitalhq.schemas.readers.SourceConverterRegistry
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
 import org.springframework.boot.autoconfigure.domain.EntityScan
@@ -18,7 +19,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 @EnableJpaRepositories
 
 @EntityScan(basePackageClasses = [VyneUser::class, CockpitCoreConfig::class])
-@Import(RawConnectionsConnectorConfig::class)
+@Import(RawConnectionsConnectorConfig::class, NebulaSpringModule::class)
 class CockpitCoreConfig {
 
    @Bean

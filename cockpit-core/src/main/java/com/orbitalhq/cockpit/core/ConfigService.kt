@@ -22,9 +22,9 @@ class ConfigService(
    analyticsConfig: QueryAnalyticsConfig,
    licenseManager: LicenseManager,
    @Value("\${management.endpoints.web.base-path:/actuator}") actuatorPath: String,
-   val featureToggles: FeatureTogglesConfig,
-   val customSettings: CustomSettings,
-   val pluginLoader: PluginLoader,
+   featureToggles: FeatureTogglesConfig,
+   customSettings: CustomSettings,
+   pluginLoader: PluginLoader,
 ) {
 
    private val configSummary =
@@ -34,7 +34,7 @@ class ConfigService(
          actuatorPath,
          featureToggles,
          customSettings.custom,
-         pluginLoader.loadedPlugins
+         pluginLoader.loadedPlugins,
       )
 
    @GetMapping("/api/config")
@@ -49,16 +49,16 @@ data class ConfigSummary(
    val licenseStatus: LicenseStatus,
    val actuatorPath: String,
    val featureToggles: FeatureTogglesConfig,
-   val custom: Map<String,Any>,
-   val loadedPlugins: List<LoadedPlugin>
+   val custom: Map<String, Any>,
+   val loadedPlugins: List<LoadedPlugin>,
 )
 
 /**
  * Settings that are provided for bespoke builds, or whitelabel builds.
  */
-@ConfigurationProperties(prefix="vyne.config")
+@ConfigurationProperties(prefix = "vyne.config")
 data class CustomSettings(
-   val custom: Map<String,Any> = emptyMap()
+   val custom: Map<String, Any> = emptyMap()
 )
 
 @ConfigurationProperties(prefix = "vyne.toggles")
@@ -68,7 +68,8 @@ data class FeatureTogglesConfig(
    val policiesEnabled: Boolean = false,
    val queryPlanModeEnabled: Boolean = false,
    val serviceLineageDiagramsEnabled: Boolean = false,
-   val copyAsCodeEnabled: Boolean = false
+   val copyAsCodeEnabled: Boolean = false,
+   val nebulaEnabled: Boolean = false
 )
 
 data class LicenseStatus(

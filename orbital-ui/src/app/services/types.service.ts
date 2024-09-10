@@ -34,6 +34,7 @@ import {ENVIRONMENT, Environment} from './environment';
 import {TuiDialogService} from '@taiga-ui/core';
 import {PackageIdentifier, PackageMetadata} from "../package-viewer/packages.service";
 import {HttpMethod, SchemaEditOperation} from '../project-import/schema-importer.service';
+import {NebulaStacksResponse} from "./stubs-api.service";
 
 
 @Injectable({
