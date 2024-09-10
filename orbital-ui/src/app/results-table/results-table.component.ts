@@ -1,5 +1,27 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
-import { AppConfig, AppInfoService } from '../services/app-info.service';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  EventEmitter,
+  Input,
+  Output
+} from '@angular/core';
+import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {fromEventPattern, Observable} from 'rxjs';
+import {Subscription} from 'rxjs';
+import {bufferTime, filter, map} from 'rxjs/operators';
+import * as moment from 'moment';
+import {
+  AgGridEvent,
+  CellClickedEvent,
+  ColDef,
+  GridReadyEvent,
+  ValueGetterParams,
+  ColumnMovedEvent, ColumnResizedEvent, GridApi, FilterChangedEvent
+} from 'ag-grid-community';
+import {AppConfig, AppInfoService} from '../services/app-info.service';
+import {QueryEditorStoreService} from '../services/query-editor-store.service';
 import {
   InstanceLike,
   isTypedInstance,
@@ -11,19 +33,16 @@ import {
   UntypedInstance
 } from '../services/schema';
 import {BaseTypedInstanceViewer, unwrapValue} from '../object-view/BaseTypedInstanceViewer';
-import {CellClickedEvent, FirstDataRenderedEvent, GridReadyEvent, ValueGetterParams} from 'ag-grid-community';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
-import {isNullOrUndefined} from 'util';
-import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
-import {Observable} from 'rxjs';
-import {Subscription} from 'rxjs';
 import {ValueWithTypeName} from '../services/models';
-import * as moment from 'moment';
-import { bufferTime, filter, map } from 'rxjs/operators';
 import {isScalar} from "../object-view/object-view.component";
+import {isNullOrUndefined} from '../utils/utils';
+
+// Define a union of the event types we're interested in persisting,
+// unfortunately ag-grid doesn't expose these in a type safe way
+type AgGridEventTypes = 'sortChanged' | 'columnResized' | 'columnMoved' | 'filterChanged';
 
 @Component({
-
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-results-table',
   template: `
@@ -33,8 +52,9 @@ import {isScalar} from "../object-view/object-view.component";
       [columnDefs]="columnDefs"
       [pagination]="true"
       [paginationPageSize]="paginationPageSize"
+      [suppressDragLeaveHidesColumns]="true"
       (gridReady)="onGridReady($event)"
-      (firstDataRendered)="onFirstDataRendered($event)"
+      (rowDataUpdated)="onRowDataUpdated()"
       (cellClicked)="onCellClicked($event)"
     >
     </ag-grid-angular>
@@ -42,30 +62,34 @@ import {isScalar} from "../object-view/object-view.component";
   styleUrls: ['./results-table.component.scss']
 })
 export class ResultsTableComponent extends BaseTypedInstanceViewer {
-
-  constructor(
-    private appInfoService: AppInfoService,
-    private changeDetector: ChangeDetectorRef
-  ) {
-    super();
-    appInfoService.getConfig()
-      .subscribe(next => this.config = next);
+  @Input()
+  get instances$(): Observable<InstanceLike> {
+    return this._instances$;
   }
 
-  config: AppConfig;
-  private gridApi: GridApi;
-
-  private _instances$: Observable<InstanceLike>;
-  private _instanceSubscription: Subscription;
-
-  columnDefs = [];
-  paginationPageSize = 100;
-
-  @Output()
-  instanceClicked = new EventEmitter<InstanceSelectedEvent>();
+  set instances$(value: Observable<InstanceLike>) {
+    if (value === this._instances$) {
+      return;
+    }
+    this._instances$ = value;
+    this.hasFirstData = false;
+    this.resetGrid();
+    this.subscribeForData();
+  }
 
   @Input()
-    // eslint-disable-next-line @typescript-eslint/no-inferrable-types
+  get type(): Type {
+    return this._type;
+  }
+
+  set type(value: Type) {
+    if (value === this._type) {
+      return;
+    }
+    this._type = value;
+  }
+
+  @Input()
   selectable: boolean = true;
 
   // Need a reference to the rowData as well as the subscripton.
@@ -80,6 +104,30 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   @Input()
   isStreamingQuery: boolean;
 
+  @Output()
+  instanceClicked = new EventEmitter<InstanceSelectedEvent>();
+
+  config: AppConfig;
+  private gridApi: GridApi;
+
+  private _instances$: Observable<InstanceLike>;
+  private _instanceSubscription: Subscription;
+
+  columnDefs: ColDef[] = [];
+  paginationPageSize = 100;
+  private hasFirstData: boolean;
+
+  constructor(
+    private appInfoService: AppInfoService,
+    private queryEditorStore: QueryEditorStoreService,
+    private changeDetector: ChangeDetectorRef,
+    private destroyRef: DestroyRef
+  ) {
+    super();
+    appInfoService.getConfig()
+      .subscribe(next => this.config = next);
+  }
+
   remeasure() {
     if (this.gridApi) {
       console.log('Resize ag Grid columns to fit');
@@ -87,7 +135,6 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     } else {
       console.warn('Called remeasure, but gridApi not available yet');
     }
-
   }
 
   downloadAsCsvFromGrid() {
@@ -101,21 +148,6 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       };
       this.gridApi.exportDataAsCsv(csvParams);
     }
-  }
-
-  @Input()
-  get instances$(): Observable<InstanceLike> {
-    return this._instances$;
-  }
-
-  set instances$(value: Observable<InstanceLike>) {
-    if (value === this._instances$) {
-      return;
-    }
-    this._instances$ = value;
-    this.resetGrid();
-    this.subscribeForData();
-
   }
 
   private subscribeForData() {
@@ -149,23 +181,12 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       }));
   }
 
-  @Input()
-  get type(): Type {
-    return this._type;
-  }
-
-  set type(value: Type) {
-    if (value === this._type) {
-      return;
-    }
-    this._type = value;
-  }
-
   protected onSchemaChanged() {
     super.onSchemaChanged();
   }
 
   private rebuildGridData(value: InstanceLike) {
+    this.gridApi.setGridOption('suppressColumnMoveAnimation', true)
     this.buildColumnDefinitions(value);
     this.changeDetector.markForCheck();
   }
@@ -187,7 +208,12 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       }];
     } else {
       const attributeNames = Object.keys(instanceValue);
-      const columnDefinitions = attributeNames.map((fieldName, index) => {
+      const columnDefinitions: ColDef[] = attributeNames.map((fieldName, index) => {
+        const filter = typeof instanceValue[fieldName] === 'number' ?
+          'agNumberColumnFilter' :
+          this.isValidDate(instanceValue[fieldName]) ?
+            'agDateColumnFilter' :
+            'agTextColumnFilter';
         return {
           resizable: true,
           headerName: fieldName,
@@ -195,7 +221,8 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
           valueGetter: (params: ValueGetterParams) => {
             return this.unwrap(params.data, fieldName);
           },
-          filter: typeof instanceValue[fieldName] === "number" ? 'agNumberColumnFilter' : 'agTextColumnFilter'
+          filter,
+          sortable: true
         };
       });
       this.columnDefs = columnDefinitions;
@@ -227,7 +254,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     } else if (typeof instance === 'object' && instance !== null) {
       return 'View nested structures in tree mode';
     } else {
-      return instance;
+      return typeof instance !== 'number' && this.isValidDate(instance) ? new Date(instance) : instance
     }
   }
 
@@ -249,17 +276,66 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
     this.subscribeForData();
   }
 
-  onFirstDataRendered(params: FirstDataRenderedEvent) {
-    const colIds = params.columnApi.getAllColumns().map(c => c.getId());
-    params.columnApi.autoSizeColumns(colIds);
+  // NOTE: using this approach instead of firstDataRendered event as when the user re-runs
+  //       a query from the same tab, the firstDataRendered event doesn't trigger.
+  onRowDataUpdated() {
+    if (!this.hasFirstData && this.gridApi.getColumnDefs().length) {
+      this.hasFirstData = true;
+      this.gridApi.autoSizeAllColumns();
+      this.reinstateColumnState();
+      this.registerColumnEventHandlers()
+    }
+  }
+
+  private registerColumnEventHandlers() {
+    const eventObservable = fromEventPattern<[AgGridEventTypes, AgGridEvent]>(
+      // Register event listener
+      (handler) => this.gridApi.addGlobalListener(handler),
+      // Deregister event listener
+      (handler) => !this.gridApi.isDestroyed() ? this.gridApi.removeGlobalListener(handler) : null
+    );
+    eventObservable.pipe(
+      takeUntilDestroyed(this.destroyRef),
+      // Filter for relevant event types
+      filter(([eventType, event]) =>
+        eventType === 'sortChanged' ||
+        eventType === 'columnResized' && (event as ColumnResizedEvent).finished && (event as ColumnResizedEvent).source !== 'autosizeColumns' ||
+        eventType === 'columnMoved' && (event as ColumnMovedEvent).finished ||
+        eventType === 'filterChanged' && (event as FilterChangedEvent).source !== 'api'
+      ),
+    ).subscribe(([eventType, event]) => {
+      console.log('persist state!!', eventType)
+      const filterModel = this.gridApi.getFilterModel();
+      const columnState = this.gridApi.getColumnState()
+      // doing this instead of prop drilling through 5 levels of components...
+      this.queryEditorStore.updateAgGridColumnState({columnState, filterModel})
+    });
   }
 
   private resetGrid() {
     if (this.gridApi) {
       this.columnDefs = [];
-      this.gridApi.setColumnDefs([]);
-      this.gridApi.setRowData([]);
+      this.gridApi.setGridOption("columnDefs", []);
+      this.gridApi.setGridOption("rowData", []);
     }
+  }
+
+  private isValidDate(dateString) {
+    if (!dateString) return false;
+    const date = new Date(dateString);
+    return !isNaN(date.getTime());
+  }
+
+  private reinstateColumnState() {
+    // reinstate column filters/state if available
+    const {filterModel, columnState} = this.queryEditorStore.activeQueryEditorState().payload.agGridColumnState() ?? {}
+    if (!isNullOrUndefined(filterModel)) {
+      this.gridApi.setFilterModel(filterModel)
+    }
+    if (!isNullOrUndefined(columnState)) {
+      this.gridApi.applyColumnState({ state: columnState, applyOrder: true })
+    }
+    this.gridApi.setGridOption('suppressColumnMoveAnimation', false)
   }
 
 }

@@ -113,10 +113,11 @@ export class PolicyQueryEditorPanelComponent {
     return this.queryEditorState?.payload
   }
 
-  constructor(stateStore: QueryEditorStoreService,
-              private typeService: TypesService,
-              ) {
-    this.queryEditorState = stateStore.createTemporaryQuery()
+  constructor(
+    private queryEditorStore: QueryEditorStoreService,
+    private typeService: TypesService,
+  ) {
+    this.queryEditorState = queryEditorStore.createTemporaryQuery()
     typeService.getTypes()
       .pipe(takeUntilDestroyed())
       .subscribe(schema => {

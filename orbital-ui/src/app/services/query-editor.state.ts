@@ -1,4 +1,5 @@
 import {inject, Signal, WritableSignal} from '@angular/core';
+import {ColumnState, FilterModel} from 'ag-grid-community';
 import {IPosition} from 'monaco-editor';
 import {BehaviorSubject, merge, Observable, of, ReplaySubject, Subject, takeUntil} from 'rxjs';
 import {
@@ -53,6 +54,7 @@ export type QueryEditorPayload = {
   showMaxRecordCountWarning: WritableSignal<boolean>
   isQuerySaveable: WritableSignal<boolean>
   lastCursorPosition: WritableSignal<IPosition>
+  agGridColumnState: WritableSignal<{columnState: ColumnState[], filterModel: FilterModel}>
   // Observabley stuff...
   results: WritableSignal<ReplaySubject<InstanceLike>>
   potentiallyPausedResults: WritableSignal<Observable<InstanceLike>>

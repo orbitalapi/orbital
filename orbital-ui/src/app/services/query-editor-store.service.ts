@@ -3,6 +3,7 @@ import {computed, Inject, Injectable, Injector, Signal, signal, WritableSignal} 
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {TuiAlertService, TuiDialogService, TuiNotification} from '@taiga-ui/core';
 import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
+import {ColumnState, FilterModel} from 'ag-grid-community';
 import {IPosition} from 'monaco-editor';
 import {ReplaySubject} from 'rxjs';
 import {copyQueryAs, CopyQueryFormat} from '../query-panel/query-editor/QueryFormatter';
@@ -104,6 +105,7 @@ export class QueryEditorStoreService {
       showMaxRecordCountWarning: signal(false),
       isQuerySaveable: signal(true), // NOTE: set this back to false when featureToggles.queryPlanModeEnabled is set to true/removed
       lastCursorPosition: signal(localStorageQuery.lastCursorPosition),
+      agGridColumnState: signal(null),
       // Observables/Subjects
       results: signal(null),
       potentiallyPausedResults: signal(null),
@@ -143,6 +145,10 @@ export class QueryEditorStoreService {
     this.activeQueryEditorState().payload.lastChatGptText.set(lastChatGptText);
   }
 
+  updateAgGridColumnState(state: {columnState: ColumnState[], filterModel: FilterModel}) {
+    this.activeQueryEditorState().payload.agGridColumnState.set(state);
+  }
+
   resetConversationMessages() {
     this.activeQueryEditorState().payload.conversationMessages.set([]);
   }
@@ -152,6 +158,7 @@ export class QueryEditorStoreService {
   }
 
   submitQuery() {
+    this.updateAgGridColumnState(null);
     this.activeQueryEditorState().submitQuery('TaxiQL', this.schema)
   }
 
