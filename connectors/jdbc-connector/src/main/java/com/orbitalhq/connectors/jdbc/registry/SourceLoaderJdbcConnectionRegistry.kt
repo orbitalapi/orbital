@@ -5,7 +5,6 @@ import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
 import com.orbitalhq.connectors.registry.MutableConnectionRegistry
 import com.orbitalhq.connectors.registry.SourceLoaderConnectionRegistryAdapter
-import java.nio.file.Path
 
 /**
  * A wrapper around ConfigFileConnectorsRegistry

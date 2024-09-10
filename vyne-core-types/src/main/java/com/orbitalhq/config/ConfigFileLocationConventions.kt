@@ -22,14 +22,19 @@ object ConfigFileLocationConventions {
       OrbitalConfigPathEntry = DEFAULT_CONFIG_PATH
    }
 
-    var OrbitalConfigKey = DEFAULT_CONFIG_KEY
-    var OrbitalConfigPathEntry = DEFAULT_CONFIG_PATH
-    fun getConventionalPathEntry(sourcesType: SourcesType):String {
-        return conventions()[sourcesType] ?: error("No convention exists for additional sources type of $sourcesType")
-    }
-    private fun conventions() = mapOf(
-        OrbitalConfigKey to OrbitalConfigPathEntry
-    )
+   var OrbitalConfigKey = DEFAULT_CONFIG_KEY
+   var OrbitalConfigPathEntry = DEFAULT_CONFIG_PATH
+
+   var OrbitalNebulaKey = "@orbital/nebula"
+   var OrbitalNebulaPathEntry = "orbital/nebula/*.nebula.kts"
+
+   fun getConventionalPathEntry(sourcesType: SourcesType): String {
+      return conventions()[sourcesType] ?: error("No convention exists for additional sources type of $sourcesType")
+   }
+
+   private fun conventions() = mapOf(
+      OrbitalConfigKey to OrbitalConfigPathEntry
+   )
 
 
 }

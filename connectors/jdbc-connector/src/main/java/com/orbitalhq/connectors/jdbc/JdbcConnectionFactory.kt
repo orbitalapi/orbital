@@ -1,6 +1,7 @@
 package com.orbitalhq.connectors.jdbc
 
 import com.google.common.cache.CacheBuilder
+import com.orbitalhq.config.UpdatableConfigRepository
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
@@ -54,6 +55,13 @@ class HikariJdbcConnectionFactory(
 
    init {
       logger.info { "New HikariJdbcConnectionFactory created" }
+      if (connectionRegistry is UpdatableConfigRepository<*>) {
+         connectionRegistry.configUpdated.subscribe {
+            logger.info { "Connection registry changed, invalidating data source cache" }
+            dataSourceCache.invalidateAll()
+            dataSourceCache.cleanUp()
+         }
+      }
    }
 
    override fun config(connectionName: String): JdbcConnectionConfiguration =

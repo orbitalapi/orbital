@@ -98,6 +98,14 @@ export class SidenavComponent implements OnInit {
       requiredAuthority: VynePrivileges.BrowseSchema,
       featureToggle: 'policiesEnabled'
     },
+    {
+      title: 'Stub Servers',
+      icon: 'assets/img/tabler/server-spark.svg',
+      route: 'stubs',
+      testId: 'stubs',
+      requiredAuthority: VynePrivileges.BrowseSchema,
+      featureToggle: 'nebulaEnabled'
+    },
   // TODO: check with Marty about the iconActive, and whether that's now not a thing (which it appears not to be)
   ].map(value => {
     return {

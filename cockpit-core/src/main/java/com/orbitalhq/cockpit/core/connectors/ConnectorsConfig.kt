@@ -4,6 +4,7 @@ import com.orbitalhq.config.ConfigSourceLoader
 import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.connectors.VyneConnectionsConfig
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
+import com.orbitalhq.nebula.NebulaEnvVariableSource
 import com.orbitalhq.schema.consumer.ProjectManagerConfigSourceLoader
 import com.orbitalhq.schema.consumer.SchemaConfigSourceLoader
 import com.orbitalhq.schema.consumer.SchemaStore
@@ -21,8 +22,9 @@ class ConnectorsConfig {
       config: VyneConnectionsConfig,
       schemaStore: SchemaStore,
       envVariablesConfig: EnvVariablesConfig,
+      // covers things like Nebula env var loader
       additionalLoaders: List<ConfigSourceLoader>?,
-      projectManager: ReactiveProjectStoreManager
+      projectManager: ReactiveProjectStoreManager,
    ): SourceLoaderConnectorsRegistry {
       val projectManagerConfigSourceLoader = ProjectManagerConfigSourceLoader(
          schemaEventSource = schemaStore,

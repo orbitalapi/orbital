@@ -146,6 +146,7 @@
       <module>test-utils</module>
       <module>plugin-api</module>
       <module>plugin-loader</module>
+      <module>nebula-support</module>
    </modules>
    <scm>
       <developerConnection>scm:git:git@gitlab.com:vyne/vyne.git</developerConnection>

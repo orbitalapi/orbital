@@ -4,8 +4,10 @@ import com.typesafe.config.ConfigFactory
 import io.github.config4k.toConfig
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.ResultWithMessage
+import com.orbitalhq.config.UpdatableConfigRepository
 import com.orbitalhq.connectors.config.ConnectionsConfig
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
+import reactor.core.publisher.Flux
 import kotlin.reflect.KProperty1
 
 interface ConnectionRegistry<T : ConnectorConfiguration> {
@@ -35,10 +37,13 @@ interface MutableConnectionRegistry<T : ConnectorConfiguration> : ConnectionRegi
 abstract class SourceLoaderConnectionRegistryAdapter<T : ConnectorConfiguration>(
    private val sourceLoaderConnectorsRegistry: SourceLoaderConnectorsRegistry,
    private val property: KProperty1<ConnectionsConfig, Map<String, T>>
-) : MutableConnectionRegistry<T> {
+) : MutableConnectionRegistry<T>, UpdatableConfigRepository<Map<String,T>> {
    private fun getCurrent(): Map<String, T> {
       return property.invoke(sourceLoaderConnectorsRegistry.load())
    }
+
+   override val configUpdated: Flux<Map<String,T>> = sourceLoaderConnectorsRegistry.configUpdated
+      .map { getCurrent() }
 
    override fun getConnection(name: String): T {
       return getCurrent().get(name) ?: error("No connection named $name is defined")
