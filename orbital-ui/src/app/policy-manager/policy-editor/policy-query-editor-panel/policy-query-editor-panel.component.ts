@@ -1,4 +1,4 @@
-import {Component} from '@angular/core';
+import {Component, Input} from '@angular/core';
 import {CodeEditorModule} from "../../../code-editor/code-editor.module";
 import {ExpandingPanelSetModule} from "../../../expanding-panelset/expanding-panel-set.module";
 import {QueryPanelModule} from "../../../query-panel/query-panel.module";
@@ -10,7 +10,7 @@ import {TypesService} from "../../../services/types.service";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {Schema} from "../../../services/schema";
 import {NgIf} from "@angular/common";
-import {TuiButtonModule} from "@taiga-ui/core";
+import {TuiButtonModule, TuiHintModule, TuiNotificationModule} from '@taiga-ui/core';
 
 @Component({
   selector: 'app-policy-query-editor-panel',
@@ -22,20 +22,53 @@ import {TuiButtonModule} from "@taiga-ui/core";
     AngularSplitModule,
     TabbedResultsViewModule,
     NgIf,
-    TuiButtonModule
+    TuiButtonModule,
+    TuiNotificationModule,
+    TuiHintModule
   ],
   template: `
     <app-panel-header title="Query editor" [isSecondary]="true">
       <div class="spacer"></div>
-      <button tuiButton size="s" appearance="primary"
-              class='button-small menu-bar-button'
-              *ngIf="queryState.currentState() !== 'Running' && queryState.currentState() !== 'Cancelling'"
-              (click)='runQuery()'>
-        <img src="assets/img/tabler/player-play.svg" class='filter-white'>
-        Run
-      </button>
+      <div [tuiHint]="policyNeedsSaving ? 'Save the policy before running the query' : null" tuiHintAppearance="onDark">
+        <button tuiButton size="s" appearance="primary"
+                class='button-small menu-bar-button'
+                [class.is-disabled]="!queryState.query() || policyNeedsSaving"
+                *ngIf="queryState.currentState() !== 'Running' && queryState.currentState() !== 'Cancelling'"
+                (click)='runQuery()'
 
+        >
+          <img src="assets/img/tabler/player-play.svg" class='filter-white'>
+          Run
+        </button>
+      </div>
+      <div *ngIf="queryState.currentState() === 'Running'">
+        <button tuiButton size="s" appearance="outline"
+                class='button-small menu-bar-button'
+                (click)='cancelQuery()'
+        >
+          <img src="assets/img/tabler/player-stop.svg">
+          Cancel
+        </button>
+      </div>
+      <div *ngIf="queryState.currentState() === 'Cancelling'">
+        <button tuiButton size="s" appearance="outline"
+                class='button-small menu-bar-button'
+                [disabled]='true'
+        >
+        <span class='running-timer'>
+          <span class='loader'></span>
+          <span>Cancelling...</span>
+        </span>
+        </button>
+      </div>
     </app-panel-header>
+    <tui-notification (close)="showQueryEditorHelp = false" status="info" *ngIf="showQueryEditorHelp">
+      @if (policyNeedsSaving) {
+        You have unsaved changes. Save your policy for it to be applied to query results
+      } @else {
+        Test that the policy is giving the desired output by running a query here.
+      }
+    </tui-notification>
     <as-split direction="vertical">
       <as-split-area>
         <app-code-editor
@@ -69,14 +102,16 @@ import {TuiButtonModule} from "@taiga-ui/core";
   styleUrl: './policy-query-editor-panel.component.scss'
 })
 export class PolicyQueryEditorPanelComponent {
+  @Input()
+  policyNeedsSaving: boolean;
 
   queryEditorState: QueryEditorState;
   schema: Schema
+  showQueryEditorHelp: boolean = true;
 
   get queryState():QueryEditorPayload {
     return this.queryEditorState?.payload
   }
-
 
   constructor(stateStore: QueryEditorStoreService,
               private typeService: TypesService,
@@ -91,6 +126,10 @@ export class PolicyQueryEditorPanelComponent {
 
   runQuery() {
     this.queryEditorState.submitQuery("TaxiQL", this.schema);
+  }
+
+  cancelQuery() {
+    this.queryEditorState.cancelQuery()
   }
 
   updateQuery($event: string) {

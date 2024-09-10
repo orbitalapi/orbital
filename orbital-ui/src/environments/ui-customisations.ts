@@ -13,7 +13,7 @@ const orbitalDocsLinks : DocsLinks = {
   lambdaDbConnection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#lambda' ,
   s3Connection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#s3' ,
   sqsConnection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#sqs' ,
-  dataPolicies : 'https://orbitalhq.com/docs/deploying/data-policies' ,
+  dataPolicies : 'https://orbitalhq.com/docs/data-policies/data-policies' ,
   docsHome : 'https://orbitalhq.com/docs' ,
 }
 

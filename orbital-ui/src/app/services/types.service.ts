@@ -5,7 +5,6 @@ import * as _ from 'lodash';
 import {HttpClient} from '@angular/common/http';
 
 import {concatAll, map, shareReplay} from 'rxjs/operators';
-import {Policy} from '../policy-manager/policies';
 import {
   collectAllServiceOperations,
   CompilationMessage,
@@ -105,11 +104,12 @@ export class TypesService {
     );
   }
 
-  getPolicies(typeName: string): Observable<Policy[]> {
-    return this.http.get(`${this.environment.serverUrl}/api/types/${typeName}/policies`)
-      .pipe(map((policyDto: any[]) => {
-        return Policy.parseDtoArray(policyDto);
-      }));
+  getPolicies(): Observable<Policy[]> {
+    return this.http.get<Policy[]>(`${this.environment.serverUrl}/api/policies`)
+  }
+
+  getPolicy(policyName: string): Observable<Policy> {
+    return this.http.get<Policy>(`${this.environment.serverUrl}/api/policies/${policyName}`)
   }
 
   getDiscoverableTypes(typeName: string): Observable<QualifiedName[]> {
@@ -492,6 +492,14 @@ export interface SavedQuery {
   queryKind: QueryKind;
   httpEndpoint: HttpOperation;
   websocketOperation: WebsocketOperation;
+}
+
+export interface Policy {
+  name: QualifiedName;
+  targetType: QualifiedName;
+  definesReadPolicy: boolean;
+  definesWritePolicy: boolean;
+  sourceFile: VersionedSource;
 }
 
 export type QueryKind = 'Stream' | 'Query';

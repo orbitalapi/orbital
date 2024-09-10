@@ -39,3 +39,14 @@ tui-accordion-item.accordion-with-panel-header {
   min-height: 100px;
   flex-grow: 1;
 }
+
+.auth-token-label {
+  font-size: 0.9rem;
+
+  .badge {
+    @extend %type-badge;
+    font-size: 0.8rem;
+    margin-left: 0.5rem;
+  }
+}
+

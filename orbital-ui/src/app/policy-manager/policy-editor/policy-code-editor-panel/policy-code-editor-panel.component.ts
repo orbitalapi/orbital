@@ -3,15 +3,24 @@ import {
   ChangeDetectorRef,
   Component,
   DestroyRef,
+  EventEmitter,
   Inject,
   Injector,
+  Input,
+  Output,
 } from '@angular/core';
+import {Router} from '@angular/router';
 import {ExpandingPanelSetModule} from "../../../expanding-panelset/expanding-panel-set.module";
 import {AngularSplitModule} from "angular-split";
 import {CodeEditorModule} from "../../../code-editor/code-editor.module";
 import {CompilationMessageListModule} from "../../../compilation-message-list/compilation-message-list.module";
 import {NgIf} from "@angular/common";
-import {TuiAlertService, TuiButtonModule, TuiDialogService, TuiNotification} from "@taiga-ui/core";
+import {
+  TuiAlertService,
+  TuiButtonModule,
+  TuiDialogService,
+  TuiNotificationModule
+} from '@taiga-ui/core';
 import {isNullOrUndefined} from "../../../utils/utils";
 import {
   CreateOrReplaceSource,
@@ -44,13 +53,18 @@ import {toSourceWithTypeHints} from "../../../model-designer/taxi-parser.service
     TuiButtonModule,
     SaveWithFilenameComponent,
     TuiAccordionModule,
-    JsonViewerModule
+    JsonViewerModule,
+    TuiNotificationModule
   ],
   template: `
     <app-panel-header title="Policy editor" [isSecondary]="true">
       <div class="spacer"></div>
-      <app-save-with-filename (saveFile)="saveFile()" [source]="versionedSource"></app-save-with-filename>
+      <app-save-with-filename (saveFile)="saveFile()" [source]="versionedSource"
+                              [isDisabled]="!source"></app-save-with-filename>
     </app-panel-header>
+    <tui-notification (close)="showPolicyEditorHelp = false" status="info" *ngIf="showPolicyEditorHelp">
+      <div>Create a policy here, and then ensure the output is correct by running a query against it.</div>
+    </tui-notification>
     <div class="code-editor-container">
       <app-code-editor
         [content]="source"
@@ -58,15 +72,16 @@ import {toSourceWithTypeHints} from "../../../model-designer/taxi-parser.service
         (contentChange)="sourceChange($event)"
       ></app-code-editor>
     </div>
-
-
     <tui-accordion [rounded]="false" [class.expanded]="authTokenOpen">
       <tui-accordion-item class="accordion-with-panel-header" [(open)]="authTokenOpen">
-        <app-panel-header title="Auth Token" [isSecondary]="true">
-          {{userTokenTypeName}}
+        <app-panel-header title="Auth Token:" [isSecondary]="true">
+          <span class="mono-badge auth-token-label">{{ userTokenTypeName }}<span class="badge model">Model</span></span>
         </app-panel-header>
         <ng-template tuiAccordionItemContent>
-          <app-json-viewer [json]="userTokenWithTypeHints"></app-json-viewer>
+          <tui-notification (close)="showAuthTokenHelp = false" status="info" *ngIf="showAuthTokenHelp">
+            <div>This is the contents of your auth token. We're showing it here for reference while you build your policy.</div>
+          </tui-notification>
+          <app-json-viewer [json]="userTokenWithTypeHints" [readOnly]="true" [showHeader]="false"></app-json-viewer>
         </ng-template>
       </tui-accordion-item>
     </tui-accordion>
@@ -78,6 +93,25 @@ export class PolicyCodeEditorPanelComponent {
   private policySetup: PolicySetupReadiness;
 
   authTokenOpen = true
+
+  source: string = '';
+  showPolicyEditorHelp: boolean = true;
+  showAuthTokenHelp: boolean = true;
+
+  private _versionedSource: VersionedSource = null;
+  @Input()
+  get versionedSource(): VersionedSource {
+    return this._versionedSource;
+  }
+
+  set versionedSource(value: VersionedSource) {
+    if (isNullOrUndefined(value)) return;
+    this._versionedSource = value;
+    this.source = value.content
+  }
+
+  @Output()
+  policyNeedsSaving: EventEmitter<boolean> = new EventEmitter<boolean>();
 
   get userTokenWithTypeHints() {
     if (!this.policySetup) return null
@@ -97,23 +131,28 @@ export class PolicyCodeEditorPanelComponent {
               private destroyRef: DestroyRef,
               private schemaImporterService: SchemaImporterService,
               private policiesService: PoliciesService,
-              private changeDetector: ChangeDetectorRef) {
+              private changeDetector: ChangeDetectorRef,
+              private router: Router
+  ) {
     policiesService.getPolicySetupReadiness().pipe(
       takeUntilDestroyed()
     ).subscribe(value => {
+      if (!Object.keys(value.authTokenInstances).length) {
+        // the auth token credentials are not setup yet
+        this.router.navigate(['/policies'])
+        return;
+      }
       this.policySetup = value;
       this.changeDetector.markForCheck();
     })
   }
 
-  source: string = '';
-
-  versionedSource: VersionedSource = null;
-
   sourceChange($event: string) {
+    if (this.source !== $event) {
+      this.policyNeedsSaving.emit(true);
+    }
     this.source = $event;
   }
-
 
   saveFile() {
     if (isNullOrUndefined(this.versionedSource)) {
@@ -129,6 +168,7 @@ export class PolicyCodeEditorPanelComponent {
         size: 'l',
         data: {
           query: this.source,
+          label: 'policy',
           previousVersion: null,
           existingSavedQueryNames: [],
           schemaEditBuilder: (packageId, filename) => {
@@ -157,6 +197,7 @@ export class PolicyCodeEditorPanelComponent {
       if (result) {
         this.versionedSource = result.sourceFile;
         this.changeDetector.markForCheck();
+        this.policyNeedsSaving.emit(false);
       }
     });
   }
@@ -180,19 +221,19 @@ export class PolicyCodeEditorPanelComponent {
     this.schemaImporterService.submitSchemaEditOperation(schemaEdit)
       .subscribe({
         next: (result) => {
-          this.alerts.open('File saved successfully', {status: TuiNotification.Success})
+          this.alerts.open('File saved successfully', {status: 'success'})
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe()
+          this.policyNeedsSaving.emit(false);
           this.changeDetector.markForCheck();
         },
         error: (error) => {
           console.error(error);
-          this.alerts.open('An error occurred saving the file', {status: TuiNotification.Error})
+          this.alerts.open('An error occurred saving the file', {status: 'error'})
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe()
           this.changeDetector.markForCheck();
         }
       })
   }
-
 }
