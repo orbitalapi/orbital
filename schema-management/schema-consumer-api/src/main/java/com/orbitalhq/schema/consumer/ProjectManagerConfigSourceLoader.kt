@@ -99,14 +99,17 @@ class ProjectManagerConfigSourceLoader(
    override fun getWriter(identifier: PackageIdentifier): ConfigSourceWriter {
       val loader = projectManager.editableLoaders.first { it.packageIdentifier == identifier }
       val sourcePackage = loadAdditionalSources(loader).block()!!
+      // ORB-624 : Need to filter down to the specific file we're trying to write to
+      val targetSourceFiles = sourcePackage.sources
+         .filter { Paths.get(it.name).fileName.toString().endsWith(filePattern) }
       val writer = when {
-         sourcePackage.sources.isEmpty() -> {
+         targetSourceFiles.isEmpty() -> {
             val configFile = createConfigFile(loader, sourcePackage)
             FileConfigSourceLoader(configFile, packageIdentifier = identifier)
          }
 
-         sourcePackage.sources.size == 1 -> {
-            val sourceFile = sourcePackage.sources.single()
+         targetSourceFiles.size == 1 -> {
+            val sourceFile = targetSourceFiles.single()
             val filePath = if (sourceFile.path == null) {
                // If this happens, we need to invesitgate why the path wasn't set.
                // If there's a valid reason, we should document it in the path property of VersionedSource

@@ -219,6 +219,63 @@ class SourceLoaderConnectorsRegistryTest : BaseGitTest() {
          )
    }
 
+   // ORB-624
+   @Test
+   fun `can add a jdbc connection to a project containing a connections-conf and services-conf`() {
+      // Setup...
+
+      // Create a git project locally
+      deployTestProjectToRemoteGitPath(projectName = "sample-project-multiple-configs")
+
+      // Configure the stack to watch the git repo, and use it as a source
+      // for config
+      val projectStoreManager = buildProjectStoreManager()
+      val gitLoader = projectStoreManager.gitLoaders.single()
+      waitForSuccessfulGitClone(projectStoreManager, gitLoader)
+
+      if (projectStoreManager.unhealthyLoaders.isNotEmpty()) {
+         Thread.sleep(1000)
+      }
+      projectStoreManager.unhealthyLoaders.shouldBeEmpty()
+
+      val configSource = ProjectManagerConfigSourceLoader(
+         SimpleSchemaStore(),
+         projectStoreManager,
+         filePattern = "connections.conf"
+      )
+      val connectorRegistry = SourceLoaderJdbcConnectionRegistry(
+         SourceLoaderConnectorsRegistry(listOf(configSource), listOf(configSource))
+      )
+
+      // test: add a JDBC connection
+      val result = connectorRegistry.register(
+         PackageIdentifier.fromId("taxi/sample/0.3.0"),
+         DefaultJdbcConnectionConfiguration(
+            "testConfig",
+            "POSTGRES",
+            emptyMap()
+         )
+      )
+
+      // Ensure we send the warning to the UI
+      result.messages.shouldContain(GitWriterDecorator.GIT_COMMIT_NEEDED)
+
+      val writtenConfigFile = localRepoDir.root.resolve("test-git-repo/orbital/config/connections.conf")
+      writtenConfigFile.shouldBeAFile()
+      writtenConfigFile.shouldExist()
+      writtenConfigFile.readText()
+         .shouldBe(
+            """jdbc {
+    testConfig {
+        connectionName=testConfig
+        connectionParameters {}
+        jdbcDriver=POSTGRES
+    }
+}
+"""
+         )
+   }
+
    @Test
    fun `when connections file edited on disk changes are detected using file watcher and update connections repository`() {
       val configFile = configFileInTempFolder("config/simple-connections.conf")
