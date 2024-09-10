@@ -7,7 +7,9 @@ import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.errors.OrbitalQueryException
 import com.orbitalhq.firstRawObject
 import com.orbitalhq.firstTypedInstace
+import com.orbitalhq.firstTypedObject
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.query.Fact
@@ -19,6 +21,7 @@ import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.runBlocking
@@ -113,6 +116,35 @@ class PolicyEvaluationSpec : DescribeSpec({
             userRole = "USER"
          ).firstRawObject()
          normalResult.shouldBe(mapOf("title" to "Star Wars", "yearReleased" to null))
+      }
+
+      it("is possible to define a policy against a nullable type that returns null") {
+         val policy = """
+            policy ThrowErrorIfFilmIsNull against Film (film:Film?) -> {
+               read {
+                  when {
+                     film == null -> throw( (NotAuthorizedError) { message: 'Not Authorized' })
+                     else -> Film
+                  }
+               }
+            }
+         """.trimIndent()
+         val (vyne, stub) = testVyne(
+            ErrorType.ErrorTypeDefinition,
+            AuthClaimType.AuthClaimsTypeDefinition,
+            """
+         $baseSchema
+         $policy
+         """
+         )
+         stub.addResponse("getOneFilm", TypedNull.create(vyne.schema.type("Film")))
+         val exception = assertThrows<OrbitalQueryException> {
+            val result = vyne
+               .query("""find { Film }""")
+               .firstRawObject()
+         }
+         exception.shouldNotBeNull()
+         exception.message.shouldBe("Not Authorized")
       }
 
       it("is possible to throw an error from a policy") {
@@ -390,6 +422,85 @@ class PolicyEvaluationSpec : DescribeSpec({
          film.shouldBe(mapOf("id" to 1, "title" to null))
          stub.calls["getOne"].shouldBeEmpty()
          stub.calls["getAll"].shouldHaveSize(1)
+      }
+
+      it("can use expression values as input to a policy") {
+         val policy =
+            """policy FilterYearReleased against Film (userInfo : UserInfo, uppercaseUsername:String = upperCase(UserId), firstSecurityGroup:SecurityGroup = first(SecurityGroup[])) -> {
+               read {
+                  when {
+                     firstSecurityGroup == 'ADMIN' && uppercaseUsername == 'JIMMY' -> Film
+                     else -> Film as { ... except { title } }
+                  }
+               }
+            }
+
+         """.trimIndent()
+         runQueryWithPolicy(
+            policy,
+            query = """find { Film }""",
+            userRole = "ADMIN"
+         ).firstRawObject()
+            .shouldBe(mapOf("title" to "Star Wars", "yearReleased" to 1978))
+
+         runQueryWithPolicy(
+            policy,
+            query = """find { Film }""",
+            userRole = "USER"
+         ).firstRawObject()
+            .shouldBe(mapOf("title" to null, "yearReleased" to 1978))
+      }
+
+      it("can use scoped data on an expression type") {
+         val (vyne, stub) = testVyne(
+            """
+            model Film {
+               title : Title inherits String
+               yearReleased : YearReleased inherits Int
+            }
+            model TermsAndConditionsAcceptance {
+               acceptedDate : AcceptedDate inherits Date
+               validUntil : ValidUntil inherits Date
+            }
+            service FilmsApi {
+               operation getFilm():Film
+               operation loadUserTermsAndConditionsAcceptance():TermsAndConditionsAcceptance[]
+            }
+
+            type HasValidAcceptance by (AcceptedDate, ValidUntil) -> AcceptedDate < currentDate() && ValidUntil > currentDate()
+
+
+            policy SuppressTitle against Film (acceptedTerms:TermsAndConditionsAcceptance = first(TermsAndConditionsAcceptance[])) -> {
+               read {
+                  when {
+                     // This is the test.
+                     // HasValidAcceptance can only be calculated using a single TermsAndConditionsAcceptance, which should
+                      // resolve from the single TermsAndConditionsAcceptance that's in scope.
+                     HasValidAcceptance -> Film
+                     else -> Film as { ... except { yearReleased } }
+                  }
+               }
+            }
+         """.trimIndent()
+         )
+         // The first acceptance is valid, so should return all the data
+         stub.addResponse("loadUserTermsAndConditionsAcceptance", """[
+            |{ "acceptedDate" : "2019-01-01", "validUntil" : "2037-10-10" },
+            |{ "acceptedDate" : "2017-01-01", "validUntil" : "2017-10-10" }
+            |]""".trimMargin())
+         stub.addResponse("getFilm", """{ "title" : "Star Wars", "yearReleased" : 1978  }""")
+         vyne.query("""find { Film }""")
+            .firstRawObject()
+            .shouldBe(mapOf("title" to "Star Wars", "yearReleased" to 1978))
+
+         // The first acceptance is invalid, so should filter the data
+         stub.addResponse("loadUserTermsAndConditionsAcceptance", """[
+            |{ "acceptedDate" : "2017-01-01", "validUntil" : "2017-10-10" },
+            |{ "acceptedDate" : "2019-01-01", "validUntil" : "2037-10-10" }
+            |]""".trimMargin())
+         vyne.query("""find { Film }""")
+            .firstRawObject()
+            .shouldBe(mapOf("title" to "Star Wars", "yearReleased" to  null))
       }
 
       it("does not re-load suppressed data from another service during a projection") {
