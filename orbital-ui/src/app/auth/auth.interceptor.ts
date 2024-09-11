@@ -56,7 +56,7 @@ export class DefaultOAuthInterceptor implements HttpInterceptor {
         catchError(err => {
           console.log(this.authService.tokenEndPoint())
           if (err instanceof HttpErrorResponse && err.status === HttpStatusCode.Unauthorized) {
-            if (err.error.path === '/api/user') {
+            if (err.error?.path === '/api/user') {
               // This error more than likely occurred in the cloud, so we send the user to
               // a page notifying them they're not authorised to use the current cloud
               // instance (ie. they don't belong to the correct organisation)

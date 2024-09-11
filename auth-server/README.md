@@ -49,4 +49,14 @@ Then, do the following:
 * `cd /opt/keycloak/bin`
 * `./kc.sh export --dir /opt/keycloak/data/import --users realm_file`
 
-This will export the data into `Vyne-realm.json`. Feel free to check this file in. 
+This will export the data into `Vyne-realm.json`. Feel free to check this file in.
+
+## Styling Keycloak
+
+We're using [keycloakify-starter](https://github.com/keycloakify/keycloakify-starter) to style the **login page**.
+
+The actual configuration for the theme is done in the KcPage.tsx and the ejected Template.tsx files (along with a main.css file).
+
+To generate a new theme .jar file, run `npx keycloakify start-keycloak`
+
+For further help, see the [documentation on the keycloakify site](https://docs.keycloakify.dev/).
