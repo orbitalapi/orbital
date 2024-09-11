@@ -63,7 +63,7 @@ data class WorkspaceGitSettings(
     * The path to the workspace.conf file within the git repository
     */
    val path: Path = Paths.get("workspace.conf"),
-   val checkoutPath:Path =  Paths.get("./.orbital/gitWorkspace/"),
+   val checkoutPath:Path =  Paths.get("orbital/gitWorkspace/"),
    val pollDuration: Duration = Duration.ofSeconds(30)
 ) {
    val gitConfig =  SimpleGitRepositoryConnectionConfig(

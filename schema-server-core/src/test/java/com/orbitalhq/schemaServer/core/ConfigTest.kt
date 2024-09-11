@@ -13,6 +13,7 @@ import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
 import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.equality.shouldBeEqualToIgnoringFields
 import io.kotest.matchers.shouldBe
 import org.apache.commons.io.IOUtils
@@ -37,7 +38,9 @@ class ConfigTest {
       // MP 06-Sep-24: We now populate the file with defaults,
       // as we need to make the paths relative to the config file.
 //      empty.file.should.be.`null`
-      empty.git.should.be.`null`
+      empty.fileConfigOrDefault.projects.shouldBeEmpty()
+      empty.file!!.projects.shouldBeEmpty()
+      empty.git!!.repositories.shouldBeEmpty()
    }
 
    @Test

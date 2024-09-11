@@ -239,7 +239,11 @@ class FileWorkspaceConfigLoader(
             }
          fileConfig.copy(projects = resolvedPaths, newProjectsPath = makeRelativeToConfigFile(fileConfig.newProjectsPath))
       }
-      return original.copy(file = updatedFileConfig)
+      val updatedGitConfig = original.gitConfigOrDefault.let { gitConfig ->
+         val checkoutRoot = makeRelativeToConfigFile(gitConfig.checkoutRoot)
+         gitConfig.copy(checkoutRoot = checkoutRoot)
+      }
+      return original.copy(file = updatedFileConfig, git = updatedGitConfig)
    }
 
    override fun addFileSpec(fileSpec: FileProjectSpec): ModifyWorkspaceResponse {
