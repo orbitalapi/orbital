@@ -1,6 +1,5 @@
-import {Component, EventEmitter, OnInit, Output} from '@angular/core';
-import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
-import {ShouldRowBeSkippedParams} from 'ag-grid-community';
+import {Component, EventEmitter, Output} from '@angular/core';
+import {GridApi, ShouldRowBeSkippedParams} from 'ag-grid-community';
 
 @Component({
   selector: 'app-table-editor',

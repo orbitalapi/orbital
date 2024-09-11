@@ -4,13 +4,12 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { AgGridModule } from 'ag-grid-angular';
 import {ColumnMapping, JdbcTable, TableMetadata, TableModelMapping} from './db-importer.service';
-import {ColDef, ValueFormatterParams, ValueGetterParams, ValueSetterParams} from 'ag-grid-community';
+import {ColDef, GridApi, ValueFormatterParams, ValueGetterParams, ValueSetterParams} from 'ag-grid-community';
 import {Schema, Type} from '../services/schema';
 import {TypeSelectorCellEditorComponent} from './type-selector-cell-editor.component';
 import {CheckboxCellEditorComponent} from './checkbox-cell-editor.component';
 import {Observable} from 'rxjs/internal/Observable';
 import {Subscription} from 'rxjs';
-import {GridApi} from 'ag-grid-community/dist/lib/gridApi';
 import { ReactiveFormsModule, UntypedFormControl, UntypedFormGroup, Validators } from '@angular/forms';
 import {validNamespace, validTypeName} from '../services/validators';
 import {
@@ -204,7 +203,7 @@ export class TableImporterComponent {
       });
 
       if (this.gridApi) {
-        this.gridApi.setRowData(this.tableMetadata.columns);
+        this.gridApi.setGridOption("rowData", this.tableMetadata.columns);
       }
     });
 

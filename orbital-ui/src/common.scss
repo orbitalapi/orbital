@@ -146,10 +146,10 @@ $border-highlight: rgba($vyne-lilac, 0.6);
 
 .fullscreen {
   position: fixed;
-  top: 1rem;
+  top: 4rem;
   left: calc(1rem + $sidenav-width);
   width: calc(100% - $sidenav-width - 2rem);
-  height: calc(100% - 2rem);
+  height: calc(100% - 5rem);
   z-index: 2000;
 }
 
