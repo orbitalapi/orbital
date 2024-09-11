@@ -29,6 +29,9 @@ export interface NebulaStacksResponse {
   // A list of env variables for each stack, grouped by the stack name
   // eg: Map<String,Map<String,String>>
   environmentVariables: { [key: StackName]: { [key: ComponentType]: { [key: EnvVarKey]  : EnvVarValue } } };
+  hasError: boolean;
+  error: string | null;
+  hasPendingUpdates: boolean;
 }
 
 export interface ComponentInfo {

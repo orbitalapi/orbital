@@ -34,7 +34,7 @@ class NebulaEnvVariableSource : ConfigSourceLoader {
       return listOf(sourcePackage)
    }
 
-   fun updateEnvVariables(currentStackState: NebulaStackState): Map<String, Map<String,Map<String, String>>> {
+   fun updateEnvVariables(currentStackState: NebulaStackState): NebulaEnvVariablesMap {
       logger.info { "Updating environment variables defined in Nebula source package" }
       // A list of all the environment variables, grouped by each
       // component

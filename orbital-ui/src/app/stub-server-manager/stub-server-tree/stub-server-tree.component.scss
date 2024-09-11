@@ -8,6 +8,21 @@
   width: 24px;
   margin-right: 2px;
   opacity: 0.8;
+
+
+}
+
+.tree-package-icon {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  img {
+    width: 16px;
+  }
+  span {
+    display: flex;
+    align-items: center;
+  }
 }
 
 router-outlet + .no-route-selected {

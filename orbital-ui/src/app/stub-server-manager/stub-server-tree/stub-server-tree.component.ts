@@ -1,8 +1,7 @@
-import {Component, Input} from '@angular/core';
-import {Observable} from "rxjs";
+import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
 import {TuiTreeModule} from "@taiga-ui/kit";
 import {AsyncPipe, KeyValuePipe, NgForOf, NgIf} from "@angular/common";
-import { NebulaStacksResponse } from 'src/app/services/stubs-api.service';
+import {NebulaStacksResponse} from 'src/app/services/stubs-api.service';
 import {RouterLink, RouterLinkActive, RouterOutlet} from "@angular/router";
 import {AngularSplitModule} from "angular-split";
 
@@ -25,7 +24,17 @@ import {AngularSplitModule} from "angular-split";
       <as-split-area size="360">
         <ng-container [tuiTreeController]="true" *ngIf="stackState">
           <tui-tree-item class="root-tree-item" *ngFor="let stack of stackState?.stacks | keyvalue">
-            {{ stack.key }}
+            <div class="tree-package-icon">
+              <span>
+                <img src="assets/img/tabler/package.svg">
+          {{ getPackageName(stack.key) }}
+              </span>
+              <span>
+                <img src="assets/img/tabler/file-description.svg">
+                        {{ getStackFilename(stack.key) }}
+              </span>
+            </div>
+
             <tui-tree-item class="show-tree-decoration" *ngFor="let stackComponent of stack.value | keyvalue">
            <span
              class="is-navigable"
@@ -46,7 +55,8 @@ import {AngularSplitModule} from "angular-split";
     </as-split>
 
   `,
-  styleUrl: './stub-server-tree.component.scss'
+  styleUrl: './stub-server-tree.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StubServerTreeComponent {
 
@@ -57,6 +67,14 @@ export class StubServerTreeComponent {
     const stackUri = stackName.replace('[','')
       .replace(']','')
     return `stacks/${stackUri}/${componentType}`;
+  }
+
+  getPackageName(stackName: string): string {
+    const packageName = stackName.split(']')[0].replace('[','')
+    return packageName
+  }
+  getStackFilename(stackName: string): string {
+    return stackName.substring(stackName.indexOf(']') + 2)
   }
 
   serviceIcon(serviceKind: string) {

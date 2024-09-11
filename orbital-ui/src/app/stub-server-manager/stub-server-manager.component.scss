@@ -1,0 +1,20 @@
+@import "src/common";
+
+.errors-panel {
+  display: flex;
+  flex-direction: column;
+
+  padding: 1rem;
+  margin-bottom: 1rem;
+
+  align-items: flex-start;
+  gap: 1rem;
+
+  h3 {
+    margin: 0;
+  }
+
+  background-color: $red-50;
+  border-radius: 4px;
+  border: 2px solid $red-400;
+}

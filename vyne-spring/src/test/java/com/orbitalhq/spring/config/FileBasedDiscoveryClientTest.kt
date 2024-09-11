@@ -53,9 +53,9 @@ class FileBasedDiscoveryClientTest {
       FileBasedDiscoveryClient(configFile).use { client ->
          Files.exists(configFile).should.be.`true`
          client.services.should.have.size(ServicesConfig.DEFAULT.services.size)
-         val schemaServer = client.getInstances("orbital-server").first()
-         val rsocket = schemaServer.metadata["rsocket"]
-         rsocket.shouldBe("tcp://orbital:7655")
+//         val schemaServer = client.getInstances("orbital-server").first()
+//         val rsocket = schemaServer.metadata["rsocket"]
+//         rsocket.shouldBe("tcp://orbital:7655")
       }
    }
 

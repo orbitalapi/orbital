@@ -15,4 +15,5 @@ export type DocsLinks = {
   sqsConnection: string;
   dataPolicies: string;
   docsHome: string;
+  nebulaDocs: string;
 }
