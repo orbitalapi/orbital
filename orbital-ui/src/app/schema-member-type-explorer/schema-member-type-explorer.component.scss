@@ -56,6 +56,7 @@ app-schema-diagram {
   flex-grow: 1;
   overflow: auto;
   margin-left: 1rem; // To give space from the as-split divider
+  margin-bottom: 2rem; // To give space from the bottom of the page
 
   app-type-viewer, app-operation-view {
     width: 100%;
