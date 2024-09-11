@@ -76,15 +76,15 @@ export const APP_ROUTES = RouterModule.forRoot(
     },
     {
       path: 'policies',
-      canActivate: [FeatureFlagGuard],
       loadChildren: () => import('./policy-manager/policy-manager.routes').then(m => m.policyManagerRoutes),
-      data: {requiredFeatureFlag: 'policiesEnabled'}
+      canActivate: [AuthGuard],
+      data: {requiredAuthority: VynePrivileges.BrowseSchema},
     },
     {
       path: 'stubs',
-      canActivate: [FeatureFlagGuard],
       loadChildren: () => import('./stub-server-manager/stub-server-manager.routes').then(m => m.stubServersRoutes),
-      data: {requiredFeatureFlag: 'policiesEnabled'}
+      canActivate: [AuthGuard],
+      data: {requiredAuthority: VynePrivileges.BrowseSchema},
     },
 
     // Redirects for deprecated routes, should be able to remove these over time
