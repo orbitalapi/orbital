@@ -21,6 +21,9 @@ class SimpleSchemaStore(
    override val schemaChanged: Publisher<SchemaSetChangedEvent>
       get() = schemaChangedSink.asFlux()
 
+   override fun forceSchemaChangedEvent() {
+   }
+
    fun setSchema(schema:Schema):SchemaSet {
       val schemaSet = SchemaSet.from(schema, this.schemaSet.generation + 1)
       setSchemaSet(schemaSet)

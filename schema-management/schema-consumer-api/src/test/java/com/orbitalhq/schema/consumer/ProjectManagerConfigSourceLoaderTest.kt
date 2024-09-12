@@ -72,6 +72,10 @@ class DummySchemaChangedEventProvider : SchemaChangedEventProvider {
     override val schemaChanged: Publisher<SchemaSetChangedEvent>
         get() = sink.asFlux()
 
+   override fun forceSchemaChangedEvent() {
+      TODO("Not yet implemented")
+   }
+
 
 }
 

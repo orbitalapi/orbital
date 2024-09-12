@@ -4,9 +4,13 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.io.Files
 import com.google.common.io.Resources
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.verify
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
+import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
+import com.orbitalhq.schemaServer.core.config.SchemaUpdateNotifier
 import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import org.apache.commons.io.FileUtils
@@ -76,7 +80,9 @@ class NebulaEnvVariableSourceTest {
       """.trimIndent()
       val connectionsConf = tempDir.resolve("connections.conf")
       connectionsConf.writeText(config)
-      val nebulaLoader = NebulaEnvVariableSource()
+      val schemaUpdateNotifier = mock<SchemaChangedEventProvider>()
+
+      val nebulaLoader = NebulaEnvVariableSource(schemaUpdateNotifier)
       val fileLoader = FileConfigSourceLoader(
          connectionsConf.toPath(),
          packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
@@ -93,6 +99,9 @@ class NebulaEnvVariableSourceTest {
       val c = connectorsRegistry.load()
       c.kafka.shouldHaveSize(1)
       c.kafka.values.single().connectionParameters["brokerAddress"]!!.shouldBe("PLAINTEXT://localhost:49187")
+
+      // verify that an update event was sent
+      verify(schemaUpdateNotifier).forceSchemaChangedEvent()
    }
 
 
