@@ -5,6 +5,8 @@ import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.config.ConfigSourceLoader
+import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
+import com.orbitalhq.schemaServer.core.config.SchemaUpdateNotifier
 import lang.taxi.utils.quoted
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
@@ -17,9 +19,12 @@ import java.util.concurrent.ConcurrentHashMap
  * as environment variables, so they can be referenced inside HOCON files elsewhere
  */
 @Component
-class NebulaEnvVariableSource : ConfigSourceLoader {
+class NebulaEnvVariableSource(
+   private val schemaUpdateNotifier: SchemaChangedEventProvider
+) : ConfigSourceLoader {
    private val variables = ConcurrentHashMap<String, String>()
    private val contentUpdatedSink = Sinks.many().multicast().directBestEffort<Class<out ConfigSourceLoader>>()
+
    override fun load(): List<SourcePackage> {
       val source = variables.entries.joinToString("\n") { (key, value) ->
          "${key.quoted()}: ${value.quoted()}"
@@ -43,6 +48,11 @@ class NebulaEnvVariableSource : ConfigSourceLoader {
       variables.putAll(envVariablesByComponent.flatten())
 
       contentUpdatedSink.emitNext(NebulaEnvVariableSource::class.java, Sinks.EmitFailureHandler.FAIL_FAST)
+
+      // Normally, the schema updates when files change.
+      // But this update is entirely in-memory, so we
+      // need to manually force a schema changed event
+      schemaUpdateNotifier.forceSchemaChangedEvent()
       return envVariablesByComponent
    }
 

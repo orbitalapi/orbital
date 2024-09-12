@@ -26,6 +26,9 @@ abstract class SchemaSetChangedEventRepository : SchemaChangedEventProvider, Sch
          return schemaSet.generation
       }
 
+   override fun forceSchemaChangedEvent() {
+      schemaSetSink.emitNext(SchemaSetChangedEvent(schemaSet,schemaSet), Sinks.EmitFailureHandler.busyLooping(Duration.ofSeconds(10)))
+   }
 
 
    /**
