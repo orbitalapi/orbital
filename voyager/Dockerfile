@@ -8,4 +8,9 @@ COPY ${JAR_FILE} /opt/service/app.jar
 COPY target/classes/static /opt/service/webapp
 
 WORKDIR /opt/service/
+
+# Add a HEALTHCHECK instruction
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:9500/api/actuator/health || exit 1
+
 CMD java -jar app.jar --spring.web.resources.static-locations=file:/opt/service/webapp

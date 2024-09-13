@@ -32,3 +32,10 @@ spring:
       driver: "org.postgresql.Driver"
       driverClassName: org.postgresql.Driver
 
+
+management:
+   endpoints:
+      web:
+         exposure:
+            include: health
+         base-path: /api/actuator
