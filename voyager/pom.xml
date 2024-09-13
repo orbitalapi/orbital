@@ -29,6 +29,12 @@
          <version>${project.version}</version>
       </dependency>
       <dependency>
+         <groupId>io.sentry</groupId>
+         <artifactId>sentry-logback</artifactId>
+         <version>7.14.0</version>
+      </dependency>
+
+      <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-webflux</artifactId>
       </dependency>
