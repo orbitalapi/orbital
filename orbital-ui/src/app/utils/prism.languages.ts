@@ -1,11 +1,13 @@
 // A spot for any custom Prism language syntax schemas
 
-export const taxi = {
+import Prism from 'prismjs'
+
+export const taxi = Prism.languages.extend('clike', {
   // Keywords
   'keyword': /\b(?:type|type alias|find|query|stream|inherits|enum|namespace|as|service|operation|import|policy|against|read|write|case|else|permit|filter|closed|true|false|null|Boolean|String|Int|Decimal|Date|Time|DateTime|Instant|Any|Double|Void)\b/,
 
   // Operators
-  'operator': /[+\-*/%=!<>&|^~?:]+|::|\.\.|[@;_$]/,
+  'operator': /[+\-*/%=!<>&|^~?:]+|::|\.\.\.|[@;_$]/,
 
   // Annotations
   'annotation': /@\s*[a-zA-Z_$][\w$]*/,
@@ -66,6 +68,6 @@ export const taxi = {
     pattern: /\\(?:[abfnrtv\\"']|x[\da-fA-F]{1,4}|u[\da-fA-F]{4}|U[\da-fA-F]{8})/,
     alias: 'escape'
   }
-};
+});
 
 
