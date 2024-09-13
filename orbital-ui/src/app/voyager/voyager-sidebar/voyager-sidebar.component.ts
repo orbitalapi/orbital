@@ -5,6 +5,7 @@ import {TuiHintModule, TuiLinkModule} from "@taiga-ui/core";
 import {openNewSiteAndCancel} from "../toolbar/playground-toolbar.component";
 import {environment} from "../../../voyager-app/environments/environment";
 import {TuiBadgeModule} from "@taiga-ui/kit";
+import {ActivatedRoute} from "@angular/router";
 
 @Component({
   selector: 'app-voyager-sidebar',
@@ -47,9 +48,13 @@ export class VoyagerSidebarComponent {
   @Input()
   side: 'left' | 'right' = 'left';
 
-  // dev-tool button for copying a snippet at something we can then
-  // embed into Voyager.
-  showCopyCodeButton = !environment.production
+  constructor(private readonly route: ActivatedRoute) {
+  }
+
+  get showCopyCodeButton():boolean {
+    return !environment.production || window.location.search.includes("enableDevTools")
+  }
+
 
   @Input()
   showDiagram: boolean;
