@@ -20,8 +20,11 @@ export class CaptureLocalNavigationDirective {
     if (target.tagName.toLowerCase() === 'a' && target.href) {
       const url = target.getAttribute('href') || '';
       if (this.isRelativeUrl(url)) {
+        const { path, queryParams } = this.splitUrl(url);
         event.preventDefault();
-        this.router.navigate([url]);
+        this.router.navigate([path], {queryParams});
+      } else {
+        target.target = '_blank'
       }
     }
   }
@@ -31,5 +34,19 @@ export class CaptureLocalNavigationDirective {
     return !url.startsWith("http://") && !url.startsWith("https://") && !url.startsWith("//")
   }
 
+  private splitUrl(url: string) {
+    const [path, queryString] = url.split('?');
+
+    let queryParams = {};
+    if (queryString) {
+      queryParams = queryString.split('&').reduce((acc, param) => {
+        const [key, value] = param.split('=');
+        acc[key] = decodeURIComponent(value);
+        return acc;
+      }, {} as Record<string, string>);
+    }
+
+    return { path, queryParams };
+  }
 
 }

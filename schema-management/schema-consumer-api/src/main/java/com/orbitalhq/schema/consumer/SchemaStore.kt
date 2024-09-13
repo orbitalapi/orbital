@@ -30,4 +30,10 @@ interface SchemaStore: SchemaChangedEventProvider {
 
 interface SchemaChangedEventProvider {
    val schemaChanged: Publisher<SchemaSetChangedEvent>
+
+   /**
+    * Forces pushing the current state as a schema change event.
+    * Normally, you shouldn't need this, as changes are detected automatically.
+    */
+   fun forceSchemaChangedEvent()
 }
