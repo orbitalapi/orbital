@@ -18,7 +18,7 @@ import java.time.Duration
  * This class models the git {} block inside a workspace.conf configuration file
  */
 data class WorkspaceGitProjectConfig(
-   val checkoutRoot: Path = Paths.get("./orbital/workspace/projects/"),
+   val checkoutRoot: Path = Paths.get("orbital/workspace/projects/"),
    val pollFrequency: Duration = Duration.ofSeconds(30),
    val repositories: List<GitProjectSpec> = emptyList(),
 ) {

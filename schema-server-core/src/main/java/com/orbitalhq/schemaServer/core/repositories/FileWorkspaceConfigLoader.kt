@@ -34,6 +34,8 @@ import io.github.config4k.extract
 import io.github.config4k.registerCustomType
 import lang.taxi.packages.ProjectName
 import lang.taxi.packages.TaxiPackageLoader
+import lang.taxi.packages.TaxiPackageLoader.Companion.forDirectoryContainingTaxiFile
+import lang.taxi.packages.TaxiPackageLoader.Companion.forPathToTaxiFile
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.writers.ConfigWriter
 import mu.KotlinLogging
@@ -49,6 +51,7 @@ import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.isRegularFile
+import kotlin.io.path.name
 import kotlin.io.path.writeText
 
 class FileWorkspaceConfigLoader(
@@ -237,7 +240,10 @@ class FileWorkspaceConfigLoader(
                   packageSpec.copy(path = relativePath)
                }
             }
-         fileConfig.copy(projects = resolvedPaths, newProjectsPath = makeRelativeToConfigFile(fileConfig.newProjectsPath))
+         fileConfig.copy(
+            projects = resolvedPaths,
+            newProjectsPath = makeRelativeToConfigFile(fileConfig.newProjectsPath)
+         )
       }
       val updatedGitConfig = original.gitConfigOrDefault.let { gitConfig ->
          val checkoutRoot = makeRelativeToConfigFile(gitConfig.checkoutRoot)
@@ -291,7 +297,12 @@ class FileWorkspaceConfigLoader(
    private fun verifyTaxiProjectExists(fileSpec: FileProjectSpec): PackageIdentifier {
       val projectPath = makeRelativeToConfigFile(fileSpec.path)
 
-      val project = TaxiPackageLoader.forDirectoryContainingTaxiFile(projectPath).load()
+      // TODO : Migrate this to TaxiPackageLoader.forDirectoryOrFilePath once available
+      val project = if (projectPath.name.endsWith(".conf")) {
+         TaxiPackageLoader.forPathToTaxiFile(projectPath).load()
+      } else {
+         TaxiPackageLoader.forDirectoryContainingTaxiFile(projectPath).load()
+      }
       if (fileSpec.packageIdentifier != null && project.identifier.toVynePackageIdentifier() != fileSpec.packageIdentifier) {
          error("The provided package identifier (${fileSpec.packageIdentifier!!.id} does not match the package identifier found at ${fileSpec.path} - ${project.identifier.id}")
       }
