@@ -26,7 +26,7 @@ data class ServicesConfig(
       val DEFAULT = ServicesConfig(
          mapOf(
             METRICS_SERVER_NAME to mapOf(URL to "http://prometheus:9090"),
-            NEBULA_SERVER_NAME to mapOf(URL to "http://nebula")
+            NEBULA_SERVER_NAME to mapOf(URL to "http://nebula:8099")
          )
       )
    }
