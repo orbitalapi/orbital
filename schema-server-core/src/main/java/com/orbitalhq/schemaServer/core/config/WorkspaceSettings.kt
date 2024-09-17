@@ -2,11 +2,9 @@ package com.orbitalhq.schemaServer.core.config
 
 import com.orbitalhq.schema.publisher.ProjectLoaderManager
 import com.orbitalhq.schemaServer.core.file.FileProjectSpec
-import com.orbitalhq.schemaServer.core.file.WorkspaceFileProjectConfig
 import com.orbitalhq.schemaServer.core.git.SimpleGitRepositoryConnectionConfig
 import com.orbitalhq.schemaServer.core.repositories.FileWorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.GitWorkspaceConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.InMemoryWorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
@@ -16,9 +14,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.net.URL
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
+import kotlin.io.path.exists
 
 /**
  * This is the command line / env-var settings passed to determine
@@ -54,7 +54,63 @@ data class WorkspaceSettings(
     * Additionally, fetching directly from Git aligns more with IAC / Immutable infrastructure.
     */
    val git: WorkspaceGitSettings? = null
-)
+) {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+   fun createLoader(eventDispatcher: ProjectSpecLifecycleEventDispatcher, projectManager: ProjectLoaderManager): WorkspaceConfigLoader {
+      return when {
+         // MP: 16-Sep-24
+         // When a user provided a project file, we used to skip creating a proper workspace (using an in-memory
+         // one instead), which leads to all sorts of confusing bugs when they later try to do things like
+         // add other projects etc.
+         // Instead, we always create an on-disk workspace now.
+         // If the user provides a project file, we add that to the workspace.
+         // (see below)
+//         workspaceConfig.projectFile != null -> {
+//            logger.info { "A single-project workspace has been configured for ${workspaceConfig.projectFile}. Ignoring any other config from ${workspaceConfig.configFile}" }
+//            return InMemoryWorkspaceConfigLoader(
+//               WorkspaceConfig(
+//                  WorkspaceFileProjectConfig(
+//                     projects = listOf(FileProjectSpec(workspaceConfig.projectFile, isEditable = true)),
+//                  )
+//               ),
+//               eventDispatcher
+//            )
+//         }
+
+         git != null -> {
+            logger.info { "Using a git-backed workspace config has been configured for $git" }
+            GitWorkspaceConfigLoader(git, eventDispatcher = eventDispatcher, projectManager = projectManager)
+         }
+
+         else -> {
+            val absolutePath = configFile.toAbsolutePath()
+            logger.info { "Using workspace config file at ${configFile}, absolute path => $absolutePath" }
+            val configLoader = FileWorkspaceConfigLoader(configFile, eventDispatcher = eventDispatcher, projectManager = projectManager)
+            // Force the creation of the workspace file if missing
+            if (!absolutePath.exists()) {
+               logger.info { "Created blank workspace.conf file at $absolutePath" }
+               configLoader.save(WorkspaceConfig.defaultEmpty())
+            }
+            val config = configLoader.load()
+
+            if (projectFile != null) {
+               if (config.fileConfigOrDefault.projects.none { it.pathString.endsWith(projectFile.toString()) }) {
+                  logger.info { "Workspace file at $absolutePath does not contain project $projectFile so adding it" }
+                  configLoader.addFileSpec(
+                     FileProjectSpec(
+                        projectFile,
+                        isEditable = true
+                     )
+                  )
+               }
+            }
+            configLoader
+         }
+      }
+   }
+}
 
 data class WorkspaceGitSettings(
    val url: URL,
@@ -91,30 +147,7 @@ class WorkspaceLoaderConfig {
       eventDispatcher: ProjectSpecLifecycleEventDispatcher,
       projectManager: ProjectLoaderManager
    ): WorkspaceConfigLoader {
-      return when {
-         workspaceConfig.projectFile != null -> {
-            logger.info { "A single-project workspace has been configured for ${workspaceConfig.projectFile}. Ignoring any other config from ${workspaceConfig.configFile}" }
-            return InMemoryWorkspaceConfigLoader(
-               WorkspaceConfig(
-                  WorkspaceFileProjectConfig(
-                     projects = listOf(FileProjectSpec(workspaceConfig.projectFile, isEditable = true)),
-                  )
-               ),
-               eventDispatcher
-            )
-         }
-
-         workspaceConfig.git != null -> {
-            logger.info { "Using a git-backed workspace config has been configured for ${workspaceConfig.git}" }
-            GitWorkspaceConfigLoader(workspaceConfig.git, eventDispatcher = eventDispatcher, projectManager = projectManager)
-         }
-
-         else -> {
-            val absolutePath = workspaceConfig.configFile.toAbsolutePath()
-            logger.info { "Using workspace config file at ${workspaceConfig.configFile}, absolute path => $absolutePath" }
-            FileWorkspaceConfigLoader(workspaceConfig.configFile, eventDispatcher = eventDispatcher, projectManager = projectManager)
-         }
-      }
+      return workspaceConfig.createLoader(eventDispatcher,projectManager)
    }
 
 }
