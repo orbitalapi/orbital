@@ -1,6 +1,8 @@
 package com.orbitalhq.query.runtime.core.gateway
 
 import com.orbitalhq.schema.api.SchemaProvider
+import com.orbitalhq.schemas.QualifiedName
+import com.orbitalhq.schemas.Schema
 import com.orbitalhq.security.VynePrivileges
 import org.springframework.http.MediaType
 import org.springframework.security.access.prepost.PreAuthorize
@@ -27,6 +29,14 @@ class OpenApiSpecService(
       val openApiGenerator = OpenApiGenerator()
       val generatedSpecs = openApiGenerator
          .generateOpenApiSpec(taxiDocument, listOf(routableQuery.query.name.fullyQualifiedName))
+      val yaml = openApiGenerator.generateYaml(generatedSpecs)
+      return yaml.joinToString("\n") { it.content }
+   }
+
+   fun getApiSpecForQuery(schema:Schema, queryName: QualifiedName): String {
+      val openApiGenerator = OpenApiGenerator()
+      val generatedSpecs = openApiGenerator
+         .generateOpenApiSpec(schema.taxi, listOf(queryName.parameterizedName))
       val yaml = openApiGenerator.generateYaml(generatedSpecs)
       return yaml.joinToString("\n") { it.content }
    }
