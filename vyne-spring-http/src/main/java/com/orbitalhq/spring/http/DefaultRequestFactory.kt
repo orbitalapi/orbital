@@ -12,6 +12,7 @@ import lang.taxi.annotations.HttpRequestBody
 import mu.KotlinLogging
 import org.springframework.http.HttpEntity
 import org.springframework.http.HttpHeaders
+import org.springframework.http.MediaType
 import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
 
@@ -39,7 +40,17 @@ class DefaultRequestFactory(private val formatSpecs: List<ModelFormatSpec>) : Ht
       val requestBodyParamType = operation.parameters[requestBodyParamIdx].type
 
       val requestBodyTypedInstance = parameters.first { it.type.name == requestBodyParamType.name }
+      // default content type is json, but we can override this if the type has a format specifier.
+      headers.contentType = MediaType.APPLICATION_JSON
       val httpBody = FormatDetector.get(formatSpecs).getFormatType(requestBodyParamType)?.let {
+         // override contentType according to format specifier.
+         val bodyMediaType = try {
+            MediaType.parseMediaType(it.second.mediaType)
+         } catch (e: Exception) {
+            logger.error { "Format spec ${it.second.mediaType::class.simpleName} declares a media type of $${it.second.mediaType} which cannot be parsed to a standard MediaType" }
+            MediaType.APPLICATION_JSON
+         }
+         headers.contentType = bodyMediaType
          it.second.serializer.write(requestBodyTypedInstance.toRawObject(), it.first, 0)
       } ?: requestBodyTypedInstance.toRawObject()
       return HttpEntity(httpBody, headers)
@@ -63,6 +74,7 @@ class DefaultRequestFactory(private val formatSpecs: List<ModelFormatSpec>) : Ht
       }
 
    }
+
 
    private fun buildHttpHeaders(operation: RemoteOperation, parameters: List<TypedInstance>): HttpHeaders {
       val headers = ArrayListMultimap.create<String, String>()
