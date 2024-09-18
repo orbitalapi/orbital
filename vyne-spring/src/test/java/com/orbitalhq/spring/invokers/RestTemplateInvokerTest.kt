@@ -180,7 +180,8 @@ namespace vyne {
          expectRequestCount(1)
          expectRequest { request ->
             assertEquals("/clients/notional", request.path)
-            assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+            // There is no request body and hence we don't set the content-type header for the request.
+            assertEquals(null, request.getHeader("Content-Type"))
          }
       }
    }
@@ -226,7 +227,8 @@ namespace vyne {
          expectRequestCount(1)
          expectRequest { request ->
             assertEquals("/people", request.path)
-            assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+            // There is no request body and hence we don't set the content-type header for the request.
+            assertEquals(null, request.getHeader("Content-Type"))
          }
       }
    }
@@ -484,7 +486,8 @@ namespace vyne {
          expectRequest { request ->
             assertEquals("/pets/100", request.path)
             assertEquals(HttpMethod.GET.name(), request.method)
-            assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+            // There is no request body and hence we don't set the content-type header for the request.
+            assertEquals(null, request.getHeader("Content-Type"))
          }
       }
    }
@@ -559,7 +562,8 @@ namespace vyne {
          expectRequest { request ->
             assertEquals("/pets/100", request.path)
             assertEquals(HttpMethod.GET.name(), request.method)
-            assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+            // There is no request body and hence we don't set the content-type header for the request.
+            assertEquals(null, request.getHeader("Content-Type"))
          }
 
       }
@@ -614,7 +618,8 @@ namespace vyne {
          expectRequest { request ->
             assertEquals("/pets", request.path)
             assertEquals(HttpMethod.GET.name(), request.method)
-            assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+            // There is no request body and hence we don't set the content-type header for the request.
+            assertEquals(null, request.getHeader("Content-Type"))
          }
       }
    }
@@ -668,7 +673,8 @@ namespace vyne {
          expectRequest { request ->
             assertEquals("/pets", request.path)
             assertEquals(HttpMethod.GET.name(), request.method)
-            assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+            // There is no request body and hence we don't set the content-type header for the request.
+            assertEquals(null, request.getHeader("Content-Type"))
          }
       }
    }

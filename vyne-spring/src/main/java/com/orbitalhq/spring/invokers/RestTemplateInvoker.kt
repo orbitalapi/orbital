@@ -110,8 +110,6 @@ class RestTemplateInvoker(
 
       val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl, uriVariables)
 
-      val contentType = getContentTypeFromResponseType(operation.returnType)
-
       val webClient = webClientFactory.webClientFor(service)
 
       //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
@@ -122,7 +120,6 @@ class RestTemplateInvoker(
                .fromUriString(absoluteUrl)
             (queryParams?.let { uriBuilder.queryParams(it) } ?: uriBuilder).build(uriVariables)
          }
-         .contentType(contentType)
          .headers { consumer ->
             consumer.addAll(httpEntity.headers)
          }
@@ -284,22 +281,6 @@ class RestTemplateInvoker(
       } else {
          results.asFlow().flowOn(Dispatchers.IO)
       }
-   }
-
-   private fun getContentTypeFromResponseType(returnType: Type): MediaType {
-      val (metadata, formatSpec) = formats.forType(returnType)
-      val mediaType = if (formatSpec != null) {
-         try {
-            MediaType.parseMediaType(formatSpec.mediaType)
-         } catch (e: Exception) {
-            logger.error { "Format spec ${formatSpec::class.simpleName} declares a media type of $${formatSpec.mediaType} which cannot be parsed to a standard MediaType" }
-            MediaType.APPLICATION_JSON
-         }
-
-      } else {
-         MediaType.APPLICATION_JSON // default to JSON
-      }
-      return mediaType
    }
 
    private fun mapError(error: Throwable,
