@@ -12,7 +12,7 @@
    <parent>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-parent</artifactId>
-      <version>3.2.4</version>
+      <version>3.3.3</version>
    </parent>
 
    <url>https://orbitalhq.com</url>
@@ -55,8 +55,7 @@
       <http4k.version>4.48.0.0</http4k.version>
       <hazelcast.version>5.4.0</hazelcast.version>
       <testcontainers.version>1.19.3</testcontainers.version>
-      <!-- Override H2 version : CVE-2022-45868 fixed in 2.2.220 -->
-      <h2.version>2.2.220</h2.version>
+
       <guava.version>32.1.3-jre</guava.version>
       <reactor-bom.version>2023.0.0</reactor-bom.version>
 
@@ -70,24 +69,6 @@
       <junit.vintage.version>5.9.2</junit.vintage.version>
 
       <json-path.version>2.9.0</json-path.version>
-
-
-      <!-- Critical vulnerability in SnakeYaml.
-      Due to be upgraded to 2.0 by default in Spring Boot 3.2
-      -->
-      <snakeyaml.version>2.0</snakeyaml.version>
-
-      <!--  CVE-2024-22262  URL Parsing with Host Validation in 6.1.5, fixed in 6.1.6, Should be released in Spring Boot > 3.2.4 -->
-      <spring-framework.version>6.1.6</spring-framework.version>
-
-      <kafka.version>3.6.1</kafka.version>
-
-      <!-- CVE-2023-6378 , Fixed in 1.4.12 -->
-      <logback.version>1.4.12</logback.version>
-
-      <!--  CVE-2024-1597, Fixed in 42.7.2
-       https://avd.aquasec.com/nvd/cve-2024-1597 -->
-      <postgresql.version>42.7.2</postgresql.version>
 
       <aws.s3.sdk.version>1.12.701</aws.s3.sdk.version>
       <aws.dynamo.sdk.version>1.12.701</aws.dynamo.sdk.version>

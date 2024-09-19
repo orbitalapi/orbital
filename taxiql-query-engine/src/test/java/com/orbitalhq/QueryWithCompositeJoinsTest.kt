@@ -20,7 +20,7 @@ class QueryWithCompositeJoinsTest {
            environmental: EScore inherits Decimal
          }
 
-         type EsgScoreId inherits Int by concat(ProductId, FactorId)
+         type EsgScoreId inherits String by concat(ProductId, FactorId)
 
          service EsgService {
            operation getProducts():Product[]
