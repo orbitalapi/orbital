@@ -23,22 +23,12 @@ class ActiveQueryController(private val monitor: ActiveQueryMonitor) {
       @PathVariable("id") queryId: String
    ) : Mono<Void> {
       if (!monitor.cancelQuery(queryId)) {
-         throw NotFoundException("No query with id $queryId was found")
+         if (!monitor.cancelQueryByClientQueryId(queryId)) {
+            throw NotFoundException("No query with id $queryId was found")
+         }
       }
       return Mono.empty()
    }
-
-   @DeleteMapping("/api/query/active/clientId/{id}")
-   @PreAuthorize("hasAuthority('${VynePrivileges.CancelQuery}')")
-   suspend fun cancelQueryByClientQueryId(
-      @PathVariable("id") clientQueryId: String
-   ) : Mono<Void> {
-      if (!monitor.cancelQueryByClientQueryId(clientQueryId)) {
-         throw NotFoundException("No query with clientQueryID $clientQueryId was found")
-      }
-      return Mono.empty()
-   }
-
 }
 
 
