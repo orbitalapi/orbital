@@ -16,7 +16,7 @@ import org.testcontainers.junit.jupiter.Testcontainers
 abstract class DatabaseTest {
    companion object {
       @Container
-      private val postgreSQLContainer = PostgreSQLContainer<Nothing>("postgres:11.1")
+      private val postgreSQLContainer = PostgreSQLContainer<Nothing>("postgres:16")
          .apply { this.start() }
 
       @JvmStatic

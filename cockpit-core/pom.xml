@@ -357,6 +357,10 @@
          <groupId>org.flywaydb</groupId>
          <artifactId>flyway-core</artifactId>
       </dependency>
+      <dependency>
+         <groupId>org.flywaydb</groupId>
+         <artifactId>flyway-database-postgresql</artifactId>
+      </dependency>
       <!-- non-reactive driver required for flyway -->
       <dependency>
          <groupId>org.postgresql</groupId>
