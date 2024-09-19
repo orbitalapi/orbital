@@ -178,7 +178,7 @@ export class QueryService {
   }
 
   cancelQueryByClientQueryId(clientQueryId: string): Observable<void> {
-    return this.http.delete<void>(`${this.environment.serverUrl}/api/query/active/clientId/${clientQueryId}`, this.httpOptions);
+    return this.http.delete<void>(`${this.environment.serverUrl}/api/query/active/${clientQueryId}`, this.httpOptions);
   }
 
   private parseRemoteCallTimestampsAsDates(profileData: QueryProfileData): QueryProfileData {

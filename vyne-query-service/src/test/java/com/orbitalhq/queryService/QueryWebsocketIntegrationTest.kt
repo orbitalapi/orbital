@@ -199,7 +199,7 @@ class QueryWebsocketIntegrationTest : DatabaseTest() {
                }
                .then {
                   runBlocking {
-                     client.delete("http://localhost:$randomServerPort/api/query/active/clientId/$clientId")
+                     client.delete("http://localhost:$randomServerPort/api/query/active/$clientId")
                   }
                }
                .then { resultsSink.tryEmitNext("""{ "filmId" : 456 }""") }
