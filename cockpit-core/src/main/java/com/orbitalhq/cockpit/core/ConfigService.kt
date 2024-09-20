@@ -1,6 +1,7 @@
 package com.orbitalhq.cockpit.core
 
 import com.orbitalhq.history.QueryAnalyticsConfig
+import com.orbitalhq.http.ServicesConfig
 import com.orbitalhq.licensing.License
 import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.plugins.LoadedPlugin
@@ -9,6 +10,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer
 import org.springframework.boot.context.properties.ConfigurationProperties
+import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.web.bind.annotation.GetMapping
@@ -25,17 +27,27 @@ class ConfigService(
    featureToggles: FeatureTogglesConfig,
    customSettings: CustomSettings,
    pluginLoader: PluginLoader,
+   discoveryClient: DiscoveryClient,
 ) {
 
-   private val configSummary =
-      ConfigSummary(
-         analyticsConfig,
-         LicenseStatus.from(licenseManager.license),
-         actuatorPath,
-         featureToggles,
-         customSettings.custom,
-         pluginLoader.loadedPlugins,
-      )
+   private lateinit var configSummary:ConfigSummary
+
+   init {
+      val defaultLicenseServerUrl =
+         ServicesConfig.DEFAULT.services[ServicesConfig.LICENSE_SERVER_NAME]?.get(ServicesConfig.URL)!!
+      val licenseServer = discoveryClient.getInstances(ServicesConfig.LICENSE_SERVER_NAME)
+         .firstOrNull()?.uri?.toASCIIString() ?: defaultLicenseServerUrl
+
+      configSummary =
+         ConfigSummary(
+            analyticsConfig,
+            actuatorPath,
+            featureToggles,
+            customSettings.custom,
+            pluginLoader.loadedPlugins,
+            licenseServer
+         )
+   }
 
    @GetMapping("/api/config")
    fun getConfig(): ConfigSummary {
@@ -46,11 +58,11 @@ class ConfigService(
 // For sending to the UI
 data class ConfigSummary(
    val analytics: QueryAnalyticsConfig,
-   val licenseStatus: LicenseStatus,
    val actuatorPath: String,
    val featureToggles: FeatureTogglesConfig,
    val custom: Map<String, Any>,
    val loadedPlugins: List<LoadedPlugin>,
+   val licenseServerEndpoint: String
 )
 
 /**
@@ -69,7 +81,8 @@ data class FeatureTogglesConfig(
    val queryPlanModeEnabled: Boolean = false,
    val serviceLineageDiagramsEnabled: Boolean = false,
    val copyAsCodeEnabled: Boolean = false,
-   val nebulaEnabled: Boolean = false
+   val nebulaEnabled: Boolean = false,
+   val enableLicenseEnforcement: Boolean = false,
 )
 
 data class LicenseStatus(

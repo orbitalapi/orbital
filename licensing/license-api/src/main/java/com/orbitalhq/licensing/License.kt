@@ -14,12 +14,16 @@ data class License(
    val expiresOn: Instant,
    @JsonFormat(shape = JsonFormat.Shape.STRING)
    val timestamp: Instant,
-   val edition: LicensedEdition,
+   val plan: String,
+   // The set of features a user has enabled.
+   // By default, it's the set contained in their edition,
+   // but they can choose to bundle additional extras
+   val features: List<LicensedFeature>,
    val quotas: List<UsageQuota>,
    /**
-    * Indciates that this license has been used becuase
+    * Indicates that this license has been used because
     * one either wasn't provided, or wasn't valid (ie., was expired,
-    * or not signed correctly)
+    * or not signed correctly
     */
    @JsonIgnore
    val isFallbackLicense: Boolean = false,
@@ -31,7 +35,8 @@ data class License(
             licensee,
             expiresOn,
             Instant.now(),
-            LicensedEdition.STARTER,
+            "Unlicensed",
+            emptyList(),
             emptyList(),
             true
          )
@@ -44,9 +49,14 @@ data class License(
 
    }
 
+   @JsonIgnore
+   val summary = LicenseSummary(
+      licensee, expiresOn, timestamp, plan
+   )
+
    override fun toString(): String {
       return "Licensed to ${this.licensee} with ${
-         this.edition.name.toLowerCase().capitalize()
+         this.plan
       } edition.  Expires on ${dateFormat.format(this.expiresOn)}."
    }
 
@@ -61,21 +71,27 @@ data class License(
       return Signing.objectMapper.writeValueAsBytes(this)
    }
 
-   fun quota(capability: MeteredCapability):UsageQuota {
+   fun quota(capability: MeteredCapability): UsageQuota {
       return this.quotas.firstOrNull { it.capability == capability }
          ?: UsageQuota(capability, 0)
    }
 }
 
 /**
- * We group our capabilities into "Editions" - basically a collection
- * of features that are enabled for the license
+ * Intended for sending to the UI.
+ * Excludes the usage quotas, which are sent with LicenseUsage
  */
-enum class LicensedEdition(val enabledFeatures: List<LicensedFeature>) {
-   STARTER(enabledFeatures = emptyList()),
-   PLATFORM(enabledFeatures = emptyList()),
-   ENTERPRISE(enabledFeatures = emptyList()),
-}
+data class LicenseSummary(
+   val licensee: String,
+   @JsonFormat(shape = JsonFormat.Shape.STRING)
+   val expiresOn: Instant,
+   @JsonFormat(shape = JsonFormat.Shape.STRING)
+   val timestamp: Instant,
+   /**
+    * A name of the plan, for display purposes.
+    */
+   val plan: String,
+)
 
 data class UsageQuota(
    val capability: MeteredCapability,
@@ -88,6 +104,18 @@ enum class MeteredCapability {
    Invocation
 }
 
+/**
+ * A Feature is a platform capability or permission that can be enabled or disabled.
+ */
 enum class LicensedFeature {
 
+   /**
+    * The customer can use their own IDP, instead of auth.orbitalhq.com
+    */
+   AllowOwnIdp,
+
+   /**
+    * The customer is entitled to author data policies
+    */
+   DataPolicies
 }

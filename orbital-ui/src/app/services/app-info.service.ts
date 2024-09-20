@@ -41,14 +41,11 @@ export interface AppConfig {
     persistResults: boolean
     maxQueryRecordCount: number
   }
-  licenseStatus: {
-    isLicensed: boolean;
-    expiresOn: Date
-  }
+  licenseServerEndpoint: string;
   actuatorPath: string;
   pipelineConfig: PipelineConfig;
   featureToggles: FeatureToggles;
-  custom: {[index:string]:any}
+  custom: {[index:string]:any};
 }
 
 export interface FeatureToggles {
@@ -57,7 +54,9 @@ export interface FeatureToggles {
   policiesEnabled: boolean;
   queryPlanModeEnabled: boolean;
   serviceLineageDiagramsEnabled: boolean;
-  copyAsCodeEnabled: boolean
+  copyAsCodeEnabled: boolean,
+  nebulaEnabled: boolean,
+  enableLicenseEnforcement: boolean
 }
 export interface PipelineConfig {
   kibanaUrl: string;

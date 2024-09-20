@@ -12,6 +12,7 @@ import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.cockpit.core.security.authorisation.VyneSamlConfig
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.licensing.LicenseManager
+import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.queryService.TestSchemaProvider
@@ -263,7 +264,7 @@ class VyneQuerySamlIntegrationTest {
    @MockBean
    lateinit var configService: ConfigService
    @MockBean
-   lateinit var licenseManager: LicenseManager
+   lateinit var licenseManager: OrbitalLicenseManager
 
    @MockBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher

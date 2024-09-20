@@ -20,13 +20,15 @@ data class ServicesConfig(
       val DEFAULT_QUERY_SERVER_RSOCKET_PORT = 7655
       val DEFAULT_STREAM_SERVER_RSOCKET_PORT = 7755
 
+      const val LICENSE_SERVER_NAME = "orbital-license-server"
       val RSOCKET = "rsocket"
       val URL = "url"
 
       val DEFAULT = ServicesConfig(
          mapOf(
             METRICS_SERVER_NAME to mapOf(URL to "http://prometheus:9090"),
-            NEBULA_SERVER_NAME to mapOf(URL to "http://nebula:8099")
+            NEBULA_SERVER_NAME to mapOf(URL to "http://nebula:8099"),
+            LICENSE_SERVER_NAME to mapOf(URL to "https://licensing.orbitalhq.com")
          )
       )
    }

@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.google.common.base.Throwables
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 import org.springframework.web.bind.annotation.ResponseStatus
@@ -28,13 +29,13 @@ class LicenseValidator(
 
    }
    fun readAndValidateLicense(licenseJson: String): Either<InvalidLicenseException,License> {
-      val unvalidatedLicense: License = Signing.objectMapper.readValue(licenseJson)
-      val (isValid,errorMessage) = validateLicense(unvalidatedLicense)
-      return if (isValid) {
-         unvalidatedLicense.right()
-      } else {
-         InvalidLicenseException(errorMessage).left()
+      val unvalidatedLicense: License = try {
+         Signing.objectMapper.readValue(licenseJson)
+      } catch (e:Exception) {
+         val rootCauseMessage = Throwables.getRootCause(e).message ?: e::class.simpleName
+         return InvalidLicenseException("Unable to read license: $rootCauseMessage").left()
       }
+      return validateLicense(unvalidatedLicense)
    }
 
    /**
@@ -43,25 +44,25 @@ class LicenseValidator(
     */
    fun fallbackLicense(licensee: String) = License.unlicensed(clock.instant().plus(fallbackLicenseDuration), licensee)
 
-   private fun validateLicense(license: License): Pair<Boolean, String> {
+   private fun validateLicense(license: License):  Either<InvalidLicenseException,License>  {
       return when {
          !verifySignature(license) -> {
             logger.warn { "License failed verification." }
-            false to "License failed verification"
+            InvalidLicenseException("License failed verification").left()
          }
 
          license.expiresOn.isBefore(clock.instant()) -> {
-            false to "License expired on ${license.expiresOn} which is before current time (${clock.instant()}."
+            InvalidLicenseException("License expired on ${license.expiresOn} which is before current time (${clock.instant()}.").left()
          }
 
          else -> {
-            true to "OK"
+            license.right()
          }
       }
    }
 
    fun isValidLicense(license: License): Boolean {
-      return validateLicense(license).first
+      return validateLicense(license).isRight()
    }
 
 

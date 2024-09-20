@@ -9,6 +9,7 @@ import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.history.db.*
 import com.orbitalhq.licensing.LicenseManager
+import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseKeyValuePair
 import com.orbitalhq.query.HistoryEventConsumerProvider
@@ -69,7 +70,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
    @MockBean
    lateinit var configService: ConfigService
    @MockBean
-   lateinit var licenseManager: LicenseManager
+   lateinit var licenseManager: OrbitalLicenseManager
 
 
    @MockBean

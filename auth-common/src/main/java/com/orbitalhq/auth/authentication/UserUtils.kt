@@ -43,7 +43,14 @@ fun Authentication.toVyneUser(): VyneUser {
 
 fun vyneUserFromClaims(claims: Map<String, Any>, authorities: Collection<GrantedAuthority>): VyneUser {
    fun <T> claim(fieldName: String): T? {
-      return claims[fieldName] as T?
+      val value =  fieldName.split(".")
+         .fold(claims as Any?) { acc, k ->
+            when (acc) {
+               is Map<*, *> -> (acc as Map<String, Any>)[k]
+               else -> null
+            }
+         }
+      return value as T?
 
    }
 
@@ -139,7 +146,7 @@ object JwtStandardClaims {
 object PropelAuthJwtTokenClaims {
    const val FirstName = "first_name"
    const val LastName = "last_name"
-   const val PictureUrl = "picture_url"
+   const val PictureUrl = "properties.picture_url"
    const val OrgIdToMemberInfo = "org_id_to_org_member_info"
 }
 

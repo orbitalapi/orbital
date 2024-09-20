@@ -3,6 +3,10 @@ package com.orbitalhq.licensing
 import mu.KotlinLogging
 import reactor.core.publisher.Sinks
 
+/**
+ * Base class for License managers.
+ * Whitelabels can create their own license managerK
+ */
 open class LicenseManager(initialLicense: License) {
 
    var license: License = initialLicense

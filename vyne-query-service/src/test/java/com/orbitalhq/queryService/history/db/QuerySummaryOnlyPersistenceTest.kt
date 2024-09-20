@@ -11,6 +11,7 @@ import com.orbitalhq.history.db.QueryHistoryRecordRepository
 import com.orbitalhq.history.db.QueryResultRowRepository
 import com.orbitalhq.history.rest.QueryHistoryService
 import com.orbitalhq.licensing.LicenseManager
+import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.ValueWithTypeName
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
@@ -79,7 +80,7 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
    @MockBean
    lateinit var configService: ConfigService
    @MockBean
-   lateinit var licenseManager: LicenseManager
+   lateinit var licenseManager: OrbitalLicenseManager
 
    @MockBean
    lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider

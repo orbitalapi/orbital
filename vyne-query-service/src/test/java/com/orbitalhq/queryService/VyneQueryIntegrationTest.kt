@@ -11,6 +11,7 @@ import com.orbitalhq.cockpit.core.content.DefaultContentRepository
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.licensing.LicenseManager
+import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
@@ -92,7 +93,7 @@ class VyneQueryIntegrationTest : DatabaseTest() {
    @MockBean
    lateinit var configService: ConfigService
    @MockBean
-   lateinit var licenseManager: LicenseManager
+   lateinit var licenseManager: OrbitalLicenseManager
 
    @Autowired
    private lateinit var restTemplate: TestRestTemplate

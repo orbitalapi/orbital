@@ -20,26 +20,30 @@ import {
   TuiHostedDropdownModule,
   TuiNotificationModule
 } from '@taiga-ui/core';
+import {
+    LicenseDisplayComponent
+} from "../../../../../vyne/orbital-ui/src/app/license-display/license-display.component";
 
 @NgModule({
-  imports: [
-    MatToolbarModule,
-    SearchModule,
-    CommonModule,
-    MatButtonModule,
-    MatIconModule,
-    MatMenuModule,
-    MatDialogModule,
-    ConfirmationDialogModule,
-    WorkspaceSelectorModule,
-    TuiAvatarModule,
-    TuiHostedDropdownModule,
-    TuiDataListModule,
-    TuiButtonModule,
-    TuiAlertModule,
-    TuiNotificationModule,
-    RouterLink,
-  ],
+    imports: [
+        MatToolbarModule,
+        SearchModule,
+        CommonModule,
+        MatButtonModule,
+        MatIconModule,
+        MatMenuModule,
+        MatDialogModule,
+        ConfirmationDialogModule,
+        WorkspaceSelectorModule,
+        TuiAvatarModule,
+        TuiHostedDropdownModule,
+        TuiDataListModule,
+        TuiButtonModule,
+        TuiAlertModule,
+        TuiNotificationModule,
+        RouterLink,
+        LicenseDisplayComponent,
+    ],
   exports: [HeaderBarComponent, AvatarComponent],
   declarations: [HeaderBarComponent, AvatarComponent],
   providers: [],

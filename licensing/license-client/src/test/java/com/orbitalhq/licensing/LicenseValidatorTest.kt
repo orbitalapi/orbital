@@ -22,8 +22,9 @@ class LicenseValidatorTest {
       "Jimmy",
       Instant.parse("2030-02-14T15:30:00Z"),
       Instant.parse("2019-02-14T15:30:00Z"),
-      LicensedEdition.ENTERPRISE,
-      quotas = emptyList()
+      "Enterprise",
+      quotas = emptyList(),
+      features = emptyList(),
    )
 
    @Test

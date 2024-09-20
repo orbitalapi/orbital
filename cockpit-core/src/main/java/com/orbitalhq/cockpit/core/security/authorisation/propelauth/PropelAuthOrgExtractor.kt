@@ -25,4 +25,16 @@ object PropelAuthOrgExtractor {
       val thisOrgClaims = organisationClaims.values.single()
       return thisOrgClaims
    }
+
+   fun getSingleOrgClaims(jwt: Jwt): Map<String,Any> {
+      val orgInfoMap = jwt.claims[PropelAuthJwtTokenClaims.OrgIdToMemberInfo] as Map<String,Map<String,Any>>
+
+      if (orgInfoMap.keys.isEmpty()) {
+         throw NotAuthorizedException("You are not a member of any organisations")
+      }
+      if (orgInfoMap.size != 1) {
+         throw NotAuthorizedException("You are a member of multiple organisations - which is not supported when running self-hosted")
+      }
+      return orgInfoMap.values.single()
+   }
 }

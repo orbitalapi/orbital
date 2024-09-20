@@ -9,6 +9,7 @@ import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvi
 import com.orbitalhq.cockpit.core.security.AuthTokenConfigurationService
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.licensing.LicenseManager
+import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.query.runtime.core.QueryService
@@ -159,7 +160,7 @@ class OperationAuthenticationMtlsTest : DatabaseTest() {
    @MockBean
    lateinit var configService: ConfigService
    @MockBean
-   lateinit var licenseManager: LicenseManager
+   lateinit var licenseManager: OrbitalLicenseManager
 
    @MockBean
    lateinit var configLoader : WorkspaceConfigLoader
