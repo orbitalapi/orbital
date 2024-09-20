@@ -11,6 +11,7 @@ import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvi
 import com.orbitalhq.cockpit.core.pipelines.StreamResultsWebsocketPublisher
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.licensing.LicenseManager
+import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.json.parseJson
@@ -89,7 +90,7 @@ class QueryWebsocketIntegrationTest : DatabaseTest() {
    @MockBean
    lateinit var configService: ConfigService
    @MockBean
-   lateinit var licenseManager: LicenseManager
+   lateinit var licenseManager: OrbitalLicenseManager
 
    @MockBean
    lateinit var hazelcastInstance: HazelcastInstance

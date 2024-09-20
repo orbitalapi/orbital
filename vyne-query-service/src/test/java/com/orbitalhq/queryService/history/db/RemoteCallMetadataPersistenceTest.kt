@@ -19,6 +19,7 @@ import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.http.emptyResponse
 import com.orbitalhq.http.response
 import com.orbitalhq.licensing.LicenseManager
+import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
@@ -111,7 +112,7 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
    @MockBean
    lateinit var configService: ConfigService
    @MockBean
-   lateinit var licenseManager: LicenseManager
+   lateinit var licenseManager: OrbitalLicenseManager
 
 
    @MockBean

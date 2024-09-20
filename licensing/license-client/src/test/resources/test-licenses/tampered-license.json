@@ -1,8 +1,9 @@
 {
-  "licensee" : "This should say Jimmy",
-  "expiresOn" : "2030-02-14T15:30:00Z",
-  "timestamp" : "2019-02-14T15:30:00Z",
-  "edition" : "ENTERPRISE",
-  "quotas" : [ ],
-  "signature" : "A+ReVZiw1+dqZqdgfNuCbhUTxRwHFmxIidPx3VLoAf5BKGmF+8+b1ImnF03AIcNLZQc8pg6kpleaxi/4IA/5tvjilUK3L6iA8P2toZUZ+pjNqAZIQlgLmfozSSUSoz9ALrM2ZA3gWMbJgdNoF+fIKS86/rpKae7yZv00ljQUsJUw+92fK1sGQXCMFzpWcrxUIxOwpSOdBl+/CcFtpY2XEBLvR72G9IzelBC0s98+DycguvjnRnU4umTY4uB7Cff9YgEA/MUX9YchIcmUbaS2Hul8Gp6Av8nDYQpyPGmfKms90EarQJqDvVjZ/bUHfsjzV7WG1cVGnZwuQbTWDs87Kg=="
+   "licensee" : "Jimmy",
+   "expiresOn" : "2032-02-14T15:30:00Z",
+   "timestamp" : "2019-02-14T15:30:00Z",
+   "plan" : "Enterprise",
+   "features" : [ ],
+   "quotas" : [ ],
+   "signature" : "ShTtVaiN60Ha3V6IEHyDN/bNmZPWxwX4ZB/Xvedq6yvudqOuEILmBU9mBFTYVKYCSMnNnGOPrmnN06CZQLECIMA9u5XXAPeyaAN7ZCk5lY6aEvZozrFSAC9jCF54A9qYylBODn+nxRr0vZ9ePeCZvSG9BcTaP/S6DvR6p/xYHPbYdgysmPiLi2a8SinSA3xNZpQV1fgaI4sfpJhCFvjLg72ZdYgRgRVxG9/V1+Gy2eg7TkHTGnI+e0l7hXDt9HnGwF1jZvRZslDMczKsiDN0IB6rCXG9IwINHyAjhKq/NOpwLbKDrN/OiwEz/586LbcLL0/bzxJ+KvYMPE1mcAHqPQ=="
 }

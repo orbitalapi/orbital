@@ -16,6 +16,7 @@ import com.orbitalhq.cockpit.core.content.DefaultContentRepository
 import com.orbitalhq.cockpit.core.pipelines.StreamResultsWebsocketPublisher
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.licensing.LicenseManager
+import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.json.parseJson
@@ -109,7 +110,7 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
    @MockBean
    lateinit var configService: ConfigService
    @MockBean
-   lateinit var licenseManager: LicenseManager
+   lateinit var licenseManager: OrbitalLicenseManager
 
    @Autowired
    lateinit var queryRouteService: QueryRouteService

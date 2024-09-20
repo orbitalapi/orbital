@@ -73,6 +73,7 @@ class DefaultOperationInvocationService(
          log().error("Gather params failed", e)
          throw e
       }
+
       val resolvedParams = ensureParametersSatisfyContracts(parameters, context)
       val validatedParams = resolvedParams
       StrategyPerformanceProfiler.record(

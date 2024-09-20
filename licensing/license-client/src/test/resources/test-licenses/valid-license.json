@@ -2,7 +2,8 @@
   "licensee" : "Jimmy",
   "expiresOn" : "2030-02-14T15:30:00Z",
   "timestamp" : "2019-02-14T15:30:00Z",
-  "edition" : "ENTERPRISE",
+  "plan" : "Enterprise",
+  "features" : [ ],
   "quotas" : [ ],
-  "signature" : "A+ReVZiw1+dqZqdgfNuCbhUTxRwHFmxIidPx3VLoAf5BKGmF+8+b1ImnF03AIcNLZQc8pg6kpleaxi/4IA/5tvjilUK3L6iA8P2toZUZ+pjNqAZIQlgLmfozSSUSoz9ALrM2ZA3gWMbJgdNoF+fIKS86/rpKae7yZv00ljQUsJUw+92fK1sGQXCMFzpWcrxUIxOwpSOdBl+/CcFtpY2XEBLvR72G9IzelBC0s98+DycguvjnRnU4umTY4uB7Cff9YgEA/MUX9YchIcmUbaS2Hul8Gp6Av8nDYQpyPGmfKms90EarQJqDvVjZ/bUHfsjzV7WG1cVGnZwuQbTWDs87Kg=="
+  "signature" : "3KHFZcBb+shRbo9MagOvJNMI81Jx7dpE9aZ/4rfYeA4P6KqYynCKBs49OnzvZW6cV70zWC/g2YaL5ZRQj27IvW3HRW/Dyldcu8XCeFQ5XuAMjwHylUY2DUpw29o4Sm32su/VHLkuhZ91+pM6JZECWST54MoIXY5PwH3AQ+6iSlPDCXKow9DezZkNRjUJtIyiBXHXJDKvg10Mub7JBF+l2tgzzC7kvmL9DiwMwrFGMMOjHSOVqS6SzpFk45/TrAp4RMJHPryfBfwaZ25zvn7mrnsMJl2FymbrvZKHvW86IyzCLO+FW7SRX5LJe1ekLMNwapAWODAkBa9qHVWR18VkFg=="
 }

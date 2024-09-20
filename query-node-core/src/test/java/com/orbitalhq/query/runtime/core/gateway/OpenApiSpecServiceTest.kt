@@ -38,7 +38,7 @@ paths:
           content:
             application/json:
               schema:
-                ${"$"}ref: '#/components/schemas/Person'
+                ${"$"}ref: "#/components/schemas/Person"
 components:
   schemas:
     Person:

@@ -21,6 +21,7 @@ import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.http.respondWith
 import com.orbitalhq.http.response
 import com.orbitalhq.licensing.LicenseManager
+import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.models.FailedSearch
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.OperationResultReference
@@ -146,7 +147,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    @MockBean
    lateinit var configService: ConfigService
    @MockBean
-   lateinit var licenseManager: LicenseManager
+   lateinit var licenseManager: OrbitalLicenseManager
 
 
    @Autowired

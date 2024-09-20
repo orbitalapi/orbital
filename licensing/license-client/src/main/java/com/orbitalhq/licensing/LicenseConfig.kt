@@ -12,6 +12,7 @@ import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
 import org.springframework.scheduling.TaskScheduler
 import org.springframework.scheduling.annotation.EnableScheduling
+import org.springframework.web.reactive.function.client.WebClient
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -27,14 +28,20 @@ class LicenseConfig {
    private val logger = KotlinLogging.logger {}
 
    private val fallbackLicensePath = Paths.get(".", "/fallback-license.json")
+
+   // The default path to write to, which should be
+   // relative to where we're running from, to minimize
+   // errors when we try to write out.
+   private val defaultLicenseWritePath = Paths.get("orbital/license.json")
    private val defaultLicenseSearchPaths = listOf(
       Paths.get(System.getProperty("user.home"), ".orbital/license.json"),
-      Paths.get(System.getProperty("user.home"), ".vyne/license.json"),
       Paths.get("/opt/var/orbital/license/license.json"),
+      defaultLicenseWritePath
    )
 
+
    companion object {
-      fun createLicenseValidator(fallbackDuration: Duration = LicenseValidator.defaultFallbackLicenseDuration):LicenseValidator  {
+      fun createLicenseValidator(fallbackDuration: Duration = LicenseValidator.defaultFallbackLicenseDuration): LicenseValidator {
          val publicKey = Resources.toByteArray(Resources.getResource("vyne-license-pub.der"))
          val validator = LicenseValidator.forPublicKey(
             publicKey,
@@ -68,8 +75,33 @@ class LicenseConfig {
       return license
    }
 
+   fun licenseSearchPaths(userProvidedPath: Path?): List<Path> {
+      val pathsToSearch = if (userProvidedPath != null) {
+         listOf(userProvidedPath) + defaultLicenseSearchPaths
+      } else {
+         logger.info { "No license location found - will look in the default locations.  Modify this by passing --vyne.license.path on startup" }
+         defaultLicenseSearchPaths
+      }
+      return pathsToSearch
+   }
+
    @Bean
-   fun licenseManager(license: License):LicenseManager = LicenseManager(license)
+   fun licenseManager(
+      @Value("\${vyne.license.path:#{null}}") licensePath: Path?,
+      license: License,
+      validator: LicenseValidator,
+      licenseServerApi: OrbitalLicenseServerApi
+   ): OrbitalLicenseManager {
+      val downloadLicensePath = licensePath ?: defaultLicenseWritePath
+      logger.info { "Downloaded licenses will be stored at ${downloadLicensePath.toAbsolutePath()}. If this is not correct, pass --vyne.license.path on startup" }
+      return OrbitalLicenseManager(
+         licenseServerApi,
+         validator,
+         downloadLicensePath,
+         license
+      )
+   }
+
 
    private fun loadLicenseJson(pathsToSearch: List<Path>, licenseValidator: LicenseValidator): License {
       logger.info { "Looking for license file" }

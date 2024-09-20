@@ -6,6 +6,7 @@ import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvi
 import com.orbitalhq.cockpit.core.content.DefaultContentRepository
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.licensing.LicenseManager
+import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.pipelines.jet.streams.HazelcastStreamResultObserver
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
@@ -64,7 +65,7 @@ abstract class BaseIntegrationTest {
    lateinit var configService: ConfigService
 
    @MockBean
-   lateinit var licenseManager: LicenseManager
+   lateinit var licenseManager: OrbitalLicenseManager
 
    @MockBean
    lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider

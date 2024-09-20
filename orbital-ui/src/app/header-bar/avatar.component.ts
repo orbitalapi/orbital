@@ -1,6 +1,8 @@
 import {HttpErrorResponse} from '@angular/common/http';
 import {Component, Inject, Input} from '@angular/core';
 import {PolymorpheusContent} from '@tinkoff/ng-polymorpheus';
+import {LicenseService} from "../license-display/license.service";
+import {AppInfoService} from "../services/app-info.service";
 import {VyneUser} from '../services/user-info.service';
 import {AuthService} from '../auth/auth.service';
 import {TuiAlertService, TuiDialogContext, TuiDialogService} from '@taiga-ui/core';
@@ -9,7 +11,7 @@ import {TuiAlertService, TuiDialogContext, TuiDialogService} from '@taiga-ui/cor
   selector: 'app-avatar',
   styleUrls: ['./avatar.component.scss'],
   template: `
-    <tui-hosted-dropdown [content]="userMenu">
+    <tui-hosted-dropdown [content]="userMenu" tuiDropdownMaxHeight="550">
       <div class="user-container">
         <tui-avatar [text]="user.username" [rounded]="true" [autoColor]="false" [avatarUrl]="user.profileUrl"
                     size="s"></tui-avatar>
@@ -24,6 +26,12 @@ import {TuiAlertService, TuiDialogContext, TuiDialogService} from '@taiga-ui/cor
                *ngIf="authService.securityConfig.accountManagementUrl">Account settings</a>
             <a tuiOption type="button" target="_blank" [href]="authService.securityConfig.orgManagementUrl"
                *ngIf="authService.securityConfig.orgManagementUrl">Organisation settings</a>
+            <app-license-display
+              *ngIf="(appInfoService.getConfig() | async).featureToggles.enableLicenseEnforcement"
+              [license]="licenseService.license | async"
+              [licenseServerEndpoint]="(appInfoService.getConfig() | async).licenseServerEndpoint"
+              (refreshLicense)="licenseService.getLicenseDetails(true)"
+            ></app-license-display>
             <button tuiOption (click)="showDialog(template)" *ngIf="user?.isAuthenticated" class="logout-button">
               <img class="logout-icon filter-black-ish" src="assets/img/tabler/logout.svg">
               Logout
@@ -58,15 +66,17 @@ import {TuiAlertService, TuiDialogContext, TuiDialogService} from '@taiga-ui/cor
           Logout
         </button>
       </div>
-      <tui-notification *ngIf="errorMessage" status="error">{{errorMessage}}</tui-notification>
+      <tui-notification *ngIf="errorMessage" status="error">{{ errorMessage }}</tui-notification>
     </ng-template>
   `,
 })
 export class AvatarComponent {
-
-  constructor(readonly authService: AuthService,
-              @Inject(TuiDialogService) private readonly dialogs: TuiDialogService,
-              @Inject(TuiAlertService) private readonly alerts: TuiAlertService,
+  constructor(
+    readonly authService: AuthService,
+    @Inject(TuiDialogService) private readonly dialogs: TuiDialogService,
+    @Inject(TuiAlertService) private readonly alerts: TuiAlertService,
+    public licenseService: LicenseService,
+    public appInfoService: AppInfoService
   ) {
   }
 
