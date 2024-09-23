@@ -5,6 +5,7 @@ import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.plugins.websocket.*
+import io.ktor.serialization.jackson.*
 import io.rsocket.kotlin.RSocket
 import io.rsocket.kotlin.ktor.client.RSocketSupport
 import io.rsocket.kotlin.ktor.client.rSocket
@@ -26,7 +27,6 @@ class ReconnectingKtorRSocket(
    private val path: String = ""
 ) {
    val client = HttpClient(CIO) {
-      install(ContentNegotiation)
       install(WebSockets)
       install(RSocketSupport)
    }
@@ -42,7 +42,8 @@ class ReconnectingKtorRSocket(
             val serviceConfig = discoveryClient.getInstances(serviceName)
                .firstOrNull() ?: throw IllegalStateException("No service named $serviceName is present in the config - update your services.conf")
 
-            val rsocket = client.rSocket(serviceConfig.uri.toASCIIString() + path)
+            val urlString = (serviceConfig.uri.toASCIIString() + path).replace("http", "ws")
+            val rsocket = client.rSocket(urlString)
 
             emit(rsocket)
 

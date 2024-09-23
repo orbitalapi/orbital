@@ -37,7 +37,7 @@ class NebulaRSocketClient(
       discoveryClient,
       ServicesConfig.NEBULA_SERVER_NAME,
       1500.milliseconds,
-      "/stackState"
+      "/events"
    )
 
    init {
@@ -46,27 +46,26 @@ class NebulaRSocketClient(
             .collect { rsocket ->
                logger.info { "Nebula client connected" }
                val currentState = schemaWatcher.currentState
-               if (currentState.isNotEmpty()) {
-                  logger.info { "Sending nebula state snapshot on new connection" }
-                  val request =
-                     UpdateStackRSocketRequest(stacks = currentState.mapValues { (stackName, versionedSource) ->
-                        versionedSource.content
-                     })
-                  rsocket.requestResponse(buildPayload {
-                     objectMapper.writeValueAsString(request)
+               logger.info { "Sending nebula state snapshot on new connection" }
+               val request =
+                  UpdateStackRSocketRequest(stacks = currentState.mapValues { (stackName, versionedSource) ->
+                     versionedSource.content
                   })
-               }
-               schemaWatcher.stacksUpdated.asFlow()
-                  .collect { event ->
-                     logger.info { "Nebula stacks have changed - submitting to Nebula" }
-                     val request =
+
+               val initialPayload = buildPayload {
+                  objectMapper.writeValueAsString(request) }
+               val payloadFlow = schemaWatcher.stacksUpdated.asFlow()
+                  .map { event ->
+                     val updatePayloadRequest =
                         UpdateStackRSocketRequest(stacks = event.currentState.mapValues { (_, versionedSource) -> versionedSource.content })
-                     rsocket.requestResponse(buildPayload {
-                        objectMapper.writeValueAsString(request)
-                     })
+                     buildPayload { objectMapper.writeValueAsString(updatePayloadRequest) }
+                  }
+               rsocket.requestChannel(initialPayload, payloadFlow)
+                  .collect { updateEvent ->
+                     logger.info { "UpdateEvent : $updateEvent" }
                   }
             }
       }
-   }
 
+   }
 }
