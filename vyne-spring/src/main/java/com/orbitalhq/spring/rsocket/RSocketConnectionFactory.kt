@@ -59,7 +59,7 @@ class RSocketConnectionFactory(private val rsocketStrategies: RSocketStrategies)
          .retryWhen(Retry.backoff(Long.MAX_VALUE, Duration.ofSeconds(1))
             .maxBackoff(Duration.ofSeconds(10))
             .doBeforeRetry { retrySignal ->
-               logger.info { "Attempting to reconnect, retry #${retrySignal.totalRetries()}" }
+               logger.info { "Attempting to reconnect to $applicationName, retry #${retrySignal.totalRetries()}" }
             })
 
       return messages to statusMessageSink.asFlux()

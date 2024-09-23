@@ -37,7 +37,7 @@ class NebulaSubmissionService(
 
          Flux.merge(added + deleted + updated)
             .subscribe {
-               updateCurrentStackSet()
+//               updateCurrentStackSet()
             }
       }
    }

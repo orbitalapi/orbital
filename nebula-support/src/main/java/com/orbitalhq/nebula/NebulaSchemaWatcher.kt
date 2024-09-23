@@ -31,6 +31,10 @@ class NebulaSchemaWatcher(
       }
    }
 
+   val currentState: Map<String,VersionedSource>
+      get() {
+         return lastSourcesState
+      }
    val stacksUpdated:Flux<NebulaStacksChangedEvent>
 
    init {
@@ -44,7 +48,8 @@ class NebulaSchemaWatcher(
             val event = NebulaStacksChangedEvent(
                added = differences.entriesOnlyOnLeft(),
                removed = differences.entriesOnlyOnRight(),
-               updated = differences.entriesDiffering()
+               updated = differences.entriesDiffering(),
+               currentState = nebulaSources
             )
             logger.info(event.toString())
             event
@@ -58,7 +63,8 @@ class NebulaSchemaWatcher(
 data class NebulaStacksChangedEvent(
    val added: Map<String,VersionedSource>,
    val removed: Map<String,VersionedSource>,
-   val updated: Map<String,ValueDifference<VersionedSource>>
+   val updated: Map<String,ValueDifference<VersionedSource>>,
+   val currentState: Map<String,VersionedSource>
 ) {
    override fun toString(): String = "NebulaStacksChangedEvent - ${added.size} added; ${removed.size} removed; ${updated.size} updated"
 }

@@ -90,3 +90,5 @@ data class ContainerInfo(
     val imageName: String,
     val containerName: String,
 )
+
+data class UpdateStackRSocketRequest(val stacks: Map<String,String>)
