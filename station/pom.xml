@@ -270,6 +270,16 @@
             <artifactId>org.eclipse.jgit</artifactId>
             <version>${jgit.version}</version>
          </dependency>
+         <dependency>
+            <!-- Vuln: calcite-core has a dependency on an older version of protobuf-java
+which has CVE-2024-7254 , which is fixed >= 3.25.5
+Note: This shouldn't be required at this level (it's declared in
+the correct projects, but for reason we're pulling in the wrong version
+-->
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${protobuf.version}</version>
+         </dependency>
       </dependencies>
    </dependencyManagement>
 </project>

@@ -69,6 +69,15 @@
    <dependencyManagement>
       <dependencies>
          <dependency>
+            <!-- Vuln: calcite-core has a dependency on an older version of protobuf-java
+ which has CVE-2024-7254 , which is fixed >= 3.25.5
+
+ -->
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${protobuf.version}</version>
+         </dependency>
+         <dependency>
             <groupId>org.jetbrains.kotlinx</groupId>
             <artifactId>kotlinx-serialization-core</artifactId>
             <version>${kotlin.serialization.version}</version>

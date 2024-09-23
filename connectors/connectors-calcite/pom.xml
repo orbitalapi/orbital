@@ -15,14 +15,10 @@
       <dependency>
          <groupId>org.apache.calcite</groupId>
          <artifactId>calcite-core</artifactId>
-         <version>1.33.0</version>
+         <version>1.37.0</version>
       </dependency>
-      <!-- TODO Remove once calcite-core is not depending on an earlier version with a vulnerability -->
-      <dependency>
-         <groupId>com.google.protobuf</groupId>
-         <artifactId>protobuf-java</artifactId>
-         <version>3.22.0</version>
-      </dependency>
+
+
       <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>vyne-core-types</artifactId>
@@ -44,4 +40,17 @@
          <version>${project.version}</version>
       </dependency>
    </dependencies>
+   <dependencyManagement>
+      <dependencies>
+         <dependency>
+            <!-- Vuln: calcite-core has a dependency on an older version of protobuf-java
+ which has CVE-2024-7254 , which is fixed >= 3.25.5
+
+ -->
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>${protobuf.version}</version>
+         </dependency>
+      </dependencies>
+   </dependencyManagement>
 </project>
