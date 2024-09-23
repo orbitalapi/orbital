@@ -78,6 +78,12 @@
       Remove after updating to spring boot > 3.3.3 -->
       <spring-framework.version>6.1.13</spring-framework.version>
 
+      <!-- Set protobuf-java to 3.25.5 because of vulnerabilities:
+CVE-2024-7254
+Transitive dependency in wire-compiler and calcite-core
+-->
+      <protobuf.version>3.25.5</protobuf.version>
+
    </properties>
 
    <modules>
@@ -676,23 +682,37 @@
                   <licenseName>Orbital Enterprise License</licenseName>
                   <licenseResolver>${project.baseUri}/src/license</licenseResolver>
                   <licenseMerges>
-                     <licenseMerge>Apache License, Version 2.0|The Apache Software License, Version 2.0|Apache 2|Apache License 2.0|AL 2.0|Apache-2.0|The Apache License, Version 2.0|Apache 2.0|Apache Software License, version 2.0|The Apache Software License, version 2.0|Apache License v2.0|Apache License, version 2.0
+                     <licenseMerge>Apache License, Version 2.0|The Apache Software License, Version 2.0|Apache 2|Apache
+                        License 2.0|AL 2.0|Apache-2.0|The Apache License, Version 2.0|Apache 2.0|Apache Software
+                        License, version 2.0|The Apache Software License, version 2.0|Apache License v2.0|Apache
+                        License, version 2.0
                      </licenseMerge>
                      <licenseMerge>CDDLv1|Common Development and Distribution License (CDDL) v1.0|COMMON DEVELOPMENT AND
                         DISTRIBUTION LICENSE (CDDL) Version 1.0
                      </licenseMerge>
-                     <licenseMerge>MIT License|The MIT License|The MIT License (MIT)|The MIT license|MIT license|MIT|MIT-0
+                     <licenseMerge>MIT License|The MIT License|The MIT License (MIT)|The MIT license|MIT
+                        license|MIT|MIT-0
                      </licenseMerge>
                      <licenseMerge>Hazelcast Community License|The Hazelcast Community License
                      </licenseMerge>
                      <licenseMerge>Common Public License 1.0|CPL</licenseMerge>
-                     <licenseMerge>GNU Library General Public License v2 only|GNU Library General Public License v2.1 or later</licenseMerge>
-                     <licenseMerge>BSD-2-Clause|The (New) BSD License|BSD 2-Clause License|The New BSD License|The BSD License|Revised BSD|The BSD 2-Clause License</licenseMerge>
-                     <licenseMerge>Creative Commons Zero v1.0 Universal|Public Domain, per Creative Commons CC0</licenseMerge>
+                     <licenseMerge>GNU Library General Public License v2 only|GNU Library General Public License v2.1 or
+                        later
+                     </licenseMerge>
+                     <licenseMerge>BSD-2-Clause|The (New) BSD License|BSD 2-Clause License|The New BSD License|The BSD
+                        License|Revised BSD|The BSD 2-Clause License
+                     </licenseMerge>
+                     <licenseMerge>Creative Commons Zero v1.0 Universal|Public Domain, per Creative Commons CC0
+                     </licenseMerge>
                      <licenseMerge>BSD-3-Clause|3-Clause BSD License|BSD</licenseMerge>
-                     <licenseMerge>Eclipse Public License - v 1.0|EPL 1.0|Eclipse Public License, Version 1.0</licenseMerge>
-                     <licenseMerge>Eclipse Public License 2.0|Eclipse Public License v2.0|EPL 2.0|Eclipse Public License, Version 2.0|Eclipse Public License - v 2.0</licenseMerge>
-                     <licenseMerge>Eclipse Distribution License - v 1.0|Eclipse Distribution License v. 1.0|EDL 1.0|Eclipse Distribution License (New BSD License)</licenseMerge>
+                     <licenseMerge>Eclipse Public License - v 1.0|EPL 1.0|Eclipse Public License, Version 1.0
+                     </licenseMerge>
+                     <licenseMerge>Eclipse Public License 2.0|Eclipse Public License v2.0|EPL 2.0|Eclipse Public
+                        License, Version 2.0|Eclipse Public License - v 2.0
+                     </licenseMerge>
+                     <licenseMerge>Eclipse Distribution License - v 1.0|Eclipse Distribution License v. 1.0|EDL
+                        1.0|Eclipse Distribution License (New BSD License)
+                     </licenseMerge>
                   </licenseMerges>
 
                   <!--exclude test-scoped dependencies from the 3rd party license-list-->
