@@ -24,9 +24,6 @@ function parseMavenDependencies(inputText) {
       const match = line.trim().match(regex);
       if (match) {
          const [, licenseName, dependencyName, dependencyId, dependencyUrl] = match;
-         if (dependencyId.includes('rabbitmq')) {
-            console.log('')
-         }
          const licenseNames = licenseName.split(') (')
             .map(d => d.replaceAll(')', ''))
          const whitelistedLicenseNames = whitelist.licenses.map(l => l.licenseName);
