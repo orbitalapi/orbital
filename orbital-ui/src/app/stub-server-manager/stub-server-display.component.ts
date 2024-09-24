@@ -1,5 +1,10 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject} from '@angular/core';
-import {ComponentInfo, NebulaStacksResponse, StubsApiService} from "../services/stubs-api.service";
+import {
+  ComponentInfo,
+  ComponentInfoWithState,
+  NebulaStacksResponse,
+  StubsApiService
+} from "../services/stubs-api.service";
 import {TypesService} from "../services/types.service";
 import {ActivatedRoute, ParamMap} from "@angular/router";
 import {combineLatestWith} from "rxjs";
@@ -65,6 +70,7 @@ import {Clipboard} from "@angular/cdk/clipboard";
 })
 export class StubServerDisplayComponent {
 
+  componentWithState: ComponentInfoWithState
   componentInfo: ComponentInfo;
   environmentVariables: { [key: string]: string };
 
@@ -86,7 +92,8 @@ export class StubServerDisplayComponent {
       const stacksResponse: NebulaStacksResponse = next[0]
 
       const stackKey = `[${this.packageId}]/${this.stackId}`;
-      this.componentInfo = stacksResponse.stacks[stackKey][this.componentId];
+      const stackState = stacksResponse.stacks[stackKey]
+      this.componentWithState = stackState.find(componentWithState => componentWithState.name == this.stackId)
       this.environmentVariables = stacksResponse.environmentVariables[stackKey][this.componentId]
 
       this.changeDetector.markForCheck();

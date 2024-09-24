@@ -4,6 +4,8 @@ import com.google.common.base.Throwables
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.config.ConfigFileLocationConventions
+import com.orbitalhq.nebula.core.NebulaEnvVariablesMap
+import com.orbitalhq.nebula.core.NebulaStackState
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
@@ -30,21 +32,22 @@ class NebulaSubmissionService(
 
    init {
       logger.info { "Nebula submission service initialized" }
-      schemaWatcher.stacksUpdated.subscribe { event ->
-         val added = createOrUpdateStacks(event.added)
-         val deleted = deleteRemovedStacks(event.removed)
-         val updated = createOrUpdateStacks(event.updated.mapValues { (k, v) -> v.leftValue() })
-
-         Flux.merge(added + deleted + updated)
-            .subscribe {
+//      schemaWatcher.stacksUpdated.subscribe { event ->
+//         logger.info { "Stacks updated" }
+//         val added = createOrUpdateStacks(event.added)
+//         val deleted = deleteRemovedStacks(event.removed)
+//         val updated = createOrUpdateStacks(event.updated.mapValues { (k, v) -> v.leftValue() })
+//
+//         Flux.merge(added + deleted + updated)
+//            .subscribe {
 //               updateCurrentStackSet()
-            }
-      }
+//            }
+//      }
    }
 
    private fun deleteRemovedStacks(removed: Map<String, VersionedSource>): List<Mono<out Any>> {
       return removed.values.map { source ->
-         val stackName = toStackName(source.packageIdentifier, source.name)
+         val stackName = stackNameForSource(source)
          // Use Mono.defer() so that retries call the method again
          Mono.defer {
             logger.info { "Attempting to remove deleted Nebula stack for source $stackName" }
@@ -74,7 +77,7 @@ class NebulaSubmissionService(
 
    private fun createOrUpdateStacks(added: Map<String, VersionedSource>): List<Mono<String>> {
       return added.values.map { source ->
-         val stackName = toStackName(source.packageIdentifier, source.name)
+         val stackName = stackNameForSource(source)
          // Use Mono.defer() so that retries call the method again
          Mono.defer {
             logger.info { "Attempting to submit nebula stack for source $stackName" }
@@ -130,26 +133,29 @@ class NebulaSubmissionService(
          }
    }
 
-
-   /**
-    * Converts the packageQualifiedName of the file to something
-    * slightly more human-readable.
-    *
-    * Just removes the config file path and the file suffix
-    */
-   private fun toStackName(packageIdentifier: PackageIdentifier?, fileName: String): String {
-      val directory = ConfigFileLocationConventions.OrbitalNebulaPathEntry.split("/").dropLast(1)
-         .joinToString("/")
-      val stackName = fileName
-         .replace("${directory}/", "")
-         .removeSuffix(".nebula.kts")
-
-      val prefix = packageIdentifier?.let { "[${it.organisation}:${it.name}]/" }
-      return "${prefix.orEmpty()}$stackName"
+   fun emitStateUpdate(stateUpdatedEvent: NebulaStateUpdatedEvent) {
+      this.stateUpdatesSink.tryEmitNext(stateUpdatedEvent)
    }
+
 
    companion object {
       private val logger = KotlinLogging.logger {}
+      /**
+       * Converts the packageQualifiedName of the file to something
+       * slightly more human-readable.
+       *
+       * Just removes the config file path and the file suffix
+       */
+      fun stackNameForSource(source:VersionedSource): String {
+         val directory = ConfigFileLocationConventions.OrbitalNebulaPathEntry.split("/").dropLast(1)
+            .joinToString("/")
+         val stackName = source.name
+            .replace("${directory}/", "")
+            .removeSuffix(".nebula.kts")
+
+         val prefix = source.packageIdentifier?.let { "[${it.organisation}:${it.name}]/" }
+         return "${prefix.orEmpty()}$stackName"
+      }
    }
 
 }

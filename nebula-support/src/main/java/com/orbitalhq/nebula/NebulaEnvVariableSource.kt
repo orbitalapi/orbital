@@ -5,6 +5,12 @@ import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.config.ConfigSourceLoader
+import com.orbitalhq.nebula.core.ComponentType
+import com.orbitalhq.nebula.core.EnvVarKey
+import com.orbitalhq.nebula.core.EnvVarValue
+import com.orbitalhq.nebula.core.NebulaEnvVariablesMap
+import com.orbitalhq.nebula.core.NebulaStackState
+import com.orbitalhq.nebula.core.StackName
 import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
 import com.orbitalhq.schemaServer.core.config.SchemaUpdateNotifier
 import lang.taxi.utils.quoted
@@ -91,17 +97,22 @@ class NebulaEnvVariableSource(
             // Generate possible stack name variations for environment variable prefixes
             val stackNameVariations = getStackNameVariations(stackName)
             // Flatten component configurations into key-value pairs with appropriate variable names
-            val stackEnvironmentVariables = componentMap.map { (componentType, componentInfo) ->
+            val stackEnvironmentVariables = componentMap.map { componentInfoWithState  ->
+               val componentInfo = componentInfoWithState.componentInfo
+               val componentName =  componentInfoWithState.name
+               val componentVariables: Map<String, String> = if (componentInfo != null) {
+                   componentInfo.componentConfigMap.entries.flatMap { (key, value) ->
+                     // Combine the stack name variations, component type, and key to form the env var names
 
-               val componentVariables = componentInfo.componentConfig.entries.flatMap { (key, value) ->
-                  // Combine the stack name variations, component type, and key to form the env var names
-                  stackNameVariations.map { prefix ->
-                     listOf(prefix, toEnvVarConvention(componentType), toEnvVarConvention(key))
-                        .filter { it.isNotEmpty() } // Remove any empty parts
-                        .joinToString("_") to value.toString() // Create the env var name
-                  }
-               }.toMap()
-               componentType to componentVariables
+                     stackNameVariations.map { prefix ->
+                        listOf(prefix, toEnvVarConvention(componentName), toEnvVarConvention(key))
+                           .filter { it.isNotEmpty() } // Remove any empty parts
+                           .joinToString("_") to value.toString() // Create the env var name
+                     }
+                  }.toMap()
+               } else emptyMap()
+
+               componentName to componentVariables
             }.toMap()
             stackName to stackEnvironmentVariables
          }.toMap()

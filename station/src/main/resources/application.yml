@@ -88,11 +88,6 @@ logging:
       org.apache.kafka.common.security.authenticator: WARN
       org.apache.kafka.clients.NetworkClient: ERROR
 
-      io.rsocket: DEBUG
-      org.springframework.messaging.rsocket: DEBUG
-      reactor.netty: DEBUG
-      reactor.core.publisher.Hooks: DEBUG
-
       #     Enable to see request / response logging
 #      io.orbital.station.RequestLoggingFilter: TRACE
 

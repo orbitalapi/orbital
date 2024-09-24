@@ -5,6 +5,7 @@ import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
 import com.orbitalhq.VersionedSource
+import com.orbitalhq.nebula.core.NebulaStackState
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
@@ -42,9 +43,9 @@ class NebulaSubmissionServiceTest {
    @Test
    fun `when update is emitted, it's submitted to nebulaApi`() {
       val added = mapOf("stack1" to VersionedSource.sourceOnly("stack {}"))
-      val event = NebulaStacksChangedEvent(added, emptyMap(), emptyMap())
+      val event = NebulaStacksChangedEvent(added, emptyMap(), emptyMap(), emptyMap())
 
-      val nebulaStack = mapOf<String, Map<String, ComponentInfo>>("stack1" to emptyMap())
+      val nebulaStack: NebulaStackState = mapOf("stack1" to emptyList())
       nebulaService.stateUpdates.test()
          .expectSubscription()
          .then {
@@ -68,7 +69,7 @@ class NebulaSubmissionServiceTest {
    @Test
    fun `when submission fails, then retry`() {
       val added = mapOf("stack1" to VersionedSource.sourceOnly("stack {}"))
-      val updateEvent = NebulaStacksChangedEvent(added, emptyMap(), emptyMap())
+      val updateEvent = NebulaStacksChangedEvent(added, emptyMap(), emptyMap(), emptyMap())
 
       // Mock failure for the first two attempts and success on the third attempt
       whenever(nebulaApi.updateStack(anyString(), anyString()))
@@ -76,7 +77,7 @@ class NebulaSubmissionServiceTest {
          .thenReturn(Mono.error(RuntimeException("Submission failed again")))
          .thenReturn(Mono.just("stack1"))
 
-      val nebulaStack = mapOf<String, Map<String, ComponentInfo>>("stack1" to emptyMap())
+      val nebulaStack:NebulaStackState = mapOf("stack1" to emptyList())
       whenever(nebulaApi.getStacks()).thenReturn(Mono.just(nebulaStack))
       StepVerifier.withVirtualTime { nebulaService.stateUpdates }
 //      StepVerifier.create(nebulaService.stateUpdates)

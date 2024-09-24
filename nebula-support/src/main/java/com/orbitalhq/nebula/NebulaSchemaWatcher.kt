@@ -56,7 +56,7 @@ class NebulaSchemaWatcher(
          } else null
          lastSourcesState = nebulaSources
          updateEvent
-      }
+      } //.share() as Flux<NebulaStacksChangedEvent>
    }
 }
 

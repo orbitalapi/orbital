@@ -9,6 +9,7 @@ import com.nhaarman.mockito_kotlin.verify
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
+import com.orbitalhq.nebula.core.NebulaStackState
 import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
 import com.orbitalhq.schemaServer.core.config.SchemaUpdateNotifier
 import io.kotest.matchers.maps.shouldHaveSize

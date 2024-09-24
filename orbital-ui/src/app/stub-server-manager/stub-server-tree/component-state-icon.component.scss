@@ -1,0 +1,42 @@
+@import "src/common";
+
+app-svg-icon {
+  &.in-progress {
+    animation: throb 1s infinite ease-in-out;
+  }
+}
+:host {
+  height: 16px;
+}
+
+app-svg-icon {
+  &.not-started {
+    color: $slate-800;
+    opacity: 0.8;
+  }
+  &.starting {
+    color: $sky-800;
+  }
+  &.running{
+    color: $green-700;
+  }
+  &.stopping{
+    color: $amber-500;
+  }
+  &.stopped {
+    color: $red-500;
+  }
+}
+
+@keyframes throb {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+

@@ -1,10 +1,10 @@
-import {Component} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component} from '@angular/core';
 import {AsyncPipe, NgIf} from "@angular/common";
 import {UiCustomisations} from "../../environments/ui-customisations";
 import {HeaderComponentLayoutModule} from "../header-component-layout/header-component-layout.module";
 import {StubServerTreeComponent} from "./stub-server-tree/stub-server-tree.component";
 import {TypesService} from "../services/types.service";
-import {Observable, switchMap} from "rxjs";
+import {Observable} from "rxjs";
 import {NebulaStacksResponse, StubsApiService} from '../services/stubs-api.service';
 import {isNullOrUndefined} from "../utils/utils";
 
@@ -26,15 +26,20 @@ import {isNullOrUndefined} from "../utils/utils";
       <div *ngIf="hasErrors" class="errors-panel">
         <h3>Stub servers could not be loaded:</h3>
         <span>{{ stacksState.error }}</span>
-        <span>To troubleshoot, check out the <a class="link" [href]="UiCustomisations.docsLinks.nebulaDocs" target="_blank">docs</a></span>
+        <span>To troubleshoot, check out the <a class="link" [href]="UiCustomisations.docsLinks.nebulaDocs"
+                                                target="_blank">docs</a></span>
       </div>
       <div *ngIf="isEmpty" class="empty-state-container">
         <img src="assets/img/illustrations/data-center.svg">
-        <p>No stub servers have been defined yet. Learn more about how to create stubs in the <a class="link" target="_blank" [href]="UiCustomisations.docsLinks.nebulaDocs">docs</a>.</p>
+        <p>No stub servers have been defined yet. Learn more about how to create stubs in the <a class="link"
+                                                                                                 target="_blank"
+                                                                                                 [href]="UiCustomisations.docsLinks.nebulaDocs">docs</a>.
+        </p>
       </div>
     </app-header-component-layout>
   `,
-  styleUrl: './stub-server-manager.component.scss'
+  styleUrl: './stub-server-manager.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StubServerManagerComponent {
 
@@ -42,17 +47,13 @@ export class StubServerManagerComponent {
   stacksState: NebulaStacksResponse;
 
   constructor(stubsService: StubsApiService,
-              typeService: TypesService
+              changeDetectorRef: ChangeDetectorRef
   ) {
-    // Note: we don't need the schema here,
-    // but we want to update our stubs list whenever
-    // the schema changes
-    typeService.getTypes()
-      .pipe(
-        switchMap(() => stubsService.getStubStates())
-      ).subscribe(next => {
-      this.stacksState = next;
-    })
+    stubsService.getStubStateStream()
+      .subscribe(next => {
+        this.stacksState = next;
+        changeDetectorRef.markForCheck();
+      })
   }
 
   get isEmpty(): boolean {
