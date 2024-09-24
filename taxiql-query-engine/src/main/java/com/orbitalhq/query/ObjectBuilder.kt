@@ -189,7 +189,7 @@ class ObjectBuilder(
    private fun buildExpressionScalar(targetType: Type): TypedInstance {
       return TypedObjectFactory(
          targetType,
-         emptyList<String>(), // What do I pass here?
+         FactBag.empty(),
          context.schema,
          source = MixedSources,
          inPlaceQueryEngine = context,
