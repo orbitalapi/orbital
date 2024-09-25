@@ -3,6 +3,7 @@ package com.orbitalhq
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import lang.taxi.compiled
 
 class ExpressionTypeSpec : DescribeSpec({
 
@@ -41,6 +42,16 @@ class ExpressionTypeSpec : DescribeSpec({
        val f=  vyne.query("""given { Age = 6 } find { AllowedFilms }""")
             .typedInstances()
          f.shouldNotBeNull()
+      }
+
+      it("is possible to use argument names in expression types") {
+        val (vyne) = testVyne("""
+            type Name inherits String
+            type UppercaseName inherits String by (name:Name) -> name.upperCase()
+         """)
+         vyne.query("""given { Name = 'Jimmy' } find { UppercaseName }""")
+            .firstRawValue()
+            .shouldBe("JIMMY")
       }
 
       it("can filter an array fetched from a service") {
