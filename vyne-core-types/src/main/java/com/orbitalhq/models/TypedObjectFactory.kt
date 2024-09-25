@@ -45,7 +45,7 @@ class TypedObjectFactory(
    val nullValues: Set<String> = emptySet(),
    val source: DataSource,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
+   private val functionRegistry: FunctionRegistry = schema.functionRegistry,
    private val evaluateAccessors: Boolean = true,
    override val inPlaceQueryEngine: InPlaceQueryEngine? = null,
    private val accessorHandlers: List<AccessorHandler<out Accessor>> = emptyList(),

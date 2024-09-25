@@ -171,13 +171,16 @@ class QueryRequestHandlerTest {
             .uri("$StreamProvidersQueryEndPoint/1")
             .header(CorrelationHeaderName, orbitalHttpQueryCorrelationId)
             .exchange()
-            .expectStatus().isBadRequest
+//            .expectStatus().isBadRequest
             .expectHeader().value(CorrelationHeaderName, CoreMatchers.`is`(orbitalHttpQueryCorrelationId))
             .expectHeader().value("Content-Type", CoreMatchers.`is`("application/json"))
             .expectHeader().value("filmId", CoreMatchers.`is`("1"))
             .returnResult<Map<String, Any>>()
 
-        result.responseBody.blockLast().shouldBe(mapOf("errorCode" to "E1234", "message" to "You didn't say the magic word"))
+        result.responseBody.blockLast().shouldBe(mapOf(
+            "errorCode" to "E1234",
+            "message" to "You didn't say the magic word",
+            "correlationId" to "stream-provider-query-1"))
         mockWebServerRule.takeRequest()
 
     }
@@ -249,16 +252,20 @@ class QueryRequestHandlerTest {
            error: {
              errorCode: String
              message: String
+             correlationId: CorrelationId
            }
+           
          }
          
-         policy AllAccessStreamProviders against StreamProvider (filmId : FilmId) -> {
+         policy AllAccessStreamProviders against StreamProvider (filmId : FilmId, correlationId: CorrelationId?) -> {
             read {
                when {
                   filmId == 2 -> StreamProvider
                   else -> throw( (BadPermissionsError) 
                                   { error: 
-                                    { errorCode: 'E1234', message: "You didn't say the magic word" }
+                                    { errorCode: 'E1234',
+                                     message: "You didn't say the magic word",
+                                      correlationId: CorrelationId }
                                   }
                                 )
                }

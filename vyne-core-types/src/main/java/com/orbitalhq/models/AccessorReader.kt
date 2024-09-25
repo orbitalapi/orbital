@@ -4,10 +4,10 @@ import com.fasterxml.jackson.databind.node.ObjectNode
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.PathNotFoundException
 import com.orbitalhq.expressions.OperatorExpressionCalculator
+import com.orbitalhq.formats.csv.CsvAttributeAccessorParser
 import com.orbitalhq.formulas.CalculatorRegistry
 import com.orbitalhq.models.conditional.ConditionalFieldSetEvaluator
 import com.orbitalhq.models.conditional.WhenBlockEvaluator
-import com.orbitalhq.formats.csv.CsvAttributeAccessorParser
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.functions.FunctionRegistry
@@ -15,19 +15,49 @@ import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.json.JsonAttributeAccessorParser
 import com.orbitalhq.models.xml.XmlParsedStructure
 import com.orbitalhq.models.xml.XmlTypedInstanceParser
-import com.orbitalhq.schemas.*
 import com.orbitalhq.schemas.QualifiedName
+import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
+import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
+import com.orbitalhq.schemas.toVyneQualifiedName
 import com.orbitalhq.utils.log
 import com.orbitalhq.utils.timeBucket
 import com.orbitalhq.utils.xtimed
-import lang.taxi.accessors.*
-import lang.taxi.expressions.*
+import lang.taxi.accessors.Accessor
+import lang.taxi.accessors.ColumnAccessor
+import lang.taxi.accessors.ConditionalAccessor
+import lang.taxi.accessors.DestructuredAccessor
+import lang.taxi.accessors.FieldSourceAccessor
+import lang.taxi.accessors.JsonPathAccessor
+import lang.taxi.accessors.LiteralAccessor
+import lang.taxi.accessors.ReadFunction
+import lang.taxi.accessors.ReadFunctionFieldAccessor
+import lang.taxi.accessors.XpathAccessor
+import lang.taxi.expressions.CastExpression
+import lang.taxi.expressions.Expression
+import lang.taxi.expressions.ExtensionFunctionExpression
+import lang.taxi.expressions.FieldReferenceExpression
+import lang.taxi.expressions.FunctionExpression
+import lang.taxi.expressions.LambdaExpression
+import lang.taxi.expressions.LiteralArray
+import lang.taxi.expressions.LiteralExpression
+import lang.taxi.expressions.ObjectExpression
+import lang.taxi.expressions.OperatorExpression
+import lang.taxi.expressions.ProjectingExpression
+import lang.taxi.expressions.TypeExpression
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.functions.FunctionExpressionAccessor
-import lang.taxi.types.*
+import lang.taxi.types.ArgumentSelector
+import lang.taxi.types.FieldReferenceSelector
+import lang.taxi.types.FormatsAndZoneOffset
+import lang.taxi.types.FormulaOperator
+import lang.taxi.types.LambdaExpressionType
+import lang.taxi.types.ModelAttributeReferenceSelector
+import lang.taxi.types.PrimitiveType
 import lang.taxi.types.TypeReference
+import lang.taxi.types.TypeReferenceSelector
+import lang.taxi.types.WhenExpression
 import lang.taxi.utils.takeHead
 import org.apache.commons.csv.CSVRecord
 import org.w3c.dom.Document
@@ -160,6 +190,13 @@ class AccessorReader(
 
          is FieldReferenceSelector -> {
             error("FieldReferenceSelector shouldn't exist as an accessor - expected everything was migrated FieldReferenceExpression")
+         }
+
+         is ObjectExpression -> {
+            val typedInstanceMap = accessor.expressionMap.map { expression ->
+               expression.key to read(value, schema.type(expression.value.returnType), expression.value, schema, nullValues, source, format)
+            }.toMap()
+            TypedInstance.from(targetType, typedInstanceMap, schema, source = source)
          }
 
          is LiteralAccessor -> {
@@ -887,7 +924,15 @@ class AccessorReader(
             format
          )
 
-
+         is ObjectExpression -> {
+            // { id : 1 , title : "Star Wars" }
+            //id -> LiteralExpression (value = 1)
+            //title -> LiteralExpression (value = "Starr Wars)")
+            val typedInstanceMap = expression.expressionMap.map { expression ->
+              expression.key to  evaluate(value, schema.type(expression.value.returnType), expression.value, schema, nullValues, dataSource, format, resultCache)
+            }.toMap()
+            TypedInstance.from(returnType, typedInstanceMap, schema, source = dataSource)
+         }
          is LiteralExpression -> TypedInstance.from(returnType, expression.literal.value, schema, source = dataSource)
          is LiteralArray -> {
             require(returnType.isCollection) { "Received a LiteralArray, but the type is not an array type - got ${returnType.name.parameterizedName}"}

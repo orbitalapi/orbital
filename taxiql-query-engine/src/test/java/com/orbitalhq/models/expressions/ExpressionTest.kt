@@ -1,9 +1,15 @@
 package com.orbitalhq.models.expressions
 
-import com.winterbe.expekt.should
-import io.kotest.matchers.shouldBe
 import com.orbitalhq.firstRawObject
-import com.orbitalhq.models.*
+import com.orbitalhq.models.EvaluatedExpression
+import com.orbitalhq.models.FailedEvaluatedExpression
+import com.orbitalhq.models.OperationResultDataSourceWrapper
+import com.orbitalhq.models.Provided
+import com.orbitalhq.models.TypeNamedInstance
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
+import com.orbitalhq.models.TypedObject
+import com.orbitalhq.models.TypedValue
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.models.functions.functionOf
 import com.orbitalhq.models.functions.stdlib.withoutWhitespace
@@ -12,6 +18,8 @@ import com.orbitalhq.rawObjects
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
+import com.winterbe.expekt.should
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import java.time.LocalDate
@@ -798,5 +806,80 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
       negativeResult["filmIds"].should.be.`null`
    }
 
+    @Test
+    fun `can evaluate an object expression consists of literal and type expressions`() = runBlocking {
+        val (vyne,stub) = testVyne(
+            """
+         model FilmDistribution {
+            filmId: FilmId inherits String 
+            filmTitle: FilmTitle inherits String
+            studioName: StudioName inherits String
+         }
+         
+         """.trimIndent()
+        )
 
+        val result = vyne.query("""
+         given { name: FilmTitle = "Star Wars" }
+         find { 
+                when(taxi.stdlib.upperCase(FilmTitle)) {
+                   "STAR WARS" -> (FilmDistribution) {
+                      filmId: '123',
+                      filmTitle: FilmTitle,
+                      studioName: 'Twentieth Century-Fox'
+                   } 
+                   else -> null
+           }
+          }
+          
+      """.trimIndent())
+            .firstRawObject()
+        result.shouldBe(mapOf(
+            "filmId" to "123",
+            "filmTitle" to "Star Wars",
+            "studioName" to "Twentieth Century-Fox"
+        ))
+    }
+
+    @Test
+    fun `can evaluate an object expression consists of literal and function expressions`() = runBlocking {
+        val functionRegistry = FunctionRegistry.default.add(
+            functionOf("lookupStudio") { inputValues, _, returnType, _ ->
+                TypedValue.from(returnType, "Twentieth Century-Fox", source = Provided)
+            }
+        )
+        val (vyne,stub) = testVyne(
+            """
+         declare function lookupStudio(String):String
+         model FilmDistribution {
+            filmId: FilmId inherits String 
+            filmTitle: FilmTitle inherits String
+            studioName: StudioName inherits String
+         }
+         
+         """.trimIndent(),
+            functionRegistry
+        )
+
+        val result = vyne.query("""
+         given { name: FilmTitle = "Star Wars" }
+         find { 
+                when(taxi.stdlib.upperCase(FilmTitle)) {
+                   "STAR WARS" -> (FilmDistribution) {
+                      filmId: '123',
+                      filmTitle: FilmTitle,
+                      studioName: lookupStudio(FilmTitle)
+                   } 
+                   else -> null
+           }
+          }
+          
+      """.trimIndent())
+            .firstRawObject()
+        result.shouldBe(mapOf(
+            "filmId" to "123",
+            "filmTitle" to "Star Wars",
+            "studioName" to "Twentieth Century-Fox"
+        ))
+    }
 }
