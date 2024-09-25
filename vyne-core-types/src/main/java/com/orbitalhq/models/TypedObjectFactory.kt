@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.*
 import lang.taxi.expressions.Expression
+import lang.taxi.expressions.LambdaExpression
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.types.FieldProjection
 import lang.taxi.types.FormatsAndZoneOffset
@@ -675,7 +676,78 @@ class TypedObjectFactory(
 
    fun evaluateExpressionType(expressionType: Type, format: FormatsAndZoneOffset?): TypedInstance {
       val expression = expressionType.expression!!
-      return accessorReader.evaluate(value, expressionType, expression, schema, nullValues, source, format)
+      return if (expression is LambdaExpression) {
+         // Lambda Expression types are evaluated more like functions.
+         // Lambda expression inputs are declared independent of queries where they're evaluated
+         // eg:
+         // type AllowedFilms by (Film[], viewerAge:Age) -> Film[].filter( (Film) -> Film::Age > viewerAge )
+         //
+         // To evaluate this, we need to create a separate evaluation context
+         // where variable names are scoped relative to the expression types.
+         // Enapsulate the logic in a dedicated function
+         return evaluateLambdaExpressionType(expressionType, expression, format)
+      } else {
+         accessorReader.evaluate(value, expressionType, expression, schema, nullValues, source, format)
+      }
+
+   }
+
+   fun evaluateLambdaExpressionType(expressionType: Type, expression: LambdaExpression, format: FormatsAndZoneOffset?): TypedInstance {
+      // Lambda Expression types are evaluated more like functions.
+      // Their inputs are declared independent of queries where they're evaluated
+      // eg:
+      // type AllowedFilms by (Film[], viewerAge:Age) -> Film[].filter( (Film) -> Film::Age > viewerAge )
+      //
+      // To evaluate this, we need to create a separate evaluation context
+      // where variable names are scoped relative to the expression types.
+      // Enapsulate the logic in a dedicated function
+      // Lambda Expression types are evaluated more like functions.
+      // Lambda expression inputs are declared independent of queries where they're evaluated
+      // eg:
+      // type AllowedFilms by (Film[], viewerAge:Age) -> Film[].filter( (Film) -> Film::Age > viewerAge )
+      //
+      // To evaluate this, we need to create a separate evaluation context
+      // where variable names are scoped relative to the expression types.
+      // eg: a query that declares a variable named "viewerAge" in the given clause
+      // should not cause a conflict based on name.
+      //
+      // given { viewerAge : SomeOtherType }
+      // find { AllowedFilms } // viewerAge means something different here.
+      //
+      // Likewise, when trying to resolve viewerAge to pass into the type expression, we don't
+      // actually want to look for things named viewerAge - that name only has meaning WITHIN
+      // the evaluation context of the expression type.
+      // MP: 24-Sep-24
+      // Actually, we DO need to resolve inputs here, as the semantics of the scopes
+      // change as we let things evaluate.
+      val valueSupplier = when (value) {
+         is FactBag -> FactBagValueSupplier(value, schema, this)
+         is TypedInstance -> FactBagValueSupplier.of(listOf(value), schema, this)
+         else ->
+            // How do we evaluate the args?
+            error("TODO - LambdaExpression evaluation requires a FactBag as value, but have ${value::class.simpleName}")
+      }
+
+      val inputs = expression.inputs.map { argument ->
+         // If the argument isn't explicitly resolved, we try to resolve
+         // it by type from the object factory.
+         // This is to handle scenarios like:
+         // type AllowedFilms by (Film[], viewerAge:Age) -> Film[].filter( (Film) -> Film::Age > viewerAge )
+         // where viewerAge can be supplied in a given {} clause.
+         val argumentValue = valueSupplier.getScopedFactOrNull(argument)
+            ?: getValue(argument.type.toVyneQualifiedName(), queryIfNotFound = true)
+         ScopedFact(argument, argumentValue)
+      }
+
+      // FactBag.empty() seems a big call here.
+      // But if we change it, we need to prune the facts that were used previously
+      // ie., if a global fact is declared (in a given), and we assign it to an argument
+      // then it can't also be present without the argument scope, or it'll pollute the scope
+      // with duplicate values.
+      val inputsForLambda = FactBag.empty().withAdditionalScopedFacts(inputs, schema)
+      val result = newFactory(type, inputsForLambda, scope = null)
+         .accessorReader.evaluate(inputsForLambda, expressionType, expression, schema, nullValues, source, format)
+      return result
    }
 
    fun evaluateExpression(expression: Expression): TypedInstance {

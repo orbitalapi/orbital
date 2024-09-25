@@ -294,7 +294,7 @@ class AccessorReader(
             )
          }
 
-         is ArgumentSelector -> readScopedReferenceSelector(value,accessor)
+         is ArgumentSelector -> readScopedReferenceSelector(value, accessor)
          is ProjectingExpression -> {
             evaluateProjectingExpression(
                value,
@@ -348,6 +348,17 @@ class AccessorReader(
                format
             )
          }
+
+         is ExtensionFunctionExpression -> evaluateExtensionFunctionExpression(
+            value,
+            targetType,
+            accessor,
+            schema,
+            nullValues,
+            source,
+            functionResultCache,
+            format
+         )
 
          is LiteralArray -> {
             val typedInstances = accessor.members.map { expression ->
@@ -671,6 +682,9 @@ class AccessorReader(
       val allInputValues = declaredInputs.map { it.fact } + varArgsValue
 
 
+      val evaluationValueSupplier = if (value is FactBag) {
+         objectFactory.withAdditionalScopedFacts(value.scopedFacts) as EvaluationValueSupplier
+      } else objectFactory
 
       val functionResult = if (function.hasBody) {
          val varArgsArgument = varArgsParam?.let { param -> ScopedFact(param, TypedCollection.from(varArgsValue)) }
@@ -694,7 +708,7 @@ class AccessorReader(
             schema,
             targetType,
             accessor,
-            objectFactory,
+         evaluationValueSupplier,
             format,
             value,
             resultCache
@@ -980,13 +994,23 @@ class AccessorReader(
          }
          is LiteralExpression -> TypedInstance.from(returnType, expression.literal.value, schema, source = dataSource)
          is LiteralArray -> {
-            require(returnType.isCollection) { "Received a LiteralArray, but the type is not an array type - got ${returnType.name.parameterizedName}"}
+            require(returnType.isCollection) { "Received a LiteralArray, but the type is not an array type - got ${returnType.name.parameterizedName}" }
             val collectionMembers = expression.members.map { memberExpression ->
-               val member = evaluate(value, schema.type(memberExpression.returnType), memberExpression, schema, nullValues, dataSource, format, resultCache)
+               val member = evaluate(
+                  value,
+                  schema.type(memberExpression.returnType),
+                  memberExpression,
+                  schema,
+                  nullValues,
+                  dataSource,
+                  format,
+                  resultCache
+               )
                member
             }
-            TypedCollection.arrayOf(returnType.collectionType!!,collectionMembers, dataSource)
+            TypedCollection.arrayOf(returnType.collectionType!!, collectionMembers, dataSource)
          }
+
          is LambdaExpression -> evaluateLambdaExpression(
             value,
             returnType,
@@ -1021,7 +1045,7 @@ class AccessorReader(
             castValue
          }
 
-         is ArgumentSelector -> readScopedReferenceSelector(value,expression)
+         is ArgumentSelector -> readScopedReferenceSelector(value, expression)
 
          is ProjectingExpression -> {
             evaluateProjectingExpression(
@@ -1059,7 +1083,7 @@ class AccessorReader(
    ): TypedInstance {
       return evaluateFunctionAccessor(
          value,
-         returnType,
+         schema.type(expression.returnType),
          schema,
          expression.functionExpression.function,
          nullValues,

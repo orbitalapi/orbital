@@ -96,5 +96,31 @@ class ExtensionFunctionTest {
          next.shouldBe(mapOf("title" to "Jaws"))
       }
 
+      @Test // ORB-650
+      fun `can chain extension functions together`(): Unit = runBlocking {
+         val (vyne, stub) = testVyne(
+            """
+            model Movie {
+               title : Title inherits String
+            }
+            service Movies {
+               operation findAll():Movie[]
+            }
+         """.trimIndent()
+         )
+         stub.addResponse("findAll", vyne.parseJson("Movie[]", """[{ "title" : "Jaws"}, {"title": "Star Wars"}]"""))
+
+         val results = vyne.query(
+            """
+         find { Movie[].filter( (Title) -> Title == "Jaws" ).convert(Title) }
+      """.trimIndent()
+         )
+            .rawObjects()
+
+         results.shouldBe(
+            listOf("Jaws")
+         )
+      }
+
    }
 }

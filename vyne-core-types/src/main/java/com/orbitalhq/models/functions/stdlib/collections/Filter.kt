@@ -25,8 +25,6 @@ object Filter : NamedFunctionInvoker, CollectionFilteringFunction() {
       rawMessageBeingParsed: Any?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
-      // Note: The Taxi compiler should pick this up
-      require(returnType.isCollection) { "filter() -- returnType must be a collection - got ${returnType.name.shortDisplayName}" }
       return applyFilter(inputValues, schema, returnType, function, objectFactory, rawMessageBeingParsed)
          .map {
             if (it.isEmpty()) {

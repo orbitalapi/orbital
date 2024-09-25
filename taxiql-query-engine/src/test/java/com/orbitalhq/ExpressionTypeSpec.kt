@@ -25,6 +25,24 @@ class ExpressionTypeSpec : DescribeSpec({
             .firstRawValue().shouldBe("Personal")
       }
 
+      it("can use a scoped variable as an input to an expression function") {
+         val (vyne,stub) = testVyne("""
+            model Film {
+               title : Title inherits String
+               minAge : Age inherits Int
+            }
+            service FilmsService {
+               operation getFilms():Film[]
+            }
+            type AllowedFilms by (Film[], viewerAge:Age) -> Film[].filter( (Film) -> Film::Age > viewerAge )
+               .convert(Title)
+         """.trimIndent())
+         stub.addResponse("getFilms", """[{"title" : "Star Wars", "minAge" : 8 }, {"title" : "Jaws" , "minAge" : 12 }]""")
+       val f=  vyne.query("""given { Age = 6 } find { AllowedFilms }""")
+            .typedInstances()
+         f.shouldNotBeNull()
+      }
+
       it("can filter an array fetched from a service") {
          val (vyne,stub) = testVyne("""
             model FilmRating {

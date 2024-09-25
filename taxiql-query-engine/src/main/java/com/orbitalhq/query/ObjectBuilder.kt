@@ -189,7 +189,11 @@ class ObjectBuilder(
    private fun buildExpressionScalar(targetType: Type): TypedInstance {
       return TypedObjectFactory(
          targetType,
-         FactBag.empty(),
+         // Note: This used to be an empty list,
+         // Then became an EmptyFactBag
+         // Then became an EmptyFactBag with additional scoped facts.
+         // Should is just be the context facts?
+         FactBag.empty().withAdditionalScopedFacts(context.scopedFacts, context.schema),
          context.schema,
          source = MixedSources,
          inPlaceQueryEngine = context,
