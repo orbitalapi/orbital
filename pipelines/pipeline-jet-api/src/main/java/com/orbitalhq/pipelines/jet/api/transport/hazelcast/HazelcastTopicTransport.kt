@@ -22,8 +22,10 @@ data class HazelcastTopicSinkSpec(
             HazelcastTopicSinkSpec::class.java
          )
 
+      const val reliableTopicPrefix = "managedStream."
+
       fun topicNameForStream(streamName: QualifiedName):String {
-         return "managedStream_${streamName.parameterizedName}\$results"
+         return "$reliableTopicPrefix${streamName.parameterizedName}.results"
       }
 
       fun forStream(streamName: QualifiedName):HazelcastTopicSinkSpec {

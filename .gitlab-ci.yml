@@ -480,7 +480,7 @@ trigger-connect-build:
       - develop
    trigger:
       project: vyne/hazelcast-orbital
-      branch: develop
+      branch: release/0.33
 
 validate-license-compliance:
    stage: verify

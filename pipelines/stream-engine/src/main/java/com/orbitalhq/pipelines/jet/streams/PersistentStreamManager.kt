@@ -65,24 +65,25 @@ class PersistentStreamManager(
       val difference = Maps.difference(updatedStreamQueries, currentStreamQueries)
 
       val addedStreams = difference.entriesOnlyOnLeft()
-      handleStreamsAdded(addedStreams.mapValues { entry -> updatedStreamState[entry.key]!! })
+      handleStreamsAdded(schema.hash,  addedStreams.mapValues { entry -> updatedStreamState[entry.key]!! })
 
       val removedStreams = difference.entriesOnlyOnRight()
       handleStreamsRemoved(removedStreams.keys, currentManagedStreams, removeCurrentState = true)
 
       val updatedStreams = difference.entriesDiffering()
-      handleStreamsUpdated(updatedStreams.mapValues { entry -> updatedStreamState[entry.key]!! }, currentManagedStreams)
+      handleStreamsUpdated(schema.hash, updatedStreams.mapValues { entry -> updatedStreamState[entry.key]!! }, currentManagedStreams)
 
    }
 
    private fun handleStreamsUpdated(
+      schemaHash: Int,
       updatedStreams: Map<QualifiedName, TaxiQlQuery>,
       currentManagedStreams: List<RunningPipelineSummary>
    ) {
       if (updatedStreams.isEmpty()) return
       logger.info { "${updatedStreams.size} streams modified, will stop and restart them" }
       handleStreamsRemoved(updatedStreams.keys, currentManagedStreams, removeCurrentState = false)
-      handleStreamsAdded(updatedStreams)
+      handleStreamsAdded(schemaHash, updatedStreams)
    }
 
    private fun handleStreamsRemoved(
@@ -104,11 +105,11 @@ class PersistentStreamManager(
 
    }
 
-   private fun handleStreamsAdded(addedStreams: Map<QualifiedName, TaxiQlQuery>) {
+   private fun handleStreamsAdded(schemaHash: Int, addedStreams: Map<QualifiedName, TaxiQlQuery>) {
       addedStreams
          .forEach {
             logger.info { "Creating a persistent stream for ${it.key}" }
-            streamStateManager.submitStream(ManagedStream.from(it.value))
+            streamStateManager.submitStream(ManagedStream.from(schemaHash, it.value))
          }
    }
 
@@ -120,6 +121,7 @@ class PersistentStreamManager(
 }
 
 data class ManagedStream(
+   val schemaHash: Int,
    val name: QualifiedName,
    val query: TaxiQlQuery,
    val streamType: StreamType,
@@ -127,9 +129,9 @@ data class ManagedStream(
    val state: StreamState = StreamState.NOT_STARTED
 ) {
    companion object {
-      fun from(query: TaxiQlQuery, enabled: Boolean = true): ManagedStream {
+      fun from(schemaHash: Int, query: TaxiQlQuery, enabled: Boolean = true): ManagedStream {
          val streamType: ManagedStream.StreamType = detectStreamType(query)
-         return ManagedStream(query.name.toVyneQualifiedName(), query, streamType, enabled)
+         return ManagedStream(schemaHash, query.name.toVyneQualifiedName() , query, streamType, enabled)
       }
 
       // TODO. Placeholder.

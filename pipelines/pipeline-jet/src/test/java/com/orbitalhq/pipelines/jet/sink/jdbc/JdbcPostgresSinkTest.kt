@@ -1,8 +1,8 @@
 package com.orbitalhq.pipelines.jet.sink.jdbc
 
+import com.hazelcast.jet.core.JobStatus
 import com.hazelcast.jet.impl.connector.WriteBufferedP
 import com.hazelcast.jet.pipeline.test.TestSources
-import com.winterbe.expekt.should
 import com.orbitalhq.connectors.jdbc.JdbcConnectionFactory
 import com.orbitalhq.connectors.jdbc.SqlUtils
 import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
@@ -19,6 +19,7 @@ import com.orbitalhq.pipelines.jet.source.fixed.FixedItemsSourceSpec
 import com.orbitalhq.pipelines.jet.source.fixed.ItemStreamSourceSpec
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.fqn
+import com.winterbe.expekt.should
 import nl.altindag.log.LogCaptor
 import org.awaitility.Awaitility
 import org.jooq.DSLContext
@@ -38,6 +39,7 @@ import java.time.Duration
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 @Disabled("Flakey - breaking the build")
@@ -143,7 +145,14 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
       val connectionFactory = testSetup.applicationContext.getBean(JdbcConnectionFactory::class.java)
       val type = testSetup.schema.type("Person")
       waitForRowCount(connectionFactory.dsl(postgresSQLContainerFacade.connection), type, 1)
+       val taskCompleted = AtomicBoolean(false)
+       firstJob!!.addStatusListener { statusEvent ->
+          taskCompleted.set(statusEvent.newStatus == JobStatus.FAILED)
+       }
       firstJob!!.cancel()
+       // We have to wait till the  firstJob is completely terminated, otherwise Jet returns error when re-submitting job with the same name.
+       Awaitility.await().untilTrue(taskCompleted)
+
 
       // Now spin up a second pipeline to generate the update
 

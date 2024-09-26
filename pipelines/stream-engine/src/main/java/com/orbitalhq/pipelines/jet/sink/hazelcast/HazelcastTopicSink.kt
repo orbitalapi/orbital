@@ -38,7 +38,7 @@ class HazelcastTopicSinkBuilder : SingleMessagePipelineSinkBuilder<HazelcastTopi
       }.receiveFn { context: HazelcastTopicSinkContext, item: MessageContentProvider ->
          val rawItem = (item as TypedInstanceContentProvider).content.toRawObject()
          if (rawItem != null) {
-            val topic = context.hazelcastInstance.getTopic<Any>(context.outputSpec.topicName)
+            val topic = context.hazelcastInstance.getReliableTopic<Any>(context.outputSpec.topicName)
             topic.publish(rawItem)
          }
 

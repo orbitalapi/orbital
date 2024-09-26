@@ -3,6 +3,7 @@ package com.orbitalhq.pipelines.jet.pipelines
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.jet.Job
 import com.hazelcast.jet.Util
+import com.hazelcast.jet.config.JobConfig
 import com.hazelcast.jet.core.JobNotFoundException
 import com.hazelcast.map.IMap
 import com.hazelcast.query.Predicates
@@ -74,13 +75,15 @@ class PipelineManager(
       val pipeline = pipelineFactory.createJetPipeline(pipelineSpec)
       logger.info { "Initializing pipeline \"${pipelineSpec.name}\"." }
       pendingPipelines.remove(pipelineSpec.name)
+      val jobConfig = JobConfig()
+      jobConfig.setName(pipelineSpec.name)
       return if (pipelineSpec.input is ScheduledPipelineTransportSpec) {
          scheduleJobToBeExecuted(
             pipelineSpec as PipelineSpec<ScheduledPipelineTransportSpec, *>,
             pipeline.toDotString()
          ) to null
       } else {
-         val job = hazelcastInstance.jet.newJob(pipeline)
+         val job = hazelcastInstance.jet.newJob(pipeline, jobConfig)
          val submittedPipeline = SubmittedPipeline(
             pipelineSpec.name,
             job.idString,
@@ -367,7 +370,7 @@ class PipelineManager(
       sinkSpec: PipelineTransportSpec = HazelcastTopicSinkSpec.forStream(managedStream.name)
    ): PipelineSpec<StreamingQueryInputSpec, PipelineTransportSpec> {
       val spec = PipelineSpec(
-         name = managedStream.name.longDisplayName,
+         name = "${managedStream.name.longDisplayName}_${managedStream.schemaHash}",
          input = StreamingQueryInputSpec(managedStream.query.source),
          transformation = null,
          outputs = listOf(sinkSpec),
