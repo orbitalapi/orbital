@@ -474,14 +474,6 @@ scan-orbital:
    variables:
       imageName: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/orbitalhq/orbital:next
 
-trigger-connect-build:
-   stage: deploy
-   only:
-      - develop
-   trigger:
-      project: vyne/hazelcast-orbital
-      branch: release/0.33
-
 validate-license-compliance:
    stage: verify
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:18.18
