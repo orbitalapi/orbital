@@ -10,7 +10,6 @@ import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.models.json.JsonParsedStructure
 import com.orbitalhq.models.json.isJson
-import com.orbitalhq.policies.PolicyEngine
 import com.orbitalhq.policies.ScopedPolicyEngine
 import com.orbitalhq.query.AlwaysGoodSpec
 import com.orbitalhq.query.TypedInstanceValidPredicate
@@ -23,6 +22,7 @@ import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.*
 import lang.taxi.expressions.Expression
 import lang.taxi.expressions.LambdaExpression
+import lang.taxi.expressions.TypeExpression
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.types.FieldProjection
 import lang.taxi.types.FormatsAndZoneOffset
@@ -685,14 +685,14 @@ class TypedObjectFactory(
          // To evaluate this, we need to create a separate evaluation context
          // where variable names are scoped relative to the expression types.
          // Enapsulate the logic in a dedicated function
-         return evaluateLambdaExpressionType(expressionType, expression, format)
+         return evaluateLambdaExpression(expression, format)
       } else {
          accessorReader.evaluate(value, expressionType, expression, schema, nullValues, source, format)
       }
 
    }
 
-   fun evaluateLambdaExpressionType(expressionType: Type, expression: LambdaExpression, format: FormatsAndZoneOffset?): TypedInstance {
+   fun evaluateLambdaExpression(expression: LambdaExpression, format: FormatsAndZoneOffset?): TypedInstance {
       // Lambda Expression types are evaluated more like functions.
       // Their inputs are declared independent of queries where they're evaluated
       // eg:
@@ -734,9 +734,31 @@ class TypedObjectFactory(
          // This is to handle scenarios like:
          // type AllowedFilms by (Film[], viewerAge:Age) -> Film[].filter( (Film) -> Film::Age > viewerAge )
          // where viewerAge can be supplied in a given {} clause.
-         val argumentValue = valueSupplier.getScopedFactOrNull(argument)
-            ?: getValue(argument.type.toVyneQualifiedName(), queryIfNotFound = true)
-         ScopedFact(argument, argumentValue)
+         if (argument is ProjectionFunctionScope && argument.expression is TypeExpression && (argument.expression as TypeExpression).constraints.isNotEmpty()) {
+            // The inputs into this expression have constraints defined.
+            // We can't search directly for the type, we need to do a search for the type with the provided constraints.
+            val argumentTypeExpression = argument.expression as TypeExpression
+            // TODO : Fix runblocking, but that requires a big change, and not sure the direction of travel
+            // wrt/ coroutines vs flux atm.
+            val argumentExpressionReturnType = schema.type(argumentTypeExpression.type)
+            val scopedFacts = this.getCurrentScopedFacts()
+            val result = runBlocking {
+               // If we're doing nested traversal of lambda expressions,
+               // there could be scoped facts we've been passed that will
+               // be needed as inputs
+
+               val queryEngineWithScopedFacts = valueSupplier.inPlaceQueryEngine!!.withAdditionalFacts(emptyList(),  scopedFacts)
+               queryEngineWithScopedFacts.findType(
+                  argumentExpressionReturnType, constraint = argumentTypeExpression.constraints
+               ).toList()
+            }
+            val typedInstance = TypedInstance.from(argumentExpressionReturnType, result, schema)
+            ScopedFact(argument, typedInstance)
+         } else {
+            val argumentValue = valueSupplier.getScopedFactOrNull(argument)
+               ?: getValue(argument.type.toVyneQualifiedName(), queryIfNotFound = true)
+            ScopedFact(argument, argumentValue)
+         }
       }
 
       // FactBag.empty() seems a big call here.
@@ -745,8 +767,16 @@ class TypedObjectFactory(
       // then it can't also be present without the argument scope, or it'll pollute the scope
       // with duplicate values.
       val inputsForLambda = FactBag.empty().withAdditionalScopedFacts(inputs, schema)
-      val result = newFactory(type, inputsForLambda, scope = null)
-         .accessorReader.evaluate(inputsForLambda, expressionType, expression, schema, nullValues, source, format)
+      val evaluationContext = newFactory(type, inputsForLambda, scope = null)
+
+      // If the expression contains a nested lambda (ie., with inputs), then we recurse into
+      // that expression to collection inputs etc...
+      val result = if (expression.expression is LambdaExpression) {
+         evaluationContext.evaluateLambdaExpression(expression.expression as LambdaExpression, format)
+      } else {
+         //...otherwise, we just evaluate the expression
+         evaluationContext.accessorReader.evaluate(inputsForLambda, schema.type(expression.returnType), expression, schema, nullValues, source, format)
+      }
       return result
    }
 
@@ -1145,6 +1175,14 @@ class TypedObjectFactory(
             val singleResult = buildResult.single()
             singleResult is TypedNull
          }
+      }
+   }
+
+   private fun getCurrentScopedFacts():List<ScopedFact> {
+      return if (value is FactBag) {
+         value.scopedFacts
+      } else {
+         emptyList()
       }
    }
 

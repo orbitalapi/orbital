@@ -369,10 +369,24 @@ data class Type(
    val collectionType: Type? =
       if (isCollection || isStream) {
          collectionAnonymousType ?: underlyingTypeParameters.firstOrNull()
+         ?: inheritanceGraph.firstNotNullOfOrNull { superType ->
+            // If we're a subtype of Array<T>, then the collection type
+            // is in the supertype
+            val inheritedCollectionType =   superType.collectionType
+            if (inheritedCollectionType != null && inheritedCollectionType.taxiType != PrimitiveType.ANY) {
+               inheritedCollectionType
+            } else null
+         }
          ?: typeCache.type(PrimitiveType.ANY.qualifiedName.fqn())
       } else {
          null
       }
+
+   init {
+      if (this.collectionType?.taxiType == PrimitiveType.ANY) {
+         println()
+      }
+   }
 
    @get:JsonProperty("collectionType")
    val collectionTypeName: QualifiedName? = collectionType?.name

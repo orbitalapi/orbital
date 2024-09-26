@@ -7,7 +7,9 @@ import io.kotest.matchers.shouldBe
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
+import com.orbitalhq.from
 import com.orbitalhq.query.VyneQlGrammar
+import io.kotest.matchers.booleans.shouldBeTrue
 import org.junit.Test
 
 class TaxiSchemaTest {

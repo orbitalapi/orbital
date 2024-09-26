@@ -18,6 +18,10 @@ fun String.withoutEmptyLines(): String {
       .joinToString("\n") { it.trimEnd() }
 }
 
+fun String.removeNewLines(): String {
+   return this.replace("\n", "")
+
+}
 fun String.substitute(inputs: Map<String, Any>): String {
    return inputs.entries.fold(this) { acc, entry ->
       val (key, value) = entry

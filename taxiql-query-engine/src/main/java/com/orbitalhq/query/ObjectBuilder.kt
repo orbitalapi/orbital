@@ -144,9 +144,8 @@ class ObjectBuilder(
       return if (targetType.isScalar && !targetType.hasExpression) {
          // if (allowRecursion)  searchForType(targetType, spec) else null
          searchForType(targetType, spec)
-      } else if (targetType.isScalar && targetType.hasExpression) {
-         // TODO : Do we need the isScalar check there?
-         buildExpressionScalar(targetType)
+      } else if (targetType.hasExpression) {
+         evaluateExpressionType(targetType)
       } else if (targetType.isCollection) {
          buildCollection(targetType, spec, constraints)
       } else {
@@ -186,7 +185,7 @@ class ObjectBuilder(
          }
    }
 
-   private fun buildExpressionScalar(targetType: Type): TypedInstance {
+   private fun evaluateExpressionType(targetType: Type): TypedInstance {
       return TypedObjectFactory(
          targetType,
          // Note: This used to be an empty list,

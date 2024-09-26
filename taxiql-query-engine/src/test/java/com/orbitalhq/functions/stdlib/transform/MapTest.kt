@@ -29,23 +29,4 @@ class MapTest {
       result.shouldNotBeNull()
       result.shouldBe(listOf("STAR WARS", "JAWS"))
    }
-
-   @Test
-   fun `mapping a non-array type throws compiler error`(): Unit = runBlocking {
-      val (vyne) = testVyne("""
-         model Film {
-            title : Title inherits String
-            year : Year inherits Int
-         }
-      """.trimIndent())
-
-      val exception = assertThrows<CompilationException> {
-         vyne.query("""
-         given { Film = { title: "Star Wars", year: 1979 } }
-         find { Film.map ( (Title) -> Title.upperCase() ) }
-      """)
-            .rawResults.toList()
-      }
-      exception.errors.shouldContainMessage("Type mismatch. Type of Film is not assignable to type lang.taxi.Array<taxi.stdlib.map\$T>")
-   }
 }

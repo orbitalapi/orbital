@@ -298,6 +298,13 @@ class StubService(
       val response = parseJson(schema!!, operation.returnType.paramaterizedName, json)
       addResponse(stubOperationKey, response)
    }
+   fun addTableFindManyResponse(tableName: String, json: String) {
+      val operation = schema!!.tableOperations.first { it.name== tableName }
+      val response = parseJson(schema!!, operation.returnType.paramaterizedName, json)
+      // people_findManyPerson
+      val operationName = "${tableName}_findMany${operation.returnType.collectionTypeName}"
+      addResponse(operationName, response)
+   }
 
    fun addResponse(
       stubOperationKey: String,
