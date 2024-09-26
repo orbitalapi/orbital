@@ -29,7 +29,7 @@ class StreamingQuerySourceBuilder() :
       pipelineSpec: PipelineSpec<StreamingQueryInputSpec, *>,
       inputType: Type?
    ): StreamSource<MessageContentProvider>? {
-      return SourceBuilder.stream(pipelineSpec.name) { context ->
+      return SourceBuilder.stream("${pipelineSpec.name}_source") { context ->
          QueryBufferingPipelineContext(context.logger(), pipelineSpec, context.jobId(), QueryBufferingPipelineContext.BufferMode.Stream)
       }.fillBufferFn { queryBuffer, sourceBuffer: SourceBuffer<MessageContentProvider> ->
          queryBuffer.drainTo(sourceBuffer)

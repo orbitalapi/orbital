@@ -48,15 +48,16 @@ class PipelineFactory(
       val inputType = if (inputTypeName != null) schema.type(inputTypeName) else null
 
       val jetPipelineBuilder = if (sourceBuilder.sourceType == PipelineSourceType.Stream) {
+         // Looks like the name set we here is used by hazelcast metric publisher which throws
+         // com.hazelcast.internal.metrics.impl.LongWordException when the name exceeds 255 chars.
+         val name = "ingest-${pipelineSpec.name}".take(255)
          jetPipeline
             .readFrom(sourceBuilder.build(pipelineSpec, inputType)!!)
             .withIngestionTimestamps()
-            // Looks like the name set we here is used by hazelcast metric publisher which throws
-            // com.hazelcast.internal.metrics.impl.LongWordException when the name exceeds 255 chars.
-            .setName("Ingest from ${pipelineSpec.name.take(255)}")
+            .setName(name)
       } else {
          jetPipeline.readFrom(sourceBuilder.buildBatch(pipelineSpec, inputType)!!)
-            .setName("Ingest from ${pipelineSpec.input.description}")
+            .setName("Ingest from ${pipelineSpec.input.description.take(255)}")
       }
 
 
@@ -165,7 +166,7 @@ class PipelineFactory(
             context.validationFailedCounter.increment()
          }
          return@filterUsingService validationResult
-      }.setName("Validate input has all the mandatory fields populated")
+      }.setName("validate-input-$pipelineName")
    }
 
    private fun <O : PipelineTransportSpec> buildSink(
@@ -191,7 +192,7 @@ class PipelineFactory(
          require(sinkBuilder is SingleMessagePipelineSinkBuilder) { "Output spec is a single message spec, but sink builder ${sinkBuilder::class.simpleName} does not accept single messages" }
          jetPipelineWithTransformation
             .writeTo(sinkBuilder.build(pipelineId, pipelineName, pipelineTransportSpec))
-            .setName("Write message to ${pipelineTransportSpec.description}")
+            .setName("$pipelineName-${pipelineTransportSpec.description}")
 
       }
    }

@@ -3,11 +3,15 @@ package com.orbitalhq.cockpit.core.connectors.hazelcast
 import com.hazelcast.config.Config
 import com.hazelcast.config.MapConfig
 import com.hazelcast.config.MapStoreConfig
+import com.hazelcast.config.ReliableTopicConfig
+import com.hazelcast.config.RingbufferConfig
 import com.hazelcast.config.XmlConfigBuilder
 import com.hazelcast.config.YamlConfigBuilder
 import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.spring.context.SpringManagedContext
+import com.hazelcast.topic.TopicOverloadPolicy
+import com.orbitalhq.pipelines.jet.api.transport.hazelcast.HazelcastTopicSinkSpec
 import com.orbitalhq.pipelines.jet.streams.StreamStateManagerHazelcastConfig
 import com.orbitalhq.pipelines.jet.streams.StreamStatusMapStore
 import mu.KotlinLogging
@@ -25,12 +29,33 @@ class EmbeddedHazelcastInstanceProvider {
                                         licenseKeyFn: () -> String?): Config {
         config.managedContext = springManagedContext
         logger.info { "setting the mapstore config for ${StreamStateManagerHazelcastConfig.STREAM_STATUS_CACHE_NAME}" }
+        /**
+         * We need to set our custom map / topic configurations here before instantiating the HazelcastInstance.
+         */
         config.addMapConfig(getMapStoreConfig(mapStore))
+        config.addReliableTopicConfig(getReliableTopicConfigForJetJobs(config))
+        config.addRingBufferConfig(getRingBufferConfigForJetJobs(config))
         config.jetConfig.isEnabled = true
         licenseKeyFn().let { licenseKey ->
             config.licenseKey = licenseKey
         }
         return config
+    }
+
+    /**
+     * Reliable Topic configuration to pass streaming query results back to Orbital for UI consumption.
+     */
+    private fun getReliableTopicConfigForJetJobs(config: Config): ReliableTopicConfig {
+        return config.getReliableTopicConfig(HazelcastTopicSinkSpec.reliableTopicPrefix + "*")
+            .setTopicOverloadPolicy(TopicOverloadPolicy.DISCARD_OLDEST)
+    }
+
+    /**
+     * RingBuffer configuration for the Streaming Result ReliableTopic.
+     */
+    private fun getRingBufferConfigForJetJobs(config: Config): RingbufferConfig {
+        return config.getRingbufferConfig(HazelcastTopicSinkSpec.reliableTopicPrefix + "*")
+            .setTimeToLiveSeconds(10)
     }
 
     private fun getMapStoreConfig(mapStore: StreamStatusMapStore): MapConfig {

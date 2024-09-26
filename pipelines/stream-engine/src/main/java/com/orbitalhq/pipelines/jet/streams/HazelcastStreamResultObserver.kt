@@ -3,10 +3,8 @@ package com.orbitalhq.pipelines.jet.streams
 import com.google.common.cache.CacheBuilder
 import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.pipelines.jet.api.transport.hazelcast.HazelcastTopicSinkSpec
-import com.orbitalhq.pipelines.jet.streams.StreamResultsService.Companion
 import com.orbitalhq.schemas.fqn
 import mu.KotlinLogging
-import org.springframework.messaging.handler.annotation.DestinationVariable
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
@@ -28,7 +26,7 @@ class HazelcastStreamResultObserver(private val hazelcastInstance: HazelcastInst
       return resultFeedCache.get(streamName) {
 
          logger.debug { "Building RSocket result emitter for stream $streamName" }
-         val topic = hazelcastInstance.getTopic<Any>(HazelcastTopicSinkSpec.topicNameForStream(streamName.fqn()))
+         val topic = hazelcastInstance.getReliableTopic<Any>(HazelcastTopicSinkSpec.topicNameForStream(streamName.fqn()))
          // We are using multicast here as there might be multiple subscribers that might want to consume the same end point.
          // Using unicast here blows up the second subscriber to a given streamName.
          val sink = Sinks.many().multicast().onBackpressureBuffer<Any>()
@@ -46,7 +44,8 @@ class HazelcastStreamResultObserver(private val hazelcastInstance: HazelcastInst
                   resultFeedCache.invalidate(streamName)
                   logger.debug { "Removing the Hz topic subscription for $streamName subscription id $subscriptionId" }
                   // We need to unregister our topic listener, otherwise we keep getting data even though the sink is disposed.
-                  topic.removeMessageListener(subscriptionId)
+                  val messageListenerRemoved =  topic.removeMessageListener(subscriptionId)
+                  logger.debug { "result stream listener $subscriptionId removed => $messageListenerRemoved" }
                }
             }
          flux

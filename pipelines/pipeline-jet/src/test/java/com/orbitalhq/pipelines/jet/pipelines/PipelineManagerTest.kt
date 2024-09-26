@@ -1,7 +1,6 @@
 package com.orbitalhq.pipelines.jet.pipelines
 
 import com.hazelcast.jet.core.JobStatus
-import com.winterbe.expekt.should
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.pipelines.jet.BaseJetIntegrationTest
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
@@ -15,6 +14,7 @@ import com.orbitalhq.pipelines.jet.source.fixed.FixedItemsSourceSpec
 import com.orbitalhq.pipelines.jet.source.fixed.ScheduledSourceSpec
 import com.orbitalhq.pipelines.jet.streams.ManagedStream
 import com.orbitalhq.schemas.fqn
+import com.winterbe.expekt.should
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOf
 import org.awaitility.Awaitility
@@ -31,6 +31,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
    fun `can submit stream`() {
       val testSetup = jetWithSpringAndVyne(
          """
+            namespace com.orbitalhq 
             model Tweet {
                text : String
             }
@@ -53,12 +54,16 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
       )
       val query = testSetup.schema.taxi.queries.single()
       val job = manager.submitStream(
-         ManagedStream.from(query),
+         ManagedStream.from(testSetup.schema.hash, query),
          sinkSpec = LoggingOutputSpec.captureForTest
       )
       manager.startPipeline(job)
+
       Awaitility.await().atMost(10, TimeUnit.SECONDS)
          .until { LoggingSinkBuilder.captured.isNotEmpty() }
+
+
+
    }
 
 
