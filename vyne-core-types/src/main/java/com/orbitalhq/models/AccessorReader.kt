@@ -336,6 +336,13 @@ class AccessorReader(
             )
          }
 
+         is LiteralArray -> {
+            val typedInstances = accessor.members.map { expression ->
+              read(value, schema.type(expression.returnType), expression, schema, nullValues, source, format)
+            }
+            TypedInstance.from(targetType, typedInstances, schema, source = source)
+         }
+
          else -> {
             TODO("Support for accessor not implemented with type $accessor")
          }

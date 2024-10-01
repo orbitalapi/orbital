@@ -1,15 +1,14 @@
 package com.orbitalhq.models
 
+//import com.orbitalhq.testVyne
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.winterbe.expekt.expect
-import com.winterbe.expekt.should
-import com.orbitalhq.firstRawObject
 import com.orbitalhq.firstTypedObject
 import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.testVyne
+import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
 import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
-//import com.orbitalhq.testVyne
 import org.junit.Test
 
 class AccessorReaderTest {
@@ -178,5 +177,50 @@ type LegacyTradeNotification {
          )
       )
    }
+
+    @Test
+    fun `LitealArrays are processed in AccessorReader`() {
+        val (vyne, _) = testVyne("""
+          enum ErrorEnum {
+           TR_ORBITAL_UnexpectedError("TR.ORBITAL.UnexpectedError")
+         }
+         
+         model OrbitalBaseError  {
+           Code: OrbitalErrorCode inherits String
+           Id: OrbitalErrorId inherits String
+           Message: OrbitalErrorMessage inherits String
+           Errors: ErrorEnum[]
+         }
+         
+         model Foo {
+            age : Int by jsonPath("/age")
+            error: OrbitalBaseError? by when (this.age)  {
+               1 -> (OrbitalBaseError) {
+                  Code: 'xyz.abc.def',
+                  Message: 'Invalid API Status',
+                  Id: "correlationId",
+                  Errors: [ErrorEnum.TR_ORBITAL_UnexpectedError]
+                }
+               else -> null
+            }
+         }
+        """.trimIndent())
+
+        val sourceJson = """{ "age" : 1 }"""
+        val jsonNode = jacksonObjectMapper().readTree(sourceJson)
+        val instance = TypedInstance.from(vyne.type("Foo"), jsonNode, vyne.schema, source = Provided) as TypedObject
+        instance["age"].value.should.equal(1)
+        val errorObject =  instance["error"] as TypedObject
+
+        errorObject.toRawObject().should.equal(mapOf(
+            "Code" to "xyz.abc.def",
+            "Id" to "correlationId",
+            "Message" to  "Invalid API Status",
+            "Errors" to  listOf("TR_ORBITAL_UnexpectedError")))
+
+
+    }
+
+
 }
 
