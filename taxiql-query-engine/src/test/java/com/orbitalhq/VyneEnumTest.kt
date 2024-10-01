@@ -8,10 +8,12 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.addJson
 import com.orbitalhq.models.json.addJsonModel
 import com.orbitalhq.models.json.addKeyValuePair
+import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.QueryResult
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.flow.toList
@@ -19,6 +21,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.test.runTest
 import lang.taxi.types.EnumType
+import lang.taxi.types.PrimitiveType
 import org.junit.Ignore
 import org.junit.Test
 import kotlin.time.ExperimentalTime
@@ -51,6 +54,120 @@ class VyneEnumTest {
 
       """.trimIndent()
    )
+
+   @Test
+   fun `serializing and deserializing values is symmetrical - the value used as an input is used as an output`():Unit = runBlocking {
+      val (vyne,_) = testVyne("""
+         enum Country {
+            NZ("NZD"),
+            AU("AUD")
+         }
+         model Person {
+            country : Country
+         }
+      """.trimIndent())
+      vyne.parseJson("Person",  """{ "country"  : "NZ" }""")
+         .toRawObject()
+         .shouldBe(mapOf("country" to "NZ"))
+
+      vyne.parseJson("Person",  """{ "country"  : "NZD" }""")
+         .toRawObject()
+         .shouldBe(mapOf("country" to "NZD"))
+   }
+
+   @Test
+   fun `can parse an array of string values to enums in given statement`() : Unit = runBlocking{
+      val (vyne,_) = testVyne("""
+         enum Country {
+            NZ("NZD"),
+            AU("AUD")
+         }
+      """.trimIndent())
+      vyne.query("""
+         given { c:Country[] = ["AUD","NZD"] }
+         find {
+            country : Country[]
+         }""")
+         .firstRawObject()
+         .shouldBe(mapOf("country" to listOf("AUD","NZD")))
+   }
+
+   @Test
+   fun `can parse an array of string enum names to enums in given statement`() : Unit = runBlocking{
+      val (vyne,_) = testVyne("""
+         enum Country {
+            NZ("NZD"),
+            AU("AUD")
+         }
+      """.trimIndent())
+      vyne.query("""
+         given { c:Country[] = ["AU","NZ"] }
+         find {
+            country : Country[]
+         }""")
+         .firstRawObject()
+         .shouldBe(mapOf("country" to listOf("AU","NZ")))
+   }
+
+   @Test
+   fun `when enum value is passed using explicit taxi reference then serialize using value if present`():Unit = runBlocking {
+      val (vyne,_) = testVyne("""
+         enum Country {
+            NZ("NZD"),
+            AU("AUD")
+         }
+         model Person {
+            country : Country
+         }
+      """.trimIndent())
+    vyne.query("""
+         given { c:Country[] = [Country.AU,Country.NZ] }
+         find {
+            country : Country[]
+         }""")
+         .firstRawObject()
+         .shouldBe(mapOf("country" to listOf("AUD","NZD")))
+   }
+
+   @Test
+   fun `when enum value is deserialized using a string value then serialize using value`():Unit = runBlocking {
+      val (vyne,_) = testVyne("""
+         enum Country {
+            NZ("NZD"),
+            AU("AUD")
+         }
+         model Person {
+            country : Country
+         }
+      """.trimIndent())
+      vyne.query("""
+         given { c:Country[] = [Country.AU,Country.NZ] }
+         find {
+            country : Country[]
+         }""")
+         .firstRawObject()
+         .shouldBe(mapOf("country" to listOf("AUD","NZD")))
+   }
+
+   @Test
+   fun `when enum value is deserialized using a string value then serialize using name if no value present`():Unit = runBlocking {
+      val (vyne,_) = testVyne("""
+         enum Country {
+            NZ,
+            AU
+         }
+         model Person {
+            country : Country
+         }
+      """.trimIndent())
+      vyne.query("""
+         given { c:Country[] = [Country.AU,Country.NZ] }
+         find {
+            country : Country[]
+         }""")
+         .firstRawObject()
+         .shouldBe(mapOf("country" to listOf("AU","NZ")))
+   }
 
    @Test
    @Ignore("Should enabled when Enum inheritance is supported")

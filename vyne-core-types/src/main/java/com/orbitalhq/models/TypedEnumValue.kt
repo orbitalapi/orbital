@@ -23,8 +23,30 @@ enum class EnumValueKind {
    VALUE;
 
    companion object {
+      /**
+       * Determines if the EnumValueKind should be NAME or VALUE.
+       * This matters when serializing this value back out (eg., to JSON).
+       * In general, we follow this approach:
+       *  - Try to be symmetrical when deserializing user content.
+       *    ie., for an enum defined as NZ("New Zealand"), if a user provided a value of "New Zealand", then
+       *    give that value back. If they provided a value of "NZ", then give that value back.
+       *
+       *  - When the user provides a reference to an enum via Taxi code,
+       *    (eg: a = Country.NZ )
+       *    then use the Enum Value if present, not the name.
+       *    The logic here is:
+       *    "If you defined a value, you probably want that serialized".
+       */
       fun from(value: Any, taxiType: EnumType): EnumValueKind {
          return when {
+            // If we've been passed an explicit enum reference
+            // (ie., the user referred to this in Taxi code),
+            // then serialize using the VALUE.
+            // The logic here is
+            // (Note, if no value is defined, this defaults to the name).
+            value is lang.taxi.types.EnumValue -> VALUE
+
+            // The user has provided a value specifically
             taxiType.hasExplicitValue(value) -> VALUE
             else -> NAME
 
