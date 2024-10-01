@@ -178,9 +178,10 @@ class QueryRequestHandlerTest {
             .returnResult<Map<String, Any>>()
 
         result.responseBody.blockLast().shouldBe(mapOf(
-            "errorCode" to "E1234",
-            "message" to "You didn't say the magic word",
-            "correlationId" to "stream-provider-query-1"))
+            "Code" to "xyz.abc.def",
+            "Id" to "correlationId",
+            "Message" to  "Invalid API Status",
+            "Errors" to  listOf("TR_ORBITAL_UnexpectedError")))
         mockWebServerRule.takeRequest()
 
     }
@@ -247,27 +248,35 @@ class QueryRequestHandlerTest {
            provider: ProviderName inherits String
          }
          
-         model BadPermissionsError inherits com.orbitalhq.errors.Error {
-           @taxi.http.ResponseBody
-           error: {
-             errorCode: String
-             message: String
-             correlationId: CorrelationId
-           }
-           
+         enum ErrorEnum {
+           TR_ORBITAL_UnexpectedError("TR.ORBITAL.UnexpectedError")
+         }
+         
+         model OrbitalBaseError inherits com.orbitalhq.errors.Error {
+           Code: OrbitalErrorCode inherits String
+           Id: OrbitalErrorId inherits String
+           Message: OrbitalErrorMessage inherits String
+           Errors: ErrorEnum[]
+         }
+
+         @taxi.http.ResponseBody
+         model OrbitalUnexpectedError inherits OrbitalBaseError {
+           Code: OrbitalErrorCode inherits String
+           Id: OrbitalErrorId inherits String
+           Message: OrbitalErrorMessage inherits String
+           Errors: ErrorEnum[]
          }
          
          policy AllAccessStreamProviders against StreamProvider (filmId : FilmId, correlationId: CorrelationId?) -> {
             read {
                when {
                   filmId == 2 -> StreamProvider
-                  else -> throw( (BadPermissionsError) 
-                                  { error: 
-                                    { errorCode: 'E1234',
-                                     message: "You didn't say the magic word",
-                                      correlationId: CorrelationId }
-                                  }
-                                )
+                  else ->  throw( (OrbitalUnexpectedError) {
+                  Code: 'xyz.abc.def',
+                  Message: 'Invalid API Status',
+                  Id: "correlationId",
+                  Errors: [ErrorEnum.TR_ORBITAL_UnexpectedError]
+                })
                }
             }
          }
