@@ -1,6 +1,5 @@
 package com.orbitalhq.schemaServer.core.schemaStoreConfig.clustered
 
-import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.schema.publisher.ExpiringSourcesStore
 import com.orbitalhq.schema.publisher.KeepAliveStrategyMonitor
@@ -61,7 +60,4 @@ class ClusteredSchemaServerSourceProviderConfiguration {
          validatingSchemaStoreClient
       )
    }
-
-   @Bean
-   fun hazelcastInstance() = Hazelcast.newHazelcastInstance()
 }

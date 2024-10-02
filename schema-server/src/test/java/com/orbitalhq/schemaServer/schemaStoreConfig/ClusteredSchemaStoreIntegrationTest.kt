@@ -1,8 +1,9 @@
 package com.orbitalhq.schemaServer.schemaStoreConfig
 
+import com.hazelcast.core.Hazelcast
+import com.hazelcast.core.HazelcastInstance
 import com.jayway.awaitility.Awaitility
 import com.jayway.awaitility.Duration
-import com.winterbe.expekt.should
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.asPackage
 import com.orbitalhq.schema.api.SchemaSet
@@ -10,6 +11,7 @@ import com.orbitalhq.schema.publisher.KeepAlivePackageSubmission
 import com.orbitalhq.schema.publisher.SourceSubmissionResponse
 import com.orbitalhq.schema.rsocket.RSocketRoutes
 import com.orbitalhq.schemaServer.SchemaServerApp
+import com.winterbe.expekt.should
 import mu.KotlinLogging
 import org.junit.BeforeClass
 import org.junit.Test
@@ -17,7 +19,9 @@ import org.junit.runner.RunWith
 import org.springframework.boot.ExitCodeGenerator
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.builder.SpringApplicationBuilder
+import org.springframework.context.ApplicationContextInitializer
 import org.springframework.context.ConfigurableApplicationContext
+import org.springframework.context.support.GenericApplicationContext
 import org.springframework.http.MediaType
 import org.springframework.http.codec.cbor.Jackson2CborDecoder
 import org.springframework.http.codec.cbor.Jackson2CborEncoder
@@ -29,6 +33,7 @@ import org.springframework.web.util.pattern.PathPatternRouteMatcher
 import reactor.core.publisher.Flux
 import java.util.*
 import java.util.concurrent.TimeUnit
+import java.util.function.Supplier
 
 private val logger = KotlinLogging.logger { }
 
@@ -130,12 +135,18 @@ class ClusteredSchemaStoreIntegrationTest {
    private fun createClusteredSchemaServerInstance(): ConfigurableApplicationContext {
       return SpringApplicationBuilder()
          .sources(SchemaServerApp::class.java)
+
          .properties(
             "spring.main.allow-bean-definition-overriding=true",
             "vyne.schema.server.clustered=true",
             "vyne.schema.server.port=${TestSocketUtils.findAvailableTcpPort()}",
             "hazelcast.config=classpath:hz-test-config.xml"
          )
+         .initializers(object: ApplicationContextInitializer<GenericApplicationContext> {
+            override fun initialize(applicationContext: GenericApplicationContext) {
+               applicationContext.registerBean(HazelcastInstance::class.java,
+                  Supplier { Hazelcast.newHazelcastInstance() })
+            }})
          // for some reason port numbers can only be overridden via run args.
          .run(
             "--server.port=${TestSocketUtils.findAvailableTcpPort()}",
