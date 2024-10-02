@@ -179,27 +179,23 @@ type LegacyTradeNotification {
    }
 
     @Test
-    fun `LitealArrays are processed in AccessorReader`() {
+    fun `LiteralArrays are processed in AccessorReader`() {
         val (vyne, _) = testVyne("""
           enum ErrorEnum {
-           TR_ORBITAL_UnexpectedError("TR.ORBITAL.UnexpectedError")
+           UnexpectedError("An unexpected error occurred")
          }
-         
+
          model OrbitalBaseError  {
-           Code: OrbitalErrorCode inherits String
-           Id: OrbitalErrorId inherits String
            Message: OrbitalErrorMessage inherits String
            Errors: ErrorEnum[]
          }
-         
+
          model Foo {
-            age : Int by jsonPath("/age")
+            age : Int
             error: OrbitalBaseError? by when (this.age)  {
                1 -> (OrbitalBaseError) {
-                  Code: 'xyz.abc.def',
                   Message: 'Invalid API Status',
-                  Id: "correlationId",
-                  Errors: [ErrorEnum.TR_ORBITAL_UnexpectedError]
+                  Errors: [ErrorEnum.UnexpectedError]
                 }
                else -> null
             }
@@ -213,10 +209,8 @@ type LegacyTradeNotification {
         val errorObject =  instance["error"] as TypedObject
 
         errorObject.toRawObject().should.equal(mapOf(
-            "Code" to "xyz.abc.def",
-            "Id" to "correlationId",
             "Message" to  "Invalid API Status",
-            "Errors" to  listOf("TR_ORBITAL_UnexpectedError")))
+            "Errors" to  listOf("An unexpected error occurred")))
 
 
     }
