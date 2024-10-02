@@ -233,7 +233,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       return providedValues.mapNotNull { (paramExpression, providedValueExpression) ->
          when (paramExpression) {
             is ArgumentSelector -> {
-               val parameter = remoteOperation.parameter(paramExpression.path)
+               val parameter = remoteOperation.parameter(paramExpression.scopeWithPath)
                if (parameter == null) {
                   logger.warn { "An expression was found to provide a value for parameter ${paramExpression.path}, but no such parameter exists on operation ${remoteOperation.name}" }
                   return@mapNotNull null

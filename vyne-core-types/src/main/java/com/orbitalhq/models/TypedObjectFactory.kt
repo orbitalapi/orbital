@@ -120,7 +120,12 @@ class TypedObjectFactory(
          attributeName to lazy {
 
             val fieldValue =
-               xtimed("build field $attributeName ${field.typeDisplayName}") { buildField(field, attributeName) }.let { constructedField ->
+               xtimed("build field $attributeName ${field.typeDisplayName}") {
+                  buildField(
+                     field,
+                     attributeName
+                  )
+               }.let { constructedField ->
                   if (policyEngine != null && inPlaceQueryEngine != null) {
                      policyEngine.evaluate(constructedField, inPlaceQueryEngine)
                   } else {
@@ -218,6 +223,30 @@ class TypedObjectFactory(
          newFactory(targetType, valueToProject, scope = projection.projectionFunctionScope.firstOrNull()).build()
       }
       return projectedFieldValue
+   }
+
+
+   fun newFactoryWithOnly(
+      type: Type,
+      newValue: FactBag,
+      scope: ProjectionFunctionScope? = null
+   ): TypedObjectFactory {
+      return TypedObjectFactory(
+         type,
+         newValue,
+         schema,
+         nullValues,
+         source,
+         objectMapper,
+         functionRegistry,
+         evaluateAccessors,
+         inPlaceQueryEngine,
+         accessorHandlers,
+         formatSpecs,
+         parsingErrorBehaviour,
+         functionResultCache,
+         scope
+      )
    }
 
    /**
@@ -318,19 +347,20 @@ class TypedObjectFactory(
       paramMetadata: Metadata,
       modelFormatSpec: ModelFormatSpec
    ): TypedInstance {
-      val (parsedValue,parsedType) = modelFormatSpec.deserializer.parse(value, type, paramMetadata, schema, source).let { parsedValue ->
-         when {
-            // When parsing CSV, we may provide the type as T, and get back T[]
-            // This is a legacy behaviour, and should be removed.
-            parsedValue is Collection<*> && parsedValue.size > 1 && !type.isCollection -> parsedValue to type.asArrayType()
+      val (parsedValue, parsedType) = modelFormatSpec.deserializer.parse(value, type, paramMetadata, schema, source)
+         .let { parsedValue ->
+            when {
+               // When parsing CSV, we may provide the type as T, and get back T[]
+               // This is a legacy behaviour, and should be removed.
+               parsedValue is Collection<*> && parsedValue.size > 1 && !type.isCollection -> parsedValue to type.asArrayType()
 
-            // The parser will generally return a collection.
-            // If the collection has a single element, and the requested type isn't a collection, unwrap the collection
-            parsedValue is Collection<*> && parsedValue.size == 1 && !type.isCollection -> parsedValue.single() to type
+               // The parser will generally return a collection.
+               // If the collection has a single element, and the requested type isn't a collection, unwrap the collection
+               parsedValue is Collection<*> && parsedValue.size == 1 && !type.isCollection -> parsedValue.single() to type
 
-            else -> parsedValue to type
+               else -> parsedValue to type
+            }
          }
-      }
 
       return TypedInstance.from(
          parsedType,
@@ -479,6 +509,7 @@ class TypedObjectFactory(
             this.type, FactBag.of(this.value, this.schema).withAdditionalScopedFacts(scopedFacts, this.schema),
             scope = this.projectionScope
          )
+
          else -> {
             error("Cannot append scoped facts to the evaluation context, as the provided source fact is neither a TypedInstance nor a FactBag")
          }
@@ -764,7 +795,11 @@ class TypedObjectFactory(
          // if we're not a Map<>, and we don't have a valueReader, there's no way
          // of plucking just the field - it's possible the whole message is just this field
          // (eg., an avro message composed into a field of an object, with metadata on the other fields)
-         fieldModelFormatSpecPair != null -> readFieldWithFormatSpecDeserializer(field, fieldType, fieldModelFormatSpecPair)
+         fieldModelFormatSpecPair != null -> readFieldWithFormatSpecDeserializer(
+            field,
+            fieldType,
+            fieldModelFormatSpecPair
+         )
 
          // Is there a default?
 //         field.defaultValue != null -> TypedValue.from(
@@ -841,7 +876,7 @@ class TypedObjectFactory(
       valueToRead: Any,
       modelFormatSpecPair: Pair<Metadata, ModelFormatSpec>,
       type: Type
-   ):TypedInstance {
+   ): TypedInstance {
       val (metadata, modelFormatSpec) = modelFormatSpecPair
       val parsed = when {
          // "canParse" here can indicate "is any more deserializaiton required?"
@@ -930,7 +965,7 @@ class TypedObjectFactory(
       searchFailureBehaviour: QueryFailureBehaviour,
       instanceValidPredicate: TypedInstanceValidPredicate,
       attributeName: AttributeName?, // null if searching for top-level type
-      constraint: List<Constraint>  = emptyList()
+      constraint: List<Constraint> = emptyList()
    ): TypedInstance {
       require(inPlaceQueryEngine != null)
       fun failWithTypedNull(failureMessage: String): TypedNull {

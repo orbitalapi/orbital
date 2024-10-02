@@ -10,6 +10,7 @@ import com.orbitalhq.models.conditional.ConditionalFieldSetEvaluator
 import com.orbitalhq.models.conditional.WhenBlockEvaluator
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
+import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.json.JsonAttributeAccessorParser
@@ -335,6 +336,18 @@ class AccessorReader(
                source = EvaluatedExpression(expressionTaxi = accessor.asTaxi(), listOf(evaluatedExpression))
             )
          }
+         is ExtensionFunctionExpression -> {
+            evaluateExtensionFunctionExpression(
+               value,
+               targetType,
+               accessor,
+               schema,
+               nullValues,
+               source,
+               functionResultCache,
+               format
+            )
+         }
 
          is LiteralArray -> {
             val typedInstances = accessor.members.map { expression ->
@@ -569,6 +582,8 @@ class AccessorReader(
       format: FormatsAndZoneOffset?
    ): TypedInstance {
       val function = accessor.function
+
+
       // Note - don't check for == here, because of vararg params
       if (accessor.inputs.size < function.parameters.size) {
          error("Function ${function.qualifiedName} expects ${function.parameters.size} arguments, but only ${accessor.inputs.size} were provided")
@@ -616,7 +631,7 @@ class AccessorReader(
             // If we revert, document the reason.
             val queryIfNotFound = true
 
-            timeBucket("read function accessor ${accessor.function.qualifiedName}") {
+            val parameterValue = timeBucket("read function accessor ${accessor.function.qualifiedName}") {
                read(
                   value,
                   targetParameterType,
@@ -628,14 +643,15 @@ class AccessorReader(
                   format = format
                )
             }
+            ScopedFact(parameter, parameterValue)
          }
       }
-      val declaredVarArgs = if (function.parameters.isNotEmpty() && function.parameters.last().isVarArg) {
+      val (varArgsParam, varArgsValue) = if (function.parameters.isNotEmpty() && function.parameters.last().isVarArg) {
          val varargFrom = function.parameters.size - 1
          val varargParam = function.parameters.last()
          val varargType = schema.type(varargParam.type)
          val inputs = accessor.inputs.subList(varargFrom, accessor.inputs.size)
-         inputs.map { varargInputAccessor ->
+         val varArgsValue = inputs.map { varargInputAccessor ->
             read(
                value,
                TypeUtils.mostSpecificType(varargType, schema.type(varargInputAccessor.returnType)),
@@ -647,21 +663,43 @@ class AccessorReader(
                allowContextQuerying = true
             )
          }
-      } else emptyList()
+         varargParam to varArgsValue
+      } else null to emptyList()
 
-      val allInputs = declaredInputs + declaredVarArgs
+      // The inputs as typed instances.
+      // Used if we're calling to an invoker.
+      val allInputValues = declaredInputs.map { it.fact } + varArgsValue
 
-      val functionResult = functionRegistry.invoke(
-         function,
-         allInputs,
-         schema,
-         targetType,
-         accessor,
-         objectFactory,
-         format,
-         value,
-         resultCache
-      )
+
+
+      val functionResult = if (function.hasBody) {
+         val varArgsArgument = varArgsParam?.let { param -> ScopedFact(param, TypedCollection.from(varArgsValue)) }
+         val allInputArguments = (declaredInputs + varArgsArgument)
+            .filterNotNull()
+         val evaluationContext = this.objectFactory //.withAdditionalScopedFacts(allInputArguments)
+         require(objectFactory is TypedObjectFactory) { "Cannot evaluate function ${function.qualifiedName} as evaluation context was instance of ${evaluationContext::class.simpleName} but needed ${TypedObjectFactory::class.simpleName}" }
+
+         // When evaluating a function (which has named, scoped arguments),
+         // names are important - so create a new FactBag containing the scoped arguments.
+         // We don't want to use the old one, as the arguments are named incorrectly
+         // (eg: names are relative to the scope they were declared, not the scope of the inputs
+         // of the function we're about to evaluate).
+         val args = FactBag.empty().withAdditionalScopedFacts(allInputArguments, schema)
+         objectFactory.newFactoryWithOnly(schema.type(function.returnType!!), args)
+            .evaluateExpression(function.body!!)
+      } else {
+         functionRegistry.invoke(
+            function,
+            allInputValues,
+            schema,
+            targetType,
+            accessor,
+            objectFactory,
+            format,
+            value,
+            resultCache
+         )
+      }
       return functionResult
    }
 
