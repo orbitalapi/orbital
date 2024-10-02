@@ -10,6 +10,7 @@ object CollectionFiltering {
       FilterEach,
       First,
       Last,
+      ExactlyOne,
       GetAtIndex
    )
 }

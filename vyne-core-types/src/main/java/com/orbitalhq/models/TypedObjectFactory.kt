@@ -742,17 +742,26 @@ class TypedObjectFactory(
             // wrt/ coroutines vs flux atm.
             val argumentExpressionReturnType = schema.type(argumentTypeExpression.type)
             val scopedFacts = this.getCurrentScopedFacts()
-            val result = runBlocking {
+            val typedInstance = runBlocking {
                // If we're doing nested traversal of lambda expressions,
                // there could be scoped facts we've been passed that will
                // be needed as inputs
 
                val queryEngineWithScopedFacts = valueSupplier.inPlaceQueryEngine!!.withAdditionalFacts(emptyList(),  scopedFacts)
-               queryEngineWithScopedFacts.findType(
+               val collectedList = queryEngineWithScopedFacts.findType(
                   argumentExpressionReturnType, constraint = argumentTypeExpression.constraints
                ).toList()
+               when {
+                  argumentExpressionReturnType.isCollection -> TypedCollection.from(collectedList)
+                  collectedList.isEmpty() -> TypedNull.create(argumentExpressionReturnType)
+                  collectedList.size == 1 -> collectedList.single()
+                  else -> {
+                     error("Expected a single value returned for the expression type ${argumentTypeExpression}, but got ${collectedList.size}")
+                  }
+               }
+
             }
-            val typedInstance = TypedInstance.from(argumentExpressionReturnType, result, schema)
+//            val typedInstance = TypedInstance.from(argumentExpressionReturnType, result, schema)
             ScopedFact(argument, typedInstance)
          } else {
             val argumentValue = valueSupplier.getScopedFactOrNull(argument)

@@ -77,6 +77,19 @@ object Last : CollectionNavigatingFunction() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Last.name
 }
 
+object ExactlyOne : CollectionNavigatingFunction() {
+   override fun select(
+      collection: List<TypedInstance>,
+      inputValues: List<TypedInstance>,
+      failureFactory: (String) -> TypedNull
+   ): TypedInstance {
+      return collection.singleOrNull() ?: failureFactory("Expected exactly 1 item present in the collection, but there were ${collection.size} items")
+   }
+
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.ExactlyOne.name
+}
+
+
 object GetAtIndex : CollectionNavigatingFunction() {
    override fun select(
       collection: List<TypedInstance>,

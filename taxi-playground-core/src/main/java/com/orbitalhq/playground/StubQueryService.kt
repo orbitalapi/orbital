@@ -19,12 +19,14 @@ import lang.taxi.annotations.HttpService
 import lang.taxi.query.QueryMode
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.Arrays
+import mu.KotlinLogging
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import java.time.Duration
 
 class StubQueryService(private val streamDelay: Duration = Duration.ofMillis(500)) {
    companion object {
+      private val logger = KotlinLogging.logger {}
       val builtInTypes: String = listOf(
          VyneQlGrammar.QUERY_TYPE_TAXI,
          CsvAnnotationSpec.taxi,
@@ -56,28 +58,33 @@ class StubQueryService(private val streamDelay: Duration = Duration.ofMillis(500
       val (vyne, stub) = StubService.stubbedVyne(schema)
       query.stubs.forEach { operationStub ->
          val operation = vyne.schema.services
-            .filter { it.hasRemoteOperation(operationStub.operationName) }
-            .single()
-            .remoteOperation(operationStub.operationName)
+            .singleOrNull { it.hasRemoteOperation(operationStub.operationName) }
+            ?.remoteOperation(operationStub.operationName)
 
-         if (operation.returnType.isStream) {
-            val collectionType = operation.returnType.typeParameters[0].asArrayType()
-            val result = vyne.parseJson(collectionType.paramaterizedName, operationStub.response)
-            require(result is TypedCollection) { "Operation ${operationStub.operationName} is a stream, so stubbed results should be provided as an array" }
-            stub.addResponseFlow(operationStub.operationName) { _, _ ->
-               flow {
-                  result.forEach {
-                     emit(it)
-                     if (addDelayToStreams) {
-                        delay(streamDelay.toMillis())
+         if (operation != null) {
+            if (operation.returnType.isStream) {
+               val collectionType = operation.returnType.typeParameters[0].asArrayType()
+               val result = vyne.parseJson(collectionType.paramaterizedName, operationStub.response)
+               require(result is TypedCollection) { "Operation ${operationStub.operationName} is a stream, so stubbed results should be provided as an array" }
+               stub.addResponseFlow(operationStub.operationName) { _, _ ->
+                  flow {
+                     result.forEach {
+                        emit(it)
+                        if (addDelayToStreams) {
+                           delay(streamDelay.toMillis())
+                        }
                      }
                   }
                }
+            } else {
+               val result = vyne.parseJson(operation.returnType.paramaterizedName, operationStub.response)
+               stub.addResponse(operationStub.operationName, result)
             }
          } else {
-            val result = vyne.parseJson(operation.returnType.paramaterizedName, operationStub.response)
-            stub.addResponse(operationStub.operationName, result)
+            logger.warn { "Received a stub for operation ${operationStub.operationName} but such operation was found in the schema" }
          }
+
+
 
       }
 
