@@ -44,6 +44,29 @@ class ExtensionFunctionTest {
    }
 
    @Test
+   fun `can use a simple extension function`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne("")
+      vyne.query("""given { s:String = "hello" } find { s.upperCase() }""")
+         .firstRawValue().shouldBe("HELLO")
+   }
+
+   @Test
+   fun `can use a simple extension function on property`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne("type Message inherits String")
+      val result = vyne.query(
+         """given { s:Message = "hello", w:Message = "world" } find {
+         |message : Message by s
+         |upperMessage : String by w.upperCase().left(2)
+         |}""".trimMargin()
+      )
+         .firstRawObject()
+      result.shouldBe(mapOf(
+         "message" to "hello",
+         "upperMessage" to "WO"
+      ))
+   }
+
+   @Test
    fun `can filter stream results using expression`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
@@ -61,9 +84,11 @@ class ExtensionFunctionTest {
       moviesFlow.emit(vyne.parseJson("Movie", """{ "title" : "Jaws"}"""))
       stub.addResponseFlow("streamMovies") { _, _ -> moviesFlow }
 
-      val results = vyne.query("""
+      val results = vyne.query(
+         """
          stream { Movie.filterEach( (Title) -> Title == "Jaws" ) }
-      """).results
+      """
+      ).results
 
       results.test(timeout = Duration.parse("15s")) {
          val next = expectTypedObject()
