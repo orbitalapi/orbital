@@ -181,7 +181,7 @@ class QueryRequestHandlerTest {
             "Code" to "xyz.abc.def",
             "Id" to "correlationId",
             "Message" to  "Invalid API Status",
-            "Errors" to  listOf("TR_ORBITAL_UnexpectedError")))
+            "Errors" to  listOf("An unexpected error occurred")))
         mockWebServerRule.takeRequest()
 
     }
@@ -223,35 +223,35 @@ class QueryRequestHandlerTest {
                    listOf(AuthClaimsTypeDefinition, ErrorTypeDefinition,
                        """
          type CorrelationId inherits String
-         type FilmId inherits Int                  
+         type FilmId inherits Int
          @com.orbitalhq.formats.Csv
          model CsvModel {
            givenName : FirstName inherits String
            surname : LastName inherits String
          }
-         
+
          model RestResponse {
            status: ResponseStatus inherits String
          }
-         
+
          model Film {
-           filmId: FilmId 
+           filmId: FilmId
          }
-         
+
          model FilmRating {
-           filmId: FilmId 
+           filmId: FilmId
            rating: Rating inherits String
          }
-         
+
          model StreamProvider {
            filmId: FilmId
            provider: ProviderName inherits String
          }
-         
+
          enum ErrorEnum {
-           TR_ORBITAL_UnexpectedError("TR.ORBITAL.UnexpectedError")
+           TR_ORBITAL_UnexpectedError("An unexpected error occurred")
          }
-         
+
          model OrbitalBaseError inherits com.orbitalhq.errors.Error {
            Code: OrbitalErrorCode inherits String
            Id: OrbitalErrorId inherits String
@@ -266,7 +266,7 @@ class QueryRequestHandlerTest {
            Message: OrbitalErrorMessage inherits String
            Errors: ErrorEnum[]
          }
-         
+
          policy AllAccessStreamProviders against StreamProvider (filmId : FilmId, correlationId: CorrelationId?) -> {
             read {
                when {
@@ -280,32 +280,32 @@ class QueryRequestHandlerTest {
                }
             }
          }
-         
+
         service CsvConsumerApi {
            @taxi.http.HttpOperation(method = "POST", url = "http://localhost:${server.port}/csv")
-           write operation saveCsv(@taxi.http.RequestBody CsvModel, 
+           write operation saveCsv(@taxi.http.RequestBody CsvModel,
                                    @taxi.http.HttpHeader(name = "x-api-correlationId") correlationId: CorrelationId
                                    ): RestResponse
         }
-        
+
         service FilmRatingsApi {
                @taxi.http.HttpOperation(method = "GET", url = "http://localhost:${server.port}/{filmId}")
                operation filmRating(@taxi.http.PathVariable("fimlId") filmId: FilmId): FilmRating
         }
-        
+
         service StreamProvidersApi {
            @taxi.http.HttpOperation(method = "GET", url = "http://localhost:${server.port}/streaming/{filmId}")
                operation filmRating(@taxi.http.PathVariable("fimlId") filmId: FilmId): StreamProvider
         }
-        
+
         @taxi.http.HttpOperation(method = "POST", url = "$CsvQueryEndPoint")
         query CsvQuery(
-         @taxi.http.RequestBody csvModel: CsvModel, 
+         @taxi.http.RequestBody csvModel: CsvModel,
          @taxi.http.HttpHeader(name = "$CorrelationHeaderName") correlationId: CorrelationId) {
            given { csvModel }
            call CsvConsumerApi::saveCsv
         }
-        
+
         @taxi.http.HttpOperation(method = "GET", url = "$FilmRatingQueryEndPoint/{filmId}")
         query FilmRatingQuery(
              @taxi.http.PathVariable("filmId") filmId: FilmId,
@@ -313,8 +313,8 @@ class QueryRequestHandlerTest {
              @taxi.http.ResponseHeader("$CorrelationHeaderName") correlationId: CorrelationId,
              @taxi.http.ResponseHeader("filmId") filmId: FilmId) {
               given { filmId}
-              find { FilmRating }   
-            }    
+              find { FilmRating }
+            }
         @taxi.http.HttpOperation(method = "GET", url = "$StreamProvidersQueryEndPoint/{filmId}")
         query FilmRatingQuery(
              @taxi.http.PathVariable("filmId") filmId: FilmId,
@@ -322,8 +322,8 @@ class QueryRequestHandlerTest {
              @taxi.http.ResponseHeader("$CorrelationHeaderName") correlationId: CorrelationId,
              @taxi.http.ResponseHeader("filmId") filmId: FilmId) {
               given { filmId }
-              find { StreamProvider }   
-            }      
+              find { StreamProvider }
+            }
       """.trimIndent())
                )
            )

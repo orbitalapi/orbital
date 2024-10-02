@@ -21,6 +21,7 @@ object Functional {
    val functions: List<NamedFunctionInvoker> = listOf(
       Reduce,
       Fold,
+      MapFunction,
       Sum,
       Max,
       Min
@@ -65,6 +66,37 @@ object Fold : NamedFunctionInvoker {
       }
       return foldedValue
    }
+}
+
+object MapFunction : NamedFunctionInvoker {
+   override val functionName: QualifiedName =  lang.taxi.functions.stdlib.Map.name
+
+   override fun invoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
+   ): TypedInstance {
+      val sourceCollection = inputValues[0] as TypedCollection
+      val deferredInstance = inputValues[1] as DeferredExpression
+      val expression = deferredInstance.expression
+      val expressionReturnType = schema.type(expression.returnType)
+      val dataSource = EvaluatedExpression(
+         function.asTaxi(),
+         inputValues
+      )
+      val result = sourceCollection.map { typedInstance ->
+         val reader = AccessorReader.forFacts(listOf(typedInstance), schema)
+         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = dataSource, format = null)
+         evaluated
+      }
+      return TypedCollection.from(result, dataSource)
+   }
+
 }
 
 object Reduce : NamedFunctionInvoker {

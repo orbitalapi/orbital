@@ -144,9 +144,8 @@ class ObjectBuilder(
       return if (targetType.isScalar && !targetType.hasExpression) {
          // if (allowRecursion)  searchForType(targetType, spec) else null
          searchForType(targetType, spec)
-      } else if (targetType.isScalar && targetType.hasExpression) {
-         // TODO : Do we need the isScalar check there?
-         buildExpressionScalar(targetType)
+      } else if (targetType.hasExpression) {
+         evaluateExpressionType(targetType)
       } else if (targetType.isCollection) {
          buildCollection(targetType, spec, constraints)
       } else {
@@ -186,10 +185,14 @@ class ObjectBuilder(
          }
    }
 
-   private fun buildExpressionScalar(targetType: Type): TypedInstance {
+   private fun evaluateExpressionType(targetType: Type): TypedInstance {
       return TypedObjectFactory(
          targetType,
-         emptyList<String>(), // What do I pass here?
+         // Note: This used to be an empty list,
+         // Then became an EmptyFactBag
+         // Then became an EmptyFactBag with additional scoped facts.
+         // Should is just be the context facts?
+         FactBag.empty().withAdditionalScopedFacts(context.scopedFacts, context.schema),
          context.schema,
          source = MixedSources,
          inPlaceQueryEngine = context,
