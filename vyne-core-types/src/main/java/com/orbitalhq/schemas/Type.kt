@@ -382,11 +382,6 @@ data class Type(
          null
       }
 
-   init {
-      if (this.collectionType?.taxiType == PrimitiveType.ANY) {
-         println()
-      }
-   }
 
    @get:JsonProperty("collectionType")
    val collectionTypeName: QualifiedName? = collectionType?.name
