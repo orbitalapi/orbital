@@ -17,19 +17,23 @@ import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.compon
 @Component({
   selector: 'voyager-app',
   template: `
-    <div class="app-container">
+    <div class="app-container theme-playground">
       <playground-toolbar (selectedExampleChange)="setCodeFromExample($event.query)"
                           (generateShareUrl)="showShareDialog()"
                           (clear)="clear()"
       ></playground-toolbar>
       <div class="container">
         <app-voyager-sidebar [(showDiagram)]="showDiagram" [(showQueryPanel)]="showQueryPanel"
+                             [(showReadme)]="showReadme"
                              (copyDevCode)="copyDevCode($event)"/>
         <as-split direction="horizontal" unit="percent" gutterSize="1">
           <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
             <div class="thin-splitter-gutter-icon"></div>
           </div>
-          <as-split-area [size]="35" [order]="0">
+          <as-split-area *ngIf="showReadme" [order]="0">
+            <app-readme-panel [markdown]="queryMessage?.readme"></app-readme-panel>
+          </as-split-area>
+          <as-split-area [size]="35" [order]="1">
             <div class="panel-with-header">
               <app-panel-header title="Schema"></app-panel-header>
               <app-code-editor
@@ -42,13 +46,13 @@ import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.compon
               </app-code-editor>
             </div>
           </as-split-area>
-          <as-split-area *ngIf="showQueryPanel" [order]="1">
+          <as-split-area *ngIf="showQueryPanel" [order]="2">
             <app-playground-query-panel [schema]="schema$ | async"
                                         [queryMessage]="queryMessage"></app-playground-query-panel>
           </as-split-area>
-          <as-split-area *ngIf="showDiagram" [order]="2">
+          <as-split-area *ngIf="showDiagram" [order]="3">
             <div class="panel-with-header">
-              <app-panel-header title="Diagram"></app-panel-header>
+              <app-panel-header tablerIcon="route-square-2" title="Diagram"></app-panel-header>
               <app-schema-diagram
                 class="flex-grow"
                 [class.mat-elevation-z8]="fullscreen"
@@ -70,6 +74,7 @@ export class VoyagerAppComponent {
 
   showDiagram: boolean = true;
   showQueryPanel: boolean = true;
+  showReadme: boolean = true;
 
   queryMessage: StubQueryMessage;
 
@@ -179,6 +184,7 @@ export class VoyagerAppComponent {
     this.queryMessage = queryMessage;
     this.setCode(queryMessage.schema)
     this.showQueryPanel = !isNullOrUndefined(queryMessage.query) && queryMessage.query.length > 0;
+    this.showReadme = true // !isNullOrUndefined(queryMessage.readme) && queryMessage.readme.length > 0;
   }
 
 

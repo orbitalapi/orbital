@@ -16,6 +16,8 @@ import markedAlert from "marked-alert";
 import {
   CaptureLocalNavigationDirective
 } from "src/app/markdown-utils/capture-local-navigation.directive";
+import {InlineRunQueryButtonComponent} from "../inline-run-query-button/inline-run-query-button.component";
+import {SvgIconComponent} from "../svg-icon/svg-icon.component";
 
 
 @NgModule({
@@ -42,6 +44,9 @@ import {
     TuiTabsModule,
     SchemaDiagramModule,
     OperationViewComponent,
+    InlineRunQueryButtonComponent,
+    SvgIconComponent,
+    TuiButtonModule,
     MarkdownModule.forRoot({
       markedExtensions: [markedAlert()]
     }),

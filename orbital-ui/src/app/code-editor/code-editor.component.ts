@@ -41,13 +41,12 @@ type WordWrapOptions = 'off' | 'on' | 'wordWrapColumn' | 'bounded';
       direction="vertical"
       unit="pixel"
       gutterDblClickDuration="250"
-      (gutterDblClick)="errorPanelSize < 60 ? errorPanelSize = 250 : errorPanelSize = 50"
     >
       <as-split-area size="*">
         <div #codeEditorContainer class="code-editor"></div>
       </as-split-area>
-      <as-split-area [size]="errorPanelSize" minSize="50" maxSize="250" *ngIf="showCompilationProblemsPanel">
-        <app-compilation-message-list [compilationMessages]="compilationMessages"></app-compilation-message-list>
+      <as-split-area [size]="errorPanelSize" minSize="42" maxSize="250" *ngIf="showCompilationProblemsPanel">
+        <app-compilation-message-list [(expanded)]="compilationProblemsPanelExpanded" [compilationMessages]="compilationMessages"></app-compilation-message-list>
       </as-split-area>
     </as-split>
   `,
@@ -64,6 +63,8 @@ export class CodeEditorComponent implements OnDestroy {
   get codeEditorContainer(): ElementRef {
     return this._codeEditorContainer;
   }
+
+  compilationProblemsPanelExpanded = true;
 
   set codeEditorContainer(value: ElementRef) {
     this._codeEditorContainer = value;
@@ -172,7 +173,9 @@ export class CodeEditorComponent implements OnDestroy {
   @Output()
   cursorPositionChanged = new EventEmitter<IPosition>();
 
-  errorPanelSize: number = 135;
+  get errorPanelSize(): number {
+    return this.compilationProblemsPanelExpanded ? 135 : 42;
+  }
 
   constructor(
     private languageServerService: MonacoLanguageServerService,

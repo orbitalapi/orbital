@@ -1,4 +1,12 @@
-import {ChangeDetectorRef, Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ComponentFactoryResolver,
+  EventEmitter,
+  Input, NgZone,
+  OnInit,
+  Output, ViewContainerRef
+} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import Prism from 'prismjs'
 import 'prismjs/plugins/toolbar/prism-toolbar';
@@ -26,6 +34,7 @@ import {
 import {taxi} from '../utils/prism.languages';
 import {MarkdownService} from "ngx-markdown";
 import {CustomMarkdownRenderer} from "../markdown-utils/markdown-custom-renderer";
+import {InlineRunQueryButtonComponent} from "../inline-run-query-button/inline-run-query-button.component";
 
 @Component({
   selector: 'app-schema-member-type-explorer',
@@ -169,8 +178,10 @@ export class SchemaMemberTypeExplorerComponent  {
     private router: Router,
     private activatedRoute: ActivatedRoute,
     private queryPanelStoreService: QueryPanelStoreService,
-    private markdownService: MarkdownService,
-    private customMarkdownRenderer: CustomMarkdownRenderer
+    markdownService: MarkdownService,
+    customMarkdownRenderer: CustomMarkdownRenderer,
+    viewContainerRef: ViewContainerRef,
+    zone: NgZone
   ) {
     this.combinedSchema$ = combineLatest([
       this.schema$,
@@ -195,20 +206,8 @@ export class SchemaMemberTypeExplorerComponent  {
     Prism.languages.taxi = taxi
     Prism.languages.taxiql = taxi
 
-    Prism.plugins.toolbar.registerButton('run-code', (env) => {
-      if (env.language === 'taxiql') {
-        const button = document.createElement('button');
-        button.innerHTML = 'Run code in query editor';
-        button.addEventListener('click', () => this.gotoQueryEditor(env.code))
-        return button
-      } else {
-        return null
-      }
-    });
-
-    this.markdownService.renderer.code = (code: string, language: string, escaped: boolean):string => {
-      return this.customMarkdownRenderer.code(code, language, escaped)
-    }
+    InlineRunQueryButtonComponent.install(viewContainerRef, ((code) => this.gotoQueryEditor(code)), zone)
+    customMarkdownRenderer.installFor(markdownService);
   }
 
   get hasCodeView(): boolean {

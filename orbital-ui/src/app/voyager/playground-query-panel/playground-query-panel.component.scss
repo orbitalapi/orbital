@@ -9,6 +9,7 @@
 
 app-code-editor {
   height: 100%;
+  flex-grow: 1;
 }
 
 .result-panel {
@@ -32,6 +33,10 @@ app-code-editor {
 
 @include thin-splitter();
 
+.flex-split-area {
+  display: flex;
+  flex-direction: column;
+}
 .stubs-params-header {
   span {
     margin-right: 1rem;

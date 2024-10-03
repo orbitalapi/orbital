@@ -1,6 +1,7 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, input, Input, signal} from '@angular/core';
 import {HttpClient} from "@angular/common/http";
 import {SafePipe} from "../safe.pipe";
+import {NgStyle} from "@angular/common";
 
 /**
  * Displays configurable svg, loaded from a known url.
@@ -17,13 +18,13 @@ import {SafePipe} from "../safe.pipe";
   selector: 'app-svg-icon',
   standalone: true,
   imports: [
-    SafePipe
+    SafePipe,
+    NgStyle
   ],
   template: `
-    <div [innerHTML]="svgContent() | safe: 'html'"></div>
+    <div [style.width]="widthCss()" [style.height]="heightCss()" [innerHTML]="svgContent() | safe: 'html'"></div>
   `,
   styleUrl: './svg-icon.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class SvgIconComponent {
 
@@ -31,8 +32,12 @@ export class SvgIconComponent {
 
   }
 
+
   width = input(16)
   height = input(16)
+
+  widthCss = computed(() => `${this.width()}px`)
+  heightCss = computed(() => `${this.height()}px`)
 
   strokeWidth = input(1.5)
   private rawSvg = signal<string>('');
@@ -52,11 +57,29 @@ export class SvgIconComponent {
     }
   }
 
+  /**
+   * Convenience helper.
+   * Set the name of a tabler icon (without the .svg)
+   * Will set the icon with the correct prefix
+   * @param value
+   */
+  @Input()
+  set tabler(value: string) {
+    this.src = `/assets/img/tabler/${value}.svg`
+  }
+
   private load(src: string) {
     this.http.get(src, {responseType: 'text'}).subscribe(svg => {
-      this.rawSvg.set(svg);
-      this.changeDetectorRef.markForCheck();
-    });
+        this.rawSvg.set(svg);
+        // Don't use markForCheck(), as this gets used in a component
+        // (InlineRunQueryButtonComponent)
+        // that is failing to registered with lifecycle hooks.
+        // So, force change detection manually here.
+        this.changeDetectorRef.detectChanges();
+      },
+      err => {
+        console.log(`Error loading ${src}: ${err}`);
+      });
   }
 
   private updateSvg(rawSvg: string, width: number, height: number, strokeWidth: number) {

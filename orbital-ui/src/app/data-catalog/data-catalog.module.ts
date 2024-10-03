@@ -35,15 +35,6 @@ import {CustomMarkdownRenderer} from "../markdown-utils/markdown-custom-renderer
     MatSelectModule,
     MatTableModule,
     MarkdownModule.forRoot({
-      markedOptions: {
-        provide: MARKED_OPTIONS,
-        useFactory: (renderer: CustomMarkdownRenderer) => {
-          return {
-            renderer
-          }
-        },
-        deps: [CustomMarkdownRenderer]
-      },
       markedExtensions: [markedAlert()],
     }),
     RouterModule,

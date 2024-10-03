@@ -7,6 +7,11 @@ export const simpleQuery:StubQueryMessageWithSlug = {
     schema: '',
     query: 'find { 1 + 2 }',
     stubs: [],
-    parameters: {}
+    parameters: {},
+    readme: `Here's a snippet:
+\`\`\`taxiql
+find { 2 + 3 }
+\`\`\`
+    `
   }
 }

@@ -51,6 +51,7 @@ import {RouterLink} from "@angular/router";
     TuiInputCopyModule,
     TuiHostedDropdownModule,
     RouterLink,
+
   ]
 })
 export class VoyagerModule {
@@ -77,6 +78,10 @@ export class VoyagerModule {
       this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/tabler/route-square-2.svg`)
     );
     this.matIconRegistry.addSvgIcon(
+      `stack-2`,
+      this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/tabler/stack-2.svg`)
+    );
+    this.matIconRegistry.addSvgIcon(
       `file-search`,
       this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/tabler/file-search.svg`)
     );
@@ -87,6 +92,10 @@ export class VoyagerModule {
     this.matIconRegistry.addSvgIcon(
       `code-circle`,
       this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/tabler/code-circle.svg`)
+    );
+    this.matIconRegistry.addSvgIcon(
+      `book`,
+      this.domSanitizer.bypassSecurityTrustResourceUrl(`../../assets/img/tabler/book.svg`)
     );
   }
 }

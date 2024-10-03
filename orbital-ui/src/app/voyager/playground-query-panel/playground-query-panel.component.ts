@@ -12,7 +12,7 @@ import {CommonModule} from '@angular/common';
 import {BehaviorSubject, EMPTY, switchMap} from "rxjs";
 import {ExpandingPanelSetModule} from "../../expanding-panelset/expanding-panel-set.module";
 import {TuiAccordionModule, TuiBadgeModule, TuiTabsModule} from "@taiga-ui/kit";
-import {TuiButtonModule} from "@taiga-ui/core";
+import {TuiButtonModule, TuiExpandModule} from "@taiga-ui/core";
 import {AngularSplitModule, IOutputData} from "angular-split";
 import {CodeEditorModule} from "../../code-editor/code-editor.module";
 import {StubPanelComponent} from "./stub-panel.component";
@@ -34,14 +34,14 @@ import {TuiChipModule} from "@taiga-ui/experimental";
   selector: 'app-playground-query-panel',
   standalone: true,
   providers: [ResizeObservableService],
-  imports: [CommonModule, ExpandingPanelSetModule, TuiAccordionModule, TuiButtonModule, AngularSplitModule, TuiTabsModule, CodeEditorModule, StubPanelComponent, HttpClientModule, JsonViewerModule, QueryConfigPanelComponent, ExpandablePanelComponent, QueryResultsPanelComponent, LineageDisplayModule, TuiBadgeModule, TuiChipModule],
+  imports: [CommonModule, ExpandingPanelSetModule, TuiAccordionModule, TuiButtonModule, AngularSplitModule, TuiTabsModule, CodeEditorModule, StubPanelComponent, HttpClientModule, JsonViewerModule, QueryConfigPanelComponent, ExpandablePanelComponent, QueryResultsPanelComponent, LineageDisplayModule, TuiBadgeModule, TuiChipModule, TuiExpandModule],
   template: `
     <as-split direction="vertical" unit="percent" gutterSize="1">
       <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
         <div class="thin-splitter-gutter-icon"></div>
       </div>
-      <as-split-area size="50">
-        <app-panel-header title="Query">
+      <as-split-area size="50" class="flex-split-area">
+        <app-panel-header tablerIcon="file-search" title="Query">
           <span class="spacer"></span>
           <button tuiButton size="s" appearance="primary"
                   class='button-small menu-bar-button'
@@ -60,44 +60,51 @@ import {TuiChipModule} from "@taiga-ui/experimental";
         </app-code-editor>
       </as-split-area>
       <as-split-area size="50">
-        <tui-accordion [rounded]="false" #accordion>
-          <tui-accordion-item size="s" [(open)]="queryPlanExpanded">
-            Query plan
-            <ng-template tuiAccordionItemContent>
-              <app-query-lineage [(fullscreen)]="queryPlanFullscreen" *ngIf="!queryPlanFullscreen"
-                                 [style.height]="expandedPanelHeight"
-                                 [rows]="parsedQuery?.queryPlan?.steps"></app-query-lineage>
-            </ng-template>
-          </tui-accordion-item>
-          <tui-accordion-item size="s" [(open)]="configPanelExpanded">
-            <div class="stubs-params-header">
-                <span>Stubs and parameters</span>
-                <tui-chip appearance="info" *ngIf="queryMessage.stubs?.length > 0">{{ queryMessage.stubs.length | i18nPlural: stubsPluralMap}}</tui-chip>
-                <tui-chip appearance="info" *ngIf="queryMessage.parameters?.length > 0">{{ queryMessage.parameters.length | i18nPlural: paramsPluralMap }} defined</tui-chip>
-            </div>
+        <app-panel-header [collapsible]="true" [(expanded)]="configPanelExpanded" #stubsPanelHeader
+                          [isSecondary]="true" title="Stubs and Parameters">
+          <div class="stubs-params-header">
+            <tui-chip appearance="info"
+                      *ngIf="queryMessage.stubs?.length > 0">{{ queryMessage.stubs.length | i18nPlural: stubsPluralMap }}
+            </tui-chip>
+            <tui-chip appearance="info"
+                      *ngIf="queryMessage.parameters?.length > 0">{{ queryMessage.parameters.length | i18nPlural: paramsPluralMap }}
+              defined
+            </tui-chip>
+          </div>
+        </app-panel-header>
+        <tui-expand [expanded]="stubsPanelHeader.expanded">
+          <app-query-config-panel [style.height]="expandedPanelHeight"
+                                  [(stubs)]="queryMessage.stubs"
+                                  [parameters]="queryMessage.parameters"
+                                  (parameterValuesChange)="updateQueryParameters($event)"
+                                  [schema]="schema"></app-query-config-panel>
+        </tui-expand>
 
-            <ng-template tuiAccordionItemContent>
-              <app-query-config-panel [style.height]="expandedPanelHeight"
-                                      [(stubs)]="queryMessage.stubs"
-                                      [parameters]="queryMessage.parameters"
-                                      (parameterValuesChange)="updateQueryParameters($event)"
-                                      [schema]="schema"></app-query-config-panel>
-            </ng-template>
-          </tui-accordion-item>
-          <tui-accordion-item size="s" [(open)]="queryResultsExpanded">
-            Results
-            <ng-template tuiAccordionItemContent>
-              <div class="result-panel" [style.height]="expandedPanelHeight">
-                <app-json-viewer [readOnly]="true" [json]="queryResult" [showHeader]="false"
-                                 *ngIf="queryResult"></app-json-viewer>
-                <div *ngIf="!queryResult" class="empty-results">
-                  No results to show
-                </div>
+
+        <app-panel-header [collapsible]="true" [(expanded)]="queryPlanExpanded" #stubsPanelHeader [isSecondary]="true"
+                          title="Query plan"/>
+        <tui-expand [expanded]="queryPlanExpanded">
+          <ng-template tuiExpandContent>
+            <app-query-lineage [(fullscreen)]="queryPlanFullscreen" *ngIf="!queryPlanFullscreen"
+                               [style.height]="expandedPanelHeight"
+                               [rows]="parsedQuery?.queryPlan?.steps"></app-query-lineage>
+          </ng-template>
+        </tui-expand>
+
+        <app-panel-header [collapsible]="true" [(expanded)]="queryResultsExpanded" #stubsPanelHeader
+                          [isSecondary]="true"
+                          title="Results"/>
+        <tui-expand [expanded]="queryResultsExpanded">
+          <ng-template tuiExpandContent>
+            <div class="result-panel" [style.height]="expandedPanelHeight">
+              <app-json-viewer [readOnly]="true" [json]="queryResult" [showHeader]="false"
+                               *ngIf="queryResult"></app-json-viewer>
+              <div *ngIf="!queryResult" class="empty-results">
+                No results to show
               </div>
-
-            </ng-template>
-          </tui-accordion-item>
-        </tui-accordion>
+            </div>
+          </ng-template>
+        </tui-expand>
       </as-split-area>
 
     </as-split>
@@ -155,13 +162,6 @@ export class PlaygroundQueryPanelComponent implements AfterViewInit {
 
   ngAfterViewInit(): void {
     this.updatePanelSizes();
-    this.resizeObservableService.resizeObservable(this.accordionElement.nativeElement)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-      )
-      .subscribe(resizeEntry => {
-        this.updatePanelSizes();
-      })
   }
 
   queryPlanExpanded: boolean = true;
@@ -241,10 +241,10 @@ export class PlaygroundQueryPanelComponent implements AfterViewInit {
   }
 
   updatePanelSizes() {
-    const accordionHeight = this.accordionElement.nativeElement.clientHeight;
-    const accordionHeaderHeight = this.accordionElement.nativeElement.querySelector('button.t-header').clientHeight;
-    const totalHeaderHeight = accordionHeaderHeight * 3
-    this.expandedPanelHeight = `${accordionHeight - totalHeaderHeight}px`
-    this.changeDetector.markForCheck();
+    // const accordionHeight = this.accordionElement.nativeElement.clientHeight;
+    // const accordionHeaderHeight = this.accordionElement.nativeElement.querySelector('button.t-header').clientHeight;
+    // const totalHeaderHeight = accordionHeaderHeight * 3
+    // this.expandedPanelHeight = `${accordionHeight - totalHeaderHeight}px`
+    // this.changeDetector.markForCheck();
   }
 }

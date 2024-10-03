@@ -4,6 +4,7 @@ export const example: StubQueryMessageWithSlug = {
   "title": "Title goes here",
   "slug": "slug-goes-here",
   "query": {
+    readme: '',
     "schema": `import FilmId
 /**
 This shows a message queue which contains streams of messages (eg., A Kafka instance).

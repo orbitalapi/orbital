@@ -1,4 +1,4 @@
-@import "src/common";
+@import "common";
 
 // Custom as-splitter style
 // Because of ng-deep rules, I couldn't find a way to
@@ -8,7 +8,7 @@
   .thin-splitter {
     width: 100%;
     height: 100%;
-    background-color: rgba($slate-500, 0.2);
+    background-color: $slate-400;
     position: relative;
   }
 

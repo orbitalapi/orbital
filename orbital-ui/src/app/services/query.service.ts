@@ -588,6 +588,7 @@ export interface StubQueryMessage {
   parameters?: { [index: string]: any };
   stubs?: OperationStub[];
   expectedJson?: string | null;
+  readme?: string;
 }
 
 export function emptyQueryMessage(): StubQueryMessage {
@@ -595,7 +596,8 @@ export function emptyQueryMessage(): StubQueryMessage {
     schema: '',
     query: '',
     parameters: {},
-    stubs: []
+    stubs: [],
+    readme: ''
   }
 }
 

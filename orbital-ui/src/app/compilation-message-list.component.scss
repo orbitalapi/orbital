@@ -7,12 +7,15 @@
   background: $gray-100;
 
   ::ng-deep app-panel-header {
-    background: $slate-100 !important;
+    :host-context(:not(.theme-playground)) {
+      background: $slate-100 !important;
 
-    &.has-errors {
-      background: $amber-50 !important;
+      &.has-errors {
+        background: $amber-50 !important;
+      }
     }
   }
+
 }
 
 .grow {
@@ -73,13 +76,14 @@ tui-badge {
     text-overflow: ellipsis;
     margin: 0 1rem;
   }
+
   .message-position {
     text-wrap: nowrap;
     opacity: 0.6;
   }
 }
 
-::ng-deep tui-accordion-item{
+::ng-deep tui-accordion-item {
   button.t-header {
     // Make the accordion header a little tighter
     padding: .425rem .75rem .425rem 1rem !important;

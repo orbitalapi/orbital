@@ -1,0 +1,40 @@
+@import "../../../common";
+
+:host {
+  background: #eeeeee;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+tui-segmented.dark {
+  background: $slate-600;
+
+  &::before {
+    box-shadow: none;
+    color: $slate-900;
+  }
+
+  button {
+    font-size: 0.8rem;
+    color: $slate-400;
+  }
+
+  .active {
+    color: white;
+  }
+}
+
+.spacer {
+  flex-grow: 1;
+}
+
+.markdown-container {
+  padding: 1rem;
+  flex-grow: 1;
+}
+app-simple-code-editor {
+  flex-grow: 1;
+  height: 100%;
+}
+
+

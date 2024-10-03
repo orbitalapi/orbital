@@ -83,9 +83,6 @@ class StubQueryService(private val streamDelay: Duration = Duration.ofMillis(500
          } else {
             logger.warn { "Received a stub for operation ${operationStub.operationName} but such operation was found in the schema" }
          }
-
-
-
       }
 
       val resultFlux = runBlocking {

@@ -10,6 +10,7 @@
   gap: 1rem;
 
   &.is-secondary {
+    min-height: unset;
     background-color: $gray-50;
   }
 }
@@ -23,4 +24,20 @@ h3, h4 {
 
 h3 {
   font-weight: 500;
+}
+
+button.icon-button {
+  background: transparent;
+  padding: 0;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+}
+.collapsible-icon {
+
+  transition: 150ms;
+  &.expanded {
+    transform-origin: center;
+    transform: rotate(90deg);
+  }
 }

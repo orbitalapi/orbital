@@ -6,26 +6,36 @@ import {openNewSiteAndCancel} from "../toolbar/playground-toolbar.component";
 import {environment} from "../../../voyager-app/environments/environment";
 import {TuiBadgeModule} from "@taiga-ui/kit";
 import {ActivatedRoute} from "@angular/router";
+import {SvgIconComponent} from "../../svg-icon/svg-icon.component";
 
 @Component({
   selector: 'app-voyager-sidebar',
   standalone: true,
-  imports: [CommonModule, MatIconModule, TuiLinkModule, TuiHintModule, TuiBadgeModule],
+  imports: [CommonModule, MatIconModule, TuiLinkModule, TuiHintModule, TuiBadgeModule, SvgIconComponent],
   template: `
-    <button class="icon-toggle-button" (click)="toggleQueryPanel()" [class.active]="showQueryPanel" [tuiHint]="'Toggle query panel'">
+    <button class="icon-toggle-button" (click)="toggleReadme()" [class.active]="showReadme"
+            [tuiHint]="'Toggle readme'">
+      <mat-icon svgIcon="book" />
+    </button>
+    <button class="icon-toggle-button" (click)="toggleQueryPanel()" [class.active]="showQueryPanel"
+            [tuiHint]="'Toggle query panel'">
       <mat-icon svgIcon="file-search"></mat-icon>
     </button>
-    <button class="icon-toggle-button" (click)="toggleDiagram()" [class.active]="showDiagram" [tuiHint]="'Toggle diagram'">
+    <button class="icon-toggle-button" (click)="toggleDiagram()" [class.active]="showDiagram"
+            [tuiHint]="'Toggle diagram'">
       <mat-icon svgIcon="route-square-2"></mat-icon>
     </button>
 
+
     <div class="spacer"></div>
-    <button class="icon-toggle-button button-with-lang-badge" *ngIf="showCopyCodeButton" (click)="copyDevCode.emit('JS')" [tuiHint]="'Copy as JS snippet'">
+    <button class="icon-toggle-button button-with-lang-badge" *ngIf="showCopyCodeButton"
+            (click)="copyDevCode.emit('JS')" [tuiHint]="'Copy as JS snippet'">
       <mat-icon svgIcon="code-circle"></mat-icon>
       <div class="lang-badge">JS</div>
     </button>
 
-    <button class="icon-toggle-button  button-with-lang-badge" *ngIf="showCopyCodeButton" (click)="copyDevCode.emit('JSON')" [tuiHint]="'Copy as JSON'">
+    <button class="icon-toggle-button  button-with-lang-badge" *ngIf="showCopyCodeButton"
+            (click)="copyDevCode.emit('JSON')" [tuiHint]="'Copy as JSON'">
       <mat-icon svgIcon="code-circle"></mat-icon>
       <div class="lang-badge">JSON</div>
     </button>
@@ -68,6 +78,12 @@ export class VoyagerSidebarComponent {
   @Output()
   showQueryPanelChange = new EventEmitter<boolean>()
 
+  @Input()
+  showReadme: boolean;
+
+  @Output()
+  showReadmeChange = new EventEmitter<boolean>();
+
   @Output()
   copyDevCode = new EventEmitter<SnippetType>()
 
@@ -82,6 +98,10 @@ export class VoyagerSidebarComponent {
   }
 
 
+  toggleReadme() {
+    this.showReadme = !this.showReadme;
+    this.showReadmeChange.emit(this.showReadme);
+  }
   toggleDiagram() {
     this.showDiagram = !this.showDiagram;
     this.showDiagramChange.emit(this.showDiagram);

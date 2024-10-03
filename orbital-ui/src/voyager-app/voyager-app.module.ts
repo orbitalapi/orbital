@@ -22,6 +22,7 @@ import {PlaygroundQueryPanelComponent} from "../app/voyager/playground-query-pan
 import {VoyagerSidebarComponent} from "../app/voyager/voyager-sidebar/voyager-sidebar.component";
 import {ExpandingPanelSetModule} from "../app/expanding-panelset/expanding-panel-set.module";
 import {CompilationMessageListModule} from "../app/compilation-message-list/compilation-message-list.module";
+import {ReadmePanelComponent} from "../app/voyager/readme-panel/readme-panel.component";
 
 @NgModule({
     imports: [
@@ -52,6 +53,7 @@ import {CompilationMessageListModule} from "../app/compilation-message-list/comp
         ExpandingPanelSetModule,
         CompilationMessageListModule,
         AsyncPipe,
+        ReadmePanelComponent,
     ],
   declarations: [VoyagerContainerAppComponent, VoyagerAppComponent],
   exports: [VoyagerContainerAppComponent, VoyagerAppComponent],

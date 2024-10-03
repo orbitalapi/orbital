@@ -2,6 +2,7 @@
 @import "../common";
 @import "../orbital-theme";
 
+$body-bg: #eeeeee;
 :root {
 
   --body-font: 'nunito-sans', sans-serif;
@@ -185,3 +186,33 @@ tui-hint {
   height: calc(100% - 2rem);
   z-index: 2000;
 }
+
+
+app-panel-header {
+  color: $slate-50 !important;
+  background-color: $slate-700 !important;
+  border-bottom: 1px solid $slate-900 !important;
+  &.is-secondary {
+    color: $slate-50 !important;
+    background-color: $slate-700 !important;
+  }
+  font-weight: 300 !important;
+  h3 {
+    font-size: 0.9rem !important;
+    color: $slate-50 !important;
+    font-weight: 300 !important;
+    text-transform: none !important;
+  }
+  h4 {
+    color: $slate-50 !important;
+    font-weight: 500 !important;
+    font-size: 0.75rem !important;
+  }
+}
+
+app-compilation-message-list {
+  ::ng-deep app-panel-header {
+    background-color: $slate-700 !important;
+  }
+}
+
