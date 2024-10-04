@@ -60,8 +60,8 @@ data class TypedCollection(
          return TypedCollection(collectionType.asArrayType(), value, source)
       }
 
-      fun empty(type: Type): TypedCollection {
-         return TypedCollection(type, emptyList())
+      fun empty(type: Type, source: DataSource = MixedSources): TypedCollection {
+         return TypedCollection(type, emptyList(), source)
       }
 
       /**

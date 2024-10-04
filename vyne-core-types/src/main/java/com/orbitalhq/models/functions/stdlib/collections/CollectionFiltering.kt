@@ -11,7 +11,8 @@ object CollectionFiltering {
       First,
       Last,
       ExactlyOne,
-      GetAtIndex
+      GetAtIndex,
+      Intersection
    )
 }
 

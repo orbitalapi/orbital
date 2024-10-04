@@ -25,7 +25,7 @@ object Filter : NamedFunctionInvoker, CollectionFilteringFunction() {
       rawMessageBeingParsed: Any?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
-      return applyFilter(inputValues, schema, returnType, function, objectFactory, rawMessageBeingParsed)
+      val result = applyFilter(inputValues, schema, returnType, function, objectFactory, rawMessageBeingParsed)
          .map {
             if (it.isEmpty()) {
                TypedCollection.empty(returnType)
@@ -35,6 +35,7 @@ object Filter : NamedFunctionInvoker, CollectionFilteringFunction() {
          }
 
          .getOrHandle { it }
+      return result
    }
 }
 

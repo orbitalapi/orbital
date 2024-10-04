@@ -8,6 +8,7 @@ import com.orbitalhq.models.functions.stdlib.collections.SingleBy
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import lang.taxi.functions.FunctionAccessor
+import lang.taxi.functions.stdlib.Collections
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
@@ -26,13 +27,38 @@ object Convert : NullSafeInvoker() {
       val source = inputValues[0]
       val targetType = inputValues[1] as TypeReferenceInstance
       val resultCacheKey = FunctionResultCacheKey(
-         SingleBy.functionName,
+         functionName,
          listOf(source, targetType)
       )
+
+      // When converting, if the targetType is a raw type (String etc),
+      // the TypedObjectFactory may not perform the conversion correctly.
+      // Here, we just re-type it back to the requested type post-conversion, if
+      // required.
+      fun TypedInstance.convertToRawTypeIfRequired(): TypedInstance {
+         val targetMemberType = targetType.type.collectionType ?: targetType.type
+         return if (targetMemberType.isPrimitive && this.type != targetMemberType) {
+            this.withTypeAlias(targetMemberType)
+         } else {
+            this
+         }
+      }
+
       val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
       val converted = resultCache.getOrPut(resultCacheKey) {
-         TypedObjectFactory(targetType.type, FactBag.of(source, schema), schema, source = dataSource, functionRegistry = schema.functionRegistry)
-            .build()
+         if (targetType.type.isCollection && source is Collection<*>) {
+            val typedInstances = source.map { member ->
+               TypedObjectFactory(targetType.type.collectionType!!, FactBag.of(member as TypedInstance, schema), schema, source = dataSource, functionRegistry = schema.functionRegistry)
+                  .build()
+                  .convertToRawTypeIfRequired()
+            }
+            TypedCollection.arrayOf(targetType.type.collectionType!!, typedInstances, dataSource)
+         } else {
+            TypedObjectFactory(targetType.type, FactBag.of(source, schema), schema, source = dataSource, functionRegistry = schema.functionRegistry)
+               .build()
+               .convertToRawTypeIfRequired()
+         }
+
       }
       return converted as TypedInstance
    }

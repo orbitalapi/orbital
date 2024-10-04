@@ -4,6 +4,7 @@ import com.orbitalhq.models.functions.NamedFunctionInvoker
 
 object Transformations {
    val functions: List<NamedFunctionInvoker> = listOf(
-      Convert
+      Convert,
+      ToRawType
    )
 }

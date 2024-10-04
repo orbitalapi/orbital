@@ -94,7 +94,11 @@ object MapFunction : NamedFunctionInvoker {
          val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = dataSource, format = null)
          evaluated
       }
-      return TypedCollection.from(result, dataSource)
+      return if (result.isEmpty())  {
+         TypedCollection.empty(returnType)
+      } else {
+         TypedCollection.from(result, dataSource)
+      }
    }
 
 }
