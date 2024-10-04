@@ -184,7 +184,7 @@ export class VoyagerAppComponent {
     this.queryMessage = queryMessage;
     this.setCode(queryMessage.schema)
     this.showQueryPanel = !isNullOrUndefined(queryMessage.query) && queryMessage.query.length > 0;
-    this.showReadme = true // !isNullOrUndefined(queryMessage.readme) && queryMessage.readme.length > 0;
+    this.showReadme = !isNullOrUndefined(queryMessage.readme) && queryMessage.readme.length > 0;
   }
 
 

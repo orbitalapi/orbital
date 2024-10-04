@@ -44,6 +44,8 @@ app-code-editor {
   display: flex;
   gap: 1rem;
   align-items: center;
+  flex-grow: 1;
+  flex-direction: row-reverse; // right align the content
 }
 
 app-query-lineage {
@@ -90,4 +92,13 @@ tui-accordion {
   width: calc(100% - $sidenav-width - 2rem);
   height: calc(100% - 2rem);
   z-index: 2000;
+}
+
+
+tui-chip[tuiAppearance][data-appearance='info']  {
+  background: $sky-500;
+  color: $slate-50;
+  font-family: $headings-font;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
