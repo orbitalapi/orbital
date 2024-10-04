@@ -460,8 +460,17 @@ class StatefulQueryEngine(
 
    private suspend fun mapTo(targetType: Type, typedInstance: TypedInstance, context: QueryContext): TypedInstance? {
 
-      //paramitziedtype of
-      val transformationResult = context.only(typedInstance).build(targetType)
+
+      // MP 3-Oct-24:
+      // Adding the scoped facts here for traversal.
+      // I think these were exclulded because it can muddy the context, but they're
+      // explicitly defined as in scope
+      // eg:
+      //  find { Movie } as (cast:Actor[]) -> {
+      //               starring : Actor[] by cast.filter( (Name) -> Name == 'Mark' )
+      //            }
+      // the variable 'cast' is in scope here.
+      val transformationResult = context.only(typedInstance, context.scopedFacts).build(targetType)
 
       return if (transformationResult.isFullyResolved) {
          val results = transformationResult.results.toList()

@@ -9,6 +9,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.toList
 import org.junit.jupiter.api.Test
 import kotlin.time.Duration
 
@@ -60,10 +61,12 @@ class ExtensionFunctionTest {
          |}""".trimMargin()
       )
          .firstRawObject()
-      result.shouldBe(mapOf(
-         "message" to "hello",
-         "upperMessage" to "WO"
-      ))
+      result.shouldBe(
+         mapOf(
+            "message" to "hello",
+            "upperMessage" to "WO"
+         )
+      )
    }
 
    @Test
@@ -95,11 +98,12 @@ class ExtensionFunctionTest {
             .toRawObject()
          next.shouldBe(mapOf("title" to "Jaws"))
       }
+   }
 
-      @Test // ORB-650
-      fun `can chain extension functions together`(): Unit = runBlocking {
-         val (vyne, stub) = testVyne(
-            """
+   @Test // ORB-650
+   fun `can chain extension functions together`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
             model Movie {
                title : Title inherits String
             }
@@ -107,20 +111,44 @@ class ExtensionFunctionTest {
                operation findAll():Movie[]
             }
          """.trimIndent()
-         )
-         stub.addResponse("findAll", vyne.parseJson("Movie[]", """[{ "title" : "Jaws"}, {"title": "Star Wars"}]"""))
+      )
+      stub.addResponse("findAll", vyne.parseJson("Movie[]", """[{ "title" : "Jaws"}, {"title": "Star Wars"}]"""))
 
-         val results = vyne.query(
-            """
+      val results = vyne.query(
+         """
          find { Movie[].filter( (Title) -> Title == "Jaws" ).convert(Title) }
       """.trimIndent()
-         )
-            .rawObjects()
+      ).rawResults.toList()
 
-         results.shouldBe(
-            listOf("Jaws")
-         )
-      }
 
+      results.shouldBe(
+         listOf("Jaws")
+      )
    }
+
+   @Test
+   fun `can call extension function against named parameter`():Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+            model Movie {
+               cast : Actor[]
+            }
+            model Actor {
+               name : Name inherits String
+            }
+            service Movies {
+               operation findOne():Movie
+            }
+         """
+      )
+      stub.addResponse("findOne", """{"cast" : [{"name": "Mark"}, {"name" : "Carrie" }]}""")
+      val result = vyne.query("""
+            find { Movie } as (cast:Actor[]) -> {
+               starring : Actor[] by cast.filter( (Name) -> Name == 'Mark' )
+            }
+      """)
+         .firstRawObject()
+      result.shouldBe(mapOf("starring" to listOf(mapOf("name" to "Mark"))))
+   }
+
 }
