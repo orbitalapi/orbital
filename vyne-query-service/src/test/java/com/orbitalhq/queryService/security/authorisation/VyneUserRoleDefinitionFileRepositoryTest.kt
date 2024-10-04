@@ -3,7 +3,11 @@ package com.orbitalhq.queryService.security.authorisation
 import com.winterbe.expekt.should
 import com.orbitalhq.auth.authorisation.VyneUserRoleDefinitionFileRepository
 import com.orbitalhq.security.VyneGrantedAuthority
+import io.kotest.matchers.collections.shouldContain
+import io.kotest.matchers.collections.shouldContainAll
+import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldNotBeEmpty
+import io.kotest.matchers.shouldBe
 import org.junit.Test
 import org.springframework.core.io.ClassPathResource
 
@@ -16,7 +20,7 @@ class VyneUserRoleDefinitionFileRepositoryTest {
       val queryRunnerRoleDefinition = repo.findByRoleName("QueryRunner")
       val viewerRoleDefinition = repo.findByRoleName("Viewer")
       val platformManager = repo.findByRoleName("PlatformManager")
-      adminRoleDefinition!!.grantedAuthorities.should.equal(setOf(
+      val expected = setOf(
          VyneGrantedAuthority.RunQuery,
          VyneGrantedAuthority.CancelQuery,
          VyneGrantedAuthority.ViewQueryHistory,
@@ -37,8 +41,14 @@ class VyneUserRoleDefinitionFileRepositoryTest {
          VyneGrantedAuthority.CreateWorkspace,
          VyneGrantedAuthority.ViewWorkspaces,
          VyneGrantedAuthority.ModifyWorkspaceMembership,
-         VyneGrantedAuthority.ViewMetrics)
+         VyneGrantedAuthority.ViewMetrics,
+         VyneGrantedAuthority.ModifyLicense,
+         VyneGrantedAuthority.TestConnections,
+         VyneGrantedAuthority.ViewActiveQueries,
+         VyneGrantedAuthority.ViewChangelog,
+         VyneGrantedAuthority.ViewLoaderStatus
       )
+      adminRoleDefinition!!.grantedAuthorities.shouldBe(expected)
 
       queryRunnerRoleDefinition!!.grantedAuthorities.shouldNotBeEmpty()
 
