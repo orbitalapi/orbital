@@ -61,13 +61,14 @@ import Prism from 'prismjs'
 })
 export class ReadmePanelComponent {
 
-  constructor(markdownService: MarkdownService,
-              customMarkdownRenderer: CustomMarkdownRenderer,
-              viewContainerRef: ViewContainerRef,
-              zone: NgZone) {
+  constructor(
+    markdownService: MarkdownService,
+    customMarkdownRenderer: CustomMarkdownRenderer,
+    viewContainerRef: ViewContainerRef,
+    zone: NgZone
+  ) {
     Prism.languages.taxi = taxi
     Prism.languages.taxiql = taxi
-
 
     InlineRunQueryButtonComponent.install(viewContainerRef, (code) => this.onRunQueryClicked(code), zone)
     customMarkdownRenderer.installFor(markdownService)
@@ -75,6 +76,7 @@ export class ReadmePanelComponent {
 
   private onRunQueryClicked(query:string) {
     console.log(query);
+    this.onRunQuery.emit(query)
   }
 
   @Input()
@@ -90,6 +92,9 @@ export class ReadmePanelComponent {
   @Output()
   markdownChange = new EventEmitter<string>();
   viewModeActiveIndex = 0
+
+  @Output()
+  onRunQuery = new EventEmitter<string>()
 
   private _markdown: string
 }

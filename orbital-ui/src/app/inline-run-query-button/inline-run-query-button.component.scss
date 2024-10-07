@@ -2,13 +2,17 @@
 :host {
   display: block;
 }
+
 button {
+  border: 1px solid $slate-300;
+  background-color: $slate-50;
+  cursor: pointer;
+
   app-svg-icon {
     margin-right: 0.5rem;
     color: $green-700;
   }
-  border: 1px solid $slate-300;
-  background-color: $slate-50;
+
   .label {
     font-size: 0.8rem;
     font-weight: 600;

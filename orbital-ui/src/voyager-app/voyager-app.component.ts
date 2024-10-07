@@ -1,9 +1,17 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Injector} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  Inject,
+  Injector,
+  model,
+  ViewChild
+} from "@angular/core";
 import {ParsedSchema, VoyagerService} from 'src/voyager-app/voyager.service';
 import {catchError, debounceTime, filter, map, mergeMap, shareReplay, switchMap, tap} from 'rxjs/operators';
 import {emptySchema, Schema} from 'src/app/services/schema';
 import {Observable, of, ReplaySubject} from 'rxjs';
-import {ExampleGroups, StubExamples} from 'src/voyager-app/code-examples';
+import {ExampleGroups} from 'src/voyager-app/code-examples';
 import {TuiAlertService, TuiDialogService} from '@taiga-ui/core';
 import {ShareDialogComponent} from 'src/app/voyager/share-dialog/share-dialog.component';
 import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
@@ -12,6 +20,7 @@ import {emptyQueryMessage, StubQueryMessage} from "../app/services/query.service
 import {isNullOrUndefined} from "../app/utils/utils";
 import {Clipboard} from '@angular/cdk/clipboard';
 import * as pako from 'pako';
+import { PlaygroundQueryPanelComponent } from "../app/voyager/playground-query-panel/playground-query-panel.component";
 import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.component";
 
 @Component({
@@ -31,7 +40,7 @@ import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.compon
             <div class="thin-splitter-gutter-icon"></div>
           </div>
           <as-split-area *ngIf="showReadme" [order]="0">
-            <app-readme-panel [markdown]="queryMessage?.readme"></app-readme-panel>
+            <app-readme-panel [markdown]="queryMessage?.readme" (onRunQuery)="onRunQueryHandler($event)"></app-readme-panel>
           </as-split-area>
           <as-split-area [size]="35" [order]="1">
             <div class="panel-with-header">
@@ -58,7 +67,7 @@ import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.compon
                 [class.mat-elevation-z8]="fullscreen"
                 [class.fullscreen]="fullscreen"
                 [schema$]="schema$"
-                displayedMembers="everything"
+                [(displayedMembers)]="displayedMembers"
                 (fullscreenChange)="onFullscreenChange()">
               </app-schema-diagram>
             </div>
@@ -87,7 +96,11 @@ export class VoyagerAppComponent {
 
   content: string | null = null;
 
-  constructor(private service: VoyagerService,
+  displayedMembers = model<string[] | 'everything' | 'services'>('everything')
+
+  @ViewChild(PlaygroundQueryPanelComponent) childComponent!: PlaygroundQueryPanelComponent;
+
+  constructor(private voyagerService: VoyagerService,
               @Inject(TuiDialogService) private readonly dialogService: TuiDialogService,
               @Inject(Injector) private readonly injector: Injector,
               private readonly activatedRoute: ActivatedRoute,
@@ -105,7 +118,7 @@ export class VoyagerAppComponent {
         switchMap((source: string) => {
           if (source && source.length > 0) {
             this.queryMessage.schema = source;
-            return this.service.parse(source)
+            return this.voyagerService.parse(source)
               .pipe(
                 catchError((error) => {
                   console.error('Error parsing source: ', error);
@@ -136,14 +149,22 @@ export class VoyagerAppComponent {
 
     this.schema$ = this.parsedSchema$
       .pipe(
+        debounceTime(250),
         filter(parseResult => {
           return !parseResult.hasErrors;
         }),
         map(parseResult => {
+          // NOTE: reset back to "everything", as the displayedMembers prop is doing
+          //       double duties functionality wise within the schema-diagram-component
+          if (!parseResult.schema.types.length) {
+            this.displayedMembers.set([])
+          } else {
+            this.displayedMembers.set('everything')
+          }
           return parseResult.schema;
         }),
       );
-    this.setCodeFromExample(StubExamples[0].query);
+    this.setCodeFromExample(ExampleGroups[0].snippets[0].query);
 
     this.activatedRoute.fragment
       .pipe(filter(f => f != null))
@@ -160,7 +181,7 @@ export class VoyagerAppComponent {
           const exampleSlug = params['exampleSlug'];
 
           if (shareSlug) {
-            return this.service.loadSharedSchema(params['shareSlug'])
+            return this.voyagerService.loadSharedSchema(params['shareSlug'])
           } else {
             const query = ExampleGroups.flatMap(group => group.snippets)
               .find(example => example.slug === exampleSlug)
@@ -181,7 +202,7 @@ export class VoyagerAppComponent {
   }
 
   setCodeFromExample(queryMessage: StubQueryMessage) {
-    this.queryMessage = queryMessage;
+    this.queryMessage = JSON.parse(JSON.stringify(queryMessage))
     this.setCode(queryMessage.schema)
     this.showQueryPanel = !isNullOrUndefined(queryMessage.query) && queryMessage.query.length > 0;
     this.showReadme = !isNullOrUndefined(queryMessage.readme) && queryMessage.readme.length > 0;
@@ -195,6 +216,12 @@ export class VoyagerAppComponent {
   setCode(code: string) {
     this.content = code;
     this.codeUpdated$.next(code);
+  }
+
+  onRunQueryHandler($event: string) {
+    this.queryMessage.query = $event
+    this.setCodeFromExample(this.queryMessage)
+    this.childComponent.runQuery()
   }
 
   private unzip(src: string): StubQueryMessage {
@@ -224,8 +251,6 @@ export class VoyagerAppComponent {
     } else {
       this.copyAsJavascriptSnippet(this.queryMessage)
     }
-
-
   }
 
   private copyAsJavascriptSnippet(queryMessage: StubQueryMessage) {
