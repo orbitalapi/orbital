@@ -84,6 +84,9 @@ Transitive dependency in wire-compiler and calcite-core
 -->
       <protobuf.version>3.25.5</protobuf.version>
 
+      <!-- CVE-2024-47554 in <2.14.0 -->
+      <commons-io.version>2.17.0</commons-io.version>
+
    </properties>
 
    <modules>
@@ -216,7 +219,6 @@ Transitive dependency in wire-compiler and calcite-core
       <dependency>
          <groupId>commons-io</groupId>
          <artifactId>commons-io</artifactId>
-         <version>2.11.0</version>
       </dependency>
       <dependency>
          <groupId>org.jetbrains.spek</groupId>
@@ -289,6 +291,13 @@ Transitive dependency in wire-compiler and calcite-core
 
    <dependencyManagement>
       <dependencies>
+         <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>${commons-io.version}</version>
+         </dependency>
+
+
          <!-- Set to 1.26.0 because of vulnerabilities:
          CVE-2024-25710 , CVE-2024-26308.
          Transitive in avro. Hopefully resolved in a release of
