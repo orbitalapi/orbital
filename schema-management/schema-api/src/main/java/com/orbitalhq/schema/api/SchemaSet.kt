@@ -245,4 +245,4 @@ data class SchemaSet private constructor(
 data class SourceNameWithPackage(
    val name: String,
    val packageIdentifier: PackageIdentifier?
-)
+): Serializable
