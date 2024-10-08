@@ -1,5 +1,7 @@
 package com.orbitalhq.schemas
 
+import com.orbitalhq.models.DefinedInSchema
+import com.orbitalhq.models.TypedEnumValue
 import com.orbitalhq.schemas.taxi.toVyneFieldModifiers
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.schemas.taxi.toVyneSources
@@ -112,7 +114,18 @@ object TaxiTypeMapper {
          }
 
          is EnumType -> {
-            val enumValues = taxiType.values.map { EnumValue(it.name, it.value, it.synonyms, it.typeDoc) }
+            val enumValues = taxiType.values.map { enumValue ->
+
+               val typedEnumValueSupplier = if (enumValue.value is lang.taxi.types.TypedValue) {
+                  require(taxiType.valueType != null) { "Expected type ${taxiType.qualifiedName} to declare a value type, as it has non-scalar values, but valueType was null"}
+                  ObjectEnumValueSupplier(schema)
+               } else {
+                  ScalarEnumValueSupplier
+               }
+               EnumValue(enumValue.name, enumValue.value, enumValue.synonyms, enumValue.typeDoc, typedEnumValueSupplier)
+
+
+            }
             Type(
                QualifiedName.from(taxiType.qualifiedName),
                modifiers = parseModifiers(taxiType),

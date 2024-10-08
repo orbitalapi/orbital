@@ -1,13 +1,11 @@
 package com.orbitalhq.models.functions.stdlib.collections
 
 import arrow.core.Either
-import arrow.core.getOrElse
 import arrow.core.left
 import arrow.core.right
 import com.orbitalhq.models.*
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
-import com.orbitalhq.utils.get
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.types.PrimitiveType
 
@@ -23,22 +21,6 @@ open class CollectionFilteringFunction {
       return TypedNull.create(
          returnType,
          FailedEvaluatedExpression(function.asTaxi(), inputValues, message, inputInError = inputInError, cause = cause)
-      )
-   }
-
-   protected fun createFailureWithTypedNull(
-      message: String,
-      returnType: Type,
-      function: FunctionAccessor,
-      inputValues: List<TypedInstance>
-   ): TypedNull {
-      return TypedNull.create(
-         returnType,
-         FailedEvaluatedExpression(
-            function.asTaxi(),
-            inputValues,
-            message
-         )
       )
    }
 
@@ -122,4 +104,20 @@ open class CollectionFilteringFunction {
       }
       return (evaluated.value as Boolean).right()
    }
+}
+
+fun createFailureWithTypedNull(
+   message: String,
+   returnType: Type,
+   function: FunctionAccessor,
+   inputValues: List<TypedInstance>
+): TypedNull {
+   return TypedNull.create(
+      returnType,
+      FailedEvaluatedExpression(
+         function.asTaxi(),
+         inputValues,
+         message
+      )
+   )
 }

@@ -15,7 +15,8 @@ object StdLib {
       ObjectFunctions.functions,
       Transformations.functions,
       Dates.functions,
-      Errors.functions
+      Errors.functions,
+      EnumFunctions.functions,
    ).flatten()
 }
 

@@ -182,8 +182,10 @@ class VyneSchemaToTaxiSchemaMapper(
             convertAnnotations(type.metadata),
             CompilationUnit.generatedFor(type.fullyQualifiedName),
             type.inheritsFromTypeNames.map { getOrCreateType(it) }.distinct(),
-            getPrimitiveType(type.basePrimitiveTypeName!!.fullyQualifiedName),
             false, // todo - isLenient
+            getPrimitiveType(type.basePrimitiveTypeName!!.fullyQualifiedName),
+
+
             type.typeDoc
          )
       )
