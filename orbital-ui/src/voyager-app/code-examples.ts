@@ -156,14 +156,14 @@ service FilmEvents {
 
 
 // Note: The 0th item in this array is selected on startup
-export const CodeSamples: CodeSample[] = [
+const CodeSamples: CodeSample[] = [
   HelloWorld,
   ModelWithApis,
   DatabaseWithTables,
   MessageQueueAndDatabase
 ];
 
-export const StubExamples = codeSamplesToStubExamples(CodeSamples);
+const StubExamples = codeSamplesToStubExamples(CodeSamples);
 export const ExampleGroups = [
   {
     title: 'Modelling',
