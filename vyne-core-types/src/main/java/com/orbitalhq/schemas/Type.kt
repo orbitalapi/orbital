@@ -17,6 +17,7 @@ import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.*
+import lang.taxi.types.TypedValue
 import lang.taxi.utils.takeHead
 import mu.KotlinLogging
 
@@ -258,10 +259,18 @@ data class Type(
    val underlyingTypeParameterNames: List<QualifiedName>
 
    @get:JsonIgnore
-   val enumTypedInstances: List<TypedEnumValue> =
+   val enumTypedInstances: List<TypedEnumValue> by lazy {
+      // MP 8-Oct-24 -- Have moved the implementation of this property to be lazy.
+      // This is because we now support object values in enums, which need to be turned into
+      // TypedInstances. However, that requires a fully populated schema, which isn't available
+      // at the time that this type is instantiated (as it's instatiated while the schema is being populated).
+      // We have previously seen that lazy methods can cause performance issues when on the hot path (such as equals).
+      // I don't expect that to be an issue with enumTypedInstances, but we may need to revisit if so.
       this.enumValues.map { enumValue ->
-         TypedEnumValue(this, enumValue, this.typeCache, DefinedInSchema)
+         enumValue.typedValueSupplier.typedEnumValue(enumValue, this, typeCache)
       }
+   }
+
 
    init {
       // placing these definitions against the field
@@ -277,7 +286,7 @@ data class Type(
 
    }
 
-   fun enumTypedInstance(value: Any, source: DataSource): TypedEnumValue {
+   fun enumTypedInstance(value: Any, source: DataSource, preferredEnumValueKind: EnumValueKind? = null): TypedEnumValue {
       // Edge case - we allow parsing of boolean values, treated as strings
       val searchValue = if (value is Boolean) value.toString() else value
       // Use the TaxiType to resolve the value, so that defaults and lenients are used.
@@ -287,7 +296,7 @@ data class Type(
          else -> this.taxiType
             .of(searchValue)
       }
-      val valueKind = EnumValueKind.from(value, this.taxiType)
+      val valueKind = preferredEnumValueKind ?: EnumValueKind.from(value, this.taxiType)
       return this.enumTypedInstances.firstOrNull { it.name == enumInstance.name }
          ?.copy(source = source, valueKind = valueKind)
          ?: error("No typed instance found for value $value on ${this.fullyQualifiedName}")

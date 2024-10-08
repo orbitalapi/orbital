@@ -224,14 +224,17 @@ class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
       collectDataSourcesTo: MutableList<Pair<TypedInstance, DataSource>>?
    ): Any? {
       val value = typedInstance.value
-      val converted = when (typedInstance) {
-         is Map<*, *> -> {
+      val converted = when {
+         typedInstance is Map<*, *> -> {
             val unwrapped = unwrapMap(value as Map<String, Any>, collectDataSourcesTo)
             mapper.handleUnwrapped(typedInstance, unwrapped)
          }
-         is Collection<*> -> {
+         typedInstance is Collection<*> -> {
             val unwrapped = unwrapCollection(value as Collection<*>, collectDataSourcesTo)
             mapper.handleUnwrappedCollection(typedInstance,unwrapped)
+         }
+         typedInstance is TypedEnumValue && value is TypedObject -> {
+            convertAndCollectDataSources(value, collectDataSourcesTo)
          }
          // TODO : There's likely other types that need unwrapping
          else -> {

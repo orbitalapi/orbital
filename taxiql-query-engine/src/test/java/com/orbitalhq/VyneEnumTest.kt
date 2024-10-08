@@ -56,8 +56,10 @@ class VyneEnumTest {
    )
 
    @Test
-   fun `serializing and deserializing values is symmetrical - the value used as an input is used as an output`():Unit = runBlocking {
-      val (vyne,_) = testVyne("""
+   fun `serializing and deserializing values is symmetrical - the value used as an input is used as an output`(): Unit =
+      runBlocking {
+         val (vyne, _) = testVyne(
+            """
          enum Country {
             NZ("NZD"),
             AU("AUD")
@@ -65,53 +67,64 @@ class VyneEnumTest {
          model Person {
             country : Country
          }
-      """.trimIndent())
-      vyne.parseJson("Person",  """{ "country"  : "NZ" }""")
-         .toRawObject()
-         .shouldBe(mapOf("country" to "NZ"))
+      """.trimIndent()
+         )
+         vyne.parseJson("Person", """{ "country"  : "NZ" }""")
+            .toRawObject()
+            .shouldBe(mapOf("country" to "NZ"))
 
-      vyne.parseJson("Person",  """{ "country"  : "NZD" }""")
-         .toRawObject()
-         .shouldBe(mapOf("country" to "NZD"))
-   }
+         vyne.parseJson("Person", """{ "country"  : "NZD" }""")
+            .toRawObject()
+            .shouldBe(mapOf("country" to "NZD"))
+      }
 
    @Test
-   fun `can parse an array of string values to enums in given statement`() : Unit = runBlocking{
-      val (vyne,_) = testVyne("""
+   fun `can parse an array of string values to enums in given statement`(): Unit = runBlocking {
+      val (vyne, _) = testVyne(
+         """
          enum Country {
             NZ("NZD"),
             AU("AUD")
          }
-      """.trimIndent())
-      vyne.query("""
+      """.trimIndent()
+      )
+      vyne.query(
+         """
          given { c:Country[] = ["AUD","NZD"] }
          find {
             country : Country[]
-         }""")
+         }"""
+      )
          .firstRawObject()
-         .shouldBe(mapOf("country" to listOf("AUD","NZD")))
+         .shouldBe(mapOf("country" to listOf("AUD", "NZD")))
    }
 
    @Test
-   fun `can parse an array of string enum names to enums in given statement`() : Unit = runBlocking{
-      val (vyne,_) = testVyne("""
+   fun `can parse an array of string enum names to enums in given statement`(): Unit = runBlocking {
+      val (vyne, _) = testVyne(
+         """
          enum Country {
             NZ("NZD"),
             AU("AUD")
          }
-      """.trimIndent())
-      vyne.query("""
+      """.trimIndent()
+      )
+      vyne.query(
+         """
          given { c:Country[] = ["AU","NZ"] }
          find {
             country : Country[]
-         }""")
+         }"""
+      )
          .firstRawObject()
-         .shouldBe(mapOf("country" to listOf("AU","NZ")))
+         .shouldBe(mapOf("country" to listOf("AU", "NZ")))
    }
 
    @Test
-   fun `when enum value is passed using explicit taxi reference then serialize using value if present`():Unit = runBlocking {
-      val (vyne,_) = testVyne("""
+   fun `when enum value is passed using explicit taxi reference then serialize using value if present`(): Unit =
+      runBlocking {
+         val (vyne, _) = testVyne(
+            """
          enum Country {
             NZ("NZD"),
             AU("AUD")
@@ -119,19 +132,23 @@ class VyneEnumTest {
          model Person {
             country : Country
          }
-      """.trimIndent())
-    vyne.query("""
+      """.trimIndent()
+         )
+         vyne.query(
+            """
          given { c:Country[] = [Country.AU,Country.NZ] }
          find {
             country : Country[]
-         }""")
-         .firstRawObject()
-         .shouldBe(mapOf("country" to listOf("AUD","NZD")))
-   }
+         }"""
+         )
+            .firstRawObject()
+            .shouldBe(mapOf("country" to listOf("AUD", "NZD")))
+      }
 
    @Test
-   fun `when enum value is deserialized using a string value then serialize using value`():Unit = runBlocking {
-      val (vyne,_) = testVyne("""
+   fun `when enum value is deserialized using a string value then serialize using value`(): Unit = runBlocking {
+      val (vyne, _) = testVyne(
+         """
          enum Country {
             NZ("NZD"),
             AU("AUD")
@@ -139,19 +156,24 @@ class VyneEnumTest {
          model Person {
             country : Country
          }
-      """.trimIndent())
-      vyne.query("""
+      """.trimIndent()
+      )
+      vyne.query(
+         """
          given { c:Country[] = [Country.AU,Country.NZ] }
          find {
             country : Country[]
-         }""")
+         }"""
+      )
          .firstRawObject()
-         .shouldBe(mapOf("country" to listOf("AUD","NZD")))
+         .shouldBe(mapOf("country" to listOf("AUD", "NZD")))
    }
 
    @Test
-   fun `when enum value is deserialized using a string value then serialize using name if no value present`():Unit = runBlocking {
-      val (vyne,_) = testVyne("""
+   fun `when enum value is deserialized using a string value then serialize using name if no value present`(): Unit =
+      runBlocking {
+         val (vyne, _) = testVyne(
+            """
          enum Country {
             NZ,
             AU
@@ -159,15 +181,39 @@ class VyneEnumTest {
          model Person {
             country : Country
          }
-      """.trimIndent())
-      vyne.query("""
+      """.trimIndent()
+         )
+         vyne.query(
+            """
          given { c:Country[] = [Country.AU,Country.NZ] }
          find {
             country : Country[]
-         }""")
+         }"""
+         )
+            .firstRawObject()
+            .shouldBe(mapOf("country" to listOf("AU", "NZ")))
+      }
+
+   @Test
+   fun `serializing an enum with an object value returns a raw object`():Unit = runBlocking {
+      val (vyne) = testVyne(
+         """
+            model ErrorDetails {
+               code : ErrorCode inherits Int
+               message : ErrorMessage inherits String
+            }
+            enum Errors<ErrorDetails> {
+               BadRequest({ code : 400, message : 'Bad Request' }),
+               Unauthorized({ code : 401, message : 'Unauthorized' })
+            }"""
+      )
+      vyne.query("""given { errorResponse : String = 'BadRequest' }
+            find {
+               error : ErrorDetails by Errors.enumForName(errorResponse)
+            }""")
          .firstRawObject()
-         .shouldBe(mapOf("country" to listOf("AU","NZ")))
    }
+
 
    @Test
    @Ignore("Should enabled when Enum inheritance is supported")
@@ -282,7 +328,8 @@ class VyneEnumTest {
 
    @Test
    fun `schema can declare circular synonyms`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          enum Country {
             NZ synonym of CountryName.NewZealand,
             AUS synonym of CountryName.Australia
@@ -295,20 +342,23 @@ class VyneEnumTest {
             NooZelund synonym of Country.NZ,
             Oz synonym of Country.AUS
          }
-      """)
+      """
+      )
       val country = schema.type("Country")
       val countryName = schema.type("CountryName")
    }
 
    @Test
    fun `detects enum valueKind correctly when enum has default`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          lenient enum Country {
             NewZealand("NZ"),
             Australia("AUS"),
             default ERROR("Error")
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val type = schema.type("Country").taxiType as EnumType
       EnumValueKind.from("NZ", type).should.equal(EnumValueKind.VALUE)
       EnumValueKind.from("nz", type).should.equal(EnumValueKind.VALUE)
@@ -319,8 +369,10 @@ class VyneEnumTest {
    }
 
    @Test
-   fun `when using synonyms from enum with value to enum without value then TypedEnumValue returns name`():Unit = runBlocking{
-      val (vyne,_) = testVyne("""
+   fun `when using synonyms from enum with value to enum without value then TypedEnumValue returns name`(): Unit =
+      runBlocking {
+         val (vyne, _) = testVyne(
+            """
          enum Country {
             NewZealand("NZL") synonym of CountrySlang.Kiwiland,
             Australia("AUS") synonym of CountrySlang.Ozzie
@@ -332,13 +384,14 @@ class VyneEnumTest {
          model Output {
             country : CountrySlang
          }
-      """.trimIndent())
-      val instance = TypedInstance.from(vyne.type("Country"), "NZL", vyne.schema)
-      val buildResult = vyne.from(instance).build("Output")
-         .rawObjects()
-      buildResult.first()
+      """.trimIndent()
+         )
+         val instance = TypedInstance.from(vyne.type("Country"), "NZL", vyne.schema)
+         val buildResult = vyne.from(instance).build("Output")
+            .rawObjects()
+         buildResult.first()
 
-   }
+      }
 
 
    @Test
@@ -396,6 +449,7 @@ class VyneEnumTest {
 ////         awaitComplete()
 //      }
    }
+
 
    @Test
    @Ignore("Enum inheritence not supported yet")

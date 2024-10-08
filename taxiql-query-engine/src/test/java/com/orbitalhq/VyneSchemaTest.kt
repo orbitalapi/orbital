@@ -3,6 +3,7 @@ package com.orbitalhq
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.schemas.EnumValue
 import com.orbitalhq.schemas.Modifier
+import com.orbitalhq.schemas.ScalarEnumValueSupplier
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
@@ -161,7 +162,7 @@ class VyneSchemaTest {
       expect(type.modifiers).to.contain(Modifier.ENUM)
 
       expect(type.enumValues).to.have.size(2)
-      expect(type.enumValues).to.contain(EnumValue("BUY", 0, listOf("vyne.example.BankDirection.BankBuys"), "Dummy TypeDoc"))
+      expect(type.enumValues).to.contain(EnumValue("BUY", 0, listOf("vyne.example.BankDirection.BankBuys"), "Dummy TypeDoc", ScalarEnumValueSupplier))
    }
 
 
