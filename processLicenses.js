@@ -304,6 +304,69 @@ const whitelist = {
             'https://developer.jboss.org/docs/DOC-15788#:~:text=be%20free%20software.-,Can%20I%20embed%20Hibernate%20in%20my%20commercial%20application%3F,Hibernate%20binary%20has%20no%20restrictions.',
             'https://hibernate.org/community/license/'
          ]
+      },
+      {
+         project: 'org.opensaml:opensaml-saml-impl',
+         license: 'Apache 2.0',
+         rationale: 'Maven issue appears to be propogating through from the parent pom - where the Apache 2.0 is declared',
+         relatedLinks: [
+            'https://build.shibboleth.net/maven/releases/net/shibboleth/parent/17.1.3/parent-17.1.3.pom',
+            'https://build.shibboleth.net/maven/releases/org/opensaml/'
+         ]
+      },
+      {
+         project: 'org.opensaml:opensaml-security-api',
+         license: 'Apache 2.0',
+         rationale: 'Maven issue appears to be propogating through from the parent pom - where the Apache 2.0 is declared',
+         relatedLinks: [
+            'https://build.shibboleth.net/maven/releases/net/shibboleth/parent/17.1.3/parent-17.1.3.pom',
+            'https://build.shibboleth.net/maven/releases/org/opensaml/'
+         ]
+      },
+      {
+         project: 'org.opensaml:opensaml-soap-api',
+         license: 'Apache 2.0',
+         rationale: 'Maven issue appears to be propogating through from the parent pom - where the Apache 2.0 is declared',
+         relatedLinks: [
+            'https://build.shibboleth.net/maven/releases/net/shibboleth/parent/17.1.3/parent-17.1.3.pom',
+            'https://build.shibboleth.net/maven/releases/org/opensaml/'
+         ]
+      },
+      {
+         project: 'org.opensaml:opensaml-storage-api',
+         license: 'Apache 2.0',
+         rationale: 'Maven issue appears to be propogating through from the parent pom - where the Apache 2.0 is declared',
+         relatedLinks: [
+            'https://build.shibboleth.net/maven/releases/net/shibboleth/parent/17.1.3/parent-17.1.3.pom',
+            'https://build.shibboleth.net/maven/releases/org/opensaml/'
+         ]
+      },
+      {
+         project: 'org.opensaml:opensaml-xmlsec-api',
+         license: 'Apache 2.0',
+         rationale: 'Maven issue appears to be propogating through from the parent pom - where the Apache 2.0 is declared',
+         relatedLinks: [
+            'https://build.shibboleth.net/maven/releases/net/shibboleth/parent/17.1.3/parent-17.1.3.pom',
+            'https://build.shibboleth.net/maven/releases/org/opensaml/'
+         ]
+      },
+      {
+         project: 'net.shibboleth:shib-support',
+         license: 'Apache 2.0',
+         rationale: 'Maven issue appears to be propogating through from the parent pom - where the Apache 2.0 is declared',
+         relatedLinks: [
+            'https://build.shibboleth.net/maven/releases/net/shibboleth/parent/17.1.3/parent-17.1.3.pom',
+            'https://build.shibboleth.net/maven/releases/org/opensaml/'
+         ]
+      },
+      {
+         project: 'net.shibboleth:shib-velocity',
+         license: 'Apache 2.0',
+         rationale: 'Maven issue appears to be propogating through from the parent pom - where the Apache 2.0 is declared',
+         relatedLinks: [
+            'https://build.shibboleth.net/maven/releases/net/shibboleth/parent/17.1.3/parent-17.1.3.pom',
+            'https://build.shibboleth.net/maven/releases/org/opensaml/'
+         ]
       }
    ]
 }
