@@ -39,8 +39,8 @@ import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.compon
           <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
             <div class="thin-splitter-gutter-icon"></div>
           </div>
-          <as-split-area *ngIf="showReadme" [order]="0">
-            <app-readme-panel [markdown]="queryMessage?.readme" (onRunQuery)="onRunQueryHandler($event)"></app-readme-panel>
+          <as-split-area *ngIf="showReadme && queryMessage" [order]="0">
+            <app-readme-panel [(markdown)]="queryMessage.readme" (onRunQuery)="onRunQueryHandler($event)"></app-readme-panel>
           </as-split-area>
           <as-split-area [size]="35" [order]="1">
             <div class="panel-with-header">
