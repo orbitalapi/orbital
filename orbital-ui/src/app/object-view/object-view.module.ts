@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { EllipsisDirective } from "../utils/ellipsis.directive";
 import { ObjectViewComponent } from './object-view.component';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
@@ -14,12 +15,21 @@ import { ScrollingModule as ExperimentalScrollingModule } from '@angular/cdk-exp
 import { JsonViewerModule } from 'src/app/json-viewer/json-viewer.module';
 
 @NgModule({
-  imports: [CommonModule,
+  imports: [
+    CommonModule,
     MatButtonModule,
     MatButtonToggleModule,
     MatMenuModule,
     MatRadioModule,
-    ResultsTableModule, FormsModule, TuiTreeModule, ScrollingModule, ExperimentalScrollingModule, TuiPaginationModule, JsonViewerModule],
+    ResultsTableModule,
+    FormsModule,
+    TuiTreeModule,
+    ScrollingModule,
+    ExperimentalScrollingModule,
+    TuiPaginationModule,
+    JsonViewerModule,
+    EllipsisDirective
+  ],
   exports: [ObjectViewComponent, ObjectViewContainerComponent],
   declarations: [ObjectViewComponent, ObjectViewContainerComponent],
   providers: [],

@@ -54,7 +54,7 @@ export interface ResultTreeMember {
     ></tui-pagination>
     <ng-template #treeContent let-item>
       <div class="tree-node">
-        <div *ngIf="treeNode(item)?.fieldName" class="field-name">{{ treeNode(item)?.fieldName }}</div>
+        <div *ngIf="treeNode(item)?.fieldName" class="field-name" app-ellipsis>{{ treeNode(item)?.fieldName }}</div>
         <div class="field-value" [class.selectable]="selectable"
              (click)="onAttributeClicked(item)">{{ treeNode(item)?.value }}
         </div>
