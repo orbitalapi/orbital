@@ -5,6 +5,7 @@ export interface CodeSample {
   title: string;
   slug: string;
   code: string;
+  query?: string;
 }
 
 const HelloWorld: CodeSample = {
@@ -195,7 +196,7 @@ function codeSampleToQueryMessage(codeSample: CodeSample): StubQueryMessageWithS
     query: {
       schema: codeSample.code,
       stubs: [],
-      query: '',
+      query: codeSample.query || '',
       parameters: {}
     }
   }

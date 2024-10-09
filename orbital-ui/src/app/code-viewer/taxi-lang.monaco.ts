@@ -45,9 +45,8 @@ export const taxiLanguageTokenProvider = <IMonarchLanguage>{
   tokenPostfix: '.taxi',
 
   keywords: [
-
-    'type', 'type alias', 'inherits', 'enum', 'namespace', 'as', 'service', 'operation', 'import',
-    'policy', 'against', 'read', 'write', 'case', 'else', 'permit', 'filter', 'closed',
+    'type', 'type alias', 'inherits', 'enum', 'namespace', 'as', 'service', 'model', 'operation', 'import',
+    'policy', 'against', 'read', 'write', 'case', 'else', 'permit', 'filter', 'closed', 'find', 'query', 'stream', 'define', 'function',
     'true', 'false', 'null',
     'Boolean', 'String', 'Int', 'Decimal', 'Date', 'Time', 'DateTime', 'Instant', 'Any', 'Double', 'Void'
   ],

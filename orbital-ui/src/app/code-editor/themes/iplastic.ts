@@ -43,7 +43,7 @@ export const iplastic_theme = {
       'token': 'variable.parameter'
     },
     {
-      'foreground': '0066ff',
+      'foreground': '888888',
       'fontStyle': 'italic',
       'token': 'comment'
     },

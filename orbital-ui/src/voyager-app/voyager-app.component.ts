@@ -51,6 +51,7 @@ import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.compon
                 wordWrap="on"
                 [showCompilationProblemsPanel]="true"
                 (contentChange)="codeUpdated$.next($event)"
+                [setFocus]="false"
               >
               </app-code-editor>
             </div>
