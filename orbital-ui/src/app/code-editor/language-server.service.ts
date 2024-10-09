@@ -22,6 +22,7 @@ export class MonacoLanguageServerService {
   readonly websocketTerminallyClosed$: Subject<void> = new Subject();
 
   private languageClient: MonacoLanguageClient;
+  private languageClientCreationPromise: Promise<MonacoLanguageClient> | null = null;
   private diagnosticsSubject: Subject<DiagnosticsEvent> = new Subject<{ uri: Uri, diagnostics: Diagnostic[] }>();
   private webSocket: WebSocket;
   private connection: Promise<[WebSocket, WsTransport]> | null = null;
@@ -52,7 +53,7 @@ export class MonacoLanguageServerService {
     this.languageClient = null
   }
 
-  private async createLanguageServerWebsocketTransport(): Promise<[WebSocket, WsTransport]> {
+  private createLanguageServerWebsocketTransport(): Promise<[WebSocket, WsTransport]> {
     // Re-use the connection. This is important as if there's multiple
     // editors in the page, they all need to be part of the same session.
     // In future, we may want to make this an observable that cleans up when
@@ -71,27 +72,52 @@ export class MonacoLanguageServerService {
   }
 
   async getLanguageClient(): Promise<MonacoLanguageClient> {
-    if (!this.languageClient) {
-      console.log('Creating new language client')
-      let websocket: WebSocket, wsTransport: WsTransport;
-      try {
-        [websocket, wsTransport] = await this.createLanguageServerWebsocketTransport()
-      } catch (error) {
-        console.error('Failed to establish WebSocket connection:', error);
-        this.websocketTerminallyClosed$.next()
-      }
-      this.webSocket = websocket;
-      this.webSocket.onclose = async (event) => {
-        console.warn('language server web socket closed...', event)
-        await this.reset();
-        this.websocketClosed$.next(event)
-      }
-      this.languageClient = createLanguageClient(wsTransport);
-      this.languageClient.onNotification('textDocument/publishDiagnostics', params => {
-        this.diagnosticsSubject.next(params)
-      })
-
+    if (this.languageClient) {
+      // If the language client already exists, return it
+      return this.languageClient;
     }
-    return this.languageClient;
+
+    // If the creation process has already started, return the promise
+    if (this.languageClientCreationPromise) {
+      return this.languageClientCreationPromise;
+    }
+
+    // Otherwise, start the creation process and store the promise
+    this.languageClientCreationPromise = new Promise(async (resolve, reject) => {
+      try {
+        console.log('Creating new language client');
+        let websocket: WebSocket, wsTransport: WsTransport;
+        try {
+          [websocket, wsTransport] = await this.createLanguageServerWebsocketTransport();
+        } catch (error) {
+          console.error('Failed to establish WebSocket connection:', error);
+          this.websocketTerminallyClosed$.next();
+          reject(error);
+          return;
+        }
+
+        this.webSocket = websocket;
+        this.webSocket.onclose = async (event) => {
+          console.warn('language server web socket closed...', event);
+          await this.reset();
+          this.websocketClosed$.next(event);
+        };
+        this.languageClient = createLanguageClient(wsTransport);
+        this.languageClient.onNotification('textDocument/publishDiagnostics', (params) => {
+          this.diagnosticsSubject.next(params);
+        });
+
+        resolve(this.languageClient);
+      } catch (error) {
+        reject(error);
+      } finally {
+        // Clear the languageClientCreationPromise when done,
+        // so subsequent requests can re-trigger the process if needed
+        this.languageClientCreationPromise = null;
+      }
+    });
+
+    return this.languageClientCreationPromise;
   }
+
 }

@@ -5,10 +5,10 @@ import {
   ElementRef,
   EventEmitter, Inject, input,
   Input,
-  OnDestroy,
+  OnDestroy, OnInit,
   Output,
   ViewChild
-} from '@angular/core';
+} from "@angular/core";
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {TuiAlertService} from '@taiga-ui/core';
 import {debounceTime, filter} from "rxjs/operators";
@@ -52,7 +52,7 @@ type WordWrapOptions = 'off' | 'on' | 'wordWrapColumn' | 'bounded';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class CodeEditorComponent implements OnDestroy {
+export class CodeEditorComponent implements OnInit, OnDestroy {
 
   private languageClient: MonacoLanguageClient;
   private monacoEditor: IStandaloneCodeEditor;
@@ -68,7 +68,6 @@ export class CodeEditorComponent implements OnDestroy {
 
   set codeEditorContainer(value: ElementRef) {
     this._codeEditorContainer = value;
-    this.createMonacoEditor()
   }
 
   private _actions: editor.IActionDescriptor[] = [];
@@ -206,6 +205,10 @@ export class CodeEditorComponent implements OnDestroy {
     });
   }
 
+  async ngOnInit() {
+    await this.createMonacoEditor()
+  }
+
   async ngOnDestroy() {
     if (this.readOnly) return;
     console.info('Closing Language Service and disposing of model');
@@ -274,7 +277,7 @@ export class CodeEditorComponent implements OnDestroy {
       this.updateManualCompilationMessages();
     }
 
-    await this.sendOpenNotifcation();
+    await this.sendOpenNotification();
 
     this.languageServerService.websocketClosed$
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -293,8 +296,8 @@ export class CodeEditorComponent implements OnDestroy {
     this.updateActionsOnEditor()
   }
 
-  private async sendOpenNotifcation() {
-    await this.languageClient.sendNotification(DidOpenTextDocumentNotification.type, {
+  private async sendOpenNotification() {
+    this.languageClient.sendNotification(DidOpenTextDocumentNotification.type, {
       textDocument: {
         uri: this.monacoModel.resource.toString(),
         languageId: 'taxi',
@@ -308,7 +311,7 @@ export class CodeEditorComponent implements OnDestroy {
     if (closeEvent.code === 1006 || closeEvent.code === 1005) {
       console.log("Refreshing websocket connection for language server");
       this.languageClient = await this.languageServerService.getLanguageClient();
-      await this.sendOpenNotifcation();
+      await this.sendOpenNotification();
     }
   }
 
