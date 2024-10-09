@@ -263,6 +263,14 @@
    </build>
    <dependencyManagement>
       <dependencies>
+         <!-- vuln: velocity-engine-core is a transitive dependency of org.pac4j:pac4j-saml, exposes CVE-2024-47554 -->
+         <dependency>
+            <groupId>org.apache.velocity</groupId>
+            <artifactId>velocity-engine-core</artifactId>
+            <version>2.4</version>
+         </dependency>
+
+
          <!-- this shouldn't be required, but for some reason we're pulling in an old dep (6.4.x), which
          has vulnerabilities -->
          <dependency>
