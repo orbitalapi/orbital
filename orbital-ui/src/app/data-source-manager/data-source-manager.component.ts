@@ -3,7 +3,7 @@ import {ChangeDetectionStrategy, ChangeDetectorRef, Component} from '@angular/co
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router, RouterOutlet} from '@angular/router';
 import {AngularSplitModule} from 'angular-split';
-import {Observable} from 'rxjs';
+import {Observable, ReplaySubject} from 'rxjs';
 import {UiCustomisations} from '../../environments/ui-customisations';
 import {ConnectionsListResponse, DbConnectionService} from '../db-connection-editor/db-importer.service';
 import {Schema} from '../services/schema';
@@ -47,7 +47,8 @@ import {DataSourceTreeComponent} from './data-source-tree/data-source-tree.compo
 })
 export class DataSourceManagerComponent {
   schema$: Observable<Schema>
-  connections$: Observable<ConnectionsListResponse>;
+  private connectionsSubject = new ReplaySubject<ConnectionsListResponse>(1);
+  connections$ = this.connectionsSubject.asObservable();
 
   constructor(
     private typeService: TypesService,
@@ -62,7 +63,9 @@ export class DataSourceManagerComponent {
     )
       .subscribe(() => {
         this.schema$ = this.typeService.getTypes();
-        this.connections$ = this.dbService.getConnections(true);
+        this.dbService.getConnections(true).subscribe(connections => {
+          this.connectionsSubject.next(connections);
+        });
         this.changeDetectorRef.markForCheck()
       });
   }
