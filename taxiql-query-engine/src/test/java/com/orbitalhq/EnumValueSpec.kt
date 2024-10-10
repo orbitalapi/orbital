@@ -150,6 +150,26 @@ find {
                )
             )
          }
+
+         it("can use dot notation to traverse the property of an enum") {
+            val (vyne) = testVyne(schema)
+            val result = vyne.query(
+               """
+            find { "Hello" } as {
+               error : ErrorDetails by Errors.enumForName('BadRequest')  as (errorDetails: ErrorDetails) -> {
+                  theMessage : errorDetails.message
+               }
+            }
+         """.trimIndent()
+            )
+               .firstTypedObject()
+            val raw = result.toRawObject()
+            raw.shouldBe(
+               mapOf(
+                  "error" to mapOf("theMessage" to "Bad Request")
+               )
+            )
+         }
       }
 
 

@@ -556,27 +556,33 @@ class AccessorReader(
          .asSequence()
          .takeWhile { errorMessage == null }
          .fold(firstObject as TypedInstance?) { lastObject, fieldReference ->
+            // Unwrap typed enum values
+            val objectToEvaluate = if (lastObject is TypedEnumValue && lastObject.value is TypedObject) {
+               lastObject.value as TypedObject
+            } else {
+               lastObject
+            }
             val result = when {
-               lastObject is TypedNull -> {
+               objectToEvaluate is TypedNull -> {
                   errorMessage =
-                     "Evaluation returned null where a ${lastObject.type.qualifiedName.shortDisplayName} was expected"
+                     "Evaluation returned null where a ${objectToEvaluate.type.qualifiedName.shortDisplayName} was expected"
                   null
                }
 
-               lastObject !is TypedObject -> {
+               objectToEvaluate !is TypedObject -> {
                   errorMessage =
-                     "Evaluation returned a type of ${lastObject!!.type.qualifiedName.shortDisplayName} which doesn't have properties"
+                     "Evaluation returned a type of ${objectToEvaluate!!.type.qualifiedName.shortDisplayName} which doesn't have properties"
                   null
                }
 
-               !lastObject.hasAttribute(fieldReference.fieldName) -> {
+               !objectToEvaluate.hasAttribute(fieldReference.fieldName) -> {
                   errorMessage =
-                     "Evaluation returned a type of ${lastObject.type.qualifiedName.shortDisplayName} which doesn't have a property named ${fieldReference.fieldName}"
+                     "Evaluation returned a type of ${objectToEvaluate.type.qualifiedName.shortDisplayName} which doesn't have a property named ${fieldReference.fieldName}"
                   null
                }
 
                else -> {
-                  lastObject.get(fieldReference.fieldName)
+                  objectToEvaluate.get(fieldReference.fieldName)
                }
             }
             result

@@ -1,6 +1,7 @@
 package com.orbitalhq.models.expressions
 
 import com.orbitalhq.firstRawObject
+import com.orbitalhq.firstTypedInstace
 import com.orbitalhq.models.EvaluatedExpression
 import com.orbitalhq.models.FailedEvaluatedExpression
 import com.orbitalhq.models.OperationResultDataSourceWrapper
@@ -811,27 +812,27 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
         val (vyne,stub) = testVyne(
             """
          model FilmDistribution {
-            filmId: FilmId inherits String 
+            filmId: FilmId inherits String
             filmTitle: FilmTitle inherits String
             studioName: StudioName inherits String
          }
-         
+
          """.trimIndent()
         )
 
         val result = vyne.query("""
          given { name: FilmTitle = "Star Wars" }
-         find { 
+         find {
                 when(taxi.stdlib.upperCase(FilmTitle)) {
                    "STAR WARS" -> (FilmDistribution) {
                       filmId: '123',
                       filmTitle: FilmTitle,
                       studioName: 'Twentieth Century-Fox'
-                   } 
+                   }
                    else -> null
            }
           }
-          
+
       """.trimIndent())
             .firstRawObject()
         result.shouldBe(mapOf(
@@ -852,28 +853,28 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
             """
          declare function lookupStudio(String):String
          model FilmDistribution {
-            filmId: FilmId inherits String 
+            filmId: FilmId inherits String
             filmTitle: FilmTitle inherits String
             studioName: StudioName inherits String
          }
-         
+
          """.trimIndent(),
             functionRegistry
         )
 
         val result = vyne.query("""
          given { name: FilmTitle = "Star Wars" }
-         find { 
+         find {
                 when(taxi.stdlib.upperCase(FilmTitle)) {
                    "STAR WARS" -> (FilmDistribution) {
                       filmId: '123',
                       filmTitle: FilmTitle,
                       studioName: lookupStudio(FilmTitle)
-                   } 
+                   }
                    else -> null
            }
           }
-          
+
       """.trimIndent())
             .firstRawObject()
         result.shouldBe(mapOf(
@@ -882,4 +883,40 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
             "studioName" to "Twentieth Century-Fox"
         ))
     }
+
+   @Test
+   fun `can use dot property access`() :Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+         model Person {
+            names : {
+               first : FirstName inherits String
+               last : LastName inherits String
+            }
+          }
+      """)
+      vyne.query("""given { p: Person = { names: { first : "Jimmy" , last : "Schmitt" } } }
+         |find { p.names.first }
+      """.trimMargin())
+         .firstTypedInstace()
+         .toRawObject()
+         .shouldBe("Jimmy")
+   }
+   @Test
+   fun `can use dot property access after function`(): Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+         model Person {
+            names : {
+               first : FirstName inherits String
+               last : LastName inherits String
+            }
+          }
+          function person():Person -> { names: { first : "Jimmy" , last : "Schmitt" } }
+      """)
+      vyne.query("""given { p: Person = { names: { first : "Jimmy" , last : "Schmitt" } } }
+         |find { p.names.first }
+      """.trimMargin())
+         .firstTypedInstace()
+         .toRawObject()
+         .shouldBe("Jimmy")
+   }
 }
