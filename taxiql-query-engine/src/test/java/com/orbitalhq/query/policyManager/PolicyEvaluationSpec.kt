@@ -174,6 +174,58 @@ class PolicyEvaluationSpec : DescribeSpec({
          exception.message.shouldBe("Not Authorized")
       }
 
+      it ("is possible to throw an error enriching an enum error") {
+         val (vyne, stub) = testVyne(
+            AuthClaimType.AuthClaimsTypeDefinition,
+            ErrorType.ErrorTypeDefinition,
+            """
+         $baseSchema
+         type ErrorKey inherits String
+         type CorrelationId inherits String
+         model ErrorDetails {
+            code : ErrorCode inherits Int
+            message : ErrorMessage inherits String
+         }
+         enum Errors<ErrorDetails> {
+            BadRequest({ code : 400, message : 'Bad Request' }),
+            Unauthorized({ code : 401, message : 'Unauthorized' })
+         }
+         model ErrorWithCorrelationId inherits Error {
+               correlationId : CorrelationId
+               code : ErrorCode
+               message : ErrorMessage
+         }
+
+         policy AllAccessFilms against Film (userInfo : UserInfo, errorKey:ErrorKey = 'BadRequest', correlationId: CorrelationId, errorInstance: ErrorDetails = Errors.enumForName(errorKey) ) -> {
+            read {
+               when {
+                  userInfo.groups.contains( 'ADMIN' ) -> Film
+                  else -> throw( (ErrorWithCorrelationId) {
+                     message: 'I am a static value',
+                     code : errorInstance.code,
+                     correlationId : correlationId
+                  })
+               }
+            }
+         }
+         """
+         )
+         addStubs(stub, vyne)
+         val user = vyne.userWithRole("USER")
+         val exception = assertThrows<OrbitalQueryException> {
+            val adminResult = vyne
+               .query("""
+                  given { correlationId : CorrelationId = 'foo' }
+                  find { Film }""".trimIndent(), executionContextFacts = setOf(user))
+               .firstRawObject()
+         }
+         exception.error.toRawObject().shouldBe(mapOf(
+            "correlationId" to "foo",
+            "code" to 400,
+            "message" to "I am a static value"
+         ))
+      }
+
       it("can enforce a policy on a nested type") {
          val (vyne, stub) = testVyne(
             AuthClaimType.AuthClaimsTypeDefinition,
