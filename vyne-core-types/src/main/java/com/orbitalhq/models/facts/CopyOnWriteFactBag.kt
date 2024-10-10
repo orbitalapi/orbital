@@ -380,7 +380,13 @@ private object TypedInstanceTree {
          }
 
          is TypedEnumValue -> {
-            instance.synonyms
+            // MP 10-Oct-24: Support enum value objects
+            if (instance.enumValue.value is TypedObject) {
+               listOf(instance.enumValue.value) + instance.synonyms
+            } else {
+               instance.synonyms
+            }
+
          }
 
          is TypedValue -> {

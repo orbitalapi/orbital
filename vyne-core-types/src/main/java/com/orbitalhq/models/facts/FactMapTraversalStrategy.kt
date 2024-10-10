@@ -3,9 +3,9 @@ package com.orbitalhq.models.facts
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.schemas.Type
-import com.orbitalhq.utils.ImmutableEquality
 import com.orbitalhq.utils.xtimed
 import lang.taxi.types.ArrayType
+import lang.taxi.types.EnumType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import java.util.concurrent.TimeUnit
@@ -129,6 +129,14 @@ data class FactMapTraversalStrategy(val name: String, val predicate: (TypedInsta
                     val memberType = taxiType.memberType as ObjectType
                     memberType.isAssignableTo(searchTaxiType) || memberType.hasDescendantWithType(searchTaxiType)
                  } */
+            is EnumType -> {
+               if (instanceType.valueType is ObjectType) {
+                  return FullScan
+               } else {
+                  IgnoreThisElement
+               }
+
+            }
             else -> IgnoreThisElement
          }
       }

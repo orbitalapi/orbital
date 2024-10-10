@@ -524,6 +524,8 @@ type typeB {
       }
    }
 
+   
+
    @Test
    @Ignore("Should enabled when Enum inheritance is supported")
    fun `should project by using synonyms and multiple inheritance`() = runBlocking {
