@@ -24,8 +24,6 @@ import mu.KotlinLogging
 typealias GrantedAuthorityName = String
 
 object VynePrivileges {
-   @Deprecated("Use BROWSE_SCHEMA instead.", ReplaceWith("BROWSE_SCHEMA"))
-   const val BrowseCatalog = "BROWSE_CATALOG"
    const val BrowseSchema = "BROWSE_SCHEMA"
    const val CancelQuery = "CANCEL_QUERY"
    const val CreateWorkspace = "CREATE_WORKSPACE"
@@ -57,8 +55,6 @@ object VynePrivileges {
 
 
 enum class VyneGrantedAuthority(val constantValue: GrantedAuthorityName) {
-   @Deprecated("Use BrowseSchema instead.", ReplaceWith("BrowseSchema"))
-   BrowseCatalog(VynePrivileges.BrowseCatalog),
    BrowseSchema(VynePrivileges.BrowseSchema),
    CancelQuery(VynePrivileges.CancelQuery),
    CreateWorkspace(VynePrivileges.CreateWorkspace),

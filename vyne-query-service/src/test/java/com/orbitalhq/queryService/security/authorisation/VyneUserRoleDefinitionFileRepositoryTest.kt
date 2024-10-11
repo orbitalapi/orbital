@@ -25,7 +25,6 @@ class VyneUserRoleDefinitionFileRepositoryTest {
          VyneGrantedAuthority.CancelQuery,
          VyneGrantedAuthority.ViewQueryHistory,
          VyneGrantedAuthority.ViewHistoricQueryResults,
-         VyneGrantedAuthority.BrowseCatalog,
          VyneGrantedAuthority.BrowseSchema,
          VyneGrantedAuthority.EditSchema,
          VyneGrantedAuthority.ViewCaskDefinitions,
