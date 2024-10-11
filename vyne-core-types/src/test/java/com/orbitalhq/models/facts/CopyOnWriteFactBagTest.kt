@@ -1,5 +1,6 @@
 package com.orbitalhq.models.facts
 
+import com.orbitalhq.models.Provided
 import com.winterbe.expekt.should
 import io.kotest.matchers.nulls.shouldNotBeNull
 import com.orbitalhq.models.TypedCollection
@@ -66,14 +67,16 @@ class CopyOnWriteFactBagTest {
 
    @Test
    fun `does not return invalid type`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          type Age inherits Int
          type Id inherits Int
 
          model Person {
             id : Id
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
    }
 
 
@@ -200,7 +203,8 @@ class CopyOnWriteFactBagTest {
 
    @Test
    fun `can fetch an enum synonym from a factbag`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          enum TwoLetterCountryCode {
             NZ,
             UK
@@ -212,13 +216,37 @@ class CopyOnWriteFactBagTest {
          model Person {
             country: TwoLetterCountryCode
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
       val person = TypedInstance.from(schema.type("Person"), """{ "country": "NZ" }""", schema)
       val factBag = CopyOnWriteFactBag(person, schema)
       val result = factBag.getFact(schema.type("ThreeLetterCountryCode"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
       result.shouldNotBeNull()
       result.typeName.shouldBe("ThreeLetterCountryCode")
       result.toRawObject().shouldBe("NZL")
+   }
+
+   @Test
+   fun `can find enum object values`() {
+      val schema = TaxiSchema.from(
+         """
+            model ErrorDetails {
+               code : ErrorCode inherits Int
+               message : ErrorMessage inherits String
+            }
+            enum Errors<ErrorDetails> {
+               BadRequest({ code : 400, message : 'Bad Request' }),
+               Unauthorized({ code : 401, message : 'Unauthorized' })
+            }
+""".trimIndent()
+      )
+      val enumValue = schema.type("Errors")
+         .enumTypedInstance("BadRequest", Provided)
+      val factBag = CopyOnWriteFactBag(enumValue, schema)
+      factBag.getFactOrNull(schema.type("Errors")).shouldNotBeNull()
+      factBag.getFactOrNull(schema.type("ErrorDetails"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE).shouldNotBeNull()
+      factBag.getFactOrNull(schema.type("ErrorCode"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE).shouldNotBeNull()
+      factBag.getFactOrNull(schema.type("ErrorMessage"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE).shouldNotBeNull()
    }
 
 }

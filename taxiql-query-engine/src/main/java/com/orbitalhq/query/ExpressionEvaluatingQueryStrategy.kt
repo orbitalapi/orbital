@@ -33,7 +33,7 @@ class ExpressionEvaluatingQueryStrategy : QueryStrategy {
       // That's currently only possible by letting them run as queries, rather than evaluating them as expressions.
       // This code will fail to detect functions that are deeply nested, so will need to cross that bridge
       // when we come to it.
-      if (expression is ExtensionFunctionExpression && expression.receiverValue is TypeExpression) {
+      if (expression is ExtensionFunctionExpression && expression.receiverValue is TypeExpression && !expression.receiverIsTypeReference) {
          val typeExpression = expression.receiverValue as TypeExpression
          val queryNode = QuerySpecTypeNode.fromExpression(typeExpression, context.schema)
 

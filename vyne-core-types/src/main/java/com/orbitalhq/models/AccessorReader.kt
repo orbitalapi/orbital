@@ -195,7 +195,15 @@ class AccessorReader(
 
          is ObjectExpression -> {
             val typedInstanceMap = accessor.expressionMap.map { expression ->
-               expression.key to read(value, schema.type(expression.value.returnType), expression.value, schema, nullValues, source, format)
+               expression.key to read(
+                  value,
+                  schema.type(expression.value.returnType),
+                  expression.value,
+                  schema,
+                  nullValues,
+                  source,
+                  format
+               )
             }.toMap()
             TypedInstance.from(targetType, typedInstanceMap, schema, source = source)
          }
@@ -336,6 +344,7 @@ class AccessorReader(
                source = EvaluatedExpression(expressionTaxi = accessor.asTaxi(), listOf(evaluatedExpression))
             )
          }
+
          is ExtensionFunctionExpression -> {
             evaluateExtensionFunctionExpression(
                value,
@@ -362,7 +371,7 @@ class AccessorReader(
 
          is LiteralArray -> {
             val typedInstances = accessor.members.map { expression ->
-              read(value, schema.type(expression.returnType), expression, schema, nullValues, source, format)
+               read(value, schema.type(expression.returnType), expression, schema, nullValues, source, format)
             }
             TypedInstance.from(targetType, typedInstances, schema, source = source)
          }
@@ -547,27 +556,33 @@ class AccessorReader(
          .asSequence()
          .takeWhile { errorMessage == null }
          .fold(firstObject as TypedInstance?) { lastObject, fieldReference ->
+            // Unwrap typed enum values
+            val objectToEvaluate = if (lastObject is TypedEnumValue && lastObject.value is TypedObject) {
+               lastObject.value as TypedObject
+            } else {
+               lastObject
+            }
             val result = when {
-               lastObject is TypedNull -> {
+               objectToEvaluate is TypedNull -> {
                   errorMessage =
-                     "Evaluation returned null where a ${lastObject.type.qualifiedName.shortDisplayName} was expected"
+                     "Evaluation returned null where a ${objectToEvaluate.type.qualifiedName.shortDisplayName} was expected"
                   null
                }
 
-               lastObject !is TypedObject -> {
+               objectToEvaluate !is TypedObject -> {
                   errorMessage =
-                     "Evaluation returned a type of ${lastObject!!.type.qualifiedName.shortDisplayName} which doesn't have properties"
+                     "Evaluation returned a type of ${objectToEvaluate!!.type.qualifiedName.shortDisplayName} which doesn't have properties"
                   null
                }
 
-               !lastObject.hasAttribute(fieldReference.fieldName) -> {
+               !objectToEvaluate.hasAttribute(fieldReference.fieldName) -> {
                   errorMessage =
-                     "Evaluation returned a type of ${lastObject.type.qualifiedName.shortDisplayName} which doesn't have a property named ${fieldReference.fieldName}"
+                     "Evaluation returned a type of ${objectToEvaluate.type.qualifiedName.shortDisplayName} which doesn't have a property named ${fieldReference.fieldName}"
                   null
                }
 
                else -> {
-                  lastObject.get(fieldReference.fieldName)
+                  objectToEvaluate.get(fieldReference.fieldName)
                }
             }
             result
@@ -596,14 +611,19 @@ class AccessorReader(
 
 
       // Note - don't check for == here, because of vararg params
-      if (accessor.inputs.size < function.parameters.size) {
-         error("Function ${function.qualifiedName} expects ${function.parameters.size} arguments, but only ${accessor.inputs.size} were provided")
-      }
+//      if (accessor.inputs.size < function.parameters.size) {
+//         error("Function ${function.qualifiedName} expects ${function.parameters.size} arguments, but only ${accessor.inputs.size} were provided")
+//      }
 
       val declaredInputs = timeBucket("lookup inputs for function ${accessor.function.qualifiedName}") {
-         function.parameters.filter { !it.isVarArg }.mapIndexed { index, parameter ->
-            require(index < accessor.inputs.size) { "Cannot read parameter ${parameter.description} as no input was provided at index $index" }
-            val parameterInputAccessor = accessor.inputs[index]
+         val scopedFacts = mutableListOf<ScopedFact>()
+         function.parameters.filter { !it.isVarArg }.mapIndexedTo(scopedFacts) { index, parameter ->
+            val parameterInputAccessor = when {
+               accessor.inputs.size > index -> accessor.inputs[index]
+               parameter.defaultValue != null -> parameter.defaultValue!!
+               else -> error("Cannot read parameter ${parameter.description} as no input was provided at index $index, and no default was provided")
+
+            }
             val targetParameterType = if (parameter.type is LambdaExpressionType) {
                schema.typeCreateIfRequired((parameter.type as LambdaExpressionType).returnType)
 //               schema.type((parameter.type as LambdaExpressionType).returnType)
@@ -643,8 +663,25 @@ class AccessorReader(
             val queryIfNotFound = true
 
             val parameterValue = timeBucket("read function accessor ${accessor.function.qualifiedName}") {
+
+               // MP - 10-Oct-24:
+               // As we evaluate previous parameters, we add them to the set of variables in scope
+               // so that they can be evaluated by later params
+               // eg: function sayHello(name: String, upperName:String = name.upperCase()):String
+               val valueWithEvaluatedParams = when (value) {
+                   is FactBag -> value.withAdditionalScopedFacts(scopedFacts, schema)
+                  is TypedInstance -> FactBag.of(value, schema).withAdditionalScopedFacts(scopedFacts,schema)
+                  else -> {
+                     // We can't append previous params if the input value is just an untyped value, (eg., a map, or a string),
+                     // and we don't have enough context to turn this into a Factbag, so we'll just have to use it as-is,
+                     // However, this means that evaluation will fail if it references other params.
+                     // I suspect that's very unlikely. If we hit this branch, and it becomes a problem, then
+                     // we need to understand the use-case of referencing other parameters, when the input value isn't a FactBag.
+                     value
+                  }
+               }
                read(
-                  value,
+                  valueWithEvaluatedParams,
                   targetParameterType,
                   parameterInputAccessor,
                   schema,
@@ -708,7 +745,7 @@ class AccessorReader(
             schema,
             targetType,
             accessor,
-         evaluationValueSupplier,
+            evaluationValueSupplier,
             format,
             value,
             resultCache
@@ -988,10 +1025,20 @@ class AccessorReader(
             //id -> LiteralExpression (value = 1)
             //title -> LiteralExpression (value = "Starr Wars)")
             val typedInstanceMap = expression.expressionMap.map { expression ->
-              expression.key to  evaluate(value, schema.type(expression.value.returnType), expression.value, schema, nullValues, dataSource, format, resultCache)
+               expression.key to evaluate(
+                  value,
+                  schema.type(expression.value.returnType),
+                  expression.value,
+                  schema,
+                  nullValues,
+                  dataSource,
+                  format,
+                  resultCache
+               )
             }.toMap()
             TypedInstance.from(returnType, typedInstanceMap, schema, source = dataSource)
          }
+
          is LiteralExpression -> TypedInstance.from(returnType, expression.literal.value, schema, source = dataSource)
          is LiteralArray -> {
             require(returnType.isCollection) { "Received a LiteralArray, but the type is not an array type - got ${returnType.name.parameterizedName}" }
@@ -1061,6 +1108,7 @@ class AccessorReader(
                valueProjector = valueProjector
             )
          }
+
          is WhenExpression -> {
             WhenBlockEvaluator(this.objectFactory, schema, this)
                .evaluate(value, expression, dataSource, returnType, format)

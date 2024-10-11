@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.accessors.ConditionalAccessor
+import lang.taxi.expressions.ProjectingExpression
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.ObjectType
@@ -366,6 +367,18 @@ class ObjectBuilder(
                // Don't attempt to populate fields with ConditionalAccessor here.
                // The TypedObjectFactory has the expression evaluation logic,
                // so leave the value as un-populated.
+            } else if (field.accessor is ProjectingExpression) {
+               // MP 10-Oct-24: Let the object factory evalaute this expression,
+               // as the input to the projection is an expression (not just a simple type)
+               // This arose when evaluating a statement like:
+               // find {
+               //   error : Errors by Errors.enumForName(errorResponse) as (errorDetails: ErrorDetails) -> {
+               //      errorCode : ErrorCode
+               //      errorMessage : ErrorMessage
+               //   }
+               //}
+               // The Errors.enumForName(...) needs to be evaluated before
+               // projected.
             } else {
                // MP 20-Jan-24: We used to pass parent facts here for nested objects, so children
                // could have reference to them.

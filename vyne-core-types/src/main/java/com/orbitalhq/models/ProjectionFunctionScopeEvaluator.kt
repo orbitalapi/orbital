@@ -39,7 +39,8 @@ object ProjectionFunctionScopeEvaluator {
       primaryFacts: List<TypedInstance>,//should be primaryFacts : List<TypedInstance> (I think)
       context: InPlaceQueryEngine,
    ):List<ScopedFact> {
-      return inputs.map { scope ->
+      val collectedFacts = mutableListOf<ScopedFact>()
+      return inputs.mapTo(collectedFacts) { scope ->
          val isAssignable = isAssignable(scope, primaryFacts)
 
          val schema = context.schema
@@ -48,7 +49,7 @@ object ProjectionFunctionScopeEvaluator {
             val selectedFact = try {
                // If the scope has an expression, evaluate it
                if (scope is ProjectionFunctionScope && scope.expression != null) {
-                  context.only(primaryFacts, context.scopedFacts)
+                  context.only(primaryFacts, context.scopedFacts + collectedFacts)
                      .evaluate(scope.expression!!)
                } else {
                   // Otherwise, try and get the fact.
