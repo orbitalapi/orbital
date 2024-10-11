@@ -7,12 +7,14 @@ import com.orbitalhq.models.EvaluationValueSupplier
 import com.orbitalhq.models.FactBagValueSupplier
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedObjectFactory
 import com.orbitalhq.models.TypedValue
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.functions.NamedFunctionInvoker
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.TypeMatchingStrategy
+import lang.taxi.expressions.TypeExpression
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
@@ -83,15 +85,27 @@ object MapFunction : NamedFunctionInvoker {
    ): TypedInstance {
       val sourceCollection = inputValues[0] as TypedCollection
       val deferredInstance = inputValues[1] as DeferredExpression
-      val expression = deferredInstance.expression
-      val expressionReturnType = schema.type(expression.returnType)
+      val lambdaExpression = deferredInstance.expression
+      val expressionReturnType = schema.type(lambdaExpression.returnType)
       val dataSource = EvaluatedExpression(
          function.asTaxi(),
          inputValues
       )
       val result = sourceCollection.map { typedInstance ->
-         val reader = AccessorReader.forFacts(listOf(typedInstance), schema)
-         val evaluated = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = dataSource, format = null)
+
+         // The type of expression determines how we should behave
+         // (which is annoying)...
+
+         val evaluated = if (lambdaExpression.expression is TypeExpression) {
+            // If the expression is in the form of T1[].map((T1) -> T2), then we should build T2 from T1
+            (objectFactory as TypedObjectFactory).newFactory(schema.type(lambdaExpression.expression.returnType), typedInstance, emptySet(),null)
+               .build()
+         } else {
+            // If the expression is in the form of T1[].map((T1) -> T1.someOtherExpression()), then we should evaluate the
+            // expression against the scope of T1
+            val reader = AccessorReader.forFacts(listOf(typedInstance), schema)
+            reader.evaluate(typedInstance, expressionReturnType, lambdaExpression, dataSource = dataSource, format = null)
+         }
          evaluated
       }
       return if (result.isEmpty())  {

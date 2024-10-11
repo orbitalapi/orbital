@@ -1,6 +1,7 @@
 package com.orbitalhq.models.expressions
 
 import com.orbitalhq.firstRawObject
+import com.orbitalhq.firstTypedCollection
 import com.orbitalhq.firstTypedInstace
 import com.orbitalhq.models.EvaluatedExpression
 import com.orbitalhq.models.FailedEvaluatedExpression
@@ -18,8 +19,10 @@ import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.rawObjects
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
+import com.orbitalhq.typedInstances
 import com.orbitalhq.typedObjects
 import com.winterbe.expekt.should
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -918,5 +921,13 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
          .firstTypedInstace()
          .toRawObject()
          .shouldBe("Jimmy")
+   }
+   @Test
+   fun `can find simple array`():Unit = runBlocking {
+      val (vyne ) = testVyne("")
+      val result = vyne.query("""find { [1,2,3] }""")
+         .typedInstances()
+         .map { it.toRawObject() }
+      result.shouldBe(listOf(1,2,3))
    }
 }

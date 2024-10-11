@@ -1,5 +1,6 @@
 package com.orbitalhq.functions.stdlib.transform
 
+import com.orbitalhq.firstRawObject
 import com.orbitalhq.rawObjects
 import com.orbitalhq.testVyne
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -29,4 +30,42 @@ class MapTest {
       result.shouldNotBeNull()
       result.shouldBe(listOf("STAR WARS", "JAWS"))
    }
+
+   @org.junit.Test
+   fun `can project from one array to another using a map function`():Unit = io.kotest.common.runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         closed model PersonResponse {
+           requestId : RequestId inherits String
+           people: Person[]
+         }
+         closed model Person {
+           name : Name inherits String
+         }
+
+         service PersonService {
+           operation getPeople():PersonResponse
+         }
+
+         model Person2 {
+           NAME : Name
+         }
+      """.trimIndent()
+      )
+      stub.addResponse(
+         "getPeople", """{
+   "requestId" : "123",
+   "people" : [ { "name" : "Jimmy" } , { "name" : "Jack" } ]
+}"""
+      )
+
+      val result = vyne.query(
+         """find { PersonResponse } as {
+    REQUEST_ID : RequestId
+    PEOPLE : Person[].map((Person) -> Person2)
+}"""
+      ).firstRawObject()
+      result.shouldNotBeNull()
+   }
+
 }
