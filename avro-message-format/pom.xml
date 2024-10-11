@@ -35,6 +35,18 @@
          <version>7.7.1</version>
       </dependency>
 
+      <!-- Addressing CVE-2024-47561 for io.confluent:kafka-avro-serializer 7.7.1 which has a dependency to org.apache.avro:avro 1.11.3
+           suffering from CVE-2024-47561.
+           REVISIT THIS WHEN UPDATING kafka-avro-serializer dependency.
+      -->
+      <!-- https://mvnrepository.com/artifact/org.apache.avro/avro -->
+      <dependency>
+         <groupId>org.apache.avro</groupId>
+         <artifactId>avro</artifactId>
+         <version>1.11.4</version>
+      </dependency>
+
+
 
       <dependency>
          <groupId>org.taxilang</groupId>
