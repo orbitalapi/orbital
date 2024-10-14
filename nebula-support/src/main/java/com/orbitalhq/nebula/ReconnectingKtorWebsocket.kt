@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.isActive
 import mu.KotlinLogging
 import org.springframework.cloud.client.discovery.DiscoveryClient
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.time.Duration
 
 class ReconnectingKtorWebsocket(
@@ -33,10 +34,11 @@ class ReconnectingKtorWebsocket(
    }
 
    private var shouldReconnect = true
+   private val connected = AtomicBoolean(false)
    fun connect(): Flow<WebSocketSession> = flow {
       while (shouldReconnect) {
          try {
-            logger.info { "Attempting to build a new Websocket client for $serviceName" }
+            logger.debug { "Attempting to build a new Websocket client for $serviceName" }
             val serviceConfig = discoveryClient.getInstances(serviceName)
                .firstOrNull()
                ?: throw IllegalStateException("No service named $serviceName is present in the config - update your services.conf")
@@ -45,11 +47,17 @@ class ReconnectingKtorWebsocket(
             val webSocketSession = client.webSocketSession(urlString)
             emit(webSocketSession)
             monitor(webSocketSession)
+            connected.set(true)
+            logger.info { "Websocket for $serviceName connected" }
             // TODO :
             // detect when the websocket session is terminated by the server
             // and reconnect
          } catch (e: Exception) {
-            logger.info { "RSocket connection to $serviceName dropped - ${e.message} - Retrying in ${reconnectDelay}" }
+            val wasConnected = connected.getAndSet(false)
+            if (wasConnected) {
+               logger.info { "RSocket connection to $serviceName dropped - ${e.message} - Retrying in ${reconnectDelay}" }
+            }
+
             delay(reconnectDelay)
          }
       }
