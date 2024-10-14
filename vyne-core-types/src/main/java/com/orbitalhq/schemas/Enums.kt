@@ -1,7 +1,5 @@
 package com.orbitalhq.schemas
 
-import arrow.core.some
-import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.DefinedInSchema
 import com.orbitalhq.models.TypedEnumValue
 import com.orbitalhq.models.TypedInstance
