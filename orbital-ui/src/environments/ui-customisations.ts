@@ -10,11 +10,11 @@ const orbitalDocsLinks : DocsLinks = {
   managingSecrets : 'https://orbitalhq.com/docs/deploying/managing-secrets',
   authentication : 'https://orbitalhq.com/docs/deploying/authentication',
   dynamoDbConnection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#dynamo-db',
-  lambdaDbConnection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#lambda' ,
-  s3Connection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#s3' ,
-  sqsConnection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#sqs' ,
-  dataPolicies : 'https://orbitalhq.com/docs/data-policies/data-policies' ,
-  docsHome : 'https://orbitalhq.com/docs' ,
+  lambdaDbConnection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#lambda',
+  s3Connection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#s3',
+  sqsConnection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#sqs',
+  dataPolicies : 'https://orbitalhq.com/docs/data-policies/data-policies',
+  docsHome : 'https://orbitalhq.com/docs',
   nebulaDocs: 'https://orbitalhq.com/docs/testing/stubbing-services'
 }
 
