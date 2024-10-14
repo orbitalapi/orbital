@@ -16,7 +16,7 @@ object KafkaConnection {
          ConnectionDriverParam(
             "Group Id",
             SimpleDataType.STRING,
-            defaultValue = "vyne",
+            defaultValue = "MyConsumerGroup",
             templateParamName = "groupId",
          )
       ),
