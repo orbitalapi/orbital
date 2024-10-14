@@ -199,7 +199,7 @@ export class ConnectionEditorComponent {
         this.working = false;
         this.testResult = {
           status: 'ERROR',
-          message: error.error.message,
+          message: error?.error?.message || 'An unknown error occurred',
           timestamp: new Date()
         };
       });
@@ -231,7 +231,7 @@ export class ConnectionEditorComponent {
         this.working = false;
         this.testResult = {
           status: 'ERROR',
-          message: error.error.message,
+          message: error?.error?.message || 'An unknown error occurred',
           timestamp: new Date()
         };
       });
