@@ -4,7 +4,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Observable } from 'rxjs/internal/Observable';
 import { UiCustomisations } from '../../../environments/ui-customisations';
 import { ChangeLogEntry, ChangelogService } from '../../changelog/changelog.service';
-import { ProjectExplorerModule } from '../../project-explorer/project-explorer.module';
 import { ParsedSource } from '../../services/schema';
 import { SchemaNotificationService } from '../../services/schema-notification.service';
 import { CardComponent } from '../card/card.component';
@@ -13,7 +12,7 @@ import {ChangelogTimelineComponent} from "../../changelog/changelog-timeline.com
 @Component({
   selector: 'app-changelog-card',
   standalone: true,
-  imports: [CommonModule, CardComponent, ProjectExplorerModule, ChangelogTimelineComponent],
+  imports: [CommonModule, CardComponent, ChangelogTimelineComponent],
   templateUrl: './changelog-card.component.html',
   styleUrls: ['./changelog-card.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush

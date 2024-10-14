@@ -1,12 +1,14 @@
-import { Component, Input } from '@angular/core';
-import { Observable } from 'rxjs/internal/Observable';
-import { ParsedSource } from '../services/schema';
-import { appInstanceType } from 'src/app/app-config/app-instance.vyne';
-import { UiCustomisations } from '../../environments/ui-customisations';
+import {CommonModule} from '@angular/common';
+import {Component, Input} from '@angular/core';
+import {Observable} from 'rxjs/internal/Observable';
+import {ChangelogTimelineComponent} from '../changelog/changelog-timeline.component';
+import {ParsedSource} from '../services/schema';
+import {appInstanceType} from 'src/app/app-config/app-instance.vyne';
+import {UiCustomisations} from '../../environments/ui-customisations';
 
 @Component({
-  selector: 'app-project-summary-view',
-  template: `
+    selector: 'app-project-summary-view',
+    template: `
     <div class="container">
       <ng-container *ngIf="displayHeaderText">
         <h1>Changelog</h1>
@@ -16,8 +18,10 @@ import { UiCustomisations } from '../../environments/ui-customisations';
       <app-changelog-timeline></app-changelog-timeline>
     </div>
   `,
-  styleUrls: ['./project-summary-view.component.scss'],
-  host: {'class': appInstanceType.appType}
+    styleUrls: ['./project-summary-view.component.scss'],
+    host: { 'class': appInstanceType.appType },
+    standalone: true,
+    imports: [CommonModule, ChangelogTimelineComponent]
 })
 export class ProjectSummaryViewComponent {
   @Input()

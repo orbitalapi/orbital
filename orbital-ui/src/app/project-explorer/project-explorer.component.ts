@@ -13,21 +13,29 @@ import moment from 'moment';
 import {ChangeLogEntry, ChangelogService} from 'src/app/changelog/changelog.service';
 import {Observable} from 'rxjs';
 import {TypesService} from 'src/app/services/types.service';
-import {ParsedSource, PartialSchema, Schema} from 'src/app/services/schema';
+import {PartialSchema, Schema} from 'src/app/services/schema';
 import {appInstanceType} from 'src/app/app-config/app-instance.vyne';
 import {integer} from "vscode-languageclient";
 import {isNullOrUndefined} from "../utils/utils";
 import {FileTreeNode, sourcesToFileTreeNode} from "../code-viewer/file-tree.component";
+import { ProjectSettingsComponent } from './project-settings.component';
+import { CodeViewerModule } from '../code-viewer/code-viewer.module';
+import { ChangelogModule } from '../changelog/changelog.module';
+import { SchemaMemberTypeExplorerModule } from '../schema-member-type-explorer/schema-member-type-explorer.module';
+import { TuiTabsModule } from '@taiga-ui/kit';
+import { SimpleBadgeListModule } from '../simple-badge-list/simple-badge-list.module';
+import {CommonModule} from '@angular/common';
 
 @Component({
-  selector: 'app-project-explorer',
-  templateUrl: './project-explorer.component.html',
-  styleUrls: ['./project-explorer.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {'class': appInstanceType.appType}
+    selector: 'app-project-explorer',
+    templateUrl: './project-explorer.component.html',
+    styleUrls: ['./project-explorer.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: { 'class': appInstanceType.appType },
+    standalone: true,
+    imports: [CommonModule, SimpleBadgeListModule, TuiTabsModule, SchemaMemberTypeExplorerModule, ChangelogModule, CodeViewerModule, ProjectSettingsComponent]
 })
 export class ProjectExplorerComponent implements OnInit {
-
 
   packageWithDescription: PackageWithDescription
   tabs = [
@@ -45,7 +53,6 @@ export class ProjectExplorerComponent implements OnInit {
     const newRoute = this.tabs[index].route;
     this.router.navigate(['..', newRoute], {relativeTo: this.activatedRoute})
   }
-
 
   badges: Badge[] = [];
 

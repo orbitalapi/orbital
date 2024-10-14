@@ -1,7 +1,6 @@
 import { RouterModule } from '@angular/router';
 import { AuthGuard } from 'src/app/services/auth.guard';
 import { VynePrivileges } from 'src/app/services/user-info.service';
-import { FeatureFlagGuard } from './services/feature-flag.guard';
 import { UiCustomisations } from '../environments/ui-customisations';
 
 export const APP_ROUTES = RouterModule.forRoot(
@@ -50,7 +49,7 @@ export const APP_ROUTES = RouterModule.forRoot(
     },
     {
       path: 'projects',
-      loadChildren: () => import('./project-explorer/project-explorer.module').then(m => m.ProjectExplorerModule),
+      loadChildren: () => import('./project-explorer/project-explorer.routes').then(m => m.projectExplorerRoutes),
       canActivate: [AuthGuard],
       data: {requiredAuthority: VynePrivileges.BrowseSchema},
     },
