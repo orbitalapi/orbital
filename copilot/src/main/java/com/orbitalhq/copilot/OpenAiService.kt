@@ -1,6 +1,7 @@
 package com.orbitalhq.copilot
 
 import com.fasterxml.jackson.core.JsonParser
+import com.fasterxml.jackson.databind.DeserializationFeature
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -39,6 +40,7 @@ class OpenAiChatService(
       private val logger = KotlinLogging.logger {}
 
       val ChatGptMapper: ObjectMapper = jacksonObjectMapper()
+         .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
          .configure(JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true)
    }
 
