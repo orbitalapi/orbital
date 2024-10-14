@@ -1,8 +1,11 @@
 package com.orbitalhq.models.functions.stdlib
 
+import com.orbitalhq.firstTypedInstace
 import com.winterbe.expekt.should
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.testVyne
+import io.kotest.common.runBlocking
+import io.kotest.matchers.shouldBe
 import org.junit.Test
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -69,6 +72,15 @@ class SumTest {
       val map = parsed.toRawObject() as Map<String, Any>
       val totalBigDecimal = map["total"]!! as BigDecimal
       totalBigDecimal.setScale(10, RoundingMode.HALF_UP).should.equal("0.5853658537".toBigDecimal())
+   }
+   @Test
+   fun `can sum a simple array`():Unit = runBlocking {
+      val (vyne, stub) = testVyne("")
+      val result = vyne.query("""
+         find { [1,2,3].sum( (Int) -> Int)  }
+      """.trimIndent())
+         .firstTypedInstace()
+      result.toRawObject().shouldBe(6)
    }
 
 }
