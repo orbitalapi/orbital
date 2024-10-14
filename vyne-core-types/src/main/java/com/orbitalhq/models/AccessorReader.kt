@@ -43,7 +43,8 @@ import lang.taxi.expressions.FunctionExpression
 import lang.taxi.expressions.LambdaExpression
 import lang.taxi.expressions.LiteralArray
 import lang.taxi.expressions.LiteralExpression
-import lang.taxi.expressions.ObjectExpression
+import lang.taxi.expressions.MemberAccessExpression
+import lang.taxi.expressions.ObjectLiteralExpression
 import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.ProjectingExpression
 import lang.taxi.expressions.TypeExpression
@@ -193,7 +194,7 @@ class AccessorReader(
             error("FieldReferenceSelector shouldn't exist as an accessor - expected everything was migrated FieldReferenceExpression")
          }
 
-         is ObjectExpression -> {
+         is ObjectLiteralExpression -> {
             val typedInstanceMap = accessor.expressionMap.map { expression ->
                expression.key to read(
                   value,
@@ -374,6 +375,9 @@ class AccessorReader(
                read(value, schema.type(expression.returnType), expression, schema, nullValues, source, format)
             }
             TypedInstance.from(targetType, typedInstances, schema, source = source)
+         }
+         is MemberAccessExpression -> {
+            evaluateMemberAccessExpression(value, schema.type(accessor.returnType), accessor, schema, nullValues, source, format,functionResultCache)
          }
 
          else -> {
@@ -1020,7 +1024,7 @@ class AccessorReader(
             format
          )
 
-         is ObjectExpression -> {
+         is ObjectLiteralExpression -> {
             // { id : 1 , title : "Star Wars" }
             //id -> LiteralExpression (value = 1)
             //title -> LiteralExpression (value = "Starr Wars)")
@@ -1113,10 +1117,31 @@ class AccessorReader(
             WhenBlockEvaluator(this.objectFactory, schema, this)
                .evaluate(value, expression, dataSource, returnType, format)
          }
+         is MemberAccessExpression -> {
+            evaluateMemberAccessExpression(value, returnType, expression, schema, nullValues, dataSource, format, resultCache)
+         }
 
          else -> TODO("Support for expression type ${expression::class.toString()} is not yet implemented")
       }
 
+   }
+
+   private fun evaluateMemberAccessExpression(
+      value: Any,
+      returnType: Type,
+      expression: MemberAccessExpression,
+      schema: Schema,
+      nullValues: Set<String>,
+      dataSource: DataSource,
+      format: FormatsAndZoneOffset?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
+   ): TypedInstance {
+      val source = evaluate(
+         value, returnType, expression.lhs, schema, nullValues, dataSource, format, resultCache
+      )
+      return readFieldSelectorsAgainstObject(
+         listOf(expression.rhs), source, schema.type(expression.returnType), expression.rhs.fieldName
+      )
    }
 
    private fun evaluateExtensionFunctionExpression(

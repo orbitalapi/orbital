@@ -90,6 +90,52 @@ find {  Errors.enumForName('BadRequest') }
                mapOf("code" to 400, "message" to "Bad Request")
             )
          }
+         it("can do a find on an enum property as top-level object") {
+            val (vyne) = testVyne(schema)
+            val result = vyne.query(
+               """
+find {  Errors.enumForName('BadRequest').code }
+            """.trimIndent()
+            )
+               .firstTypedInstace().toRawObject()
+            result.shouldBe(400)
+         }
+         it("can chain accessors on an enum property as top-level object") {
+            val (vyne) = testVyne(schema)
+            val result = vyne.query(
+               """
+find {  Errors.enumForName('BadRequest').message.upperCase() }
+            """.trimIndent()
+            )
+               .firstTypedInstace().toRawObject()
+            result.shouldBe("BAD REQUEST")
+         }
+
+
+         it("can can use an chained enum access as a field property") {
+            val (vyne) = testVyne(schema)
+            val result = vyne.query(
+               """
+find {  "hello" } as {
+   errorCode: Errors.enumForName('BadRequest').code
+}
+            """.trimIndent()
+            )
+               .firstTypedInstace().toRawObject()
+            result.shouldBe(mapOf("errorCode" to 400))
+         }
+         it("can chain accessors on an enum property as top-level object") {
+            val (vyne) = testVyne(schema)
+            val result = vyne.query(
+               """
+find {  "hello" } as {
+   errorCode: Errors.enumForName('BadRequest').message.upperCase()
+}
+            """.trimIndent()
+            )
+               .firstTypedInstace().toRawObject()
+            result.shouldBe(mapOf("errorCode" to "BAD REQUEST"))
+         }
          it("can use an enum as a top-level field") {
             val (vyne) = testVyne(schema)
             val result = vyne.query(
@@ -170,6 +216,46 @@ find {
                )
             )
          }
+
+         it("can use dot notation to traverse the property of an enum with an inline declaration") {
+            val (vyne) = testVyne(schema)
+            val result = vyne.query(
+               """
+            find { "Hello" } as {
+               error : {
+                  theMessage : Errors.enumForName('BadRequest').message
+               }
+            }
+         """.trimIndent()
+            )
+               .firstTypedObject()
+            val raw = result.toRawObject()
+            raw.shouldBe(
+               mapOf(
+                  "error" to mapOf("theMessage" to "Bad Request")
+               )
+            )
+         }
+         it("can use dot notation to chain enum property traversal and method call") {
+            val (vyne) = testVyne(schema)
+            val result = vyne.query(
+               """
+            find { "Hello" } as {
+               error : {
+                  theMessage : Errors.enumForName('BadRequest').message.upperCase()
+               }
+            }
+         """.trimIndent()
+            )
+               .firstTypedObject()
+            val raw = result.toRawObject()
+            raw.shouldBe(
+               mapOf(
+                  "error" to mapOf("theMessage" to "BAD REQUEST")
+               )
+            )
+         }
+
       }
 
 
