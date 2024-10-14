@@ -9,13 +9,17 @@ import {
 import { SourcePackageDescription } from 'src/app/package-viewer/packages.service';
 import { SchemaImporterService } from 'src/app/project-import/schema-importer.service';
 import { Message } from 'src/app/services/schema';
-import { TuiAlertService, TuiDialogService } from '@taiga-ui/core';
+import { TuiAlertService, TuiDialogService, TuiButtonModule } from '@taiga-ui/core';
 import { TUI_PROMPT } from '@taiga-ui/kit';
 import {Router} from "@angular/router";
+import { TuiNotificationModule } from '@taiga-ui/core/components/notification';
+import {CommonModule} from '@angular/common';
+import {FileConfigComponent} from '../project-import/project-source-config/file-config.component';
+import {GitConfigComponent} from '../project-import/project-source-config/git-config.component';
 
 @Component({
-  selector: 'app-project-settings',
-  template: `
+    selector: 'app-project-settings',
+    template: `
       <app-git-config *ngIf="packageDescription()?.publisherType === 'GitRepo'" [editable]="false"
                       [gitConfig]="packageDescription().packageConfig"></app-git-config>
       <app-file-config *ngIf="packageDescription()?.publisherType === 'FileSystem'" [editable]="false"
@@ -31,8 +35,10 @@ import {Router} from "@angular/router";
       </ng-container>
 
   `,
-  styleUrls: ['./project-settings.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./project-settings.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+  imports: [CommonModule, TuiButtonModule, TuiNotificationModule, GitConfigComponent, FileConfigComponent],
 })
 export class ProjectSettingsComponent {
 

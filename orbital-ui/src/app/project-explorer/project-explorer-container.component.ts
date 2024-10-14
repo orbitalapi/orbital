@@ -1,6 +1,6 @@
 import { Component, Directive } from '@angular/core';
 import { AppInfoService, AppConfig } from '../services/app-info.service';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink, RouterOutlet } from '@angular/router';
 import {
   PackageIdentifier,
   PackagesService,
@@ -10,6 +10,11 @@ import {
 import { Observable } from 'rxjs/internal/Observable';
 import {SchemaNotificationService, SchemaUpdatedNotification} from 'src/app/services/schema-notification.service';
 import {TypesService} from "../services/types.service";
+import {CommonModule} from '@angular/common';
+import { PackageViewerModule } from '../package-viewer/package-viewer.module';
+import { TuiButtonModule } from '@taiga-ui/core';
+import { RequiresAuthorityDirective } from '../requires-authority.directive';
+import { ExpandingPanelSetModule } from '../expanding-panelset/expanding-panel-set.module';
 
 @Directive()
 export class BaseProjectExplorerContainer {
@@ -56,8 +61,8 @@ export class BaseProjectExplorerContainer {
 
 
 @Component({
-  selector: 'app-project-explorer-container',
-  template: `
+    selector: 'app-project-explorer-container',
+    template: `
     <app-panel-header title="Projects">
       <div class="spacer"></div>
       <button
@@ -82,7 +87,9 @@ export class BaseProjectExplorerContainer {
     </div>
 
   `,
-  styleUrls: ['./project-explorer-container.component.scss']
+    styleUrls: ['./project-explorer-container.component.scss'],
+    standalone: true,
+    imports: [ExpandingPanelSetModule, RequiresAuthorityDirective, TuiButtonModule, RouterLink, PackageViewerModule, RouterOutlet, CommonModule]
 })
 export class ProjectExplorerContainerComponent extends BaseProjectExplorerContainer {
 

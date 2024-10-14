@@ -1,10 +1,12 @@
-import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
+import {ChangeDetectionStrategy, Component} from '@angular/core';
 import {PackagesService, ProjectLoaderWithStatus} from "../package-viewer/packages.service";
 import {Observable} from "rxjs";
+import {AsyncPipe, CommonModule} from '@angular/common';
+import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
 
 @Component({
-  selector: 'app-project-error-list',
-  template: `
+    selector: 'app-project-error-list',
+    template: `
     <app-header-component-layout
       title="Projects - problems"
       description="There are problems with these projects, preventing them from loading.">
@@ -27,8 +29,14 @@ import {Observable} from "rxjs";
 
     </app-header-component-layout>
   `,
-  styleUrls: ['./project-error-list.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+    styleUrls: ['./project-error-list.component.scss'],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: true,
+    imports: [
+      CommonModule,
+      AsyncPipe,
+      HeaderComponentLayoutModule
+    ]
 })
 export class ProjectErrorListComponent {
 
