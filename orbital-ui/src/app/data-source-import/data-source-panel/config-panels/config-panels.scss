@@ -45,3 +45,11 @@
     flex: 1;
   }
 }
+
+.open-api-notification {
+  margin: -1rem 0 1.5rem 0;
+}
+
+::ng-deep tui-hint {
+  max-width: 460px !important;
+}
