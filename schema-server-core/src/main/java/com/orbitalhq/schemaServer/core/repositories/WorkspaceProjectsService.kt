@@ -132,15 +132,25 @@ class WorkspaceProjectsService(
    @PostMapping("/api/repositories/git", params = ["test"])
    @PreAuthorize("hasAuthority('${VynePrivileges.TestConnections}')")
    fun testGitConnection(@RequestBody request: GitConnectionTestRequest): Mono<GitConnectionTestResult> {
-      return Mono.just(GitUtils.testConnection(request.uri))
-         .map { testResult ->
-            GitConnectionTestResult(
-               successful = testResult.successful,
-               errorMessage = testResult.errorMessage,
-               branchNames = testResult.branchNames,
-               defaultBranch = testResult.defaultBranch
-            )
-         }
+      return try {
+         Mono.just(GitUtils.testConnection(request.uri))
+            .map { testResult ->
+               GitConnectionTestResult(
+                  successful = testResult.successful,
+                  errorMessage = testResult.errorMessage,
+                  branchNames = testResult.branchNames,
+                  defaultBranch = testResult.defaultBranch
+               )
+            }
+      } catch (e: Exception) {
+         Mono.just(GitConnectionTestResult(
+            successful = false,
+            errorMessage = e.cause.toString(),
+            branchNames = null,
+            defaultBranch = null
+         ))
+      }
+
    }
 }
 
