@@ -1,4 +1,5 @@
 import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {TuiHintModule, TuiNotificationModule, tuiNotificationOptionsProvider} from '@taiga-ui/core';
 import {TuiInputModule} from '@taiga-ui/kit';
 import {OpenApiPackageLoaderSpec} from 'src/app/project-import/project-import.models';
 import {ControlContainer, FormsModule, NgModelGroup, ReactiveFormsModule} from '@angular/forms';
@@ -9,7 +10,30 @@ import {FilePathOrUploadComponent} from './file-path-or-upload.component';
 @Component({
   selector: 'app-open-api-package-config',
   standalone: true,
+  imports: [
+    FilePathOrUploadComponent,
+    PackageIdentifierInputComponent,
+    TuiInputModule,
+    FormsModule,
+    TuiNotificationModule,
+    TuiHintModule,
+  ],
+  providers: [
+    tuiNotificationOptionsProvider({
+      icon: 'tuiIconHelpCircle',
+      status: 'info',
+    }),
+  ],
+  viewProviders: [{ provide: ControlContainer, useExisting: NgModelGroup }],
   template: `
+    <tui-notification status="info" class="open-api-notification" [tuiHint]="tooltip" tuiHintAppearance="onDark" tuiHintShowDelay="100">
+      Understanding the difference between adding a project vs adding a data source
+    </tui-notification>
+    <ng-template #tooltip>
+      <p>Using this approach, the OpenAPI spec remains as your source of truth, and you create links between an OpenAPI service and your models by embedding Taxi metadata directly within the spec.</p>
+      <p>Use this when you'd prefer to work with OpenAPI over Taxi.</p>
+      <p>Alternatively, you can add the OpenAPI spec as a data source, which will convert the spec to Taxi, and write it to your project.</p>
+    </ng-template>
     <div class="form-row">
       <div class="form-item-description-container">
         <h3>OpenAPI spec file</h3>
@@ -75,14 +99,7 @@ import {FilePathOrUploadComponent} from './file-path-or-upload.component';
       </div>
     </div>
   `,
-  styleUrls: ['./open-api-package-config.component.scss'],
-  imports: [
-    FilePathOrUploadComponent,
-    PackageIdentifierInputComponent,
-    TuiInputModule,
-    FormsModule
-  ],
-  viewProviders: [{ provide: ControlContainer, useExisting: NgModelGroup }]
+  styleUrls: ['./open-api-package-config.component.scss']
 })
 export class OpenApiPackageConfigComponent {
   @Input()

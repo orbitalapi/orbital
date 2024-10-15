@@ -2,8 +2,9 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgxFileDropEntry } from 'ngx-file-drop';
-import { TuiButtonModule } from '@taiga-ui/core';
+import {TuiButtonModule, TuiHintModule, TuiNotificationModule, tuiNotificationOptionsProvider} from '@taiga-ui/core';
 import { TuiInputModule, TuiTabsModule } from '@taiga-ui/kit';
+import {UiCustomisations} from '../../../../environments/ui-customisations';
 import { ConvertSchemaEvent, SwaggerConverterOptions } from '../../data-source-import.models';
 import { readSingleFile } from '../../../utils/files';
 import { PackageIdentifier } from '../../../package-viewer/packages.service';
@@ -19,11 +20,27 @@ import { sanitiseNamespace } from '../../../utils/utils';
     TuiButtonModule,
     TuiInputModule,
     TuiTabsModule,
-    DataExplorerModule
+    DataExplorerModule,
+    TuiNotificationModule,
+    TuiHintModule,
+  ],
+  providers: [
+    tuiNotificationOptionsProvider({
+      icon: 'tuiIconHelpCircle',
+      status: 'info',
+    }),
   ],
   template: `
     <div class="form-container">
       <form class="form-body" #swaggerForm="ngForm">
+        <tui-notification status="info" class="open-api-notification" [tuiHint]="tooltip" tuiHintAppearance="onDark" tuiHintShowDelay="100">
+          Understanding the difference between adding a project vs adding a data source
+        </tui-notification>
+        <ng-template #tooltip>
+          <p>Using this approach, the OpenAPI spec is converted to Taxi, and stored in your project, and the Taxi version becomes the source of truth.</p>
+          <p>Use this when you'd prefer to work with Taxi over OpenAPI.</p>
+          <p>Alternatively, you can add the spec directly as a project, reading from disk or a git repository. This works well when you plan on keeping your OAS spec as a source of truth, and can embed Taxi metadata directly inside it.</p>
+        </ng-template>
         <div class="form-row">
           <div class="form-item-description-container">
             <h3>OpenAPI spec source</h3>
@@ -121,4 +138,6 @@ export class SwaggerConfigComponent {
         this.swaggerOptions.defaultNamespace = sanitiseNamespace(`${organisation}.${name}`);
       })
   }
+
+  protected readonly uiConfig = UiCustomisations;
 }
