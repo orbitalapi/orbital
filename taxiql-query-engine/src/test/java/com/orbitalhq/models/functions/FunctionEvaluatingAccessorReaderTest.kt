@@ -2,11 +2,14 @@ package com.orbitalhq.models.functions
 
 import com.orbitalhq.firstRawObject
 import com.orbitalhq.firstRawValue
+import com.orbitalhq.firstTypedInstace
 import com.winterbe.expekt.should
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.testVyne
+import com.orbitalhq.typedInstances
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -104,6 +107,25 @@ class FunctionEvaluatingAccessorReaderTest {
       )
          .firstRawObject()
       result.shouldBe(mapOf("message" to "hello", "upperMessage" to "WORLD"))
+   }
+
+   // ORB-714
+   @Test
+   fun `can evaluate a nested expression`():Unit = runBlocking {
+      val (vyne) = testVyne("""
+         function compoundFilter(
+           firstSet: String[],
+           secondSet: String[]
+         ):String[] -> firstSet.filter( (String) -> secondSet.contains('hello'))
+      """.trimIndent())
+      val result = vyne.query("""find { compoundFilter(
+    ['a','b','hello'],
+    ['hello']
+)}""").typedInstances().map { it.toRawObject() }
+      // The point of this test isn't the output, just that an error wasn't
+      // thrown, as per ORB-714
+      // However, let's be thorought
+      result.shouldBe(listOf("a", "b", "hello"))
    }
 
 }

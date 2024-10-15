@@ -513,8 +513,10 @@ class AccessorReader(
    }
 
    private fun readScopedReferenceSelector(value: Any, accessor: ArgumentSelector): TypedInstance {
+
       val scopedInstance = if (value is FactBag) {
          value.getScopedFactOrNull(accessor.scope)?.fact
+            ?: objectFactory.getScopedFactOrNull(accessor.scope)
             ?: error("Failed to resolve scope argument ${accessor.scope.name}")
 
       } else {
