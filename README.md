@@ -30,13 +30,20 @@ Instead, Orbital is powered by the API specs you're already building.
 
 Orbital creates integration on-the-fly, without engineers having to write glue code.
 
-Get started right now, by spinning up Orbital on your machine
+Get started right now, by spinning up Orbital on your machine. 
+
+* Grab the `docker-compose.yml` at [https://start.orbitalhq.com/](https://start.orbitalhq.com/)
+   * Note that some of Orbital's test features leverage platform-specific docker features. 
+   * So, either visit the above in a browser and download the file (we'll work out the correct one to serve you), or...
+   * `curl  -H "x-os: ${OS:-${OSTYPE:-$(uname)}}" https://start.orbitalhq.com -o docker-compose.yml` will also fetch the right version for your OS
+* Then `docker compose up`
+* Finally visit http://localhost:9022 in your browser.
 
 ```bash
-docker run -p 9022:9022 orbitalhq/orbital
+# for the impatient...
+curl  -H "x-os: ${OS:-${OSTYPE:-$(uname)}}" https://start.orbitalhq.com -o docker-compose.yml
+docker compose up -d
 ```
-
-Then visit http://localhost:9022 in your browser.
 
 ## What is Orbital?
 Orbital is a data gateway that automates the orchestration, integration and transformation of data and services (API’s, databases, message brokers) across your enterprise.
