@@ -3,10 +3,10 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component,
-  EventEmitter,
+  EventEmitter, HostBinding,
   Input,
   Output,
-  ViewChild
+  ViewChild,
 } from '@angular/core';
 import { BaseTypedInstanceViewer } from './BaseTypedInstanceViewer';
 import { InstanceLike, Type } from '../services/schema';
@@ -73,6 +73,8 @@ export class ObjectViewContainerComponent extends BaseTypedInstanceViewer implem
 
   @ViewChild(ResultsTableComponent)
   resultsTable: ResultsTableComponent;
+
+  @HostBinding('class.display-contents') get classDisplayMode() { return this.displayMode === "json" }
 
   @Input()
   get displayMode(): DisplayMode {

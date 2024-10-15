@@ -7,12 +7,15 @@ img.icon {
 :host {
   height: 100%;
   overflow: auto;
+
+  &.display-contents {
+    display: contents;
+  }
 }
 
 .display-wrapper {
   flex-grow: 1;
 }
-
 
 app-results-table, app-json-results-view {
   flex-grow: 1;
