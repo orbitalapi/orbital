@@ -6,12 +6,20 @@
   </as-split-area>
   <as-split-area size="*" order="1">
     <div class="code-viewer-container">
-      <app-code-editor class="code-editor"
-                       [content]="sourceContent"
-                       [showCompilationProblemsPanel]="showCompilationProblemsPanel"
-                       [compilationMessages]="selectedSource?.errors"
-                       [readOnly]="true"
-      ></app-code-editor>
+      <as-split direction="vertical" unit="pixel">
+        <as-split-area size="*">
+          <app-code-editor class="code-editor"
+                           [content]="sourceContent"
+                           [showCompilationProblemsPanel]="false"
+                           [compilationMessages]="selectedSource?.errors"
+                           [readOnly]="true"
+          ></app-code-editor>
+        </as-split-area>
+        <as-split-area *ngIf="errors?.length > 0" [size]="200">
+          <app-compilation-message-list [compilationMessages]="errors"
+                                        (messageClicked)="compilationMessageClicked($event)"></app-compilation-message-list>
+        </as-split-area>
+      </as-split>
     </div>
   </as-split-area>
 </as-split>

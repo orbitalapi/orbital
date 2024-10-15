@@ -9,6 +9,10 @@
     //display: grid; // flex doesn't allow the Monaco editor to size correctly horizontally, so using grid instead
     min-height: 0;
   }
+
+  .as-split-area {
+    overflow-x: auto;
+  }
 }
 
 .file-list {
