@@ -9,6 +9,10 @@
 tui-badge {
   font-weight: bold !important;
   font-family: $headings-font;
+
+  &[data-status=warning] {
+    --left-content-color: #{$yellow-600};
+  }
 }
 
 .row {
@@ -16,6 +20,7 @@ tui-badge {
   align-items: center;
   gap: 0.5rem;
   width: 100%;
+  text-wrap: nowrap;
 
   &.active,
   &.active:hover {
@@ -41,9 +46,16 @@ tui-badge {
   }
 }
 
-.tree-node.has-error {
-  text-decoration: underline red;
-  text-decoration-thickness: 2px;
+.tree-node {
+  &.has-error {
+    text-decoration: underline wavy $red-700;
+    text-decoration-thickness: 1px;
+  }
+
+  &.has-warning {
+    text-decoration: underline wavy $yellow-400;
+    text-decoration-thickness: 1px;
+  }
 }
 
 tui-tree {

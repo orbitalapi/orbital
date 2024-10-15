@@ -5,9 +5,8 @@
   display: flex;
   flex-direction: column;
   flex-grow: 1;
-  width: 10px;
   margin-left: 1rem;
-  overflow: auto;
+  overflow: hidden;
 }
 :host(.vyne) {
   background-color: $body-bg;

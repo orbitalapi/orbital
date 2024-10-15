@@ -13,6 +13,7 @@ import com.orbitalhq.schemas.taxi.TaxiSchema
 import lang.taxi.CompilationError
 import lang.taxi.errors
 import lang.taxi.sources.SourceLocation
+import lang.taxi.warnings
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 
@@ -61,7 +62,8 @@ class TaxiSchemaValidator(
          val packagesWithTranspiledCode = schema.packages
 
          val errors = messages.errors()
-         val errorsByPackage = messages.errors().map { compilationError ->
+         val errorsAndWarnings = messages.errors() + messages.warnings()
+         val errorsAndWarningsByPackage = errorsAndWarnings.map { compilationError ->
             val compilationErrorSourceName = compilationError.sourceName
                ?: error("It should now be illegal to submit a source without a sourcename.  If this error is hit, understand the usecase. If not, lets make the field not nullable.")
             val (packageIdentifier, sourceName) = VersionedSource.splitPackageIdentifier(compilationErrorSourceName)
@@ -69,12 +71,12 @@ class TaxiSchemaValidator(
          }
          val parsedPackages = packagesWithTranspiledCode.map { sourcePackage ->
             val parsedSources = sourcePackage.sourcesWithPackageIdentifier.map { versionedSource ->
-               val errors = errorsByPackage
+               val errorsAndWarnings = errorsAndWarningsByPackage
                   .filter { error ->
                      error.first == sourcePackage.identifier && error.second == versionedSource.name
                   }
                   .map { it.third }
-               ParsedSource(versionedSource, errors)
+               ParsedSource(versionedSource, errorsAndWarnings)
             }
             ParsedPackage(sourcePackage.packageMetadata, parsedSources, sourcePackage.additionalSources, sourcePackage.readme)
          }

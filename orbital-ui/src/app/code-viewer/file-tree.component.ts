@@ -4,8 +4,6 @@ import {EMPTY_ARRAY, TuiHandler} from "@taiga-ui/cdk";
 import {TUI_TREE_CONTENT, TuiTreeItemComponent} from "@taiga-ui/kit";
 import {PolymorpheusComponent} from "@tinkoff/ng-polymorpheus";
 import {FileTreeFolderNodeComponent} from "./file-tree-folder-node.component";
-import {ActivatedRoute, Router} from "@angular/router";
-import {integer} from "vscode-languageclient";
 import {convertToParsedSources} from "./code-viewer.component";
 
 @Component({
@@ -23,8 +21,9 @@ import {convertToParsedSources} from "./code-viewer.component";
       let-value
     >
       <div class="row" (click)="onClick(value)" [ngClass]="{'active': value.value?.filename === selectedFilename}">
-        <button class="tree-node" [ngClass]="{'has-error': value.hasErrors}">{{ value.label }}</button>
+        <button class="tree-node" [ngClass]="{'has-error': value.hasErrors, 'has-warning': value.hasWarnings && !value.hasErrors}">{{ value.label }}</button>
         <tui-badge status="error" *ngIf="value.value?.errorCount > 0" size="xs">{{ value.value.errorCount }}</tui-badge>
+        <tui-badge status="warning" *ngIf="value.value?.warningCount > 0" size="xs">{{ value.value.warningCount }}</tui-badge>
       </div>
     </ng-template>
   `,
@@ -133,7 +132,8 @@ export function sourcesToFileTreeNode(sources: ParsedSource[] | VersionedSource[
 export function parsedSourceToDecoratedFileEntry(parsedSource: ParsedSource): FileEntryWithErrorCounts {
   return {
     filename: parsedSource.source.name,
-    errorCount: parsedSource.errors.length,
+    errorCount: parsedSource.errors.filter(error => error.severity === 'ERROR').length,
+    warningCount: parsedSource.errors.filter(error => error.severity === 'WARNING').length,
     source: parsedSource
   }
 }
@@ -167,6 +167,12 @@ export class FileTreeNode {
     return this.descendants.some(d => d.hasErrors);
   }
 
+  get hasWarnings(): boolean {
+    if (this.value?.warningCount > 0) {
+      return true;
+    }
+    return this.descendants.some(d => d.hasWarnings);
+  }
 
   get descendants(): FileTreeNode[] {
     const childDescendants = this.childNodes.map(it => it.descendants).flat()
@@ -195,6 +201,7 @@ export class FileTreeNode {
 export interface FileEntryWithErrorCounts {
   filename: string;
   errorCount: number;
+  warningCount: number;
   source: ParsedSource
 }
 

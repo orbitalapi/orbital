@@ -238,6 +238,8 @@ export class CodeEditorComponent implements OnInit, OnDestroy {
       filter(event => event.uri === model.textEditorModel.uri.toString()),
       debounceTime(100)
     ).subscribe(next => {
+      // only update compilationMessages if they haven't been set manually already
+      if (!isNullOrUndefined(this.compilationMessages)) return
       this.compilationMessages = next.diagnostics.map(message => {
         let severity:CompilationMessageSeverity
         if (message.severity == DiagnosticSeverity.Error) {
