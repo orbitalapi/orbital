@@ -82,8 +82,6 @@ import reactor.kotlin.test.test
 )
 @ActiveProfiles("test")
 class SavedQueryEndpointIntegrationTest : DatabaseTest() {
-   @MockBean
-   lateinit var hazelcastInstance: HazelcastInstance
 
    @MockBean
    lateinit var cmsService: DefaultContentRepository
@@ -185,6 +183,10 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
       @Bean
       @Primary
       fun schemaProvider(): SchemaProvider = TestSchemaProvider.withBuiltInsAnd(TestSchema.schema)
+
+      @Bean
+      fun hazelcastInstance(): HazelcastInstance = MockHazelcastInstance()
+
 
       @Bean
       fun queryMetricsReporter(): QueryMetricsReporter = NoOpMetricsReporter

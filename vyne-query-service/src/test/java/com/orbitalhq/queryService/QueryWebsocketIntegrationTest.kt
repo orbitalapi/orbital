@@ -2,6 +2,7 @@ package com.orbitalhq.queryService
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.test.TestHazelcastInstanceFactory
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.VyneProvider
@@ -92,11 +93,6 @@ class QueryWebsocketIntegrationTest : DatabaseTest() {
    @MockBean
    lateinit var licenseManager: OrbitalLicenseManager
 
-   @MockBean
-   lateinit var hazelcastInstance: HazelcastInstance
-
-
-
    @LocalServerPort
    val randomServerPort = 0
 
@@ -149,6 +145,10 @@ class QueryWebsocketIntegrationTest : DatabaseTest() {
       fun responseFlow(): Sinks.Many<String> {
          return Sinks.many().unicast().onBackpressureBuffer<String>()
       }
+
+      @Bean
+      @Primary
+      fun hazelcastInstance():HazelcastInstance = TestHazelcastInstanceFactory().newHazelcastInstance()
 
       @Bean
       @Primary

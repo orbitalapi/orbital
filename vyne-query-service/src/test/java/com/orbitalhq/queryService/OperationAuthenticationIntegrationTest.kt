@@ -69,9 +69,6 @@ class OperationAuthenticationIntegrationTest : DatabaseTest() {
    private lateinit var taxiSchema: TaxiSchema
 
    @MockBean
-   lateinit var hazelcastInstance: HazelcastInstance
-
-   @MockBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
    @MockBean
@@ -281,6 +278,10 @@ class OperationAuthenticationIntegrationTest : DatabaseTest() {
    @Import(TestDiscoveryClientConfig::class)
    class Config {
       private val logger = KotlinLogging.logger {}
+
+      @Bean
+      fun hazelcastInstance(): HazelcastInstance = MockHazelcastInstance()
+
 
       @Bean
       @Primary

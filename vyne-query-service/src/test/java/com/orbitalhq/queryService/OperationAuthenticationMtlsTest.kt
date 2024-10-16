@@ -138,12 +138,13 @@ class OperationAuthenticationMtlsTest : DatabaseTest() {
       @Bean
       fun schemaStore(): SchemaStore = LocalValidatingSchemaStoreClient()
 
+      @Bean
+      fun hazelcastInstance(): HazelcastInstance = MockHazelcastInstance()
+
+
 
    }
    private lateinit var taxiSchema: TaxiSchema
-
-   @MockBean
-   lateinit var hazelcastInstance: HazelcastInstance
 
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
