@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.auth.EmptyAuthenticationToken
 import com.orbitalhq.query.runtime.core.gateway.WebsocketQueryRouteMatchingService
+import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.NotFoundException
 import com.orbitalhq.spring.http.websocket.OrbitalWebSocketConfiguration
 import com.orbitalhq.spring.http.websocket.WebSocketController
 import mu.KotlinLogging
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Flux
@@ -37,6 +39,7 @@ class StreamResultsWebsocketPublisher(
    override val paths: List<String>
       get() = listOf(PATH)
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
    override fun handle(session: WebSocketSession): Mono<Void> {
       val queryPath = session.handshakeInfo.uri
          .path

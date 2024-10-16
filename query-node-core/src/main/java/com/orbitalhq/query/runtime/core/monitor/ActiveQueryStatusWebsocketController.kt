@@ -1,6 +1,7 @@
 package com.orbitalhq.query.runtime.core.monitor
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.websocket.OrbitalWebSocketConfiguration
 import com.orbitalhq.spring.http.websocket.WebSocketController
 import kotlinx.coroutines.FlowPreview
@@ -8,6 +9,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.time.sample
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Component
 import org.springframework.web.reactive.socket.WebSocketMessage
 import org.springframework.web.reactive.socket.WebSocketSession
@@ -26,6 +28,8 @@ class ActiveQueryStatusWebsocketController(
       "/api/query/status"
    )
 
+
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewQueryHistory}')")
    override fun handle(webSocketSession: WebSocketSession): Mono<Void> {
 
       val websocketPath = webSocketSession.handshakeInfo.uri.path.toString()

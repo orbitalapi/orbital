@@ -1,6 +1,7 @@
 package com.orbitalhq.queryService.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.AuthClaimType
@@ -10,10 +11,10 @@ import com.orbitalhq.cockpit.core.content.DefaultContentRepository
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.copilot.OpenAiChatService
-import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
+import com.orbitalhq.query.runtime.core.WebsocketQuery
 import com.orbitalhq.queryService.MockHazelcastInstance
 import com.orbitalhq.queryService.TestSchemaProvider
 import com.orbitalhq.queryService.security.TestRoles.adminUserName
@@ -41,6 +42,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
 import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.test.web.client.TestRestTemplate
+import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.cloud.contract.wiremock.AutoConfigureWireMock
 import org.springframework.context.annotation.Bean
@@ -55,9 +57,16 @@ import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
+import org.springframework.web.reactive.socket.WebSocketMessage
+import org.springframework.web.reactive.socket.client.ReactorNettyWebSocketClient
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
+import reactor.core.publisher.Mono
+import reactor.core.publisher.Sinks
+import reactor.test.StepVerifier
+import java.net.URI
+import java.time.Duration
 
 /**
  *
@@ -103,6 +112,13 @@ class VyneQueryOidcIntegrationTest {
       } as PostgreSQLContainer<*>
 
    }
+
+   private var jwsBuilder: JWSBuilder? = null
+
+
+   @LocalServerPort
+   val randomServerPort = 0
+
 
    @MockBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
@@ -219,6 +235,18 @@ class VyneQueryOidcIntegrationTest {
    }
 
    @Test
+   fun `a viewer user can not execute query through websockets`() {
+      val  results: Sinks.Many<String> = issueWebSocketQuery(viewerUserName)
+      StepVerifier.create(
+      results.asFlux())
+         .expectSubscription()
+         .expectNoEvent(Duration.ofSeconds(5))
+         //.expectNextMatches { it.contains("No data sources were found that can return Username[]") }
+         .thenCancel()
+         .verify()
+   }
+
+   @Test
    fun `a user without Query Runner role can not execute query`() {
       val token = getTestAuthToken("userWithoutAnyRoleSetup")
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
@@ -232,6 +260,19 @@ class VyneQueryOidcIntegrationTest {
       val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
       val response = issueVyneQuery(headers)
       response.statusCode.is2xxSuccessful.shouldBeTrue()
+   }
+
+   @Test
+   fun `a query runner can execute query through websockets`() {
+      val  results: Sinks.Many<String> = issueWebSocketQuery(queryRunnerUser)
+      StepVerifier.create(
+         results.asFlux())
+         .expectSubscription()
+         .expectNextMatches {
+            it.contains("{\"typeName\":\"com.orbitalhq.Username\",\"anonymousTypes\":[],\"value\":\"queryExecutor\"")
+         }
+         .thenCancel()
+         .verify()
    }
 
    @Test
@@ -667,6 +708,40 @@ class VyneQueryOidcIntegrationTest {
    private fun getUserRoleDefinitions(headers: HttpHeaders): ResponseEntity<String> {
       val entity = HttpEntity<Unit>(headers)
       return restTemplate.exchange(JWSBuilder.getUserRoleDefinitions, HttpMethod.GET, entity, String::class.java)
+
+   }
+
+   private fun issueWebSocketQuery(userName: String): Sinks.Many<String> {
+      val token = getTestAuthToken(userName)
+      val headers = JWSBuilder.httpHeadersWithBearerAuthorisation(token)
+      val webSocketClient = ReactorNettyWebSocketClient()
+
+      val query = jacksonObjectMapper().writeValueAsString(
+         WebsocketQuery(
+            clientQueryId = "clientId123",
+            query = "find { com.orbitalhq.Username[] }"
+         )
+      )
+      val  results: Sinks.Many<String> = Sinks.many().replay().limit(1000)
+      StepVerifier.create(
+         webSocketClient.execute(URI.create("ws://localhost:${randomServerPort}/api/query/taxiql"),
+            headers) { webSocketSession ->
+            val outStream = Mono.just(webSocketSession.textMessage (query))
+            val inStream = webSocketSession
+               .receive()
+               .map(WebSocketMessage::getPayloadAsText)
+               .doOnNext { results.tryEmitNext(it) }
+
+            webSocketSession
+               .send(outStream)
+               .thenMany(inStream)
+               .then()
+         })
+         .expectSubscription()
+         .expectComplete()
+         .verify()
+
+      return results
 
    }
 }

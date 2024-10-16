@@ -111,6 +111,7 @@ class OrbitalSamlConfig {
 
       return http.build()
    }
+
 }
 
 object SamlCallbackUrlProvider {

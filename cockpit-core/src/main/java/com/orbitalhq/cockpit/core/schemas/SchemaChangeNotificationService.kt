@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.schema.api.SourceNameWithPackage
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.SchemaSetChangedEvent
+import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.websocket.OrbitalWebSocketConfiguration
 import com.orbitalhq.spring.http.websocket.WebSocketController
 import com.orbitalhq.utils.log
@@ -15,6 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactor.asFlux
 import org.springframework.beans.factory.InitializingBean
 import org.springframework.scheduling.annotation.EnableScheduling
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.reactive.socket.WebSocketSession
@@ -55,6 +57,8 @@ class SchemaChangeNotificationService(
       }
 
    override val paths: List<String> = listOf("/api/schema/updates")
+
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    override fun handle(session: WebSocketSession): Mono<Void> {
       val outbound = schemaUpdatedNotificationEvents
          .map { mapper.writeValueAsString(it) }
