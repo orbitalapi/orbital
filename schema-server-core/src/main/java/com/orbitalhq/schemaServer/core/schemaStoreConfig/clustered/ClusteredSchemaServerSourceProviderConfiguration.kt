@@ -56,7 +56,7 @@ class ClusteredSchemaServerSourceProviderConfiguration {
       hazelcastInstance: HazelcastInstance
    ): SchemaUpdateNotifier {
       return DistributedSchemaUpdateNotifier(
-         hazelcastInstance.getReliableTopic("/vyne/schemaUpdate"),
+         hazelcastInstance.getReliableTopic("/schema-update"),
          validatingSchemaStoreClient
       )
    }
