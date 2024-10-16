@@ -158,7 +158,7 @@ class StreamStateMapListener(
 
    init {
       emitCurrentState()
-      streamStateCache.addLocalEntryListener(this)
+      streamStateCache.addEntryListener(this, true)
    }
 
    private fun emitCurrentState() {
@@ -166,7 +166,7 @@ class StreamStateMapListener(
          .toList())
    }
    override fun entryAdded(event: EntryEvent<String, StreamStatus>) {
-      if (event.value.state == StreamStatus.State.RUNNING && event.oldValue.state != StreamStatus.State.RUNNING) {
+      if (event.value.state == StreamStatus.State.RUNNING && event.oldValue.state != StreamStatus.State.RUNNING && event.member.localMember()) {
          val streamName = event.value.streamName
          logger.info { "Stream $streamName entered state ${event.value.state}, so submitting to pipeline manager" }
          pipelineManager.startPipelineByName(streamName.fqn())
@@ -178,6 +178,7 @@ class StreamStateMapListener(
 
    override fun entryRemoved(event: EntryEvent<String, StreamStatus>) {
       // I think it's already been removed from the pipeline manager at this point
+      logger.info { "${event.key} removed from Stream Status cache" }
    }
 
    override fun entryUpdated(event: EntryEvent<String, StreamStatus>) {
@@ -186,15 +187,17 @@ class StreamStateMapListener(
          return
       }
       val streamName = value.streamName.fqn()
-      when (value.state) {
-         StreamStatus.State.PAUSED -> {
-            logger.info { "Stream $streamName entered state ${event.value.state}, so pausing on pipeline manager" }
-            pipelineManager.suspendPipelineByName(streamName)
-         }
+      if (event.member.localMember()) {
+         when (value.state) {
+            StreamStatus.State.PAUSED -> {
+               logger.info { "Stream $streamName entered state ${event.value.state}, so pausing on pipeline manager" }
+               pipelineManager.suspendPipelineByName(streamName)
+            }
 
-         StreamStatus.State.RUNNING -> {
-            logger.info { "Stream $streamName entered state ${event.value.state}, so submitting to pipeline manager" }
-            pipelineManager.startPipelineByName(streamName)
+            StreamStatus.State.RUNNING -> {
+               logger.info { "Stream $streamName entered state ${event.value.state}, so submitting to pipeline manager" }
+               pipelineManager.startPipelineByName(streamName)
+            }
          }
       }
       emitCurrentState()

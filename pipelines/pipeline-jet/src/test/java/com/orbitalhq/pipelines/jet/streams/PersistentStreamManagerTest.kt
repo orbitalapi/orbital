@@ -104,6 +104,7 @@ $querySrc
          val argCaptor = argumentCaptor<ManagedStream>()
          verify(pipelineManager, times(1)).submitStream(argCaptor.capture(), any())
          reset(pipelineManager)
+          whenever(pipelineManager.canStartPipelines()).thenReturn(true)
 
          val runningPipeline = RunningPipelineSummary(
             SubmittedPipeline(
@@ -121,14 +122,80 @@ $querySrc
          verify(pipelineManager, times(1)).terminatePipeline(any<String>(), any())
 
       }
+
+       it("when a stream is configured to be running, but the pipeline manager is not leader then the stream is not triggered to start it") {
+           val (store, streamManager, pipelineManager) = storeAndManager()
+           reset(pipelineManager)
+           whenever(pipelineManager.canStartPipelines()).thenReturn(false)
+
+           val streamState = streamManager.streamStateManager.streamStateCache
+           streamState["MyStream"] = StreamStatus("MyStream", StreamStatus.State.RUNNING)
+           whenever(pipelineManager.submitStream(any(), any())).thenReturn(mock())
+
+           store.setSchema(
+               TaxiSchema.from(
+                   """
+            model Foo
+            query MyStream {
+               stream { Foo }
+            }
+         """
+               )
+           )
+
+           verify(pipelineManager, times(0)).submitStream(any<ManagedStream>(), any())
+           verify(pipelineManager, times(0)).startPipeline(anyOrNull())
+       }
+
+       it("when a scheme update is received with same content the pipeline manager is not triggered to restart a running pipeline") {
+           val (store, streamManager, pipelineManager) = storeAndManager()
+           val streamState = streamManager.streamStateManager.streamStateCache
+           streamState["MyStream"] = StreamStatus("MyStream", StreamStatus.State.RUNNING)
+           whenever(pipelineManager.submitStream(any(), any())).thenReturn(mock())
+
+           val taxiSchema =  TaxiSchema.from(
+               """
+            model Foo
+            query MyStream {
+               stream { Foo }
+            }
+         """
+           )
+           store.setSchema(
+               taxiSchema
+           )
+
+           verify(pipelineManager, times(1)).submitStream(any<ManagedStream>(), any())
+           verify(pipelineManager, times(1)).startPipeline(anyOrNull())
+
+           reset(pipelineManager)
+           whenever(pipelineManager.canStartPipelines()).thenReturn(true)
+
+           val querySrc = """ query MyStream {
+               stream { Foo }
+            }"""
+           val runningPipeline = RunningPipelineSummary(
+               SubmittedPipeline(
+                   "MyStream",
+                   "foo-123",
+                   PipelineSpec("MyStream", StreamingQueryInputSpec(querySrc), null, emptyList()),
+                   "",
+                   mock { },
+                   false
+               ),
+               PipelineStatus("MyStream", "foo-123", JobStatus.RUNNING, Instant.now(), mock { })
+           )
+           whenever(pipelineManager.getManagedStreams(false)) doReturn listOf(runningPipeline)
+           store.setSchema(taxiSchema)
+           verify(pipelineManager, times(0)).submitStream(any<ManagedStream>(), any())
+           verify(pipelineManager, times(0)).startPipeline(anyOrNull())
+       }
    }
-
-
 })
 
 private fun storeAndManager(): Triple<SimpleSchemaStore, PersistentStreamManager, PipelineManager> {
    val store = SimpleSchemaStore()
-   val pipelineManager: PipelineManager = mock { }
+   val pipelineManager: PipelineManager = mock { on {canStartPipelines()} doReturn true  }
    val stateManager = StreamStateManager(StreamStatus.State.PAUSED, pipelineManager, mutableMapOf())
    val manager = PersistentStreamManager(store, pipelineManager, stateManager)
    return Triple(store, manager, pipelineManager)
