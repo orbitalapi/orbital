@@ -6,10 +6,12 @@ import com.hazelcast.cluster.MembershipListener
 import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.pipelines.jet.api.streams.StreamServerStatusEvent
+import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.websocket.OrbitalWebSocketConfiguration
 import com.orbitalhq.spring.http.websocket.WebSocketController
 import mu.KotlinLogging
 import org.springframework.messaging.handler.annotation.MessageMapping
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.stereotype.Controller
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Flux
@@ -71,6 +73,7 @@ class StreamServerStatusService(
 
    override val paths: List<String> = listOf("/api/streams/status")
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditPipelines}')")
    override fun handle(session: WebSocketSession): Mono<Void> {
       val outbound =  statusUpdates
          .map { event ->

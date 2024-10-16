@@ -30,6 +30,7 @@ import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.Schema
+import com.orbitalhq.security.VyneGrantedAuthority
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.websocket.WebSocketController
 import kotlinx.coroutines.CoroutineScope
@@ -384,6 +385,8 @@ class QueryService(
 
 
    override val paths: List<String> = listOf("/api/query/taxiql")
+
+   @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
    override fun handle(session: WebSocketSession): Mono<Void> {
       val sink = Sinks.many().replay().latest<String>()
       val output = sink.asFlux()

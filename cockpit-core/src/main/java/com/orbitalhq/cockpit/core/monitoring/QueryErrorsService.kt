@@ -4,9 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.connectors.StreamErrorPublisher
 import com.orbitalhq.history.db.QueryHistoryRecordRepository
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
+import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.BadRequestException
 import com.orbitalhq.spring.http.websocket.OrbitalWebSocketConfiguration
 import com.orbitalhq.spring.http.websocket.WebSocketController
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.reactive.socket.WebSocketSession
 import org.springframework.web.util.UriTemplate
@@ -26,7 +28,10 @@ class QueryErrorsService(
 ) : WebSocketController {
 
    override val paths: List<String> = listOf("/api/query/taxiql/{clientQueryId}/errors")
+
    private val uriTemplate = UriTemplate(paths.single())
+
+   @PreAuthorize("hasAuthority('${VynePrivileges.RunQuery}')")
    override fun handle(session: WebSocketSession): Mono<Void> {
       val uriVariables = uriTemplate.match(session.handshakeInfo.uri.path)
       val clientQueryId = uriVariables["clientQueryId"]
