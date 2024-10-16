@@ -40,8 +40,24 @@ class PersistentStreamManager(
       schemaStore.schemaChanged
          .toFlux()
          .subscribe { schemaSetChangedEvent ->
-            logger.info { "Schema changed, now on generation ${schemaSetChangedEvent.newSchemaSet.generation} - checking for changes to managed streams" }
-            updateStreams(schemaSetChangedEvent.newSchemaSet.schema)
+            val newContentHash = schemaSetChangedEvent.newSchemaSet.allSourcesContentHashes
+            val oldContentHash = schemaSetChangedEvent.oldSchemaSet?.allSourcesContentHashes
+            /**
+             * Consider moving this check up to the point where we fire SchemaSetChangedEvent.
+             */
+            if (newContentHash != oldContentHash) {
+               logger.info { "new content hash => $newContentHash" }
+               logger.info { "old content hash => $oldContentHash" }
+               logger.info { "Schema changed, now on generation ${schemaSetChangedEvent.newSchemaSet.generation} old generation is ${schemaSetChangedEvent.oldSchemaSet?.generation}- checking for changes to managed streams" }
+               logger.info { "Schema changed, now on schema hash ${schemaSetChangedEvent.newSchemaSet.schema.hash} old generation is ${schemaSetChangedEvent.oldSchemaSet?.schema?.hash}- checking for changes to managed streams" }
+               if (this.pipelineManager.canStartPipelines()) {
+                  updateStreams(schemaSetChangedEvent.newSchemaSet.schema)
+               } else {
+                  logger.warn { "Skipping the stream updates as I am not the leader!" }
+               }
+            } else {
+               logger.warn { "Schema is updated but source content hash are the same, skipping stream updates!" }
+            }
          }
    }
 

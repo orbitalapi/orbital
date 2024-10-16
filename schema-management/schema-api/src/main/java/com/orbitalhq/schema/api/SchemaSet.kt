@@ -68,6 +68,9 @@ data class SchemaSet private constructor(
    @Transient
    private var _compositeSchema: CompositeSchema? = null
 
+   @Transient
+   private var _allSourcesContentHashes: Set<String>? = null
+
 
    @get:JsonIgnore
    val validPackages = parsedPackages.filter { it.isValid }
@@ -109,6 +112,15 @@ data class SchemaSet private constructor(
             init()
          }
          return this._rawSchemaStrings ?: error("SchemaSet failed to initialize")
+      }
+
+   @get:JsonIgnore
+   val allSourcesContentHashes: Set<String>
+      get() {
+         if (this._allSourcesContentHashes == null) {
+            this._allSourcesContentHashes = allSources.map { it.contentHash }.sorted().toSet()
+         }
+         return this._allSourcesContentHashes ?: emptySet()
       }
 
    @get:JsonIgnore

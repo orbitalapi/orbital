@@ -19,6 +19,8 @@ import com.orbitalhq.pipelines.jet.api.transport.ScheduledPipelineTransportSpec
 import com.orbitalhq.pipelines.jet.api.transport.hazelcast.HazelcastTopicSinkSpec
 import com.orbitalhq.pipelines.jet.api.transport.query.StreamingQueryInputSpec
 import com.orbitalhq.pipelines.jet.badRequest
+import com.orbitalhq.pipelines.jet.streams.ClusterLeaderSelector
+import com.orbitalhq.pipelines.jet.streams.HazelcastLeaderSelector
 import com.orbitalhq.pipelines.jet.streams.ManagedStream
 import com.orbitalhq.schemas.QualifiedName
 import mu.KotlinLogging
@@ -38,6 +40,8 @@ class PipelineManager(
    private val pipelineFactory: PipelineFactory,
    private val hazelcastInstance: HazelcastInstance,
 ) {
+
+   private val clusterLeaderSelector: ClusterLeaderSelector = HazelcastLeaderSelector(hazelcastInstance)
 
    data class ScheduledPipeline(
       val nextRunTime: Instant,
@@ -63,6 +67,10 @@ class PipelineManager(
       if (pendingPipeline != null) return pendingPipeline
 
       return getEnabledPipelineByName(name).spec
+   }
+
+   fun canStartPipelines(): Boolean {
+      return clusterLeaderSelector.amILeader()
    }
 
    fun startPipelineByName(name: QualifiedName): Pair<SubmittedPipeline, Job?> {
