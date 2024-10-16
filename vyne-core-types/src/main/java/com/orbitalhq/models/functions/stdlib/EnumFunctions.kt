@@ -5,7 +5,6 @@ import com.orbitalhq.models.EvaluatedExpression
 import com.orbitalhq.models.EvaluationValueSupplier
 import com.orbitalhq.models.TypeReferenceInstance
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedValue
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.functions.NamedFunctionInvoker
@@ -13,12 +12,15 @@ import com.orbitalhq.models.functions.stdlib.collections.createFailureWithTypedN
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import lang.taxi.functions.FunctionAccessor
+import lang.taxi.types.EnumType
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
 
 object EnumFunctions {
    val functions : List<NamedFunctionInvoker> = listOf(
-      com.orbitalhq.models.functions.stdlib.EnumForName
+      com.orbitalhq.models.functions.stdlib.EnumForName,
+      com.orbitalhq.models.functions.stdlib.HasEnumNamed,
+
    )
 }
 
@@ -59,6 +61,29 @@ object EnumForName : NamedFunctionInvoker {
          createFailureWithTypedNull("Lookup of enum by name failed - ${e.message!!}", returnType, function, inputValues)
       }
       return result
+   }
+
+}
+
+object HasEnumNamed : NamedFunctionInvoker {
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.HasEnumNamed.name
+   override fun invoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
+   ): TypedInstance {
+      val typeReference = inputValues[0] as TypeReferenceInstance
+      val requestedName = inputValues[1] as TypedValue
+
+      val typeInSchema = schema.type(typeReference.typeName)
+      val result = (typeInSchema.taxiType as EnumType).hasExplicitName(requestedName.value as String)
+      val source = EvaluatedExpression(function.asTaxi(), inputValues)
+      return TypedInstance.from(returnType, result, schema, source = source)
    }
 
 }
