@@ -8,5 +8,7 @@ app-file-config {
 }
 
 :host {
-  margin: 0 2rem 2rem 1rem;
+  margin-top: -1rem;
+  padding: 1rem 2rem 2rem 1rem;
+  overflow-y: auto;
 }
