@@ -1,5 +1,6 @@
 package com.orbitalhq.query.runtime.core.gateway
 
+import com.hazelcast.test.TestHazelcastInstanceFactory
 import com.jayway.awaitility.Awaitility
 import com.nhaarman.mockito_kotlin.*
 import com.orbitalhq.AuthClaimType
@@ -389,7 +390,7 @@ class QueryRequestHandlerTest {
                vyneProvider,
               historyEventConsumerProvider,
                Jackson2ObjectMapperBuilder().build(),
-               ActiveQueryMonitor(),
+               ActiveQueryMonitor(TestHazelcastInstanceFactory().newHazelcastInstance()),
                QueryResponseFormatter(listOf(CsvFormatSpec), SimpleSchemaProvider(schemaProvider.schema))
            )
            return queryService

@@ -14,6 +14,7 @@ import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
+import com.orbitalhq.queryService.MockHazelcastInstance
 import com.orbitalhq.queryService.TestSchemaProvider
 import com.orbitalhq.queryService.security.TestRoles.adminUserName
 import com.orbitalhq.queryService.security.TestRoles.platformManagerUser
@@ -104,9 +105,6 @@ class VyneQueryOidcIntegrationTest {
    }
 
    @MockBean
-   lateinit var hazelcastInstance: HazelcastInstance
-
-   @MockBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
    @MockBean
@@ -157,6 +155,9 @@ class VyneQueryOidcIntegrationTest {
    @TestConfiguration
    @Import(TestDiscoveryClientConfig::class)
    class TestVyneAuthorisationConfig {
+      @Bean
+      fun hazelcastInstance(): HazelcastInstance = MockHazelcastInstance()
+
       @Bean
       @Primary
       fun schemaProvider(@Value("\${wiremock.server.baseUrl}") mockServerBaseUrl: String): SchemaProvider {

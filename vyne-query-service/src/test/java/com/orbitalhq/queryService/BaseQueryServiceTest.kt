@@ -1,6 +1,7 @@
 package com.orbitalhq.queryService
 
 import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.test.TestHazelcastInstanceFactory
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
@@ -145,7 +146,7 @@ abstract class BaseQueryServiceTest {
          SimpleVyneProvider(vyne),
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
-         ActiveQueryMonitor(),
+         ActiveQueryMonitor(TestHazelcastInstanceFactory().newHazelcastInstance()),
          QueryResponseFormatter(listOf(CsvFormatSpec), SimpleSchemaProvider(vyne.schema))
       )
       return queryService
@@ -224,8 +225,8 @@ class TestSpringConfig {
    @Bean
    fun metricsReporter() = NoOpMetricsReporter
 
-   @MockBean
-   lateinit var hazelcastInstance: HazelcastInstance
+   @Bean
+   fun hazelcastInstance(): HazelcastInstance = MockHazelcastInstance()
 
    @Bean
    @Primary

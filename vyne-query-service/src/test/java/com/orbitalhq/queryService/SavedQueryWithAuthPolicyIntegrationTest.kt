@@ -1,5 +1,6 @@
 package com.orbitalhq.queryService
 
+import com.hazelcast.core.HazelcastInstance
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.whenever
 import com.orbitalhq.AuthClaimType
@@ -153,6 +154,9 @@ class SavedQueryWithAuthPolicyIntegrationTest : BaseIntegrationTest() {
       @Bean
       @Primary
       fun queryMetricsReporter(): QueryMetricsReporter = NoOpMetricsReporter
+
+      @Bean
+      fun hazelcastInstance(): HazelcastInstance = MockHazelcastInstance()
 
       @Bean
       fun schemaStore(): LocalValidatingSchemaStoreClient {

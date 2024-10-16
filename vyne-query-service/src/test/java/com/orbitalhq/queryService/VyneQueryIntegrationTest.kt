@@ -67,9 +67,6 @@ import kotlin.test.assertEquals
 @ActiveProfiles("test")
 class VyneQueryIntegrationTest : DatabaseTest() {
    @MockBean
-   lateinit var hazelcastInstance: HazelcastInstance
-
-   @MockBean
    lateinit var chatService: OpenAiChatService
 
    @MockBean
@@ -178,6 +175,9 @@ class VyneQueryIntegrationTest : DatabaseTest() {
 
       @Bean
       fun schemaStore(): SchemaStore = LocalValidatingSchemaStoreClient()
+
+      @Bean
+      fun hazelcastInstance(): HazelcastInstance = MockHazelcastInstance()
 
       @Bean
       @Primary

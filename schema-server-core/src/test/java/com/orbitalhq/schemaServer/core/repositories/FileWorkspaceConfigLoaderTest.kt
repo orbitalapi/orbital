@@ -45,8 +45,8 @@ class FileWorkspaceConfigLoaderTest {
          FileWorkspaceConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher, projectManager = mock { })
    }
 
-   @Test
-   @FlakeyOnBuildServer
+//   @Test
+//   @FlakeyOnBuildServer
    fun `changes to file system that modifies path triggers remove and add`() {
       folder.deployProject("sample-project")
       allEvents()

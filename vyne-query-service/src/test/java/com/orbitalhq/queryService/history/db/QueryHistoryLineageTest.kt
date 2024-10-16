@@ -1,5 +1,6 @@
 package com.orbitalhq.queryService.history.db
 
+import com.hazelcast.test.TestHazelcastInstanceFactory
 import com.jayway.awaitility.Awaitility.await
 import com.winterbe.expekt.should
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
@@ -144,7 +145,7 @@ class QueryHistoryLineageTest {
          vyneProvider,
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
-         ActiveQueryMonitor(),
+         ActiveQueryMonitor(TestHazelcastInstanceFactory().newHazelcastInstance()),
          QueryResponseFormatter(listOf(CsvFormatSpec), schemaProvider)
       )
       runBlocking {

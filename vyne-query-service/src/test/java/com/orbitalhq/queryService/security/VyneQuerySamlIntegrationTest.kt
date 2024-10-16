@@ -15,6 +15,7 @@ import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
+import com.orbitalhq.queryService.MockHazelcastInstance
 import com.orbitalhq.queryService.TestSchemaProvider
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
@@ -219,9 +220,6 @@ class VyneQuerySamlIntegrationTest {
    }
 
    @MockBean
-   lateinit var hazelcastInstance: HazelcastInstance
-
-   @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
    @Autowired
@@ -279,6 +277,9 @@ class VyneQuerySamlIntegrationTest {
    @TestConfiguration
    @Import(TestDiscoveryClientConfig::class)
    class TestVyneAuthorisationConfig {
+
+      @Bean
+      fun hazelcastInstance(): HazelcastInstance = MockHazelcastInstance()
 
 
       @Bean

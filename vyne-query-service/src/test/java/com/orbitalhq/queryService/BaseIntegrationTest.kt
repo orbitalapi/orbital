@@ -40,8 +40,6 @@ abstract class BaseIntegrationTest {
    @MockBean
    lateinit var configLoader: WorkspaceConfigLoader
 
-   @MockBean
-   lateinit var hazelcastInstance: HazelcastInstance
 
    @MockBean
    lateinit var hazelcastStreamObserver: HazelcastStreamResultObserver
