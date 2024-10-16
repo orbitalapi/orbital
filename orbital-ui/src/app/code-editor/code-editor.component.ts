@@ -238,8 +238,6 @@ export class CodeEditorComponent implements OnInit, OnDestroy {
       filter(event => event.uri === model.textEditorModel.uri.toString()),
       debounceTime(100)
     ).subscribe(next => {
-      // only update compilationMessages if they haven't been set manually already
-      if (!isNullOrUndefined(this.compilationMessages)) return
       this.compilationMessages = next.diagnostics.map(message => {
         let severity:CompilationMessageSeverity
         if (message.severity == DiagnosticSeverity.Error) {
@@ -250,7 +248,7 @@ export class CodeEditorComponent implements OnInit, OnDestroy {
           severity = "INFO"
         }
         return {
-          char: message.range.start.character + 1,
+          char: message.range.start.character,
           line: message.range.start.line + 1,
           sourceName: message.source,
           severity: severity,
