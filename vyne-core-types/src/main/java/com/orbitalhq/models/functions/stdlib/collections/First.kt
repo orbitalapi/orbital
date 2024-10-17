@@ -1,5 +1,7 @@
 package com.orbitalhq.models.functions.stdlib.collections
 
+import com.orbitalhq.models.DataSourceUpdater
+import com.orbitalhq.models.EvaluatedExpression
 import com.orbitalhq.models.EvaluationValueSupplier
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
@@ -43,7 +45,11 @@ abstract class CollectionNavigatingFunction : NamedFunctionInvoker, CollectionFi
 
       return select(collection, inputValues) { message ->
          createFailureWithTypedNull(message, returnType, function, inputValues)
+      }.let { typedInstance ->
+         val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
+         DataSourceUpdater.update(typedInstance, dataSource)
       }
+
    }
 
    abstract fun select(
