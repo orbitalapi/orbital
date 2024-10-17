@@ -20,7 +20,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
   standalone: true,
   template: `
     <app-header-component-layout title="Query Endpoints"
-                                 description="Queries, Streams and Pipelines defined in your schema">
+                                 description="Queries and streams defined in your schema">
       <ng-container ngProjectAs="header-components">
         <tui-notification *ngIf="websocketConnectionError && hasStreamingQueries"
                           status="error">{{ websocketConnectionError }}
