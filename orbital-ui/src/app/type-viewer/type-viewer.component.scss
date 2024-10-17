@@ -77,3 +77,8 @@ h1 {
     @extend %type-badge;
   }
 }
+
+.definition-header {
+  display: flex;
+  gap: 1rem;
+}

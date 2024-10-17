@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Observable } from 'rxjs';
+import {SaveWithFilenameComponent} from '../filename-display/save-with-filename.component';
 import { SchemaDiagramModule } from '../schema-diagram/schema-diagram.module';
 import {AppConfig, AppInfoService} from '../services/app-info.service';
 import { QualifiedName, Schema, Service } from '../services/schema';
@@ -18,8 +19,9 @@ import { LineageGraphModule } from '../type-viewer/lineage-graph/lineage-graph.m
     <div class="page-content">
       <div class="documentation" *ngIf="service">
         <div class="page-heading">
-          <h1>{{ service?.name?.name }}<span class="badge service">{{ service.serviceKind }}</span></h1>
+          <h1>{{ service?.name?.name }}<span class="badge service">{{ service.serviceKind ?? 'Service' }}</span></h1>
           <span class="mono-badge">{{ service?.name?.fullyQualifiedName }}</span>
+          <app-save-with-filename [source]="service.sourceCode?.[0]" [showSaveButton]="false"></app-save-with-filename>
         </div>
 
         <section>
@@ -54,7 +56,7 @@ import { LineageGraphModule } from '../type-viewer/lineage-graph/lineage-graph.m
                 <td><span class="mono-badge"><a
                   [routerLink]="['/catalog',navigationTargetForType(operation.returnType)]">{{ operation.returnType.shortDisplayName }}</a></span>
                 </td>
-                <td><span class="url">{{ operation.url }}</span></td>
+                <td><span class="url">{{ operation.url }}asdasd</span></td>
               </tr>
             </table>
           </div>
@@ -75,7 +77,8 @@ import { LineageGraphModule } from '../type-viewer/lineage-graph/lineage-graph.m
     DescriptionEditorModule,
     SchemaDiagramModule,
     RouterLink,
-    LineageGraphModule
+    LineageGraphModule,
+    SaveWithFilenameComponent,
   ],
   standalone: true
 })

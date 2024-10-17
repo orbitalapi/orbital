@@ -22,6 +22,7 @@ import {VersionedSource} from "../services/schema";
       </span>
     </div>
     <a
+      *ngIf="showSaveButton"
       tuiLink
       class="button-link"
       (click)="saveFile.emit()"
@@ -38,6 +39,9 @@ export class SaveWithFilenameComponent {
 
   @Input()
   isDisabled: boolean;
+
+  @Input()
+  showSaveButton: boolean = true;
 
   @Output()
   saveFile = new EventEmitter();
