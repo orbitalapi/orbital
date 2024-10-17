@@ -103,7 +103,10 @@
   <!--    </section>-->
 
   <section *ngIf="showTaxi">
-    <h2>Definition</h2>
+    <div class="definition-header">
+      <h2>Definition</h2>
+      <app-save-with-filename [source]="type.sources?.[0]" [showSaveButton]="false"></app-save-with-filename>
+    </div>
     <app-code-viewer [sources]="sources"></app-code-viewer>
 <!--    <app-simple-code-viewer name="Taxi" [content]="sourceTaxi" lang="taxi" [expanded]="true"></app-simple-code-viewer>-->
     <!--      <app-code-viewer [sources]="sources"></app-code-viewer>-->

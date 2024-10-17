@@ -7,6 +7,15 @@
   @include vyne-table()
 }
 
+app-description-editor-container {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+app-save-with-filename {
+  margin-top: 1rem;
+}
+
 app-service-lineage-graph-container {
   height: 600px;
 }
