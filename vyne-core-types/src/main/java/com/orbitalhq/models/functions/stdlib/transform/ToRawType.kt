@@ -52,7 +52,7 @@ object ToRawType : NamedFunctionInvoker {
          is TypedCollection -> {
             val strippedMembers = input.map { stripTypes(it, schema, source, returnType) }
             if (strippedMembers.isEmpty()) {
-               TypedCollection.empty(returnType, source)
+               TypedCollection.empty(returnType.asArrayType(), source)
             } else {
                TypedCollection.from(strippedMembers, source)
             }
