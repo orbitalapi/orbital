@@ -294,7 +294,7 @@ class StubService(
       return this
    }
    fun addResponse(stubOperationKey: String, json: String) {
-      val operation = schema!!.operations.first { it.name == stubOperationKey }
+      val operation = schema!!.operations.firstOrNull { it.name == stubOperationKey } ?: error("Cannot stub $stubOperationKey as it's not a valid operation")
       val response = parseJson(schema!!, operation.returnType.paramaterizedName, json)
       addResponse(stubOperationKey, response)
    }
