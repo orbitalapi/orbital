@@ -15,18 +15,19 @@ import {
   isMappedSynonym,
   isTypedCollection,
   isTypeNamedInstance,
-  isUntypedInstance,
+  isUntypedInstance, QualifiedName,
   ReferenceRepository,
   SchemaGraphLink,
   SchemaGraphNode,
   SchemaGraphNodeType,
-  SchemaNodeSet,
+  SchemaNodeSet, TypedInstance,
   TypeNamedInstance
 } from '../services/schema';
 import {BaseGraphComponent} from '../inheritence-graph/base-graph-component';
 import {Subject} from 'rxjs';
 import {isNullOrUndefined} from 'util';
 import {QueryResultMemberCoordinates} from '../query-panel/instance-selected-event';
+import {QualifiedNameParser} from "../services/qualified-name-parser";
 
 type LineageElement = TypeNamedInstance | TypeNamedInstance[] | DataSource;
 
@@ -118,15 +119,15 @@ export class LineageDisplayComponent extends BaseGraphComponent {
 
 
     expressionDataSource.inputs.forEach(param => {
-      const inputNode = instanceToNode(param);
-      nodes.push(inputNode);
-      links.push({
-        source: inputNode.nodeId,
-        target: dataSourceNode.nodeId,
-        label: 'input'
-      });
-      const inputNodes = this.buildGraph(param, inputNode, []);
-      this.appendNodeSet(inputNodes, nodeSet);
+        const inputNode = instanceToNode(param);
+        nodes.push(inputNode);
+        links.push({
+          source: inputNode.nodeId,
+          target: dataSourceNode.nodeId,
+          label: 'input'
+        });
+        const inputNodes = this.buildGraph(param, inputNode, []);
+        this.appendNodeSet(inputNodes, nodeSet);
     })
   }
 
@@ -179,10 +180,16 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     let label = '';
     if (Array.isArray(instance)) {
       label = 'Multiple values';
+    } else if (Array.isArray(instance.value)) {
+      // We'll get here if the value was a TypedCollction
+      const values = instance.value as TypeNamedInstance[]
+      // TODO : We should be truncating this if there's hundreds
+      label = JSON.stringify(values.map(v => v.value))
     } else {
       label = isNullOrUndefined(instance.value) ? 'Null value' : displayedValue || instance.value;
     }
-    const shortDisplayName = Array.isArray(instance) ? 'Array' : instance.typeName.split('.').pop();
+    const qualifiedName = QualifiedNameParser.parse(instance.typeName)
+    const shortDisplayName = qualifiedName.shortDisplayName
     return {
       id: instanceId,
       nodeId: instanceId,

@@ -1,5 +1,6 @@
 package com.orbitalhq.history.remote
 
+import com.orbitalhq.history.LineageJsonSerializer
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.history.ResultRowPersistenceStrategyFactory
 import com.orbitalhq.history.chart.LineageSankeyViewBuilder
@@ -27,7 +28,7 @@ class QueryHistoryRSocketWriter(
       .newFixedThreadPool(1)
       .asCoroutineDispatcher()
    private val queryEventConsumer = RemoteQueryEventConsumerClient(
-      ResultRowPersistenceStrategyFactory.resultRowPersistenceStrategy(Jackson.defaultObjectMapper, null, config),
+      ResultRowPersistenceStrategyFactory.resultRowPersistenceStrategy(LineageJsonSerializer.objectMapper, null, config),
       config,
       CoroutineScope(historyDispatcher)
    )

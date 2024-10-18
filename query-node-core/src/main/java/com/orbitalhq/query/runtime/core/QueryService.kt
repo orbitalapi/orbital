@@ -478,7 +478,7 @@ class QueryService(
             extractJwtClaimFactFromQueryParameters(schema, taxiQlQuery.parameters)
          ) + userAuthTokenFacts
 
-         val vyne = vyneProvider.createVyne(executionContextFacts + userAuthTokenFacts, schema, queryOptions)
+         val vyne = vyneProvider.createVyne(executionContextFacts + userAuthTokenFacts, querySchema, queryOptions)
          val historyWriterEventConsumer = historyWriterProvider.createEventConsumer(queryId, vyne.schema)
          val response = try {
             val eventDispatcherForQuery =

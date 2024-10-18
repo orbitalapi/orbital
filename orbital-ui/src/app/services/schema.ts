@@ -3,9 +3,10 @@ import {isNullOrUndefined, isString} from 'util';
 import {PackageIdentifier} from "../package-viewer/packages.service";
 import {SavedQuery} from "./types.service";
 import {TuiNotificationT} from "@taiga-ui/core";
+import {QualifiedNameParser} from "./qualified-name-parser";
 
 export function fqn(input: string): QualifiedName {
-  return QualifiedName.from(input);
+  return QualifiedNameParser.parse(input);
 }
 
 export type QualifiedNameAsString = string;
@@ -24,6 +25,9 @@ export class QualifiedName {
     return parts[parts.length - 1];
   }
 
+  /**
+   * @deprecated Use QualifiedNameParser.parse() instead
+   */
   static from(fullyQualifiedName: string): QualifiedName {
     const parts = fullyQualifiedName.split('.');
     const name = QualifiedName.nameOnly(fullyQualifiedName);
@@ -37,6 +41,9 @@ export class QualifiedName {
     return qualifiedName;
   }
 
+  /**
+   * @deprecated Use QualifiedNameParser.parse() instead
+   */
   static fromWithArray(parameter: QualifiedName): QualifiedName {
     const qualifiedName = QualifiedName.from('lang.taxi.Array')
     qualifiedName.parameterizedName = `lang.taxi.Array<${parameter.fullyQualifiedName}>`;

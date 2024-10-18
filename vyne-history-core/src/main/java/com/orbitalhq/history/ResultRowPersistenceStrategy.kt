@@ -1,7 +1,12 @@
 package com.orbitalhq.history
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.orbitalhq.models.*
+import com.orbitalhq.models.DataSource
+import com.orbitalhq.models.FailedSearch
+import com.orbitalhq.models.OperationResult
+import com.orbitalhq.models.StaticDataSource
+import com.orbitalhq.models.TypeNamedInstanceMapper
+import com.orbitalhq.models.TypedInstanceConverter
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.models.serde.DataSourceReference
 import com.orbitalhq.query.QueryResultEvent
@@ -35,7 +40,7 @@ interface ResultRowPersistenceStrategy {
 object ResultRowPersistenceStrategyFactory {
 
    fun resultRowPersistenceStrategy(
-      objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
+      objectMapper: ObjectMapper = LineageJsonSerializer.objectMapper,
       persistenceQueue: HistoryPersistenceQueue?,
       config: QueryAnalyticsConfig
    ): ResultRowPersistenceStrategy {
@@ -107,7 +112,7 @@ open class DatabaseResultRowPersistenceStrategy(
                         dataSource.id,
                         queryId,
                         dataSource.name,
-                        objectMapper.writeValueAsString(dataSource)
+                        LineageJsonSerializer.objectMapper.writeValueAsString(dataSource)
                      )
                   } catch (e: OutOfMemoryError) {
                      null
@@ -152,6 +157,7 @@ open class DatabaseResultRowPersistenceStrategy(
    override fun extractResultRowAndLineage(event: QueryResultEvent): QueryResultRowLineage? {
       val result = measureTimedValue {
          val (convertedTypedInstance, dataSources) = converter.convertAndCollectDataSources(event.typedInstance)
+
          val queryResultRow = if (persistResults) QueryResultRow(
             queryId = event.queryId,
             json = objectMapper.writeValueAsString(convertedTypedInstance),
