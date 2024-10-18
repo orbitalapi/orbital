@@ -13,6 +13,15 @@
     min-height: unset;
     background-color: $gray-50;
   }
+
+  &.is-collapsible:hover {
+    background-color: $slate-200;
+    cursor: pointer;
+
+    &.is-secondary {
+      background-color: $slate-100;
+    }
+  }
 }
 .spacer {
   flex-grow: 1;

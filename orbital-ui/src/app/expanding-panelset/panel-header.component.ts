@@ -1,9 +1,9 @@
-import {Component, EventEmitter, HostBinding, Input, Output} from '@angular/core';
+import {Component, EventEmitter, HostBinding, HostListener, Input, Output} from '@angular/core';
 
 @Component({
   selector: 'app-panel-header',
   template: `
-    <button class="icon-button" *ngIf="collapsible" (click)="expanded = !expanded">
+    <button class="icon-button" *ngIf="collapsible">
       <app-svg-icon [class.expanded]="expanded" class="collapsible-icon" tabler="chevron-right" strokeWidth="2"
                     width="16" height="16"></app-svg-icon>
     </button>
@@ -19,6 +19,7 @@ import {Component, EventEmitter, HostBinding, Input, Output} from '@angular/core
 export class PanelHeaderComponent {
 
   @Input()
+  @HostBinding('class.is-collapsible')
   collapsible: boolean = false;
 
   @Input()
@@ -54,4 +55,9 @@ export class PanelHeaderComponent {
   @Input()
   @HostBinding('class.is-secondary')
   isSecondary: boolean
+
+  @HostListener('click', ['$event.target'])
+  onClick() {
+    this.expanded = !this.expanded
+  }
  }
