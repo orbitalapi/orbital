@@ -124,11 +124,11 @@ class LocalProjectionProvider : ProjectionProvider {
                   cancel()
                }
 
-               val scopedFact = buildScopedProjectionFacts(projection, emittedResult, context)
+               val scopedFacts = buildScopedProjectionFacts(projection, emittedResult, context)
                logger.trace { "project or map instance of ${emittedResult.value.type.qualifiedName.shortDisplayName} (index ${emittedResult.index}) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
 
                projectOrMap(
-                  scopedFact,
+                  scopedFacts,
                   declaredSourceType,
                   context,
                   globalFacts,
