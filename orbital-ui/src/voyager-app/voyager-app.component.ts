@@ -44,7 +44,7 @@ import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.compon
           </as-split-area>
           <as-split-area [size]="35" [order]="1">
             <div class="panel-with-header">
-              <app-panel-header title="Schema"></app-panel-header>
+              <app-panel-header title="Schema" tablerIcon="book2"></app-panel-header>
               <app-code-editor
                 class="flex-grow"
                 [content]="content"
