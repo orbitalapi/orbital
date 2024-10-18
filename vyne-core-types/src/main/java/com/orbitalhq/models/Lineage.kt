@@ -28,7 +28,10 @@ interface DataSource {
       logger.error { "Attempt of unsupported operation, updating failedAttempts of datasource ${this::class.simpleName}" }
       return this
    }
+}
 
+interface DatasourceWithInputs : DataSource {
+   val inputs: List<TypedInstance>
 }
 
 object DataSourceUpdater {
@@ -268,25 +271,25 @@ object Calculated : DataSource {
    override val failedAttempts: List<DataSource> = emptyList()
 }
 
-data class EvaluatedExpression(
+data class  EvaluatedExpression(
    val expressionTaxi: String,
-   val inputs: List<TypedInstance>,
+   override val inputs: List<TypedInstance>,
    override val id: String = UUID.randomUUID().toString()
-) : DataSource {
+) : DataSource, DatasourceWithInputs {
    override val name: String = "Evaluated expression"
    override val failedAttempts: List<DataSource> = emptyList()
 }
 
 data class FailedEvaluatedExpression(
    val expressionTaxi: String,
-   val inputs: List<TypedInstance>,
+   override val inputs: List<TypedInstance>,
    val errorMessage: String,
    val unresolvedInputs: List<QualifiedName> = emptyList(),
    val inputInError: TypedInstance? = null,
    val cause: DataSource? = null,
    override val id: String = UUID.randomUUID().toString(),
    override val failedAttempts: List<DataSource> = emptyList()
-) : DataSource {
+) : DataSource, DatasourceWithInputs {
    override val name: String = "Failed evaluated expression"
    override fun toString(): String {
       return "FailedEvaluatedExpression: Expression $expressionTaxi failed with message $errorMessage"

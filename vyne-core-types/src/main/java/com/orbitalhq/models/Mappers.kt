@@ -231,6 +231,7 @@ class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
          }
          typedInstance is Collection<*> -> {
             val unwrapped = unwrapCollection(value as Collection<*>, collectDataSourcesTo)
+            collectDataSourcesTo?.add(typedInstance to typedInstance.source)
             mapper.handleUnwrappedCollection(typedInstance,unwrapped)
          }
          typedInstance is TypedEnumValue && value is TypedObject -> {
