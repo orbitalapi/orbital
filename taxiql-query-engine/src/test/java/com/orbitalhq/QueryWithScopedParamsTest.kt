@@ -189,4 +189,98 @@ class QueryWithScopedParamsTest {
 
          ))
    }
+   @Test
+   fun `can use a variable by name in a projection scope in body`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+            model Film {
+               title : Title inherits String
+               cast : Actor[]
+            }
+            model Actor {
+               name : PersonName inherits String
+            }
+            service Films {
+               operation getFilm():Film
+            }
+""")
+      stub.addResponse("getFilm", """{ "title" :"Star Wars" , "cast" : [ {"name" : "Mark"}, {"name" : "Carrie"}, {"name": "Harrison"} ] }""")
+      val result = vyne.query("""
+         find { Film } as (starring: Actor[].first()) -> {
+            leadActor: starring
+         }
+      """.trimIndent())
+         .firstRawObject()
+      result.shouldBe(mapOf("leadActor" to mapOf("name" to "Mark")))
+   }
+
+   @Test
+   fun `can use a variable by type in a projection scope in body`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+            model Film {
+               title : Title inherits String
+               cast : Actor[]
+            }
+            model Actor {
+               name : PersonName inherits String
+            }
+            service Films {
+               operation getFilm():Film
+            }
+""")
+      stub.addResponse("getFilm", """{ "title" :"Star Wars" , "cast" : [ {"name" : "Mark"}, {"name" : "Carrie"}, {"name": "Harrison"} ] }""")
+      val result = vyne.query("""
+         find { Film } as (starring: Actor = Actor[].first()) -> {
+            leadActor: Actor
+         }
+      """.trimIndent())
+         .firstRawObject()
+      result.shouldBe(mapOf("leadActor" to mapOf("name" to "Mark")))
+   }
+
+   @Test
+   fun `can use a variable by type in a projection scope in body without explicit type in find clause and using type traversal`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+            model Film {
+               title : Title inherits String
+               cast : Actor[]
+            }
+            model Actor {
+               name : PersonName inherits String
+            }
+            service Films {
+               operation getFilm():Film
+            }
+""")
+      stub.addResponse("getFilm", """{ "title" :"Star Wars" , "cast" : [ {"name" : "Mark"}, {"name" : "Carrie"}, {"name": "Harrison"} ] }""")
+      val result = vyne.query("""
+         find { "" } as (starring: Actor = Film::Actor[].first()) -> {
+            leadActor: Actor
+         }
+      """.trimIndent())
+         .firstRawObject()
+      result.shouldBe(mapOf("leadActor" to mapOf("name" to "Mark")))
+   }
+   @Test
+   fun `can use a variable by type in a projection scope in body without explicit type in find clause using property traversal`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+            model Film {
+               title : Title inherits String
+               cast : Actor[]
+            }
+            model Actor {
+               name : PersonName inherits String
+            }
+            service Films {
+               operation getFilm():Film
+            }
+""")
+      stub.addResponse("getFilm", """{ "title" :"Star Wars" , "cast" : [ {"name" : "Mark"}, {"name" : "Carrie"}, {"name": "Harrison"} ] }""")
+      val result = vyne.query("""
+         find { "" } as (film: Film, starring: Actor = film.cast.first()) -> {
+            leadActor: Actor
+         }
+      """.trimIndent())
+         .firstRawObject()
+      result.shouldBe(mapOf("leadActor" to mapOf("name" to "Mark")))
+   }
 }
