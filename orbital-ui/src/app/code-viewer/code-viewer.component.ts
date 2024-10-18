@@ -56,6 +56,13 @@ export class CodeViewerComponent {
 
   }
 
+  get errorPanelSize(): number {
+    return this.compilationProblemsPanelExpanded ? this.lastCompilationProblemsPanelHeight : 42;
+  }
+
+  compilationProblemsPanelExpanded = true;
+  lastCompilationProblemsPanelHeight = 135;
+
   @Input()
   sidebarMode: SidebarMode = 'Auto';
 
@@ -176,6 +183,8 @@ export class CodeViewerComponent {
       this.activateSelectedSource();
     }
   }
+
+  protected readonly Number = Number;
 }
 
 export type SidebarMode = 'Visible' | 'Hidden' | 'Auto';

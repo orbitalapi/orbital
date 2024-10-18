@@ -35,11 +35,11 @@ import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.compon
         <app-voyager-sidebar [(showDiagram)]="showDiagram" [(showQueryPanel)]="showQueryPanel"
                              [(showReadme)]="showReadme"
                              (copyDevCode)="copyDevCode($event)"/>
-        <as-split direction="horizontal" unit="percent" gutterSize="1">
+        <as-split direction="horizontal" unit="percent" gutterSize="1" useTransition="true">
           <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
             <div class="thin-splitter-gutter-icon"></div>
           </div>
-          <as-split-area *ngIf="showReadme && queryMessage" [order]="0">
+          <as-split-area [visible]="!!(showReadme && queryMessage)" [order]="0">
             <app-readme-panel [(markdown)]="queryMessage.readme" (onRunQuery)="onRunQueryHandler($event)"></app-readme-panel>
           </as-split-area>
           <as-split-area [size]="35" [order]="1">
@@ -56,11 +56,11 @@ import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.compon
               </app-code-editor>
             </div>
           </as-split-area>
-          <as-split-area *ngIf="showQueryPanel" [order]="2">
+          <as-split-area [visible]="showQueryPanel" [order]="2">
             <app-playground-query-panel [schema]="schema$ | async"
                                         [queryMessage]="queryMessage"></app-playground-query-panel>
           </as-split-area>
-          <as-split-area *ngIf="showDiagram" [order]="3">
+          <as-split-area [visible]="showDiagram" [order]="3">
             <div class="panel-with-header">
               <app-panel-header tablerIcon="route-square-2" title="Diagram"></app-panel-header>
               <app-schema-diagram

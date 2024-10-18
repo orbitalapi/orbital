@@ -6,7 +6,7 @@
   </as-split-area>
   <as-split-area size="*" order="1">
     <div class="code-viewer-container">
-      <as-split direction="vertical" unit="pixel">
+      <as-split direction="vertical" unit="pixel" useTransition="true" (dragEnd)="lastCompilationProblemsPanelHeight = Number($event.sizes[1])">
         <as-split-area size="*">
           <app-code-editor class="code-editor"
                            [content]="sourceContent"
@@ -15,9 +15,11 @@
                            [readOnly]="true"
           ></app-code-editor>
         </as-split-area>
-        <as-split-area *ngIf="errors?.length > 0" [size]="200">
+        <as-split-area [visible]="errors?.length > 0" [size]="errorPanelSize" minSize="42">
           <app-compilation-message-list [compilationMessages]="errors"
-                                        (messageClicked)="compilationMessageClicked($event)"></app-compilation-message-list>
+                                        (messageClicked)="compilationMessageClicked($event)"
+                                        [(expanded)]="compilationProblemsPanelExpanded"
+          ></app-compilation-message-list>
         </as-split-area>
       </as-split>
     </div>
