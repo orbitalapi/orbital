@@ -173,9 +173,15 @@ button.dropdown-host {
       font-weight: bold;
       padding: 0.5rem;
       border-radius: 8px;
+      color: $slate-800;
 
-      &:hover {
+      &.active {
         background-color: $slate-100;
+      }
+
+      &:hover:not(.active) {
+        background-color: $slate-50;
+        color: $slate-900;
       }
     }
   }

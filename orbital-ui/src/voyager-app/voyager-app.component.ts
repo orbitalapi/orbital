@@ -4,9 +4,9 @@ import {
   Component,
   Inject,
   Injector,
-  model,
-  ViewChild
-} from "@angular/core";
+  model, OnInit,
+  ViewChild,
+} from '@angular/core';
 import {ParsedSchema, VoyagerService} from 'src/voyager-app/voyager.service';
 import {catchError, debounceTime, filter, map, mergeMap, shareReplay, switchMap, tap} from 'rxjs/operators';
 import {emptySchema, Schema} from 'src/app/services/schema';
@@ -15,12 +15,13 @@ import {ExampleGroups} from 'src/voyager-app/code-examples';
 import {TuiAlertService, TuiDialogService} from '@taiga-ui/core';
 import {ShareDialogComponent} from 'src/app/voyager/share-dialog/share-dialog.component';
 import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
-import {ActivatedRoute, Params} from '@angular/router';
+import {ActivatedRoute, NavigationEnd, Params, Router} from '@angular/router';
 import {emptyQueryMessage, StubQueryMessage} from "../app/services/query.service";
 import {isNullOrUndefined} from "../app/utils/utils";
 import {Clipboard} from '@angular/cdk/clipboard';
 import * as pako from 'pako';
 import { PlaygroundQueryPanelComponent } from "../app/voyager/playground-query-panel/playground-query-panel.component";
+import {ReadmePanelComponent} from '../app/voyager/readme-panel/readme-panel.component';
 import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.component";
 
 @Component({
@@ -80,7 +81,7 @@ import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.compon
   styleUrls: ['./voyager-app.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class VoyagerAppComponent {
+export class VoyagerAppComponent implements OnInit {
 
   showDiagram: boolean = true;
   showQueryPanel: boolean = true;
@@ -101,13 +102,17 @@ export class VoyagerAppComponent {
 
   @ViewChild(PlaygroundQueryPanelComponent) childComponent!: PlaygroundQueryPanelComponent;
 
+  @ViewChild(ReadmePanelComponent)
+  readmePanelComponent: ReadmePanelComponent;
+
   constructor(private voyagerService: VoyagerService,
               @Inject(TuiDialogService) private readonly dialogService: TuiDialogService,
               @Inject(Injector) private readonly injector: Injector,
               private readonly activatedRoute: ActivatedRoute,
               private readonly changeDetectorRef: ChangeDetectorRef,
               private readonly alertsService: TuiAlertService,
-              private readonly clipboard: Clipboard
+              private readonly clipboard: Clipboard,
+              private readonly router: Router
   ) {
     this.parsedSchema$ = this.codeUpdated$
       .pipe(
@@ -165,7 +170,6 @@ export class VoyagerAppComponent {
           return parseResult.schema;
         }),
       );
-    this.setCodeFromExample(ExampleGroups[0].snippets[0].query);
 
     this.activatedRoute.fragment
       .pipe(filter(f => f != null))
@@ -174,20 +178,24 @@ export class VoyagerAppComponent {
         this.setCodeFromExample(queryMessage)
       })
 
-    this.activatedRoute.params
+    this.router.events
       .pipe(
-        filter(params => params['shareSlug'] !== undefined || params['exampleSlug'] !== undefined),
+        filter(event => event instanceof NavigationEnd), // Trigger on every route change
+        switchMap(() => this.getActiveRouteParams()), // Use paramMap to get the most recent params
+        //filter(params => params['shareSlug'] !== undefined || params['exampleSlug'] !== undefined),
         mergeMap((params: Params) => {
           const shareSlug = params['shareSlug'];
           const exampleSlug = params['exampleSlug'];
 
           if (shareSlug) {
             return this.voyagerService.loadSharedSchema(params['shareSlug'])
-          } else {
+          } else if (exampleSlug) {
             const query = ExampleGroups.flatMap(group => group.snippets)
               .find(example => example.slug === exampleSlug)
               .query
             return of(query);
+          } else {
+            return of(emptyQueryMessage())
           }
 
         })
@@ -197,6 +205,9 @@ export class VoyagerAppComponent {
       });
   }
 
+  ngOnInit() {
+    this.setCodeFromExample(ExampleGroups[0].snippets[0].query);
+  }
 
   onFullscreenChange() {
     this.fullscreen = !this.fullscreen;
@@ -210,8 +221,10 @@ export class VoyagerAppComponent {
   }
 
 
-  clear() {
+  async clear() {
     this.setCodeFromExample(emptyQueryMessage())
+    await this.router.navigate(['empty'])
+    this.readmePanelComponent.resetViewMode()
   }
 
   setCode(code: string) {
@@ -309,5 +322,18 @@ export class VoyagerAppComponent {
 
 export const example: StubQueryMessageWithSlug = ${exampleAsJs}`
     return formattedJsSnippet
+  }
+
+  // this is required as without it the activatedRoute only returns the parent route ('/')
+  private getActiveRouteParams() {
+    let route = this.activatedRoute;
+
+    // Traverse to the deepest activated route (where the params would be)
+    while (route.firstChild) {
+      route = route.firstChild;
+    }
+
+    // Return the observable of the params from the deepest route
+    return route.params;
   }
 }

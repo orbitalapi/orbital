@@ -89,12 +89,17 @@ export class ReadmePanelComponent {
     this.markdownChange.emit(this.markdown);
   }
 
+  viewModeActiveIndex = 0
+
   @Output()
   markdownChange = new EventEmitter<string>();
-  viewModeActiveIndex = 0
 
   @Output()
   onRunQuery = new EventEmitter<string>()
 
   private _markdown: string
+
+  resetViewMode() {
+    this.viewModeActiveIndex = 0;
+  }
 }
