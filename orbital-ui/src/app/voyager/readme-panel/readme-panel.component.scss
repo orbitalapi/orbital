@@ -6,23 +6,6 @@
   flex-direction: column;
   height: 100%;
 }
-tui-segmented.dark {
-  background: $slate-600;
-
-  &::before {
-    box-shadow: none;
-    color: $slate-900;
-  }
-
-  button {
-    font-size: 0.8rem;
-    color: $slate-400;
-  }
-
-  .active {
-    color: white;
-  }
-}
 
 .spacer {
   flex-grow: 1;

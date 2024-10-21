@@ -28,13 +28,18 @@ table {
   border-collapse: collapse !important;
 
   td {
-    &:hover {
+    &:hover:not(.is-disabled){
       background-color: $slate-100;
     }
   }
 
   margin-bottom: 1rem;
   .response-cell {
+    &:not(.is-disabled) {
+      &:hover {
+        cursor: pointer;
+      }
+    }
     transition: background-color ease-in-out 150ms;
     font-family: $mono;
     font-size: 0.8rem;
@@ -45,9 +50,7 @@ table {
     max-width: 200px;
     white-space: nowrap;
 
-    &:hover {
-      cursor: pointer;
-    }
+
   }
   .button-cell {
     width: 1rem;

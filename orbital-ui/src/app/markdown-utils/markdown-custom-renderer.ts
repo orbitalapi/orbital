@@ -20,7 +20,12 @@ export class CustomMarkdownRenderer {
       // Create a unique identifier for the placeholder
       const id = `orb-diagram-${Math.random().toString(36).substr(2, 9)}`;
       setTimeout(() => this.replacePlaceholderWithComponent(id, code), 0);
-      return `<div id="${id}">An architecture diagram was supposed to appear here, but didn't. How bitterly disappointing.</div>`
+      return `<div id="${id}" style="
+    padding: 1rem;
+    border: 1px solid red;
+    border-radius: 4px;
+    margin-bottom: 1rem;
+">An architecture diagram was supposed to appear here, but didn't. How bitterly disappointing.</div>`
     } else {
       return delegateFunction(code, language, escaped);
     }

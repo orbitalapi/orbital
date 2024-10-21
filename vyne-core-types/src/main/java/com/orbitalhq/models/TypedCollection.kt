@@ -60,6 +60,9 @@ data class TypedCollection(
          return TypedCollection(collectionType.asArrayType(), value, source)
       }
 
+      /**
+       * The type passed here should be the collection type (eg., T[]), not the member type (T)
+       */
       fun empty(type: Type, source: DataSource = MixedSources): TypedCollection {
          return TypedCollection(type, emptyList(), source)
       }

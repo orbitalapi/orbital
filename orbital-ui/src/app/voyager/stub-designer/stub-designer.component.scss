@@ -1,0 +1,125 @@
+@import "src/common";
+
+:host {
+  display: flex;
+  flex-direction: column;
+
+  // Panel display stuff.
+  // Move if we re-house this in a non pop-up component
+  width: 1180px;
+  max-width: 80vw;
+  height: 800px;
+  max-height: 80vh;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  .spacer {
+    flex-grow: 1;
+  }
+}
+
+.panel-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex-grow: 1;
+  padding: 1rem;
+
+  .form-view, .simple-view {
+    flex-grow: 1;
+  }
+}
+
+.simple-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex-grow: 1;
+  app-simple-code-editor {
+    flex-grow: 1;
+    height: 10px; // without some static height, flex-grow isn't calcualting correctly
+    border: 1px solid $slate-300;
+  }
+}
+.param-row {
+  gap: 1rem;
+
+  tui-input {
+    flex-grow: 1;
+  }
+}
+
+.advanced-mode-form-container, .advanced-mode-json-editor {
+  flex-grow: 1;
+  height: 10px; // without some static height, flex-grow isn't calcualting correctly
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.advanced-mode-json-editor {
+  app-simple-code-editor {
+    flex-grow: 1;
+  }
+}
+.form-view {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  align-items: flex-start;
+  flex-grow: 1;
+  height: 10px; // static height required, otherwise flex not calcualting correctly
+
+  tui-accordion {
+    width: 100%;
+    overflow-y: auto;
+    height: 10px; // static height required, otherwise flex not calcualting correctly
+    flex-grow: 1;
+  }
+}
+.parameter-summary-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.parameter-summary {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.form-section-label {
+  font-weight: bold;
+  font-size: 0.9rem;
+}
+
+.response-condition-editor {
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  padding: 0.5rem;
+  border: 1px solid $slate-300;
+  border-top: none;
+
+  app-simple-code-editor {
+    flex-grow: 1;
+    border: 1px solid $slate-300;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+}
+
+.type-name {
+
+  @extend %type-badge;
+  font-size: 0.7rem;
+
+}
+
+button.disabled {
+  cursor: not-allowed;
+}

@@ -1,6 +1,5 @@
 package org.taxilang.playground.lsp
 
-import arrow.core.sequence
 import com.orbitalhq.playground.StubQueryService
 import lang.taxi.lsp.sourceService.WorkspaceSourceService
 import lang.taxi.lsp.sourceService.WorkspaceSourceServiceFactory
@@ -17,11 +16,9 @@ import org.springframework.stereotype.Component
  */
 class SchemaWorkspaceSourceService() : WorkspaceSourceService {
    override fun loadSources(): Sequence<SourceCode> {
-      return StubQueryService.builtInTypesSourcePackage
-         .sources
-         .mapIndexed { index,source-> SourceCode("internal-source-$index", source.content) }
+      return StubQueryService.builtInTypesSourcePackage.sources
          .asSequence()
-
+         .map { SourceCode(it.name, it.content, path = it.pathOrName) }
    }
 
    /**

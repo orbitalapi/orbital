@@ -7,7 +7,7 @@ import { AppComponent } from './app.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { DraftManagementBarModule } from './draft-management-bar/draft-management-bar.module';
 import { HeaderBarModule } from './header-bar/header-bar.module';
-import { TypesService } from './services/types.service';
+import {SCHEMA_PROVIDER_TOKEN, TypesService} from './services/types.service';
 import { QueryService } from './services/query.service';
 import { SearchService } from './search/search.service';
 import { SidenavComponent } from './sidenav/sidenav.component';
@@ -37,6 +37,7 @@ import { MatNativeDateModule } from '@angular/material/core';
 import { NgDompurifySanitizer } from '@tinkoff/ng-dompurify';
 import { LANGUAGE_SERVER_WS_ADDRESS_TOKEN } from './code-editor/language-server.tokens';
 import { CodeEditorModule } from './code-editor/code-editor.module';
+import {PlaygroundSchemaService} from "../voyager-app/playground-schema-service";
 
 const oauth2OidcModule = [AuthModule];
 
@@ -88,6 +89,10 @@ const oauth2OidcModule = [AuthModule];
     {
       provide: ENVIRONMENT,
       useValue: environment,
+    },
+    {
+      provide: SCHEMA_PROVIDER_TOKEN,
+      useExisting: TypesService
     },
     DatePipe,
     { provide: TUI_ALERT_POSITION, useValue: '2rem auto 0 auto' },

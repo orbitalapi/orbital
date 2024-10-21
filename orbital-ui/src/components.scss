@@ -66,3 +66,15 @@ button.button-small {
     line-height: 0.75rem;
   }
 }
+
+.markdown-body {
+  h4 {
+    text-transform: none;
+  }
+}
+
+// Override the default font in prism highlighted stuff - matches the font used
+// by monaco
+code[class*=language-] {
+  font-family: "Droid Sans Mono", "monospace", monospace
+}

@@ -17,6 +17,8 @@ import {collectionAllOperations, Operation, Schema, ServiceMember} from "../../s
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {PolymorpheusComponent} from "@tinkoff/ng-polymorpheus";
 import {ResponseEditorDialogComponent} from "./response-editor-dialog.component";
+import {StubDesignerComponent, StubDesignerProps} from "../stub-designer/stub-designer.component";
+import {isNullOrUndefined} from "../../utils/utils";
 
 @Component({
   imports: [
@@ -57,7 +59,7 @@ import {ResponseEditorDialogComponent} from "./response-editor-dialog.component"
             </tui-data-list>
           </tui-combo-box>
         </td>
-        <td *tuiCell="'response'" tuiTd class="response-cell no-rhs-border" (click)="showResponseEditorDialog(stub)">
+        <td *tuiCell="'response'" [class.disabled]="isNullOrUndefined(stub.operationName)" tuiTd class="response-cell no-rhs-border" (click)="showResponseEditorDialog(stub)">
           {{ stub.response }}
         </td>
         <td tuiTd *tuiCell="'button'" class="button-cell">
@@ -98,17 +100,25 @@ export class StubPanelComponent {
   readonly columns = ['operationName', 'response', 'button']
 
   showResponseEditorDialog(stub: OperationStub) {
-    this.dialogs.open<string>(
-      new PolymorpheusComponent(ResponseEditorDialogComponent, this.injector),
+    if (isNullOrUndefined(stub.operationName)) {
+      return
+    }
+
+    const operation = this.operations.find(op => op.name == stub.operationName)
+    this.dialogs.open<OperationStub>(
+      new PolymorpheusComponent(StubDesignerComponent, this.injector),
       {
         size: "auto",
         closeable: true,
-        data: stub.response,
+        appearance: 'no-border',
+        data: {
+          operation,
+          stub
+        } as StubDesignerProps,
         dismissible: true,
-        label: 'Response',
       },
     ).subscribe(next => {
-      stub.response = next;
+      this.stubs[this.stubs.indexOf(stub)] = next;
       this.changeDetector.markForCheck();
     });
 
@@ -126,4 +136,6 @@ export class StubPanelComponent {
     this.stubs.splice(this.stubs.indexOf(stub), 1)
     this.stubsChange.emit(this.stubs);
   }
+
+  protected readonly isNullOrUndefined = isNullOrUndefined;
 }

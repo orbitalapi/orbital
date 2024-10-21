@@ -1,4 +1,4 @@
-import {Inject, Injectable, Injector} from '@angular/core';
+import {Inject, Injectable, InjectionToken, Injector} from '@angular/core';
 import {Observable, ReplaySubject, Subject} from 'rxjs';
 
 import * as _ from 'lodash';
@@ -36,10 +36,20 @@ import {HttpMethod, SchemaEditOperation} from '../project-import/schema-importer
 import {NebulaStacksResponse} from "./stubs-api.service";
 
 
+
+export const SCHEMA_PROVIDER_TOKEN = new InjectionToken<SchemaProvider>('SchemaProvider');
+/**
+ * Simple interface to abstract away TypeService,
+ * as in playground we don't interact with a server.
+ */
+export interface SchemaProvider {
+  getSchema(): Observable<Schema>
+}
+
 @Injectable({
   providedIn: 'root',
 })
-export class TypesService {
+export class TypesService implements SchemaProvider {
   private schema: Schema;
   private schemaSubject: Subject<Schema> = new ReplaySubject(1);
   private schemaRequest: Observable<Schema>;
@@ -63,6 +73,10 @@ export class TypesService {
             this.schema = schema;
           });
       });
+  }
+
+  getSchema(): Observable<Schema> {
+    return this.getTypes()
   }
 
   validateSchema(schema: string): Observable<Type[]> {
@@ -304,7 +318,6 @@ export class TypesService {
   getQuery(qualifiedName: string): Observable<SavedQuery> {
     return this.http.get<SavedQuery>(`${this.environment.serverUrl}/api/schemas/queries/${qualifiedName}`,)
   }
-
 
 
   getAllMetadata(): Observable<QualifiedName[]> {
