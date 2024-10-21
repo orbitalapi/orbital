@@ -37,7 +37,7 @@
       <div class="examples-list">
         <ul>
           <li *ngFor="let snippet of group.snippets">
-            <a class="" [routerLink]="['/examples', snippet.slug]" (click)="examplesOpen = false">{{ snippet.title }}</a>
+            <a [routerLink]="['/examples', snippet.slug]" routerLinkActive="active" (click)="examplesOpen = false">{{ snippet.title }}</a>
           </li>
         </ul>
       </div>

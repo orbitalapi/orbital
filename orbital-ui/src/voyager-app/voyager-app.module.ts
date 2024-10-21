@@ -43,9 +43,10 @@ import {ReadmePanelComponent} from "../app/voyager/readme-panel/readme-panel.com
             clientId: 'ZaDGRQWEfgTFtlWVR9AXWg9vOiBxgVPv'
         }),
         RouterModule.forRoot([
-            {path: 'examples/:exampleSlug', component: VoyagerAppComponent},
-            {path: 's/:shareSlug', component: VoyagerAppComponent},
-            {path: '', component: VoyagerAppComponent},
+            {path: '', component: VoyagerAppComponent, children: [
+                {path: 'examples/:exampleSlug', component: VoyagerAppComponent},
+                {path: 's/:shareSlug', component: VoyagerAppComponent},
+            ]},
             {path: '**', redirectTo: ''}
         ]),
         PlaygroundQueryPanelComponent,
@@ -71,7 +72,7 @@ import {ReadmePanelComponent} from "../app/voyager/readme-panel/readme-panel.com
         plausible.enableAutoOutboundTracking();
         return plausible;
       }
-    }
+    },
   ],
   bootstrap: [VoyagerContainerAppComponent]
 })

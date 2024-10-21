@@ -21,7 +21,7 @@ import {
   TuiTextfieldControllerModule
 } from '@taiga-ui/core';
 import {ShareDialogComponent} from './share-dialog/share-dialog.component';
-import {RouterLink} from "@angular/router";
+import {RouterLink, RouterLinkActive} from '@angular/router';
 
 
 @NgModule({
@@ -51,8 +51,9 @@ import {RouterLink} from "@angular/router";
     TuiInputCopyModule,
     TuiHostedDropdownModule,
     RouterLink,
+    RouterLinkActive,
 
-  ]
+  ],
 })
 export class VoyagerModule {
 
