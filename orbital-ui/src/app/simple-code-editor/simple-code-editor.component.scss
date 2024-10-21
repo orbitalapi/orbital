@@ -1,11 +1,12 @@
 :host {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  height: 100%;
+  //width: 100%;
+  //height: 100%;
 }
 
 .code-editor {
   width: 100%;
+  height: 10px; // without some static height, flex-grow isn't calculating correctly
   flex-grow: 1;
 }

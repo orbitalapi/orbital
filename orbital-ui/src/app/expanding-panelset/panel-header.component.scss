@@ -9,6 +9,10 @@
   border-bottom: 1px solid $slate-300;
   gap: 1rem;
 
+  &.collapsible {
+    cursor: pointer;
+  }
+
   &.is-secondary {
     min-height: unset;
     background-color: $gray-50;

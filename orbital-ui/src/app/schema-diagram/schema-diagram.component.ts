@@ -1,12 +1,13 @@
 import {
+  AfterViewInit,
   ChangeDetectionStrategy,
   Component, computed,
   DestroyRef,
   ElementRef,
   EventEmitter, Injector,
-  Input, model, OnInit,
+  Input, model,
   Output, signal,
-  ViewChild, WritableSignal
+  ViewChild, WritableSignal,
 } from '@angular/core';
 import { Router } from '@angular/router';
 import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
@@ -29,9 +30,10 @@ import { ResizeObservableService } from '../services/resize-observable.service';
     <!-- we need a wrapper to catch the resize events, and then
     provide explicit sizing to container -->
     <h3 *ngIf="title">{{ title }}</h3>
-    <div id="wrapper" class="wrapper" [class.has-border]="hasBorder">
+    <div #wrapperElementRef class="wrapper" [class.has-border]="hasBorder">
       <div class="toolbar" [class.is-full-screen]="isFullScreen$ | async">
         <app-schema-multi-select
+          *ngIf="showTypeToolbar"
           [schema]="schema$ | async"
           [schemaQualifiedNames]="schemaQualifiedNames()"
           [selectedMembers]="computedDisplayedMembers()"
@@ -44,7 +46,8 @@ import { ResizeObservableService } from '../services/resize-observable.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [ResizeObservableService]
 })
-export class SchemaDiagramComponent implements OnInit {
+export class SchemaDiagramComponent implements AfterViewInit {
+  @ViewChild('wrapperElementRef') wrapperElement!: ElementRef;
 
   constructor(
     private router: Router,
@@ -54,8 +57,8 @@ export class SchemaDiagramComponent implements OnInit {
   ) {
   }
 
-  ngOnInit() {
-    const wrapperElement = document.getElementById('wrapper');
+  ngAfterViewInit() {
+    const wrapperElement = this.wrapperElement.nativeElement;
     this.resizeObservableService.resizeObservable(wrapperElement)
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -74,6 +77,9 @@ export class SchemaDiagramComponent implements OnInit {
         );
       })
   }
+
+  @Input()
+  showTypeToolbar: boolean = true
 
   private _visibleLinkKinds: LinkKind[] = ['entity'];
   @Input()

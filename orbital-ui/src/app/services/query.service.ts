@@ -604,4 +604,18 @@ export function emptyQueryMessage(): StubQueryMessage {
 export interface OperationStub {
   operationName: string;
   response: string;
+  conditionalResponses?: ResponseCondition[];
+}
+
+
+export interface ResponseCondition {
+  inputs: ParameterValue[];
+  response: {
+    body: any
+    // later, headers etc
+  }
+}
+export interface ParameterValue {
+  name: string;
+  value: any,
 }

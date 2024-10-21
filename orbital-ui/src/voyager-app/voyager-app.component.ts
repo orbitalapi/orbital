@@ -8,9 +8,19 @@ import {
   ViewChild,
 } from '@angular/core';
 import {ParsedSchema, VoyagerService} from 'src/voyager-app/voyager.service';
-import {catchError, debounceTime, filter, map, mergeMap, shareReplay, switchMap, tap} from 'rxjs/operators';
+import {
+  catchError,
+  debounceTime,
+  filter,
+  map,
+  mergeMap,
+  shareReplay,
+  switchMap,
+  tap,
+} from 'rxjs/operators';
+import {combineLatest} from 'rxjs'
 import {emptySchema, Schema} from 'src/app/services/schema';
-import {Observable, of, ReplaySubject} from 'rxjs';
+import {forkJoin, Observable, of, ReplaySubject} from 'rxjs';
 import {ExampleGroups} from 'src/voyager-app/code-examples';
 import {TuiAlertService, TuiDialogService} from '@taiga-ui/core';
 import {ShareDialogComponent} from 'src/app/voyager/share-dialog/share-dialog.component';
@@ -20,9 +30,10 @@ import {emptyQueryMessage, StubQueryMessage} from "../app/services/query.service
 import {isNullOrUndefined} from "../app/utils/utils";
 import {Clipboard} from '@angular/cdk/clipboard';
 import * as pako from 'pako';
-import { PlaygroundQueryPanelComponent } from "../app/voyager/playground-query-panel/playground-query-panel.component";
 import {ReadmePanelComponent} from '../app/voyager/readme-panel/readme-panel.component';
+import {PlaygroundQueryPanelComponent} from "../app/voyager/playground-query-panel/playground-query-panel.component";
 import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.component";
+import {PlaygroundSchemaService} from "./playground-schema-service";
 
 @Component({
   selector: 'voyager-app',
@@ -41,7 +52,8 @@ import {SnippetType} from "../app/voyager/voyager-sidebar/voyager-sidebar.compon
             <div class="thin-splitter-gutter-icon"></div>
           </div>
           <as-split-area [visible]="!!(showReadme && queryMessage)" [order]="0">
-            <app-readme-panel [(markdown)]="queryMessage.readme" (onRunQuery)="onRunQueryHandler($event)"></app-readme-panel>
+            <app-readme-panel [(markdown)]="queryMessage.readme"
+                              (onRunQuery)="onRunQueryHandler($event)"></app-readme-panel>
           </as-split-area>
           <as-split-area [size]="35" [order]="1">
             <div class="panel-with-header">
@@ -106,6 +118,7 @@ export class VoyagerAppComponent implements OnInit {
   readmePanelComponent: ReadmePanelComponent;
 
   constructor(private voyagerService: VoyagerService,
+              private schemaService: PlaygroundSchemaService,
               @Inject(TuiDialogService) private readonly dialogService: TuiDialogService,
               @Inject(Injector) private readonly injector: Injector,
               private readonly activatedRoute: ActivatedRoute,
@@ -171,42 +184,49 @@ export class VoyagerAppComponent implements OnInit {
         }),
       );
 
-    this.activatedRoute.fragment
-      .pipe(filter(f => f != null))
-      .subscribe(fragment => {
-        const queryMessage = this.unzip(fragment.substring(5))
-        this.setCodeFromExample(queryMessage)
-      })
+    this.schema$.subscribe(next => {
+      console.log('Updating schema');
+      this.schemaService.updateSchema(next)
+    });
+    this.setCodeFromExample(ExampleGroups[0].snippets[0].query);
 
     this.router.events
       .pipe(
-        filter(event => event instanceof NavigationEnd), // Trigger on every route change
-        switchMap(() => this.getActiveRouteParams()), // Use paramMap to get the most recent params
-        //filter(params => params['shareSlug'] !== undefined || params['exampleSlug'] !== undefined),
-        mergeMap((params: Params) => {
+        filter(event => event instanceof NavigationEnd),
+        switchMap(() =>
+          combineLatest([this.getActiveRouteParams(), this.getActiveRouteFragment()]) // Combine params and fragment
+        ),
+        mergeMap(([params, fragment]: [Params, string | null]) => {
           const shareSlug = params['shareSlug'];
           const exampleSlug = params['exampleSlug'];
 
-          if (shareSlug) {
-            return this.voyagerService.loadSharedSchema(params['shareSlug'])
+          if (fragment) {
+            const queryMessage = this.unzip(fragment.substring(5));
+            this.setCodeFromExample(queryMessage);
+            return of(null); // Return an empty observable, since fragment is handled directly
+          }
+          else if (shareSlug) {
+            return this.voyagerService.loadSharedSchema(shareSlug);
           } else if (exampleSlug) {
             const query = ExampleGroups.flatMap(group => group.snippets)
-              .find(example => example.slug === exampleSlug)
-              .query
+              .find(example => example.slug === exampleSlug)?.query;
             return of(query);
           } else {
-            return of(emptyQueryMessage())
+            return of(emptyQueryMessage());
           }
-
         })
       )
       .subscribe(stubQueryMessage => {
-        this.setCodeFromExample(stubQueryMessage)
+        if (stubQueryMessage) {
+          this.setCodeFromExample(stubQueryMessage);
+        }
       });
   }
 
   ngOnInit() {
-    this.setCodeFromExample(ExampleGroups[0].snippets[0].query);
+    if (this.router.url === '/') {
+      this.router.navigate([`examples/${ExampleGroups[0].snippets[0].slug}`])
+    }
   }
 
   onFullscreenChange() {
@@ -222,8 +242,7 @@ export class VoyagerAppComponent implements OnInit {
 
 
   async clear() {
-    this.setCodeFromExample(emptyQueryMessage())
-    await this.router.navigate(['empty'])
+    await this.router.navigate([''])
     this.readmePanelComponent.resetViewMode()
   }
 
@@ -335,5 +354,17 @@ export const example: StubQueryMessageWithSlug = ${exampleAsJs}`
 
     // Return the observable of the params from the deepest route
     return route.params;
+  }
+
+  private getActiveRouteFragment() {
+    let route = this.activatedRoute;
+
+    // Traverse to the deepest activated route (where the params would be)
+    while (route.firstChild) {
+      route = route.firstChild;
+    }
+
+    // Return the observable of the params from the deepest route
+    return route.fragment;
   }
 }

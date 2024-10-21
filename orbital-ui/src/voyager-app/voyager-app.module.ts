@@ -23,45 +23,58 @@ import {VoyagerSidebarComponent} from "../app/voyager/voyager-sidebar/voyager-si
 import {ExpandingPanelSetModule} from "../app/expanding-panelset/expanding-panel-set.module";
 import {CompilationMessageListModule} from "../app/compilation-message-list/compilation-message-list.module";
 import {ReadmePanelComponent} from "../app/voyager/readme-panel/readme-panel.component";
+import {
+    ResponseEditorDialogComponent
+} from "../../../../vyne/orbital-ui/src/app/voyager/playground-query-panel/response-editor-dialog.component";
+import {StubDesignerComponent} from "../../../../vyne/orbital-ui/src/app/voyager/stub-designer/stub-designer.component";
+import {ENVIRONMENT} from "../app/services/environment";
+import {PlaygroundSchemaService} from "./playground-schema-service";
+import {SCHEMA_PROVIDER_TOKEN, SchemaProvider} from "../app/services/types.service";
 
 @NgModule({
-    imports: [
-        BrowserModule,
-        BrowserAnimationsModule,
-        CommonModule,
-        AngularSplitModule,
+  imports: [
+    BrowserModule,
+    BrowserAnimationsModule,
+    CommonModule,
+    AngularSplitModule,
 
-        VoyagerModule,
-        CodeEditorModule,
-        SchemaDiagramModule,
+    VoyagerModule,
+    CodeEditorModule,
+    SchemaDiagramModule,
 
-        HttpClientModule,
-        TuiRootModule,
-        TuiDialogModule,
-        AuthModule.forRoot({
-            domain: 'orbitalhq.eu.auth0.com',
-            clientId: 'ZaDGRQWEfgTFtlWVR9AXWg9vOiBxgVPv'
-        }),
-        RouterModule.forRoot([
-            {path: '', component: VoyagerAppComponent, children: [
-                {path: 'examples/:exampleSlug', component: VoyagerAppComponent},
-                {path: 's/:shareSlug', component: VoyagerAppComponent},
-            ]},
-            {path: '**', redirectTo: ''}
-        ]),
-        PlaygroundQueryPanelComponent,
-        VoyagerSidebarComponent,
-        ExpandingPanelSetModule,
-        CompilationMessageListModule,
-        AsyncPipe,
-        ReadmePanelComponent,
-    ],
+    HttpClientModule,
+    TuiRootModule,
+    TuiDialogModule,
+    AuthModule.forRoot({
+      domain: 'orbitalhq.eu.auth0.com',
+      clientId: 'ZaDGRQWEfgTFtlWVR9AXWg9vOiBxgVPv'
+    }),
+    RouterModule.forRoot([
+      {path: '', component: VoyagerAppComponent, children: [
+          {path: 'examples/:exampleSlug', component: VoyagerAppComponent},
+          {path: 's/:shareSlug', component: VoyagerAppComponent},
+        ]},
+      {path: '**', redirectTo: ''}
+    ]),
+    PlaygroundQueryPanelComponent,
+    VoyagerSidebarComponent,
+    ExpandingPanelSetModule,
+    CompilationMessageListModule,
+    AsyncPipe,
+    ReadmePanelComponent,
+    ResponseEditorDialogComponent,
+    StubDesignerComponent,
+  ],
   declarations: [VoyagerContainerAppComponent, VoyagerAppComponent],
   exports: [VoyagerContainerAppComponent, VoyagerAppComponent],
   providers: [
     {
       provide: LANGUAGE_SERVER_WS_ADDRESS_TOKEN,
       useValue: WebsocketService.buildWsUrl(environment.serverUrl, '/api/language-server'),
+    },
+    {
+      provide: SCHEMA_PROVIDER_TOKEN,
+      useExisting: PlaygroundSchemaService
     },
     {
       provide: PLAUSIBLE_ANALYTICS,
@@ -72,6 +85,10 @@ import {ReadmePanelComponent} from "../app/voyager/readme-panel/readme-panel.com
         plausible.enableAutoOutboundTracking();
         return plausible;
       }
+    },
+    {
+      provide: ENVIRONMENT,
+      useValue: environment,
     },
   ],
   bootstrap: [VoyagerContainerAppComponent]

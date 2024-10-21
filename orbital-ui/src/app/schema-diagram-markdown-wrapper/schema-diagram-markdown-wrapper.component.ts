@@ -1,6 +1,6 @@
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input} from '@angular/core';
+import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Input} from '@angular/core';
 import {SchemaDiagramModule} from "../schema-diagram/schema-diagram.module";
-import {TypesService} from "../services/types.service";
+import {SCHEMA_PROVIDER_TOKEN, SchemaProvider, TypesService} from "../services/types.service";
 import {Observable} from "rxjs";
 import {Schema} from "../services/schema";
 import {isNullOrUndefined} from "../utils/utils";
@@ -26,6 +26,7 @@ import {isNullOrUndefined} from "../utils/utils";
       [schema$]="schema$"
       [memberNameNavigable]="true"
       [displayedMembers]="displayedMembers"
+      [showTypeToolbar]="diagramSpec?.showTypeToolbar"
       hasBorder="true"
     ></app-schema-diagram>
   `,
@@ -35,12 +36,12 @@ import {isNullOrUndefined} from "../utils/utils";
 export class SchemaDiagramMarkdownWrapperComponent {
   schema$: Observable<Schema>;
 
-  constructor(private typeService: TypesService, changeDetector: ChangeDetectorRef) {
-    this.schema$ = typeService.getTypes()
+  constructor(@Inject(SCHEMA_PROVIDER_TOKEN) private schemaProvider: SchemaProvider, changeDetector: ChangeDetectorRef) {
+    this.schema$ = schemaProvider.getSchema();
   }
 
   private _code: string;
-  private diagramSpec: SchemaDiagramSpec;
+  diagramSpec: SchemaDiagramSpec;
 
   @Input()
   get code(): string {
@@ -56,14 +57,22 @@ export class SchemaDiagramMarkdownWrapperComponent {
 
   private parseCode() {
     try {
-      this.diagramSpec = JSON.parse(this.code) as SchemaDiagramSpec;
+      const parsedDiagramSpec = JSON.parse(this.code) as SchemaDiagramSpec;
+      const defaultDiagramSpec: SchemaDiagramSpec = {
+        members: {},
+        showTypeToolbar: true
+      }
+      this.diagramSpec = {
+        ...defaultDiagramSpec,
+        ...parsedDiagramSpec
+      }
       this.displayedMembers = this.parseDisplayedMembers();
     } catch (e) {
       console.log(e, 'Diagram is invalid')
     }
   }
 
-  displayedMembers: string[]
+  displayedMembers: string[] | 'everything' | 'services' = 'everything'
 
   parseDisplayedMembers():string[] {
     if (isNullOrUndefined(this.diagramSpec)) {
@@ -88,6 +97,7 @@ export interface SchemaDiagramSpec {
    * of display properties
    */
   members: { [key: string]: SchemaDiagramMemberDisplayProperties }
+  showTypeToolbar: boolean
 }
 
 export interface SchemaDiagramMemberDisplayProperties {

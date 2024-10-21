@@ -1,3 +1,7 @@
+:host {
+  margin-bottom: 1rem;
+  display: block;
+}
 /**
 This component is inside a ngx-markdown component, which pollutes the global CSS rules with .markdown {} rules.
 As a result, the inner chart gets a number of css properties inherited unintentionally.
