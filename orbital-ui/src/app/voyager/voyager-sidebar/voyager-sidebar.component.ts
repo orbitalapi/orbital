@@ -25,22 +25,19 @@ import {SvgIconComponent} from "../../svg-icon/svg-icon.component";
             [tuiHint]="'Toggle diagram'">
       <mat-icon svgIcon="route-square-2"></mat-icon>
     </button>
-
-
     <div class="spacer"></div>
-    <button class="icon-toggle-button button-with-lang-badge" *ngIf="showCopyCodeButton"
+    <div class="button-with-lang-badge"
+            *ngIf="showCopyCodeButton"
             (click)="copyDevCode.emit('JS')" [tuiHint]="'Copy as JS snippet'">
       <mat-icon svgIcon="code-circle"></mat-icon>
       <div class="lang-badge">JS</div>
-    </button>
-
-    <button class="icon-toggle-button  button-with-lang-badge" *ngIf="showCopyCodeButton"
+    </div>
+    <div class="button-with-lang-badge"
+            *ngIf="showCopyCodeButton"
             (click)="copyDevCode.emit('JSON')" [tuiHint]="'Copy as JSON'">
       <mat-icon svgIcon="code-circle"></mat-icon>
       <div class="lang-badge">JSON</div>
-    </button>
-
-
+    </div>
     <a tuiLink href="https://github.com/orbitalapi/orbital" target="_blank"
        (click)="openNewSite($event, 'https://github.com/orbitalapi/orbital')">
       <mat-icon svgIcon="brandGitHub"></mat-icon>
@@ -50,7 +47,6 @@ import {SvgIconComponent} from "../../svg-icon/svg-icon.component";
     >
       <mat-icon svgIcon="slack"></mat-icon>
     </a>
-
   `,
   styleUrls: ['./voyager-sidebar.component.scss']
 })
@@ -64,7 +60,6 @@ export class VoyagerSidebarComponent {
   get showCopyCodeButton():boolean {
     return !environment.production || window.location.search.includes("enableDevTools")
   }
-
 
   @Input()
   showDiagram: boolean;
@@ -96,7 +91,6 @@ export class VoyagerSidebarComponent {
   openNewSite(event: Event, url: string) {
     openNewSiteAndCancel(event, url)
   }
-
 
   toggleReadme() {
     this.showReadme = !this.showReadme;

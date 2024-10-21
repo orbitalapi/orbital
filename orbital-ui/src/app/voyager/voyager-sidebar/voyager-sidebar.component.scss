@@ -26,11 +26,12 @@ mat-icon {
   padding: 2px 0.5rem;
   cursor: pointer;
   display: flex;
+  border-left: $border-width solid transparent;
 
   &:hover {
     background-color: rgba(255, 255, 255, 0.1);
   }
-  border-left: $border-width solid transparent;
+
   &.active {
     border-left: $border-width solid $sky-500;
   }
@@ -40,6 +41,9 @@ mat-icon {
   display: flex;
   flex-direction: column;
   align-items: center;
+  cursor: pointer;
+  padding-bottom: 0.5rem;
+
   .lang-badge {
     // Position the badge
     margin-top: -0.8rem;
@@ -51,7 +55,6 @@ mat-icon {
     font-size: 0.7rem;
     font-weight: bold;
   }
-
 }
 
 .spacer {
@@ -64,4 +67,3 @@ mat-icon {
 mat-icon, app-svg-icon {
   color: white;
 }
-

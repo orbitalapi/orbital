@@ -177,6 +177,7 @@ button.dropdown-host {
 
       &.active {
         background-color: $slate-100;
+        pointer-events: none;
       }
 
       &:hover:not(.active) {
