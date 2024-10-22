@@ -3,14 +3,15 @@
 :host {
   display: flex;
   flex-direction: column;
-  padding: 1rem 0;
+  padding: 1rem;
   gap: 1rem;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .row {
   display: flex;
   align-items: center;
-
 }
 
 .spacer {
@@ -33,13 +34,7 @@ table {
     }
   }
 
-  margin-bottom: 1rem;
   .response-cell {
-    &:not(.is-disabled) {
-      &:hover {
-        cursor: pointer;
-      }
-    }
     transition: background-color ease-in-out 150ms;
     font-family: $mono;
     font-size: 0.8rem;
@@ -47,13 +42,19 @@ table {
 
     text-overflow: ellipsis;
     overflow: hidden;
-    max-width: 200px;
+    max-width: 180px;
     white-space: nowrap;
 
-
+    &:not(.is-disabled) {
+      &:hover {
+        cursor: pointer;
+      }
+    }
   }
+
   .button-cell {
     width: 1rem;
+
     &:hover {
       background-color: transparent;
     }
@@ -64,4 +65,8 @@ table {
       }
     }
   }
+}
+
+.add-stub-btn {
+  margin-left: auto;
 }

@@ -1,13 +1,23 @@
-import {ChangeDetectionStrategy, Component, Inject, Input} from '@angular/core';
-import {Operation, Schema} from "../../services/schema";
-import {TuiSegmentedModule} from "@taiga-ui/experimental";
+import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
+import {AngularSplitModule} from 'angular-split';
+import {CodeEditorModule} from '../../code-editor/code-editor.module';
+import {findType, Operation, Schema, Type} from '../../services/schema';
+import {TuiChipModule, TuiSegmentedModule} from '@taiga-ui/experimental';
 import {ExpandingPanelSetModule} from "../../expanding-panelset/expanding-panel-set.module";
-import {NgForOf, NgIf} from "@angular/common";
+import {CommonModule} from '@angular/common';
+import {TypesService} from '../../services/types.service';
 import {SimpleCodeEditorComponent} from "../../simple-code-editor/simple-code-editor.component";
 import {TuiAccordionModule, TuiInputModule} from "@taiga-ui/kit";
-import {TuiButtonModule, TuiDialogContext, TuiHintModule, TuiTextfieldControllerModule} from "@taiga-ui/core";
+import {
+  TuiButtonModule,
+  TuiDialogContext,
+  TuiHintModule,
+  TuiNotificationModule,
+  TuiTextfieldControllerModule,
+} from '@taiga-ui/core';
 import {FormsModule} from "@angular/forms";
 import {OperationStub, ParameterValue, ResponseCondition} from "../../services/query.service";
+import {TypeViewerModule} from '../../type-viewer/type-viewer.module';
 import {isNullOrUndefined} from "../../utils/utils";
 import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
 
@@ -15,17 +25,21 @@ import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
   selector: 'app-stub-designer',
   standalone: true,
   imports: [
+    CommonModule,
     ExpandingPanelSetModule,
     TuiSegmentedModule,
-    NgIf,
     SimpleCodeEditorComponent,
-    NgForOf,
     TuiInputModule,
     TuiTextfieldControllerModule,
     TuiAccordionModule,
     TuiButtonModule,
     FormsModule,
-    TuiHintModule
+    TuiHintModule,
+    AngularSplitModule,
+    CodeEditorModule,
+    TuiChipModule,
+    TypeViewerModule,
+    TuiNotificationModule,
   ],
   template: `
     <app-panel-header tablerIcon="switch-horizontal" title="Stub response editor">
@@ -39,18 +53,54 @@ import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
       </tui-segmented>
     </app-panel-header>
     <div class="panel-body">
+      <ng-container *ngIf="viewModeActiveIndex == 0">
+        <tui-notification *ngIf="operationStub.conditionalResponses?.length > 0" status="info">
+          You already have conditional stubs, they will be favoured over anything you configure in here
+        </tui-notification>
+        <div>Paste a response which will be used for every call to {{ operation?.name }}</div>
+        <as-split direction="horizontal" unit="percent" gutterSize="1">
+          <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
+            <div class="thin-splitter-gutter-icon"></div>
+          </div>
+          <as-split-area class="type-viewer">
+            <app-type-viewer
+              [type]="type"
+              [schema]="schema"
+              [showDocumentation]="false"
+              [schemaMemberNavigable]="false"
+              [showTags]="false"
+              [showTaxi]="false"
+              [showUsages]="false"
+              [showInheritanceGraph]="false"
+            ></app-type-viewer>
+          </as-split-area>
+          <as-split-area size="60" class="simple-view">
+            <app-simple-code-editor [(content)]="operationStub.response"></app-simple-code-editor>
+          </as-split-area>
+        </as-split>
+      </ng-container>
       <div *ngIf="viewModeActiveIndex == 1" class="form-view">
         <div>Configure the responses returned based on the input parameters</div>
         <div class="row">
-          <div class="form-section-label">Responses</div>
+          <h3>Responses:</h3>
           <div class="spacer"></div>
+          <button
+            tuiButton
+            size="s"
+            appearance="secondary"
+            icon="tuiIconPlus"
+            class="button-small"
+            (click)="addNewCondition()"
+          >
+            Add new condition
+          </button>
           <tui-segmented size="s" [(activeItemIndex)]="advancedViewEditModeIndex">
             <button [class.active]="advancedViewEditModeIndex === 0">Form</button>
             <button [class.active]="advancedViewEditModeIndex === 1">JSON</button>
           </tui-segmented>
         </div>
-
         <div class="advanced-mode-form-container" *ngIf="advancedViewEditModeIndex===0">
+          <i *ngIf="conditionalResponses?.length === 0">No conditional responses, add one to get started</i>
           <tui-accordion>
             <tui-accordion-item *ngFor="let condition of conditionalResponses">
               <div class="parameter-summary-row">
@@ -66,38 +116,32 @@ import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
                 <div class="response-condition-editor">
                   <div class="form-section-label">Parameters</div>
                   <div class="parameters">
-                    <div class="param-row row" *ngFor="let input of condition.inputs">
-                      <div class="label">{{ input.name }} <span
-                        class="type-name type">{{ paramType(input) }}</span></div>
-                      <tui-input tuiTextfieldSize="m" [tuiTextfieldLabelOutside]="true"><input tuiTextfield
-                                                                                               [(ngModel)]="input.value"/>
+                    <div class="row" *ngFor="let input of condition.inputs">
+                      <div class="label">{{ input.name }}
+                        <span class="type-name type">{{ paramType(input) }}</span>
+                      </div>
+                      <tui-input
+                        tuiTextfieldSize="s"
+                        [tuiTextfieldLabelOutside]="true"
+                        class="parameter-input"
+                      >
+                        <input tuiTextfield [(ngModel)]="input.value"/>
                       </tui-input>
                     </div>
                   </div>
                   <div class="form-section-label">Response body</div>
                   <app-simple-code-editor [(content)]="condition.response.body"></app-simple-code-editor>
                 </div>
-
               </ng-template>
             </tui-accordion-item>
           </tui-accordion>
-          <div class="row items-center">
-            <button tuiButton appearance="outline" size="s" (click)="addNewCondition()">Add new condition</button>
-          </div>
-
         </div>
         <div class="advanced-mode-json-editor" *ngIf="advancedViewEditModeIndex===1">
           <app-simple-code-editor [(content)]="advancedModeJson"></app-simple-code-editor>
         </div>
       </div>
-      <div *ngIf="viewModeActiveIndex == 0" class="simple-view">
-        <div>Paste a response which will be used for every call to {{ operation?.name }}</div>
-        <app-simple-code-editor [(content)]="operationStub.response"></app-simple-code-editor>
-      </div>
-      <div class="row">
-        <button tuiButton size="m" appearance="outline" (click)="context.completeWith(context.data.stub)">Cancel
-        </button>
-        <span class="spacer"></span>
+      <div class="footer">
+        <button tuiButton size="m" appearance="outline" (click)="context.completeWith(context.data.stub)">Cancel</button>
         <button tuiButton size="m" appearance="primary" (click)="context.completeWith(operationStub)">Update</button>
       </div>
     </div>
@@ -106,11 +150,24 @@ import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class StubDesignerComponent {
+  advancedViewEditModeIndex = 0;
+  viewModeActiveIndex = 0;
+  operation: Operation;
+  operationStub: OperationStub;
+  schema: Schema;
+  type: Type
 
-  constructor(@Inject(POLYMORPHEUS_CONTEXT)
-              readonly context: TuiDialogContext<OperationStub, StubDesignerProps>,) {
+  constructor(
+    @Inject(POLYMORPHEUS_CONTEXT)
+    readonly context: TuiDialogContext<OperationStub, StubDesignerProps>,
+    readonly typeService: TypesService
+  ) {
     this.operationStub = JSON.parse(JSON.stringify(context.data.stub));
     this.operation = context.data.operation;
+    this.schema = context.data.schema;
+
+    const type = findType(this.schema, this.operation.returnTypeName.parameterizedName)
+    this.type = type.collectionType || type
   }
 
   get advancedModeJson() {
@@ -122,7 +179,6 @@ export class StubDesignerComponent {
     } catch (e) {
       console.error('Failed to update conditional responses', e)
     }
-
   }
 
   get advancedModeDisabled() {
@@ -136,15 +192,9 @@ export class StubDesignerComponent {
     }
   }
 
-  advancedViewEditModeIndex = 0;
-  viewModeActiveIndex = 0;
-  operation: Operation;
-  operationStub: OperationStub;
-
   get conditionalResponses():ResponseCondition[] {
     return this.operationStub?.conditionalResponses || [];
   }
-
 
   get parameters() {
     return this.operation?.parameters || [];
@@ -180,5 +230,6 @@ export class StubDesignerComponent {
 export interface StubDesignerProps {
   operation: Operation;
   stub: OperationStub;
+  schema: Schema;
 }
 

@@ -9,6 +9,7 @@ import {
   Output
 } from '@angular/core';
 import {CommonModule} from '@angular/common';
+import {RequiresAuthorityDirective} from '../../requires-authority.directive';
 import {OperationStub} from "../../services/query.service";
 import {TuiTableModule} from "@taiga-ui/addon-table";
 import {TuiButtonModule, TuiDataListModule, TuiDialogService} from "@taiga-ui/core";
@@ -29,7 +30,9 @@ import {isNullOrUndefined} from "../../utils/utils";
     TuiTableModule,
     TuiButtonModule,
     TuiComboBoxModule,
-    TuiDataListModule],
+    TuiDataListModule,
+    RequiresAuthorityDirective,
+  ],
   selector: 'app-stub-panel',
   standalone: true,
   styleUrls: ['./stub-panel.component.scss'],
@@ -47,7 +50,6 @@ import {isNullOrUndefined} from "../../utils/utils";
       </thead>
       <tbody tuiTbody [data]="stubs">
       <tr tuiTr *ngFor="let stub of stubs">
-
         <td *tuiCell="'operationName'" tuiTd>
           <tui-combo-box
             [(ngModel)]="stub.operationName"
@@ -59,8 +61,13 @@ import {isNullOrUndefined} from "../../utils/utils";
             </tui-data-list>
           </tui-combo-box>
         </td>
-        <td *tuiCell="'response'" [class.disabled]="isNullOrUndefined(stub.operationName)" tuiTd class="response-cell no-rhs-border" (click)="showResponseEditorDialog(stub)">
-          {{ stub.response }}
+        <td *tuiCell="'response'"
+            [class.is-disabled]="isNullOrUndefined(stub.operationName)"
+            tuiTd
+            class="response-cell no-rhs-border"
+            (click)="showResponseEditorDialog(stub)"
+        >
+          {{ stubbedResponseLabel(stub) }}
         </td>
         <td tuiTd *tuiCell="'button'" class="button-cell">
           <button tuiButton appearance="icon" icon="tuiIconTrash" size="xs" (click)="removeStub(stub)"></button>
@@ -68,8 +75,17 @@ import {isNullOrUndefined} from "../../utils/utils";
       </tr>
       </tbody>
     </table>
-    <div>
-      <button tuiButton size="s" appearance="outline" (click)="addNewStub()">Add new</button>
+    <div class="add-stub-btn">
+      <button
+        tuiButton
+        size="s"
+        appearance="secondary"
+        icon="tuiIconPlus"
+        class="button-small"
+        (click)="addNewStub()"
+      >
+        Add stub
+      </button>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -113,7 +129,8 @@ export class StubPanelComponent {
         appearance: 'no-border',
         data: {
           operation,
-          stub
+          stub,
+          schema: this.schema
         } as StubDesignerProps,
         dismissible: true,
       },
@@ -135,6 +152,10 @@ export class StubPanelComponent {
   removeStub(stub: OperationStub) {
     this.stubs.splice(this.stubs.indexOf(stub), 1)
     this.stubsChange.emit(this.stubs);
+  }
+
+  stubbedResponseLabel(stub: OperationStub): string {
+    return stub.conditionalResponses?.length ? stub.conditionalResponses?.length + " conditional response" : stub.response
   }
 
   protected readonly isNullOrUndefined = isNullOrUndefined;

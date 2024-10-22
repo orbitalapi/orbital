@@ -39,26 +39,26 @@ import {
       <span class="field-spacer"></span>
       @if (editable) {
         <tui-checkbox-labeled [size]="'m'"
-                              [ngModel]="!treeNode.field.nullable"
-                              (ngModelChange)="onRequiredChanged(treeNode.field)"
-        >Required
-        </tui-checkbox-labeled>
-        <tui-checkbox-labeled [size]="'m'"
                               [ngModel]="memberHasIdAnnotation"
                               (ngModelChange)="memberHasIdAnnotationChanged($event)"
         >Id
         </tui-checkbox-labeled>
+        <tui-checkbox-labeled [size]="'m'"
+                              [ngModel]="!treeNode.field.nullable"
+                              (ngModelChange)="onRequiredChanged(treeNode.field)"
+        >Required
+        </tui-checkbox-labeled>
       } @else {
-        <tui-badge
-          *ngIf="!treeNode.field.nullable"
-          status="warning"
-          value="Required"
-          size="s"
-        ></tui-badge>
         <tui-badge
           *ngIf="memberHasIdAnnotation"
           status="info"
           value="Id"
+          size="s"
+        ></tui-badge>
+        <tui-badge
+          *ngIf="!treeNode.field.nullable"
+          status="warning"
+          value="Required"
           size="s"
         ></tui-badge>
       }
