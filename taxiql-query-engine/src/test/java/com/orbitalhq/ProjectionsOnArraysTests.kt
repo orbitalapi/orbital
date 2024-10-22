@@ -74,4 +74,65 @@ class ProjectionsOnArraysTest {
       )
    }
 
+   @Test // ORB-739
+   fun `services returning empty array from array discovery should result in empty array`():Unit = runBlocking {
+      val (vyne,stub) = testVyne()
+      stub.addResponse("findFilm", """{ "title": "Star Wars", "cast" : 100 }""")
+      stub.addResponse("getCast", """{ "actors" : [] }""")
+      val result = vyne.query("""
+         |given { FilmId = 1 } find { Film } as
+         |{
+         |  title : FilmTitle,
+         |  cast : Actor[]
+         |}
+      """.trimMargin())
+         .firstRawObject()
+      result.shouldBe(mapOf("title" to "Star Wars", "cast" to emptyList<Map<String,Any>>()))
+   }
+
+   @Test // ORB-739
+   fun `services returning null from array discovery should result in null`():Unit = runBlocking {
+      val (vyne,stub) = testVyne()
+      stub.addResponse("findFilm", """{ "title": "Star Wars", "cast" : 100 }""")
+      stub.addResponse("getCast", """{ "actors" : null }""")
+      val result = vyne.query("""given { FilmId = 1 } find { Film } as
+         |{
+         |  title : FilmTitle,
+         |  cast : Actor[]
+         |}
+      """.trimMargin())
+         .firstRawObject()
+      result.shouldBe(mapOf("title" to "Star Wars", "cast" to null))
+   }
+
+   @Test // ORB-739
+   fun `services returning top-level empty array from array discovery should result in empty array`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+            type FilmId inherits Int
+            model Film {
+               title : FilmTitle inherits String
+               cast : CastId inherits Int
+            }
+            model Actor {
+               name : PersonName inherits String
+            }
+            service Movies {
+               operation findFilm(FilmId):Film
+               operation getCast(CastId):Actor[]
+            }
+      """.trimIndent())
+      stub.addResponse("findFilm", """{ "title": "Star Wars", "cast" : 100 }""")
+      stub.addResponse("getCast", """[]""")
+      val result = vyne.query("""given { FilmId = 1 } find { Film } as
+         |{
+         |  title : FilmTitle,
+         |  cast : Actor[]
+         |}
+      """.trimMargin())
+         .firstRawObject()
+      result.shouldBe(mapOf("title" to "Star Wars", "cast" to emptyList<Map<String,Any>>()))
+   }
+
+
+
 }
