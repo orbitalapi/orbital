@@ -101,7 +101,12 @@ data class TypedCollection(
          }
          return if (populatedList.all { it is TypedCollection }) {
             val nestedList = populatedList as List<TypedCollection>
-            TypedCollection.from(nestedList.flatten(), source)
+            val types = populatedList.map { it.memberType.resolveAliases() }.distinct()
+            if (types.isEmpty()) {
+               error("A non-empty list of TypedCollections should produce at least a single member type, but found 0")
+            }
+            val commonMemberType = types.first().commonTypeAncestor(types)
+            TypedCollection(commonMemberType.asArrayType(), nestedList.flatten(), source)
          } else {
             TypedCollection.from(populatedList, source)
          }
