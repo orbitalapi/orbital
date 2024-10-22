@@ -5,6 +5,28 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+
+  ::ng-deep {
+    button.t-header {
+      // Set the background in accordion headers
+      background-color: $slate-100 !important;
+    }
+    tui-expand {
+      transform: unset !important;
+      .t-content {
+        //padding: 0 !important;
+      }
+    }
+
+    tui-accordion-item {
+      height: 100%;
+      .t-wrapper {
+        button {
+          background-color: $slate-100;
+        }
+      }
+    }
+  }
 }
 
 app-code-editor {
@@ -57,33 +79,9 @@ app-query-lineage {
   padding: 1rem;
 }
 
-::ng-deep {
-  button.t-header {
-    // Set the background in accordion headers
-    background-color: $slate-100 !important;
-  }
-  tui-expand {
-    transform: unset !important;
-    .t-content {
-      padding: 0 !important;
-    }
-  }
-
-  tui-accordion-item {
-    height: 100%;
-    .t-wrapper {
-      button {
-        background-color: $slate-100;
-      }
-    }
-  }
-}
-
 tui-accordion {
   height: 100%;
 }
-
-
 
 .fullscreen {
   position: fixed;
@@ -94,11 +92,14 @@ tui-accordion {
   z-index: 2000;
 }
 
-
 tui-chip[tuiAppearance][data-appearance='info']  {
   background: $sky-500;
   color: $slate-50;
   font-family: $headings-font;
   font-size: 0.9rem;
   font-weight: 500;
+}
+
+.bottom-split-area {
+  overflow-y: auto;
 }

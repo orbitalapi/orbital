@@ -60,7 +60,7 @@ import {TuiChipModule} from "@taiga-ui/experimental";
         >
         </app-code-editor>
       </as-split-area>
-      <as-split-area size="50">
+      <as-split-area size="50" class="bottom-split-area">
         <app-panel-header [collapsible]="true" [(expanded)]="configPanelExpanded" #stubsPanelHeader
                           [isSecondary]="true" title="Stubs and Parameters">
           <div class="stubs-params-header">

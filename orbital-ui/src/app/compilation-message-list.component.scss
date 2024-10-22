@@ -16,6 +16,11 @@
     }
   }
 
+  ::ng-deep tui-expand {
+    .t-content {
+      padding: 0 !important;
+    }
+  }
 }
 
 .grow {
@@ -90,10 +95,4 @@ tui-badge {
     min-height: unset !important;
   }
 
-}
-
-::ng-deep tui-expand {
-  .t-content {
-    padding: 0 !important;
-  }
 }
