@@ -77,9 +77,13 @@ class ObjectBuilder(
       val nullableFact = context.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY, spec)
       if (nullableFact != null) {
          val instance = nullableFact as TypedCollection
-         when (instance.size) {
-            0 -> error("Found 0 instances of ${targetType.fullyQualifiedName}, but hasFactOfType returned true")
-            1 -> {
+         when  {
+            instance.size == 0 && targetType.isCollection -> {
+               // The fact was an empty collection
+               return instance
+            }
+            instance.size == 0 -> error("Found 0 instances of ${targetType.paramaterizedName}, but hasFactOfType returned true")
+            instance.size == 1 -> {
                // FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY always returns a collection.
                // If we didn't request a collection, we actually want the first element.
                // Otherwise, we want the collection itself.

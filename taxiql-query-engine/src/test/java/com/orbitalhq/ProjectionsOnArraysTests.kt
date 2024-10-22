@@ -56,14 +56,14 @@ class ProjectionsOnArraysTest {
       return testVyne(
          """
             type FilmId inherits Int
-            model Film {
+            closed model Film {
                title : FilmTitle inherits String
                cast : CastId inherits Int
             }
-            model Actor {
+            closed model Actor {
                name : PersonName inherits String
             }
-            model FilmCast {
+            closed model FilmCast {
                actors : Actor[]
             }
             service Movies {
@@ -84,6 +84,25 @@ class ProjectionsOnArraysTest {
          |{
          |  title : FilmTitle,
          |  cast : Actor[]
+         |}
+      """.trimMargin())
+         .firstRawObject()
+      result.shouldBe(mapOf("title" to "Star Wars", "cast" to emptyList<Map<String,Any>>()))
+   }
+
+   @Test // ORB-739
+   fun `projecting a discovered empty array should result in empty array`():Unit = runBlocking {
+      val (vyne,stub) = testVyne()
+      stub.addResponse("findFilm", """{ "title": "Star Wars", "cast" : 100 }""")
+      stub.addResponse("getCast", """{ "actors" : [] }""")
+      val result = vyne.query("""
+         |given { FilmId = 1 }
+         |find { Film } as
+         |{
+         |  title : FilmTitle,
+         |  cast : Actor[] as {
+         |     firstName : PersonName
+         |  }[]
          |}
       """.trimMargin())
          .firstRawObject()
@@ -129,6 +148,38 @@ class ProjectionsOnArraysTest {
          |  cast : Actor[]
          |}
       """.trimMargin())
+         .firstRawObject()
+      result.shouldBe(mapOf("title" to "Star Wars", "cast" to emptyList<Map<String,Any>>()))
+   }
+
+   // ORB-739
+   // This was throwing an error, as adding an empty array to the fact bag, and then
+   // searching for it was throwing an exception
+   @Test // ORB-739
+   fun `parsing empty array`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+         type FilmId inherits Int
+         closed model Film {
+            title : FilmTitle inherits String
+            cast : Actor[]
+         }
+         closed model Actor {
+            name : PersonName inherits String
+         }
+         service Movies {
+            operation findFilm():Film
+         }
+      """.trimIndent())
+      stub.addResponse("findFilm", """{ "title": "Star Wars", "cast" : [] }""")
+      val result = vyne.query("""
+         find { Film } as
+         {
+           title : FilmTitle
+           cast : Actor[] as {
+             actorName : PersonName
+           }[]
+         }
+      """.trimIndent())
          .firstRawObject()
       result.shouldBe(mapOf("title" to "Star Wars", "cast" to emptyList<Map<String,Any>>()))
    }
