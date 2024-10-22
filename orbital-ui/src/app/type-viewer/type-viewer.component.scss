@@ -22,8 +22,10 @@ app-schema-diagram, app-service-lineage-graph-container {
   }
 }
 
-.row {
+.full-type-names-toggle {
   display: flex;
+  align-items: center;
+  margin-bottom: 0.5rem;
 
   span {
     font-size: 0.85rem;

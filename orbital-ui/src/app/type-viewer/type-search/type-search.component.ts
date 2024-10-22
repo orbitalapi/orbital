@@ -48,12 +48,12 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
       <div class="results-list">
         <section>
           <ng-container *ngIf="searchResults.length > 0">
-            <div *ngFor="let searchResult of searchResults; let idx = index">
-              <app-type-search-result [result]="searchResult"
-                                      (click)="selectResult(searchResult)"
-                                      (mouseenter)="onMouseOver(searchResult, idx)"
-              ></app-type-search-result>
-            </div>
+            <app-type-search-result
+              *ngFor="let searchResult of searchResults; let idx = index"
+              [result]="searchResult"
+              (click)="selectResult(searchResult)"
+              (mouseenter)="onMouseOver(searchResult, idx)"
+            ></app-type-search-result>
           </ng-container>
           <ng-container *ngIf="searchResults.length === 0">
             <div class="no-results">No results</div>

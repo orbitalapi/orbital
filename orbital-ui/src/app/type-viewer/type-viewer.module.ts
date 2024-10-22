@@ -30,14 +30,15 @@ import {
     TuiTextfieldControllerModule
 } from '@taiga-ui/core';
 import {
-    TuiCheckboxLabeledModule,
-    TuiInputModule,
-    TuiProgressModule,
-    TuiTabsModule,
-    TuiTagModule,
-    TuiTextareaModule,
-    TuiToggleModule,
-    TuiTreeModule,
+  TuiBadgeModule,
+  TuiCheckboxLabeledModule,
+  TuiInputModule,
+  TuiProgressModule,
+  TuiTabsModule,
+  TuiTagModule,
+  TuiTextareaModule,
+  TuiToggleModule,
+  TuiTreeModule,
 } from '@taiga-ui/kit';
 import {TypeSearchComponent} from './type-search/type-search.component';
 import {TypeSearchContainerComponent} from './type-search/type-search-container.component';
@@ -93,6 +94,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
     TuiSvgModule,
     TuiProgressModule,
     SaveWithFilenameComponent,
+    TuiBadgeModule,
   ],
     declarations: [
         TocHostDirective,

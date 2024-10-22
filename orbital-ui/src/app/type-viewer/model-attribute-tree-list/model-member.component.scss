@@ -1,8 +1,8 @@
 @import "src/common";
 
 :host {
-  border-bottom: 1px solid rgba($vyne-lilac, 0.3);
-  padding: 1rem 0;
+  border-top: 1px solid rgba($vyne-lilac, 0.3);
+  padding: 0.75rem 0.25rem;
   display: flex;
   flex-direction: column;
   max-width: 720px;
@@ -13,7 +13,7 @@
 }
 
 .tree-node.child {
-  margin: 0.5rem 0 2rem;
+  margin: 0.5rem 0 1rem;
 
   &:before,
   &:after {
@@ -21,12 +21,12 @@
     position: absolute;
     left: -0.75rem;
     z-index: -1;
-    top: 1.3rem;
+    top: 1.4rem;
   }
 
   &:before {
-    width: 1rem;
-    border-bottom: 1px solid $gray-400;
+    width: 2rem;
+    border-top: 1px solid $gray-400;
   }
 }
 
@@ -42,8 +42,8 @@
   // Controls the tree borders on expanded nodes.
   // These values are all magic, calculated by fiddling about.
   &:after {
-    top: -1rem;
-    bottom: -1rem;
+    top: -0.7rem;
+    bottom: -1.3rem;
     border-left: 1px solid $gray-300;
   }
 }

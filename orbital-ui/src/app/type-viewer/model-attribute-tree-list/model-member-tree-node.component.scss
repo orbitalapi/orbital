@@ -12,7 +12,20 @@
   tui-checkbox-labeled {
     margin-right: 1.5rem;
   }
-  margin-bottom: 0.5rem;
+}
+
+.description-editor-container {
+  margin-top: 0.5rem;
+}
+
+::ng-deep {
+  tui-badge {
+    margin-right: 0.5rem;
+
+    .t-left-content {
+      display: none !important;
+    }
+  }
 }
 
 .field-name {

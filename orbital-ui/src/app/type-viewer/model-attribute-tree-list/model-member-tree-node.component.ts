@@ -37,20 +37,33 @@ import {
       </span>
       <tui-tag class="new-tag" size="s" *ngIf="treeNode.isNew" value="New"></tui-tag>
       <span class="field-spacer"></span>
-      <tui-checkbox-labeled [size]="'m'"
-                            [ngModel]="!treeNode.field.nullable"
-                            (ngModelChange)="onRequiredChanged(treeNode.field)"
-                            [class._readonly]="!editable"
-      >Required
-      </tui-checkbox-labeled>
-      <tui-checkbox-labeled [size]="'m'"
-                            [ngModel]="memberHasIdAnnotation"
-                            (ngModelChange)="memberHasIdAnnotationChanged($event)"
-                            [class._readonly]="!editable"
-      >Id
-      </tui-checkbox-labeled>
+      @if (editable) {
+        <tui-checkbox-labeled [size]="'m'"
+                              [ngModel]="!treeNode.field.nullable"
+                              (ngModelChange)="onRequiredChanged(treeNode.field)"
+        >Required
+        </tui-checkbox-labeled>
+        <tui-checkbox-labeled [size]="'m'"
+                              [ngModel]="memberHasIdAnnotation"
+                              (ngModelChange)="memberHasIdAnnotationChanged($event)"
+        >Id
+        </tui-checkbox-labeled>
+      } @else {
+        <tui-badge
+          *ngIf="!treeNode.field.nullable"
+          status="warning"
+          value="Required"
+          size="s"
+        ></tui-badge>
+        <tui-badge
+          *ngIf="memberHasIdAnnotation"
+          status="info"
+          value="Id"
+          size="s"
+        ></tui-badge>
+      }
     </div>
-    <div>
+    <div *ngIf="!!(treeNode.field.typeDoc || editable)" class="description-editor-container">
       <app-description-editor-container
         [type]="treeNode.field"
         [editable]="editable"
