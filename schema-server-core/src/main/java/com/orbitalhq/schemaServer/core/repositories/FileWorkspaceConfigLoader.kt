@@ -34,8 +34,6 @@ import io.github.config4k.extract
 import io.github.config4k.registerCustomType
 import lang.taxi.packages.ProjectName
 import lang.taxi.packages.TaxiPackageLoader
-import lang.taxi.packages.TaxiPackageLoader.Companion.forDirectoryContainingTaxiFile
-import lang.taxi.packages.TaxiPackageLoader.Companion.forPathToTaxiFile
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.writers.ConfigWriter
 import mu.KotlinLogging
@@ -148,7 +146,9 @@ class FileWorkspaceConfigLoader(
          eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(addedGitSpec, workspaceConfig.gitConfigOrDefault))
       }
 
-      eventDispatcher.schemaSourceRemoved(removedPackages)
+      if (removedPackages.isNotEmpty()) {
+         eventDispatcher.schemaSourceRemoved(removedPackages)
+      }
 
    }
 

@@ -5,12 +5,12 @@ import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
 import com.orbitalhq.schemaServer.core.file.SourcesChangedMessage
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoader
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader
-import com.orbitalhq.utils.RetryFailOnSerializeEmitHandler
+import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.time.Duration
-import java.util.concurrent.CompletableFuture
 
+private val logger = KotlinLogging.logger {  }
 /**
  * Central point for notifying repositories added / removed.
  *
@@ -34,10 +34,12 @@ class ProjectStoreLifecycleManager(
    private val gitSpecRemovedSink = Sinks.many().replay().limit<GitSpecRemovedEvent>(Duration.ofSeconds(30))
    private val fileSpecRemovedSink = Sinks.many().replay().limit<FileSpecRemovedEvent>(Duration.ofSeconds(30))
 
-   // Replay logic here: We don't wanna keep 'em forever.
-   // But, on startup, subscribers may arrive late,
-   // so just keep a few seconds worth.
-   private val sourcesChangedSink = Sinks.many().replay().limit<SourcesChangedMessage>(Duration.ofSeconds(30))
+   // Replay logic here:
+   // Subscriber of this sink is SourceWatchingSchemaPublisher which is instantiated later than ProjectStoreLifecycleManager
+   // When the workspace contains many projects including Avro and OpenApi based ones putting a limit on replayed items are getting risky.
+   // When we limit replay limit to 30 secs, we see cases where SourceWatchingSchemaPublisher is missing SourcesChangedMessage updates and hence
+   // Orbital reports incorrect of projects and invalid compilation errors.
+   private val sourcesChangedSink = Sinks.many().replay().all<SourcesChangedMessage>()
 
 
    override val projectStoreAdded: Flux<SchemaPackageTransport> = schemaSourceAddedSink.asFlux()
@@ -46,14 +48,14 @@ class ProjectStoreLifecycleManager(
    override val sourcesRemoved: Flux<List<PackageIdentifier>> = schemaSourceRemovedSink.asFlux()
 
    init {
+      logger.debug { "ProjectStoreLifecycleManager::init" }
       projectStoreAdded
          .subscribe { schemaTransport ->
+            logger.info { "Starting schemaTransport: ${schemaTransport.packageIdentifier}" }
             schemaTransport.start()
                .subscribe { sourcePackage ->
-                  sourcesChangedSink.emitNext(
-                     SourcesChangedMessage(listOf(sourcePackage)),
-                     RetryFailOnSerializeEmitHandler
-                  )
+                  logger.info { "emitting SourcesChangedMessage: ${sourcePackage.identifier}" }
+                  sourcesChangedSink.emitOnSingleThread(SourcesChangedMessage(listOf(sourcePackage)))
                }
          }
    }
@@ -68,6 +70,7 @@ class ProjectStoreLifecycleManager(
       get() = fileSpecRemovedSink.asFlux()
 
    override fun fileProjectStoreAdded(repository: FileSystemPackageLoader) {
+      logger.info { "A new file Project store is added: ${repository.packageIdentifier}" }
       schemaSourceAddedSink.emitOnSingleThread(repository)
    }
 

@@ -23,10 +23,13 @@ class SourceWatchingSchemaPublisher(
 ) {
    private val logger = KotlinLogging.logger {}
 
+   private val sourcesChangedScheduler = Schedulers.newSingle("SourceWatchingSchemaPublisher")
+
    init {
+      logger.debug { "SourceWatchingSchemaPublisher::init" }
       eventSource
          .sourcesChanged
-         .publishOn(Schedulers.boundedElastic())
+         .publishOn(sourcesChangedScheduler)
          .subscribe { message ->
             logger.info { "Received source change message for packages ${message.packages.joinToString { it.identifier.id }} - submitting updated packages" }
             submitSources(message.packages)
@@ -34,7 +37,7 @@ class SourceWatchingSchemaPublisher(
 
       eventSource
          .sourcesRemoved
-         .publishOn(Schedulers.boundedElastic())
+         .publishOn(sourcesChangedScheduler)
          .subscribe { packages ->
             logger.info { "Received source change message for packages ${packages.joinToString { it.id }} - removing packages" }
             schemaPublisher.removeSchemas(packages)

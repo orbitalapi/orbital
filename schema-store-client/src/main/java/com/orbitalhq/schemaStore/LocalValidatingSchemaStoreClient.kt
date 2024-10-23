@@ -2,12 +2,22 @@ package com.orbitalhq.schemaStore
 
 import arrow.core.Either
 import arrow.core.right
-import com.orbitalhq.*
+import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.ParsedPackage
+import com.orbitalhq.ParsedSource
+import com.orbitalhq.SourcePackage
+import com.orbitalhq.UnversionedPackageIdentifier
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.api.SchemaValidator
 import com.orbitalhq.schema.consumer.SchemaSetChangedEventRepository
 import com.orbitalhq.schema.consumer.SchemaStore
-import com.orbitalhq.schema.publisher.*
+import com.orbitalhq.schema.publisher.KeepAlivePackageSubmission
+import com.orbitalhq.schema.publisher.PackageAdded
+import com.orbitalhq.schema.publisher.PackageRemoved
+import com.orbitalhq.schema.publisher.PackageUpdated
+import com.orbitalhq.schema.publisher.PackagesUpdatedMessage
+import com.orbitalhq.schema.publisher.PublisherHealthUpdated
+import com.orbitalhq.schema.publisher.SchemaPublisherTransport
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import lang.taxi.CompilationError
@@ -150,6 +160,7 @@ abstract class ValidatingSchemaStoreClient(
    fun submitUpdates(message: PackagesUpdatedMessage): Either<CompilationException, Schema> {
       // We need to syncronize here - when the server starts we will get many publication requests concurrently.
       // They need to be processed incrementally, or the result becomes last-in-wins
+      logger.info { "Submitting PackagesUpdatedMessage" }
       val submissionResults = synchronized(LOCK_KEY) {
          message.deltas.mapNotNull { delta ->
             when (delta) {
