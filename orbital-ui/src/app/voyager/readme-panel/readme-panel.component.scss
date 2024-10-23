@@ -14,6 +14,7 @@
 .markdown-container {
   padding: 1rem;
   flex-grow: 1;
+  overflow: auto;
 }
 app-simple-code-editor {
   flex-grow: 1;
