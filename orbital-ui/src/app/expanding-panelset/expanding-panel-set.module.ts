@@ -1,11 +1,10 @@
 import {NgModule} from '@angular/core';
-
+import {SvgIconComponent} from '../svg-icon/svg-icon.component';
 import {PanelHeaderComponent} from './panel-header.component';
 import {CommonModule} from '@angular/common';
 import { PanelsetComponent } from './panelset.component';
 import { PanelComponent } from './panel.component';
 import {DialogModule} from "@angular/cdk/dialog";
-import {SvgIconComponent} from "../../../../../vyne/orbital-ui/src/app/svg-icon/svg-icon.component";
 
 @NgModule({
     imports: [

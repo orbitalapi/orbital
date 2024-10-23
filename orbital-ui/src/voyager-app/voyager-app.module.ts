@@ -23,10 +23,8 @@ import {VoyagerSidebarComponent} from "../app/voyager/voyager-sidebar/voyager-si
 import {ExpandingPanelSetModule} from "../app/expanding-panelset/expanding-panel-set.module";
 import {CompilationMessageListModule} from "../app/compilation-message-list/compilation-message-list.module";
 import {ReadmePanelComponent} from "../app/voyager/readme-panel/readme-panel.component";
-import {
-    ResponseEditorDialogComponent
-} from "../../../../vyne/orbital-ui/src/app/voyager/playground-query-panel/response-editor-dialog.component";
-import {StubDesignerComponent} from "../../../../vyne/orbital-ui/src/app/voyager/stub-designer/stub-designer.component";
+import {ResponseEditorDialogComponent} from '../app/voyager/playground-query-panel/response-editor-dialog.component';
+import {StubDesignerComponent} from '../app/voyager/stub-designer/stub-designer.component';
 import {ENVIRONMENT} from "../app/services/environment";
 import {PlaygroundSchemaService} from "./playground-schema-service";
 import {SCHEMA_PROVIDER_TOKEN, SchemaProvider} from "../app/services/types.service";

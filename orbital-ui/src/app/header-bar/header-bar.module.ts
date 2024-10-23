@@ -1,6 +1,6 @@
 import { NgModule } from '@angular/core';
 import {RouterLink} from '@angular/router';
-
+import {LicenseDisplayComponent} from '../license-display/license-display.component';
 import { HeaderBarComponent } from './header-bar.component';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { SearchModule } from '../search/search.module';
@@ -20,9 +20,6 @@ import {
   TuiHostedDropdownModule,
   TuiNotificationModule
 } from '@taiga-ui/core';
-import {
-    LicenseDisplayComponent
-} from "../../../../../vyne/orbital-ui/src/app/license-display/license-display.component";
 
 @NgModule({
     imports: [
