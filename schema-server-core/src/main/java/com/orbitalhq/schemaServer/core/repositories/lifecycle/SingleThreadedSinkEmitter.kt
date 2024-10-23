@@ -2,9 +2,7 @@ package com.orbitalhq.schemaServer.core.repositories.lifecycle
 
 import mu.KotlinLogging
 import reactor.core.publisher.Sinks
-import reactor.core.scheduler.Schedulers
 import java.util.concurrent.CompletableFuture
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.LinkedBlockingQueue
 import kotlin.concurrent.thread
 
