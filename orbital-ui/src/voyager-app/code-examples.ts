@@ -1,5 +1,7 @@
 import {StubQueryMessageWithSlug} from "../app/services/query.service";
 import {simpleQuery} from "./code-examples/simple-query";
+import {KafkaApiWebsocket} from "./code-examples/kafka-api-websocket";
+import {KafkaDbApi} from "./code-examples/kafka-db-api";
 
 export interface CodeSample {
   title: string;
@@ -173,7 +175,8 @@ export const ExampleGroups = [
   {
     title: 'Querying & Streaming',
     snippets: [
-      simpleQuery
+      KafkaApiWebsocket,
+      KafkaDbApi
     ]
   },
   // {

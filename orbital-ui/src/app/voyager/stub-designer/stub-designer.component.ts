@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
 import {AngularSplitModule} from 'angular-split';
 import {CodeEditorModule} from '../../code-editor/code-editor.module';
-import {findType, Operation, Schema, Type} from '../../services/schema';
+import {findMemberTypeOrType, findType, Operation, Schema, Type} from '../../services/schema';
 import {TuiChipModule, TuiSegmentedModule} from '@taiga-ui/experimental';
 import {ExpandingPanelSetModule} from "../../expanding-panelset/expanding-panel-set.module";
 import {CommonModule} from '@angular/common';
@@ -166,8 +166,7 @@ export class StubDesignerComponent {
     this.operation = context.data.operation;
     this.schema = context.data.schema;
 
-    const type = findType(this.schema, this.operation.returnTypeName.parameterizedName)
-    this.type = type.collectionType || type
+    this.type =  findMemberTypeOrType(this.schema, this.operation.returnTypeName)
   }
 
   get advancedModeJson() {
