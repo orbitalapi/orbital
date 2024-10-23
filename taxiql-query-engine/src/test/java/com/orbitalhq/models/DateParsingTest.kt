@@ -8,6 +8,7 @@ import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import lang.taxi.types.FormatsAndZoneOffset
 import org.junit.Test
@@ -188,6 +189,30 @@ class DateParsingTest {
          """.trimMargin()
       JSONAssert.assertEquals(expectedJson, rawJson, true);
    }
+
+   @Test
+   fun `can parse a property with an array of dates`() {
+      val schema = TaxiSchema.from("""
+         type ScreeningDate inherits Instant
+         model MovieListing {
+            cinema : CinemaName inherits String
+            screenings : ScreeningDate[]
+         }
+      """.trimIndent())
+      val date = TypedInstance.from(schema.type("ScreeningDate"), "2024-10-25T19:30:00Z", schema)
+      val instance = TypedInstance.from(
+         schema.type("MovieListing"),
+         """{ "cinema" : "Levin Odeon", "screenings" : [ "2024-10-25T19:30:00Z", "2024-10-26T19:30:00Z" ] }""",
+         schema,
+         source = Provided
+      ) as TypedObject
+      val screenings = instance["screenings"] as TypedCollection
+      screenings.map { it.value }.shouldBe(listOf(
+         Instant.parse("2024-10-25T19:30:00Z"),
+         Instant.parse("2024-10-26T19:30:00Z"),
+      ))
+   }
+
 
    @Test
    fun `can parse string to date`() {

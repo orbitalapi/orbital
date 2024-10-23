@@ -256,6 +256,21 @@ export function findSchemaMember(schema: Schema, memberName: string, anonymousTy
   throw new Error('Could not find member ' + memberName)
 }
 
+/**
+ * For a Stream<T> or Array<T>, returns the type T.
+ * @param schema
+ * @param typeName either a QualifiedName or the fully parameterized name of the type to search for
+ * @param anonymousTypes
+ */
+export function findMemberTypeOrType(schema: TypeCollection, typeName: QualifiedName | String, anonymousTypes: Type[] = []): Type {
+  const qualifiedName = typeof typeName === 'string' ? QualifiedNameParser.parse(typeName) : typeName as QualifiedName;
+  if (qualifiedName.parameters.length === 1) {
+    return findMemberTypeOrType(schema,qualifiedName.parameters[0], anonymousTypes);
+  } else {
+    return findType(schema, qualifiedName.parameterizedName, anonymousTypes);
+  }
+}
+
 export function findType(schema: TypeCollection, typeName: string, anonymousTypes: Type[] = []): Type {
   if (schema.anonymousTypes === undefined) {
     schema.anonymousTypes = {};

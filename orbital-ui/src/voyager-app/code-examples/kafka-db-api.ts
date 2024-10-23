@@ -1,8 +1,8 @@
 import {StubQueryMessageWithSlug} from "../../app/services/query.service";
 
-export const example: StubQueryMessageWithSlug = {
-  "title": "Title goes here",
-  "slug": "slug-goes-here",
+export const KafkaDbApi: StubQueryMessageWithSlug = {
+  "title": "Enrich Kafka with a DB Query",
+  "slug": "kafka-db-api",
   "query": {
     readme: '',
     "schema": `import FilmId
