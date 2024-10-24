@@ -4,7 +4,7 @@ export const KafkaApiWebsocket: StubQueryMessageWithSlug = {
   "title": "Enrich Kafka and publish over websocket",
   "slug": "kafka-api-websocket",
   "query": {
-    "schema": `// This demo shows:
+    "schema": `// This example shows:
 //
 // * Pulling data from a stream (such as a Kafka topic)
 // * Enriching it with company details from a REST API (company name and HQ)
@@ -16,6 +16,8 @@ export const KafkaApiWebsocket: StubQueryMessageWithSlug = {
 // Note: As this is a playground, all server interactions are
 // stubbed out, and publishing over a websocket
 // isn't provided.
+// However, a full TaxiQL server (such as Orbital) would publish these results
+// over a websocket
 
 closed model StockQuote {
   symbol: Ticker inherits String
