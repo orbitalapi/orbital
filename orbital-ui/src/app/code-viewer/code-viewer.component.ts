@@ -189,7 +189,7 @@ export class CodeViewerComponent {
     console.log("onDragEnd", e.sizes[1]);
     const height = e.sizes[1] as number
     this.compilationProblemsPanelExpanded = height > 42
-    this.lastCompilationProblemsPanelHeight = height
+    this.lastCompilationProblemsPanelHeight = height === 42 ? 135 : height;
   }
 }
 
