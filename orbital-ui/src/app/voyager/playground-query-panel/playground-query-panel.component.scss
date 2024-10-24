@@ -11,7 +11,21 @@
       // Set the background in accordion headers
       background-color: $slate-100 !important;
     }
+
     tui-expand {
+
+      // Components like the results panel where we need the panel to grow
+      // to 100% of available space
+      &.flex-expand {
+        display: flex;
+        flex-grow: 1;
+        flex-direction: column;
+        .t-wrapper {
+          display: flex;
+          flex-direction: column;
+          flex-grow: 1;
+        }
+      }
       transform: unset !important;
       .t-content {
         //padding: 0 !important;
@@ -102,4 +116,6 @@ tui-chip[tuiAppearance][data-appearance='info']  {
 
 .bottom-split-area {
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 }

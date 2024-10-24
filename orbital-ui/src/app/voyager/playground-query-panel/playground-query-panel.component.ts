@@ -82,22 +82,22 @@ import {TuiChipModule} from "@taiga-ui/experimental";
         </tui-expand>
 
 
-        <app-panel-header [collapsible]="true" [(expanded)]="queryPlanExpanded" #stubsPanelHeader [isSecondary]="true"
-                          title="Query plan"/>
-        <tui-expand [expanded]="queryPlanExpanded">
-          <ng-template tuiExpandContent>
-            <app-query-lineage [(fullscreen)]="queryPlanFullscreen" *ngIf="!queryPlanFullscreen"
-                               [style.height]="expandedPanelHeight"
-                               [rows]="parsedQuery?.queryPlan?.steps"></app-query-lineage>
-          </ng-template>
-        </tui-expand>
+<!--        <app-panel-header [collapsible]="true" [(expanded)]="queryPlanExpanded" [isSecondary]="true"-->
+<!--                          title="Query plan"/>-->
+<!--        <tui-expand [expanded]="queryPlanExpanded">-->
+<!--          <ng-template tuiExpandContent>-->
+<!--            <app-query-lineage [(fullscreen)]="queryPlanFullscreen" *ngIf="!queryPlanFullscreen"-->
+<!--                               [style.height]="expandedPanelHeight"-->
+<!--                               [rows]="parsedQuery?.queryPlan?.steps"></app-query-lineage>-->
+<!--          </ng-template>-->
+<!--        </tui-expand>-->
 
         <app-panel-header [collapsible]="true" [(expanded)]="queryResultsExpanded" #stubsPanelHeader
                           [isSecondary]="true"
                           title="Results"/>
-        <tui-expand [expanded]="queryResultsExpanded">
+        <tui-expand [expanded]="queryResultsExpanded" class="flex-expand">
           <ng-template tuiExpandContent>
-            <div class="result-panel" [style.height]="expandedPanelHeight">
+            <div class="result-panel">
               <app-json-viewer [readOnly]="true" [json]="queryResult" [showHeader]="false"
                                *ngIf="queryResult"></app-json-viewer>
               <div *ngIf="!queryResult" class="empty-results">
