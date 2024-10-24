@@ -1,6 +1,7 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, HostBinding, Input} from '@angular/core';
 import {ActivatedRoute, Router} from "@angular/router";
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
+import {IOutputData} from 'angular-split';
 import {CompilationMessage, ParsedSource, VersionedSource} from '../services/schema';
 import {FileTreeNode, isFileTreeNodeList, sourcesToFileTreeNode} from "./file-tree.component";
 import {isNullOrUndefined} from "util";
@@ -184,7 +185,12 @@ export class CodeViewerComponent {
     }
   }
 
-  protected readonly Number = Number;
+  onDragEnd(e: IOutputData) {
+    console.log("onDragEnd", e.sizes[1]);
+    const height = e.sizes[1] as number
+    this.compilationProblemsPanelExpanded = height > 42
+    this.lastCompilationProblemsPanelHeight = height
+  }
 }
 
 export type SidebarMode = 'Visible' | 'Hidden' | 'Auto';

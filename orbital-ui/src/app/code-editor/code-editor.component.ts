@@ -11,6 +11,7 @@ import {
 } from "@angular/core";
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {TuiAlertService} from '@taiga-ui/core';
+import {IOutputData} from 'angular-split';
 import {debounceTime, filter} from "rxjs/operators";
 import {editor, IPosition, MarkerSeverity} from 'monaco-editor';
 import {createTaxiEditor, createTaxiEditorModel} from "./language-server-commons";
@@ -41,7 +42,7 @@ type WordWrapOptions = 'off' | 'on' | 'wordWrapColumn' | 'bounded';
       direction="vertical"
       unit="pixel"
       useTransition="true"
-      (dragEnd)="lastCompilationProblemsPanelHeight = Number($event.sizes[1])"
+      (dragEnd)="onDragEnd($event)"
     >
       <as-split-area size="*">
         <div #codeEditorContainer class="code-editor"></div>
@@ -65,7 +66,7 @@ export class CodeEditorComponent implements OnInit, OnDestroy {
     return this._codeEditorContainer;
   }
 
-  compilationProblemsPanelExpanded = true;
+  compilationProblemsPanelExpanded = false;
 
   set codeEditorContainer(value: ElementRef) {
     this._codeEditorContainer = value;
@@ -377,6 +378,11 @@ export class CodeEditorComponent implements OnInit, OnDestroy {
     editor.setModelMarkers(model, 'owner', markers)
   }
 
-  protected readonly Number = Number;
+  onDragEnd(e: IOutputData) {
+    console.log("onDragEnd", e.sizes[1]);
+    const height = e.sizes[1] as number
+    this.compilationProblemsPanelExpanded = height > 42
+    this.lastCompilationProblemsPanelHeight = height
+  }
 }
 

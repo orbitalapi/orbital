@@ -6,7 +6,7 @@
   </as-split-area>
   <as-split-area size="*" order="1">
     <div class="code-viewer-container">
-      <as-split direction="vertical" unit="pixel" useTransition="true" (dragEnd)="lastCompilationProblemsPanelHeight = Number($event.sizes[1])">
+      <as-split direction="vertical" unit="pixel" useTransition="true" (dragEnd)="onDragEnd($event)">
         <as-split-area size="*">
           <app-code-editor class="code-editor"
                            [content]="sourceContent"
