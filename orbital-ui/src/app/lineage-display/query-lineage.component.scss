@@ -35,12 +35,18 @@
   position: absolute;
   left: 0;
   right: 0;
+  pointer-events: none;
+
+  mat-chip-listbox {
+    pointer-events: all;
+  }
 
   .spacer {
     flex-grow: 1;
   }
 
   .fullscreen-toggle {
+    pointer-events: all;
     opacity: 0.65;
 
     img {
