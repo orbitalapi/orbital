@@ -179,10 +179,11 @@ tui-hint {
 
 
 .fullscreen {
+  $sidenav-width: 50px;
   position: fixed;
   top: 1rem;
-  left: calc(1rem + $sidenav-width);
-  width: calc(100% - $sidenav-width - 2rem);
+  left: calc(1rem + $sidenav-width) !important;
+  width: calc(100% - $sidenav-width - 2rem) !important;
   height: calc(100% - 2rem);
   z-index: 2000;
 }
@@ -218,7 +219,7 @@ app-panel-header {
 }
 
 tui-segmented.dark {
-  background: $slate-600;
+  background: $slate-800;
 
   &::before {
     box-shadow: none;
@@ -228,6 +229,11 @@ tui-segmented.dark {
   button {
     font-size: 0.8rem;
     color: $slate-400;
+
+    &:hover:not(.active) {
+      color: $slate-300;
+      background: $slate-700;
+    }
   }
 
   .active {

@@ -21,7 +21,7 @@ import org.springframework.web.server.ResponseStatusException
 private val logger = KotlinLogging.logger {}
 
 @Component
-class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>, private val schemaProvider: SchemaProvider) {
+class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>) {
    private val formatDetector = FormatDetector(modelFormatSpecs)
    @FlowPreview
    fun convertToSerializedContent(

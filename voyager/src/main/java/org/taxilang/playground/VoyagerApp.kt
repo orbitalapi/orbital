@@ -9,13 +9,12 @@ import io.micrometer.core.instrument.MeterRegistry
 import mu.KotlinLogging
 import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.autoconfigure.security.reactive.ReactiveSecurityAutoConfiguration
-import org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
 import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
+import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.web.client.RestTemplate
@@ -115,6 +114,10 @@ class AwsConfig {
 
 @Configuration
 class WebConfiguration : WebFluxConfigurer {
+
+   override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {
+      configurer.customCodecs().register(CsvXmlMessageWriter())
+   }
    override fun addCorsMappings(registry: CorsRegistry) {
       registry.addMapping("/**")
          .allowedMethods("*")

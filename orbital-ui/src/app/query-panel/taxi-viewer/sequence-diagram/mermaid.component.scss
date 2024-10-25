@@ -1,4 +1,10 @@
 @import "src/common";
 .mermaid-diagram {
   display: block;
+  margin: 1rem 0.5rem;
+
+  ::ng-deep svg {
+    width: 100%;
+    height: 100%;
+  }
 }

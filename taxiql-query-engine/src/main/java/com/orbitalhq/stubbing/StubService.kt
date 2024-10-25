@@ -18,11 +18,13 @@ import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.connectors.OperationResponseFlowProvider
 import com.orbitalhq.query.connectors.OperationResponseHandler
 import com.orbitalhq.query.graph.operationInvocation.DefaultOperationInvocationService
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
+import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCachingInvokerProvider
 import com.orbitalhq.query.projection.LocalProjectionProvider
 import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.Parameter
@@ -63,7 +65,7 @@ class StubService(
             QueryEngineFactory.withOperationInvokers(
                VyneCacheConfiguration.default(),
                formatSpecs = emptyList(),
-               invokers = listOf(stubService),
+               invokers = CacheAwareOperationInvocationDecorator.decorateAll(listOf(stubService), cacheProvider = LocalCachingInvokerProvider.default()),
                projectionProvider = LocalProjectionProvider(),
                stateStoreProvider = null
             )
@@ -112,6 +114,18 @@ class StubService(
    ): List<TypedInstance> {
       require(schema != null) { "Stub service was not created with a schema." }
       val result = handler.invoke(remoteOperation, params)
+      val dataSource = getRemoteCallDataSource(remoteOperation, result, params)
+      return result.map { typedInstance ->
+         val updated = TypedInstanceConverter(DataSourceMutatingMapper(dataSource)).convert(typedInstance)
+         TypedInstance.from(typedInstance.type, updated, schema, source = dataSource)
+      }
+   }
+
+   private fun getRemoteCallDataSource(
+      remoteOperation: RemoteOperation,
+      result: List<TypedInstance>,
+      params: List<Pair<Parameter, TypedInstance>>
+   ): OperationResultDataSourceWrapper {
       val remoteCall = RemoteCall(
          service = OperationNames.serviceName(remoteOperation.qualifiedName).fqn(),
          address = "https://fakeurl.com/",
@@ -125,19 +139,16 @@ class StubService(
          timestamp = Instant.now(),
          responseMessageType = ResponseMessageType.FULL,
          exchange = HttpExchange(
-            url = "https://fakeulr.com",
-            verb = "GET",
-            requestBody = "Fake request body",
-            responseCode = 200,
-            responseSize = 1000,
-            headers = HttpHeaders.empty()
+               url = "https://fakeulr.com",
+               verb = "GET",
+               requestBody = "Fake request body",
+               responseCode = 200,
+               responseSize = 1000,
+               headers = HttpHeaders.empty()
          )
       )
       val dataSource = OperationResultDataSourceWrapper(OperationResult.from(params, remoteCall))
-      return result.map { typedInstance ->
-         val updated = TypedInstanceConverter(DataSourceMutatingMapper(dataSource)).convert(typedInstance)
-         TypedInstance.from(typedInstance.type, updated, schema, source = dataSource)
-      }
+      return dataSource
    }
 
    constructor(vararg responses: Pair<String, List<TypedInstance>>) : this(responses.toMap().toMutableMap())
@@ -288,9 +299,23 @@ class StubService(
 
    fun addResponseFlow(
       stubOperationKey: String,
-      handler: OperationResponseFlowProvider
+      modifyDataSource: Boolean = false,
+      handler: OperationResponseFlowProvider,
+
    ): StubService {
-      this.flowHandlers[stubOperationKey] = handler
+      if (modifyDataSource) {
+         this.flowHandlers.put(stubOperationKey) { remoteOperation, params ->
+            handler.invoke(remoteOperation, params)
+               .map { typedInstance ->
+                  val dataSource = getRemoteCallDataSource(remoteOperation, listOf(typedInstance), params)
+                  val updated = TypedInstanceConverter(DataSourceMutatingMapper(dataSource)).convert(typedInstance)
+                  TypedInstance.from(typedInstance.type, updated, schema!!, source = dataSource)
+               }
+         }
+      } else {
+         this.flowHandlers[stubOperationKey] = handler
+      }
+
       return this
    }
    fun addResponse(stubOperationKey: String, json: String) {

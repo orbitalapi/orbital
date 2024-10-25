@@ -141,7 +141,7 @@ export class QueryService {
     return this.http.get<QueryProfileData>(`${this.environment.serverUrl}/api/query/history/clientId/${clientQueryId}/profile`, this.httpOptions)
       .pipe(
         shareReplay(1),
-        map(profileData => profileData ? this.parseRemoteCallTimestampsAsDates(profileData) : null)
+        map(profileData => profileData ? convertRemoteCallTimestampsToDates(profileData) : null)
       ) // This observable is shared
       ;
   }
@@ -150,7 +150,7 @@ export class QueryService {
     return this.http.get<QueryProfileData>(`${this.environment.serverUrl}/api/query/history/${queryId}/profile`, this.httpOptions)
       .pipe(
         shareReplay(1),
-        map(profileData => this.parseRemoteCallTimestampsAsDates(profileData))
+        map(profileData => convertRemoteCallTimestampsToDates(profileData))
       ) // This observable is shared
       ;
   }
@@ -181,24 +181,6 @@ export class QueryService {
     return this.http.delete<void>(`${this.environment.serverUrl}/api/query/active/${clientQueryId}`, this.httpOptions);
   }
 
-  private parseRemoteCallTimestampsAsDates(profileData: QueryProfileData): QueryProfileData {
-    const remoteCalls = profileData.remoteCalls.map(remoteCall => {
-      remoteCall.startTime = new Date((remoteCall as any).startTime);
-      return remoteCall;
-    });
-    profileData.remoteCalls = remoteCalls.sort((a, b) => {
-      switch (true) {
-        case a.startTime.getTime() < b.startTime.getTime() :
-          return -1;
-        case a.startTime.getTime() > b.startTime.getTime() :
-          return 1;
-        default:
-          return 0;
-      }
-    });
-    return profileData;
-  }
-
   getLineageRecord(dataSourceId: string): Observable<LineageRecord> {
     return this.http.get<LineageRecord>(`${this.environment.serverUrl}/api/query/history/dataSource/${dataSourceId}`);
   }
@@ -218,6 +200,23 @@ export class QueryService {
 
 }
 
+export function convertRemoteCallTimestampsToDates(profileData: QueryProfileData): QueryProfileData {
+  const remoteCalls = profileData.remoteCalls.map(remoteCall => {
+    remoteCall.startTime = new Date((remoteCall as any).startTime);
+    return remoteCall;
+  });
+  profileData.remoteCalls = remoteCalls.sort((a, b) => {
+    switch (true) {
+      case a.startTime.getTime() < b.startTime.getTime() :
+        return -1;
+      case a.startTime.getTime() > b.startTime.getTime() :
+        return 1;
+      default:
+        return 0;
+    }
+  });
+  return profileData;
+}
 export interface LineageRecord {
   dataSource: DataSource;
 }

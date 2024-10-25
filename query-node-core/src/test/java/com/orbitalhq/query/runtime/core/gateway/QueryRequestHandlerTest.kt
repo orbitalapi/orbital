@@ -391,7 +391,7 @@ class QueryRequestHandlerTest {
               historyEventConsumerProvider,
                Jackson2ObjectMapperBuilder().build(),
                ActiveQueryMonitor(TestHazelcastInstanceFactory().newHazelcastInstance()),
-               QueryResponseFormatter(listOf(CsvFormatSpec), SimpleSchemaProvider(schemaProvider.schema))
+               QueryResponseFormatter(listOf(CsvFormatSpec))
            )
            return queryService
        }

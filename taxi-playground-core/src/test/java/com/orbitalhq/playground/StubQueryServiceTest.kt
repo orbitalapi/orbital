@@ -22,7 +22,8 @@ class StubQueryServiceTest {
    @Test
    fun `can submit simple query`() {
       val query = StubQueryMessage("", "find { 1 + 2 }")
-      val result = queryService.submitQuery(query, false)
+      val result = queryService.submitQuery(query, addDelayToStreams =  false)
+         .first
          .asA<Mono<Any>>()
          .block()!!
       result.shouldBe(3)
@@ -45,6 +46,7 @@ class StubQueryServiceTest {
          )
       )
       val result = queryService.submitQuery(query)
+         .first
          .asA<Flux<Any>>()
          .collectList()
          .block()!!
@@ -68,6 +70,7 @@ class StubQueryServiceTest {
          )
       )
       queryService.submitQuery(query)
+         .first
          .asA<Flux<Any>>()
          .test()
          .expectSubscription()

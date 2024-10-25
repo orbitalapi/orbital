@@ -147,7 +147,7 @@ abstract class BaseQueryServiceTest {
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor(TestHazelcastInstanceFactory().newHazelcastInstance()),
-         QueryResponseFormatter(listOf(CsvFormatSpec), SimpleSchemaProvider(vyne.schema))
+         QueryResponseFormatter(listOf(CsvFormatSpec))
       )
       return queryService
    }

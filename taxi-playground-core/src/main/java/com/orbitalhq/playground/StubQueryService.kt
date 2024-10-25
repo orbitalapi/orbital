@@ -1,38 +1,68 @@
 package com.orbitalhq.playground
 
+import com.google.common.cache.CacheBuilder
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.Vyne
+import com.orbitalhq.cockpit.core.query.QueryPlanEventHandler
 import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.formats.csv.CsvAnnotationSpec
 import com.orbitalhq.formats.xml.XmlAnnotationSpec
+import com.orbitalhq.history.LineageJsonSerializer
+import com.orbitalhq.history.QueryAnalyticsConfig
+import com.orbitalhq.history.ResultRowPersistenceStrategyFactory
+import com.orbitalhq.history.remote.RemoteQueryEventConsumerClient
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
+import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.models.format.ModelFormatSpec
+import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.query.QueryContextEventBroker
+import com.orbitalhq.query.QueryEventConsumer
+import com.orbitalhq.query.QueryProfileData
 import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.query.history.RemoteCallResponse
+import com.orbitalhq.query.history.RemoteCallResponseDto
+import com.orbitalhq.query.history.toDto
+import com.orbitalhq.query.runtime.core.ModelFormatSpecSerializer
+import com.orbitalhq.query.runtime.core.QueryResponseFormatter
+import com.orbitalhq.query.runtime.core.RawResultsSerializer
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import com.orbitalhq.stubbing.StubService
+import com.orbitalhq.utils.Ids
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExecutorCoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
 import lang.taxi.annotations.HttpService
 import lang.taxi.query.QueryMode
-import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.Arrays
 import mu.KotlinLogging
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import java.time.Duration
+import java.util.concurrent.Executors
+import java.util.concurrent.ThreadPoolExecutor
+
+typealias ContentTypeString = String
 
 class StubQueryService(
    private val streamDelay: Duration = Duration.ofMillis(500),
-   private val formatSpecs: List<ModelFormatSpec> = FormatSpecRegistry.default().formats
+   private val formatSpecs: List<ModelFormatSpec> = FormatSpecRegistry.default().formats,
 ) {
+
+   private val queryProfileCache = CacheBuilder.newBuilder()
+      .expireAfterWrite(Duration.ofSeconds(30))
+      .build<String, QueryProfileData>()
+
    companion object {
       private val logger = KotlinLogging.logger {}
       val builtInTypes: String = listOf(
@@ -54,31 +84,109 @@ class StubQueryService(
 
    fun submitQuery(
       query: StubQueryMessage,
+      queryId: String = Ids.id(prefix = "query", size = 12),
+
       /**
        * When query calls a stream, this will add a delay on each
        * message, to simulate a 'streaming' response.
        * If false, all data is returned instantly
        */
       addDelayToStreams: Boolean = false
-   ): Publisher<Any> {
+   ): Pair<Publisher<Any>, ContentTypeString> {
+
 
       val schema = TaxiSchema.fromStrings(query.schema, builtInTypes)
       val (vyne, stub) = StubService.stubbedVyne(schema)
       configureStubs(query, vyne, stub, addDelayToStreams)
 
+      val (dispatcher, remoteCallCollector) = buildQueryEventConsumer()
+      val queryPlanEventHandler = QueryPlanEventHandler.createFor(schema)
+      val eventBroker = QueryContextEventBroker()
+         .addHandlers(listOf(remoteCallCollector, queryPlanEventHandler))
       val resultFlux = runBlocking {
-         vyne.query(query.query, arguments = query.parameters)
+         vyne.query(query.query, arguments = query.parameters, eventBroker = eventBroker)
             .results
             .asFlux()
-            .mapNotNull { it.toRawObject() } as Flux<Any>
+            .doOnNext { typedInstance -> queryPlanEventHandler.appendResult(typedInstance) }
       }
-      val (taxiQlQuery, _, _) = vyne.parseQuery(query.query)
+         .doFinally {
+            (dispatcher.executor as ThreadPoolExecutor).shutdown()
+            captureQueryProfileData(queryId, remoteCallCollector, queryPlanEventHandler)
+         }
+
+      val (taxiQlQuery, queryOptions, querySchema) = vyne.parseQuery(query.query)
       val queryResultType = taxiQlQuery.discoveryType?.type ?: taxiQlQuery.returnType
-      return when {
-         taxiQlQuery.queryMode == QueryMode.STREAM -> resultFlux
-         Arrays.isArray(queryResultType) -> resultFlux
-         else -> resultFlux.singleOrEmpty()
+      val formatSerializer = FormatDetector(formatSpecs).getFormatType(querySchema.type(taxiQlQuery.returnType))?.let { (metadata, spec) ->
+         ModelFormatSpecSerializer(spec, metadata)
+      } ?: RawResultsSerializer(queryOptions)
+
+      val serializedResults = resultFlux
+         .filter { it !is TypedNull }
+         .map {
+         formatSerializer.serialize(it, querySchema)
+      }.filter { it != null } as Flux<Any>
+      val publisher = when {
+         taxiQlQuery.queryMode == QueryMode.STREAM -> serializedResults
+         Arrays.isArray(queryResultType) -> serializedResults
+         else -> serializedResults.singleOrEmpty()
       }
+
+      return publisher to formatSerializer.contentType
+   }
+
+   private fun captureQueryProfileData(
+      queryId: String,
+      remoteCallCollector: RemoteCallResponseCollector,
+      queryPlanEventHandler: QueryPlanEventHandler
+   ) {
+      val profileData = QueryProfileData(
+         queryId,
+         0,
+         remoteCalls = remoteCallCollector.events,
+         operationStats = emptyList(),
+         queryLineageData = queryPlanEventHandler.sankeyViewBuilder.asChartRows(queryId)
+      )
+      this.queryProfileCache.put(queryId, profileData)
+   }
+
+   private fun buildQueryEventConsumer(): Pair<ExecutorCoroutineDispatcher, RemoteCallResponseCollector> {
+      val historyDispatcher = Executors
+         .newFixedThreadPool(1)
+         .asCoroutineDispatcher()
+      val config = QueryAnalyticsConfig(
+         persistResults = true,
+         persistRemoteCallResponses = true,
+         persistRemoteCallMetadata = true
+      )
+      val client = RemoteQueryEventConsumerClient(
+         ResultRowPersistenceStrategyFactory.resultRowPersistenceStrategy(
+            LineageJsonSerializer.objectMapper,
+            null,
+            config
+         ),
+         config,
+         CoroutineScope(historyDispatcher)
+      )
+      return historyDispatcher to RemoteCallResponseCollector(client)
+   }
+
+   /**
+    * Collects RemoteCallResponse from a query event stream, without persisting them
+    */
+   class RemoteCallResponseCollector(val eventClient: RemoteQueryEventConsumerClient) :
+      QueryEventConsumer by eventClient {
+      private val _events = mutableListOf<RemoteCallResponse>()
+
+      init {
+         eventClient.queryEvents()
+            .filter { it is RemoteCallResponse }
+            .subscribe { _events.add(it as RemoteCallResponse) }
+      }
+
+      val events: List<RemoteCallResponseDto>
+         get() {
+            return _events.distinctBy { it.remoteCallId }.map { it.toDto() }
+         }
    }
 
    private fun configureStubs(
@@ -105,7 +213,7 @@ class StubQueryService(
                      vyne.schema,
                      formatSpecs = formatSpecs
                   )
-                  stub.addResponse(operationStub.operationName, parsedInstance)
+                  stub.addResponse(operationStub.operationName, parsedInstance, modifyDataSource = true)
                }
 
             }
@@ -120,7 +228,7 @@ class StubQueryService(
       operationStub: OperationStub,
       vyne: Vyne
    ) {
-      stub.addResponse(operationStub.operationName) { operation, params ->
+      stub.addResponse(operationStub.operationName, modifyDataSource = true) { operation, params ->
 
          // Look at the stub configuration, and find a response which
          // matches the inputs we've received
@@ -176,5 +284,11 @@ class StubQueryService(
             }
          }
       }
+   }
+
+   fun getAndPurgeProfileData(queryId: String): QueryProfileData? {
+      val profileData = queryProfileCache.getIfPresent(queryId)
+      queryProfileCache.invalidate(queryId)
+      return profileData
    }
 }

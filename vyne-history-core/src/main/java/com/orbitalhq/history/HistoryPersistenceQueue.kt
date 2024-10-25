@@ -66,7 +66,7 @@ fun Path.deleteRecursively() {
  *
  * Using CBOR seems to work well, and has small performance improvements over json
  */
-class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
+class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) : QueryObservabilityWriter {
 
    val queryBasePath = baseQueuePath.resolve("$queryId/").toFile().canonicalPath
 
@@ -102,15 +102,15 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) {
    fun retrieveNewRemoteCalls(): Flux<RemoteCallResponse> = remoteCallResponseStore.retrieveNewValues()
    fun retrieveNewLineageRecords(): Flux<LineageRecord> = lineageRecordStore.retrieveNewValues()
 
-   fun storeResultRow(resultRow: QueryResultRow) {
+   override fun storeResultRow(resultRow: QueryResultRow) {
       queryResultRowStore.store(resultRow)
    }
 
-   fun storeRemoteCallResponse(remoteCallResponse: RemoteCallResponse) {
+   override fun storeRemoteCallResponse(remoteCallResponse: RemoteCallResponse) {
       remoteCallResponseStore.store(remoteCallResponse)
    }
 
-   fun storeLineageRecord(lineageRecord: LineageRecord) {
+   override fun storeLineageRecord(lineageRecord: LineageRecord) {
       lineageRecordStore.store(lineageRecord)
    }
 

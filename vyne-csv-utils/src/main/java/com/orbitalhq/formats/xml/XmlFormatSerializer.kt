@@ -46,10 +46,17 @@ private class StaxXmlSerializer(private val schema: Schema, private val writer: 
 
    private fun writeInstanceToXml(value: TypedInstance, elementName: String) {
       when (value) {
+         is TypedValue -> writeScalarToXml(value, elementName)
          is TypedObject -> writeObjectToXml(value, elementName)
          is TypedCollection -> writeCollectionToXml(value, elementName)
          else -> TODO()
       }
+   }
+
+   private fun writeScalarToXml(value: TypedValue, elementName: String) {
+      writer.writeStartElement(elementName)
+      writer.writeCharacters(value.toRawObject().toString())
+      writer.writeEndElement()
    }
 
    private fun writeCollectionToXml(value: TypedCollection, elementName: String) {

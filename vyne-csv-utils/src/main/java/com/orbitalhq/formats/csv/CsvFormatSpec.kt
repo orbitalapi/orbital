@@ -21,7 +21,7 @@ object CsvAnnotationSpec {
             firstRecordAsHeader : Boolean = true
             nullValue : String?
             containsTrailingDelimiters : Boolean = false
-            useFieldNamesAsColumnNames: Boolean = false
+            useFieldNamesAsColumnNames: Boolean = true
             quoteChar: String = '"'
             recordSeparator: String = "\r\n"
          }
