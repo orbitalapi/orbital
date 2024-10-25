@@ -48,9 +48,7 @@ export class SequenceDiagramComponent {
           const resultMessage = (wasSuccessful) ? `${remoteCall.responseTypeDisplayName} (${remoteCall.durationMs}ms)`
             : `${remoteCall.resultCode} (${remoteCall.durationMs}ms)`
           const indent = '    ';
-          const lines = [indent + `${UiCustomisations.productName} ->> ${remoteCall.serviceDisplayName}: ${remoteCall.operationName} (${remoteCall.method})`,
-            indent + `${remoteCall.serviceDisplayName} ->> ${UiCustomisations.productName}: ${resultMessage}`
-          ].join('\n');
+          const lines = indent + `${UiCustomisations.productName} ->> ${remoteCall.serviceDisplayName}: ${remoteCall.operationName} (${remoteCall.method}) - ${resultMessage}`
           return lines;
 
         }).join('\n');

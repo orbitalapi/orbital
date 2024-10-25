@@ -5,7 +5,6 @@ import {
   Component, DestroyRef,
   ElementRef,
   Input,
-  OnInit,
   ViewChild
 } from '@angular/core';
 import {CommonModule} from '@angular/common';
@@ -19,16 +18,16 @@ import {StubPanelComponent} from "./stub-panel.component";
 import {Schema} from "../../services/schema";
 import {HttpClientModule} from "@angular/common/http";
 import {VoyagerService} from "../../../voyager-app/voyager.service";
-import {emptyQueryMessage, QueryParseMetadata, StubQueryMessage} from "../../services/query.service";
+import {emptyQueryMessage, QueryParseMetadata, QueryProfileData, StubQueryMessage} from "../../services/query.service";
 import {JsonViewerModule} from "../../json-viewer/json-viewer.module";
 import {QueryConfigPanelComponent} from "./query-config-panel.component";
 import {catchError, debounceTime, filter, tap} from "rxjs/operators";
 import {ExpandablePanelComponent} from "../../expanding-panelset/expandable-panel/expandable-panel.component";
 import {QueryResultsPanelComponent} from "./query-results-panel.component";
 import {ResizeObservableService} from "../../services/resize-observable.service";
-import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {LineageDisplayModule} from "../../lineage-display/lineage-display.module";
 import {TuiChipModule} from "@taiga-ui/experimental";
+import {isNullOrUndefined} from "../../utils/utils";
 
 @Component({
   selector: 'app-playground-query-panel',
@@ -80,41 +79,14 @@ import {TuiChipModule} from "@taiga-ui/experimental";
                                   (parameterValuesChange)="updateQueryParameters($event)"
                                   [schema]="schema"></app-query-config-panel>
         </tui-expand>
-
-
-<!--        <app-panel-header [collapsible]="true" [(expanded)]="queryPlanExpanded" [isSecondary]="true"-->
-<!--                          title="Query plan"/>-->
-<!--        <tui-expand [expanded]="queryPlanExpanded">-->
-<!--          <ng-template tuiExpandContent>-->
-<!--            <app-query-lineage [(fullscreen)]="queryPlanFullscreen" *ngIf="!queryPlanFullscreen"-->
-<!--                               [style.height]="expandedPanelHeight"-->
-<!--                               [rows]="parsedQuery?.queryPlan?.steps"></app-query-lineage>-->
-<!--          </ng-template>-->
-<!--        </tui-expand>-->
-
-        <app-panel-header [collapsible]="true" [(expanded)]="queryResultsExpanded" #stubsPanelHeader
-                          [isSecondary]="true"
-                          title="Results"/>
-        <tui-expand [expanded]="queryResultsExpanded" class="flex-expand">
-          <ng-template tuiExpandContent>
-            <div class="result-panel">
-              <app-json-viewer [readOnly]="true" [json]="queryResult" [showHeader]="false"
-                               *ngIf="queryResult"></app-json-viewer>
-              <div *ngIf="!queryResult" class="empty-results">
-                No results to show
-              </div>
-            </div>
-          </ng-template>
-        </tui-expand>
+        <app-query-results-panel
+          [(expanded)]="queryResultsExpanded"
+          [queryResult]="queryResult"
+          [profileData]="queryProfileData"
+        ></app-query-results-panel>
       </as-split-area>
 
     </as-split>
-    <!-- This is a hacky workaround.
-     See comments on QueryLineageComponent fullscreen as to why we have have two app-query-lineage
-     components (one inside the accordion, and one outside)
-     -->
-    <app-query-lineage *ngIf="queryPlanFullscreen" [(fullscreen)]="queryPlanFullscreen"
-                       [rows]="parsedQuery?.queryPlan?.steps"></app-query-lineage>
   `,
   styleUrls: ['./playground-query-panel.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -180,10 +152,10 @@ export class PlaygroundQueryPanelComponent implements AfterViewInit {
   parsedQuery: QueryParseMetadata = null;
 
   queryResult: string | null = null;
+  queryProfileData: QueryProfileData | null = null;
 
 
   private _queryMessage: StubQueryMessage = emptyQueryMessage();
-  queryPlanFullscreen: boolean = false;
 
   @Input()
   get queryMessage(): StubQueryMessage {
@@ -202,14 +174,26 @@ export class PlaygroundQueryPanelComponent implements AfterViewInit {
           this.queryResultsExpanded = true;
           this.queryPlanExpanded = false;
           this.configPanelExpanded = false;
-          this.queryResult = JSON.stringify(result, null, 3)
+          this.queryResult = result.data;
+          this.service.getQueryProfileData(result.queryId)
+            .subscribe(profile => {
+              this.queryProfileData = profile;
+              this.changeDetector.markForCheck();
+            })
           this.changeDetector.markForCheck();
         },
         error: err => {
           this.queryResultsExpanded = true;
           this.queryPlanExpanded = false;
           this.configPanelExpanded = false;
-          this.queryResult = JSON.stringify(err.error, null, 3);
+          if (!isNullOrUndefined(err.error)) {
+            // because the service configures the HTTP handler to treat
+            // the response as text, we need to reformat the error to make it readable
+            this.queryResult = JSON.stringify(JSON.parse(err.error), null, 3);
+          } else {
+            this.queryResult = JSON.stringify(err)
+          }
+
           this.changeDetector.markForCheck();
         }
       })

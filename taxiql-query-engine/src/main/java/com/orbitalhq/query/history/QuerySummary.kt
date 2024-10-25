@@ -268,10 +268,47 @@ interface PartialRemoteCallResponse : BasePartialRemoteCallResponse {
 
 }
 
+/**
+ * Wraps a RemoteCallResponse to make it implement PartialRemoteCallResponse
+ *
+ * Here's the rationale:
+ *  - PartialRemoteCallResponse is a view interface, so that JPA only returns
+ *    a subset of fields
+ *  - We use PartialRemoteCallResponse for building DTO's to send to the UI
+ *  - RemoteCallResponse must not implement PartialRemoteCallResponse or the JPA projection
+ *    returns the entire value, not the subset
+ *
+ *  So, we need a wrapper.
+ *  In practice this is only useful if we're trying to convert a RemoteCallResponse
+ *  to a PartialRemoteCallResponse without first persisting it.
+ *  This happens in the playground.
+ */
+data class WrapperPartialRemoteCallResponse(
+   @JsonIgnore
+   val remoteCallResponse: RemoteCallResponse
+) : PartialRemoteCallResponse {
+   override val responseId: String = remoteCallResponse.responseId
+   override val remoteCallId: String  = remoteCallResponse.remoteCallId
+   override val queryId: String = remoteCallResponse.queryId
+   override val address: String = remoteCallResponse.address
+   override val startTime: Instant = remoteCallResponse.startTime
+   override val durationMs: Long? = remoteCallResponse.durationMs
+   override val exchange: RemoteCallExchangeMetadata = remoteCallResponse.exchange
+   override val operation: QualifiedName = remoteCallResponse.operation
+   override val success: Boolean = remoteCallResponse.success
+   override val messageKind: ResponseMessageType = remoteCallResponse.messageKind
+   override val responseType: QualifiedName = remoteCallResponse.responseType
+
+}
 
 // Has to be an extension function, because Spring Data.
 fun PartialRemoteCallResponse.toDto(): RemoteCallResponseDto {
    return RemoteCallResponseDto(this)
+}
+
+fun RemoteCallResponse.toDto():RemoteCallResponseDto {
+   return WrapperPartialRemoteCallResponse(this)
+      .toDto()
 }
 
 /**

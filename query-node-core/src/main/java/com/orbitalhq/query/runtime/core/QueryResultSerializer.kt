@@ -1,6 +1,7 @@
 package com.orbitalhq.query.runtime.core
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.orbitalhq.models.RawObjectMapper
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedInstanceConverter
@@ -15,7 +16,19 @@ import com.orbitalhq.schemas.Type
 import org.springframework.http.MediaType
 import java.util.concurrent.atomic.AtomicInteger
 
-class RawResultsSerializer(queryOptions: QueryOptions) : QueryResultSerializer {
+class RawResultsSerializer(
+   queryOptions: QueryOptions,
+   /**
+    * Indicates if we should serialize this out directly
+    * as JSON, or leave that to the Spring layer.
+    * For legacy reasons, this was false, but
+    * to be consistent with other QueryResultSerializers,
+    * we should probably return the actual JSON.
+    */
+   private val returnJson: Boolean = false,
+   private val usePrettyPrinting: Boolean = false,
+   private val objectMapper: ObjectMapper = jacksonObjectMapper()
+) : QueryResultSerializer {
 
    // TODO : We create a new object mapper for each instance of this serializer,
    // as we mutate it.  Is that expensive? Not sure.  But we can't have a shared instance.
@@ -29,13 +42,25 @@ class RawResultsSerializer(queryOptions: QueryOptions) : QueryResultSerializer {
 
       // If we need to use a special mapper (eg., to exclude nulls),
       // then convert the item using the converter before returning it.
-      return if (queryOptionsConverter != null) {
+      val valueToSerialize = if (queryOptionsConverter != null) {
          queryOptionsConverter.convertValue(converted, Any::class.java)
       } else {
          converted
       }
+
+      return if(returnJson) {
+         if (usePrettyPrinting) {
+            objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(valueToSerialize)
+         } else {
+            objectMapper.writeValueAsString(valueToSerialize)
+         }
+
+      } else {
+         valueToSerialize
+      }
    }
 }
+
 
 class ModelFormatSpecSerializer(
    private val modelFormatSpec: ModelFormatSpec,

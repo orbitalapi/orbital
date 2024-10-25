@@ -71,10 +71,16 @@ class NoOpResultRowPersistenceStrategy : ResultRowPersistenceStrategy {
 }
 
 
-@OptIn(ExperimentalTime::class)
+/**
+ * Performs the mapping between observability / lineage events,
+ * and the format they're used to persist.
+ *
+ * Then offloads writing to a QueryObservabilityWriter, which will ultimately
+ * write them out
+ */
 open class DatabaseResultRowPersistenceStrategy(
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
-   private val persistenceQueue: HistoryPersistenceQueue?,
+   private val observabilityWriter: QueryObservabilityWriter?,
    private val persistRemoteResponses: Boolean,
    private val persistRemoteMetadata: Boolean,
    private val persistResults: Boolean
@@ -140,7 +146,7 @@ open class DatabaseResultRowPersistenceStrategy(
             if (it.queryResultRow == null) {
                logger.warn { "persistResults is configured to true, but no results were emitted"}
             } else {
-               persistenceQueue?.storeResultRow(it.queryResultRow)
+               observabilityWriter?.storeResultRow(it.queryResultRow)
             }
          }
          // Moved the persistence of remote calls into PersistingQueryEventConsumer, so that
@@ -148,7 +154,7 @@ open class DatabaseResultRowPersistenceStrategy(
 //         it.remoteCalls.forEach { remoteCallResponse -> persistenceQueue?.storeRemoteCallResponse(remoteCallResponse) }
          if (persistResults) {
             it.lineageRecords.forEach { lineageRecord ->
-               persistenceQueue?.storeLineageRecord(lineageRecord)
+               observabilityWriter?.storeLineageRecord(lineageRecord)
             }
          }
       }

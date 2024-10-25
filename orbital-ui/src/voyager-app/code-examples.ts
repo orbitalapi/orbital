@@ -3,6 +3,10 @@ import {simpleQuery} from "./code-examples/simple-query";
 import {KafkaApiWebsocket} from "./code-examples/kafka-api-websocket";
 import {KafkaDbApi} from "./code-examples/kafka-db-api";
 import {DatabaseApiEnrich} from "./code-examples/database-api-enrich";
+import {SimpleDataPolicy} from "./code-examples/policies/simple-data-policy";
+import {PolicyOnBaseType} from "./code-examples/policies/policy-on-base-type";
+import {RoleBasedKafka} from "./code-examples/policies/policy-on-kafka-stream";
+import {RelationshipBasedAccessControl} from "./code-examples/policies/relationship-based-access-control";
 
 export interface CodeSample {
   title: string;
@@ -181,6 +185,16 @@ export const ExampleGroups = [
       KafkaDbApi
     ]
   },
+  {
+    title: 'Data authorization',
+    snippets: [
+      SimpleDataPolicy,
+      PolicyOnBaseType,
+      RoleBasedKafka,
+      RelationshipBasedAccessControl
+
+    ]
+  }
   // {
   //   title: 'Mutations',
   //   snippets: StubExamples

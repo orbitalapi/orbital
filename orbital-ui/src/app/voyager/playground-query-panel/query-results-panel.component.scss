@@ -1,0 +1,74 @@
+@import "src/common";
+
+:host {
+  display: flex;
+  flex-direction: column;
+}
+
+.spacer {
+  flex-grow: 1;
+}
+::ng-deep {
+  tui-expand {
+
+    // Components like the results panel where we need the panel to grow
+    // to 100% of available space
+    &.flex-expand {
+      display: flex;
+      flex-grow: 1;
+      flex-direction: column;
+
+      .t-wrapper {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+      }
+    }
+
+    transform: unset !important;
+
+  }
+
+  .result-panel {
+    height: 100%;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+
+    app-json-viewer {
+      flex-grow: 1;
+      height: 100%;
+    }
+
+    .empty-results {
+      padding: 1rem;
+      height: 100%;
+      flex-grow: 1;
+      // For consistency, set to the colour of the editor background
+      background-color: $vscode-theme-code-background;
+    }
+  }
+}
+
+app-query-lineage.inline {
+  display: flex;
+  flex-direction: column;
+  ::ng-deep {
+    .chart-outer-container {
+      margin: 0 !important;
+      flex-grow: 1;
+      // Without a fixed static height, the diagram resizes continually.
+      // Flexbox overrides this anyway
+      height: 10px !important;
+    }
+  }
+}
+
+.fullscreen {
+  position: fixed;
+  top: 1rem;
+  left: 1rem;
+  width: calc(100% - 2rem);
+  height: calc(100% - 2rem);
+  z-index: 2000;
+}

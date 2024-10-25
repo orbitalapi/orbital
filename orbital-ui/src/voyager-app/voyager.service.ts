@@ -4,7 +4,13 @@ import {Observable} from 'rxjs';
 import {CompilationMessage, QualifiedName, Schema, Type} from 'src/app/services/schema';
 import {environment} from 'src/voyager-app/environments/environment';
 import {map} from 'rxjs/operators';
-import {QueryParseMetadata, QueryPlan, StubQueryMessage} from "../app/services/query.service";
+import {
+  convertRemoteCallTimestampsToDates,
+  QueryParseMetadata,
+  QueryPlan,
+  QueryProfileData,
+  StubQueryMessage
+} from "../app/services/query.service";
 import {QueryKind} from "../app/services/types.service";
 
 export enum SubscriptionResult {
@@ -41,13 +47,42 @@ export class VoyagerService {
     return this.httpClient.get<StubQueryMessage>(`${environment.serverUrl}/api/schema/share/${slug}`)
   }
 
-  runQuery(message: StubQueryMessage): Observable<any> {
-    return this.httpClient.post(`${environment.serverUrl}/api/query`, message)
+  runQuery(message: StubQueryMessage): Observable<QueryResponseWrapper> {
+    return this.httpClient.post(`${environment.serverUrl}/api/query`, message, {observe: 'response', responseType: 'text'})
+      .pipe(
+        map(response => {
+          console.log('hello?')
+          let data: string;
+          if (response.headers.get('content-type') == 'application/json') {
+            // If we get JSON back, reformat it so it looks pretty
+            data = JSON.stringify(JSON.parse(response.body), null, 3)
+          } else {
+            // Everything else, just take as-is
+            data = response.body
+          }
+          return {
+            data,
+            queryId: response.headers.get('x-query-id')
+          } as QueryResponseWrapper
+        })
+      )
+  }
+
+  getQueryProfileData(queryId: string): Observable<QueryProfileData> {
+    return this.httpClient.get<QueryProfileData>(`${environment.serverUrl}/api/query/${queryId}/profile`)
+      .pipe(map(profileData => {
+        return convertRemoteCallTimestampsToDates(profileData)
+      }));
   }
 
   parseQuery(query: StubQueryMessage): Observable<QueryParseMetadata> {
     return this.httpClient.post<QueryParseMetadata>(`${environment.serverUrl}/api/query/parse`, query);
   }
+}
+
+export interface QueryResponseWrapper {
+  data: any;
+  queryId: string
 }
 
 export interface SharedSchemaResponse {

@@ -2,6 +2,7 @@ package com.orbitalhq.cockpit.core.query
 
 import com.orbitalhq.history.chart.LineageSankeyViewBuilder
 import com.orbitalhq.models.OperationResult
+import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.QueryEvent
 import com.orbitalhq.query.QueryEventConsumer
@@ -43,11 +44,18 @@ class QueryVisualizer {
    }
 }
 
-private class QueryPlanEventHandler(private val sankeyViewBuilder: LineageSankeyViewBuilder) : QueryEventConsumer {
-   override fun handleEvent(event: QueryEvent) {
-      if (event is TaxiQlQueryResultEvent) {
-         sankeyViewBuilder.append(event.typedInstance)
+class QueryPlanEventHandler(val sankeyViewBuilder: LineageSankeyViewBuilder) : QueryEventConsumer {
+   companion object {
+      fun createFor(schema:Schema):QueryPlanEventHandler {
+         val builder = LineageSankeyViewBuilder(schema)
+         return QueryPlanEventHandler(builder)
       }
+   }
+
+   fun appendResult(instance: TypedInstance) {
+      sankeyViewBuilder.append(instance)
+   }
+   override fun handleEvent(event: QueryEvent) {
    }
 
    override fun recordResult(operation: OperationResult, queryId: String) {

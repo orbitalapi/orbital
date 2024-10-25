@@ -43,29 +43,17 @@
   }
 }
 
+app-query-results-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
 app-code-editor {
   height: 100%;
   flex-grow: 1;
 }
 
-.result-panel {
-  height: 100%;
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-
-  app-json-viewer {
-    flex-grow: 1;
-    height: 100%;
-  }
-
-  .empty-results {
-    height: 100%;
-    flex-grow: 1;
-    // For consistency, set to the colour of the editor background
-    background-color: $vscode-theme-code-background;
-  }
-}
 
 @include thin-splitter();
 
@@ -84,26 +72,8 @@ app-code-editor {
   flex-direction: row-reverse; // right align the content
 }
 
-app-query-lineage {
-  display: block;
-}
-
-.empty-results {
-  background-color: $slate-200;
-  padding: 1rem;
-}
-
 tui-accordion {
   height: 100%;
-}
-
-.fullscreen {
-  position: fixed;
-  top: 1rem;
-  left: calc(1rem + $sidenav-width);
-  width: calc(100% - $sidenav-width - 2rem);
-  height: calc(100% - 2rem);
-  z-index: 2000;
 }
 
 tui-chip[tuiAppearance][data-appearance='info']  {

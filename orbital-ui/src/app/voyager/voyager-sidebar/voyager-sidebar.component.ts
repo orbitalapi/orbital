@@ -14,27 +14,27 @@ import {SvgIconComponent} from "../../svg-icon/svg-icon.component";
   imports: [CommonModule, MatIconModule, TuiLinkModule, TuiHintModule, TuiBadgeModule, SvgIconComponent],
   template: `
     <button class="icon-toggle-button" (click)="toggleReadme()" [class.active]="showReadme"
-            [tuiHint]="'Toggle readme'">
+            tuiHint="Toggle readme" tuiHintDirection="right">
       <mat-icon svgIcon="book" />
     </button>
     <button class="icon-toggle-button" (click)="toggleQueryPanel()" [class.active]="showQueryPanel"
-            [tuiHint]="'Toggle query panel'">
+            tuiHint="Toggle query panel" tuiHintDirection="right">
       <mat-icon svgIcon="file-search"></mat-icon>
     </button>
     <button class="icon-toggle-button" (click)="toggleDiagram()" [class.active]="showDiagram"
-            [tuiHint]="'Toggle diagram'">
+            tuiHint="Toggle diagram" tuiHintDirection="right">
       <mat-icon svgIcon="route-square-2"></mat-icon>
     </button>
     <div class="spacer"></div>
     <div class="button-with-lang-badge"
             *ngIf="showCopyCodeButton"
-            (click)="copyDevCode.emit('JS')" [tuiHint]="'Copy as JS snippet'">
+            (click)="copyDevCode.emit('JS')" tuiHint="Copy as JS snippet" tuiHintDirection="right">
       <mat-icon svgIcon="code-circle"></mat-icon>
       <div class="lang-badge">JS</div>
     </div>
     <div class="button-with-lang-badge"
             *ngIf="showCopyCodeButton"
-            (click)="copyDevCode.emit('JSON')" [tuiHint]="'Copy as JSON'">
+            (click)="copyDevCode.emit('JSON')" tuiHint="Copy as JSON" tuiHintDirection="right">
       <mat-icon svgIcon="code-circle"></mat-icon>
       <div class="lang-badge">JSON</div>
     </div>
