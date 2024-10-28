@@ -447,6 +447,8 @@ terraform-deploy-prod-voyager:
       TRIVY_PASSWORD: "$CI_DEPENDENCY_PROXY_PASSWORD"
 #      TRIVY_AUTH_URL: "$CI_REGISTRY"
       FULL_IMAGE_NAME: $imageName
+      TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
+      TRIVY_JAVA_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-java-db
    script:
 #      - docker login -u $CI_DEPENDENCY_PROXY_USER -p $CI_DEPENDENCY_PROXY_PASSWORD $CI_DEPENDENCY_PROXY_SERVER
       - trivy --version
