@@ -205,8 +205,12 @@ class LineageSankeyViewBuilder(private val schema: Schema) {
             id = requestObjectNodeId
          )
       }
-      val requestParam = value.value as Map<String, TypeNamedInstance>
-      requestParam.values.forEach { paramValue ->
+      // TODO :
+      // The value can be an array. We need to handle that
+      val requestParam = value.value as Map<String,*>
+      requestParam.values
+         .filterIsInstance<TypeNamedInstance>()
+         .forEach { paramValue ->
          val sourceNode = lookupSource(paramValue.dataSourceId)
          if (sourceNode == null) {
             logger.warn { "Unable to find source node with id ${paramValue.dataSourceId}" }

@@ -4,6 +4,12 @@ export const KafkaDbApi: StubQueryMessageWithSlug = {
   "title": "Enrich Kafka with a DB Query",
   "slug": "kafka-db-api",
   "query": {
+    "layout": {
+      "showSchema": true,
+      "showDiagram": true,
+      "showReadme": false,
+      "showQuery": true
+    },
     readme: '',
     "schema": `import FilmId
 /**

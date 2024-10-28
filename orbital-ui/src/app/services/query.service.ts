@@ -588,6 +588,12 @@ export interface StubQueryMessage {
   stubs?: OperationStub[];
   expectedJson?: string | null;
   readme?: string;
+  layout?: {
+    showDiagram?: boolean;
+    showReadme?: boolean;
+    showQuery?: boolean;
+    showSchema?: boolean;
+  }
 }
 
 export function emptyQueryMessage(): StubQueryMessage {

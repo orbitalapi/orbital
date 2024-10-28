@@ -965,6 +965,14 @@ class TypedObjectFactory(
          }
 
          else -> queryForFieldValue(field, fieldType, attributeName)
+      }.let { value ->
+         // If there was a format provided (ie., a date format), and it doesn't match,
+         // apply it now
+         if (value is TypedValue && value.format != field.format) {
+            value.copy(format = field.format)
+         } else {
+            value
+         }
       }
    }
 

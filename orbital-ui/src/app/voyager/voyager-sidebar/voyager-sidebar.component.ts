@@ -15,27 +15,32 @@ import {SvgIconComponent} from "../../svg-icon/svg-icon.component";
   template: `
     <button class="icon-toggle-button" (click)="toggleReadme()" [class.active]="showReadme"
             tuiHint="Toggle readme" tuiHintDirection="right">
-      <mat-icon svgIcon="book" />
+      <app-svg-icon tabler="book" width="32" height="32" />
     </button>
+    <button class="icon-toggle-button" (click)="toggleSchema()" [class.active]="showSchema"
+            tuiHint="Toggle schema panel" tuiHintDirection="right">
+      <app-svg-icon tabler="code" width="32" height="32" />
+    </button>
+
     <button class="icon-toggle-button" (click)="toggleQueryPanel()" [class.active]="showQueryPanel"
             tuiHint="Toggle query panel" tuiHintDirection="right">
-      <mat-icon svgIcon="file-search"></mat-icon>
+      <app-svg-icon tabler="file-search" width="32" height="32" />
     </button>
     <button class="icon-toggle-button" (click)="toggleDiagram()" [class.active]="showDiagram"
             tuiHint="Toggle diagram" tuiHintDirection="right">
-      <mat-icon svgIcon="route-square-2"></mat-icon>
+      <app-svg-icon tabler="route-square-2" width="32" height="32" />
     </button>
     <div class="spacer"></div>
     <div class="button-with-lang-badge"
             *ngIf="showCopyCodeButton"
             (click)="copyDevCode.emit('JS')" tuiHint="Copy as JS snippet" tuiHintDirection="right">
-      <mat-icon svgIcon="code-circle"></mat-icon>
+      <app-svg-icon tabler="code-circle" width="32" height="32" />
       <div class="lang-badge">JS</div>
     </div>
     <div class="button-with-lang-badge"
             *ngIf="showCopyCodeButton"
             (click)="copyDevCode.emit('JSON')" tuiHint="Copy as JSON" tuiHintDirection="right">
-      <mat-icon svgIcon="code-circle"></mat-icon>
+      <app-svg-icon tabler="code-circle" width="32" height="32" />
       <div class="lang-badge">JSON</div>
     </div>
     <a tuiLink href="https://github.com/orbitalapi/orbital" target="_blank"
@@ -79,6 +84,12 @@ export class VoyagerSidebarComponent {
   @Output()
   showReadmeChange = new EventEmitter<boolean>();
 
+  @Input()
+  showSchema: boolean;
+
+  @Output()
+  showSchemaChange = new EventEmitter<boolean>();
+
   @Output()
   copyDevCode = new EventEmitter<SnippetType>()
 
@@ -99,6 +110,10 @@ export class VoyagerSidebarComponent {
   toggleDiagram() {
     this.showDiagram = !this.showDiagram;
     this.showDiagramChange.emit(this.showDiagram);
+  }
+  toggleSchema() {
+    this.showSchema = !this.showSchema
+    this.showSchemaChange.emit(this.showSchema);
   }
   toggleQueryPanel() {
     this.showQueryPanel = !this.showQueryPanel;

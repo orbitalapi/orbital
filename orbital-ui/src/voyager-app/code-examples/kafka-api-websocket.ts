@@ -4,6 +4,12 @@ export const KafkaApiWebsocket: StubQueryMessageWithSlug = {
   "title": "Enrich Kafka and publish over websocket",
   "slug": "kafka-api-websocket",
   "query": {
+    "layout": {
+      "showSchema": true,
+      "showDiagram": true,
+      "showReadme": false,
+      "showQuery": true
+    },
     "schema": `// This example shows:
 //
 // * Pulling data from a stream (such as a Kafka topic)
