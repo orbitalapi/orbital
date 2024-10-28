@@ -13,8 +13,8 @@ import org.springframework.context.annotation.Configuration
 @Configuration
 class HazelcastConnectorConfig {
    @Bean
-   fun hazelcastConnectionsManager(connectors: SourceLoaderConnectorsRegistry, schemaStore: SchemaStore, orbitalHazelcastInstance: HazelcastInstance): HazelcastConnectionsManager {
-      return HazelcastConnectionsManager(connectors, schemaStore, orbitalHazelcastInstance)
+   fun hazelcastConnectionsManager(connectors: SourceLoaderConnectorsRegistry, orbitalHazelcastInstance: HazelcastInstance): HazelcastConnectionsManager {
+      return HazelcastConnectionsManager(connectors, orbitalHazelcastInstance)
 
    }
    @Bean

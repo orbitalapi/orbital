@@ -11,6 +11,9 @@ import com.hazelcast.core.Hazelcast
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.spring.context.SpringManagedContext
 import com.hazelcast.topic.TopicOverloadPolicy
+import com.orbitalhq.connectors.hazelcast.HazelcastBuilder
+import com.orbitalhq.connectors.hazelcast.OperationParamCompactSerializer
+import com.orbitalhq.connectors.hazelcast.QualifiedNameCompactSerializer
 import com.orbitalhq.pipelines.jet.api.transport.hazelcast.HazelcastTopicSinkSpec
 import com.orbitalhq.pipelines.jet.streams.StreamStateManagerHazelcastConfig
 import com.orbitalhq.pipelines.jet.streams.StreamStatusMapStore
@@ -39,6 +42,13 @@ class EmbeddedHazelcastInstanceProvider {
         licenseKeyFn().let { licenseKey ->
             config.licenseKey = licenseKey
         }
+        val serializationConfig = config.serializationConfig
+        serializationConfig.compactSerializationConfig.addSerializer(QualifiedNameCompactSerializer)
+        serializationConfig.compactSerializationConfig.addSerializer(OperationParamCompactSerializer)
+        HazelcastBuilder.customSerializers().forEach { serializerConfig ->
+            serializationConfig.addSerializerConfig(serializerConfig)
+        }
+            //.addSerializerConfig(HazelcastBuilder.serializationConfig(schemaStore))
         return config
     }
 
