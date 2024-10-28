@@ -9,22 +9,21 @@ import com.hazelcast.config.SerializationConfig
 import com.hazelcast.config.SerializerConfig
 import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
-import com.orbitalhq.schema.consumer.SchemaStore
 
 object HazelcastBuilder {
 
-   private fun customSerializers(schemaStore: SchemaStore): List<SerializerConfig> {
+   fun customSerializers(): List<SerializerConfig> {
       return listOf(
          SerializerConfig().apply {
-            implementation = ExpiringTypedInstanceCustomSerializer(schemaStore)
+            implementation = ExpiringTypedInstanceCustomSerializer()
             typeClass = CachedTypedInstanceList::class.java
          },
       )
    }
 
-   fun serializationConfig(schemaStore: SchemaStore): SerializationConfig {
+   fun serializationConfig(): SerializationConfig {
       return SerializationConfig().apply {
-         customSerializers(schemaStore).forEach {
+         customSerializers().forEach {
             addSerializerConfig(it)
          }
          compactSerializationConfig
@@ -36,21 +35,20 @@ object HazelcastBuilder {
 
    fun build(
       config: HazelcastConfiguration,
-      instanceNameSuffix: String = "",
-      schemaStore: SchemaStore
+      instanceNameSuffix: String = ""
    ): HazelcastInstance {
      return  when {
          config.xmlConfig != null ->  {
            val xmlConfig =  XmlClientConfigBuilder(config.xmlConfigFilePath())
             HazelcastClient.newHazelcastClient(xmlConfig.build().apply {
-               serializationConfig = serializationConfig(schemaStore)
+               serializationConfig = serializationConfig()
             })
          }
 
          config.yamlConfig != null -> {
             val yamlConfig = YamlClientConfigBuilder(config.yamlConfigFilePath())
             HazelcastClient.newHazelcastClient(yamlConfig.build().apply {
-               serializationConfig = serializationConfig(schemaStore)
+               serializationConfig = serializationConfig()
             })
          }
 
@@ -59,7 +57,7 @@ object HazelcastBuilder {
                config.hazelcastClusterName()?.let {
                   clusterName = it
                }
-               serializationConfig = serializationConfig(schemaStore)
+               serializationConfig = serializationConfig()
 
                config.hazelcastClientName()?.let {
                   instanceName = "${it}$instanceNameSuffix"

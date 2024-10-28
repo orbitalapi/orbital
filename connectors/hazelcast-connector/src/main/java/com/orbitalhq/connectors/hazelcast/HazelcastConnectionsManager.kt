@@ -4,14 +4,13 @@ import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConfigurationType
-import com.orbitalhq.schema.consumer.SchemaStore
 import java.util.concurrent.ConcurrentHashMap
 
 object HazelcastConnections {
    const val QUERY_CACHE = "_query"
 }
 
-class HazelcastConnectionsManager(private val connectors: SourceLoaderConnectorsRegistry, private val schemaStore: SchemaStore, private val orbitalHazelcastInstance: HazelcastInstance) : HazelcastInstanceProvider {
+class HazelcastConnectionsManager(private val connectors: SourceLoaderConnectorsRegistry, private val orbitalHazelcastInstance: HazelcastInstance) : HazelcastInstanceProvider {
    private val hazelcastConnections = ConcurrentHashMap<HazelcastConfiguration, HazelcastInstance>()
 
    override fun hazelcastConnection(connectionName: String?): Pair<HazelcastInstance, HazelcastConfiguration> {
@@ -24,8 +23,7 @@ class HazelcastConnectionsManager(private val connectors: SourceLoaderConnectors
             } else {
                HazelcastBuilder.build(
                   defaultHazelcastConnection,
-                  HazelcastConnections.QUERY_CACHE,
-                  schemaStore
+                  HazelcastConnections.QUERY_CACHE
                )
             }
          }
@@ -37,7 +35,7 @@ class HazelcastConnectionsManager(private val connectors: SourceLoaderConnectors
             if (connectionConfig.configType == HazelcastConfigurationType.Embedded) {
                orbitalHazelcastInstance
             } else {
-               HazelcastBuilder.build(connectionConfig, HazelcastConnections.QUERY_CACHE, schemaStore)
+               HazelcastBuilder.build(connectionConfig, HazelcastConnections.QUERY_CACHE)
             }
          }
          hzInstance to connectionConfig

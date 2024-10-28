@@ -51,7 +51,7 @@ class HazelcastCacheProviderTest : DescribeSpec({
          clock = ManualClock(Instant.now())
          hazelcast = TestHazelcastInstanceFactory()
             .newHazelcastInstance(Config().apply {
-               serializationConfig = HazelcastBuilder.serializationConfig(schemaStore)
+               serializationConfig = HazelcastBuilder.serializationConfig()
             })
 
          cacheProvider = HazelcastCachingInvokerProvider(

@@ -135,7 +135,10 @@ class HazelcastMapCachingProvider(
          // The downside is that there will be more cache-misses (this isn't atomic),
          // but that's an acceptable trade-off,
          // as the near-cache values do not incur (de)/serialization costs
-         val typedInstance = map.getOrPut(key) { invokeLoader(key, loader, resultsFromLoader) }!!
+         val typedInstance = map.getOrPut(key) {
+            val cachedTypedInstanceList = invokeLoader(key, loader, resultsFromLoader)
+            cachedTypedInstanceList
+         }!!
          sink.success(typedInstance)
       }.map { typedInstance ->
 
@@ -149,17 +152,18 @@ class HazelcastMapCachingProvider(
       }
          .flatMapIterable { cachedTypedInstances ->
 
-            if (resultsFromLoader.isNotEmpty()) {
-               // If the resultsFromLoader are populated, it means this thread
-               // was the "writer", populating the cache.
-               // Return the results directly from the upstream invoker,
-               // so that values like lineage / dataSources remain populated correctly
-               resultsFromLoader
-            } else {
+            resultsFromLoader.ifEmpty {
                // ... otherwise we fetched from the cache.
                // This means that we should update the datasource so it shows
                // the cache call and notify the eventDispatcher
-               val typedInstances = cachedTypedInstances.instances
+               val typedInstances = cachedTypedInstances.instances.map { typedInstanceByteArray ->
+                  SerializableTypedInstance.fromBytes(typedInstanceByteArray)
+                     .toTypedInstance(
+                        schemaStore.schema(),
+                        dataSource = cachedTypedInstances.dataSource
+                     )
+
+               }
 
                require(cachedTypedInstances.dataSource is CachedOperationResultReference) { "Expected a CachedOperationResultReference, but found ${cachedTypedInstances.dataSource::class.simpleName}" }
                val operationResult =
@@ -193,11 +197,11 @@ class HazelcastMapCachingProvider(
          .collectList()
          .block(Duration.ofSeconds(60))!!
 
-      val (expirationTime, ttl) = calculateTtlFromResults(values, defaultTTL, clock)
+      val (expirationTime, _) = calculateTtlFromResults(values, defaultTTL, clock)
       val typedInstances = values.map { it.first }
       val operationResultReference: OperationResultReference? = collateDataSources(typedInstances)
       val cachedTypedInstanceList =
-         CachedTypedInstanceList(expirationTime, values.map { it.first }, operationResultReference)
+         CachedTypedInstanceList(expirationTime, values.map { it.first.toSerializable().toBytes() }, operationResultReference)
 
 
       // We can't directly set the TTL here, so we queue an instruction to set the ttl in a bit
@@ -285,24 +289,24 @@ class HazelcastMapCachingProvider(
  */
 data class CachedTypedInstanceList(
    val expiresAt: Long?,
-   val instances: List<TypedInstance>,
+   val instances: List<ByteArray>,
    val dataSource: DataSource
 ) {
    companion object {
       // Started out using hashcode, but was breaking between local compilation rounds - not sure why
-      val SERIALIZATION_ID = 10_000
+      const val SERIALIZATION_ID = 10_000
    }
 
    constructor(
       expiresAt: Instant?,
-      value: List<TypedInstance>,
+      value: List<ByteArray>,
       dataSource: OperationResultReference?
    ) : this(expiresAt?.toEpochMilli(), value, dataSource ?: UndefinedSource)
 
    fun isExpired(clock: Clock): Boolean {
-      return when {
-         expiresAt == null -> false
-         else -> expiresAt < clock.instant().toEpochMilli()
+      return when (expiresAt) {
+          null -> false
+          else -> expiresAt < clock.instant().toEpochMilli()
       }
    }
 }
@@ -340,10 +344,14 @@ object QualifiedNameCompactSerializer : CompactSerializer<QualifiedName> {
    }
 }
 
-class ExpiringTypedInstanceCustomSerializer(
-   private val schemaStore: SchemaStore,
-   private val clock: Clock = Clock.systemUTC(),
-) : StreamSerializer<CachedTypedInstanceList> {
+
+/***
+ * Do not attempt to inject SchemaStore as when DistributedSchemaStoreClient (injected when vyne.schema.server.clustered=true)
+ * which can be injected into IMap context (DistributedSchemaStoreClient has two IMap members which seems to be causing trouble for HZ run-time)
+ * and we end up Hazelcast Serialisation errors when this is executed in an Orbital HazelcastInstance object (strangely it works fine with a HazelcastClientInstance)
+ */
+class ExpiringTypedInstanceCustomSerializer : StreamSerializer<CachedTypedInstanceList> {
+   private val clock: Clock = Clock.systemUTC()
    companion object {
       private val logger = KotlinLogging.logger {}
    }
@@ -367,11 +375,8 @@ class ExpiringTypedInstanceCustomSerializer(
          }
 
          out.writeInt(value.instances.count())
-         value.instances.forEach { typedInstance ->
-            out.writeByteArray(
-               typedInstance.toSerializable()
-                  .toBytes()
-            )
+         value.instances.forEach { typedInstanceByteArray ->
+            out.writeByteArray(typedInstanceByteArray)
          }
       }
 
@@ -392,22 +397,15 @@ class ExpiringTypedInstanceCustomSerializer(
          )
       } else UndefinedSource
 
-      val typedInstances = mutableListOf<TypedInstance>()
+      val typedInstanceByteArray = mutableListOf<ByteArray>()
       StrategyPerformanceProfiler.profiled("Hazelcast deserialize") {
          val listSize = input.readInt()
          for (i in 0 until listSize) {
             val bytes = input.readByteArray() ?: error("Expected to find a byteArray at index $i, but value was null")
-            val typedInstance = SerializableTypedInstance.fromBytes(bytes)
-               .toTypedInstance(
-                  schemaStore.schema(),
-                  dataSource = dataSource
-               ) //we update the data source before returning to the consumer
-            typedInstances.add(typedInstance)
+            typedInstanceByteArray.add(bytes)
          }
       }
-
-
-      return CachedTypedInstanceList(expirationDate, typedInstances, dataSource)
+      return CachedTypedInstanceList(expirationDate, typedInstanceByteArray, dataSource)
    }
 }
 
