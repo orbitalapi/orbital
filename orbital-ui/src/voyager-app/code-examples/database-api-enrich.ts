@@ -1,16 +1,29 @@
 import {StubQueryMessageWithSlug} from "../../app/services/query.service";
 
 export const DatabaseApiEnrich: StubQueryMessageWithSlug = {
-  "title": "Multiple APIs and a DB",
+  "title": "Combining APIs and a Database",
   "slug": "database-enrich-against-api",
   "query": {
+    "layout": {
+      "showSchema": true,
+      "showDiagram": false,
+      "showReadme": true,
+      "showQuery": true
+    },
     "schema": `import MovieId
 
+// A model describing our movies.
+// It matches the table schema from our database.
 model Movie {
   id : MovieId inherits Int
   releaseYear: ReleaseYear inherits Int
   title : Title inherits String
 }
+
+// A database containing our movies data.
+// As this is a playground, we've left out the
+// db connection details, and
+// responses have been stubbed out in the stubs panel.
 service MoviesDatabase {
   table movies : Movie[]
 }
@@ -19,6 +32,11 @@ closed model FilmReview {
   review: ReviewText inherits String
   score: ReviewScore inherits Decimal
 }
+
+// A REST API returning film reviews.
+// As this is a playground, we've left out the
+// API connection details, and
+// responses have been stubbed out in the stubs panel.
 service ReviewsApi {
   operation getFilmReview(MovieId):FilmReview
 }
@@ -29,6 +47,10 @@ closed model CinemaListing {
   cinema: CinemaName inherits String
   upcomingScreenings : ScreeningDate[]
 }
+// A rest API returning movie screening times.
+// As this is a playground, we've left out the
+// API connection details, and
+// responses have been stubbed out in the stubs panel.
 service ShowListingsApi {
   operation getCinemaListings(MovieId):CinemaListing
 }`,
@@ -160,16 +182,17 @@ service ShowListingsApi {
         ]
       }
     ],
-    "query": `import CinemaListing
-import ScreeningDate
-import ReviewScore
-import Movie
-find { Movie[]( ReleaseYear > 2020) } as {
-    title,
-    releaseYear
-    review: ReviewScore
-    upcomingListings: CinemaListing
-}[]`,
-    "parameters": {}
+    "query": `find { Movie[](ReleaseYear > 2020) } as {
+   title, // shorthand to include the fields from the original response
+   releaseYear, // shorthand to include the fields from the original response
+   // Adding fields by type.
+   // TaxiQL engines will find the appropriate data source, and
+   // fetch the data
+   review: ReviewScore,
+   upcomingListings: CinemaListing
+}[]
+`,
+    "parameters": {},
+    "readme": "## Enriching database info with API calls\nThis example shows fetching data from a database\nof movies, and enriching it with data from two\nAPIs:\n* An API of upcoming screening times\n* An API of film reviews\n\n\n> [!TIP]\n> We've hidden the standard diagram by default in this example. <br />\n> You can turn it back on in the sidebar\n\nHere's a digram of our services, and how\nthe data relates:\n\n```components\n{\n\"showTypeToolbar\" : false,\n\"members\" : {\n    \"MoviesDatabase\" : {},\n    \"Movie\" : {},\n    \"FilmReview\" : {},\n    \"ReviewsApi\" : {},\n    \"CinemaListing\" : {},\n    \"ShowListingsApi\" : {}\n\n}\n}\n```\n\nLet's start by asking for data from our database.\n\n> [!TIP]\n> These queries are runnable - click to execute\n> them in the query panel.\n\n```taxiql\nfind { Movie[] }\n```\n\n## Adding criteria\n\n> [!TIP]\n> Our database responses are stubbed, so adding this criteria doesn't affect\n> the output in this playground - but we wanted to show you the syntax\n\n```taxiql\nfind { Movie[](ReleaseYear > 2020) }\n```\n\n## Enrichg with API calls\nTaxiQL is a declarative language - we ask for the data we \nwant, and leave it to the query engine to work out how to \nconnect the data sources.\n\nTo ask for data enriched from API sources, we simply restructure the \nresponse (called a \"Projection\"), adding in the fields we want\n\n```taxiql\nfind { Movie[](ReleaseYear > 2020) } as {\n   title, // shorthand to include the fields from the original response\n   releaseYear, // shorthand to include the fields from the original response\n   // Adding fields by type.\n   // TaxiQL engines will find the appropriate data source, and\n   // fetch the data\n   review: ReviewScore, \n   upcomingListings: CinemaListing\n}[]\n```\n\n> [!TIP]\n> After running this query, check out the Requests panel\n> to see the actual requests that were performed, and the Lineage\n> diagram that shows where data was sourced from\n"
   }
 }

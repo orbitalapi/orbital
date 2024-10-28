@@ -45,7 +45,8 @@ import {PlaygroundSchemaService} from "./playground-schema-service";
       ></playground-toolbar>
       <div class="container">
         <app-voyager-sidebar [(showDiagram)]="showDiagram" [(showQueryPanel)]="showQueryPanel"
-                             [(showReadme)]="showReadme"
+                             [(showReadme)]="showReadme" [(showSchema)]="showSchema"
+
                              (copyDevCode)="copyDevCode($event)"/>
         <as-split direction="horizontal" unit="percent" gutterSize="1" useTransition="true">
           <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
@@ -55,9 +56,9 @@ import {PlaygroundSchemaService} from "./playground-schema-service";
             <app-readme-panel [(markdown)]="queryMessage.readme"
                               (onRunQuery)="onRunQueryHandler($event)"></app-readme-panel>
           </as-split-area>
-          <as-split-area [size]="35" [order]="1">
+          <as-split-area  [visible]="showSchema"  [size]="35" [order]="1">
             <div class="panel-with-header">
-              <app-panel-header title="Schema" tablerIcon="book2"></app-panel-header>
+              <app-panel-header title="Schema" tablerIcon="code"></app-panel-header>
               <app-code-editor
                 class="flex-grow"
                 [content]="content"
@@ -98,6 +99,7 @@ export class VoyagerAppComponent implements OnInit {
   showDiagram: boolean = true;
   showQueryPanel: boolean = true;
   showReadme: boolean = true;
+  showSchema: boolean = true;
 
   queryMessage: StubQueryMessage;
 
@@ -236,8 +238,17 @@ export class VoyagerAppComponent implements OnInit {
   setCodeFromExample(queryMessage: StubQueryMessage) {
     this.queryMessage = JSON.parse(JSON.stringify(queryMessage))
     this.setCode(queryMessage.schema)
-    this.showQueryPanel = !isNullOrUndefined(queryMessage.query) && queryMessage.query.length > 0;
-    this.showReadme = !isNullOrUndefined(queryMessage.readme) && queryMessage.readme.length > 0;
+
+    this.showQueryPanel = queryMessage.layout?.showQuery ?? (!isNullOrUndefined(queryMessage.query) && queryMessage.query.length > 0);
+    this.showReadme = queryMessage.layout?.showReadme ?? (!isNullOrUndefined(queryMessage.readme) && queryMessage.readme.length > 0);
+
+    // We used to honour whatever the user had set before (ie., current state) for these,
+    // but it means that if the diagram or schema were turned off currently, and then
+    // swapping to an example that doesn't have a query or readme, then the user is left with
+    // a blank canvas.
+    // So, if we haven't explicitly configured the visibility of these two, default to showing them,
+    this.showDiagram = queryMessage.layout?.showDiagram ?? true;
+    this.showSchema = queryMessage.layout?.showSchema ?? true;
   }
 
 
@@ -252,8 +263,9 @@ export class VoyagerAppComponent implements OnInit {
   }
 
   onRunQueryHandler($event: string) {
-    this.queryMessage.query = $event
-    this.setCodeFromExample(this.queryMessage)
+    this.queryMessage = { ...this.queryMessage, query: $event };
+    this.changeDetectorRef.detectChanges();
+    // this.setCodeFromExample(this.queryMessage)
     this.childComponent.runQuery()
   }
 

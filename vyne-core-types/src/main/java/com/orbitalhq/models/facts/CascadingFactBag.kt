@@ -164,7 +164,7 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
                secondary.getFactOrNull(type, strategy, spec) as TypedCollection?,
                type,
                permitNull = true
-            )!!
+            )
          }
 
          CascadeApproach.Cascade -> {

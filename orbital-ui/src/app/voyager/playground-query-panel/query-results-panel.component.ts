@@ -34,7 +34,7 @@ import {LineageDisplayModule} from "../../lineage-display/lineage-display.module
       <tui-segmented size="s" [(activeItemIndex)]="viewModeActiveIndex" class="dark" *ngIf="queryResult"
                      (click)="$event.stopImmediatePropagation()">
         <button [class.active]="viewModeActiveIndex === 0">Results</button>
-        <button [class.active]="viewModeActiveIndex === 1">Solution Diagram</button>
+        <button [class.active]="viewModeActiveIndex === 1">Lineage Diagram</button>
         <button [class.active]="viewModeActiveIndex === 2">Requests</button>
       </tui-segmented>
     </app-panel-header>

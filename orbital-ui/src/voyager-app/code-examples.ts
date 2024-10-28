@@ -1,5 +1,4 @@
 import {StubQueryMessageWithSlug} from "../app/services/query.service";
-import {simpleQuery} from "./code-examples/simple-query";
 import {KafkaApiWebsocket} from "./code-examples/kafka-api-websocket";
 import {KafkaDbApi} from "./code-examples/kafka-db-api";
 import {DatabaseApiEnrich} from "./code-examples/database-api-enrich";
@@ -7,6 +6,10 @@ import {SimpleDataPolicy} from "./code-examples/policies/simple-data-policy";
 import {PolicyOnBaseType} from "./code-examples/policies/policy-on-base-type";
 import {RoleBasedKafka} from "./code-examples/policies/policy-on-kafka-stream";
 import {RelationshipBasedAccessControl} from "./code-examples/policies/relationship-based-access-control";
+import {BasicCsvReading} from "./code-examples/etl/basic-csv-reading";
+import {NormalizingCsv} from "./code-examples/etl/normalizing-csv";
+import {EnrichingCsvData} from "./code-examples/etl/enriching-csv";
+import {AggregateAndStoreCsv} from "./code-examples/etl/aggregate-and-store-csv";
 
 export interface CodeSample {
   title: string;
@@ -19,21 +22,23 @@ const HelloWorld: CodeSample = {
   title: 'Hello, universe',
   slug: 'hello-universe',
   code: `/**
-Welcome to Voyager - a microservices diagramming tool.
+Welcome to Taxi Playground!
 
-Easily create diagrams that visualize the connections between services and data sources in your stack
+Taxi is a powerful language designed for schema definition and data querying.
+Use it to express and explore relationships between your data sources.
 
-How it works:
+In this interactive panel, you can define schemas that describe your
+ data sources and their contracts - whether they're APIs, databases,
+ or other services.
 
-- Describe your services and model
+ As you write, the visualization updates in real-time,
+ illustrating the connections between your services and data structures.
 
-That's it! Links between services will automatically be made where types are shared.
+Take our example: The Reviews service accepts a FilmId as input and returns a FilmReview.
+Notice how the diagram automatically shows the relationship between these components,
+making it easy to understand the data flow.
 
-e.g. In the example below, we have a Reviews service which accepts an Input of FilmId and returns a FilmReview.
-
-Also described is the FilmReview model, and we can see that a connection has been added between the two objects in the diagram.
-
-We'd love to hear what you think. Head over to our GitHub repo to report issues, or jump on our Slack channel to chat.
+Want to get involved? Join our community on Slack to chat with other users, or visit our GitHub repository to report issues and contribute. We value your feedback!
 */
 
 model Film {
@@ -192,7 +197,15 @@ export const ExampleGroups = [
       PolicyOnBaseType,
       RoleBasedKafka,
       RelationshipBasedAccessControl
-
+    ]
+  },
+  {
+    title: "Transforming data",
+    snippets: [
+      BasicCsvReading,
+      NormalizingCsv,
+      EnrichingCsvData,
+      AggregateAndStoreCsv
     ]
   }
   // {
