@@ -17,7 +17,7 @@ class QueryWithGivenTest {
             title : FilmTitle inherits String
          }
          service Films {
-            operation findFilm(FilmId):Film[]
+            operation findFilm(FilmId):Film[](...)
          }
          """.trimIndent()
       )
