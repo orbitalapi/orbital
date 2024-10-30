@@ -25,6 +25,7 @@ object MongoConnector {
       const val BatchSizeAttributeName = "batchSize"
       const val batchDurationAttributeName = "batchDuration"
       val ObjectIdAnnotationName = "${namespace}.ObjectId".fqn()
+      val UniqueIndexAnnotationName = "${namespace}.UniqueIndex".fqn()
       data class MongoOperation(val connectionName: String) : AnnotationWrapper {
          companion object {
             val NAME = "$namespace.MongoService"
@@ -76,7 +77,7 @@ object MongoConnector {
       val mongoOperationName = QualifiedName.from(MongoOperation.NAME)
       val collectionName = QualifiedName.from(Collection.NAME)
 
-      val imports: String = listOf(MongoOperation.NAME, Collection.NAME, ObjectIdAnnotationName).joinToString("\n") { "import $it" }
+      val imports: String = listOf(MongoOperation.NAME, Collection.NAME, ObjectIdAnnotationName, UniqueIndexAnnotationName).joinToString("\n") { "import $it" }
 
       data class BatchAttribute(val batchSize: Int, val batchDurationInMillis: Long)
    }
@@ -95,6 +96,7 @@ namespace ${Annotations.namespace} {
         batchDuration: $BatchDurationAttribute?
    }
    annotation ObjectId {}
+   annotation UniqueIndex {}
   
    annotation ${Annotations.collectionName.typeName} {
       connection : ConnectionName
