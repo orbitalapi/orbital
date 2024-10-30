@@ -18,7 +18,7 @@ class QueryWithScopedParamsTest {
             filmId : FilmId inherits Int
          }
          service Films {
-            operation findFilm(FilmId):Film
+            operation findFilm(FilmId):Film(...)
          }
       """.trimIndent()
       )

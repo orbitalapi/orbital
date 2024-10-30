@@ -384,6 +384,9 @@ data class OperationContract(
       return this.constraints.map { it.satisfiesRequestedConstraint(requiredConstraint) }
          .reduce { acc, constraintComparison -> acc + constraintComparison }
    }
+   fun satisfiesAll(constraints: List<Constraint>): Boolean {
+      return constraints.all { satisfies(it).satisfiesRequestedConstraint }
+   }
 }
 
 

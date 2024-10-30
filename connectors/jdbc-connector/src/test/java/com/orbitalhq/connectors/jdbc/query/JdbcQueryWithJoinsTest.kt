@@ -137,7 +137,7 @@ class JdbcQueryWithJoinsTest {
    """.trimIndent()
 
    @Test
-   fun lendingCrowd(): Unit = runBlocking {
+   fun `joins in nested projection fields`(): Unit = runBlocking {
       loanRepository.saveAll(mutableListOf(
          Loan(loanId = "loan_1", loanApplicationId = "1"),
          Loan(loanId = "loan_2", loanApplicationId = "2"),

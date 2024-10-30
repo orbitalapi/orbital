@@ -59,7 +59,8 @@ class FunctionProjectionTest {
       val (vyne, stub) = testVyne(schema)
       stub.addResponse("getAll", vyne.parseJson("Movie[]", movieJson))
       val results = vyne.query(
-         """find { Movie[] } as {
+         """
+            find { Movie[] } as {
             // Selecting the first person as the star
              starring : first(Person[]) as {
                starsName : PersonName

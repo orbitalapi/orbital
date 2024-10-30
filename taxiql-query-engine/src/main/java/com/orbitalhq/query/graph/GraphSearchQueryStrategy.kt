@@ -167,8 +167,21 @@ class GraphSearchQueryStrategy(
          return QueryStrategyResult.searchFailed()
       }
 
+      // If the search target specifies a constraint,
+      // we can only consider the operations that advertise they satisfy that constraint.
+      val invocationConstraintsForSearch = if (firstTarget.dataConstraints.isNotEmpty()) {
+         val operationsReturningType = context.schema.remoteOperations
+            .filter { it.returnType.isAssignableTo(firstTarget.type) }
+         val operationsNotSatisfyingContract = operationsReturningType.filterNot { operation ->
+            operation.contract.satisfiesAll(firstTarget.dataConstraints)
+         }.map { SearchGraphExclusion("Does not satisfy requested contract", it) }
+         invocationConstraints.copy(excludedOperations = invocationConstraints.excludedOperations + operationsNotSatisfyingContract)
+      } else {
+         invocationConstraints
+      }
+
       // search from every fact in the context
-      return find(targetElement, context, invocationConstraints)
+      return find(targetElement, context, invocationConstraintsForSearch)
    }
 
 

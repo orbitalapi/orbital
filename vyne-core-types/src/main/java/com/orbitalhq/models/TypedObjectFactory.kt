@@ -897,7 +897,7 @@ class TypedObjectFactory(
          }
          // Not a map, so could be an object, try the value reader - but this is an expensive
          // call, so we defer to last-ish
-         valueReader.contains(value, attributeName) -> readWithValueReader(attributeName, fieldType, field.format)
+         valueReader.contains(value, attributeName) && field.constraints.isNullOrEmpty() -> readWithValueReader(attributeName, fieldType, field.format)
 
          // Support embedded formats.
          // Eg: A field in a JSON message that contains an XML payload.
@@ -966,6 +966,15 @@ class TypedObjectFactory(
 
          else -> queryForFieldValue(field, fieldType, attributeName)
       }.let { value ->
+         if (!field.constraints.isNullOrEmpty()) {
+            verifyValueSatisfiesConstraints(value, field, type, attributeName, )
+         } else {
+            value
+         }
+      }
+
+
+         .let { value ->
          // If there was a format provided (ie., a date format), and it doesn't match,
          // apply it now
          if (value is TypedValue && value.format != field.format) {
@@ -973,6 +982,25 @@ class TypedObjectFactory(
          } else {
             value
          }
+      }
+   }
+
+   /**
+    * A field was defined with a constraint.
+    * We need to ensure that the value we're using
+    * satisfies that constraint. Otherwise, search for it.
+    */
+   private fun verifyValueSatisfiesConstraints(
+      value: TypedInstance,
+      field: Field,
+      type: Type,
+      attributeName: AttributeName
+   ): TypedInstance {
+      val validator = DataSourceConstraintValidator()
+      return if (!validator.sourceSatisfiesConstraint(field.constraints, value, schema)) {
+         queryForFieldValue(field, field.resolveType(schema), attributeName)
+      } else {
+         value
       }
    }
 
