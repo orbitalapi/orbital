@@ -174,11 +174,40 @@ class MongoCriteriaGenerator(private val taxiSchema: TaxiDocument) {
       fun upsertFor(typedInstance: TypedInstance, documentMap: Map<String, Any?>): Pair<Query, Update>? {
           require(typedInstance is TypedObject) { "Writes not supported on instances of type ${typedInstance::class.simpleName}" }
          val attributeNameForId = idField(typedInstance.type)
+         val uniqueIndexFields = uniqueIndexFields(typedInstance.type)
+         val uniqueIndexFieldsAndValues =  uniqueIndexFields.map { attributeName ->
+               attributeName to typedInstance[attributeName].value
+          }.toMap()
 
-         return if (attributeNameForId != null && typedInstance[attributeNameForId].value != null) {
-            val query = Query().addCriteria(Criteria.where(MongoIdField).`is`(typedInstance[attributeNameForId].value))
+          var query: Query? = null
+
+          when {
+              attributeNameForId != null && typedInstance[attributeNameForId].value != null -> query =
+                  Query().addCriteria(Criteria.where(MongoIdField).`is`(typedInstance[attributeNameForId].value))
+
+              uniqueIndexFieldsAndValues.isNotEmpty() && query != null -> uniqueIndexFieldsAndValues.forEach { (attributeName, attributeValue) ->
+                  query = query!!.addCriteria(
+                      Criteria.where(attributeName).`is`(attributeValue)
+                  )
+              }
+
+              uniqueIndexFieldsAndValues.isNotEmpty() && query == null ->
+                  uniqueIndexFieldsAndValues.forEach { (attributeName, attributeValue) ->
+                      if (query == null) {
+                          query = Query().addCriteria(Criteria.where(attributeName).`is`(attributeValue))
+                      } else {
+                          query = query!!.addCriteria(
+                              Criteria.where(attributeName).`is`(attributeValue)
+                          )
+                      }
+                  }
+
+              else -> null
+          }
+
+         return if (query != null) {
             val update = Update.fromDocument(Document(documentMap))
-            query to update
+            query!! to update
          } else {
             null
          }
@@ -193,6 +222,16 @@ class MongoCriteriaGenerator(private val taxiSchema: TaxiDocument) {
             idFields.keys.first()
          }
       }
+
+       private fun uniqueIndexFields(vyneType: com.orbitalhq.schemas.Type): Set<AttributeName> {
+           val idFields = vyneType.getAttributesWithAnnotation(MongoConnector.Annotations.UniqueIndexAnnotationName)
+           require(idFields.isEmpty() || idFields.size == 1)
+           return if (idFields.isEmpty()) {
+               emptySet()
+           } else {
+               idFields.keys
+           }
+       }
 
    }
 

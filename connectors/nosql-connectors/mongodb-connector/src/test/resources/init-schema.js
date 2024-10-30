@@ -101,3 +101,5 @@ db.ratings.insertOne({
    _id: "mediocreRating",
    name: "Mediocre"
 });
+
+db.accounts.createIndex( {accountId: 1}, {unique: true})
