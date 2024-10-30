@@ -12,6 +12,25 @@ import lang.taxi.compiled
 class ExpressionTypeSpec : DescribeSpec({
 
    describe("Expression types") {
+      it("applies default value when defined at type") {
+         val (vyne, stub) = testVyne("""
+            type PersonName inherits String by 'Always Jimmy'
+            type PersonId inherits String
+
+            model Person {
+               id : PersonId
+               name : PersonName
+            }
+            service PersonApi {
+               operation getPerson():Person
+            }
+         """.trimIndent())
+         stub.addResponse("getPerson", """{ "id" : "123" }""")
+         val result = vyne.query("""find { Person }""")
+            .firstRawObject()
+         result.shouldBe(mapOf("id" to "123", "name" to "Always Jimmy"))
+      }
+
       it("evaluates when clause on an expression type correctly") {
          val (vyne) = testVyne(
             """
