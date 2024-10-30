@@ -112,6 +112,12 @@ data class VyneOpenIdpConnectConfig(
     * and background tasks that are executed without a user context
     */
    val executorRoleClientSecret: String? = null,
+
+   /**
+    * Defines the Url to fetch the access token by using `executorRoleClientId` and `executorRoleClientSecret`
+    * If it is null then we'll try to extract the `token_endpoint` value from http://OPEN_IDP_SERVER/.well-known/openid-configuration
+    */
+   val executorRoleTokenUrl: String? = null,
    /**
     * Expected audience (aud) value in the provided Jwt token
     * By default this value is null which means that audience verification is disabled.
