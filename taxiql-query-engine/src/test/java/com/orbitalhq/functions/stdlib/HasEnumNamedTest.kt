@@ -23,4 +23,20 @@ class HasEnumNamedTest {
       vyne.query("""find { Countries.hasEnumNamed('UK') }""")
          .firstRawValue()!!.shouldBe(false)
    }
+
+   @Test
+   fun`enum with value contains`():Unit = runBlocking {
+      val (vyne) = testVyne("""
+         enum Countries {
+            default NZ("New Zealand"),
+            AUS("Australia")
+         }
+      """.trimIndent())
+      vyne.query("""find { Countries.hasEnumNamed('NZ') }""")
+         .firstRawValue()!!.shouldBe(true)
+      vyne.query("""find { Countries.hasEnumNamed('AUS') }""")
+         .firstRawValue()!!.shouldBe(true)
+      vyne.query("""find { Countries.hasEnumNamed('UK') }""")
+         .firstRawValue()!!.shouldBe(false)
+   }
 }
