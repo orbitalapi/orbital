@@ -12,7 +12,7 @@
    <parent>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-parent</artifactId>
-      <version>3.3.3</version>
+      <version>3.3.5</version>
    </parent>
 
    <url>https://orbitalhq.com</url>
@@ -73,11 +73,6 @@
       <aws.s3.sdk.version>1.12.701</aws.s3.sdk.version>
       <aws.dynamo.sdk.version>1.12.701</aws.dynamo.sdk.version>
 
-      <!-- manually overriding because of a CVE-2024-38816 in
-      Spring 6.1.12.
-      Remove after updating to spring boot > 3.3.3 -->
-      <spring-framework.version>6.1.13</spring-framework.version>
-
       <!-- Set protobuf-java to 3.25.5 because of vulnerabilities:
 CVE-2024-7254
 Transitive dependency in wire-compiler and calcite-core
@@ -87,8 +82,6 @@ Transitive dependency in wire-compiler and calcite-core
       <!-- CVE-2024-47554 in <2.14.0 -->
       <commons-io.version>2.17.0</commons-io.version>
 
-      <!-- CVE-2024-38821 for 6.3.3 -->
-      <spring-security-web.version>6.3.4</spring-security-web.version>
 
    </properties>
 
