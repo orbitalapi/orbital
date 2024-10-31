@@ -68,6 +68,10 @@ data class VyneSamlConfig(
    }
 }
 
+enum class ClientAuthenticationType {
+   ClientSecretPost,
+   ClientSecretBasic
+}
 
 // configuration class annotation need to use kebab-case, otherwise spring gives prefix must be in canonical form in Intellij
 @ConfigurationProperties(prefix = "vyne.security.open-idp")
@@ -118,6 +122,16 @@ data class VyneOpenIdpConnectConfig(
     * If it is null then we'll try to extract the `token_endpoint` value from http://OPEN_IDP_SERVER/.well-known/openid-configuration
     */
    val executorRoleTokenUrl: String? = null,
+
+   /**
+    * Defines the Authentication Type to fetch the access token for Executor Role.
+    */
+   val executorRoleAuthenticationType: ClientAuthenticationType = ClientAuthenticationType.ClientSecretPost,
+
+   /**
+    * Optional scopes that needs to be passed when asking for the access token for the Executor Role.
+    */
+   val executorRoleScopes: String? = null,
    /**
     * Expected audience (aud) value in the provided Jwt token
     * By default this value is null which means that audience verification is disabled.
