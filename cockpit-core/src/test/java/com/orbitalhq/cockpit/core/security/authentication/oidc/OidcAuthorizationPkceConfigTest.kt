@@ -1,11 +1,11 @@
 package com.orbitalhq.cockpit.core.security.authentication.oidc
 
-import com.nimbusds.jwt.JWT
 import com.nimbusds.jwt.JWTClaimsSet
 import com.orbitalhq.auth.authorisation.UserRole
 import com.orbitalhq.auth.authorisation.VyneDefaultUserRoleMappings
 import com.orbitalhq.auth.authorisation.VyneUserAuthorisationRoleDefinition
 import com.orbitalhq.auth.authorisation.VyneUserRoleDefinitionRepository
+import com.orbitalhq.cockpit.core.security.authorisation.ClientAuthenticationType
 import com.orbitalhq.cockpit.core.security.authorisation.SimplePathBasedRolesExtractor
 import com.orbitalhq.cockpit.core.security.authorisation.VyneOpenIdpConnectConfig
 import com.orbitalhq.security.VyneGrantedAuthority
@@ -14,7 +14,6 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
-import org.springframework.core.convert.converter.Converter
 import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
 import org.springframework.security.authentication.ReactiveAuthenticationManager
@@ -45,24 +44,21 @@ class OidcAuthorizationPkceConfigTest {
     private val authenticationManager =
         ReactiveAuthenticationManager { authentication ->
             val token = (authentication as BearerTokenAuthenticationToken).token
-            NimbusReactiveJwtDecoder(object: Converter<JWT, Mono<JWTClaimsSet>>  {
-                override fun convert(source: JWT): Mono<JWTClaimsSet>? {
-                    val claimSet = JWTClaimsSet
-                        .Builder()
-                        .expirationTime(Date.from(Instant.now().plusSeconds(3600)))
-                        .issuer(mockWebServer.url("/").toUrl().toString())
-                        .subject("application-client")
-                        .audience("application-client")
-                        .issueTime(Date())
-                        .claim("roles", listOf("Admin"))
-                        .notBeforeTime(Date())
-                        .jwtID("00844099-8108-4be0-a397-51baf30cb5f5")
-                        .claim("preferred_username", "application-client")
-                        .build()
-                    return Mono.just(claimSet)
-                }
-
-            }).decode(token).map { jwt ->
+            NimbusReactiveJwtDecoder {
+                val claimSet = JWTClaimsSet
+                    .Builder()
+                    .expirationTime(Date.from(Instant.now().plusSeconds(3600)))
+                    .issuer(mockWebServer.url("/").toUrl().toString())
+                    .subject("application-client")
+                    .audience("application-client")
+                    .issueTime(Date())
+                    .claim("roles", listOf("Admin"))
+                    .notBeforeTime(Date())
+                    .jwtID("00844099-8108-4be0-a397-51baf30cb5f5")
+                    .claim("preferred_username", "application-client")
+                    .build()
+                Mono.just(claimSet)
+            }.decode(token).map { jwt ->
                 val jwtAuthenticationConverter = JwtAuthenticationConverter()
                 val roleExtractor = SimplePathBasedRolesExtractor("roles")
                 val grantedAuthoritiesExtractor =GrantedAuthoritiesExtractor (vyneUserRoleDefinitionRepository, roleExtractor)
@@ -130,6 +126,37 @@ class OidcAuthorizationPkceConfigTest {
                 val rolesInClaims = vyneUser.claims["roles"] as List<String>
                 rolesInClaims.contains("Admin") &&
                         requestBody == "grant_type=client_credentials&client_id=$clientId&client_secret=$clientSecret"
+            }
+            .thenCancel()
+            .verify()
+
+    }
+
+    @Test
+    fun `can request access token with client_secret_basic`() {
+        val vyneOpenIdpConnectConfig = VyneOpenIdpConnectConfig(
+            oidcDiscoveryUrl = null,
+            executorRoleTokenUrl = mockWebServer.url("/").toUrl().toString(),
+            executorRoleClientId = clientId,
+            executorRoleClientSecret = clientSecret,
+            executorRoleAuthenticationType = ClientAuthenticationType.ClientSecretBasic,
+            executorRoleScopes = "openid email profile flow:QueryRunner flow:PlatformManager")
+
+        val oAuthExecutionPrincipalAuthService =
+            OidcAuthorizationPkceConfig().executionPrincipalAuthService(vyneOpenIdpConnectConfig, authenticationManager, WebClient.builder())
+
+
+        enqueueTokenResponse()
+
+        StepVerifier.create(oAuthExecutionPrincipalAuthService!!.loadUser())
+            .expectSubscription()
+            .expectNextMatches { vyneUser ->
+                val tokenRequest = mockWebServer.takeRequest()
+                tokenRequest.headers["Authorization"].should.equal("Basic Y2xpZW50SWQ6Y2xpZW50U2VjcmV0")
+                val requestBody = tokenRequest.body.readUtf8()
+                val rolesInClaims = vyneUser.claims["roles"] as List<String>
+                rolesInClaims.contains("Admin") &&
+                        requestBody == "grant_type=client_credentials&scope=openid email profile flow:QueryRunner flow:PlatformManager"
             }
             .thenCancel()
             .verify()

@@ -1,33 +1,22 @@
 package com.orbitalhq.cockpit.core.security.authentication.oidc
 
-import com.nimbusds.oauth2.sdk.id.Issuer
-import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata
 import com.orbitalhq.auth.CookieOrHeaderTokenConverter
 import com.orbitalhq.auth.authorisation.VyneUserRoleDefinitionRepository
 import com.orbitalhq.cockpit.core.lsp.LanguageServerConfig
 import com.orbitalhq.cockpit.core.security.FrontEndSecurityConfig
 import com.orbitalhq.cockpit.core.security.authorisation.JwtRolesExtractor
 import com.orbitalhq.cockpit.core.security.authorisation.VyneOpenIdpConnectConfig
-import com.orbitalhq.schema.publisher.http.RetryConfig
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
-import org.springframework.retry.RetryCallback
-import org.springframework.retry.RetryContext
-import org.springframework.retry.RetryListener
-import org.springframework.retry.backoff.FixedBackOffPolicy
-import org.springframework.retry.listener.RetryListenerSupport
-import org.springframework.retry.policy.SimpleRetryPolicy
-import org.springframework.retry.support.RetryTemplate
 import org.springframework.security.authentication.AuthenticationServiceException
 import org.springframework.security.authentication.ReactiveAuthenticationManager
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.core.Authentication
-import org.springframework.security.oauth2.client.registration.ClientRegistration
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator
 import org.springframework.security.oauth2.jwt.JwtTimestampValidator
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder
@@ -43,7 +32,6 @@ import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
-import java.time.Duration
 
 private val logger = KotlinLogging.logger {  }
 /**
@@ -74,29 +62,11 @@ class OidcAuthorizationPkceConfig {
       require(securityConfig.executorRoleClientId != null) { "Expected vyne.security.openIdp.executorRoleClientId to be set" }
       require(securityConfig.executorRoleClientSecret != null)
       { "vyne.security.openIdp.executorRoleClientSecret must be set when vyne.security.openIdp.executorRoleClientId is provided" }
-      val tokenRequestUrl = extractExecutionPrincipalTokenRequestUrl(securityConfig)
-      logger.info { "Using Executor principal token request url as => $tokenRequestUrl" }
       return OAuthExecutionPrincipalAuthService(
+         securityConfig,
          webClientBuilder.build(),
-         securityConfig.executorRoleClientId,
-         securityConfig.executorRoleClientSecret,
-         tokenRequestUrl,
          authenticationManager
       )
-   }
-
-   private fun extractExecutionPrincipalTokenRequestUrl(securityConfig: VyneOpenIdpConnectConfig): String {
-      return securityConfig.executorRoleTokenUrl ?: extractExecutionPrincipalTokenRequestUrlFromWellKnownOpenIdc(securityConfig)
-   }
-
-   private fun extractExecutionPrincipalTokenRequestUrlFromWellKnownOpenIdc(securityConfig: VyneOpenIdpConnectConfig): String {
-      val issuerUrl =  securityConfig.oidcDiscoveryUrl ?: securityConfig.issuerUrl ?: throw IllegalArgumentException("Either oidcDiscoveryUrl or issuerUrl must be provided!")
-      val issuer = Issuer(issuerUrl)
-      logger.info { "Fetching the OpenId Configuration from => ${OIDCProviderMetadata.resolveURL(issuer)}" }
-      val retryTemplate = RetryConfig.simpleRetryWithBackoff(Duration.ofSeconds(15))
-      return retryTemplate.execute<String, Exception> {
-         OIDCProviderMetadata.resolve(issuer).tokenEndpointURI.toString()
-      }
    }
 
    @Bean
