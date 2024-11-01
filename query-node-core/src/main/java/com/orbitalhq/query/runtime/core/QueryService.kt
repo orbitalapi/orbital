@@ -6,8 +6,10 @@ import com.orbitalhq.AuthClaimType
 import com.orbitalhq.FactSetId
 import com.orbitalhq.FactSets
 import com.orbitalhq.VyneProvider
+import com.orbitalhq.auth.EmptyAuthenticationToken
 import com.orbitalhq.auth.authentication.VyneUser
 import com.orbitalhq.auth.authentication.toVyneUser
+import com.orbitalhq.auth.getAuthClaimsAsFacts
 import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
@@ -24,19 +26,19 @@ import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.SearchFailedException
 import com.orbitalhq.query.runtime.FailedSearchResponse
 import com.orbitalhq.query.runtime.QueryServiceApi
-import com.orbitalhq.auth.EmptyAuthenticationToken
-import com.orbitalhq.auth.getAuthClaimsAsFacts
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.Schema
-import com.orbitalhq.security.VyneGrantedAuthority
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.websocket.WebSocketController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.cancellable
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -69,6 +71,7 @@ import java.security.Principal
 import java.time.Instant
 import java.util.*
 import java.util.concurrent.Executors
+import kotlin.coroutines.cancellation.CancellationException
 
 const val TEXT_CSV = "text/csv"
 const val TEXT_CSV_UTF_8 = "$TEXT_CSV;charset=UTF-8"
@@ -299,7 +302,7 @@ class QueryService(
    )
    override suspend fun submitVyneQlQueryStreamingResponse(
       @RequestBody query: TaxiQLQueryString,
-      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode ,
+      @RequestParam("resultMode", defaultValue = "RAW") resultMode: ResultMode,
       @RequestHeader(
          value = "ContentSerializationFormat",
          defaultValue = MediaType.APPLICATION_JSON_VALUE
@@ -392,13 +395,27 @@ class QueryService(
       val output = sink.asFlux()
          .map { entry -> session.textMessage(entry.toString()) }
 
+      // Create a coroutine scope that can be cancelled
+      val queryScope = CoroutineScope(vyneQlDispatcher)
+      var clientQueryId: String? = null
+
       session.receive()
-         .flatMap { message -> session.handshakeInfo.principal.defaultIfEmpty(EmptyAuthenticationToken)
-            .map { auth: Principal ->  auth to message }
+         .doOnComplete {
+            logger.info { "Websocket query with client queryId $clientQueryId was closed gracefully by the consumer - cancelling the query" }
+            queryScope.cancel()
+         }
+         .doOnCancel {
+            logger.info { "Websocket query with client queryId $clientQueryId was closed ungracefully by the consumer - cancelling the query" }
+            queryScope.cancel()
+         }
+         .flatMap { message ->
+            session.handshakeInfo.principal.defaultIfEmpty(EmptyAuthenticationToken)
+               .map { auth: Principal -> auth to message }
          }
          .subscribe { (auth, message) ->
             val websocketQuery = objectMapper.readValue<WebsocketQuery>(message.payloadAsText)
-            CoroutineScope(vyneQlDispatcher).launch {
+            clientQueryId = websocketQuery.clientQueryId
+            queryScope.launch {
                try {
                   val nullableAuth = EmptyAuthenticationToken.nullIfEmpty(auth) as Authentication?
                   getVyneQlQueryStreamingResponse(
@@ -407,35 +424,46 @@ class QueryService(
                      MediaType.APPLICATION_JSON_VALUE,
                      clientQueryId = websocketQuery.clientQueryId,
                      auth = nullableAuth
-                  ).onCompletion { error ->
-                     if (error == null) {
-                        sink.emitComplete(Sinks.EmitFailureHandler.FAIL_FAST)
-                     } else {
-                        sink.emitError(error, Sinks.EmitFailureHandler.FAIL_FAST)
+                  )
+                     .cancellable()
+                     .onCompletion { error ->
+                        if (error == null) {
+                           sink.emitComplete(Sinks.EmitFailureHandler.FAIL_FAST)
+                        } else {
+                           sink.emitError(error, Sinks.EmitFailureHandler.FAIL_FAST)
+                        }
+                        session.close(CloseStatus.NORMAL)
+                           .subscribe()
                      }
-                     session.close(CloseStatus.NORMAL)
-                        .subscribe()
-                  }
                      .collect { emittedResult ->
+                        ensureActive()
                         val json = objectMapper.writeValueAsString(emittedResult)
                         sink.emitNext(json, Sinks.EmitFailureHandler.FAIL_FAST)
                      }
 
                } catch (e: Exception) {
-                  // Compilation exceptions hit here, before the flow exists.
-                  val errorMessage = FailedSearchResponse(
-                     e.message ?: e::class.simpleName ?: "An unknown error occurred",
-                     null,
-                     websocketQuery.clientQueryId
-                  )
-                  val json = objectMapper.writeValueAsString(errorMessage)
-                  sink.emitNext(json, Sinks.EmitFailureHandler.FAIL_FAST)
+                  when (e) {
+                     is CancellationException -> {
+                        logger.info { "Query cancelled due to websocket disconnection" }
+                        sink.emitComplete(Sinks.EmitFailureHandler.FAIL_FAST)
+                     }
 
-                  sink.emitError(e, Sinks.EmitFailureHandler.FAIL_FAST)
-                  session.close(CloseStatus.BAD_DATA)
-                     .subscribe()
+                     else -> {
+                        // Compilation exceptions hit here, before the flow exists.
+                        val errorMessage = FailedSearchResponse(
+                           e.message ?: e::class.simpleName ?: "An unknown error occurred",
+                           null,
+                           websocketQuery.clientQueryId
+                        )
+                        val json = objectMapper.writeValueAsString(errorMessage)
+                        sink.emitNext(json, Sinks.EmitFailureHandler.FAIL_FAST)
+
+                        sink.emitError(e, Sinks.EmitFailureHandler.FAIL_FAST)
+                        session.close(CloseStatus.BAD_DATA)
+                           .subscribe()
+                     }
+                  }
                }
-
             }
          }
 
@@ -447,7 +475,8 @@ class QueryService(
       schema: Schema,
       parameters: List<lang.taxi.query.Parameter>
    ): String? {
-      val jwtParameter = parameters.firstOrNull { it.type.inheritsFrom(schema.taxiType(AuthClaimType.AuthClaimsTypeName)) }
+      val jwtParameter =
+         parameters.firstOrNull { it.type.inheritsFrom(schema.taxiType(AuthClaimType.AuthClaimsTypeName)) }
       return jwtParameter?.type?.qualifiedName
 
    }
@@ -493,7 +522,7 @@ class QueryService(
                querySchema = querySchema,
                executionContextFacts = executionContextFacts,
 
-            )
+               )
          } catch (e: lang.taxi.CompilationException) {
             logger.info("The query failed compilation: ${e.message}")
             /**
@@ -533,7 +562,6 @@ class QueryService(
             .responseWithQueryHistoryListener(query, response) to queryOptions
       }
    }
-
 
 
    private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {

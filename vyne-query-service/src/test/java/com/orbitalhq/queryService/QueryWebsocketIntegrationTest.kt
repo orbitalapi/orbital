@@ -18,6 +18,7 @@ import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.query.runtime.core.WebsocketQuery
 import com.orbitalhq.query.runtime.core.dispatcher.local.RSocketStreamResultSubscriptionManager
+import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
@@ -31,13 +32,16 @@ import com.orbitalhq.spring.SimpleVyneProvider
 import com.orbitalhq.spring.config.TestDiscoveryClientConfig
 import com.orbitalhq.testVyne
 import com.orbitalhq.utils.Ids
+import io.kotest.assertions.timing.eventually
 import io.kotest.common.runBlocking
+import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
@@ -55,6 +59,7 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import reactor.core.publisher.Sinks
 import reactor.kotlin.test.test
+import kotlin.time.Duration
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -92,6 +97,9 @@ class QueryWebsocketIntegrationTest : DatabaseTest() {
    lateinit var configService: ConfigService
    @MockBean
    lateinit var licenseManager: OrbitalLicenseManager
+
+   @Autowired
+   lateinit var activeQueryMonitor: ActiveQueryMonitor
 
    @LocalServerPort
    val randomServerPort = 0
@@ -204,6 +212,40 @@ class QueryWebsocketIntegrationTest : DatabaseTest() {
                   }
                }
                .then { resultsSink.tryEmitNext("""{ "filmId" : 456 }""") }
+               .expectComplete()
+               .verify()
+         }
+      }
+   }
+
+   @Test
+   fun `when the client cancels a query then the upstream query is cancelled`() {
+      val client = HttpClient(CIO) {
+         install(WebSockets)
+      }
+      val clientId = Ids.id(prefix = "query")
+      val query = jacksonObjectMapper().writeValueAsString(
+         WebsocketQuery(
+            clientQueryId = clientId,
+            query = "stream { NewReleaseAnnouncement }"
+         )
+      )
+
+      runBlocking {
+         client.webSocket("ws://localhost:$randomServerPort/api/query/taxiql") {
+            send(query)
+            incoming.receiveAsFlow()
+               .asFlux()
+               .test()
+               .expectSubscription()
+               .then {
+                  runBlocking {
+                     // Calling cancel triggers doOnComplete()
+                     // It's a graceful termination - ie., the client
+                     // closing the websocket (without sending a cancel request)
+                     close(CloseReason(CloseReason.Codes.NORMAL, "OK"))
+                  }
+               }
                .expectComplete()
                .verify()
          }
