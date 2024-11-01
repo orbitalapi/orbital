@@ -1,7 +1,7 @@
+import { TuiBadge } from "@taiga-ui/kit";
 import { AsyncPipe, CommonModule, TitleCasePipe } from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject} from '@angular/core';
-import {TuiAlertService, TuiNotificationModule} from '@taiga-ui/core';
-import { TuiBadgeModule } from '@taiga-ui/kit';
+import {TuiAlertService, TuiAppearanceOptions, TuiNotification} from '@taiga-ui/core';
 import {Observable, switchMap} from 'rxjs';
 import { ConnectionStatusComponent } from '../data-source-manager/connection-status/connection-status.component';
 import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
@@ -12,7 +12,6 @@ import {
   PipelineService, StreamServerStatusEvent,
 } from "../pipelines/pipelines.service";
 import {map, tap} from 'rxjs/operators';
-import {TuiStatus} from "@taiga-ui/kit/types";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 
 @Component({
@@ -22,8 +21,8 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
     <app-header-component-layout title="Query Endpoints"
                                  description="Queries and streams defined in your schema">
       <ng-container ngProjectAs="header-components">
-        <tui-notification *ngIf="websocketConnectionError && hasStreamingQueries"
-                          status="error">{{ websocketConnectionError }}
+        <tui-notification size="m" *ngIf="websocketConnectionError && hasStreamingQueries"
+                          appearance="error">{{ websocketConnectionError }}
         </tui-notification>
       </ng-container>
       <div *ngIf="queries$ | async as queries">
@@ -40,8 +39,8 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
           <tr *ngFor="let query of queries" (click)="navigateToQueryPage(query)">
             <td>{{ query.name.shortDisplayName }}</td>
             <td>
-              <tui-badge [value]="queryState(query) | titlecase" [status]="queryStateBadgeType(queryState(query))"
-                         size="s"></tui-badge>
+              <tui-badge [appearance]="queryStateBadgeType(queryState(query))"
+                         size="m">{{ queryState(query) | titlecase }}</tui-badge>
             </td>
             <td>{{ query.queryKind }}</td>
             <td>
@@ -66,9 +65,9 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
     HeaderComponentLayoutModule,
     ConnectionStatusComponent,
     AsyncPipe,
-    TuiNotificationModule,
+    TuiNotification,
     TitleCasePipe,
-    TuiBadgeModule
+    TuiBadge
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -120,7 +119,7 @@ export class EndpointListComponent {
           this.websocketConnectionError = 'Unable to fetch stream statuses'
           this.alertService
             .open('Server disconnected, please refresh the browser to reconnect',
-              {status: 'warning', autoClose: false, hasIcon: true, hasCloseButton: false }
+              {appearance: 'warning', autoClose: 0, closeable: false }
             )
             .subscribe()
           changeDetector.markForCheck();
@@ -128,7 +127,7 @@ export class EndpointListComponent {
       });
   }
 
-  queryStateBadgeType(state: 'RUNNING' | 'PAUSED' | 'UNKNOWN'): TuiStatus {
+  queryStateBadgeType(state: 'RUNNING' | 'PAUSED' | 'UNKNOWN'): TuiAppearanceOptions["appearance"] {
     switch (state) {
       case "UNKNOWN":
         return "neutral";

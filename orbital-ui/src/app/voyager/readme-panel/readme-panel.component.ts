@@ -1,3 +1,5 @@
+import { TuiSegmented } from "@taiga-ui/kit";
+import { TuiButton } from "@taiga-ui/core";
 import {
   Component,
   ComponentFactoryResolver,
@@ -8,8 +10,6 @@ import {
   ViewContainerRef
 } from '@angular/core';
 import {ExpandingPanelSetModule} from "../../expanding-panelset/expanding-panel-set.module";
-import {TuiSegmentedModule} from "@taiga-ui/experimental";
-import {TuiButtonModule} from "@taiga-ui/core";
 import {MarkdownComponent, MarkdownService, MARKED_OPTIONS, provideMarkdown} from "ngx-markdown";
 import {CustomMarkdownRenderer} from "../../markdown-utils/markdown-custom-renderer";
 import markedAlert from "marked-alert";
@@ -23,8 +23,8 @@ import Prism from 'prismjs'
   standalone: true,
   imports: [
     ExpandingPanelSetModule,
-    TuiSegmentedModule,
-    TuiButtonModule,
+    TuiSegmented,
+    TuiButton,
     MarkdownComponent,
     NgIf,
     SimpleCodeEditorComponent,

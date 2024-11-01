@@ -49,7 +49,7 @@ import {WorkspacesService} from "../../services/workspaces.service";
                     </div>
                 </div>
             </form>
-            <tui-notification *ngIf="errorMessage" [status]="'error'">{{ errorMessage }}</tui-notification>
+            <tui-notification size="m" *ngIf="errorMessage" [appearance]="'error'">{{ errorMessage }}</tui-notification>
             <div class="row">
                 <div class="spacer"></div>
                 <button
@@ -59,7 +59,7 @@ import {WorkspacesService} from "../../services/workspaces.service";
                         appearance="primary"
                         [disabled]="!formGroup.valid"
                         (click)="save()"
-                        [showLoader]="working"
+                        [loading]="working"
                 >
                     Save
                 </button>

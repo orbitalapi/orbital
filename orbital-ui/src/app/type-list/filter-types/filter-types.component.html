@@ -4,48 +4,44 @@
     class="group"
     [collapsed]="true"
   >
-    <tui-checkbox-block
+   <label tuiBlock="m">
+     <input tuiCheckbox type="checkbox"
       i18n
-      contentAlign="right"
       formControlName="showTypes"
-      size="m"
-    >
-      Types
-    </tui-checkbox-block>
-    <tui-checkbox-block
+     >
+       Types
+    </label>
+   <label tuiBlock="m">
+     <input tuiCheckbox type="checkbox"
       i18n
-      contentAlign="right"
       formControlName="showModels"
-      size="m"
-    >
-      Data models
-    </tui-checkbox-block>
-    <tui-checkbox-block
-      contentAlign="right"
+     >
+       Data models
+    </label>
+   <label tuiBlock="m">
+     <input tuiCheckbox type="checkbox"
       formControlName="showServices"
-      size="m"
-    >
-      Services
-    </tui-checkbox-block>
-    <tui-checkbox-block
-      contentAlign="right"
+     >
+       Services
+    </label>
+   <label tuiBlock="m">
+     <input tuiCheckbox type="checkbox"
       formControlName="showOperations"
-      size="m"
-    >
-      Operations
-    </tui-checkbox-block>
+     >
+       Operations
+    </label>
   </div>
   <tui-input
     tuiTextfieldSize="m"
     formControlName="filter"
     [tuiTextfieldCleaner]="true"
     [tuiTextfieldLabelOutside]="true"
-    tuiTextfieldIconLeft="tuiIconSearchLarge"
+    tuiTextfieldIconLeft="@tui.search"
   >
     Filter
     <input
       size="m"
-      tuiTextfield
+      tuiTextfieldLegacy
     />
   </tui-input>
 </form>

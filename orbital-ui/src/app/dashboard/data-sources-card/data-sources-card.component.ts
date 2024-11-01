@@ -1,9 +1,9 @@
+import { TuiProgress } from "@taiga-ui/kit";
 import {ChangeDetectionStrategy, Component, signal} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import {TuiButtonModule, TuiNotificationModule} from '@taiga-ui/core';
-import { TuiProgressModule } from '@taiga-ui/kit';
+import { TuiNotification, TuiButton } from '@taiga-ui/core';
 import { ConnectionStatusComponent } from '../../data-source-manager/connection-status/connection-status.component';
 import {ConnectorSummary, DbConnectionService, PackageWithError} from '../../db-connection-editor/db-importer.service';
 import {SchemaNotificationService} from '../../services/schema-notification.service';
@@ -14,8 +14,8 @@ import {StatisticModule} from "../../statistic/statistic.module";
   selector: 'app-data-sources-card',
   standalone: true,
   imports: [
-    CommonModule, CardComponent, TuiProgressModule, TuiButtonModule, RouterLink, ConnectionStatusComponent,
-    TuiNotificationModule,
+    CommonModule, CardComponent, TuiProgress, TuiButton, RouterLink, ConnectionStatusComponent,
+    TuiNotification,
     StatisticModule
   ],
   templateUrl: './data-sources-card.component.html',

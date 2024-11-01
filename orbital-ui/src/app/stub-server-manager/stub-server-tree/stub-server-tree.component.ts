@@ -1,5 +1,5 @@
+import { TuiTree } from "@taiga-ui/kit";
 import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
-import {TuiTreeModule} from "@taiga-ui/kit";
 import {AsyncPipe, KeyValuePipe, NgForOf, NgIf} from "@angular/common";
 import {
   ComponentInfo,
@@ -15,7 +15,7 @@ import {ComponentStateIconComponent} from "./component-state-icon.component";
   selector: 'app-stub-server-tree',
   standalone: true,
   imports: [
-    TuiTreeModule,
+    TuiTree,
     KeyValuePipe,
     AsyncPipe,
     NgForOf,

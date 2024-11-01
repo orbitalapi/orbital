@@ -1,3 +1,4 @@
+import { TuiInputModule } from "@taiga-ui/legacy";
 import {NgModule} from '@angular/core';
 
 import {TypeEditorComponent} from './type-editor.component';
@@ -13,7 +14,6 @@ import { TypeEditorCardComponent } from './type-editor-card.component';
 import { TypeEditorPopupComponent } from './type-editor-popup.component';
 import { TypeEditorContainerComponent } from './type-editor-container.component';
 import {MatProgressBarModule} from '@angular/material/progress-bar';
-import {TuiInputModule} from '@taiga-ui/kit';
 
 @NgModule({
     imports: [

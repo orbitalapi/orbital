@@ -38,29 +38,29 @@ import {
       <tui-tag class="new-tag" size="s" *ngIf="treeNode.isNew" value="New"></tui-tag>
       <span class="field-spacer"></span>
       @if (editable) {
-        <tui-checkbox-labeled [size]="'m'"
+       <label tuiLabel class="checkbox-label">
+         <input tuiCheckbox type="checkbox" size="m"
                               [ngModel]="memberHasIdAnnotation"
                               (ngModelChange)="memberHasIdAnnotationChanged($event)"
         >Id
-        </tui-checkbox-labeled>
-        <tui-checkbox-labeled [size]="'m'"
+        </label>
+       <label tuiLabel class="checkbox-label">
+         <input tuiCheckbox type="checkbox" size="m"
                               [ngModel]="!treeNode.field.nullable"
                               (ngModelChange)="onRequiredChanged(treeNode.field)"
         >Required
-        </tui-checkbox-labeled>
+        </label>
       } @else {
         <tui-badge
           *ngIf="memberHasIdAnnotation"
-          status="info"
-          value="Id"
+          appearance="info"
           size="s"
-        ></tui-badge>
+        >Id</tui-badge>
         <tui-badge
           *ngIf="!treeNode.field.nullable"
-          status="warning"
-          value="Required"
+          appearance="warning"
           size="s"
-        ></tui-badge>
+        >Required</tui-badge>
       }
     </div>
     <div *ngIf="!!(treeNode.field.typeDoc || editable)" class="description-editor-container">

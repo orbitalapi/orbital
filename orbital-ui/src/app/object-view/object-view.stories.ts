@@ -1,3 +1,4 @@
+import { TuiRoot } from "@taiga-ui/core";
 import { moduleMetadata } from "@storybook/angular";
 import { ObjectViewComponent } from "./object-view.component";
 import { CommonModule } from "@angular/common";
@@ -11,8 +12,6 @@ import {
 } from "../services/schema";
 import { testSchema } from "./test-schema";
 import { ObjectViewModule } from "./object-view.module";
-import { TuiRootModule } from "@taiga-ui/core";
-
 const schema = testSchema;
 const typeNamedInstance: TypeNamedInstance = {
   typeName: "demo.Customer",
@@ -98,7 +97,7 @@ export default {
   decorators: [
     moduleMetadata({
       declarations: [],
-      imports: [CommonModule, BrowserModule, ObjectViewModule, TuiRootModule],
+      imports: [CommonModule, BrowserModule, ObjectViewModule, TuiRoot],
     }),
   ],
 };

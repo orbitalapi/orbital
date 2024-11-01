@@ -1,3 +1,4 @@
+import { TuiButton } from "@taiga-ui/core";
 import { Component, Directive } from '@angular/core';
 import { AppInfoService, AppConfig } from '../services/app-info.service';
 import { ActivatedRoute, Router, RouterLink, RouterOutlet } from '@angular/router';
@@ -12,7 +13,6 @@ import {SchemaNotificationService, SchemaUpdatedNotification} from 'src/app/serv
 import {TypesService} from "../services/types.service";
 import {CommonModule} from '@angular/common';
 import { PackageViewerModule } from '../package-viewer/package-viewer.module';
-import { TuiButtonModule } from '@taiga-ui/core';
 import { RequiresAuthorityDirective } from '../requires-authority.directive';
 import { ExpandingPanelSetModule } from '../expanding-panelset/expanding-panel-set.module';
 
@@ -70,7 +70,7 @@ export class BaseProjectExplorerContainer {
         tuiButton
         size="s"
         appearance="primary"
-        icon="tuiIconPlus"
+        iconStart="@tui.plus"
         class='button-small menu-bar-button'
         [routerLink]="['project-import']"
       >
@@ -89,7 +89,7 @@ export class BaseProjectExplorerContainer {
   `,
     styleUrls: ['./project-explorer-container.component.scss'],
     standalone: true,
-    imports: [ExpandingPanelSetModule, RequiresAuthorityDirective, TuiButtonModule, RouterLink, PackageViewerModule, RouterOutlet, CommonModule]
+    imports: [ExpandingPanelSetModule, RequiresAuthorityDirective, TuiButton, RouterLink, PackageViewerModule, RouterOutlet, CommonModule]
 })
 export class ProjectExplorerContainerComponent extends BaseProjectExplorerContainer {
 

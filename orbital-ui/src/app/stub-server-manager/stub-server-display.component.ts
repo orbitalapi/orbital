@@ -9,7 +9,7 @@ import {TypesService} from "../services/types.service";
 import {ActivatedRoute, ParamMap} from "@angular/router";
 import {combineLatestWith} from "rxjs";
 import {KeyValuePipe, NgForOf, NgIf} from "@angular/common";
-import {TuiAlertService, TuiButtonModule, TuiNotification} from "@taiga-ui/core";
+import { TuiAlertService, TuiButton } from "@taiga-ui/core";
 import {Clipboard} from "@angular/cdk/clipboard";
 
 @Component({
@@ -19,7 +19,7 @@ import {Clipboard} from "@angular/cdk/clipboard";
     NgIf,
     KeyValuePipe,
     NgForOf,
-    TuiButtonModule
+    TuiButton
   ],
   template: `
       <h2>{{ componentId }}</h2>
@@ -102,7 +102,7 @@ export class StubServerDisplayComponent {
 
   copyToClipboard(value:string) {
     this.clipboard.copy(value)
-    this.alerts.open('Copied to clipboard', {status: TuiNotification.Success})
+    this.alerts.open('Copied to clipboard', {appearance: 'success'})
       .subscribe()
   }
 }

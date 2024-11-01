@@ -39,10 +39,13 @@
     <h2>Attributes</h2>
     <div class="full-type-names-toggle">
       <span>Show full type names</span>
-      <tui-toggle
+      <input
+        tuiSwitch
+        type="checkbox"
         [(ngModel)]="showFullTypeNames"
         [showIcons]="true"
-      ></tui-toggle>
+        size="s"
+      />
     </div>
     <app-model-attribute-tree-list
       [schema]="schema"

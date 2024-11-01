@@ -76,12 +76,10 @@ tui-accordion {
   height: 100%;
 }
 
-tui-chip[tuiAppearance][data-appearance='info']  {
-  background: $sky-500;
+tui-badge[tuiAppearance][data-appearance='info']  {
+  background: $sky-600;
   color: $slate-50;
-  font-family: $headings-font;
   font-size: 0.9rem;
-  font-weight: 500;
 }
 
 .bottom-split-area {

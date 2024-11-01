@@ -34,12 +34,12 @@
             </app-query-editor-toolbar>
             <tui-notification
               size="s"
-              status="error"
+              appearance="error"
               *ngIf="state.lastErrorMessage()"
               class='error-notification'
-            >
+            ><div>
               <div class='error-message'>{{ state.lastErrorMessage() }}</div>
-            </tui-notification>
+            </div></tui-notification>
             <div class='code-viewer-container'>
               <app-code-editor
                 class='code-editor'

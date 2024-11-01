@@ -1,12 +1,12 @@
+import { TuiBadge } from "@taiga-ui/kit";
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {TuiBadgeModule} from '@taiga-ui/kit';
 import {Observable, switchMap} from 'rxjs';
 import {UiCustomisations} from '../../environments/ui-customisations';
 import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
-import {TuiButtonModule, TuiHintModule} from '@taiga-ui/core';
+import { TuiButton, TuiHint } from '@taiga-ui/core';
 import {PoliciesService, PolicySetupReadiness} from '../services/policies.service';
 import {SchemaNotificationService} from '../services/schema-notification.service';
 import {Policy, TypesService} from '../services/types.service';
@@ -14,7 +14,7 @@ import {Policy, TypesService} from '../services/types.service';
 @Component({
   selector: 'app-policy-manager',
   standalone: true,
-  imports: [CommonModule, HeaderComponentLayoutModule, TuiButtonModule, RouterLink, TuiBadgeModule, TuiHintModule],
+  imports: [CommonModule, HeaderComponentLayoutModule, TuiButton, RouterLink, TuiBadge, TuiHint],
   template: `
     <app-header-component-layout
       title="Policies"
@@ -51,10 +51,10 @@ import {Policy, TypesService} from '../services/types.service';
           <tr *ngFor="let policy of policies" (click)="navigateToPolicyPage(policy)">
             <td>{{ policy.name.shortDisplayName }}</td>
             <td>{{ policy.targetType.shortDisplayName }}</td>
-            <td [tuiHint]="policy.definesReadPolicy ? 'Defines a read policy' : 'Does not define a read policy'" tuiHintAppearance="onDark">
+            <td [tuiHint]="policy.definesReadPolicy ? 'Defines a read policy' : 'Does not define a read policy'" tuiHintAppearance="dark">
               <img src="assets/img/tabler/check.svg" class="policy-icon" [class.has-policy]="policy.definesReadPolicy">
             </td>
-            <td [tuiHint]="policy.definesWritePolicy ? 'Defines a write policy' : 'Does not define a write policy'" tuiHintAppearance="onDark">
+            <td [tuiHint]="policy.definesWritePolicy ? 'Defines a write policy' : 'Does not define a write policy'" tuiHintAppearance="dark">
               <img src="assets/img/tabler/check.svg" class="policy-icon" [class.has-policy]="policy.definesWritePolicy">
             </td>
           </tr>

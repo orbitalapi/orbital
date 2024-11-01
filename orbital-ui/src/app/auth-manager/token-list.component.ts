@@ -4,7 +4,7 @@ import { UiCustomisations } from '../../environments/ui-customisations';
 import { AuthScheme, AuthTokenMap, NoCredentialsAuthToken } from './auth-manager.service';
 import { of } from 'rxjs';
 import { TuiDialogService } from '@taiga-ui/core';
-import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
+import { PolymorpheusComponent } from '@taiga-ui/polymorpheus';
 import { AddTokenPanelComponent } from './add-token-panel.component';
 import { map } from 'rxjs/operators';
 

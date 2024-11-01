@@ -1,15 +1,9 @@
+import { TuiInputModule, TuiSelectModule } from "@taiga-ui/legacy";
+import { TuiButton } from "@taiga-ui/core";
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import {
-  TuiDataListWrapperModule,
-  TuiInputModule,
-  TuiSelectModule,
-  TuiStringifyContentPipeModule,
-  TuiStringifyPipeModule,
-  TuiTabsModule
-} from '@taiga-ui/kit';
-import { TuiButtonModule } from '@taiga-ui/core';
+import { TuiDataListWrapper, TuiStringifyContentPipe, TuiTabs, TuiStringifyPipe, TuiButtonLoading } from '@taiga-ui/kit';
 import { NgxFileDropEntry } from 'ngx-file-drop';
 import { ConvertSchemaEvent, JsonSchemaConverterOptions, JsonSchemaVersion } from '../../data-source-import.models';
 import { readSingleFile } from '../../../utils/files';
@@ -24,14 +18,15 @@ import { DataExplorerModule } from '../../../data-explorer/data-explorer.module'
     CommonModule,
     TuiSelectModule,
     FormsModule,
-    TuiDataListWrapperModule,
-    TuiStringifyContentPipeModule,
-    TuiButtonModule,
+    TuiDataListWrapper,
+    TuiStringifyContentPipe,
+    TuiButton,
     TuiInputModule,
-    TuiTabsModule,
+    TuiTabs,
     DataExplorerModule,
-    TuiStringifyPipeModule
-  ],
+    TuiStringifyPipe,
+    TuiButtonLoading
+],
   template: `
     <div class="form-container">
       <form class="form-body" #jsonSchemaForm="ngForm">
@@ -127,7 +122,7 @@ import { DataExplorerModule } from '../../../data-explorer/data-explorer.module'
     </div>
 
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()" [disabled]="jsonSchemaForm.invalid">
+      <button tuiButton [loading]="working" [size]="'m'" (click)="doCreate()" [disabled]="jsonSchemaForm.invalid">
         Configure
       </button>
     </div>

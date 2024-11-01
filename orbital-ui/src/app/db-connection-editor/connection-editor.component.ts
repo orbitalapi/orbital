@@ -1,13 +1,8 @@
+import { TuiComboBoxModule, TuiInputModule } from "@taiga-ui/legacy";
 import { CommonModule } from '@angular/common';
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import { TuiButtonModule, TuiErrorModule } from '@taiga-ui/core';
-import {
-  TuiComboBoxModule,
-  TuiDataListWrapperModule,
-  TuiFieldErrorPipeModule,
-  TuiFilterByInputPipeModule,
-  TuiInputModule, TuiProgressModule, TuiStringifyContentPipeModule
-} from '@taiga-ui/kit';
+import { TuiError, TuiButton } from '@taiga-ui/core';
+import { TuiDataListWrapper, TuiStringifyContentPipe, TuiFilterByInputPipe, TuiFieldErrorPipe, TuiProgress } from '@taiga-ui/kit';
 import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
 import { ProjectSelectorModule } from '../project-selector/project-selector.module';
 import {
@@ -42,15 +37,15 @@ export type ConnectionEditorMode = 'create' | 'edit';
     ProjectSelectorModule,
     ReactiveFormsModule,
     TuiInputModule,
-    TuiErrorModule,
+    TuiError,
     TuiComboBoxModule,
-    TuiDataListWrapperModule,
-    TuiFieldErrorPipeModule,
-    TuiFilterByInputPipeModule,
+    TuiDataListWrapper,
+    TuiFieldErrorPipe,
+    TuiFilterByInputPipe,
     DynamicFormComponentComponent,
-    TuiButtonModule,
-    TuiProgressModule,
-    TuiStringifyContentPipeModule,
+    TuiButton,
+    TuiProgress,
+    TuiStringifyContentPipe,
     FormsModule
   ],
   standalone: true

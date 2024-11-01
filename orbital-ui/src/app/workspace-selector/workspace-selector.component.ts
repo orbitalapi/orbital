@@ -18,7 +18,7 @@ import {Router} from "@angular/router";
           class="link small"
           (click)="createNewWorkspace()"
         >
-          <tui-svg src="tuiIconPlus" class="icon"></tui-svg>
+          <tui-icon icon="@tui.plus" class="icon"></tui-icon>
           <span class="small">New...</span>
         </button>
         <button *ngFor="let workspaceMembership of workspaces | async" tuiOption

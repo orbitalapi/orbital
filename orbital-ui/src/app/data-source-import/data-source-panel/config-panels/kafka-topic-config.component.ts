@@ -1,9 +1,10 @@
+import { TuiInputModule, TuiSelectModule } from "@taiga-ui/legacy";
 import { Component, EventEmitter, Inject, Injector, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TuiButtonModule, TuiDataListModule, TuiDialogService, TuiSvgModule } from '@taiga-ui/core';
-import { TuiDataListWrapperModule, TuiInputModule, TuiSelectModule } from '@taiga-ui/kit';
-import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
+import { TuiDialogService, TuiDataList, TuiIcon, TuiButton } from '@taiga-ui/core';
+import { TuiDataListWrapper, TuiButtonLoading } from '@taiga-ui/kit';
+import { PolymorpheusComponent } from '@taiga-ui/polymorpheus';
 import { ConnectorSummary } from '../../../db-connection-editor/db-importer.service';
 import { TypeAutocompleteTuiModule } from '../../../type-autocomplete-tui/type-autocomplete-tui.module';
 import { ConvertSchemaEvent, KafkaOffset, KafkaTopicConverterOptions } from '../../data-source-import.models';
@@ -24,14 +25,15 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
     CommonModule,
     TuiSelectModule,
     FormsModule,
-    TuiDataListWrapperModule,
-    TuiButtonModule,
+    TuiDataListWrapper,
+    TuiButton,
     TuiInputModule,
-    TuiDataListModule,
-    TuiSvgModule,
+    TuiDataList,
+    TuiIcon,
     ConnectionFiltersModule,
     TypeAutocompleteTuiModule,
-  ],
+    TuiButtonLoading
+],
   template: `
     <div class="form-container">
       <form class="form-body" #kafkaForm="ngForm">
@@ -57,7 +59,7 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
                   class="link"
                   (click)="createNewConnection()"
                 >
-                  <tui-svg src="tuiIconPlusCircleLarge" class="icon"></tui-svg>
+                  <tui-icon icon="@tui.circle-plus" class="icon"></tui-icon>
                   Add new connection...
                 </button>
                 <button *ngFor="let connection of connections | messageBrokers" tuiOption
@@ -168,7 +170,7 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
     </div>
 
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'" [disabled]="kafkaForm.invalid">Configure
+      <button tuiButton [loading]="working" (click)="doCreate()" [size]="'m'" [disabled]="kafkaForm.invalid">Configure
       </button>
     </div>
   `,

@@ -1,7 +1,7 @@
+import { TuiRoot } from "@taiga-ui/core";
 import {provideAnimations} from '@angular/platform-browser/animations';
 import {applicationConfig, moduleMetadata} from '@storybook/angular';
 import {CommonModule} from '@angular/common';
-import {TuiRootModule} from '@taiga-ui/core';
 import {of} from 'rxjs';
 import {SchemaDiagramModule} from './schema-diagram.module';
 import {FILMS_SCHEMA} from './films-schema';
@@ -14,7 +14,7 @@ export default {
       declarations: [],
       imports: [
         CommonModule,
-        TuiRootModule,
+        TuiRoot,
         SchemaDiagramModule,
       ],
     }),

@@ -1,17 +1,17 @@
+import { TuiBadge } from "@taiga-ui/kit";
 import {Component, EventEmitter, HostBinding, Input, Output} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {MatIconModule} from "@angular/material/icon";
-import {TuiHintModule, TuiLinkModule} from "@taiga-ui/core";
+import { TuiLink, TuiHint } from "@taiga-ui/core";
 import {openNewSiteAndCancel} from "../toolbar/playground-toolbar.component";
 import {environment} from "../../../voyager-app/environments/environment";
-import {TuiBadgeModule} from "@taiga-ui/kit";
 import {ActivatedRoute} from "@angular/router";
 import {SvgIconComponent} from "../../svg-icon/svg-icon.component";
 
 @Component({
   selector: 'app-voyager-sidebar',
   standalone: true,
-  imports: [CommonModule, MatIconModule, TuiLinkModule, TuiHintModule, TuiBadgeModule, SvgIconComponent],
+  imports: [CommonModule, MatIconModule, TuiLink, TuiHint, TuiBadge, SvgIconComponent],
   template: `
     <button class="icon-toggle-button" (click)="toggleReadme()" [class.active]="showReadme"
             tuiHint="Toggle readme" tuiHintDirection="right">
@@ -63,7 +63,7 @@ export class VoyagerSidebarComponent {
   }
 
   get showCopyCodeButton():boolean {
-    return !environment.production || window.location.search.includes("enableDevTools")
+    return !environment.production || window.location.search?.includes("enableDevTools")
   }
 
   @Input()

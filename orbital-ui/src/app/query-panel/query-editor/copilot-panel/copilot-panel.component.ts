@@ -1,3 +1,6 @@
+import {TuiAutoFocus} from '@taiga-ui/cdk';
+import { TUI_CONFIRM } from "@taiga-ui/kit";
+import { TuiTextareaModule} from '@taiga-ui/legacy';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -12,16 +15,7 @@ import {
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {Clipboard} from '@angular/cdk/clipboard';
-import {TuiAutoFocusModule} from '@taiga-ui/cdk';
-import {
-  TuiAlertService,
-  TuiButtonModule,
-  TuiDialogService,
-  TuiHintModule,
-  TuiLinkModule,
-  TuiNotification
-} from '@taiga-ui/core';
-import {TUI_PROMPT, TuiTextAreaModule} from '@taiga-ui/kit';
+import { TuiAlertService, TuiDialogService, TuiLink, TuiButton, TuiHint } from '@taiga-ui/core';
 import {MarkdownComponent} from 'ngx-markdown';
 import {ExpandingPanelSetModule} from '../../../expanding-panelset/expanding-panel-set.module';
 import {ConversationMessage} from '../../../services/query.service';
@@ -33,13 +27,13 @@ import {QueryState} from '../query-editor-toolbar/query-editor-toolbar.component
   imports: [
     CommonModule,
     ExpandingPanelSetModule,
-    TuiButtonModule,
+    TuiButton,
     FormsModule,
-    TuiTextAreaModule,
     MarkdownComponent,
-    TuiHintModule,
-    TuiLinkModule,
-    TuiAutoFocusModule
+    TuiHint,
+    TuiLink,
+    TuiTextareaModule,
+    TuiAutoFocus
   ],
   templateUrl: './copilot-panel.component.html',
   styleUrl: './copilot-panel.component.scss',
@@ -87,13 +81,13 @@ export class CopilotPanelComponent {
 
   copyQuery(query: string) {
     this.clipboard.copy(query);
-    this.alerts.open('Copied to clipboard', {status: TuiNotification.Success})
+    this.alerts.open('Copied to clipboard', {appearance: 'success'})
       .subscribe()
   }
 
   confirmRemoval() {
     this.dialogService
-      .open<boolean>(TUI_PROMPT, {
+      .open<boolean>(TUI_CONFIRM, {
         label: 'Are you sure?',
         data: {
           content: "This will remove the previous chats for this tab",

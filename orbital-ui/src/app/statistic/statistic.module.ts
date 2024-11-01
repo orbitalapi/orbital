@@ -1,15 +1,14 @@
+import { TuiBadge } from "@taiga-ui/kit";
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {StatisticComponent} from './statistic.component';
-import {TuiBadgeModule} from "@taiga-ui/kit";
-
 
 @NgModule({
   declarations: [StatisticComponent],
   exports: [StatisticComponent],
     imports: [
         CommonModule,
-        TuiBadgeModule
+        TuiBadge
     ]
 })
 export class StatisticModule {

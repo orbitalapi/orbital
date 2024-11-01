@@ -2,7 +2,7 @@
 <tui-input [formControl]="nameControl">
   Specify a title for the changes you're proposing.
   <input
-    tuiTextfield
+    tuiTextfieldLegacy
   />
 </tui-input>
 <div class="error-message-box" *ngIf="errorMessage">
@@ -15,7 +15,7 @@
     type="button"
     class="tui-space_right-3"
     size="m"
-    appearance="outline"
+    appearance="outline-grayscale"
     (click)="context.completeWith(null)">
     Cancel
   </button>

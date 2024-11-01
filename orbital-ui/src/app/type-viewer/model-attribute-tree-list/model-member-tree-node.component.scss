@@ -9,7 +9,7 @@
   font-size: 0.8rem;
   align-items: center;
 
-  tui-checkbox-labeled {
+  .checkbox-label {
     margin-right: 1.5rem;
   }
 }
@@ -21,10 +21,10 @@
 ::ng-deep {
   tui-badge {
     margin-right: 0.5rem;
-
-    .t-left-content {
-      display: none !important;
-    }
+    // NOTE: these overrides shouldn't be required, something's up with Taiga v4
+    //font-size: 0.75rem !important;
+    //padding: 0 0.4rem !important;
+    //block-size: 1.5rem !important;
   }
 }
 

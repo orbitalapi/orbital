@@ -1,13 +1,13 @@
+import { TuiBlockStatus } from "@taiga-ui/layout";
+import { TuiButton } from "@taiga-ui/core";
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { TuiButtonModule } from '@taiga-ui/core';
-import { TuiBlockStatusModule } from '@taiga-ui/layout';
 import { UiCustomisations } from '../../../../environments/ui-customisations';
 
 @Component({
   selector: 'app-configure-auth-step',
   standalone: true,
-  imports: [CommonModule, TuiBlockStatusModule, TuiButtonModule],
+  imports: [CommonModule, TuiBlockStatus, TuiButton],
   template: `
     <tui-block-status>
       <img tuiSlot="top" src="assets/img/illustrations/settings-28.svg">

@@ -7,7 +7,6 @@ import {
   Output, ViewChild
 } from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import { tuiIconPause, tuiIconPlay } from '@taiga-ui/icons';
 import { BehaviorSubject, EMPTY, Observable, of, Subject } from 'rxjs';
 import {filter, map, scan, tap} from 'rxjs/operators';
 import {
@@ -57,7 +56,7 @@ enum ViewMode {
             class="tab-mode-container"
             [(activeItemIndex)]="viewMode"
             [tuiHint]="!hasQueryRun() ? 'Results mode available after query has been run' : null"
-            tuiHintAppearance="onDark"
+            tuiHintAppearance="dark"
           >
             <button>
               Design
@@ -66,12 +65,12 @@ enum ViewMode {
               Results
             </button>
           </tui-segmented>
-          <tui-notification
+          <tui-notification size="m"
             *ngIf="showResultsPanel && viewMode === ViewMode.DESIGN"
-            status="info"
+            appearance="info"
             class="alert query-plan"
             tuiHint="The plan may change when executed if data is missing, or services return errors"
-            tuiHintAppearance="onDark"
+            tuiHintAppearance="dark"
           >
             The query plan below is indicative, and only shows the happy path.
           </tui-notification>
@@ -103,26 +102,26 @@ enum ViewMode {
           <button *tuiItem tuiTab>
             <img src="assets/img/tabler/exclamation-circle.svg" class="tab-icon">
             Problems
-            <tui-badge class="error-count-badge" *ngIf="errorCount > 0" [value]="errorCount" size="xs"></tui-badge>
+            <tui-badge class="error-count-badge" *ngIf="errorCount > 0" size="s">{{ errorCount }}</tui-badge>
           </button>
         </tui-tabs-with-more>
         <ng-template #more>
-          <tui-svg src="tuiIconMoreHorizontalLarge"></tui-svg>
+          <tui-icon  icon="@tui.ellipsis"></tui-icon>
         </ng-template>
         <div class="rightside-controls-container" *ngIf="viewMode === ViewMode.RESULTS">
           <tui-notification
             *ngIf="showMaxRecordCountWarning"
-            status="warning"
+            appearance="warning"
             size="s"
           >
             Pausing results to prevent UI instability
           </tui-notification>
           <button
             *ngIf="isQueryRunning || showMaxRecordCountWarning || (!isQueryRunning && isQueryPaused)"
-            tuiButton type="button" appearance="outline" size="s"
-            [icon]="icon"
+            tuiButton type="button" appearance="outline-grayscale" size="s"
+            [iconStart]="isQueryPaused || showMaxRecordCountWarning ? '@tui.play' : '@tui.pause'"
             [tuiHint]="hint"
-            tuiHintAppearance="onDark"
+            tuiHintAppearance="dark"
             (click)="pauseStreamToggled.emit(!isQueryPaused)"
             class="button-small menu-bar-button pause-stream-button"
             [class.is-query-paused]="isQueryPaused"
@@ -424,7 +423,5 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
     this.changeDetector.detectChanges();
   }
 
-  protected readonly tuiIconPlay = tuiIconPlay;
-  protected readonly tuiIconPause = tuiIconPause;
   protected readonly ViewMode = ViewMode;
 }

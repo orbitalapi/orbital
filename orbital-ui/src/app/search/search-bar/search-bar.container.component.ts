@@ -16,10 +16,10 @@ import { isNullOrUndefined } from "util";
                      (searchChange)="searchInputValueChanged($event)" [tuiTextfieldCleaner]="true"
                      [tuiTextfieldLabelOutside]="true"
                      [stringify]="emptyStringify"
-                     tuiTextfieldIconLeft="tuiIconSearch"
+                     tuiTextfieldIconLeft="@tui.search"
       >
           Search
-          <input placeholder="Search" tuiTextfield>
+          <input placeholder="Search" tuiTextfieldLegacy>
           <tui-data-list-wrapper
                   *tuiDataList
                   [itemContent]="content"

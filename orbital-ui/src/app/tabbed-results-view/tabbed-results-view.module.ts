@@ -1,6 +1,5 @@
 import {NgModule} from '@angular/core';
 import {FormsModule} from '@angular/forms';
-import {TuiSegmentedModule} from '@taiga-ui/experimental';
 import {DropdownComponent} from '../query-panel/query-editor/query-editor-toolbar/dropdown/dropdown.component';
 import {TabbedResultsViewComponent} from './tabbed-results-view.component';
 import {MatTabsModule} from '@angular/material/tabs';
@@ -9,15 +8,8 @@ import {CallExplorerModule} from '../query-panel/taxi-viewer/call-explorer/call-
 import {CommonModule} from '@angular/common';
 import {LineageDisplayModule} from '../lineage-display/lineage-display.module';
 import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
-import {TuiBadgeModule, TuiProgressModule, TuiTabsModule} from '@taiga-ui/kit';
-import {
-  TuiButtonModule,
-  TuiDataListModule,
-  TuiHintModule,
-  TuiHostedDropdownModule,
-  TuiNotificationModule,
-  TuiSvgModule
-} from '@taiga-ui/core';
+import { TuiBadge, TuiTabs, TuiSegmented, TuiProgress } from '@taiga-ui/kit';
+import { TuiNotification, TuiDataList, TuiDropdown, TuiIcon, TuiButton, TuiHint } from '@taiga-ui/core';
 import {JsonViewerModule} from 'src/app/json-viewer/json-viewer.module';
 import {QueryErrorsListComponent} from "../query-errors-list/query-errors-list.component";
 
@@ -30,18 +22,18 @@ import {QueryErrorsListComponent} from "../query-errors-list/query-errors-list.c
     CallExplorerModule,
     LineageDisplayModule,
     ExpandingPanelSetModule,
-    TuiTabsModule,
-    TuiHostedDropdownModule,
-    TuiButtonModule,
-    TuiSvgModule,
-    TuiDataListModule,
+    ...TuiTabs,
+    ...TuiDropdown,
+    TuiButton,
+    TuiIcon,
+    ...TuiDataList,
     JsonViewerModule,
-    TuiProgressModule,
+    ...TuiProgress,
     QueryErrorsListComponent,
-    TuiBadgeModule,
-    TuiHintModule,
-    TuiNotificationModule,
-    TuiSegmentedModule,
+    TuiBadge,
+    ...TuiHint,
+    TuiNotification,
+    TuiSegmented,
     DropdownComponent,
   ],
   exports: [TabbedResultsViewComponent],

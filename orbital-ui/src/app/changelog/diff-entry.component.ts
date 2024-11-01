@@ -5,7 +5,7 @@ import { ChangeLogDiffEntry, DiffKind } from './changelog.service';
   selector: 'app-diff-entry',
   template: `
     <div class="row">
-      <tui-svg [src]="iconForDiffKind" class="icon" [ngClass]="diffCategory"></tui-svg>
+      <tui-icon [icon]="iconForDiffKind" class="icon" [ngClass]="diffCategory"></tui-icon>
       <span class="display-name badge" [ngClass]="diffCategory">{{ diff.displayName }}</span>
       <span class="diff-kind subtle">{{ diff.kind | diffKind}}</span>
     </div>
@@ -69,11 +69,11 @@ export class DiffEntryComponent {
   get iconForDiffKind(): string {
     switch (this.diffCategory) {
       case 'add':
-        return 'tuiIconPlus';
+        return '@tui.plus';
       case 'change':
-        return 'tuiIconDraft';
+        return '@tui.draft';
       case 'remove':
-        return 'tuiIconMinus';
+        return '@tui.minus';
       default:
         return '';
     }

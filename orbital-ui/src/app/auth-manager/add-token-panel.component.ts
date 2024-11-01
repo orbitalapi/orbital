@@ -1,5 +1,5 @@
-import {Component, Inject, OnInit} from '@angular/core';
-import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
+import {Component, Inject} from '@angular/core';
+import {POLYMORPHEUS_CONTEXT} from "@taiga-ui/polymorpheus";
 import {TuiDialogContext} from "@taiga-ui/core";
 import {UiCustomisations} from "../../environments/ui-customisations";
 

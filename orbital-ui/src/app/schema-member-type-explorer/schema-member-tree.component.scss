@@ -7,8 +7,52 @@
 
   &::ng-deep {
     tui-expand {
-      margin-top: 0.3rem;
-      margin-left: 2.5rem !important;
+      margin-top: 0.25rem;
+      margin-left: 2.15rem !important;
+    }
+
+    tui-tree-item.tree-item-leaf-node {
+      padding: 0.15rem 0;
+      margin-left: 0.15rem;
+      white-space: nowrap;
+
+      > *:not(._expandable) {
+        padding-left: 0.25rem !important;
+      }
+
+      // The rest of this is the styling for the hierarchy decoration of the nodes
+      position: relative;
+
+      &:before,
+      &:after {
+        content: '';
+        position: absolute;
+        left: -1.56rem;
+      }
+
+      &:before {
+        width: 0.8rem;
+        height: 0;
+        top: 0.95rem;
+        border-bottom: 1px solid $gray-300;
+      }
+
+      &:not(._expandable){
+        &:before {
+          width: 1.35rem;
+        }
+      }
+
+      &:after {
+        top: -0.3rem;
+        height: 100%;
+        width: 0;
+        border-left: 1px solid $gray-300;
+      }
+
+      &:last-child::after {
+        height: 1.25rem;
+      }
     }
   }
 }
@@ -47,31 +91,6 @@
   img {
     padding-right: 2px;
     opacity: 0.8;
-  }
-
-  ::ng-deep tui-tree-item-content {
-    padding: 2px 2px 2px 4px !important;
-
-    // The rest of this is the styling for the hierarchy decoration of the nodes
-    position: relative;
-
-    &:before,
-    &:after {
-      content: '';
-      position: absolute;
-      left: -0.85rem;
-    }
-
-    &:before {
-      width: 0.8rem;
-      border-bottom: 1px solid $gray-300;
-    }
-
-    &:after {
-      top: -1rem;
-      bottom: 0.9rem;
-      border-left: 1px solid $gray-300;
-    }
   }
 
   &:hover {

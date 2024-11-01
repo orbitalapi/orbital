@@ -1,7 +1,8 @@
+import { TuiButtonLoading } from "@taiga-ui/kit";
+import { TuiSelectModule } from "@taiga-ui/legacy";
 import {CommonModule} from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
 import {FormsModule} from '@angular/forms';
-import {TuiSelectModule} from '@taiga-ui/kit';
 import {projectTypeToString} from 'src/app/project-import/project-source-config/git-config.component';
 import {
   AvroPackageLoaderSpec,
@@ -12,7 +13,7 @@ import {
 } from '../project-import.models';
 import {Message} from 'src/app/services/schema';
 import {FileRepositoryTestResponse, SchemaImporterService} from 'src/app/project-import/schema-importer.service';
-import {TuiAlertService, TuiButtonModule, TuiDataListModule, TuiNotificationModule} from '@taiga-ui/core';
+import { TuiAlertService, TuiNotification, TuiDataList, TuiButton } from '@taiga-ui/core';
 import {Router} from "@angular/router";
 import {AvroPackageConfigComponent} from './avro-package-config.component';
 import {OpenApiPackageConfigComponent} from './open-api-package-config.component';
@@ -91,26 +92,27 @@ import {TaxiPackageConfigComponent} from './taxi-package-config.component';
         (click)="goBackOnboarding.emit()"
       >Cancel
       </button>
-      <button tuiButton [showLoader]='working' [size]="'m'" (click)='doCreate()' [disabled]='fileForm.invalid'>
+      <button tuiButton [loading]='working' [size]="'m'" (click)='doCreate()' [disabled]='fileForm.invalid'>
         Create
       </button>
     </div>
-    <tui-notification [status]='saveResultMessage.severity.toLowerCase()' *ngIf='saveResultMessage'>
+    <tui-notification [appearance]='saveResultMessage.severity.toLowerCase()' *ngIf='saveResultMessage'>
       {{ saveResultMessage.message }}
     </tui-notification>
   `,
   styleUrls: ['./file-config.component.scss'],
   imports: [
-    TuiNotificationModule,
+    TuiNotification,
     FormsModule,
     TuiSelectModule,
-    TuiDataListModule,
+    TuiDataList,
     TaxiPackageConfigComponent,
     OpenApiPackageConfigComponent,
     AvroPackageConfigComponent,
-    TuiButtonModule,
-    CommonModule
-  ],
+    TuiButton,
+    CommonModule,
+    TuiButtonLoading
+],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class FileConfigComponent {
@@ -218,7 +220,7 @@ export class FileConfigComponent {
     if (!this.isOnboardingMode) {
       this.alertsService.open(
         'The local disk repository was added successfully',
-        { status: 'success' }
+        { appearance: 'success' }
       ).subscribe()
       this.router.navigate(['projects']);
     } else {

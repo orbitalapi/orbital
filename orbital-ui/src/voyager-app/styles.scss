@@ -27,9 +27,9 @@ $body-bg: #eeeeee;
 
   --component-bg-color: #{$slate-100};
 
-  --tui-primary: #{$primary};
-  --tui-primary-hover: #{$primary-light};
-  --tui-primary-active: #{$primary-dark};
+  --tui-background-accent-1: #{$primary};
+  --tui-background-accent-1-hover: #{$primary-light};
+  --tui-background-accent-1-pressed: #{$primary-dark};
 
   --tui-radius-s: 3px;
   --tui-radius-m: 5px;
@@ -66,7 +66,7 @@ body {
   margin: 0;
   font-family: $font-sans;
 
-  --tui-primary: #3b6af9;
+  --tui-background-accent-1: #3b6af9;
 }
 
 button {
@@ -230,14 +230,15 @@ tui-segmented.dark {
     font-size: 0.8rem;
     color: $slate-400;
 
+    &.active {
+      color: white;
+      opacity: 1 !important;
+    }
+
     &:hover:not(.active) {
       color: $slate-300;
       background: $slate-700;
     }
-  }
-
-  .active {
-    color: white;
   }
 }
 

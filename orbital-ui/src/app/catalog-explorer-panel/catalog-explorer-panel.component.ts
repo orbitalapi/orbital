@@ -8,14 +8,14 @@ import {QualifiedName} from "../services/schema";
   template: `
       <div class="search-container">
           <tui-input
-            icon="tuiIconSearch"
+            icon="@tui.search"
             [tuiTextfieldCleaner]="true"
             [tuiTextfieldLabelOutside]="true"
             [ngModel]="searchValue"
             (ngModelChange)="onSearchChanged($event)"
             tuiTextfieldSize="m">
             Search
-            <input tuiTextfield/>
+            <input tuiTextfieldLegacy/>
 
           </tui-input>
       </div>

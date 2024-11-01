@@ -1,11 +1,12 @@
+import { TuiTextfieldControllerModule, TuiInputModule, TuiSelectModule } from "@taiga-ui/legacy";
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { QuerySnippetPanelComponent } from './query-snippet-panel.component';
-import { TuiAccordionModule, TuiDataListWrapperModule, TuiInputModule, TuiSelectModule } from '@taiga-ui/kit';
+import { TuiDataListWrapper, TuiAccordion } from '@taiga-ui/kit';
 import { CovalentHighlightModule } from '@covalent/highlight';
 import { QuerySnippetContainerComponent } from './query-snippet-container.component';
 import { FormsModule } from '@angular/forms';
-import { TuiButtonModule, TuiDataListModule, TuiRootModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
+import { TuiRoot, TuiDataList, TuiButton } from '@taiga-ui/core';
 
 
 @NgModule({
@@ -19,14 +20,14 @@ import { TuiButtonModule, TuiDataListModule, TuiRootModule, TuiTextfieldControll
   ],
   imports: [
     CommonModule,
-    TuiAccordionModule,
+    ...TuiAccordion,
     CovalentHighlightModule,
     TuiSelectModule,
     FormsModule,
-    TuiDataListWrapperModule,
-    TuiDataListModule,
+    ...TuiDataListWrapper,
+    ...TuiDataList,
     TuiInputModule,
-    TuiButtonModule,
+    TuiButton,
     TuiTextfieldControllerModule,
   ]
 })

@@ -1,7 +1,7 @@
+import { TuiNotification } from "@taiga-ui/core";
 import { AsyncPipe, CommonModule, KeyValuePipe, TitleCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { TuiNotificationModule } from '@taiga-ui/core';
 import { Observable, } from 'rxjs';
 import { mergeMap } from 'rxjs/operators';
 import { ConnectorConfigDetail, DbConnectionService } from '../db-connection-editor/db-importer.service';
@@ -17,7 +17,7 @@ import { ConnectionStatusComponent } from './connection-status/connection-status
         <h2>{{connectorSummary.config.connectionName}}</h2>
         <app-connection-status [status]="connectorSummary.config?.connectionStatus"></app-connection-status>
       </div>
-      <tui-notification class="error-notification" *ngIf="connectorSummary.config.connectionStatus.status === 'ERROR'" status="error">
+      <tui-notification size="m" class="error-notification" *ngIf="connectorSummary.config.connectionStatus.status === 'ERROR'" appearance="error">
         {{connectorSummary.config.connectionStatus.message}}
       </tui-notification>
       <table class="connection-properties">
@@ -52,7 +52,7 @@ import { ConnectionStatusComponent } from './connection-status/connection-status
     TitleCasePipe,
     RouterLink,
     CommonModule,
-    TuiNotificationModule,
+    TuiNotification,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })

@@ -1,12 +1,12 @@
+import { TuiAccordion } from "@taiga-ui/kit";
 import {Component, Input} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {HttpExchangeHeaders} from "../../../services/query.service";
-import {TuiAccordionModule} from "@taiga-ui/kit";
 
 @Component({
   selector: 'app-headers-view',
   standalone: true,
-  imports: [CommonModule, TuiAccordionModule],
+  imports: [CommonModule, TuiAccordion],
   template: `
     <tui-accordion [closeOthers]="false" [rounded]="false">
       <tui-accordion-item size="s" [open]="true">

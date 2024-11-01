@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Input} from '@angular/core';
 import {findType, Schema, Type} from 'src/app/services/schema';
 import {Snippet} from 'src/app/query-snippet-panel/query-snippet-panel.component';
-import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
+import {POLYMORPHEUS_CONTEXT} from '@taiga-ui/polymorpheus';
 import {TuiDialogContext} from '@taiga-ui/core';
 import {PrimitiveTypeNames} from 'src/app/services/taxi';
 import {isNullOrUndefined} from 'util';

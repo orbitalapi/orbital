@@ -1,7 +1,7 @@
+import { TuiButton } from "@taiga-ui/core";
 import { AsyncPipe, NgIf } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
-import { TuiButtonModule } from '@taiga-ui/core';
 import { Observable } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 import { UiCustomisations } from '../../environments/ui-customisations';
@@ -20,7 +20,7 @@ import {RequiresAuthorityDirective} from "../requires-authority.directive";
         <button *appRequiresAuthority="['EditConnections']"
           tuiButton
           size="m"
-          icon="tuiIconPlus"
+          iconStart="@tui.plus"
           appearance="primary"
           [disabled]="(isAddingDataSource$ | async)"
           (click)="addDataSource()"
@@ -34,7 +34,7 @@ import {RequiresAuthorityDirective} from "../requires-authority.directive";
   styleUrls: ['./data-source-manager-header.component.scss'],
   imports: [
     HeaderComponentLayoutModule,
-    TuiButtonModule,
+    TuiButton,
     RouterOutlet,
     AsyncPipe,
     NgIf,

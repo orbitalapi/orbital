@@ -9,7 +9,7 @@ import {LandingPageCardConfig} from './landing-page.component';
       <img [src]="cardConfig.emptyStateImage">
       <div class="empty-container-content">
         <p>{{ cardConfig.emptyText }}</p>
-        <button tuiButton shape="rounded" (click)="emptyActionClicked.emit()">{{ cardConfig.emptyActionLabel }}</button>
+        <button tuiButton [style.border-radius.%]="100" (click)="emptyActionClicked.emit()">{{ cardConfig.emptyActionLabel }}</button>
       </div>
     </div>
   `,

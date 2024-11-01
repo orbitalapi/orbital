@@ -1,3 +1,4 @@
+import { TuiTextfieldControllerModule, TuiTextareaModule, TuiInputModule, TuiSelectModule } from "@taiga-ui/legacy";
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {CopilotPanelComponent} from './query-editor/copilot-panel/copilot-panel.component';
@@ -40,27 +41,21 @@ import {MatSortModule} from '@angular/material/sort';
 import {CovalentFileModule} from '@covalent/core/file';
 import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
 import {
-  TuiButtonModule, TuiDataListModule, TuiDropdownModule,
-  TuiErrorModule,
-  TuiHintModule, TuiHostedDropdownModule,
-  TuiNotificationModule, TuiSvgModule,
-  TuiTextfieldControllerModule
+  TuiNotification,
+  TuiDataList,
+  TuiError,
+  TuiDropdown,
+  TuiIcon,
+  TuiButton,
+  TuiHint,
+  TuiAppearance,
+  TuiLink,
 } from '@taiga-ui/core';
 import {ResultsDownloadModule} from 'src/app/results-download/results-download.module';
 import {MatMenuModule} from '@angular/material/menu';
 import {ClipboardModule} from '@angular/cdk/clipboard';
 import {QuerySnippetPanelModule} from 'src/app/query-snippet-panel/query-snippet-panel.module';
-import {
-  TUI_VALIDATION_ERRORS,
-  TuiDataListWrapperModule,
-  TuiFieldErrorPipeModule,
-  TuiFilterByInputPipeModule,
-  TuiInputModule,
-  TuiSelectModule,
-  TuiStringifyContentPipeModule,
-  TuiTabsModule,
-  TuiTextAreaModule
-} from '@taiga-ui/kit';
+import { TUI_VALIDATION_ERRORS, TuiDataListWrapper, TuiStringifyContentPipe, TuiFilterByInputPipe, TuiFieldErrorPipe, TuiTabs } from '@taiga-ui/kit';
 import {CatalogExplorerPanelModule} from "../catalog-explorer-panel/catalog-explorer-panel.module";
 import {SaveQueryDialogComponent} from "./query-editor/query-editor-toolbar/save-query-dialog.component";
 import {HeaderComponentLayoutModule} from "../header-component-layout/header-component-layout.module";
@@ -69,7 +64,7 @@ import {QueryHistoryPanelModule} from "../query-history-panel/query-history-pane
 import {SavedQueriesPanelModule} from "../saved-queries-panel/saved-queries-panel.module";
 import {PublishEndpointDialogComponent} from "./query-editor/query-editor-toolbar/publish-endpoint-dialog.component";
 import {ProjectSelectorModule} from "../project-selector/project-selector.module";
-import { TuiActiveZoneModule, TuiAutoFocusModule } from '@taiga-ui/cdk';
+import { TuiActiveZone, TuiAutoFocus } from '@taiga-ui/cdk';
 
 @NgModule({
   imports: [
@@ -104,38 +99,39 @@ import { TuiActiveZoneModule, TuiAutoFocusModule } from '@taiga-ui/cdk';
     RouterModule,
     MatSortModule,
     ExpandingPanelSetModule,
-    TuiButtonModule,
+    TuiButton,
     ResultsDownloadModule,
     MatMenuModule,
     ClipboardModule,
-    TuiHintModule,
+    ...TuiHint,
     QuerySnippetPanelModule,
-    TuiTabsModule,
-    TuiTextAreaModule,
+    ...TuiTabs,
+    TuiTextareaModule,
     TuiSelectModule,
-    TuiDataListWrapperModule,
+    ...TuiDataListWrapper,
     TuiTextfieldControllerModule,
     CatalogExplorerPanelModule,
     HeaderComponentLayoutModule,
-    TuiNotificationModule,
-    TuiFilterByInputPipeModule,
-    TuiStringifyContentPipeModule,
+    TuiNotification,
+    TuiFilterByInputPipe,
+    TuiStringifyContentPipe,
     TuiInputModule,
-    TuiErrorModule,
-    TuiFieldErrorPipeModule,
+    TuiError,
+    TuiFieldErrorPipe,
     DisableControlModule,
     QueryHistoryPanelModule,
     SavedQueriesPanelModule,
     ProjectSelectorModule,
-    TuiDropdownModule,
-    TuiActiveZoneModule,
-    TuiHostedDropdownModule,
-    TuiDataListModule,
-    TuiSvgModule,
-    TuiAutoFocusModule,
+    ...TuiDropdown,
+    TuiActiveZone,
+    ...TuiDataList,
+    TuiIcon,
+    TuiAutoFocus,
     PublishedEndpointInfoComponent,
     DropdownComponent,
     CopilotPanelComponent,
+    TuiAppearance,
+    TuiLink,
   ],
   exports: [
     QueryPanelComponent,

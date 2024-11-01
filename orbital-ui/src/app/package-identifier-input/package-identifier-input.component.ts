@@ -1,8 +1,8 @@
+import { TuiInputModule } from "@taiga-ui/legacy";
 import {Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
 import {CovalentCommonModule} from "@covalent/core/common";
 import {NgIf} from "@angular/common";
-import {TuiErrorModule, TuiGroupModule} from '@taiga-ui/core';
-import {TuiInputModule} from '@taiga-ui/kit';
+import { TuiError, TuiGroup } from '@taiga-ui/core';
 import {PackageIdentifier} from "../package-viewer/packages.service";
 import {ControlContainer, NgControl, NgModel, NgModelGroup, ReactiveFormsModule} from '@angular/forms';
 import {ValidIdentifierDirective} from "../project-import/project-source-config/valid-identifier.directive";
@@ -15,11 +15,11 @@ import {SemverValidatorDirective} from "../project-import/project-source-config/
   imports: [
     CovalentCommonModule,
     NgIf,
-    TuiGroupModule,
+    TuiGroup,
     TuiInputModule,
     ValidIdentifierDirective,
     SemverValidatorDirective,
-    TuiErrorModule,
+    TuiError,
     ReactiveFormsModule,
   ],
   template: `

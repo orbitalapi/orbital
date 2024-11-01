@@ -37,9 +37,9 @@
 
   --component-bg-color: #{$slate-100};
 
-  --tui-primary: #{$primary};
-  --tui-primary-hover: #{$primary-light};
-  --tui-primary-active: #{$primary-dark};
+  --tui-background-accent-1: #{$primary};
+  --tui-background-accent-1-hover: #{$primary-light};
+  --tui-background-accent-1-pressed: #{$primary-dark};
 
   --body-font: 'nunito-sans', sans-serif;
   --mono-font: 'jetbrains-mono', monospace;

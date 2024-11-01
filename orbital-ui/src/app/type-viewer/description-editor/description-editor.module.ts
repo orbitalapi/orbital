@@ -1,3 +1,6 @@
+import {TuiAutoFocus} from '@taiga-ui/cdk';
+import { TuiButton } from "@taiga-ui/core";
+import { TuiTextfieldControllerModule, TuiTextareaModule, TuiInputModule } from "@taiga-ui/legacy";
 import { NgModule } from '@angular/core';
 import { DescriptionEditorComponent } from './description-editor.component';
 import { DescriptionEditorContainerComponent } from './description-editor-container.component';
@@ -10,9 +13,6 @@ import { VyneServicesModule } from '../../services/vyne-services.module';
 import { RouterModule } from '@angular/router';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ChangesetNameDialogComponent } from '../../changeset-name-dialog/changeset-name-dialog.component';
-import { TuiInputModule, TuiTextareaModule } from '@taiga-ui/kit';
-import { TuiButtonModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
-import { TuiAutoFocusModule } from '@taiga-ui/cdk';
 
 @NgModule({
   imports: [
@@ -26,10 +26,10 @@ import { TuiAutoFocusModule } from '@taiga-ui/cdk';
     FormsModule,
     ReactiveFormsModule,
     TuiInputModule,
-    TuiButtonModule,
+    TuiButton,
     TuiTextareaModule,
     TuiTextfieldControllerModule,
-    TuiAutoFocusModule,
+    TuiAutoFocus
   ],
   exports: [DescriptionEditorContainerComponent, DescriptionEditorComponent, ChangesetNameDialogComponent],
   declarations: [DescriptionEditorComponent, DescriptionEditorContainerComponent, ChangesetNameDialogComponent],

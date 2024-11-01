@@ -1,7 +1,8 @@
+import { TuiButton } from "@taiga-ui/core";
+import { TuiIslandDirective } from "@taiga-ui/legacy";
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { TuiAvatarModule, TuiIslandModule, TuiStepperModule } from '@taiga-ui/kit';
-import { TuiButtonModule } from '@taiga-ui/core';
+import { TuiStepper, TuiAvatar } from '@taiga-ui/kit';
 import { UiCustomisations } from '../../../environments/ui-customisations';
 import {FileConfigComponent} from '../../project-import/project-source-config/file-config.component';
 import {GitConfigComponent} from '../../project-import/project-source-config/git-config.component';
@@ -14,10 +15,10 @@ import { RouterLink } from '@angular/router';
   imports: [
     CommonModule,
     RouterLink,
-    TuiStepperModule,
-    TuiIslandModule,
-    TuiButtonModule,
-    TuiAvatarModule,
+    TuiStepper,
+    TuiIslandDirective,
+    TuiButton,
+    TuiAvatar,
     ProjectListComponent,
     FileConfigComponent,
     GitConfigComponent

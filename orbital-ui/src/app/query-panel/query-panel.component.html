@@ -3,10 +3,10 @@
           type="button"
           size="s"
           appearance="icon"
-          icon="tuiIconPlus"
+          iconStart="@tui.plus"
           class="add-tab-button"
           tuiHint="New tab"
-          tuiHintAppearance="onDark"
+          tuiHintAppearance="dark"
           (click)="queryPanelStore.addTab()"
   ></button>
   <tui-tabs-with-more [activeItemIndex]="queryPanelStore.activeTabIndex()"
@@ -19,7 +19,7 @@
         tuiTab
         class="tab-button"
         [tuiHint]="longHint"
-        tuiHintAppearance="onDark"
+        tuiHintAppearance="dark"
         tuiHintDirection="top"
       >
         <ng-template #longHint>
@@ -34,7 +34,7 @@
           class="endpoint-published-icon"
           [class.is-active]="queryPanelStore.activeTabIndex() === i"
           tuiHint="Endpoint exists for this query"
-          tuiHintAppearance="onDark"
+          tuiHintAppearance="dark"
           tuiHintDirection="top"
         >
         <div
@@ -50,7 +50,7 @@
   </tui-tabs-with-more>
 
   <ng-template #more>
-    <tui-svg src="tuiIconMoreHorizontalLarge"></tui-svg>
+    <tui-icon icon="@tui.ellipsis"></tui-icon>
   </ng-template>
 </div>
 <app-query-editor

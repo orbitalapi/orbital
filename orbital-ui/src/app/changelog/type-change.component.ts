@@ -7,7 +7,7 @@ import { QualifiedName } from '../services/schema';
     <h4 class="h4">{{ label }}</h4>
     <div class="container">
       <span class="old-value mono-badge">{{ oldValue.shortDisplayName }}</span>
-      <tui-svg src="tuiIconArrowRight" class="icon"></tui-svg>
+      <tui-icon icon="@tui.arrow-right" class="icon"></tui-icon>
       <span class="new-value mono-badge">{{ newValue.shortDisplayName }}</span>
     </div>
 

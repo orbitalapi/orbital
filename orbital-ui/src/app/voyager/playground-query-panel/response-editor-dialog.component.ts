@@ -6,19 +6,19 @@ import {
 import {isNullOrUndefined} from "../../utils/utils";
 import * as monaco from "monaco-editor";
 import {JSONPathFinder} from "../../json-viewer/JsonPathFinder";
-import {TuiButtonModule, TuiDialogContext} from "@taiga-ui/core";
-import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
+import { TuiDialogContext, TuiButton } from "@taiga-ui/core";
+import {POLYMORPHEUS_CONTEXT} from "@taiga-ui/polymorpheus";
 import {editor} from "monaco-editor";
 import ITextModel = editor.ITextModel;
 
 @Component({
   selector: 'app-response-editor-dialog',
   standalone: true,
-  imports: [CommonModule, TuiButtonModule],
+  imports: [CommonModule, TuiButton],
   template: `
     <div #codeEditorContainer class="code-editor"></div>
     <div class="row">
-      <button tuiButton size="m" appearance="outline" (click)="context.completeWith(context.data)">Cancel</button>
+      <button tuiButton size="m" appearance="outline-grayscale" (click)="context.completeWith(context.data)">Cancel</button>
       <span class="spacer"></span>
       <button tuiButton size="m" appearance="primary" (click)="update()">Update</button>
     </div>

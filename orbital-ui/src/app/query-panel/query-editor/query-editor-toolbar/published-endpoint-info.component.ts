@@ -2,7 +2,7 @@ import {Clipboard} from '@angular/cdk/clipboard';
 import {CommonModule} from '@angular/common';
 import {ChangeDetectionStrategy, Component, Inject, Input, OnChanges, SimpleChanges} from '@angular/core';
 import {RouterLink} from '@angular/router';
-import {TuiAlertService, TuiDataListModule, TuiHintModule, TuiNotification} from '@taiga-ui/core';
+import { TuiAlertService, TuiDataList, TuiHint } from '@taiga-ui/core';
 import {HttpMethod} from '../../../project-import/schema-importer.service';
 import {SavedQuery} from '../../../services/types.service';
 import {DropdownComponent} from './dropdown/dropdown.component';
@@ -18,7 +18,7 @@ type QueryPayload = {
   selector: 'app-published-endpoint-info',
   standalone: true,
   styleUrl: './published-endpoint-info.component.scss',
-  imports: [CommonModule, RouterLink, DropdownComponent, TuiDataListModule, TuiHintModule],
+  imports: [CommonModule, RouterLink, DropdownComponent, TuiDataList, TuiHint],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div *ngFor="let query of queries; index as i; trackBy: queryName" class="published-endpoint">
@@ -113,7 +113,7 @@ export class PublishedEndpointInfoComponent implements OnChanges {
       }
       this.clipboard.copy(clipboardContent)
     }
-    this.alerts.open('Copied to clipboard', {status: TuiNotification.Success})
+    this.alerts.open('Copied to clipboard', {appearance: 'success'})
       .subscribe()
   }
 }

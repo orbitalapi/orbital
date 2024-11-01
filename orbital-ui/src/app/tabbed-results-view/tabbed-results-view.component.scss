@@ -6,7 +6,7 @@
 }
 
 .panel-header {
-  padding: 0.2rem 1rem;
+  padding: 0 1rem;
   gap: 0;
 
   ::ng-deep h4 {
@@ -48,6 +48,9 @@ tui-tabs-with-more {
     font-family: $headings-font;
     font-size: 0.9rem ;
   }
+
+  // hide the border at the bottom
+  box-shadow: none !important;
 }
 
 .results-container {

@@ -23,27 +23,30 @@ import IModelContentChangedEvent = editor.IModelContentChangedEvent;
     template: `
     <app-panel-header title="Source content" [isSecondary]="true">
       <div class="spacer"></div>
-      <button tuiButton size="s" appearance="outline" *ngIf="editorVisible" (click)="clearContent()">Clear</button>
+      <button tuiButton size="s" appearance="outline-grayscale" *ngIf="editorVisible" (click)="clearContent()">Clear</button>
     </app-panel-header>
     <div class="empty-state" *ngIf="!editorVisible">
-      <tui-notification class="onboarding-text" status="neutral" size="s">
-        Provide a data sample to design a Taxi schema for
+      <tui-notification class="onboarding-text" appearance="neutral" size="s">
+        Provide a data sample to design a Taxi schema for (you can upload CSV, TSV, PSV, JSON or XML files)
       </tui-notification>
-      <tui-input-files
+      <label
         *ngIf="!fileDropControl.value"
-        [formControl]="fileDropControl"
-        (reject)="onReject($event)"
-        [maxFileSize]="8*1024*1024"
-        accept=".csv, .tsv, .psv, .json, .xml"
-        link="Choose a CSV, TSV, PSV, JSON or XML file"
-        label="or drop one here"
-      ></tui-input-files>
+        tuiInputFiles
+      >
+        <input
+          [formControl]="fileDropControl"
+          tuiInputFiles
+          (reject)="onReject($event)"
+          [maxFileSize]="8*1024*1024"
+          accept=".csv, .tsv, .psv, .json, .xml"
+        />
+      </label>
       <tui-files *ngIf="rejectedFiles$ | async as file">
         <tui-file
           state="error"
           [file]="file"
           [showDelete]="fileDropControl.enabled"
-          (removed)="clearRejected()"
+          (remove)="clearRejected()"
         ></tui-file>
       </tui-files>
       <tui-files *ngIf="loadingFiles$ | async as file">
@@ -54,7 +57,7 @@ import IModelContentChangedEvent = editor.IModelContentChangedEvent;
         ></tui-file>
       </tui-files>
       <div>OR</div>
-      <button tuiButton appearance="outline" (click)="showEditor()">Start by writing</button>
+      <button tuiButton appearance="outline-grayscale" (click)="showEditor()">Start by writing</button>
     </div>
     <div class="editor-container" #codeEditorContainer *ngIf="editorVisible">
 

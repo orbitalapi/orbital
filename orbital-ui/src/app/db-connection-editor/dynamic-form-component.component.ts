@@ -1,3 +1,4 @@
+import { TuiInputModule, TuiInputNumberModule, TuiInputPasswordModule } from "@taiga-ui/legacy";
 import { AsyncPipe, CommonModule, NgSwitch } from '@angular/common';
 import {Component, forwardRef, Input} from '@angular/core';
 import {
@@ -7,14 +8,8 @@ import {
   UntypedFormControl,
   UntypedFormGroup
 } from '@angular/forms';
-import {
-  TuiCheckboxLabeledModule,
-  TuiFieldErrorPipeModule,
-  TuiInputModule,
-  TuiInputNumberModule,
-  TuiInputPasswordModule
-} from '@taiga-ui/kit';
-import { TUI_NUMBER_FORMAT, TuiErrorModule } from '@taiga-ui/core';
+import { TuiFieldErrorPipe, TuiCheckbox } from '@taiga-ui/kit';
+import { TUI_NUMBER_FORMAT, TuiError, TuiLabel } from '@taiga-ui/core';
 
 export class DynamicFormComponentSpec {
   constructor(readonly key: string,
@@ -51,8 +46,10 @@ export type InputType = 'text' | 'password' | 'number' | 'checkbox';
         <tui-input-password *ngSwitchCase="'password'" [formControlName]="spec.key">{{ spec.label }}
         </tui-input-password>
         <tui-input-number *ngSwitchCase="'number'" [formControlName]="spec.key">{{ spec.label }}</tui-input-number>
-        <tui-checkbox-labeled *ngSwitchCase="'checkbox'" [formControlName]="spec.key">{{ spec.label }}
-        </tui-checkbox-labeled>
+        <label tuiLabel *ngSwitchCase="'checkbox'">
+          <input tuiCheckbox type="checkbox" size="s" [formControlName]="spec.key">
+          {{ spec.label }}
+        </label>
       </ng-container>
       <tui-error [formControlName]="spec.key" [required]="spec.required" [formGroup]="form"
                  [error]="[] | tuiFieldError | async"
@@ -66,11 +63,12 @@ export type InputType = 'text' | 'password' | 'number' | 'checkbox';
     TuiInputModule,
     TuiInputPasswordModule,
     TuiInputNumberModule,
-    TuiCheckboxLabeledModule,
-    TuiErrorModule,
-    TuiFieldErrorPipeModule,
-    AsyncPipe
-  ],
+    TuiLabel,
+    TuiError,
+    TuiFieldErrorPipe,
+    AsyncPipe,
+    TuiCheckbox
+],
   standalone: true
 })
 export class DynamicFormComponentComponent implements ControlValueAccessor {

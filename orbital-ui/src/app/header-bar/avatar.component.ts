@@ -1,6 +1,6 @@
 import {HttpErrorResponse} from '@angular/common/http';
 import {Component, Inject, Input} from '@angular/core';
-import {PolymorpheusContent} from '@tinkoff/ng-polymorpheus';
+import {PolymorpheusContent} from '@taiga-ui/polymorpheus';
 import {LicenseService} from "../license-display/license.service";
 import {AppInfoService} from "../services/app-info.service";
 import {VyneUser} from '../services/user-info.service';
@@ -11,13 +11,15 @@ import {TuiAlertService, TuiDialogContext, TuiDialogService} from '@taiga-ui/cor
   selector: 'app-avatar',
   styleUrls: ['./avatar.component.scss'],
   template: `
-    <tui-hosted-dropdown [content]="userMenu" tuiDropdownMaxHeight="550">
+    <div tuiDropdownOpen [tuiDropdown]="userMenu" tuiDropdownMaxHeight="550">
       <div class="user-container">
-        <tui-avatar [text]="user.username" [rounded]="true" [autoColor]="false" [avatarUrl]="user.profileUrl"
-                    size="s"></tui-avatar>
+        <tui-avatar [round]="true"
+                    size="s"
+                    [src]="(user.name || user.username).slice(0, 1).toUpperCase()"
+        />
         <div class="username">{{ user.name || user.username }}</div>
       </div>
-    </tui-hosted-dropdown>
+    </div>
     <ng-template #userMenu>
       <tui-data-list>
         <tui-opt-group [label]="user.username">
@@ -60,13 +62,13 @@ import {TuiAlertService, TuiDialogContext, TuiDialogService} from '@taiga-ui/cor
           tuiButton
           type="button"
           class="tui-space_right-3"
-          [showLoader]="isLoggingOut"
+          [loading]="isLoggingOut"
           (click)="logout()"
         >
           Logout
         </button>
       </div>
-      <tui-notification *ngIf="errorMessage" status="error">{{ errorMessage }}</tui-notification>
+      <tui-notification size="m" *ngIf="errorMessage" appearance="error">{{ errorMessage }}</tui-notification>
     </ng-template>
   `,
 })

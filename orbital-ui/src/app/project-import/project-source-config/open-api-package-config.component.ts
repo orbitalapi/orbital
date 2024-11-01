@@ -1,6 +1,6 @@
+import { TuiInputModule } from "@taiga-ui/legacy";
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import {TuiHintModule, TuiNotificationModule, tuiNotificationOptionsProvider} from '@taiga-ui/core';
-import {TuiInputModule} from '@taiga-ui/kit';
+import { tuiNotificationOptionsProvider, TuiNotification, TuiHint } from '@taiga-ui/core';
 import {OpenApiPackageLoaderSpec} from 'src/app/project-import/project-import.models';
 import {ControlContainer, FormsModule, NgModelGroup, ReactiveFormsModule} from '@angular/forms';
 import {UiCustomisations} from '../../../environments/ui-customisations';
@@ -15,18 +15,18 @@ import {FilePathOrUploadComponent} from './file-path-or-upload.component';
     PackageIdentifierInputComponent,
     TuiInputModule,
     FormsModule,
-    TuiNotificationModule,
-    TuiHintModule,
+    TuiNotification,
+    TuiHint,
   ],
   providers: [
     tuiNotificationOptionsProvider({
-      icon: 'tuiIconHelpCircle',
-      status: 'info',
+      icon: '@tui.circle-help',
+      appearance: 'info',
     }),
   ],
   viewProviders: [{ provide: ControlContainer, useExisting: NgModelGroup }],
   template: `
-    <tui-notification status="info" class="open-api-notification" [tuiHint]="tooltip" tuiHintAppearance="onDark" tuiHintShowDelay="100">
+    <tui-notification size="m" appearance="info" class="open-api-notification" [tuiHint]="tooltip" tuiHintAppearance="dark" tuiHintShowDelay="100">
       Understanding the difference between adding a project vs adding a data source
     </tui-notification>
     <ng-template #tooltip>

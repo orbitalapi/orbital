@@ -167,7 +167,7 @@ tui-pagination {
 
   &:before {
     width: 1rem;
-    border-bottom: 1px solid var(--tui-base-04);
+    border-bottom: 1px solid var(--tui-border-normal);
   }
 
 
@@ -178,7 +178,7 @@ tui-pagination {
   &:after {
     top: -1rem;
     bottom: 6.5rem; // Magic variable, calculated by fiddling about.
-    border-left: 1px solid var(--tui-base-04);
+    border-left: 1px solid var(--tui-border-normal);
   }
 }
 
@@ -187,6 +187,6 @@ tui-pagination {
   &:after {
     top: -1.5rem;
     bottom: 1rem;
-    border-left: 1px solid var(--tui-base-04);
+    border-left: 1px solid var(--tui-border-normal);
   }
 }

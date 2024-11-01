@@ -1,20 +1,20 @@
+import {TuiPopover} from '@taiga-ui/cdk';
 import {Component, Inject, Injector} from '@angular/core';
-import {Message, Severity, severityToTuiNotification} from "../services/schema";
-import {TuiAlertOptions, TuiAlertService, TuiButtonModule, TuiNotificationT} from "@taiga-ui/core";
-import {POLYMORPHEUS_CONTEXT, PolymorpheusComponent} from "@tinkoff/ng-polymorpheus";
-import {TuiDialog} from "@taiga-ui/cdk";
-import {merge, Observable} from "rxjs";
-import {ResultWithMessage} from "../services/types.service";
+import {Message, Severity, severityToTuiNotification} from '../services/schema';
+import {TuiAlertOptions, TuiAlertService, TuiButton} from '@taiga-ui/core';
+import {POLYMORPHEUS_CONTEXT, PolymorpheusComponent} from '@taiga-ui/polymorpheus';
+import {merge, Observable} from 'rxjs';
+import {ResultWithMessage} from '../services/types.service';
 
 @Component({
   selector: 'app-alert-with-dismiss',
   standalone: true,
   imports: [
-    TuiButtonModule
+    TuiButton
   ],
   template: `
     <div class="message-text" [innerHTML]="messageWithLineBreaks"></div>
-    <button tuiButton size="s" appearance="outline" (click)="close()">Close</button>
+    <button tuiButton size="s" appearance="outline-grayscale" (click)="close()">Close</button>
   `,
   styleUrl: './alert-with-dismiss.component.scss'
 })
@@ -23,7 +23,7 @@ export class AlertWithDismissComponent {
 
   constructor(
     @Inject(POLYMORPHEUS_CONTEXT)
-    private readonly context: TuiDialog<TuiAlertOptions<Message>, void>
+    private readonly context: TuiPopover<TuiAlertOptions<Message>, void>
   ) {
     this.message = context.data;
   }
@@ -48,10 +48,10 @@ export function showAlertForMessage(message: Message, alertService: TuiAlertServ
   return alertService.open(
     new PolymorpheusComponent(AlertWithDismissComponent, injector),
     {
-      status: severityToTuiNotification(message.severity),
+      appearance: severityToTuiNotification(message.severity),
       data: message,
-      autoClose: false,
-      hasCloseButton: true
+      autoClose: 0,
+      closeable: true
     }
   )
 }

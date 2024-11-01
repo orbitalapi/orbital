@@ -1,5 +1,5 @@
+import { TuiHint } from "@taiga-ui/core";
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef} from '@angular/core';
-import {TuiHintModule} from '@taiga-ui/core';
 import {ChangelogModule} from './changelog.module';
 import {ChangeLogEntry, ChangelogService} from "./changelog.service";
 import {SchemaNotificationService} from "../services/schema-notification.service";
@@ -20,7 +20,7 @@ import {PackagesService, SourcePackageDescription} from "../package-viewer/packa
     MomentModule,
     RouterLink,
     I18nPluralPipe,
-    TuiHintModule,
+    TuiHint,
     ChangelogModule
   ],
   template: `
@@ -36,7 +36,7 @@ import {PackagesService, SourcePackageDescription} from "../package-viewer/packa
             <img src="assets/img/tabler/package.svg">
             <div>
               {{ pkg.split('/')[0] }} / <a class="link" [routerLink]="packageIdToRoute(pkg)">{{ pkg.split('/')[1] }}</a>
-              <div class="diff-length" [tuiHint]="hintTemplate" tuiHintAppearance="onDark">
+              <div class="diff-length" [tuiHint]="hintTemplate" tuiHintAppearance="dark">
                 {{ changelogEntry.diffs.length | i18nPlural: changelogPluralMap }}
               </div>
               <ng-template #hintTemplate><app-diff-list [diffs]="changelogEntry.diffs"></app-diff-list></ng-template>

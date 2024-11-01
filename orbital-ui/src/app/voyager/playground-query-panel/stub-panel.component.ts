@@ -1,3 +1,5 @@
+import { TuiComboBoxModule } from "@taiga-ui/legacy";
+import { TuiTable } from "@taiga-ui/addon-table";
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -11,12 +13,10 @@ import {
 import {CommonModule} from '@angular/common';
 import {RequiresAuthorityDirective} from '../../requires-authority.directive';
 import {OperationStub} from "../../services/query.service";
-import {TuiTableModule} from "@taiga-ui/addon-table";
-import {TuiButtonModule, TuiDataListModule, TuiDialogService} from "@taiga-ui/core";
-import {TuiComboBoxModule} from "@taiga-ui/kit";
+import { TuiDialogService, TuiDataList, TuiButton } from "@taiga-ui/core";
 import {collectionAllOperations, Operation, Schema, ServiceMember} from "../../services/schema";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
-import {PolymorpheusComponent} from "@tinkoff/ng-polymorpheus";
+import {PolymorpheusComponent} from "@taiga-ui/polymorpheus";
 import {ResponseEditorDialogComponent} from "./response-editor-dialog.component";
 import {StubDesignerComponent, StubDesignerProps} from "../stub-designer/stub-designer.component";
 import {isNullOrUndefined} from "../../utils/utils";
@@ -27,10 +27,10 @@ import {isNullOrUndefined} from "../../utils/utils";
     FormsModule,
     ReactiveFormsModule,
     ResponseEditorDialogComponent,
-    TuiTableModule,
-    TuiButtonModule,
+    TuiTable,
+    TuiButton,
     TuiComboBoxModule,
-    TuiDataListModule,
+    TuiDataList,
     RequiresAuthorityDirective,
   ],
   selector: 'app-stub-panel',
@@ -70,7 +70,7 @@ import {isNullOrUndefined} from "../../utils/utils";
           {{ stubbedResponseLabel(stub) }}
         </td>
         <td tuiTd *tuiCell="'button'" class="button-cell">
-          <button tuiButton appearance="icon" icon="tuiIconTrash" size="xs" (click)="removeStub(stub)"></button>
+          <button tuiButton appearance="icon" iconStart="@tui.trash" size="xs" (click)="removeStub(stub)"></button>
         </td>
       </tr>
       </tbody>
@@ -80,7 +80,7 @@ import {isNullOrUndefined} from "../../utils/utils";
         tuiButton
         size="s"
         appearance="secondary"
-        icon="tuiIconPlus"
+        iconStart="@tui.plus"
         class="button-small"
         (click)="addNewStub()"
       >
@@ -125,7 +125,6 @@ export class StubPanelComponent {
       new PolymorpheusComponent(StubDesignerComponent, this.injector),
       {
         size: "auto",
-        closeable: true,
         appearance: 'no-border',
         data: {
           operation,
@@ -133,6 +132,7 @@ export class StubPanelComponent {
           schema: this.schema
         } as StubDesignerProps,
         dismissible: true,
+        closeable: false
       },
     ).subscribe(next => {
       this.stubs[this.stubs.indexOf(stub)] = next;

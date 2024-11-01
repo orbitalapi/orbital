@@ -1,8 +1,8 @@
+import { TuiBadge } from "@taiga-ui/kit";
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import {TuiDataListModule, TuiSvgModule} from '@taiga-ui/core';
-import { TuiBadgeModule } from '@taiga-ui/kit';
+import { TuiDataList, TuiIcon } from '@taiga-ui/core';
 import {DropdownComponent} from '../query-panel/query-editor/query-editor-toolbar/dropdown/dropdown.component';
 import { PackageListComponent } from './package-list/package-list.component';
 
@@ -15,12 +15,12 @@ import { PackageListComponent } from './package-list/package-list.component';
   ],
   imports: [
     CommonModule,
-    TuiBadgeModule,
+    TuiBadge,
     RouterLinkActive,
     RouterLink,
     DropdownComponent,
-    TuiDataListModule,
-    TuiSvgModule
+    ...TuiDataList,
+    TuiIcon
   ]
 })
 export class PackageViewerModule {

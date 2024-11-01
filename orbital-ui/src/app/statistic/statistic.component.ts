@@ -1,6 +1,5 @@
-import {Component, HostBinding, Input, OnInit} from '@angular/core';
-import {TuiStatus} from "@taiga-ui/kit/types";
-import {TuiSizeL} from "@taiga-ui/core";
+import {Component, HostBinding, Input} from '@angular/core';
+import {TuiAppearanceOptions, TuiSizeL} from '@taiga-ui/core';
 
 @Component({
   selector: 'app-statistic',
@@ -9,7 +8,7 @@ import {TuiSizeL} from "@taiga-ui/core";
       <span>{{ label }}</span>
     </div>
     <div class="stat-value">
-      <tui-badge size="xs" *ngIf="status" [status]="status" [value]="" ></tui-badge>
+      <tui-badge size="s" *ngIf="status" [appearance]="status"></tui-badge>
       <span>{{ value }}</span>
     </div>
   `,
@@ -24,7 +23,7 @@ export class StatisticComponent {
   value: string;
 
   @Input()
-  status: TuiStatus | null = null;
+  status:  TuiAppearanceOptions["appearance"] | null = null;
 
   @Input()
   size: TuiSizeL = 'm'

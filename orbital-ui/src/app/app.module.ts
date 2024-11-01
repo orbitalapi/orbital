@@ -1,3 +1,6 @@
+import { PolymorpheusTemplate, PolymorpheusOutlet } from "@taiga-ui/polymorpheus";
+import { TUI_SANITIZER, TuiInputModule } from "@taiga-ui/legacy";
+import { NG_EVENT_PLUGINS } from "@taiga-ui/event-plugins";
 import { BrowserModule } from '@angular/platform-browser';
 import { ApplicationRef, DoBootstrap, NgModule, Optional } from '@angular/core';
 import { CommonModule, DatePipe } from '@angular/common';
@@ -14,30 +17,18 @@ import { SidenavComponent } from './sidenav/sidenav.component';
 import { SystemAlertModule } from './system-alert/system-alert.module';
 import { AuthModule } from './auth/auth.module';
 import { AuthService } from './auth/auth.service';
-import {
-  TUI_ALERT_POSITION,
-  TUI_SANITIZER,
-  TuiAlertModule,
-  TuiButtonModule,
-  TuiDialogModule,
-  TuiLinkModule,
-  TuiRootModule,
-  TuiScrollbarModule
-} from '@taiga-ui/core';
+import { TUI_ALERT_POSITION, TuiRoot, TuiAlert, TuiScrollbar, TuiLink, TuiDialog, TuiButton } from '@taiga-ui/core';
 
 import { APP_ROUTES } from 'src/app/app.routes';
 import { ConfirmationDialogModule } from 'src/app/confirmation-dialog/confirmation-dialog.module';
 import { WebsocketService } from 'src/app/services/websocket.service';
 import { environment } from 'src/environments/environment';
 import { ENVIRONMENT } from 'src/app/services/environment';
-import { TuiInputModule, TuiProgressModule } from '@taiga-ui/kit';
-import { PolymorpheusModule } from '@tinkoff/ng-polymorpheus';
-import { TuiDialogHostModule, TuiFocusTrapModule, TuiOverscrollModule } from '@taiga-ui/cdk';
+import {TuiProgress} from '@taiga-ui/kit';
 import { MatNativeDateModule } from '@angular/material/core';
-import { NgDompurifySanitizer } from '@tinkoff/ng-dompurify';
+import { NgDompurifySanitizer } from '@taiga-ui/dompurify';
 import { LANGUAGE_SERVER_WS_ADDRESS_TOKEN } from './code-editor/language-server.tokens';
 import { CodeEditorModule } from './code-editor/code-editor.module';
-import {PlaygroundSchemaService} from "../voyager-app/playground-schema-service";
 
 const oauth2OidcModule = [AuthModule];
 
@@ -54,25 +45,22 @@ const oauth2OidcModule = [AuthModule];
     LayoutModule,
     HttpClientModule,
     ...oauth2OidcModule,
-    TuiRootModule,
-    TuiAlertModule,
-    TuiLinkModule,
-    TuiDialogModule,
+    TuiRoot,
+    TuiAlert,
+    TuiLink,
+    TuiDialog,
     TuiInputModule,
-    PolymorpheusModule,
-    TuiButtonModule,
+    PolymorpheusTemplate, PolymorpheusOutlet,
+    TuiButton,
     ConfirmationDialogModule,
-    TuiFocusTrapModule,
-    TuiScrollbarModule,
-    TuiOverscrollModule,
-    TuiDialogHostModule,
+    TuiScrollbar,
     MatNativeDateModule,
     CodeEditorModule,
     DraftManagementBarModule,
     HeaderBarModule,
     SidenavComponent,
     SystemAlertModule,
-    TuiProgressModule
+    ...TuiProgress,
   ],
   providers: [
     TypesService,
@@ -96,7 +84,8 @@ const oauth2OidcModule = [AuthModule];
     },
     DatePipe,
     { provide: TUI_ALERT_POSITION, useValue: '2rem auto 0 auto' },
-  ],
+    NG_EVENT_PLUGINS
+],
   exports: []
 })
 export class AppModule implements DoBootstrap {

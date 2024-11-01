@@ -27,7 +27,7 @@ import {QualifiedName} from "../services/schema";
                 type="button"
                 size="xs"
                 appearance="icon"
-                icon="tuiIconPlusCircle"
+                iconStart="@tui.circle-plus"
                 (click)="addToQueryClicked.emit(searchResult.qualifiedName)"
                 [tuiHint]="'Add to query'"
         ></button>

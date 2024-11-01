@@ -1,8 +1,8 @@
+import { TuiAccordion } from "@taiga-ui/kit";
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { concatMap, Observable } from 'rxjs';
 import { shareReplay, tap } from 'rxjs/operators';
-import { TuiAccordionModule } from '@taiga-ui/kit';
 import { UiCustomisations } from '../../../../environments/ui-customisations';
 import { PackagesService, SourcePackageDescription } from '../../../package-viewer/packages.service';
 import { TypesService } from '../../../services/types.service';
@@ -10,7 +10,7 @@ import { TypesService } from '../../../services/types.service';
 @Component({
   selector: 'app-project-list',
   standalone: true,
-  imports: [CommonModule, TuiAccordionModule],
+  imports: [CommonModule, TuiAccordion],
   templateUrl: './project-list.component.html',
   styleUrls: ['./project-list.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush

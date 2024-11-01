@@ -1,3 +1,4 @@
+import { TuiInputModule } from "@taiga-ui/legacy";
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {NewWorkspaceComponent} from './new-workspace/new-workspace.component';
@@ -6,9 +7,9 @@ import {AuthGuard} from "../services/auth.guard";
 import {VynePrivileges} from "../services/user-info.service";
 import {HeaderBarModule} from "../header-bar/header-bar.module";
 import {HeaderComponentLayoutModule} from "../header-component-layout/header-component-layout.module";
-import {TuiFieldErrorPipeModule, TuiInputModule, TuiTabsModule} from "@taiga-ui/kit";
+import { TuiFieldErrorPipe, TuiTabs, TuiButtonLoading } from "@taiga-ui/kit";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
-import {TuiButtonModule, TuiErrorModule, TuiNotificationModule} from "@taiga-ui/core";
+import { TuiNotification, TuiError, TuiButton } from "@taiga-ui/core";
 import { UiCustomisations } from '../../environments/ui-customisations';
 
 
@@ -29,14 +30,15 @@ import { UiCustomisations } from '../../environments/ui-customisations';
         ]),
         HeaderBarModule,
         HeaderComponentLayoutModule,
-        TuiTabsModule,
+        ...TuiTabs,
         ReactiveFormsModule,
         TuiInputModule,
         FormsModule,
-        TuiButtonModule,
-        TuiErrorModule,
-        TuiFieldErrorPipeModule,
-        TuiNotificationModule
+        TuiButton,
+        TuiError,
+        TuiFieldErrorPipe,
+        TuiNotification,
+        TuiButtonLoading
     ]
 })
 export class WorkspaceManagerModule {

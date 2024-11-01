@@ -1,7 +1,8 @@
+import { TuiButtonLoading } from "@taiga-ui/kit";
+import { TuiComboBoxModule, TuiInputModule, TuiSelectModule } from "@taiga-ui/legacy";
 import {NgIf} from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
 import {FormsModule} from '@angular/forms';
-import {TuiComboBoxModule, TuiInputModule, TuiSelectModule} from '@taiga-ui/kit';
 import {UiCustomisations} from '../../../environments/ui-customisations';
 import {
   AvroPackageLoaderSpec,
@@ -14,7 +15,7 @@ import {
 import {isNullOrUndefined} from 'src/app/utils/utils';
 import {GitConnectionTestResult, SchemaImporterService} from 'src/app/project-import/schema-importer.service';
 import {Message} from 'src/app/services/schema';
-import {TuiAlertService, TuiButtonModule, TuiDataListModule, TuiNotificationModule} from '@taiga-ui/core';
+import { TuiAlertService, TuiNotification, TuiDataList, TuiButton } from '@taiga-ui/core';
 import {Router} from "@angular/router";
 import {AvroPackageConfigComponent} from './avro-package-config.component';
 import {OpenApiPackageConfigComponent} from './open-api-package-config.component';
@@ -37,15 +38,16 @@ export const projectTypeToString = (item: LoadablePackageType) => {
   imports: [
     FormsModule,
     TuiInputModule,
-    TuiButtonModule,
+    TuiButton,
     NgIf,
     TuiComboBoxModule,
-    TuiDataListModule,
+    TuiDataList,
     TuiSelectModule,
     OpenApiPackageConfigComponent,
     AvroPackageConfigComponent,
-    TuiNotificationModule
-  ],
+    TuiNotification,
+    TuiButtonLoading
+],
   template: `
     <div class="form-header-text">
       <p>Connect {{ UiCustomisations.productName }} to a Git repository to add individual OpenAPI schemas, or entire
@@ -76,9 +78,9 @@ export const projectTypeToString = (item: LoadablePackageType) => {
                   Repository URL
                   <span class="tui-required"></span>
                 </tui-input>
-                <button tuiButton appearance="outline" size="m"
+                <button tuiButton appearance="outline-grayscale" size="m"
                         [disabled]="testingConnection || !gitConfig.uri"
-                        [showLoader]="testingConnection" (click)="testConnection()">Test connection
+                        [loading]="testingConnection" (click)="testConnection()">Test connection
                 </button>
               </div>
               <div class="test-result-box error-message"
@@ -245,10 +247,10 @@ export const projectTypeToString = (item: LoadablePackageType) => {
         (click)="goBackOnboarding.emit()"
       >Cancel
       </button>
-      <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()" [disabled]="gitForm.invalid">Create
+      <button tuiButton [loading]="working" [size]="'m'" (click)="doCreate()" [disabled]="gitForm.invalid">Create
       </button>
     </div>
-    <tui-notification [status]="saveResultMessage.severity.toLowerCase()" *ngIf="saveResultMessage">
+    <tui-notification [appearance]="saveResultMessage.severity.toLowerCase()" *ngIf="saveResultMessage">
       {{ saveResultMessage.message }}
     </tui-notification>
   `
@@ -356,7 +358,7 @@ export class GitConfigComponent {
           if (!this.isOnboardingMode) {
             this.alertsService.open(
               'The git repository was added successfully',
-              {status: 'success' }
+              {appearance: 'success' }
             ).subscribe()
             this.router.navigate(['projects']);
           } else {

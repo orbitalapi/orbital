@@ -20,7 +20,7 @@ import { TypeViewerContainerComponent } from 'src/app/type-viewer/type-viewer-co
 import { TypeViewerModule } from 'src/app/type-viewer/type-viewer.module';
 import { TypeListModule } from 'src/app/type-list/type-list.module';
 import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/header-component-layout.module';
-import { TuiProgressModule, TuiStepperModule, TuiTabsModule } from '@taiga-ui/kit';
+import { TuiStepper, TuiTabs, TuiProgress } from '@taiga-ui/kit';
 import { SchemaDiagramModule } from 'src/app/schema-diagram/schema-diagram.module';
 import { UiCustomisations } from '../../environments/ui-customisations';
 import markedAlert from 'marked-alert'
@@ -47,10 +47,10 @@ import {CustomMarkdownRenderer} from "../markdown-utils/markdown-custom-renderer
     TypeViewerModule,
     TypeListModule,
     HeaderComponentLayoutModule,
-    TuiTabsModule,
+    ...TuiTabs,
     SchemaDiagramModule,
-    TuiStepperModule,
-    TuiProgressModule,
+    ...TuiStepper,
+    ...TuiProgress,
     RouterModule.forChild([
       { path: '', component: DataCatalogContainerComponent, title: `${UiCustomisations.productName}: Catalog` },
       { path: 'diagram', component: DataCatalogContainerComponent, title: `${UiCustomisations.productName}: Catalog` },

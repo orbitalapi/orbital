@@ -1,25 +1,19 @@
+import { TuiTextfieldControllerModule, TuiInputModule } from "@taiga-ui/legacy";
 import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
 import {AngularSplitModule} from 'angular-split';
 import {CodeEditorModule} from '../../code-editor/code-editor.module';
 import {findMemberTypeOrType, findType, Operation, Schema, Type} from '../../services/schema';
-import {TuiChipModule, TuiSegmentedModule} from '@taiga-ui/experimental';
 import {ExpandingPanelSetModule} from "../../expanding-panelset/expanding-panel-set.module";
 import {CommonModule} from '@angular/common';
 import {TypesService} from '../../services/types.service';
 import {SimpleCodeEditorComponent} from "../../simple-code-editor/simple-code-editor.component";
-import {TuiAccordionModule, TuiInputModule} from "@taiga-ui/kit";
-import {
-  TuiButtonModule,
-  TuiDialogContext,
-  TuiHintModule,
-  TuiNotificationModule,
-  TuiTextfieldControllerModule,
-} from '@taiga-ui/core';
+import { TuiAccordion, TuiChip, TuiSegmented } from "@taiga-ui/kit";
+import { TuiDialogContext, TuiNotification, TuiButton, TuiHint } from '@taiga-ui/core';
 import {FormsModule} from "@angular/forms";
 import {OperationStub, ParameterValue, ResponseCondition} from "../../services/query.service";
 import {TypeViewerModule} from '../../type-viewer/type-viewer.module';
 import {isNullOrUndefined} from "../../utils/utils";
-import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
+import {POLYMORPHEUS_CONTEXT} from "@taiga-ui/polymorpheus";
 
 @Component({
   selector: 'app-stub-designer',
@@ -27,19 +21,19 @@ import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
   imports: [
     CommonModule,
     ExpandingPanelSetModule,
-    TuiSegmentedModule,
+    TuiSegmented,
     SimpleCodeEditorComponent,
     TuiInputModule,
     TuiTextfieldControllerModule,
-    TuiAccordionModule,
-    TuiButtonModule,
+    TuiAccordion,
+    TuiButton,
     FormsModule,
-    TuiHintModule,
+    TuiHint,
     AngularSplitModule,
     CodeEditorModule,
-    TuiChipModule,
+    TuiChip,
     TypeViewerModule,
-    TuiNotificationModule,
+    TuiNotification,
   ],
   template: `
     <app-panel-header tablerIcon="switch-horizontal" title="Stub response editor">
@@ -54,7 +48,7 @@ import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
     </app-panel-header>
     <div class="panel-body">
       <ng-container *ngIf="viewModeActiveIndex == 0">
-        <tui-notification *ngIf="operationStub.conditionalResponses?.length > 0" status="info">
+        <tui-notification size="m" *ngIf="operationStub.conditionalResponses?.length > 0" appearance="info">
           You already have conditional stubs, they will be favoured over anything you configure in here
         </tui-notification>
         <div>Paste a response which will be used for every call to {{ operation?.name }}</div>
@@ -88,7 +82,7 @@ import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
             tuiButton
             size="s"
             appearance="secondary"
-            icon="tuiIconPlus"
+            iconStart="@tui.plus"
             class="button-small"
             (click)="addNewCondition()"
           >
@@ -109,7 +103,7 @@ import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
                   <span class="parameter-value">{{ param.value }}</span>
                 </div>
                 <div class="spacer"></div>
-                <button tuiButton appearance="icon" icon="tuiIconTrash" size="xs"
+                <button tuiButton appearance="icon" iconStart="@tui.trash" size="xs"
                         (click)="removeCondition(condition)"></button>
               </div>
               <ng-template tuiAccordionItemContent>
@@ -125,7 +119,7 @@ import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
                         [tuiTextfieldLabelOutside]="true"
                         class="parameter-input"
                       >
-                        <input tuiTextfield [(ngModel)]="input.value"/>
+                        <input tuiTextfieldLegacy [(ngModel)]="input.value"/>
                       </tui-input>
                     </div>
                   </div>
@@ -141,7 +135,7 @@ import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
         </div>
       </div>
       <div class="footer">
-        <button tuiButton size="m" appearance="outline" (click)="context.completeWith(context.data.stub)">Cancel</button>
+        <button tuiButton size="m" appearance="outline-grayscale" (click)="context.completeWith(context.data.stub)">Cancel</button>
         <button tuiButton size="m" appearance="primary" (click)="context.completeWith(operationStub)">Update</button>
       </div>
     </div>

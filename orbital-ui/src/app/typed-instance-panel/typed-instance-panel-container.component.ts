@@ -25,7 +25,7 @@ import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/Ba
         type="button"
         appearance="icon"
         size="xs"
-        icon="tuiIconClose"
+        iconStart="@tui.x"
       ></button>
     </app-panel-header>
     <app-typed-instance-panel

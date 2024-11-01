@@ -1,9 +1,10 @@
+import { TuiInputModule } from "@taiga-ui/legacy";
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NgxFileDropEntry } from 'ngx-file-drop';
-import {TuiButtonModule, TuiHintModule, TuiNotificationModule, tuiNotificationOptionsProvider} from '@taiga-ui/core';
-import { TuiInputModule, TuiTabsModule } from '@taiga-ui/kit';
+import { tuiNotificationOptionsProvider, TuiNotification, TuiButton, TuiHint } from '@taiga-ui/core';
+import { TuiTabs, TuiButtonLoading } from '@taiga-ui/kit';
 import {UiCustomisations} from '../../../../environments/ui-customisations';
 import { ConvertSchemaEvent, SwaggerConverterOptions } from '../../data-source-import.models';
 import { readSingleFile } from '../../../utils/files';
@@ -17,17 +18,18 @@ import { sanitiseNamespace } from '../../../utils/utils';
   imports: [
     CommonModule,
     FormsModule,
-    TuiButtonModule,
+    TuiButton,
     TuiInputModule,
-    TuiTabsModule,
+    TuiTabs,
     DataExplorerModule,
-    TuiNotificationModule,
-    TuiHintModule,
-  ],
+    TuiNotification,
+    TuiHint,
+    TuiButtonLoading
+],
   providers: [
     tuiNotificationOptionsProvider({
-      icon: 'tuiIconHelpCircle',
-      status: 'info',
+      icon: '@tui.circle-help',
+      appearance: 'info',
     }),
   ],
   template: `
@@ -103,7 +105,7 @@ import { sanitiseNamespace } from '../../../utils/utils';
       </form>
     </div>
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()" [disabled]="swaggerForm.invalid">Configure
+      <button tuiButton [loading]="working" [size]="'m'" (click)="doCreate()" [disabled]="swaggerForm.invalid">Configure
       </button>
     </div>
   `,
