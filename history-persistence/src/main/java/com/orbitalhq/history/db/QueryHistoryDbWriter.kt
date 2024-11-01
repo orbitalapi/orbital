@@ -42,8 +42,6 @@ class QueryHistoryDbWriter(
       remoteCallResponseRepository,
       sankeyChartRowRepository
    )
-   var eventConsumers: ConcurrentHashMap<PersistingQueryEventConsumer, String> = ConcurrentHashMap()
-
    private val persistenceQueue = HistoryPersistenceQueue("combined", config.persistenceQueueStorePath)
    private val createdRemoteCallRecordIds = CacheBuilder.newBuilder()
       .maximumSize(2000L)
@@ -133,26 +131,6 @@ class QueryHistoryDbWriter(
          CoroutineScope(historyDispatcher),
          schema
       )
-      eventConsumers[persistingQueryEventConsumer] = queryId
       return persistingQueryEventConsumer
-   }
-
-   /**
-    * Every 30 seconds clear down any history writers that are complete - the eventConsumer contains db keys that should be
-    * GC when the query has finished
-    */
-   @Scheduled(fixedDelay = 30000)
-   fun cleanup() {
-      val entriesTobeRemoved = mutableListOf<MutableMap.MutableEntry<PersistingQueryEventConsumer, String>>()
-      val currentMillis = System.currentTimeMillis()
-      eventConsumers.entries.forEach {
-         if ((currentMillis - it.key.lastWriteTime.get()) > 120000) {
-            logger.debug { "Query ${it.value} is not expecting any more results.. Shutting down the result writer." }
-            it.key.shutDown()
-            entriesTobeRemoved.add(it)
-         }
-      }
-
-      eventConsumers.entries.removeAll(entriesTobeRemoved)
    }
 }

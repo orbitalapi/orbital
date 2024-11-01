@@ -19,7 +19,7 @@ class GitRepoSync(
       private val logger = KotlinLogging.logger {}
 
        fun syncNow(workingDir: Path, config: GitRepositoryConnectionConfig): GitSyncStatus {
-         logger.info { "Starting a git sync for ${config.description}" }
+         logger.debug { "Starting a git sync for ${config.description}" }
          val result = try {
             GitPollOperations(workingDir.normalize().toFile(), config).fetchLatest()
          } catch (e: Exception) {
