@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, ChangeDetectorRef, Component } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
-import { TuiStepperModule, TuiStepState } from '@taiga-ui/kit';
+import { TuiStepper } from '@taiga-ui/kit';
 import { UiCustomisations } from '../../../environments/ui-customisations';
 import { HeaderComponentLayoutModule } from '../../header-component-layout/header-component-layout.module';
 import { SourcePackageDescription } from '../../package-viewer/packages.service';
@@ -20,7 +20,7 @@ import { WritePolicyStepComponent } from './write-policy-step/write-policy-step.
     CommonModule,
     RouterLink,
     HeaderComponentLayoutModule,
-    TuiStepperModule,
+    TuiStepper,
     ConfigureAuthStepComponent,
     MapAuthTokenStepComponent,
     ConfirmModelStepComponent,
@@ -96,7 +96,7 @@ export class PolicyManagerWizardComponent {
       })
   }
 
-  get authenticationSetupState():TuiStepState {
+  get authenticationSetupState(): 'error' | 'pass' | 'normal' {
     if (!this.setupReadiness) {
       return "error";
     }

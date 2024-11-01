@@ -1,6 +1,7 @@
+import { TuiButtonLoading } from "@taiga-ui/kit";
 import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { TuiButtonModule, TuiNotificationModule } from '@taiga-ui/core';
+import { CommonModule, NgIf } from '@angular/common';
+import { TuiNotification, TuiButton } from '@taiga-ui/core';
 import { CodeEditorModule } from '../../../code-editor/code-editor.module';
 import { SourcePackageDescription } from '../../../package-viewer/packages.service';
 import {
@@ -13,7 +14,7 @@ import { Message } from '../../../services/schema';
 @Component({
   selector: 'app-confirm-model-step',
   standalone: true,
-  imports: [CommonModule, CodeEditorModule, TuiButtonModule, TuiNotificationModule],
+  imports: [CommonModule, CodeEditorModule, TuiButton, TuiNotification, TuiButtonLoading, NgIf],
   template: `
       <h4>Confirm model</h4>
       <p>
@@ -33,7 +34,7 @@ import { Message } from '../../../services/schema';
       <app-code-editor class="code-editor" [(content)]="pendingEdits.sources[0].content"></app-code-editor>
       <div class="form-button-bar">
           <button tuiButton appearance="secondary" [size]="'m'" (click)="gotoMapAuthTokenStep.emit()">Back</button>
-          <button tuiButton [showLoader]="working" [size]="'m'" (click)="onSubmit()">Confirm</button>
+          <button tuiButton [loading]="working" [size]="'m'" (click)="onSubmit()">Confirm</button>
       </div>
   `,
   styleUrls: ['./confirm-model-step.component.scss']

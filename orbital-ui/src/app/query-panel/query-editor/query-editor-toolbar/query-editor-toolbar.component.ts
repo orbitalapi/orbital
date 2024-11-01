@@ -47,7 +47,7 @@ import {SavedQueryWithSource} from '../../../project-import/schema-importer.serv
     </div>
 
     <button *ngIf="config?.featureToggles.copilotEnabled"
-            tuiButton size="s" appearance="outline"
+            tuiButton size="s" appearance="outline-grayscale"
             class='button-small menu-bar-button toggleable'
             [class.is-toggled]="isCopilotOpen"
             (click)='showCopilotPanel.emit()'
@@ -63,7 +63,7 @@ import {SavedQueryWithSource} from '../../../project-import/schema-importer.serv
         <button *ngIf="config?.featureToggles.copyAsCodeEnabled"
                 tuiOption (click)="copyQuery.emit('snippet')"
                 [tuiHint]="!resultType ? 'Available once query has completed' : null"
-                tuiHintAppearance="onDark"
+                tuiHintAppearance="dark"
                 [disabled]="!resultType"
         >
           As code...
@@ -98,7 +98,7 @@ import {SavedQueryWithSource} from '../../../project-import/schema-importer.serv
 
     <span
       [tuiHint]="!isQuerySaveable ? 'Fix the compilation errors first to save this query' : 'Save query to project'"
-      tuiHintAppearance="onDark"
+      tuiHintAppearance="dark"
     >
       <a
         tuiLink

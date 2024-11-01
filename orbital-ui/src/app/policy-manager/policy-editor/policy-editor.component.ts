@@ -1,7 +1,7 @@
 import {CommonModule} from '@angular/common';
 import {ChangeDetectionStrategy, Component, Inject, Injector} from '@angular/core';
 import {ActivatedRoute} from '@angular/router';
-import {TuiDialogService, TuiLinkModule} from '@taiga-ui/core';
+import { TuiDialogService, TuiLink } from '@taiga-ui/core';
 import {filter, Observable, switchMap} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {UiCustomisations} from '../../../environments/ui-customisations';
@@ -22,12 +22,12 @@ import {CompilationMessageListModule} from "../../compilation-message-list/compi
     PolicyCodeEditorPanelComponent,
     PolicyQueryEditorPanelComponent,
     CompilationMessageListModule,
-    TuiLinkModule
+    TuiLink
   ],
   template: `
     <app-panel-header title="Policy designer" helpText="- Create and test policies that control how data is accessed">
       <a
-        icon="tuiIconHelpCircle"
+        iconEnd="@tui.circle-help"
         tuiLink
         class="help-link"
         [href]="UiCustomisations.docsLinks.dataPolicies"

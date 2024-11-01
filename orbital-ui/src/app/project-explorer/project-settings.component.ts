@@ -1,3 +1,4 @@
+import { TUI_CONFIRM, TuiButtonLoading } from "@taiga-ui/kit";
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -9,10 +10,8 @@ import {
 import { SourcePackageDescription } from 'src/app/package-viewer/packages.service';
 import { SchemaImporterService } from 'src/app/project-import/schema-importer.service';
 import { Message } from 'src/app/services/schema';
-import { TuiAlertService, TuiDialogService, TuiButtonModule } from '@taiga-ui/core';
-import { TUI_PROMPT } from '@taiga-ui/kit';
+import { TuiAlertService, TuiDialogService, TuiNotification, TuiButton } from '@taiga-ui/core';
 import {Router} from "@angular/router";
-import { TuiNotificationModule } from '@taiga-ui/core/components/notification';
 import {CommonModule} from '@angular/common';
 import {FileConfigComponent} from '../project-import/project-source-config/file-config.component';
 import {GitConfigComponent} from '../project-import/project-source-config/git-config.component';
@@ -26,10 +25,10 @@ import {GitConfigComponent} from '../project-import/project-source-config/git-co
                        [fileSystemPackageConfig]="packageDescription().packageConfig"></app-file-config>
       <ng-container *ngIf="canRemove()">
           <h3>Danger zone</h3>
-          <button tuiButton appearance="secondary-destructive" [showLoader]="working" (click)="confirmRemoval()">
+          <button tuiButton appearance="secondary-destructive" [loading]="working" (click)="confirmRemoval()">
               Remove this project...
           </button>
-          <tui-notification [status]="deleteResultMessage.severity.toLowerCase()" *ngIf="deleteResultMessage">
+          <tui-notification [appearance]="deleteResultMessage.severity.toLowerCase()" *ngIf="deleteResultMessage">
               {{ deleteResultMessage.message }}
           </tui-notification>
       </ng-container>
@@ -38,7 +37,7 @@ import {GitConfigComponent} from '../project-import/project-source-config/git-co
     styleUrls: ['./project-settings.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     standalone: true,
-  imports: [CommonModule, TuiButtonModule, TuiNotificationModule, GitConfigComponent, FileConfigComponent],
+  imports: [CommonModule, TuiButton, TuiNotification, GitConfigComponent, FileConfigComponent, TuiButtonLoading],
 })
 export class ProjectSettingsComponent {
 
@@ -56,13 +55,14 @@ export class ProjectSettingsComponent {
   }
 
   canRemove = computed(() => {
-    return !this.packageDescription()?.identifier.id.startsWith('com.orbitalhq/core-types');
+    const {id} = this.packageDescription()?.identifier
+    return !(id.startsWith('com.orbitalhq/core-types') || id.startsWith('flow/core-types'));
     // return this.packageDescription.publisherType !== 'Pushed';
   })
 
   confirmRemoval() {
     this.dialogService
-      .open<boolean>(TUI_PROMPT, {
+      .open<boolean>(TUI_CONFIRM, {
         label: 'Are you sure?',
         data: {
           content: `When you remove a project, any data sources and data types within the project are also removed.` +
@@ -83,7 +83,7 @@ export class ProjectSettingsComponent {
     this.service.removeRepository(this.packageDescription())
       .subscribe({
         next: result => {
-          this.alertService.open('Project was successfully removed', {status: 'success', autoClose: 5000 })
+          this.alertService.open('Project was successfully removed', {appearance: 'success', autoClose: 5000 })
             .subscribe()
           this.working = false;
           this.changeDetector.markForCheck();

@@ -1,10 +1,9 @@
+import { TuiButton } from "@taiga-ui/core";
 import { moduleMetadata } from "@storybook/angular";
 import { CommonModule } from "@angular/common";
 import { BrowserModule } from "@angular/platform-browser";
 import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
 import { ExpandingPanelSetModule } from "./expanding-panel-set.module";
-import { TuiButtonModule } from "@taiga-ui/core";
-
 export default {
   title: "Expanding panelset",
 
@@ -13,7 +12,7 @@ export default {
       declarations: [],
       imports: [
         CommonModule,
-        TuiButtonModule,
+        TuiButton,
         BrowserModule,
         BrowserAnimationsModule,
         ExpandingPanelSetModule,

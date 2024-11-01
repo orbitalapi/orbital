@@ -9,7 +9,7 @@ import { ObjectViewContainerComponent } from './object-view-container.component'
 import { ResultsTableModule } from '../results-table/results-table.module';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { FormsModule } from '@angular/forms';
-import { TuiPaginationModule, TuiTreeModule } from '@taiga-ui/kit';
+import { TuiPagination, TuiTree } from '@taiga-ui/kit';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { ScrollingModule as ExperimentalScrollingModule } from '@angular/cdk-experimental/scrolling';
 import { JsonViewerModule } from 'src/app/json-viewer/json-viewer.module';
@@ -23,10 +23,10 @@ import { JsonViewerModule } from 'src/app/json-viewer/json-viewer.module';
     MatRadioModule,
     ResultsTableModule,
     FormsModule,
-    TuiTreeModule,
+    ...TuiTree,
     ScrollingModule,
     ExperimentalScrollingModule,
-    TuiPaginationModule,
+    TuiPagination,
     JsonViewerModule,
     EllipsisDirective
   ],

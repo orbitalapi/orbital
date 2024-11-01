@@ -1,9 +1,10 @@
+import { TuiInputModule } from "@taiga-ui/legacy";
+import { TuiError } from "@taiga-ui/core";
 import {Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
 import {ControlContainer, FormControl, FormsModule, NgControl, NgModelGroup, ReactiveFormsModule} from '@angular/forms';
 import {Observable, of, Subject, switchMap} from 'rxjs';
 import {CommonModule} from '@angular/common';
-import {TuiErrorModule} from '@taiga-ui/core';
-import {TuiFileLike, TuiInputFilesModule, TuiInputModule} from '@taiga-ui/kit';
+import { TuiFileLike, TuiFiles } from '@taiga-ui/kit';
 import {FileExtensionValidatorDirective} from './file-extension-validator.directive';
 
 // A component that combines the Tui components required for file upload and a path based input field.
@@ -13,36 +14,42 @@ import {FileExtensionValidatorDirective} from './file-extension-validator.direct
   viewProviders: [{provide: ControlContainer, useExisting: NgModelGroup}],
   standalone: true,
   imports: [
-    TuiInputFilesModule,
+    TuiFiles,
     ReactiveFormsModule,
     CommonModule,
     TuiInputModule,
     FormsModule,
     FileExtensionValidatorDirective,
-    TuiErrorModule
+    TuiError,
   ],
   template: `
     @if (mode === 'upload' && editable) {
-      <tui-input-files
+      <label
         *ngIf="!fileDropControl.value"
-        [accept]="filesAccepted.join(',')"
-        [link]="uploadLabel"
-        [formControl]="fileDropControl"
-        (reject)="onReject($event)"
-      ></tui-input-files>
+        tuiInputFiles
+      >
+        <input
+          tuiInputFiles
+          [accept]="filesAccepted.join(',')"
+          [link]="uploadLabel"
+          [lable]="uploadLabel"
+          [formControl]="fileDropControl"
+          (reject)="onReject($event)"
+        />
+      </label>
       <tui-files class="tui-space_top-1">
         <tui-file
           *ngIf="loadedFiles$ | async as file"
           [file]="file"
           [showDelete]="fileDropControl.enabled"
-          (removed)="removeFile()"
+          (remove)="removeFile()"
         ></tui-file>
         <tui-file
           *ngIf="rejectedFiles$ | async as file"
           state="error"
           [file]="file"
           [showDelete]="fileDropControl.enabled"
-          (removed)="clearRejected()"
+          (remove)="clearRejected()"
         ></tui-file>
       </tui-files>
     } @else {

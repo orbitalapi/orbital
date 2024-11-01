@@ -112,7 +112,7 @@ export class AppComponent implements OnInit {
           }
         }
         if (!isFirstSchemaUpdate) {
-          this.alertService.open(message, {status: this.alerts.length ? 'warning': 'success', autoClose: 5000 })
+          this.alertService.open(message, {appearance: this.alerts.length ? 'warning': 'success', autoClose: 5000 })
             .subscribe()
         }
         isFirstSchemaUpdate = false;

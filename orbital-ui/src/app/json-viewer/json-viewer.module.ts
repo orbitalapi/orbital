@@ -1,10 +1,10 @@
+import { TuiCheckbox } from "@taiga-ui/kit";
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { JsonViewerComponent } from './json-viewer.component';
 import { JsonResultsViewComponent } from './json-results-view.component';
 import { ExpandingPanelSetModule } from 'src/app/expanding-panelset/expanding-panel-set.module';
-import { TuiButtonModule, TuiNotificationModule } from '@taiga-ui/core';
-import { TuiCheckboxLabeledModule } from "@taiga-ui/kit";
+import { TuiNotification, TuiLabel, TuiButton } from '@taiga-ui/core';
 import { FormsModule } from "@angular/forms";
 
 
@@ -20,10 +20,11 @@ import { FormsModule } from "@angular/forms";
   imports: [
     CommonModule,
     ExpandingPanelSetModule,
-    TuiButtonModule,
-    TuiCheckboxLabeledModule,
+    TuiButton,
+    TuiLabel,
     FormsModule,
-    TuiNotificationModule
-  ]
+    TuiNotification,
+    TuiCheckbox
+]
 })
 export class JsonViewerModule { }

@@ -7,11 +7,8 @@
 }
 
 tui-badge {
-  font-weight: bold !important;
-  font-family: $headings-font;
-
-  &[data-status=warning] {
-    --left-content-color: #{$yellow-600};
+  &[data-apperance=warning] {
+    //--left-content-color: #{$yellow-600};
   }
 }
 

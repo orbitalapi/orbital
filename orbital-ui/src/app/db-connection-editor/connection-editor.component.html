@@ -23,7 +23,7 @@
           (ngModelChange)="setDriver()">
           Connection type
           <tui-data-list-wrapper *tuiDataList
-                                 [items]="drivers | tuiFilterByInputWith : stringifyJdbcDriver"
+                                 [items]="drivers | tuiFilterByInput"
                                  [itemContent]="stringifyJdbcDriver | tuiStringifyContent">
           </tui-data-list-wrapper>
         </tui-combo-box>
@@ -37,7 +37,7 @@
 
 
     <div class="form-buttons">
-      <button tuiButton appearance="outline" size="m" (click)="doTestConnection()" [disabled]="!isValid">Test connection
+      <button tuiButton appearance="outline-grayscale" size="m" (click)="doTestConnection()" [disabled]="!isValid">Test connection
       </button>
       <div class="spacer"></div>
       <button tuiButton appearance="primary" size="m" [disabled]="!isValid" (click)="createConnection()">Create</button>

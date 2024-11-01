@@ -1,14 +1,14 @@
+import { TuiBlockStatus } from "@taiga-ui/layout";
+import { TuiButton } from "@taiga-ui/core";
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {RouterLink} from '@angular/router';
-import { TuiButtonModule } from '@taiga-ui/core';
-import { TuiBlockStatusModule } from '@taiga-ui/layout';
 import { UiCustomisations } from '../../../../environments/ui-customisations';
 
 @Component({
   selector: 'app-write-policy-step',
   standalone: true,
-  imports: [CommonModule, TuiButtonModule, TuiBlockStatusModule, RouterLink],
+  imports: [CommonModule, TuiButton, TuiBlockStatus, RouterLink],
   template: `
     <tui-block-status>
       <img tuiSlot="top" src="assets/img/illustrations/settings-28.svg">

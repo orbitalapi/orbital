@@ -1,11 +1,12 @@
+import { TuiIslandDirective } from "@taiga-ui/legacy";
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {MarkdownComponent, MarkdownModule} from 'ngx-markdown';
 import {SchemaMemberTypeExplorerComponent} from 'src/app/schema-member-type-explorer/schema-member-type-explorer.component';
 import {AngularSplitModule} from 'angular-split';
 import {SchemaMemberTreeComponent} from 'src/app/schema-member-type-explorer/schema-member-tree.component';
-import {TuiBadgeModule, TuiIslandModule, TuiTabsModule, TuiTreeModule} from '@taiga-ui/kit';
-import {TuiButtonModule, TuiGroupModule, TuiNotificationModule} from '@taiga-ui/core';
+import { TuiTree, TuiBadge, TuiTabs } from '@taiga-ui/kit';
+import { TuiNotification, TuiGroup, TuiButton } from '@taiga-ui/core';
 import {TypeViewerModule} from 'src/app/type-viewer/type-viewer.module';
 import {FormsModule} from "@angular/forms";
 import {CodeEditorModule} from "../code-editor/code-editor.module";
@@ -31,22 +32,21 @@ import {SvgIconComponent} from "../svg-icon/svg-icon.component";
   imports: [
     CommonModule,
     AngularSplitModule,
-    TuiBadgeModule,
-    TuiTreeModule,
-    TuiButtonModule,
+    TuiBadge,
+    ...TuiTree,
+    TuiButton,
     TypeViewerModule,
-    TuiNotificationModule,
-    TuiGroupModule,
+    TuiNotification,
+    TuiGroup,
     FormsModule,
     CodeEditorModule,
     CodeViewerModule,
-    TuiIslandModule,
-    TuiTabsModule,
+    TuiIslandDirective,
+    ...TuiTabs,
     SchemaDiagramModule,
     OperationViewComponent,
     InlineRunQueryButtonComponent,
     SvgIconComponent,
-    TuiButtonModule,
     MarkdownModule.forRoot({
       markedExtensions: [markedAlert()]
     }),

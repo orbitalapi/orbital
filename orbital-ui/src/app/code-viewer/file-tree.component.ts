@@ -1,8 +1,8 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
 import {ParsedSource, VersionedSource} from "../services/schema";
 import {EMPTY_ARRAY, TuiHandler} from "@taiga-ui/cdk";
-import {TUI_TREE_CONTENT, TuiTreeItemComponent} from "@taiga-ui/kit";
-import {PolymorpheusComponent} from "@tinkoff/ng-polymorpheus";
+import {TUI_TREE_CONTENT} from "@taiga-ui/kit";
+import {PolymorpheusComponent} from "@taiga-ui/polymorpheus";
 import {FileTreeFolderNodeComponent} from "./file-tree-folder-node.component";
 import {convertToParsedSources} from "./code-viewer.component";
 
@@ -22,8 +22,8 @@ import {convertToParsedSources} from "./code-viewer.component";
     >
       <div class="row" (click)="onClick(value)" [ngClass]="{'active': value.value?.filename === selectedFilename}">
         <button class="tree-node" [ngClass]="{'has-error': value.hasErrors, 'has-warning': value.hasWarnings && !value.hasErrors}">{{ value.label }}</button>
-        <tui-badge status="error" *ngIf="value.value?.errorCount > 0" size="xs">{{ value.value.errorCount }}</tui-badge>
-        <tui-badge status="warning" *ngIf="value.value?.warningCount > 0" size="xs">{{ value.value.warningCount }}</tui-badge>
+        <tui-badge appearance="error" *ngIf="value.value?.errorCount > 0" size="s">12</tui-badge>
+        <tui-badge appearance="warning" *ngIf="value.value?.warningCount > 0" size="s">{{ value.value.warningCount }}</tui-badge>
       </div>
     </ng-template>
   `,

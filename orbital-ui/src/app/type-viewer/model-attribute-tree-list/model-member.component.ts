@@ -1,12 +1,10 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { Field, findType, PartialSchema, QualifiedName, Schema, Type } from '../../services/schema';
 import { isNullOrUndefined } from 'src/app/utils/utils';
-import { TuiHandler } from '@taiga-ui/cdk';
+import {EMPTY_ARRAY, TuiHandler} from '@taiga-ui/cdk';
 import { MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { TypeSearchContainerComponent } from '../type-search/type-search-container.component';
 import { BaseDeferredEditComponent } from '../base-deferred-edit.component';
-import { TuiTreeLoader, TuiTreeService } from '@taiga-ui/kit';
-import { Observable, of } from 'rxjs';
 import { TypeSelectedEvent } from 'src/app/type-viewer/type-search/type-selected-event';
 import { ChangeFieldTypeEvent } from '../../project-import/schema-importer.service';
 
@@ -25,14 +23,11 @@ export interface TypeMemberTreeNode {
 @Component({
   selector: 'app-model-member',
   template: `
-    <ng-container *ngIf="treeDataService">
       <tui-tree
         [tuiTreeController]="false"
-        [value]="treeDataService.data$ | async"
+        [value]="treeData"
         [content]="treeContent"
         [childrenHandler]="treeChildrenHandler"
-        (toggled)="onToggled($event)"
-        [map]="map"
       ></tui-tree>
       <ng-template #treeContent let-item>
         <div class="tree-node" [ngClass]="{child: !item.isRoot, isLastChild: item.isLastChild}">
@@ -45,7 +40,6 @@ export interface TypeMemberTreeNode {
           ></app-model-member-tree-node>
         </div>
       </ng-template>
-    </ng-container>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./model-member.component.scss']
@@ -55,10 +49,6 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
   constructor(private dialog: MatDialog) {
     super();
   }
-
-  unloadedChildrenPlaceholder: TypeMemberTreeNode;
-
-  map = new Map<TypeMemberTreeNode, boolean>();
 
   private _member: Field;
 
@@ -79,8 +69,6 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
 
   @Input()
   parentModel: Type;
-
-  treeDataService: TuiTreeService<TypeMemberTreeNode>;
 
   @Input()
   get member(): Field {
@@ -138,43 +126,21 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
 
   memberType: Type
 
+  treeData: TypeMemberTreeNode
+
   private setMemberType() {
     if (isNullOrUndefined(this.schema) || isNullOrUndefined(this.member) || isNullOrUndefined(this.anonymousTypes)) {
       return;
     }
     this.memberType = findType(this.schema, this.member.type.parameterizedName, this.anonymousTypes);
     this.new = this.anonymousTypes.includes(this.memberType);
-    //console.time("buildTreeRootNode");
-    const treeData = this.buildTreeRootNode();
-    //console.timeEnd("buildTreeRootNode");
-    this.unloadedChildrenPlaceholder = {
-      name: 'Loading...',
-      children: [],
-      isNew: false,
-      isRoot: false,
-      field: treeData.field,
-      type: treeData.type,
-      parentModel: this.parentModel,
-      isLastChild: false
-    }
-    this.treeDataService = new TuiTreeService<TypeMemberTreeNode>(
-      this.unloadedChildrenPlaceholder, treeData, new TreeLoader()
-    )
+    this.treeData = this.buildTreeRootNode();
   }
 
   private readonly loadedChildren = new Set<TypeMemberTreeNode>();
 
-  onToggled(item: TypeMemberTreeNode): void {
-    this.treeDataService.loadChildren(item);
-  }
-
-  treeChildrenHandler: TuiHandler<TypeMemberTreeNode, readonly TypeMemberTreeNode[]> = item => {
-    if (item.children.length > 0) {
-      return this.treeDataService.getChildren(item);
-    } else {
-      return item.children;
-    }
-  };
+  protected readonly treeChildrenHandler: TuiHandler<TypeMemberTreeNode, readonly TypeMemberTreeNode[]> = (item) =>
+    item.children || EMPTY_ARRAY;
 
   private buildTreeRootNode(): TypeMemberTreeNode {
     return {
@@ -257,15 +223,5 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
         }
       }
     })
-  }
-}
-
-class TreeLoader implements TuiTreeLoader<TypeMemberTreeNode> {
-  hasChildren(item: TypeMemberTreeNode): boolean {
-    return item.children.length > 0;
-  }
-
-  loadChildren(item: TypeMemberTreeNode): Observable<TypeMemberTreeNode[]> {
-    return of(item.children)
   }
 }

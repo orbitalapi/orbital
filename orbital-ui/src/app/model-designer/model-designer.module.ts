@@ -1,3 +1,4 @@
+import { TuiTextfieldControllerModule, TuiComboBoxModule } from "@taiga-ui/legacy";
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {ModelDesignerComponent} from './model-designer.component';
@@ -7,20 +8,9 @@ import {SourceInputPanelComponent} from './source-input-panel/source-input-panel
 import {CodeEditorPanelComponent} from './code-editor-panel/code-editor-panel.component';
 import {ParseResultPanelComponent} from './parse-result-panel/parse-result-panel.component';
 import {AngularSplitModule} from "angular-split";
-import {
-    TuiComboBoxModule,
-    TuiDataListWrapperModule,
-    TuiFilterByInputPipeModule,
-    TuiInputFilesModule, TuiProgressModule, TuiStringifyContentPipeModule
-} from "@taiga-ui/kit";
+import { TuiDataListWrapper, TuiStringifyContentPipe, TuiFilterByInputPipe, TuiProgress, TuiFiles } from "@taiga-ui/kit";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
-import {
-    TuiButtonModule,
-    TuiDataListModule, TuiHintModule, TuiLinkModule,
-    TuiLoaderModule,
-    TuiNotificationModule,
-    TuiTextfieldControllerModule
-} from '@taiga-ui/core';
+import { TuiNotification, TuiDataList, TuiLoader, TuiLink, TuiButton, TuiHint } from '@taiga-ui/core';
 import {ExpandingPanelSetModule} from "../expanding-panelset/expanding-panel-set.module";
 import {CodeEditorModule} from "../code-editor/code-editor.module";
 import {TaxiParserService} from "./taxi-parser.service";
@@ -52,28 +42,28 @@ import { UiCustomisations } from '../../environments/ui-customisations';
         ]),
         HeaderBarModule,
         AngularSplitModule,
-        TuiInputFilesModule,
+        ...TuiFiles,
         ReactiveFormsModule,
-        TuiButtonModule,
+        TuiButton,
         ExpandingPanelSetModule,
         CodeEditorModule,
         TuiComboBoxModule,
         FormsModule,
-        TuiDataListWrapperModule,
-        TuiFilterByInputPipeModule,
-        TuiStringifyContentPipeModule,
+        ...TuiDataListWrapper,
+        TuiFilterByInputPipe,
+        TuiStringifyContentPipe,
         TuiTextfieldControllerModule,
-        TuiNotificationModule,
-        TuiProgressModule,
+        TuiNotification,
+        ...TuiProgress,
         CompilationMessageListModule,
         TabbedResultsViewModule,
-        TuiLoaderModule,
+        TuiLoader,
         TypeNamedInstanceTreeModule,
         JsonViewerModule,
-        TuiDataListModule,
+        ...TuiDataList,
         TypeAutocompleteTuiModule,
-        TuiHintModule,
-        TuiLinkModule
+        ...TuiHint,
+        TuiLink
     ]
 })
 export class ModelDesignerModule {

@@ -7,12 +7,12 @@ import {
   OnDestroy, OnInit,
   Output
 } from '@angular/core';
-import {CommonModule} from '@angular/common';
+import { CommonModule, NgIf } from '@angular/common';
 import {ActivatedRoute, Router} from '@angular/router';
 import {BehaviorSubject} from 'rxjs';
 import {Observable} from 'rxjs/internal/Observable';
 import {shareReplay} from 'rxjs/operators';
-import {TuiAlertService, TuiNotificationModule} from '@taiga-ui/core';
+import { TuiAlertService, TuiNotification } from '@taiga-ui/core';
 import {SchemaSubmissionResult, TypesService} from '../services/types.service';
 import {Message, Schema} from '../services/schema';
 import {
@@ -39,7 +39,7 @@ import {showAlertForMessage} from "../alert-with-dismiss/alert-with-dismiss.comp
   selector: 'app-data-source-import',
   styleUrls: ['./data-source-import.component.scss'],
   standalone: true,
-  imports: [CommonModule, DataSourcePanelComponent, TuiNotificationModule, SchemaMemberTypeExplorerModule],
+  imports: [CommonModule, DataSourcePanelComponent, TuiNotification, SchemaMemberTypeExplorerModule, NgIf],
   template: `
     <div class="importer-step step" *ngIf="(wizardStep | async) === 'importSchema'">
       <h3 *ngIf="title">{{ title }}</h3>

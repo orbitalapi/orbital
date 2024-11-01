@@ -1,3 +1,4 @@
+import { TuiTabs } from "@taiga-ui/kit";
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, Router} from '@angular/router';
@@ -22,7 +23,6 @@ import { ProjectSettingsComponent } from './project-settings.component';
 import { CodeViewerModule } from '../code-viewer/code-viewer.module';
 import { ChangelogModule } from '../changelog/changelog.module';
 import { SchemaMemberTypeExplorerModule } from '../schema-member-type-explorer/schema-member-type-explorer.module';
-import { TuiTabsModule } from '@taiga-ui/kit';
 import { SimpleBadgeListModule } from '../simple-badge-list/simple-badge-list.module';
 import {CommonModule} from '@angular/common';
 
@@ -33,7 +33,7 @@ import {CommonModule} from '@angular/common';
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { 'class': appInstanceType.appType },
     standalone: true,
-    imports: [CommonModule, SimpleBadgeListModule, TuiTabsModule, SchemaMemberTypeExplorerModule, ChangelogModule, CodeViewerModule, ProjectSettingsComponent]
+    imports: [CommonModule, SimpleBadgeListModule, TuiTabs, SchemaMemberTypeExplorerModule, ChangelogModule, CodeViewerModule, ProjectSettingsComponent]
 })
 export class ProjectExplorerComponent implements OnInit {
 

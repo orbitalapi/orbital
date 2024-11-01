@@ -291,7 +291,7 @@ export class CodeEditorComponent implements OnInit, OnDestroy {
       .subscribe(async (closeEvent) => {
         this.alertService
           .open('Server disconnected, please refresh the browser to reconnect',
-            {status: 'warning', autoClose: false, hasIcon: true, hasCloseButton: false }
+            {appearance: 'warning', autoClose: 0, closeable: false }
           )
           .subscribe()
       })

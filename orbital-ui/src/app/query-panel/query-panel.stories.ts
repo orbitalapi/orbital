@@ -1,3 +1,4 @@
+import { TuiRoot } from "@taiga-ui/core";
 import { moduleMetadata } from "@storybook/angular";
 import { CommonModule } from "@angular/common";
 import { BrowserModule } from "@angular/platform-browser";
@@ -5,7 +6,6 @@ import { QueryPanelModule } from "./query-panel.module";
 import { AngularSplitModule } from "angular-split";
 import { RouterTestingModule } from "@angular/router/testing";
 import { ExpandingPanelSetModule } from "../expanding-panelset/expanding-panel-set.module";
-import { TuiRootModule } from "@taiga-ui/core";
 import { BrowserAnimationsModule } from "@angular/platform-browser/animations";
 
 export default {
@@ -18,7 +18,7 @@ export default {
         CommonModule,
         BrowserModule,
         BrowserAnimationsModule,
-        TuiRootModule,
+        TuiRoot,
         QueryPanelModule,
         ExpandingPanelSetModule,
         AngularSplitModule,

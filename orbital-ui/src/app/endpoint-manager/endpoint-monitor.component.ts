@@ -1,15 +1,10 @@
+import { TuiTextfieldControllerModule, TuiSelectModule } from "@taiga-ui/legacy";
 import {CommonModule, DecimalPipe, TitleCasePipe} from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, Input, OnInit} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormsModule} from '@angular/forms';
-import {TuiDataListModule, TuiNotificationModule, TuiTextfieldControllerModule} from '@taiga-ui/core';
-import {
-  TuiBadgeModule,
-  TuiCheckboxLabeledModule,
-  TuiProgressModule,
-  TuiSelectModule,
-  TuiToggleModule
-} from '@taiga-ui/kit';
+import { TuiNotification, TuiDataList, TuiLabel } from '@taiga-ui/core';
+import { TuiBadge, TuiSwitch, TuiProgress, TuiCheckbox } from '@taiga-ui/kit';
 import {
   ApexAxisChartSeries,
   ApexChart,
@@ -79,7 +74,7 @@ type MetricsPeriodToDescription = {
         Period
         <input
           placeholder="Period"
-          tuiTextfield
+          tuiTextfieldLegacy
         />
         <tui-data-list *tuiDataList>
           <button *ngFor="let period of periods"
@@ -89,7 +84,10 @@ type MetricsPeriodToDescription = {
           </button>
         </tui-data-list>
       </tui-select>
-      <tui-checkbox-labeled size="m" [(ngModel)]="refreshEnabled">Auto refresh</tui-checkbox-labeled>
+      <label tuiLabel>
+        <input tuiCheckbox type="checkbox" size="s" [(ngModel)]="refreshEnabled">
+        Auto refresh
+      </label>
     </app-panel-header>
     <progress
       max="100"
@@ -138,24 +136,25 @@ type MetricsPeriodToDescription = {
   imports: [
     CommonModule,
     HeaderComponentLayoutModule,
-    TuiToggleModule,
-    TuiBadgeModule,
+    TuiSwitch,
+    TuiBadge,
     ExpandingPanelSetModule,
     TuiSelectModule,
     FormsModule,
-    TuiDataListModule,
-    TuiCheckboxLabeledModule,
-    TuiNotificationModule,
+    TuiDataList,
+    TuiLabel,
+    TuiNotification,
     NgApexchartsModule,
     CodeViewerModule,
     TitleCasePipe,
     DecimalPipe,
     TuiTextfieldControllerModule,
-    TuiProgressModule,
+    TuiProgress,
     LineageDisplayModule,
     DataSourcesCardComponent,
-    RequiresAuthorityDirective
-  ],
+    RequiresAuthorityDirective,
+    TuiCheckbox
+],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EndpointMonitorComponent implements OnInit {

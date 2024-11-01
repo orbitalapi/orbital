@@ -6,19 +6,19 @@
     <button
       tuiButton
       size="m"
-      icon="tuiIconEdit2"
+      iconStart="@tui.pencil"
       appearance="primary"
       routerLink="/query/editor"
     >
       Create a query
     </button>
   </ng-container>
-  <tui-notification (close)="onHideNotification()" status="info" *ngIf="!hideLiveReloadNotification">
+  <tui-notification size="m" (close)="onHideNotification()" appearance="info" *ngIf="!hideLiveReloadNotification"><div>
     <strong>Live reload</strong>
     <div>The developer environment of {{ uiConfig.productName }} is configured with live reload, so any changes you make
       in your taxi project are automatically picked up and detected inside of {{ uiConfig.productName }}
     </div>
-  </tui-notification>
+  </div> <button tuiIconButton iconStart="@tui.x"></button></tui-notification>
 
   <div class="grid-container grid-cols-2">
     <app-data-sources-card *appRequiresAuthority="['ViewConnections']"></app-data-sources-card>

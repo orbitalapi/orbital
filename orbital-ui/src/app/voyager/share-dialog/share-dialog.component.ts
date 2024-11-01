@@ -1,6 +1,6 @@
 import {Component, Inject} from '@angular/core';
 import {TuiDialogContext} from '@taiga-ui/core';
-import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
+import {POLYMORPHEUS_CONTEXT} from '@taiga-ui/polymorpheus';
 import {SharedSchemaResponse} from 'src/voyager-app/voyager.service';
 import {UntypedFormControl, UntypedFormGroup} from '@angular/forms';
 
@@ -15,7 +15,7 @@ import {UntypedFormControl, UntypedFormGroup} from '@angular/forms';
         [readOnly]="true"
       >
         <input
-          tuiTextfield
+          tuiTextfieldLegacy
           [readOnly]="true"
         />
         Click to copy share url

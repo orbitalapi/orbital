@@ -5,26 +5,25 @@ import {ControlValueAccessor, NG_VALUE_ACCESSOR} from "@angular/forms";
 @Component({
   selector: 'app-project-selector',
   template: `
-    <tui-notification *ngIf="!hasEditablePackages && showErrorIfNoEditable"
-                      status="error"
-    >
+    <tui-notification size="m" *ngIf="!hasEditablePackages && showErrorIfNoEditable"
+                      appearance="error"
+    ><div>
       You don't currently have any projects that are editable. Add or configure a project in the <a
         [routerLink]="['/schemas']">Schemas</a> view
-    </tui-notification>
+    </div></tui-notification>
 
     <tui-select
       [stringify]="stringify"
       [ngModel]="selectedPackage"
       (ngModelChange)="setValue($event)"
-      [tuiDropdownOpen]="startOpened"
     >
       {{ prompt }}
       <input
-        tuiTextfield [disableControl]="disabled"
+        tuiTextfieldLegacy [disableControl]="disabled"
       />
       <tui-data-list-wrapper
         *tuiDataList
-        [items]="editablePackages | tuiFilterByInputWith : stringify"
+        [items]="editablePackages | tuiFilterByInput"
         [itemContent]="stringify | tuiStringifyContent"
       ></tui-data-list-wrapper>
     </tui-select>

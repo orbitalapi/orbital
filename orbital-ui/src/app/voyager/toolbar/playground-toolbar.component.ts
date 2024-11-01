@@ -1,8 +1,9 @@
+import { TUI_ARROW } from "@taiga-ui/legacy";
 import {Component, EventEmitter, Inject, Input, Output} from '@angular/core';
 import {TuiDialogService} from '@taiga-ui/core';
 import {CodeSample, ExampleGroups} from 'src/voyager-app/code-examples';
 import {TuiStringHandler} from '@taiga-ui/cdk';
-import {TUI_ARROW, TUI_PROMPT, tuiItemsHandlersProvider, TuiPromptData} from '@taiga-ui/kit';
+import { tuiItemsHandlersProvider, TUI_CONFIRM, TuiConfirmData } from '@taiga-ui/kit';
 import {StubQueryMessageWithSlug, StubQueryMessage} from "../../services/query.service";
 
 const STRINGIFY_CODE_SAMPLE: TuiStringHandler<CodeSample> = (item: CodeSample) => item.title;
@@ -39,12 +40,12 @@ export class PlaygroundToolbarComponent {
   }
 
   showClearConfirmation() {
-    const data: TuiPromptData = {
+    const data: TuiConfirmData = {
       content: 'This will clear your schema, query and any stubs you\'ve configured.',
       yes: 'OK',
       no: 'Cancel'
     }
-    this.dialogService.open<boolean>(TUI_PROMPT, {
+    this.dialogService.open<boolean>(TUI_CONFIRM, {
       label: 'Trash it all?',
       size: 's',
       data: data,

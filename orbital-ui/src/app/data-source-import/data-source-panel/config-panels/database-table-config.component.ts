@@ -1,22 +1,11 @@
+import { TuiTextfieldControllerModule, TuiInputModule, TuiMultiSelectModule, TuiSelectModule } from "@taiga-ui/legacy";
 import { Component, EventEmitter, Inject, Injector, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs/internal/Observable';
-import {
-  TuiButtonModule,
-  TuiDataListModule,
-  TuiDialogService,
-  TuiSvgModule,
-  TuiTextfieldControllerModule
-} from '@taiga-ui/core';
-import {
-  TuiDataListWrapperModule,
-  TuiFilterByInputPipeModule,
-  TuiInputModule,
-  TuiMultiSelectModule, TuiSelectModule,
-  TuiStringifyContentPipeModule
-} from '@taiga-ui/kit';
-import { PolymorpheusComponent } from '@tinkoff/ng-polymorpheus';
+import { TuiDialogService, TuiDataList, TuiIcon, TuiButton } from '@taiga-ui/core';
+import { TuiDataListWrapper, TuiStringifyContentPipe, TuiFilterByInputPipe, TuiButtonLoading } from '@taiga-ui/kit';
+import { PolymorpheusComponent } from '@taiga-ui/polymorpheus';
 import { ConvertSchemaEvent, TableSchemaConverterOptions } from '../../data-source-import.models';
 import { ConnectorSummary, MappedTable } from '../../../db-connection-editor/db-importer.service';
 import {
@@ -33,18 +22,19 @@ import { sanitiseNamespace } from '../../../utils/utils';
   imports: [
     CommonModule,
     FormsModule,
-    TuiDataListModule,
-    TuiSvgModule,
+    TuiDataList,
+    TuiIcon,
     ConnectionFiltersModule,
-    TuiDataListWrapperModule,
-    TuiStringifyContentPipeModule,
-    TuiFilterByInputPipeModule,
-    TuiButtonModule,
+    TuiDataListWrapper,
+    TuiStringifyContentPipe,
+    TuiFilterByInputPipe,
+    TuiButton,
     TuiInputModule,
     TuiSelectModule,
     TuiMultiSelectModule,
     TuiTextfieldControllerModule,
-  ],
+    TuiButtonLoading
+],
   template: `
     <div class="form-container">
       <form class="form-body" #databaseForm="ngForm">
@@ -70,7 +60,7 @@ import { sanitiseNamespace } from '../../../utils/utils';
                   class="link"
                   (click)="createNewConnection()"
                 >
-                  <tui-svg src="tuiIconPlusCircleLarge" class="icon"></tui-svg>
+                  <tui-icon icon="@tui.circle-plus" class="icon"></tui-icon>
                   Add new connection...
                 </button>
                 <button *ngFor="let connection of connections | databases" tuiOption
@@ -101,7 +91,7 @@ import { sanitiseNamespace } from '../../../utils/utils';
                 *tuiDataList
                 tuiMultiSelectGroup
                 [itemContent]="stringifyTableName | tuiStringifyContent"
-                [items]="tables$  | async | tuiFilterByInputWith : stringifyTableName"
+                [items]="tables$  | async | tuiFilterByInput"
               ></tui-data-list-wrapper>
             </tui-multi-select>
           </div>
@@ -123,7 +113,7 @@ import { sanitiseNamespace } from '../../../utils/utils';
     </div>
 
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" (click)="doCreate()" [size]="'m'" [disabled]="databaseForm.invalid">Configure
+      <button tuiButton [loading]="working" (click)="doCreate()" [size]="'m'" [disabled]="databaseForm.invalid">Configure
       </button>
     </div>
   `,

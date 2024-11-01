@@ -1,14 +1,14 @@
+import { TuiButton } from "@taiga-ui/core";
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { TuiButtonModule } from '@taiga-ui/core';
 import { UiCustomisations } from '../../../environments/ui-customisations';
 import { DataSourceImportComponent } from '../../data-source-import/data-source-import.component';
 
 @Component({
   selector: 'app-select-data-source',
   standalone: true,
-  imports: [CommonModule, RouterLink, TuiButtonModule, DataSourceImportComponent],
+  imports: [CommonModule, RouterLink, TuiButton, DataSourceImportComponent],
   templateUrl: './data-source.component.html',
   styleUrls: ['./data-source.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush

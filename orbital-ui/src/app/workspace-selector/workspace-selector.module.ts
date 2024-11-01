@@ -1,8 +1,8 @@
+import { TuiTextfieldControllerModule, TuiSelectModule } from "@taiga-ui/legacy";
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {WorkspaceSelectorComponent} from "./workspace-selector.component";
-import {TuiDataListModule, TuiSvgModule, TuiTextfieldControllerModule} from "@taiga-ui/core";
-import {TuiSelectModule} from "@taiga-ui/kit";
+import { TuiDataList, TuiIcon } from "@taiga-ui/core";
 import {FormsModule} from "@angular/forms";
 import {VyneServicesModule} from "../services/vyne-services.module";
 import {RouterModule} from "@angular/router";
@@ -17,9 +17,9 @@ import {RouterModule} from "@angular/router";
     ],
     imports: [
         CommonModule,
-        TuiSvgModule,
+        TuiIcon,
         TuiSelectModule,
-        TuiDataListModule,
+        ...TuiDataList,
         FormsModule,
         TuiTextfieldControllerModule,
         VyneServicesModule,

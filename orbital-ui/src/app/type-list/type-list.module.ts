@@ -1,3 +1,5 @@
+import { TuiGroup } from "@taiga-ui/core";
+import { TuiTextfieldControllerModule, TuiInputModule } from "@taiga-ui/legacy";
 import { NgModule } from '@angular/core';
 import { TypeListComponent } from './type-list.component';
 import { MatToolbarModule } from '@angular/material/toolbar';
@@ -16,8 +18,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { HeaderBarModule } from '../header-bar/header-bar.module';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { ScrollingModule as ExperimentalScrollingModule } from '@angular/cdk-experimental/scrolling';
-import { TuiGroupModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
-import { TuiCheckboxBlockModule, TuiInputModule } from '@taiga-ui/kit';
+import { TuiBlock, TuiCheckbox } from '@taiga-ui/kit';
 import { ChangesetSelectorModule } from '../changeset-selector/changeset-selector.module';
 
 @NgModule({
@@ -37,8 +38,8 @@ import { ChangesetSelectorModule } from '../changeset-selector/changeset-selecto
     HeaderBarModule,
     ScrollingModule,
     ExperimentalScrollingModule,
-    TuiGroupModule,
-    TuiCheckboxBlockModule,
+    TuiGroup,
+    TuiBlock, TuiCheckbox,
     TuiInputModule,
     TuiTextfieldControllerModule,
     ChangesetSelectorModule,

@@ -1,6 +1,6 @@
 import {CommonModule} from '@angular/common';
 import {ChangeDetectionStrategy, Component, input, Input, model} from '@angular/core';
-import {TuiDataListModule, TuiHintModule, TuiHostedDropdownModule, TuiSvgModule} from '@taiga-ui/core';
+import { TuiDataList, TuiDropdown, TuiIcon, TuiHint } from '@taiga-ui/core';
 
 @Component({
   // TODO: this is a bit generic... but maybe that's ok?
@@ -10,20 +10,20 @@ import {TuiDataListModule, TuiHintModule, TuiHostedDropdownModule, TuiSvgModule}
   standalone: true,
   imports: [
     CommonModule,
-    TuiDataListModule,
-    TuiHintModule,
-    TuiHostedDropdownModule,
-    TuiSvgModule
+    TuiDataList,
+    TuiHint,
+    TuiDropdown,
+    TuiIcon
   ],
   template: `
-    <tui-hosted-dropdown
+    <div
       tuiDropdownAlign="left"
-      [content]="menuDropdown"
-      [open]="isMenuOpen()"
-      (openChange)="isMenuOpen.set($event)"
-      [canOpen]="!isDisabled"
+      [tuiDropdown]="menuDropdown"
+      [tuiDropdownOpen]="isMenuOpen()"
+      (tuiDropdownOpenChange)="isMenuOpen.set($event)"
+      [tuiDropdownEnabled]="!isDisabled"
       [tuiHint]="isDisabled ? hintWhenDisabled : null"
-      tuiHintAppearance="onDark"
+      tuiHintAppearance="dark"
       tuiHintDirection="top"
     >
       <a
@@ -32,18 +32,18 @@ import {TuiDataListModule, TuiHintModule, TuiHostedDropdownModule, TuiSvgModule}
         [class.is-open]="isMenuOpen()"
         [class.is-disabled]="isDisabled"
         [tuiHint]="hint"
-        tuiHintAppearance="onDark"
+        tuiHintAppearance="dark"
         tuiHintDirection="top"
       >
         {{value}}
         <img *ngIf="iconUrl" [src]="iconUrl">
-        <tui-svg
-          src="tuiIconChevronDown"
+        <tui-icon
+          icon="@tui.chevron-down"
           class="dropdown-arrow"
           [class.dropdown-arrow_open]="isMenuOpen()"
-        ></tui-svg>
+        ></tui-icon>
       </a>
-    </tui-hosted-dropdown>
+    </div>
     <ng-template
       #menuDropdown
       let-close="close"

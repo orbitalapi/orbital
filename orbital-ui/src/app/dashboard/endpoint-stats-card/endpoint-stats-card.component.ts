@@ -1,10 +1,10 @@
+import { TuiTextfieldControllerModule, TuiSelectModule } from "@taiga-ui/legacy";
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import {RouterLink} from '@angular/router';
-import { TuiDataListModule, TuiTextfieldControllerModule } from '@taiga-ui/core';
-import { TuiSelectModule } from '@taiga-ui/kit';
+import { TuiDataList } from '@taiga-ui/core';
 import { BehaviorSubject, filter, Observable } from 'rxjs';
 import {map, tap} from 'rxjs/operators';
 import { EndpointMonitorComponent } from '../../endpoint-manager/endpoint-monitor.component';
@@ -27,7 +27,7 @@ type QueryWithLabel = {
     TuiSelectModule,
     TuiTextfieldControllerModule,
     FormsModule,
-    TuiDataListModule,
+    TuiDataList,
     RouterLink
   ],
   templateUrl: './endpoint-stats-card.component.html',

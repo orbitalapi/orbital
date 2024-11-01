@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { TuiHintModule, TuiSvgModule } from '@taiga-ui/core';
+import { TuiIcon, TuiHint } from '@taiga-ui/core';
 import { BehaviorSubject, combineLatestWith } from 'rxjs';
 import { Observable } from 'rxjs/internal/Observable';
 import { filter, map, tap } from 'rxjs/operators';
@@ -23,7 +23,7 @@ export interface SidebarElement {
 @Component({
   selector: 'app-sidenav',
   standalone: true,
-  imports: [CommonModule, HeaderBarModule, RouterLink, RouterLinkActive, TuiSvgModule, TuiHintModule],
+  imports: [CommonModule, HeaderBarModule, RouterLink, RouterLinkActive, TuiIcon, TuiHint],
   templateUrl: './sidenav.component.html',
   styleUrls: ['./sidenav.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush

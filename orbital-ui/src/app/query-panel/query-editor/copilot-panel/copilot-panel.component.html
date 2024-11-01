@@ -8,7 +8,7 @@
     class="button-link"
     [class.is-disabled]="!conversationMessages().length"
     tuiHint="Remove chat history for this tab..."
-    tuiHintAppearance="onDark"
+    tuiHintAppearance="dark"
     (click)="confirmRemoval()"
   >
     <img src="assets/img/tabler/trash.svg">
@@ -20,7 +20,7 @@
     type="button"
     appearance="icon"
     size="xs"
-    icon="tuiIconClose"
+    iconStart="@tui.x"
   ></button>
 </app-panel-header>
 <div class="results-container" #results>
@@ -39,7 +39,7 @@
                   tuiLink
                   class="button-link"
                   tuiHint="Copy query"
-                  tuiHintAppearance="onDark"
+                  tuiHintAppearance="dark"
                   (click)="copyQuery(chunk['taxi'])"
                 >
                   <img src="assets/img/tabler/copy.svg">
@@ -49,7 +49,7 @@
                   tuiLink
                   class="button-link"
                   tuiHint="Set in editor"
-                  tuiHintAppearance="onDark"
+                  tuiHintAppearance="dark"
                   (click)="findQueryToSetInEditor(index)"
                 >
                   <img src="assets/img/tabler/pencil.svg">
@@ -59,7 +59,7 @@
                   tuiLink
                   class="button-link"
                   tuiHint="Run editor"
-                  tuiHintAppearance="onDark"
+                  tuiHintAppearance="dark"
                   (click)="findQueryToRun(index)"
                 >
                   <img src="assets/img/tabler/player-play.svg">
@@ -70,7 +70,7 @@
             </markdown>
           </div>
           <div *ngIf="last && chunk.kind === 'Query'" class="query-action-button-container">
-            <button tuiButton size="s" appearance="outline"
+            <button tuiButton size="s" appearance="outline-grayscale"
                     class="button-small"
                     (click)="findQueryToSetInEditor()"
             >
@@ -96,20 +96,20 @@
   </span>
 </div>
 <div class="query-container">
-  <tui-text-area
+  <tui-textarea
     class='flat'
     tuiAutoFocus
     [(ngModel)]='chatQuery'
     (keydown.enter)="submitChat($event)"
   >
     Write a query
-  </tui-text-area>
+  </tui-textarea>
   <a
     tuiLink
     class="button-link submit-query-button"
     [class.is-disabled]="chatQuery() === '' || currentState() === 'Generating'"
     tuiHint="Submit query"
-    tuiHintAppearance="onDark"
+    tuiHintAppearance="dark"
     (click)='submitChat()'
   >
     <img src="assets/img/tabler/message-forward.svg">

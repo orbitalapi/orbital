@@ -24,7 +24,7 @@ import {forkJoin, Observable, of, ReplaySubject} from 'rxjs';
 import {ExampleGroups} from 'src/voyager-app/code-examples';
 import {TuiAlertService, TuiDialogService} from '@taiga-ui/core';
 import {ShareDialogComponent} from 'src/app/voyager/share-dialog/share-dialog.component';
-import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
+import {PolymorpheusComponent} from '@taiga-ui/polymorpheus';
 import {ActivatedRoute, NavigationEnd, Params, Router} from '@angular/router';
 import {emptyQueryMessage, StubQueryMessage} from "../app/services/query.service";
 import {isNullOrUndefined} from "../app/utils/utils";
@@ -145,7 +145,7 @@ export class VoyagerAppComponent implements OnInit {
                   console.error('Error parsing source: ', error);
                   this.alertsService.open('The compiler threw an exception compiling your source - this shouldn\'t happen)',
                     {
-                      status: "error",
+                      appearance: "error",
                       label: 'Something went wrong'
                     }).subscribe()
                   return of({

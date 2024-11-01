@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Input, Output } from "@angular/core";
-import { TuiButtonModule, TuiHintModule, TuiLinkModule } from "@taiga-ui/core";
+import { TuiLink, TuiButton, TuiHint } from "@taiga-ui/core";
 import { ShortNumberPipe } from "../utils/short-number.pipe";
 import {LicenseService, LicenseWithUsage} from "./license.service";
 import { CommonModule, NgIf } from "@angular/common";
@@ -9,10 +9,10 @@ import { CommonModule, NgIf } from "@angular/common";
   standalone: true,
   imports: [
     CommonModule,
-    TuiButtonModule,
+    TuiButton,
     ShortNumberPipe,
-    TuiLinkModule,
-    TuiHintModule
+    TuiLink,
+    TuiHint
   ],
   template: `
     @if (!license) {
@@ -34,7 +34,7 @@ import { CommonModule, NgIf } from "@angular/common";
           <a
             tuiLink
             tuiHint="Refresh license"
-            tuiHintAppearance="onDark"
+            tuiHintAppearance="dark"
             class="button-link"
             (click)="refreshLicense.emit()"
           >
@@ -57,7 +57,7 @@ import { CommonModule, NgIf } from "@angular/common";
       <button
         tuiButton
         type="button"
-        appearance="outline"
+        appearance="outline-grayscale"
         size="m"
         class="manage-button"
         (click)="gotoLicenseManagement()"

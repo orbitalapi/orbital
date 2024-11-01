@@ -12,7 +12,7 @@
   --tui-radius-m: 5px;
   --tui-radius-l: 6px;
 
-  --tui-primary-active: #{$primary-dark};
+  --tui-background-accent-1-pressed: #{$primary-dark};
 
   // After upgrading taiga 2->3, everything was shrunk
   // to 13px.  This seems to fix it.
@@ -189,4 +189,34 @@ tui-dropdown-box {
 
 .monaco-hover hr {
   margin-bottom: 0.25rem !important;
+}
+
+// NOTE: not sure why we need these override to get tui-icons
+//       styled correctly in v4, but we do (for now)
+
+tui-icon[icon*='@tui.'],
+tui-icon[ng-reflect-icon*='@tui.']:not([ng-reflect-icon*='tui.chevron']),
+tui-tree tui-icon {
+  &:before,
+  &:after {
+    inline-size: 70% !important;
+  }
+}
+
+[tuiIcons] {
+  &:before,
+  &:after {
+    font-size: 1rem !important;
+  }
+}
+
+tui-icon:after,
+tui-icon[tuiIcons]:after {
+  margin: 0 auto;
+  right: 0;
+}
+
+[tuiLink][tuiIcons]:before,
+[tuiLink][tuiIcons]:after {
+  vertical-align: unset !important;
 }

@@ -10,7 +10,7 @@ import {TypesService} from "../../../services/types.service";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {Schema} from "../../../services/schema";
 import {NgIf} from "@angular/common";
-import {TuiButtonModule, TuiHintModule, TuiNotificationModule} from '@taiga-ui/core';
+import { TuiNotification, TuiButton, TuiHint } from '@taiga-ui/core';
 
 @Component({
   selector: 'app-policy-query-editor-panel',
@@ -22,14 +22,14 @@ import {TuiButtonModule, TuiHintModule, TuiNotificationModule} from '@taiga-ui/c
     AngularSplitModule,
     TabbedResultsViewModule,
     NgIf,
-    TuiButtonModule,
-    TuiNotificationModule,
-    TuiHintModule
+    TuiButton,
+    TuiNotification,
+    TuiHint
   ],
   template: `
     <app-panel-header title="Query editor" [isSecondary]="true">
       <div class="spacer"></div>
-      <div [tuiHint]="policyNeedsSaving ? 'Save the policy before running the query' : null" tuiHintAppearance="onDark">
+      <div [tuiHint]="policyNeedsSaving ? 'Save the policy before running the query' : null" tuiHintAppearance="dark">
         <button tuiButton size="s" appearance="primary"
                 class='button-small menu-bar-button'
                 [class.is-disabled]="!queryState.query() || policyNeedsSaving"
@@ -42,7 +42,7 @@ import {TuiButtonModule, TuiHintModule, TuiNotificationModule} from '@taiga-ui/c
         </button>
       </div>
       <div *ngIf="queryState.currentState() === 'Running'">
-        <button tuiButton size="s" appearance="outline"
+        <button tuiButton size="s" appearance="outline-grayscale"
                 class='button-small menu-bar-button'
                 (click)='cancelQuery()'
         >
@@ -51,7 +51,7 @@ import {TuiButtonModule, TuiHintModule, TuiNotificationModule} from '@taiga-ui/c
         </button>
       </div>
       <div *ngIf="queryState.currentState() === 'Cancelling'">
-        <button tuiButton size="s" appearance="outline"
+        <button tuiButton size="s" appearance="outline-grayscale"
                 class='button-small menu-bar-button'
                 [disabled]='true'
         >
@@ -62,13 +62,13 @@ import {TuiButtonModule, TuiHintModule, TuiNotificationModule} from '@taiga-ui/c
         </button>
       </div>
     </app-panel-header>
-    <tui-notification (close)="showQueryEditorHelp = false" status="info" *ngIf="showQueryEditorHelp">
+    <tui-notification size="m" (close)="showQueryEditorHelp = false" appearance="info" *ngIf="showQueryEditorHelp">
       @if (policyNeedsSaving) {
         You have unsaved changes. Save your policy for it to be applied to query results
       } @else {
         Test that the policy is giving the desired output by running a query here.
       }
-    </tui-notification>
+     <button tuiIconButton iconStart="@tui.x"></button></tui-notification>
     <as-split direction="vertical">
       <as-split-area>
         <app-code-editor

@@ -1,8 +1,9 @@
+import { TuiTextfieldControllerModule, TuiComboBoxModule, TuiSelectModule } from "@taiga-ui/legacy";
 import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import {TypeAutocompleteTuiComponent} from "./type-autocomplete-tui.component";
-import {TuiComboBoxModule, TuiDataListWrapperModule, TuiFilterByInputPipeModule, TuiSelectModule} from "@taiga-ui/kit";
-import {TuiDataListModule, TuiTextfieldControllerModule} from "@taiga-ui/core";
+import { TuiDataListWrapper, TuiFilterByInputPipe } from "@taiga-ui/kit";
+import { TuiDataList } from "@taiga-ui/core";
 import {FormsModule} from "@angular/forms";
 
 
@@ -17,9 +18,9 @@ import {FormsModule} from "@angular/forms";
   imports: [
     CommonModule,
     TuiComboBoxModule,
-    TuiDataListModule,
-    TuiDataListWrapperModule,
-    TuiFilterByInputPipeModule,
+    ...TuiDataList,
+    ...TuiDataListWrapper,
+    TuiFilterByInputPipe,
     TuiSelectModule,
     TuiTextfieldControllerModule,
     FormsModule

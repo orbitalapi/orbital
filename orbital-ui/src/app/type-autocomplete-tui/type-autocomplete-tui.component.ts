@@ -24,7 +24,7 @@ import {Schema, SchemaMember, Type} from '../services/schema';
       [tuiTextfieldCleaner]="true"
     >
       {{ label }}
-      <input tuiTextfield [placeholder]="label"/>
+      <input tuiTextfieldLegacy [placeholder]="label"/>
       <ng-template #value let-item>
         <div class="type-option">
           <span class="type-name">{{ item.name.shortDisplayName }}</span>
@@ -33,7 +33,7 @@ import {Schema, SchemaMember, Type} from '../services/schema';
       </ng-template>
       <ng-template tuiDataList>
         <tui-opt-group label="New type(s)">
-          <tui-data-list *ngFor="let item of this.additionalTypes | tuiFilterByInputWith : stringifyTypeName"
+          <tui-data-list *ngFor="let item of this.additionalTypes | tuiFilterByInput"
                          [size]="size">
             <button tuiOption [value]="item">
               <div class="type-option">
@@ -44,7 +44,7 @@ import {Schema, SchemaMember, Type} from '../services/schema';
           </tui-data-list>
         </tui-opt-group>
         <tui-opt-group label="Existing types">
-          <tui-data-list *ngFor="let item of displayTypes() | tuiFilterByInputWith : stringifyTypeName" [size]="size">
+          <tui-data-list *ngFor="let item of displayTypes() | tuiFilterByInput" [size]="size">
             <button tuiOption [value]="item">
               <div class="type-option">
                 <span class="type-name">{{ item.name.shortDisplayName }}</span>

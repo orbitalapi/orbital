@@ -1,3 +1,4 @@
+import { TuiStepper } from "@taiga-ui/kit";
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit } from '@angular/core';
 import {
@@ -7,8 +8,7 @@ import {
   RouterOutlet,
   Scroll
 } from '@angular/router';
-import { TuiStepperModule } from '@taiga-ui/kit';
-import {TuiLinkModule, TuiNotificationModule} from '@taiga-ui/core';
+import { TuiNotification, TuiLink } from '@taiga-ui/core';
 import { UiCustomisations } from '../../environments/ui-customisations';
 import { Observable } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
@@ -16,7 +16,7 @@ import { filter, map } from 'rxjs/operators';
 @Component({
   selector: 'app-onboarding-container',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, TuiStepperModule, TuiLinkModule, TuiNotificationModule, RouterLink],
+  imports: [CommonModule, RouterOutlet, TuiStepper, TuiLink, TuiNotification, RouterLink],
   templateUrl: './onboarding-container.component.html',
   styleUrls: ['./onboarding-container.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush

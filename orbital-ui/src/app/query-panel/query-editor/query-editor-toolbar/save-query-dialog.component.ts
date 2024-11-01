@@ -9,8 +9,8 @@ import {
   Validators
 } from '@angular/forms';
 import {TUI_VALIDATION_ERRORS} from "@taiga-ui/kit";
-import {TuiAlertService, TuiDialogContext, TuiNotification} from '@taiga-ui/core';
-import {POLYMORPHEUS_CONTEXT} from "@tinkoff/ng-polymorpheus";
+import {TuiAlertService, TuiDialogContext} from '@taiga-ui/core';
+import {POLYMORPHEUS_CONTEXT} from "@taiga-ui/polymorpheus";
 import {
   CreateOrReplaceQuery,
   SavedQueryWithSource,
@@ -32,12 +32,12 @@ export interface SaveQueryRequestProps {
   selector: 'app-save-query-dialog',
   template: `
     <app-header-component-layout [title]="'Save ' + context.data.label">
-      <tui-notification *ngIf="!hasEditablePackages"
-                        status="error"
-      >
+      <tui-notification size="m" *ngIf="!hasEditablePackages"
+                        appearance="error"
+      ><div>
         You don't currently have any projects that are editable. Add or configure a project in the <a
         [routerLink]="['/schemas']" (click)='close()'>Schemas</a> view
-      </tui-notification>
+      </div></tui-notification>
       <form [formGroup]="formGroup">
         <app-project-selector formControlName="schemaPackage"
                               [disabled]="!hasEditablePackages"
@@ -53,7 +53,7 @@ export interface SaveQueryRequestProps {
         >
           {{context.data.label}} name
           <input [disableControl]="!hasEditablePackages"
-                 tuiTextfield
+                 tuiTextfieldLegacy
           />
           <span class="tui-required"></span>
         </tui-input>
@@ -62,13 +62,13 @@ export interface SaveQueryRequestProps {
           [error]="[] | tuiFieldError | async"
         ></tui-error>
       </form>
-      <tui-notification *ngIf="errorMessage" [status]="'error'">{{ errorMessage }}</tui-notification>
+      <tui-notification size="m" *ngIf="errorMessage" [appearance]="'error'">{{ errorMessage }}</tui-notification>
       <div class="row">
         <button
           tuiButton
           type="button"
           size="m"
-          appearance="outline"
+          appearance="outline-grayscale"
           (click)="close()"
         >
           Cancel
@@ -155,7 +155,7 @@ export class SaveQueryDialogComponent {
     this.schemaImporterService.submitSchemaEditOperation(schemaEdit)
       .subscribe({
         next: (result) => {
-          this.alerts.open('Query saved successfully', {status: TuiNotification.Success})
+          this.alerts.open('Query saved successfully', {appearance: 'success'})
             //.pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe()
 

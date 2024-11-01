@@ -1,6 +1,6 @@
+import { TuiLink } from "@taiga-ui/core";
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {NgIf} from "@angular/common";
-import {TuiLinkModule} from '@taiga-ui/core';
 import {VersionedSource} from "../services/schema";
 
 @Component({
@@ -8,7 +8,7 @@ import {VersionedSource} from "../services/schema";
   standalone: true,
   imports: [
     NgIf,
-    TuiLinkModule
+    TuiLink
   ],
   template: `
     <div class="filename" *ngIf="source">

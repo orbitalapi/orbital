@@ -1,4 +1,5 @@
-import {CommonModule} from '@angular/common';
+import { TuiBlock, TuiCheckbox, TuiButtonLoading } from "@taiga-ui/kit";
+import { CommonModule, NgIf } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -9,8 +10,7 @@ import {
   SimpleChanges
 } from '@angular/core';
 import {FormsModule} from '@angular/forms';
-import {TuiButtonModule, TuiNotificationModule} from '@taiga-ui/core';
-import {TuiCheckboxBlockModule} from '@taiga-ui/kit';
+import { TuiNotification, TuiButton } from '@taiga-ui/core';
 import {Observable} from 'rxjs/internal/Observable';
 import {UiCustomisations} from '../../../../environments/ui-customisations';
 import {ConvertSchemaEvent} from '../../../data-source-import/data-source-import.models';
@@ -25,9 +25,8 @@ import {__values} from "tslib";
   selector: 'app-map-auth-token-step',
   standalone: true,
   imports: [
-    CommonModule, ProjectSelectorModule, TuiButtonModule, TuiCheckboxBlockModule, FormsModule,
-    TuiNotificationModule
-  ],
+    CommonModule, ProjectSelectorModule, TuiButton, TuiBlock, TuiCheckbox, FormsModule,
+    TuiNotification, TuiButtonLoading, NgIf],
   template: `
     <h4>Map your authentication token</h4>
     <p>
@@ -69,7 +68,7 @@ import {__values} from "tslib";
       </tui-notification>
     </div>
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" [size]="'m'" (click)="onSubmit()" [disabled]="!isFormValid()">Configure
+      <button tuiButton [loading]="working" [size]="'m'" (click)="onSubmit()" [disabled]="!isFormValid()">Configure
       </button>
     </div>
   `,

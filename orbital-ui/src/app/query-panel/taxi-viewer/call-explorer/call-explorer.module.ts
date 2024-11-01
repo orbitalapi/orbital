@@ -1,3 +1,4 @@
+import { TuiTabs } from "@taiga-ui/kit";
 import {NgModule} from '@angular/core';
 import { CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import {CallExplorerComponent} from './call-explorer.component';
@@ -19,7 +20,6 @@ import {JsonViewerModule} from 'src/app/json-viewer/json-viewer.module';
 import {ExpandingPanelSetModule} from 'src/app/expanding-panelset/expanding-panel-set.module';
 import {AngularSplitModule} from 'angular-split';
 import {FileSizePipeModule} from 'src/app/file-size-pipe/file-size-pipe.module';
-import {TuiTabsModule} from "@taiga-ui/kit";
 import {HeadersViewComponent} from "./headers-view.component";
 
 @NgModule({
@@ -41,7 +41,7 @@ import {HeadersViewComponent} from "./headers-view.component";
         ExpandingPanelSetModule,
         AngularSplitModule,
         FileSizePipeModule,
-        TuiTabsModule,
+        ...TuiTabs,
         HeadersViewComponent,
         CdkFixedSizeVirtualScroll,
         CdkVirtualForOf,

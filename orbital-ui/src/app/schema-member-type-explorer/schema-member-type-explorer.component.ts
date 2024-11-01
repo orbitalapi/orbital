@@ -117,10 +117,10 @@ import {InlineRunQueryButtonComponent} from "../inline-run-query-button/inline-r
       {{ saveResultMessage.message }}
     </div>
     <div class="button-bar" *ngIf="editable">
-      <button tuiButton appearance="secondary" size="m" (click)="cancelConfig.emit()" [showLoader]="working">
+      <button tuiButton appearance="secondary" size="m" (click)="cancelConfig.emit()" [loading]="working">
         Cancel
       </button>
-      <button tuiButton size="m" (click)="savePendingEdits()" [showLoader]="working">Save</button>
+      <button tuiButton size="m" (click)="savePendingEdits()" [loading]="working">Save</button>
     </div>
   `,
   styleUrls: ['./schema-member-type-explorer.component.scss'],

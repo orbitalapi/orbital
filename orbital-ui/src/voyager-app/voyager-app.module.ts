@@ -1,3 +1,4 @@
+import { NG_EVENT_PLUGINS } from "@taiga-ui/event-plugins";
 import {NgModule} from '@angular/core';
 import {BrowserModule} from '@angular/platform-browser';
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
@@ -9,7 +10,7 @@ import {HttpClientModule} from '@angular/common/http';
 import {AuthModule} from '@auth0/auth0-angular';
 import {WebsocketService} from 'src/app/services/websocket.service';
 import {environment} from 'src/voyager-app/environments/environment';
-import {TuiDialogModule, TuiRootModule} from '@taiga-ui/core';
+import { TuiRoot, TuiDialog } from '@taiga-ui/core';
 
 import Plausible from 'plausible-tracker'
 import {PLAUSIBLE_ANALYTICS} from './plausible';
@@ -41,8 +42,8 @@ import {SCHEMA_PROVIDER_TOKEN, SchemaProvider} from "../app/services/types.servi
     SchemaDiagramModule,
 
     HttpClientModule,
-    TuiRootModule,
-    TuiDialogModule,
+    TuiRoot,
+    TuiDialog,
     AuthModule.forRoot({
       domain: 'orbitalhq.eu.auth0.com',
       clientId: 'ZaDGRQWEfgTFtlWVR9AXWg9vOiBxgVPv'
@@ -88,7 +89,8 @@ import {SCHEMA_PROVIDER_TOKEN, SchemaProvider} from "../app/services/types.servi
       provide: ENVIRONMENT,
       useValue: environment,
     },
-  ],
+    NG_EVENT_PLUGINS
+],
   bootstrap: [VoyagerContainerAppComponent]
 })
 export class VoyagerAppModule {

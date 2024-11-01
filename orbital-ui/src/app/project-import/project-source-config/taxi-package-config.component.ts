@@ -1,9 +1,10 @@
+import { TuiInputModule } from "@taiga-ui/legacy";
 import {CommonModule} from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, EventEmitter, Input} from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ControlContainer, FormsModule, NgModelGroup} from '@angular/forms';
-import {TuiCheckboxModule, TuiInputModule} from '@taiga-ui/kit';
+import { TuiCheckbox } from '@taiga-ui/kit';
 import {of} from 'rxjs';
 import {catchError, debounceTime, switchMap} from 'rxjs/operators';
 import {UiCustomisations} from '../../../environments/ui-customisations';
@@ -11,7 +12,7 @@ import {PackageIdentifierInputComponent} from '../../package-identifier-input/pa
 import {FileSystemPackageSpec} from '../project-import.models';
 import {isNullOrUndefined} from 'src/app/utils/utils';
 import {FileRepositoryTestResponse, SchemaImporterService} from 'src/app/project-import/schema-importer.service';
-import {TuiButtonModule, TuiGroupModule, TuiLoaderModule, TuiNotificationModule} from '@taiga-ui/core';
+import { TuiNotification, TuiLoader, TuiGroup, TuiButton } from '@taiga-ui/core';
 
 @Component({
   selector: 'app-taxi-package-config',
@@ -38,13 +39,13 @@ import {TuiButtonModule, TuiGroupModule, TuiLoaderModule, TuiNotificationModule}
                           *ngIf='editable && !filePathTestResult && fileSystemPackageConfig.path'
                           [textContent]="'Checking for a taxi project file at ' + expectedTaxiConfLocation"
               ></tui-loader>
-              <tui-notification *ngIf='filePathTestResult?.exists' status='success'>
+              <tui-notification size="m" *ngIf='filePathTestResult?.exists' appearance='success'>
                 Great - we've found project {{ filePathTestResult.identifier.id }} there
               </tui-notification>
               <div style='display: flex; width: 100%; align-items: center;'
                    *ngIf='filePathTestResult && !filePathTestResult.exists && !filePathTestResult.errorMessage'>
-                <tui-notification style='flex-grow: 1'
-                                  status='info'>
+                <tui-notification size="m" style='flex-grow: 1'
+                                  appearance='info'>
                   Can't find a project at {{ expectedTaxiConfLocation }}
                 </tui-notification>
                 <button tuiButton size='s' appearance='outline' style='margin-left: 1rem'
@@ -54,8 +55,8 @@ import {TuiButtonModule, TuiGroupModule, TuiLoaderModule, TuiNotificationModule}
               </div>
               <div style='display: flex; width: 100%; align-items: center;'
                    *ngIf='filePathTestResult && filePathTestResult.errorMessage'>
-                <tui-notification style='flex-grow: 1'
-                                  status='error'>
+                <tui-notification size="m" style='flex-grow: 1'
+                                  appearance='error'>
                   {{ filePathTestResult.errorMessage }}
                 </tui-notification>
               </div>
@@ -92,8 +93,10 @@ import {TuiButtonModule, TuiGroupModule, TuiLoaderModule, TuiNotificationModule}
         </div>
       </div>
       <div class='form-element'>
-        <tui-checkbox [(ngModel)]='fileSystemPackageConfig.isEditable' name='editable'
-                      required [readOnly]='!editable'></tui-checkbox>
+        <input
+            tuiCheckbox
+            type="checkbox" [(ngModel)]='fileSystemPackageConfig.isEditable' name='editable'
+                      required [readOnly]='!editable' size="s"/>
       </div>
     </div>
   `,
@@ -103,12 +106,12 @@ import {TuiButtonModule, TuiGroupModule, TuiLoaderModule, TuiNotificationModule}
     CommonModule,
     FormsModule,
     TuiInputModule,
-    TuiLoaderModule,
-    TuiNotificationModule,
+    TuiLoader,
+    TuiNotification,
     PackageIdentifierInputComponent,
-    TuiCheckboxModule,
-    TuiButtonModule,
-    TuiGroupModule
+    TuiCheckbox,
+    TuiButton,
+    TuiGroup
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   viewProviders: [{provide: ControlContainer, useExisting: NgModelGroup}],

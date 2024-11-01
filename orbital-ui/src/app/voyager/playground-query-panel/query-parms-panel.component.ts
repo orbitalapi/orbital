@@ -1,15 +1,15 @@
+import { TuiComboBoxModule, TuiInputModule } from "@taiga-ui/legacy";
+import { TuiTable } from "@taiga-ui/addon-table";
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import { CommonModule } from '@angular/common';
-import {TuiButtonModule, TuiDataListModule} from "@taiga-ui/core";
-import {TuiComboBoxModule, TuiInputModule} from "@taiga-ui/kit";
-import {TuiTableModule} from "@taiga-ui/addon-table";
+import { TuiDataList, TuiButton } from "@taiga-ui/core";
 import {FormsModule} from "@angular/forms";
 
 type KeyValuePair = {name: string, value: any}
 @Component({
   selector: 'app-query-params-panel',
   standalone: true,
-  imports: [CommonModule, TuiButtonModule, TuiComboBoxModule, TuiDataListModule, TuiTableModule, FormsModule, TuiInputModule],
+  imports: [CommonModule, TuiButton, TuiComboBoxModule, TuiDataList, TuiTable, FormsModule, TuiInputModule],
   template: `
     <div>Parameters let you pass values to a query at runtime</div>
     <div *ngIf="!paramList || paramList.length === 0">
@@ -32,7 +32,7 @@ type KeyValuePair = {name: string, value: any}
         </td>
         <td *tuiCell="'value'" tuiTd class="">
           <tui-input [ngModel]="parameter.value" (ngModelChange)="updateParam(parameter, $event)">
-            <input tuiTextfield/>
+            <input tuiTextfieldLegacy/>
           </tui-input>
         </td>
       </tr>

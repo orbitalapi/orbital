@@ -5,7 +5,7 @@ import {map} from 'rxjs/operators';
 import {PipelineDirection, PipelineTransportSpec} from '../pipelines.service';
 import {BaseTransportConfigEditor} from './base-transport-config-editor';
 import {ConnectorSummary} from "../../db-connection-editor/db-importer.service";
-import {PolymorpheusComponent} from "@tinkoff/ng-polymorpheus";
+import {PolymorpheusComponent} from "@taiga-ui/polymorpheus";
 import {
   ConnectionEditorContext,
   DbConnectionEditorDialogComponent
@@ -27,7 +27,7 @@ import {TuiDialogService} from "@taiga-ui/core";
               class="link"
               (click)="createNewConnection()"
             >
-              <tui-svg src="tuiIconPlusCircleLarge" class="icon"></tui-svg>
+              <tui-icon icon="@tui.circle-plus" class="icon"></tui-icon>
               Add new connection...
             </button>
             <button *ngFor="let connection of connections | messageBrokers" tuiOption

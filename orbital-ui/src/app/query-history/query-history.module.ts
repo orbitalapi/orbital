@@ -1,3 +1,4 @@
+import { TuiProgress } from "@taiga-ui/kit";
 import { NgModule } from '@angular/core';
 import { QueryHistoryComponent } from './query-history.component';
 import { CommonModule } from '@angular/common';
@@ -19,11 +20,10 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { TabbedResultsViewModule } from '../tabbed-results-view/tabbed-results-view.module';
 import { AngularSplitModule } from 'angular-split';
 import { ExpandingPanelSetModule } from '../expanding-panelset/expanding-panel-set.module';
-import {TuiButtonModule, TuiNotificationModule} from '@taiga-ui/core';
+import { TuiNotification, TuiButton } from '@taiga-ui/core';
 import {RouterModule, UrlSegment} from '@angular/router';
 import { ResultsDownloadModule } from 'src/app/results-download/results-download.module';
 import { TruncatePipeModule } from 'src/app/truncate-pipe/truncate-pipe.module';
-import {TuiProgressModule} from '@taiga-ui/kit';
 import { UiCustomisations } from '../../environments/ui-customisations';
 
 @NgModule({
@@ -44,7 +44,7 @@ import { UiCustomisations } from '../../environments/ui-customisations';
     TabbedResultsViewModule,
     AngularSplitModule,
     ExpandingPanelSetModule,
-    TuiButtonModule,
+    TuiButton,
     ResultsDownloadModule,
     RouterModule.forChild([
       {
@@ -64,8 +64,8 @@ import { UiCustomisations } from '../../environments/ui-customisations';
         title: `${UiCustomisations.productName}: Query history`
       },
     ]),
-    TuiNotificationModule,
-    TuiProgressModule
+    TuiNotification,
+    ...TuiProgress
   ],
   exports: [QueryHistoryComponent, QueryListComponent],
   declarations: [

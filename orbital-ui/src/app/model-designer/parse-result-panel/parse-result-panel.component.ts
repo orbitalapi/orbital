@@ -18,7 +18,7 @@ import {SourceWithTypeHints} from "../../json-viewer/json-results-view.component
 @Component({
   selector: 'app-designer-parse-result-panel',
   template: `
-    <tui-notification *ngIf="disabled" class="onboarding-text" status="neutral" size="s">
+    <tui-notification *ngIf="disabled" class="onboarding-text" appearance="neutral" size="s">
       @if (!taxi && !targetType) {
         As you edit your Taxi schema above, parsing results will appear here
       } @else {
@@ -31,7 +31,7 @@ import {SourceWithTypeHints} from "../../json-viewer/json-results-view.component
     </app-panel-header>
     <app-json-viewer [json]="sourceWithHints" *ngIf="sourceWithHints" [readOnly]="true"></app-json-viewer>
     <div class="row center">
-        <tui-notification *ngIf="errorMessage" status="error">{{errorMessage}}</tui-notification>
+        <tui-notification size="m" *ngIf="errorMessage" appearance="error">{{errorMessage}}</tui-notification>
     </div>
     `,
   styleUrls: ['./parse-result-panel.component.scss'],

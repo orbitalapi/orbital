@@ -3,8 +3,8 @@ import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Injector}
 import {FormsModule} from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
 import {tuiButtonOptionsProvider, TuiDialogService,} from '@taiga-ui/core';
-import {TuiBadgeModule, TuiPromptComponent, TuiPromptData, TuiStatus, TuiToggleModule} from '@taiga-ui/kit';
-import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
+import { TuiConfirm, TuiStatus, TuiBadge, TuiSwitch, TuiConfirmData } from '@taiga-ui/kit';
+import {PolymorpheusComponent} from '@taiga-ui/polymorpheus';
 import {combineLatestWith, filter, Observable, of} from 'rxjs';
 import {map, mergeMap, tap} from 'rxjs/operators';
 import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
@@ -32,9 +32,11 @@ import {RequiresAuthorityDirective} from "../requires-authority.directive";
       <ng-container ngProjectAs="header-components">
         <app-published-endpoint-info [savedQuery]="query" [showTitle]="false"></app-published-endpoint-info>
         <div *ngIf="query.queryKind === 'Stream'" class="row stream-status-and-toggle">
-          <tui-toggle *appRequiresAuthority="['EditPipelines']" [ngModel]="streamIsRunning" (click)="handleToggleClick($event)" size="l"></tui-toggle>
-          <tui-badge size="l" [value]="streamStatusBadge.label | titlecase"
-                     [status]="streamStatusBadge.status"></tui-badge>
+          <input
+              tuiSwitch
+              type="checkbox" *appRequiresAuthority="['EditPipelines']" [ngModel]="streamIsRunning" (click)="handleToggleClick($event)" size="m"/>
+          <tui-badge size="m"
+                     [appearance]="streamStatusBadge.status">{{ streamStatusBadge.label | titlecase }}</tui-badge>
         </div>
       </ng-container>
       <app-endpoint-monitor
@@ -49,8 +51,8 @@ import {RequiresAuthorityDirective} from "../requires-authority.directive";
   imports: [
     CommonModule,
     HeaderComponentLayoutModule,
-    TuiToggleModule,
-    TuiBadgeModule,
+    TuiSwitch,
+    TuiBadge,
     EndpointMonitorComponent,
     FormsModule,
     PublishedEndpointInfoComponent,
@@ -142,7 +144,7 @@ export class EndpointMonitorContainerComponent {
   }
 
   updateStreamRunningState(targetState: StreamRunningState) {
-    let promptData: TuiPromptData;
+    let promptData: TuiConfirmData;
     this.query$.pipe(
       mergeMap(savedQuery => {
         let dialogLabel: string;
@@ -162,7 +164,7 @@ export class EndpointMonitorContainerComponent {
           dialogLabel = `Disable ${savedQuery.name.shortDisplayName}`
         }
         return this.dialogs.open<boolean>(new PolymorpheusComponent(
-          TuiPromptComponent,
+          TuiConfirm,
           Injector.create({
             providers: [tuiButtonOptionsProvider({ appearance: targetState === 'RUNNING' ? 'primary' : 'destructive' })],
             parent: this.injector,

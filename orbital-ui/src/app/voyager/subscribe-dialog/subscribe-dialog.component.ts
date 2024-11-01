@@ -1,7 +1,7 @@
 import {ChangeDetectorRef, Component, Inject} from '@angular/core';
 import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {TuiDialogContext} from '@taiga-ui/core';
-import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
+import {POLYMORPHEUS_CONTEXT} from '@taiga-ui/polymorpheus';
 import {PLAUSIBLE_ANALYTICS} from 'src/voyager-app/plausible';
 import {SubscriptionResult, VoyagerService} from 'src/voyager-app/voyager.service';
 

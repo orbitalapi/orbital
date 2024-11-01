@@ -1,15 +1,15 @@
 
 
 :host {
-  --tui-primary: #3b6af9;
+  --tui-background-accent-1: #3b6af9;
 }
 
 
 .dialog-text {
-  color: var(--tui-text-02);
+  color: var(--tui-text-secondary);
   font-size: var(--tui-font-text-s);
 }
 
-tui-checkbox-labeled {
+.checkbox-label {
   margin: 1rem 0;
 }

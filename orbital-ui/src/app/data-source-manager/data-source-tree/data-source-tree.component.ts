@@ -1,9 +1,9 @@
+import { TuiTree } from "@taiga-ui/kit";
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, DestroyRef, Input, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive } from '@angular/router';
-import { TuiHintModule, TuiNotificationModule } from '@taiga-ui/core';
-import { TuiTreeModule } from '@taiga-ui/kit';
+import { TuiNotification, TuiHint } from '@taiga-ui/core';
 import { BehaviorSubject, combineLatest, Observable } from 'rxjs';
 import {
   ConnectionsListResponse,
@@ -28,8 +28,8 @@ interface TreeEntry {
   selector: 'app-data-source-tree',
   standalone: true,
   imports: [
-    CommonModule, TuiTreeModule, TuiHintModule, RouterLink, RouterLinkActive, ConnectionStatusComponent,
-    TuiNotificationModule
+    CommonModule, TuiTree, TuiHint, RouterLink, RouterLinkActive, ConnectionStatusComponent,
+    TuiNotification
   ],
   template: `
     <ng-container [tuiTreeController]="true">

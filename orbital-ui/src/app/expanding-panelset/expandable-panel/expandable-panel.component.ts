@@ -1,8 +1,8 @@
+import { TuiButton } from "@taiga-ui/core";
+import { TuiBadge } from "@taiga-ui/kit";
 import {Component, EventEmitter, HostBinding, Input, Output} from '@angular/core';
 import {ExpandingPanelSetModule} from "../expanding-panel-set.module";
 import {NgIf} from "@angular/common";
-import {TuiBadgeModule} from "@taiga-ui/kit";
-import {TuiButtonModule} from "@taiga-ui/core";
 
 @Component({
   selector: 'app-expandable-panel',
@@ -10,14 +10,14 @@ import {TuiButtonModule} from "@taiga-ui/core";
   imports: [
     ExpandingPanelSetModule,
     NgIf,
-    TuiBadgeModule,
-    TuiButtonModule
+    TuiBadge,
+    TuiButton
   ],
   template: `
     <app-panel-header [title]="title" [isSecondary]="isSecondary">
       <ng-content select="header-content"></ng-content>
       <span class="spacer"></span>
-      <button tuiButton [icon]="expanded ? 'tuiIconMinimize2' : 'tuiIconMaximize2'" size="s" appearance="icon" (click)="toggleExpanded()"></button>
+      <button tuiButton [iconStart]="expanded ? '@tui.minimize-2' : '@tui.maximize-2'" size="s" appearance="icon" (click)="toggleExpanded()"></button>
     </app-panel-header>
     <ng-content *ngIf="expanded"></ng-content>
   `,

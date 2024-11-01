@@ -1,7 +1,7 @@
+import { TuiRoot } from "@taiga-ui/core";
 import {BrowserAnimationsModule} from '@angular/platform-browser/animations';
 import {moduleMetadata} from '@storybook/angular';
 import { CommonModule } from "@angular/common";
-import {TuiRootModule} from '@taiga-ui/core';
 import {AuthService} from '../auth/auth.service';
 import {Environment, ENVIRONMENT} from '../services/environment';
 import { HeaderBarModule } from "./header-bar.module";
@@ -27,7 +27,7 @@ export default {
 
   decorators: [
     moduleMetadata({
-      imports: [CommonModule, BrowserAnimationsModule, HeaderBarModule, TuiRootModule],
+      imports: [CommonModule, BrowserAnimationsModule, HeaderBarModule, TuiRoot],
       providers: [
         {
           provide: AuthService,

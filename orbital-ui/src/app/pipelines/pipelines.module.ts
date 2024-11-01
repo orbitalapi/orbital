@@ -1,3 +1,4 @@
+import { TuiComboBoxModule } from "@taiga-ui/legacy";
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {TypeAutocompleteModule} from '../type-autocomplete/type-autocomplete.module';
@@ -31,10 +32,9 @@ import {OutputEditorComponent} from './pipeline-builder/output-editor.component'
 import {MatDialogModule} from '@angular/material/dialog';
 import {PipelineBuilderContainerComponent} from './pipeline-builder/pipeline-builder-container.component';
 import {SchemaDisplayTableModule} from '../schema-display-table/schema-display-table.module';
-import {TuiButtonModule, TuiDataListModule, TuiSvgModule} from '@taiga-ui/core';
+import { TuiDataList, TuiIcon, TuiButton } from '@taiga-ui/core';
 import {SqsS3InputConfigComponent} from './pipeline-builder/sqs-s3-input-config.component';
 import {JdbcOutputConfigComponent} from './pipeline-builder/jdbc-output-config.component';
-import {TuiComboBoxModule} from '@taiga-ui/kit';
 import {ConnectionFiltersModule} from '../utils/connections.pipe';
 import {
   PollingScheduleFormInputComponent
@@ -79,7 +79,6 @@ import {VyneServicesModule} from 'src/app/services/vyne-services.module';
     ReactiveFormsModule,
     VyneFormsModule,
     MatInputModule,
-    VyneFormsModule,
     MatSelectModule,
     MatAutocompleteModule,
     HeaderBarModule,
@@ -89,10 +88,10 @@ import {VyneServicesModule} from 'src/app/services/vyne-services.module';
     MomentModule,
     NgxGraphModule,
     SchemaDisplayTableModule,
-    TuiButtonModule,
+    TuiButton,
     TuiComboBoxModule,
-    TuiSvgModule,
-    TuiDataListModule,
+    TuiIcon,
+    ...TuiDataList,
     FormsModule,
     ConnectionFiltersModule,
     VyneServicesModule,

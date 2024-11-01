@@ -2,9 +2,9 @@
   Taxi Playground
 </a>
 
-<tui-hosted-dropdown
-  [content]="dropdown"
-  [(open)]="examplesOpen"
+<div
+  [tuiDropdown]="dropdown"
+  [(tuiDropdownOpen)]="examplesOpen"
   tuiDropdownAlign="left"
 >
   <button
@@ -13,11 +13,11 @@
     type="button"
     size="s"
     appearance="flat"
-    [iconRight]="arrow"
+    iconEnd="@tui.chevron-down"
   >
     <span class="label">Examples</span>
   </button>
-</tui-hosted-dropdown>
+</div>
 <button class="header-icon-button header-icon-spacer "
         (click)="generateShareUrl.emit()">
   <mat-icon svgIcon="share"></mat-icon>

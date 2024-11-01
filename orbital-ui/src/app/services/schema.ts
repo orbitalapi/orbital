@@ -2,7 +2,6 @@ import {PrimitiveTypeNames} from './taxi';
 import {isNullOrUndefined, isString} from 'util';
 import {PackageIdentifier} from "../package-viewer/packages.service";
 import {SavedQuery} from "./types.service";
-import {TuiNotificationT} from "@taiga-ui/core";
 import {QualifiedNameParser} from "./qualified-name-parser";
 
 export function fqn(input: string): QualifiedName {
@@ -736,7 +735,7 @@ export type Severity = 'INFO' | 'WARNING' | 'ERROR' |
   // UI only messages:
   'SUCCESS' | 'FAILURE';
 
-export function severityToTuiNotification(severity: Severity): TuiNotificationT {
+export function severityToTuiNotification(severity: Severity): string {
   switch (severity) {
     case "INFO":
       return "info";

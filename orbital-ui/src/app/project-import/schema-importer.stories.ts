@@ -1,3 +1,4 @@
+import { TuiRoot } from "@taiga-ui/core";
 import { moduleMetadata } from "@storybook/angular";
 import { CommonModule } from "@angular/common";
 import { BrowserModule } from "@angular/platform-browser";
@@ -6,7 +7,6 @@ import {
   importedSchema,
   schemaWithNestedTypes,
 } from "../data-source-import/data-source-import.data";
-import { TuiRootModule } from "@taiga-ui/core";
 import { RouterTestingModule } from "@angular/router/testing";
 
 export default {
@@ -19,7 +19,7 @@ export default {
         CommonModule,
         BrowserModule,
         BrowserAnimationsModule,
-        TuiRootModule,
+        TuiRoot,
         RouterTestingModule,
       ],
     }),

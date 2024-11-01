@@ -1,14 +1,9 @@
+import { TuiTextfieldControllerModule, TuiInputModule } from "@taiga-ui/legacy";
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {CatalogExplorerPanelComponent} from './catalog-explorer-panel.component';
-import {TuiInputModule, TuiTreeModule} from "@taiga-ui/kit";
-import {
-  TuiButtonModule,
-  TuiHintModule,
-  TuiLoaderModule,
-  TuiSvgModule,
-  TuiTextfieldControllerModule
-} from "@taiga-ui/core";
+import { TuiTree } from "@taiga-ui/kit";
+import { TuiLoader, TuiIcon, TuiButton, TuiHint } from "@taiga-ui/core";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import {MatProgressBarModule} from "@angular/material/progress-bar";
 import {CatalogPanelSearchResults} from './catalog-panel-search-results.component';
@@ -34,11 +29,11 @@ import {CatalogEntryLineComponent} from './catalog-entry-line.component';
       FormsModule,
       ReactiveFormsModule,
       MatProgressBarModule,
-      TuiLoaderModule,
-      TuiTreeModule,
-      TuiHintModule,
-      TuiSvgModule,
-      TuiButtonModule
+      TuiLoader,
+      ...TuiTree,
+      ...TuiHint,
+      TuiIcon,
+      TuiButton
     ]
 })
 export class CatalogExplorerPanelModule { }

@@ -29,17 +29,17 @@ import {Disposable} from "vscode-languageclient";
   selector: 'app-json-viewer',
   template: `
     <app-panel-header *ngIf="showHeader" [title]="title" [isSecondary]="true">
-      <tui-checkbox-labeled [(ngModel)]="showTypeHints" *ngIf="hasTypes">
+     <label tuiLabel> <input tuiCheckbox type="checkbox" [(ngModel)]="showTypeHints" *ngIf="hasTypes" size="s">
         Show types
-      </tui-checkbox-labeled>
-      <tui-notification *ngIf="showResultsSizeWarning || isResponseLarge" status="warning" class="alert">
+      </label>
+      <tui-notification size="m" *ngIf="showResultsSizeWarning || isResponseLarge" appearance="warning" class="alert"><div>
         The response is really big.
         <ng-container *ngIf="isResponseLarge">Some features have been disabled.</ng-container>
         <ng-container *ngIf="showResultsSizeWarning">UI performance may be impacted.</ng-container>
-      </tui-notification>
+      </div></tui-notification>
       <div *ngIf="!showResultsSizeWarning && !isResponseLarge" class="spacer"></div>
-      <button (click)="applyFormat()" tuiButton size="s" appearance="outline">Format</button>
-      <button (click)="copyToClipboard()" tuiButton size="s" appearance="outline">{{ copyButtonText }}</button>
+      <button (click)="applyFormat()" tuiButton size="s" appearance="outline-grayscale">Format</button>
+      <button (click)="copyToClipboard()" tuiButton size="s" appearance="outline-grayscale">{{ copyButtonText }}</button>
     </app-panel-header>
     <div #codeEditorContainer class="code-editor"></div>`,
   styleUrls: ['./json-viewer.component.scss'],

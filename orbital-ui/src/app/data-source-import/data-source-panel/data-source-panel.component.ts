@@ -1,15 +1,10 @@
+import { TuiIslandDirective, TuiSelectModule } from "@taiga-ui/legacy";
 import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
 import {Observable} from 'rxjs/internal/Observable';
-import {TuiButtonModule, TuiDataListModule, TuiDropdownModule, TuiHintModule} from '@taiga-ui/core';
-import {
-  TuiDataListWrapperModule,
-  TuiFilterByInputPipeModule,
-  TuiIslandModule,
-  TuiSelectModule,
-  TuiStringifyContentPipeModule
-} from '@taiga-ui/kit';
+import { TuiDataList, TuiDropdown, TuiButton, TuiHint } from '@taiga-ui/core';
+import { TuiDataListWrapper, TuiStringifyContentPipe, TuiFilterByInputPipe } from '@taiga-ui/kit';
 import {ConnectorSummary, MappedTable} from '../../db-connection-editor/db-importer.service';
 import {ConvertSchemaEvent} from '../data-source-import.models';
 import {Schema} from '../../services/schema';
@@ -21,7 +16,6 @@ import {DatabaseTableConfigComponent} from './config-panels/database-table-confi
 import {KafkaTopicConfigComponent} from './config-panels/kafka-topic-config.component';
 import {ProtobufConfigComponent} from './config-panels/protobuf-config.component';
 import {ConnectionFiltersModule} from '../../utils/connections.pipe';
-import {TuiClickOutsideModule} from '@taiga-ui/cdk';
 import {UiCustomisations} from "../../../environments/ui-customisations";
 
 @Component({
@@ -34,21 +28,20 @@ import {UiCustomisations} from "../../../environments/ui-customisations";
     ProjectSelectorModule,
     TuiSelectModule,
     FormsModule,
-    TuiDataListWrapperModule,
-    TuiFilterByInputPipeModule,
-    TuiStringifyContentPipeModule,
-    TuiIslandModule,
-    TuiButtonModule,
+    TuiDataListWrapper,
+    TuiFilterByInputPipe,
+    TuiStringifyContentPipe,
+    TuiIslandDirective,
+    TuiButton,
     SwaggerConfigComponent,
     JsonSchemaConfigComponent,
     DatabaseTableConfigComponent,
     KafkaTopicConfigComponent,
     ProtobufConfigComponent,
     ConnectionFiltersModule,
-    TuiHintModule,
-    TuiDataListModule,
-    TuiDropdownModule,
-    TuiClickOutsideModule
+    TuiHint,
+    TuiDataList,
+    TuiDropdown,
   ],
   template: `
     <div class="selectors">
@@ -61,7 +54,6 @@ import {UiCustomisations} from "../../../environments/ui-customisations";
       ></app-project-selector>
       <tui-select
         tuiTextfieldSize="l"
-        [(tuiDropdownOpen)]="isDataSourceSelectorOpen"
         [stringify]="stringify"
         [(ngModel)]="schemaType"
         [disabled]="!selectedPackage"

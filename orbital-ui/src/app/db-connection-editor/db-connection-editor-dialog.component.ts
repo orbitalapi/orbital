@@ -2,7 +2,7 @@ import {Component, Inject, Injector} from '@angular/core';
 import {Observable} from 'rxjs';
 import {tap} from 'rxjs/operators';
 import {TuiAlertService, TuiDialogContext} from '@taiga-ui/core';
-import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
+import {POLYMORPHEUS_CONTEXT} from '@taiga-ui/polymorpheus';
 import {ConnectorSummary, ConnectorType} from './db-importer.service';
 import {PackageIdentifier, PackagesService, SourcePackageDescription} from '../package-viewer/packages.service';
 import {ConnectionEditorComponent, ConnectionEditorMode} from './connection-editor.component';

@@ -24,7 +24,7 @@ import {OperationKind, QualifiedName, ServiceKind, TypeKind} from "../services/s
                 type="button"
                 size="xs"
                 appearance="icon"
-                icon="tuiIconPlusCircle"
+                iconStart="@tui.circle-plus"
                 (click)="addToQueryClicked.emit(qualifiedName)"
                 [tuiHint]="'Add to query'"
         ></button>

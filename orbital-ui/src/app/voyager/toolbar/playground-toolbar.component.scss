@@ -30,8 +30,8 @@ a:visited {
 }
 
 .nav-link {
-  --tui-link: white;
-  --tui-link-hover: white;
+  --tui-text-action: white;
+  --tui-text-action-hover: white;
   margin-right: 10px;
 }
 
@@ -130,9 +130,16 @@ tui-hosted-dropdown {
 }
 
 button.dropdown-host {
+  margin-right: 0.5rem;
+  color: $whiteish;
+
+  &:hover {
+    color: $white;
+  }
+
   .label {
     // add some space before the chevron
-    margin-right: 0.5rem;
+    margin-right: 0.25rem;
   }
 
   ::ng-deep {

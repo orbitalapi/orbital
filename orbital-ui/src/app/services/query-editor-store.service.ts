@@ -1,8 +1,8 @@
 import {Clipboard} from '@angular/cdk/clipboard';
 import {computed, Inject, Injectable, Injector, Signal, signal, WritableSignal} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {TuiAlertService, TuiDialogService, TuiNotification} from '@taiga-ui/core';
-import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
+import {TuiAlertService, TuiDialogService} from '@taiga-ui/core';
+import {PolymorpheusComponent} from '@taiga-ui/polymorpheus';
 import {ColumnState, FilterModel} from 'ag-grid-community';
 import {IPosition} from 'monaco-editor';
 import {ReplaySubject} from 'rxjs';
@@ -202,7 +202,7 @@ export class QueryEditorStoreService {
       ).subscribe();
     } else {
       copyQueryAs(this.activeQueryEditorState().payload.query(), this.queryService.queryEndpoint, $event, this.clipboard);
-      this.alerts.open('Copied to clipboard', {status: TuiNotification.Success})
+      this.alerts.open('Copied to clipboard', {appearance: 'success'})
         .subscribe()
     }
   }

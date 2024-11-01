@@ -27,7 +27,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
       <tui-input
         appearance="no-border"
         class="hero-search-bar"
-        icon="tuiIconSearchLarge"
+        icon="@tui.search"
         iconAlign="left"
         [(ngModel)]="searchTerm"
         (ngModelChange)="searchTermChanged.next($event)"

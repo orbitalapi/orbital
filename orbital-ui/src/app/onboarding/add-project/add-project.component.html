@@ -24,11 +24,9 @@
 <div class="island-container tui-space_top-4" *ngIf="step === 'options' || step === 'projectAdded'">
   <tui-island>
     <div>
-      <tui-avatar
-        avatarUrl="assets/img/tabler/brand-git.svg"
-        new
-        [rounded]="true"
-        size="xs"
+      <tui-avatar [src]="'assets/img/tabler/brand-git.svg'"
+        [round]="true"
+        size="l"
         class="icon"
       ></tui-avatar>
       <h3 class="tui-island__title">Git Repository</h3>
@@ -37,39 +35,36 @@
       </p>
     </div>
     <p class="tui-island__paragraph tui-island__paragraph_button">
-      <button tuiButton appearance="whiteblock" size="m" iconRight="tuiIconPlus" (click)="step = 'gitRepo'">Add</button>
+      <button tuiButton appearance="whiteblock" size="m" iconEnd="@tui.plus" (click)="step = 'gitRepo'">Add</button>
     </p>
   </tui-island>
   <tui-island>
     <div>
-      <tui-avatar
-        avatarUrl="assets/img/tabler/server.svg"
-        new
-        [rounded]="true"
-        size="xs"
+      <tui-avatar [src]="'assets/img/tabler/server.svg'"
+        [round]="true"
+        size="l"
         class="icon"
       ></tui-avatar>
       <h3 class="tui-island__title">Local disk</h3>
       <p class="tui-island__paragraph">Read projects directly from the local machine.</p>
     </div>
     <p class="tui-island__paragraph tui-island__paragraph_button">
-      <button tuiButton appearance="whiteblock" size="m" iconRight="tuiIconPlus" (click)="step = 'localDisk'">Add</button>
+      <button tuiButton appearance="whiteblock" size="m" iconEnd="@tui.plus" (click)="step = 'localDisk'">Add</button>
     </p>
   </tui-island>
   <!--<tui-island>
     <div>
       <tui-avatar
         avatarUrl="assets/img/tabler/topology-star-3.svg"
-        new
         [rounded]="true"
-        size="xs"
+        size="l"
         class="icon"
       ></tui-avatar>
       <h3 class="tui-island__title">Microservice</h3>
       <p class="tui-island__paragraph">Need a description (and action) for this...</p>
     </div>
     <p class="tui-island__paragraph tui-island__paragraph_button">
-      <button tuiButton appearance="whiteblock" size="m" iconRight="tuiIconPlus" (click)="step = 'microService'">Add</button>
+      <button tuiButton appearance="whiteblock" size="m" iconRight="@tui.plus" (click)="step = 'microService'">Add</button>
     </p>
   </tui-island>-->
 </div>
@@ -77,11 +72,9 @@
 <!--Git Repo-->
 <tui-island class="tui-space_top-4" *ngIf="step === 'gitRepo'">
   <div>
-    <tui-avatar
-      avatarUrl="assets/img/tabler/brand-git.svg"
-      new
-      [rounded]="true"
-      size="xs"
+    <tui-avatar [src]="'assets/img/tabler/brand-git.svg'"
+      [round]="true"
+      size="l"
       class="icon"
     ></tui-avatar>
     <h3 class="tui-island__title">Git Repository</h3>
@@ -97,11 +90,9 @@
 <!--Local disk-->
 <tui-island class="tui-space_top-4" *ngIf="step === 'localDisk'">
   <div>
-    <tui-avatar
-      avatarUrl="assets/img/tabler/server.svg"
-      new
-      [rounded]="true"
-      size="xs"
+    <tui-avatar [src]="'assets/img/tabler/server.svg'"
+      [round]="true"
+      size="l"
       class="icon"
     ></tui-avatar>
     <h3 class="tui-island__title">Local disk</h3>
@@ -117,11 +108,9 @@
 <!--Microservice-->
 <tui-island class="tui-space_top-4" *ngIf="step === 'microService'">
   <div class="tui-space_bottom-2">
-    <tui-avatar
-      avatarUrl="assets/img/tabler/server.svg"
-      new
-      [rounded]="true"
-      size="xs"
+    <tui-avatar [src]="'assets/img/tabler/server.svg'"
+      [round]="true"
+      size="l"
       class="icon"
     ></tui-avatar>
     <h3 class="tui-island__title">Microservice</h3>

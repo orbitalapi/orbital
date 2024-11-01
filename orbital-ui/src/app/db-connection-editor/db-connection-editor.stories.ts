@@ -1,3 +1,4 @@
+import { TuiRoot } from "@taiga-ui/core";
 import { moduleMetadata } from "@storybook/angular";
 import {
   DbConnectionService,
@@ -9,8 +10,6 @@ import { QualifiedName } from "../services/schema";
 import { testSchema } from "../object-view/test-schema";
 import { HttpClientTestingModule } from "@angular/common/http/testing";
 import { RouterTestingModule } from "@angular/router/testing";
-import { TuiRootModule } from "@taiga-ui/core";
-
 const stringType: QualifiedName = {
   name: "lang.taxi.String",
   fullyQualifiedName: "lang.taxi.String",
@@ -119,7 +118,7 @@ export default {
   decorators: [
     moduleMetadata({
       declarations: [],
-      imports: [HttpClientTestingModule, RouterTestingModule, TuiRootModule],
+      imports: [HttpClientTestingModule, RouterTestingModule, TuiRoot],
       providers: [DbConnectionService],
     }),
   ],

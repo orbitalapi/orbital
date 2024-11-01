@@ -1,3 +1,4 @@
+import { TuiButton } from "@taiga-ui/core";
 import {
   ChangeDetectorRef,
   Component,
@@ -7,7 +8,6 @@ import {
   Output,
   ViewContainerRef
 } from '@angular/core';
-import {TuiButtonModule} from "@taiga-ui/core";
 import {SvgIconComponent} from "../svg-icon/svg-icon.component";
 import Prism from 'prismjs'
 import 'prismjs/plugins/toolbar/prism-toolbar';
@@ -18,11 +18,11 @@ let componentInstalled = false;
   selector: 'app-inline-run-query-button',
   standalone: true,
   imports: [
-    TuiButtonModule,
+    TuiButton,
     SvgIconComponent
   ],
   template: `
-    <button class="inline-run-query-button" tuiButton size="s" appearance="outline" type="button"
+    <button class="inline-run-query-button" tuiButton size="s" appearance="outline-grayscale" type="button"
             (click)="clicked.emit()">
       <app-svg-icon tabler="player-play" strokeWidth="3"></app-svg-icon>
       <span class="label">{{ label }}</span>

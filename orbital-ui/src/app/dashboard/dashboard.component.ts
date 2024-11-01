@@ -1,8 +1,8 @@
-import {CommonModule} from '@angular/common';
+import { CommonModule, NgIf } from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Router, RouterLink, RouterOutlet} from '@angular/router';
-import {TuiButtonModule, TuiNotificationModule} from '@taiga-ui/core';
+import { TuiNotification, TuiButton } from '@taiga-ui/core';
 import {UiCustomisations} from '../../environments/ui-customisations';
 import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
 import {OnboardingContainerComponent} from '../onboarding/onboarding-container.component';
@@ -20,10 +20,9 @@ import {RequiresAuthorityDirective} from "../requires-authority.directive";
   selector: 'app-dashboard',
   standalone: true,
   imports: [
-    CommonModule, HeaderComponentLayoutModule, RouterOutlet, TuiButtonModule, RouterLink,
-    TuiNotificationModule, DataSourcesCardComponent, EndpointStatsCardComponent, ChangelogCardComponent, CardComponent, ContentCardComponent,
-    RequiresAuthorityDirective
-  ],
+    CommonModule, HeaderComponentLayoutModule, RouterOutlet, TuiButton, RouterLink,
+    TuiNotification, DataSourcesCardComponent, EndpointStatsCardComponent, ChangelogCardComponent, CardComponent, ContentCardComponent,
+    RequiresAuthorityDirective, NgIf],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush

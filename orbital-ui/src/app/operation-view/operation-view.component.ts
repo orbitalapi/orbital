@@ -3,7 +3,7 @@ import {Component, EventEmitter, Input, Output} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router, RouterLink } from '@angular/router';
-import { TuiToggleModule } from '@taiga-ui/kit';
+import {TuiSwitch} from '@taiga-ui/kit';
 import { ObjectViewModule } from '../object-view/object-view.module';
 import {
   getDisplayName,
@@ -89,10 +89,13 @@ import { OperationErrorComponent } from './operation-error.component';
         <h2>Parameters</h2>
         <div class="row">
           <span>Show full type names</span>
-          <tui-toggle
+          <input
+            tuiSwitch
+            type="checkbox"
             [(ngModel)]="showFullTypeNames"
             [showIcons]="true"
-          ></tui-toggle>
+            size="s"
+          />
         </div>
         <div>
           <table class="parameter-list" *ngIf="operation.parameters && operation.parameters.length > 0">
@@ -146,7 +149,7 @@ import { OperationErrorComponent } from './operation-error.component';
             required</p>
         </div>
         <div class="button-row" *ngIf="allowTryItOut">
-          <button tuiButton size="m" appearance="outline" (click)="onCancel()" *ngIf="tryMode">Cancel</button>
+          <button tuiButton size="m" appearance="outline-grayscale" (click)="onCancel()" *ngIf="tryMode">Cancel</button>
           <div class="spacer"></div>
           <button tuiButton size="m" appearance="secondary" *ngIf="tryMode" (click)="doSubmit()">Submit</button>
         </div>
@@ -166,12 +169,12 @@ import { OperationErrorComponent } from './operation-error.component';
   imports: [
     CommonModule,
     DescriptionEditorModule,
-    TuiToggleModule,
     MatProgressSpinnerModule,
     OperationErrorComponent,
     ObjectViewModule,
     FormsModule,
-    RouterLink
+    RouterLink,
+    TuiSwitch,
   ],
   standalone: true
 })

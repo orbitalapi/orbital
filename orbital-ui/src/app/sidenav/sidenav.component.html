@@ -7,18 +7,18 @@
          routerLinkActive="active">
       <a [routerLink]="element.route" routerLinkActive="active" #rla="routerLinkActive"
          [attr.data-e2e-id]="element.testId" *ngIf="element.route"
-         [tuiHintShowDelay]="100" [tuiHintHideDelay]="50" [tuiHint]="isCollapsed && tooltip" tuiHintAppearance="onDark"
+         [tuiHintShowDelay]="100" [tuiHintHideDelay]="50" [tuiHint]="isCollapsed && tooltip" tuiHintAppearance="dark"
          tuiHintDirection="right"
       >
-        <tui-svg [src]="element.icon" class="icon"></tui-svg>
+        <tui-icon  [icon]="element.icon" class="icon"></tui-icon>
         <span class="label">{{ element.title }}</span>
       </a>
       <a [href]="element.externalUrl" target="_blank"
          [attr.data-e2e-id]="element.testId" *ngIf="element.externalUrl"
-         [tuiHintShowDelay]="100" [tuiHintHideDelay]="50" [tuiHint]="isCollapsed && tooltip" tuiHintAppearance="onDark"
+         [tuiHintShowDelay]="100" [tuiHintHideDelay]="50" [tuiHint]="isCollapsed && tooltip" tuiHintAppearance="dark"
          tuiHintDirection="right"
       >
-        <tui-svg [src]="element.icon" class="icon"></tui-svg>
+        <tui-icon  [icon]="element.icon" class="icon"></tui-icon>
         <span class="label">{{ element.title }}</span>
       </a>
       <ng-template #tooltip>
@@ -35,7 +35,7 @@
       </div>
     </ng-container>
     <div class="app-info" *ngIf="appInfo" [class.is-collapsed]="isCollapsed"
-         [tuiHintShowDelay]="100" [tuiHintHideDelay]="50" [tuiHint]="isCollapsed && appInfoHint" tuiHintAppearance="onDark">
+         [tuiHintShowDelay]="100" [tuiHintHideDelay]="50" [tuiHint]="isCollapsed && appInfoHint" tuiHintAppearance="dark">
       <ng-container *ngTemplateOutlet="appInfoHint"></ng-container>
       <ng-template #appInfoHint>
         v{{

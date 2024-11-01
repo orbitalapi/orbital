@@ -10,8 +10,8 @@ import {
 import {CommonModule} from '@angular/common';
 import {BehaviorSubject, EMPTY, switchMap} from "rxjs";
 import {ExpandingPanelSetModule} from "../../expanding-panelset/expanding-panel-set.module";
-import {TuiAccordionModule, TuiBadgeModule, TuiTabsModule} from "@taiga-ui/kit";
-import {TuiButtonModule, TuiExpandModule} from "@taiga-ui/core";
+import { TuiAccordion, TuiBadge, TuiTabs, TuiChip } from "@taiga-ui/kit";
+import { TuiExpand, TuiButton } from "@taiga-ui/core";
 import {AngularSplitModule, IOutputData} from "angular-split";
 import {CodeEditorModule} from "../../code-editor/code-editor.module";
 import {StubPanelComponent} from "./stub-panel.component";
@@ -26,14 +26,13 @@ import {ExpandablePanelComponent} from "../../expanding-panelset/expandable-pane
 import {QueryResultsPanelComponent} from "./query-results-panel.component";
 import {ResizeObservableService} from "../../services/resize-observable.service";
 import {LineageDisplayModule} from "../../lineage-display/lineage-display.module";
-import {TuiChipModule} from "@taiga-ui/experimental";
 import {isNullOrUndefined} from "../../utils/utils";
 
 @Component({
   selector: 'app-playground-query-panel',
   standalone: true,
   providers: [ResizeObservableService],
-  imports: [CommonModule, ExpandingPanelSetModule, TuiAccordionModule, TuiButtonModule, AngularSplitModule, TuiTabsModule, CodeEditorModule, StubPanelComponent, HttpClientModule, JsonViewerModule, QueryConfigPanelComponent, ExpandablePanelComponent, QueryResultsPanelComponent, LineageDisplayModule, TuiBadgeModule, TuiChipModule, TuiExpandModule],
+  imports: [CommonModule, ExpandingPanelSetModule, TuiAccordion, TuiButton, AngularSplitModule, TuiTabs, CodeEditorModule, StubPanelComponent, HttpClientModule, JsonViewerModule, QueryConfigPanelComponent, ExpandablePanelComponent, QueryResultsPanelComponent, LineageDisplayModule, TuiBadge, TuiChip, TuiExpand],
   template: `
     <as-split direction="vertical" unit="percent" gutterSize="1">
       <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
@@ -63,13 +62,13 @@ import {isNullOrUndefined} from "../../utils/utils";
         <app-panel-header [collapsible]="true" [(expanded)]="configPanelExpanded" #stubsPanelHeader
                           [isSecondary]="true" title="Stubs and Parameters">
           <div class="stubs-params-header">
-            <tui-chip appearance="info"
+            <tui-badge appearance="info"
                       *ngIf="queryMessage.stubs?.length > 0">{{ queryMessage.stubs.length | i18nPlural: stubsPluralMap }}
-            </tui-chip>
-            <tui-chip appearance="info"
+            </tui-badge>
+            <tui-badge appearance="info"
                       *ngIf="queryMessage.parameters?.length > 0">{{ queryMessage.parameters.length | i18nPlural: paramsPluralMap }}
               defined
-            </tui-chip>
+            </tui-badge>
           </div>
         </app-panel-header>
         <tui-expand [expanded]="stubsPanelHeader.expanded">

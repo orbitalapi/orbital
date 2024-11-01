@@ -36,11 +36,11 @@ import {HttpRequestState} from 'ngx-http-request-state';
           >
           </app-query-history-card>
         </div>
-        <tui-notification *ngIf='historyRecords.value?.length === 0'>
+        <tui-notification size="m" *ngIf='historyRecords.value?.length === 0'>
           No queries have been run yet
         </tui-notification>
         <!-- Show an error message if state is error -->
-        <tui-notification *ngIf='historyRecords.error' status='error'>
+        <tui-notification size="m" *ngIf='historyRecords.error' appearance='error'>
           {{historyRecords.error.message}}
         </tui-notification>
       </ng-container>

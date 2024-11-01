@@ -16,7 +16,7 @@ import {isNullOrUndefined} from "./utils/utils";
           <tui-accordion-item *ngFor="let messageGroup of compilationMessageGroups" size="s" [open]="true">
             <div class="accordion-header">
               <img src='assets/img/tabler/align-left.svg'> {{ filenameOnly(messageGroup.source) }}
-              <tui-badge [value]="messageGroup.messages.length" size="xs"></tui-badge>
+              <tui-badge-notification size="s">{{ messageGroup.messages.length }}</tui-badge-notification>
             </div>
             <div tuiAccordionItemContent>
               <div class="error-row" *ngFor="let compilationMessage of messageGroup.messages"

@@ -1,3 +1,4 @@
+import { TuiTextfieldControllerModule, TuiTextareaModule, TuiInputModule, TuiTagModule } from "@taiga-ui/legacy";
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {SaveWithFilenameComponent} from '../filename-display/save-with-filename.component';
@@ -22,23 +23,14 @@ import {FormsModule} from '@angular/forms';
 import {LineageGraphModule} from './lineage-graph/lineage-graph.module';
 import {RouterModule} from '@angular/router';
 import {InheritsFromComponent} from './inherits-from.component';
+import {TuiLabel, TuiIcon, TuiLink, TuiButton, TuiLoader} from '@taiga-ui/core';
 import {
-    TuiButtonModule,
-    TuiLabelModule,
-    TuiLinkModule,
-    TuiSvgModule,
-    TuiTextfieldControllerModule
-} from '@taiga-ui/core';
-import {
-  TuiBadgeModule,
-  TuiCheckboxLabeledModule,
-  TuiInputModule,
-  TuiProgressModule,
-  TuiTabsModule,
-  TuiTagModule,
-  TuiTextareaModule,
-  TuiToggleModule,
-  TuiTreeModule,
+  TuiTree,
+  TuiBadge,
+  TuiSwitch,
+  TuiTabs,
+  TuiProgress,
+  TuiCheckbox, TuiChip,
 } from '@taiga-ui/kit';
 import {TypeSearchComponent} from './type-search/type-search.component';
 import {TypeSearchContainerComponent} from './type-search/type-search-container.component';
@@ -50,7 +42,6 @@ import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {TypedEditorModule} from '../type-editor/type-editor.module';
 import {SchemaDiagramModule} from '../schema-diagram/schema-diagram.module';
 import {ChangesetSelectorModule} from '../changeset-selector/changeset-selector.module';
-import { TuiAutoFocusModule } from '@taiga-ui/cdk';
 import { MarkdownModule } from 'ngx-markdown';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 
@@ -76,25 +67,26 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
     FormsModule,
     LineageGraphModule,
     RouterModule,
-    TuiLinkModule,
+    TuiLink,
     TuiTextareaModule,
-    TuiTreeModule,
-    TuiCheckboxLabeledModule,
+    ...TuiTree,
+    TuiLabel,
     TuiTagModule,
     MatProgressSpinnerModule,
-    TuiToggleModule,
-    TuiLabelModule,
-    TuiTabsModule,
+    TuiSwitch,
+    ...TuiTabs,
     TypedEditorModule,
     SchemaDiagramModule,
-    TuiButtonModule,
+    TuiButton,
     ChangesetSelectorModule,
-    TuiAutoFocusModule,
     MarkdownModule,
-    TuiSvgModule,
-    TuiProgressModule,
+    TuiIcon,
+    ...TuiProgress,
     SaveWithFilenameComponent,
-    TuiBadgeModule,
+    TuiBadge,
+    TuiCheckbox,
+    TuiLoader,
+    TuiChip,
   ],
     declarations: [
         TocHostDirective,

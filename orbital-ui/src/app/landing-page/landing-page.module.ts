@@ -1,9 +1,9 @@
+import { TuiButton } from "@taiga-ui/core";
 import {NgModule} from '@angular/core';
 
 import {LandingPageComponent} from './landing-page.component';
 import {CommonModule} from '@angular/common';
 import {LandingCardComponent} from './landing-card.component';
-import {TuiButtonModule} from '@taiga-ui/core';
 import {RouterModule} from '@angular/router';
 import {HeaderBarModule} from '../header-bar/header-bar.module';
 import {SearchModule} from '../search/search.module';
@@ -17,7 +17,7 @@ import { OnboardingContainerComponent } from '../onboarding/onboarding-container
 @NgModule({
     imports: [
         CommonModule,
-        TuiButtonModule,
+        TuiButton,
         RouterModule,
         HeaderBarModule,
         SearchModule,

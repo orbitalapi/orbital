@@ -1,3 +1,4 @@
+import { TuiAvatar, TuiButtonLoading } from "@taiga-ui/kit";
 import { NgModule } from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {LicenseDisplayComponent} from '../license-display/license-display.component';
@@ -12,14 +13,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatDialogModule } from '@angular/material/dialog';
 import { ConfirmationDialogModule } from 'src/app/confirmation-dialog/confirmation-dialog.module';
 import {WorkspaceSelectorModule} from "../workspace-selector/workspace-selector.module";
-import {TuiAvatarModule} from "@taiga-ui/kit";
-import {
-  TuiAlertModule,
-  TuiButtonModule,
-  TuiDataListModule,
-  TuiHostedDropdownModule,
-  TuiNotificationModule
-} from '@taiga-ui/core';
+import { TuiAlert, TuiNotification, TuiDataList, TuiDropdown, TuiButton, TuiFallbackSrcPipe, TuiInitialsPipe } from '@taiga-ui/core';
 
 @NgModule({
     imports: [
@@ -32,14 +26,17 @@ import {
         MatDialogModule,
         ConfirmationDialogModule,
         WorkspaceSelectorModule,
-        TuiAvatarModule,
-        TuiHostedDropdownModule,
-        TuiDataListModule,
-        TuiButtonModule,
-        TuiAlertModule,
-        TuiNotificationModule,
+        TuiAvatar,
+        ...TuiDropdown,
+        ...TuiDataList,
+        TuiButton,
+        TuiAlert,
+        TuiNotification,
         RouterLink,
         LicenseDisplayComponent,
+        TuiButtonLoading,
+        TuiFallbackSrcPipe,
+        TuiInitialsPipe
     ],
   exports: [HeaderBarComponent, AvatarComponent],
   declarations: [HeaderBarComponent, AvatarComponent],

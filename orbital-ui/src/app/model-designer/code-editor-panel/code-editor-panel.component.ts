@@ -1,12 +1,12 @@
 import {Clipboard} from '@angular/cdk/clipboard';
 import {ChangeDetectionStrategy, Component, EventEmitter, HostBinding, Inject, Input, Output} from '@angular/core';
-import {TuiAlertService, TuiNotification} from '@taiga-ui/core';
+import {TuiAlertService} from '@taiga-ui/core';
 import {CompilationMessage, Schema, SchemaMember, Type} from "../../services/schema";
 
 @Component({
     selector: 'app-designer-code-editor-panel',
     template: `
-        <tui-notification *ngIf="disabled" class="onboarding-text" status="neutral" size="s">
+        <tui-notification *ngIf="disabled" class="onboarding-text" appearance="neutral" size="s">
           Once you've provided your data sample, create a Taxi schema here to describe your data
         </tui-notification>
         <app-panel-header title="Taxi model editor" [isSecondary]="true">
@@ -21,7 +21,7 @@ import {CompilationMessage, Schema, SchemaMember, Type} from "../../services/sch
               tuiLink
               class="button-link"
               tuiHint="Copy model"
-              tuiHintAppearance="onDark"
+              tuiHintAppearance="dark"
               (click)="copyModel(taxi)"
             >
               <img src="assets/img/tabler/copy.svg">
@@ -71,7 +71,7 @@ export class CodeEditorPanelComponent {
 
     copyModel(query: string) {
       this.clipboard.copy(query);
-      this.alerts.open('Copied to clipboard', {status: TuiNotification.Success})
+      this.alerts.open('Copied to clipboard', {appearance: 'success'})
         .subscribe()
     }
 }

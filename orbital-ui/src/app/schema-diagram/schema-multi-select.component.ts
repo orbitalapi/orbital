@@ -1,3 +1,4 @@
+import { TuiTextfieldControllerModule, TuiMultiSelectModule } from "@taiga-ui/legacy";
 import {CommonModule} from '@angular/common';
 import {
   ChangeDetectionStrategy,
@@ -9,14 +10,8 @@ import {
   WritableSignal
 } from '@angular/core';
 import {FormsModule} from '@angular/forms';
-import {
-  TUI_DEFAULT_MATCHER,
-  TuiContextWithImplicit,
-  TuiHandler,
-  tuiIsString, TuiLetModule,
-} from '@taiga-ui/cdk';
-import {TuiTextfieldControllerModule} from '@taiga-ui/core';
-import {TuiDataListWrapperModule, TuiMultiSelectModule} from '@taiga-ui/kit';
+import { TUI_DEFAULT_MATCHER, TuiHandler, tuiIsString, TuiContext, TuiLet } from '@taiga-ui/cdk';
+import { TuiDataListWrapper } from '@taiga-ui/kit';
 import {findSchemaMember, QualifiedName, Schema} from '../services/schema';
 
 @Component({
@@ -69,9 +64,9 @@ import {findSchemaMember, QualifiedName, Schema} from '../services/schema';
     CommonModule,
     FormsModule,
     TuiMultiSelectModule,
-    TuiLetModule,
+    TuiLet,
     TuiTextfieldControllerModule,
-    TuiDataListWrapperModule,
+    TuiDataListWrapper,
   ],
   standalone: true
 })
@@ -93,13 +88,13 @@ export class SchemaMultiSelectComponent {
       .map(({fullyQualifiedName}) => fullyQualifiedName)
   })
 
-  protected readonly computedStringify: Signal<TuiHandler<TuiContextWithImplicit<string> | string, string>> = computed(() => {
+  protected readonly computedStringify: Signal<TuiHandler<TuiContext<string> | string, string>> = computed(() => {
     const nameMap = this.schemaQualifiedNames().reduce((map, obj) => {
       map.set(obj.fullyQualifiedName, obj.name);
       return map;
     }, new Map<string, string>());
 
-    return (fullyQualifiedName: TuiContextWithImplicit<string> | string) => {
+    return (fullyQualifiedName: TuiContext<string> | string) => {
       return (tuiIsString(fullyQualifiedName) ?
         nameMap.get(fullyQualifiedName.split('@@')[0]) :
         nameMap.get(fullyQualifiedName.$implicit.split('@@')[0])) || 'Loading...'

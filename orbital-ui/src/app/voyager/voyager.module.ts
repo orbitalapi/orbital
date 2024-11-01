@@ -1,3 +1,4 @@
+import { TuiTextfieldControllerModule, TuiInputModule, TuiInputCopyModule, TuiSelectModule } from "@taiga-ui/legacy";
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {PlaygroundToolbarComponent} from 'src/app/voyager/toolbar/playground-toolbar.component';
@@ -6,20 +7,8 @@ import {DomSanitizer} from '@angular/platform-browser';
 import {MatButtonModule} from '@angular/material/button';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import {SubscribeDialogComponent} from './subscribe-dialog/subscribe-dialog.component';
-import {
-  TuiCheckboxLabeledModule,
-  TuiDataListWrapperModule,
-  TuiInputCopyModule,
-  TuiInputModule,
-  TuiSelectModule
-} from '@taiga-ui/kit';
-import {
-  TuiButtonModule,
-  TuiDialogModule,
-  TuiHintModule, TuiHostedDropdownModule,
-  TuiLinkModule,
-  TuiTextfieldControllerModule
-} from '@taiga-ui/core';
+import { TuiDataListWrapper, TuiCheckbox } from '@taiga-ui/kit';
+import {TuiLabel, TuiDropdown, TuiLink, TuiDialog, TuiButton, TuiHint, TuiAppearance} from '@taiga-ui/core';
 import {ShareDialogComponent} from './share-dialog/share-dialog.component';
 import {RouterLink, RouterLinkActive} from '@angular/router';
 
@@ -37,22 +26,23 @@ import {RouterLink, RouterLinkActive} from '@angular/router';
     CommonModule,
     MatIconModule,
     MatButtonModule,
-    TuiDialogModule,
+    TuiDialog,
     TuiInputModule,
     ReactiveFormsModule,
     TuiSelectModule,
-    TuiButtonModule,
+    TuiButton,
     TuiTextfieldControllerModule,
-    TuiDataListWrapperModule,
-    TuiCheckboxLabeledModule,
-    TuiHintModule,
-    TuiLinkModule,
+    ...TuiDataListWrapper,
+    TuiLabel,
+    ...TuiHint,
+    TuiLink,
     FormsModule,
     TuiInputCopyModule,
-    TuiHostedDropdownModule,
+    ...TuiDropdown,
     RouterLink,
     RouterLinkActive,
-
+    TuiCheckbox,
+    TuiAppearance,
   ],
 })
 export class VoyagerModule {

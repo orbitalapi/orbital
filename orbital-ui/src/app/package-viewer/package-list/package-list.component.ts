@@ -8,6 +8,7 @@ import {
   Output, signal,
   Signal, WritableSignal
 } from '@angular/core';
+import {TuiAppearanceOptions} from '@taiga-ui/core';
 import { UiCustomisations } from '../../../environments/ui-customisations';
 import {ProjectLoaderWithStatus, PublisherHealthStatus, SourcePackageDescription} from '../packages.service';
 import {TuiStatus} from "@taiga-ui/kit";
@@ -25,7 +26,7 @@ type SortOrder = 'A-Z' | 'Updated'
             @for (so of sortOrders; track so) {
               <button tuiOption (click)="sortOrder.set(so); sortOrderDropdownOpen = false">
                 {{ so }}
-                <tui-svg *ngIf="so === sortOrder()" src="tuiIconCheck"></tui-svg>
+                <tui-icon  *ngIf="so === sortOrder()" icon="@tui.check"></tui-icon>
               </button>
             }
           </tui-data-list>
@@ -45,8 +46,8 @@ type SortOrder = 'A-Z' | 'Updated'
         <h3 class="package-title">
           {{ sourcePackage.identifier.name }}
           <tui-badge *ngIf="getPackageBadgeState(sourcePackage) === 'error'"
-                     [status]="getPackageBadgeState(sourcePackage)" size="s"
-                     [value]="getPackageStateBadgeMessage(sourcePackage)"></tui-badge>
+                     [appearance]="getPackageBadgeState(sourcePackage)" size="m"
+                    >{{ getPackageStateBadgeMessage(sourcePackage) }}</tui-badge>
         </h3>
         <div *ngIf="getPackageStateMessage(sourcePackage)" class="unhealthy-state">
           {{ getPackageStateMessage(sourcePackage) }}
@@ -144,7 +145,7 @@ export class PackageListComponent {
     } else return sourcePackage.health.message
   }
 
-  getPackageBadgeState(sourcePackage: SourcePackageDescription): TuiStatus {
+  getPackageBadgeState(sourcePackage: SourcePackageDescription): TuiAppearanceOptions["appearance"] {
     if (this.packagesWithCompilationErrors.includes(sourcePackage.identifier.id)) {
       return "error";
     } else {

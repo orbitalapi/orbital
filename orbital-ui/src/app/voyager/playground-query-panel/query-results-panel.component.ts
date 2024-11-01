@@ -1,11 +1,11 @@
+import { TuiSegmented } from "@taiga-ui/kit";
+import { TuiExpand } from "@taiga-ui/core";
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {JsonViewerModule} from "../../json-viewer/json-viewer.module";
 import {NgIf} from "@angular/common";
 import {ExpandablePanelComponent} from "../../expanding-panelset/expandable-panel/expandable-panel.component";
 import {QueryProfileData} from "../../services/query.service";
-import {TuiExpandModule} from "@taiga-ui/core";
 import {ExpandingPanelSetModule} from "../../expanding-panelset/expanding-panel-set.module";
-import {TuiSegmentedModule} from "@taiga-ui/experimental";
 import {CallExplorerModule} from "../../query-panel/taxi-viewer/call-explorer/call-explorer.module";
 import {SequenceDiagramModule} from "../../query-panel/taxi-viewer/sequence-diagram/sequence-diagram.module";
 import {BehaviorSubject} from "rxjs";
@@ -19,9 +19,8 @@ import {LineageDisplayModule} from "../../lineage-display/lineage-display.module
     NgIf,
     ExpandablePanelComponent,
     ExpandingPanelSetModule,
-    TuiExpandModule,
-    ExpandingPanelSetModule,
-    TuiSegmentedModule,
+    TuiExpand,
+    TuiSegmented,
     CallExplorerModule,
     SequenceDiagramModule,
     LineageDisplayModule

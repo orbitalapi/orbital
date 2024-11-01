@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import {TuiTreeItemContentComponent} from "@taiga-ui/kit";
+import {TuiTreeItemContent} from "@taiga-ui/kit";
 
 /**
  * This whole class is really only needed because the base component
@@ -9,16 +9,16 @@ import {TuiTreeItemContentComponent} from "@taiga-ui/kit";
 @Component({
   selector: 'app-file-tree-folder-node',
   template: `
-    <tui-svg
+    <tui-icon
       (click)="onClick()"
       [ngClass]="iconClass"
-      [src]="icon"
-    ></tui-svg>
+      [icon]="icon"
+    ></tui-icon>
     <ng-container [ngTemplateOutlet]="context.template"></ng-container>
   `,
   styleUrls: ['./file-tree-folder-node.component.scss'],
 })
-export class FileTreeFolderNodeComponent extends TuiTreeItemContentComponent {
+export class FileTreeFolderNodeComponent extends TuiTreeItemContent {
   get icon(): string {
     return this.isExpandable ? 'assets/img/tabler/chevron-right.svg' : 'assets/img/tabler/align-left.svg';
   }

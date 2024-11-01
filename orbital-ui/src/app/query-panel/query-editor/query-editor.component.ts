@@ -9,8 +9,8 @@ import {
   Output,
 } from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {TuiAlertService, TuiDialogService, TuiNotification} from '@taiga-ui/core';
-import {PolymorpheusComponent} from '@tinkoff/ng-polymorpheus';
+import {TuiAlertService, TuiDialogService} from '@taiga-ui/core';
+import {PolymorpheusComponent} from '@taiga-ui/polymorpheus';
 import {editor, IPosition, KeyCode, KeyMod} from 'monaco-editor';
 import {QueryEditorPayload} from '../../services/query-editor.state';
 import {QueryHistorySummary, QueryResult, QueryService} from '../../services/query.service';
@@ -227,7 +227,7 @@ export class QueryEditorComponent {
     this.schemaImporterService.submitSchemaEditOperation(schemaEdit)
       .subscribe({
         next: (result) => {
-          this.alerts.open('Query saved successfully', {status: TuiNotification.Success})
+          this.alerts.open('Query saved successfully', {appearance: 'success'})
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe()
           const updatedState = this.schemaImporterService.getQueryStateFromEditResult(result, versionedSource.name)
@@ -236,7 +236,7 @@ export class QueryEditorComponent {
         },
         error: (error) => {
           console.error(error);
-          this.alerts.open('An error occurred saving the query', {status: TuiNotification.Error})
+          this.alerts.open('An error occurred saving the query', {appearance: 'error'})
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe()
         }

@@ -1,3 +1,4 @@
+import { TuiButton } from "@taiga-ui/core";
 import { NgModule } from '@angular/core';
 
 import { AuthManagerComponent } from './auth-manager.component';
@@ -14,7 +15,6 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { MatInputModule } from '@angular/material/input';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
-import { TuiButtonModule } from '@taiga-ui/core';
 import { RouterModule } from '@angular/router';
 import { AuthManagerService } from 'src/app/auth-manager/auth-manager.service';
 import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/header-component-layout.module';
@@ -35,7 +35,7 @@ import { UiCustomisations } from '../../environments/ui-customisations';
         MatSelectModule,
         MatInputModule,
         MatSnackBarModule,
-        TuiButtonModule,
+        TuiButton,
         RouterModule.forChild([
             {
                 path: '',

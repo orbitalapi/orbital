@@ -1,8 +1,9 @@
+import { TuiInputModule } from "@taiga-ui/legacy";
+import { TuiButton } from "@taiga-ui/core";
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TuiButtonModule } from '@taiga-ui/core';
-import { TuiInputModule, TuiTabsModule } from '@taiga-ui/kit';
+import { TuiTabs, TuiButtonLoading } from '@taiga-ui/kit';
 import { NgxFileDropEntry } from 'ngx-file-drop';
 import { readSingleFile } from '../../../utils/files';
 import { ConvertSchemaEvent, ProtobufSchemaConverterOptions } from '../../data-source-import.models';
@@ -16,11 +17,12 @@ import { DataExplorerModule } from '../../../data-explorer/data-explorer.module'
   imports: [
     CommonModule,
     FormsModule,
-    TuiButtonModule,
+    TuiButton,
     TuiInputModule,
-    TuiTabsModule,
-    DataExplorerModule
-  ],
+    TuiTabs,
+    DataExplorerModule,
+    TuiButtonLoading
+],
   template: `
     <div class="form-container">
       <form class="form-body" #protobufForm="ngForm">
@@ -64,7 +66,7 @@ import { DataExplorerModule } from '../../../data-explorer/data-explorer.module'
     </div>
 
     <div class="form-button-bar">
-      <button tuiButton [showLoader]="working" [size]="'m'" (click)="doCreate()" [disabled]="protobufForm.invalid">Configure
+      <button tuiButton [loading]="working" [size]="'m'" (click)="doCreate()" [disabled]="protobufForm.invalid">Configure
       </button>
     </div>`
 })

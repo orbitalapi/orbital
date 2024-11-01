@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject} from '@angular/core';
 import {AbstractControl, FormControl, FormGroup, ValidationErrors, ValidatorFn, Validators} from '@angular/forms';
-import {TuiAlertService, TuiDialogContext, TuiNotification} from '@taiga-ui/core';
-import {POLYMORPHEUS_CONTEXT} from '@tinkoff/ng-polymorpheus';
+import {TuiAlertService, TuiDialogContext} from '@taiga-ui/core';
+import {POLYMORPHEUS_CONTEXT} from '@taiga-ui/polymorpheus';
 import {
   AddOrRemoveHttpEndpointAnnotationEvent,
   AddOrRemoveWebsocketEndpointAnnotationEvent,
@@ -35,12 +35,11 @@ export interface PublishEndpointPanelProps extends SaveQueryRequestProps {
         <tui-input
           formControlName="endpoint"
           [tuiTextfieldPrefix]="context.data.endpointType === 'HTTP' ? httpPrefix : websocketPrefix"
-          [pseudoFocus]="true"
           [class.hidden]="operation === 'Remove'"
           tuiAutoFocus
         >
           API Endpoint
-          <input tuiTextfield/>
+          <input tuiTextfieldLegacy/>
           <span class="tui-required"></span>
         </tui-input>
         <tui-error
@@ -58,13 +57,13 @@ export interface PublishEndpointPanelProps extends SaveQueryRequestProps {
           <span class="tui-required"></span>
         </tui-select>
       </form>
-      <tui-notification *ngIf="errorMessage" [status]="'error'">{{ errorMessage }}</tui-notification>
+      <tui-notification size="m" *ngIf="errorMessage" [appearance]="'error'">{{ errorMessage }}</tui-notification>
       <div class="row">
         <button
           tuiButton
           type="button"
           size="m"
-          appearance="outline"
+          appearance="outline-grayscale"
           (click)="close()"
         >
           Cancel
@@ -144,7 +143,7 @@ export class PublishEndpointDialogComponent {
     this.schemaImporterService.submitSchemaEditOperation(schemaEdit)
       .subscribe({
         next: (result) => {
-          this.alerts.open('Query saved successfully', {status: TuiNotification.Success})
+          this.alerts.open('Query saved successfully', {appearance: 'success'})
             .subscribe()
           const filename = this.schemaImporterService.extractFilenameFromVersionedSource(versionedSource)
           const updatedState =  this.schemaImporterService.getQueryStateFromEditResult(result, filename)
