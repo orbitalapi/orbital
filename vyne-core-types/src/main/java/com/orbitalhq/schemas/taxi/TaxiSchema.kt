@@ -19,6 +19,7 @@ import lang.taxi.query.TaxiQlQuery
 import lang.taxi.sources.SourceCodeLanguages
 import lang.taxi.types.Annotation
 import lang.taxi.types.ArrayType
+import lang.taxi.types.CompilationUnit
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.StreamType
 import lang.taxi.types.TypeReference
@@ -33,11 +34,19 @@ class TaxiSchema(
    @get:JsonIgnore override val packages: List<SourcePackage>,
    override val functionRegistry: FunctionRegistry = FunctionRegistry.default,
    private val queryCacheSize: Long = 100,
+   private val environmentVariables: Map<String, String> = System.getenv(),
+   compilerMessages: List<CompilationMessage> = emptyList()
 //   override val additionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
 ) : Schema {
    override val types: Set<Type>
    override val services: Set<Service>
    override val policies: Set<Policy>
+
+   private val _compilerMessages: MutableList<CompilationMessage> = compilerMessages.toMutableList();
+   val compilerMessages: List<CompilationMessage>
+      get() {
+         return _compilerMessages.toList()
+      }
 
    private val queryCompiler = DefaultQueryCompiler(this, queryCacheSize)
 
@@ -101,7 +110,10 @@ class TaxiSchema(
                ConsumedOperation(consumes.serviceName, consumes.operationName)
             }
 
-            val metadata = parseAnnotationsToMetadata(taxiServiceLineage.annotations)
+            val metadata = parseAnnotationsToMetadata(
+               taxiServiceLineage.annotations,
+               taxiServiceLineage.compilationUnits.firstOrNull()
+            )
             ServiceLineage(
                consumes = consumes,
                stores = taxiServiceLineage.stores.map { QualifiedName.from(it.fullyQualifiedName) },
@@ -115,7 +127,7 @@ class TaxiSchema(
                QueryOperation(
                   parameters = queryOperation.parameters.map { taxiParam -> parseOperationParameter(taxiParam) },
                   qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, queryOperation.name),
-                  metadata = parseAnnotationsToMetadata(queryOperation.annotations),
+                  metadata = parseAnnotationsToMetadata(queryOperation.annotations, queryOperation.compilationUnits.firstOrNull()),
                   grammar = queryOperation.grammar,
                   returnType = returnType,
                   capabilities = queryOperation.capabilities,
@@ -130,8 +142,12 @@ class TaxiSchema(
                   parameters,
                   operationType = taxiOperation.scope,
                   returnType = returnType,
-                  metadata = parseAnnotationsToMetadata(taxiOperation.annotations),
-                  contract = OperationContract(returnType, taxiOperation.contract?.returnTypeConstraints
+                  metadata = parseAnnotationsToMetadata(
+                     taxiOperation.annotations,
+                     taxiOperation.compilationUnits.firstOrNull()
+                  ),
+                  contract = OperationContract(
+                     returnType, taxiOperation.contract?.returnTypeConstraints
                         ?: emptyList()
                   ),
                   sources = taxiOperation.compilationUnits.toVyneSources(),
@@ -144,14 +160,20 @@ class TaxiSchema(
                TableOperation.build(
                   qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, taxiTable.name),
                   returnType = returnType,
-                  metadata = parseAnnotationsToMetadata(taxiTable.annotations),
+                  metadata = parseAnnotationsToMetadata(
+                     taxiTable.annotations,
+                     taxiTable.compilationUnits.firstOrNull()
+                  ),
                   typeDoc = taxiTable.typeDoc,
                   schema = this
                )
                TableOperation.build(
                   qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, taxiTable.name),
                   returnType = returnType,
-                  metadata = parseAnnotationsToMetadata(taxiTable.annotations),
+                  metadata = parseAnnotationsToMetadata(
+                     taxiTable.annotations,
+                     taxiTable.compilationUnits.firstOrNull()
+                  ),
                   typeDoc = taxiTable.typeDoc,
                   schema = this
                )
@@ -161,11 +183,17 @@ class TaxiSchema(
                StreamOperation(
                   qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, taxiStream.name),
                   returnType = returnType,
-                  metadata = parseAnnotationsToMetadata(taxiStream.annotations),
+                  metadata = parseAnnotationsToMetadata(
+                     taxiStream.annotations,
+                     taxiStream.compilationUnits.firstOrNull()
+                  ),
                   typeDoc = taxiStream.typeDoc
                )
             },
-            metadata = parseAnnotationsToMetadata(taxiService.annotations),
+            metadata = parseAnnotationsToMetadata(
+               taxiService.annotations,
+               taxiService.compilationUnits.firstOrNull()
+            ),
             sourceCode = taxiService.compilationUnits.toVyneSources(),
             typeDoc = taxiService.typeDoc,
             lineage = lineage
@@ -179,7 +207,7 @@ class TaxiSchema(
       return Parameter(
          type = type,
          name = taxiParam.name,
-         metadata = parseAnnotationsToMetadata(taxiParam.annotations),
+         metadata = parseAnnotationsToMetadata(taxiParam.annotations, compilationUnit = null),
          constraints = taxiParam.constraints,
          typeDoc = taxiParam.typeDoc,
          nullable = taxiParam.nullable,
@@ -187,8 +215,60 @@ class TaxiSchema(
       )
    }
 
-   private fun parseAnnotationsToMetadata(annotations: List<Annotation>): List<Metadata> {
-      return annotations.map { Metadata(it.name.fqn(), it.parameters) }
+   private fun parseAnnotationsToMetadata(
+      annotations: List<Annotation>,
+      compilationUnit: CompilationUnit?
+   ): List<Metadata> {
+      return annotations.map { annotation ->
+         val resolvedParameters = annotation.parameters.mapValues { (paramKey, paramValue) ->
+            resolveEnvironmentVariablesInAnnotationValue(paramValue, annotation, compilationUnit)
+         }
+         Metadata(annotation.name.fqn(), resolvedParameters)
+
+      }
+   }
+
+   /**
+    * Allows users to specify an env variable in an annotation, and we'll swap it out
+    * and resolve it at runtime.
+    *
+    * eg:
+    * ```
+    * @KafkaOperation( topic = "${envTopic}", offset = "earliest" )
+    * stream comments : Stream<Comment>
+    * ```
+    *
+    * Note - after discussion, we felt like this was a 'runtime' not 'compile time' feature, so should
+    * live inside Orbital, not the Taxi compiler.
+    *
+    * Eg: If this were in Taxi, then compiler errors would get raised in CI/CD scenarios where
+    * env variables aren't reasonably expected to be set. Similarly, pulling someone elses project
+    * into yours would throw compiler errors if env variables were declared - which aren't required until
+    * runtime.
+    *
+    */
+   private fun resolveEnvironmentVariablesInAnnotationValue(
+      paramValue: Any?,
+      annotation: Annotation,
+      compilationUnit: CompilationUnit?
+   ) = if (paramValue is String && Metadata.getVariableName(paramValue) != null) {
+      val variableName = Metadata.getVariableName(paramValue)!!
+      if (environmentVariables.containsKey(variableName)) {
+         environmentVariables.get(variableName)!!
+      } else {
+         val messageText =
+            "Annotation ${annotation.name} specifies env variable $variableName which is not defined"
+         val compilerMessage = if (compilationUnit != null) {
+            CompilationMessage(
+               compilationUnit, messageText
+            )
+         } else {
+            CompilationMessage(CompilationUnit.unspecified(), messageText)
+         }
+         _compilerMessages.add(compilerMessage)
+      }
+   } else {
+      paramValue
    }
 
    private fun parseTypes(document: TaxiDocument): Pair<TypeCache, Set<Type>> {
@@ -203,10 +283,14 @@ class TaxiSchema(
          this.document.merge(schema.document),
          this.packages + schema.packages,
          this.functionRegistry.merge(schema.functionRegistry),
+         compilerMessages = this.compilerMessages + schema.compilerMessages
       )
    }
 
-   override fun parseQuery(vyneQlQuery: TaxiQLQueryString, useCache: Boolean): Triple<TaxiQlQuery, QueryOptions, Schema> {
+   override fun parseQuery(
+      vyneQlQuery: TaxiQLQueryString,
+      useCache: Boolean
+   ): Triple<TaxiQlQuery, QueryOptions, Schema> {
       return queryCompiler.compile(vyneQlQuery, useCache)
    }
 
@@ -250,16 +334,18 @@ class TaxiSchema(
          packages: List<SourcePackage>,
          imports: List<TaxiSchema> = emptyList(),
          functionRegistry: FunctionRegistry = FunctionRegistry.default,
-         sourceConverters: List<SourceToTaxiConverter> = listOf(TaxiSourceConverter)
+         sourceConverters: List<SourceToTaxiConverter> = listOf(TaxiSourceConverter),
+         environmentVariables: Map<String, String> = System.getenv()
       ): Pair<List<CompilationError>, TaxiSchema> {
-         return this.compiled(packages, imports, functionRegistry, sourceConverters)
+         return this.compiled(packages, imports, functionRegistry, sourceConverters, environmentVariables)
       }
 
       fun compiled(
          packages: List<SourcePackage>,
          imports: List<TaxiSchema> = emptyList(),
          functionRegistry: FunctionRegistry = FunctionRegistry.default,
-         sourceConverters: List<SourceToTaxiConverter> = listOf(TaxiSourceConverter)
+         sourceConverters: List<SourceToTaxiConverter> = listOf(TaxiSourceConverter),
+         environmentVariables: Map<String, String> = System.getenv()
       ): Pair<List<CompilationError>, TaxiSchema> {
          val stopwatch = Stopwatch.createStarted()
 
@@ -272,11 +358,11 @@ class TaxiSchema(
                   1 -> it.languages.single()
                   else -> error("Package ${it.identifier} contains multiple languages, which is not currently supported")
                }
-         }.toSortedMap { o1, o2 ->
-            // Load Taxi first.
-            // This is a sloppy workaround to us not supporting dependenices when creating a Taxi Schema.
-            // Should be removed once dependency loading has advaned
-            when {
+            }.toSortedMap { o1, o2 ->
+               // Load Taxi first.
+               // This is a sloppy workaround to us not supporting dependenices when creating a Taxi Schema.
+               // Should be removed once dependency loading has advaned
+               when {
                   o1 == SourceCodeLanguages.TAXI && o2 == SourceCodeLanguages.TAXI -> 0
                   o1 == SourceCodeLanguages.TAXI && o2 != SourceCodeLanguages.TAXI -> -1
                   o1 != SourceCodeLanguages.TAXI && o2 == SourceCodeLanguages.TAXI -> 1
@@ -295,7 +381,10 @@ class TaxiSchema(
                logger.warn { "No converters provided capable of converting sources of languages(s): ${firstSourcePackage.languages.joinToString()}. This source package is being ignored." }
                acc
             } else {
-               val (errors, doc, transpiledSources) = converter.loadAll(sourcePackages, listOf(accTaxiDoc) + importedTaxiDocs)
+               val (errors, doc, transpiledSources) = converter.loadAll(
+                  sourcePackages,
+                  listOf(accTaxiDoc) + importedTaxiDocs
+               )
                // TODO : Need to get smarter about how errors are handled.
                // Currently, an error in an earlier compilation may be resolved by a later compilation.
                // However, it may not be, and at present, it may not be re-reported, as it's part of the
@@ -335,12 +424,19 @@ class TaxiSchema(
                logger.info { "Compiler provided the following messages: \n ${compilationErrors.toMessage()}" }
             }
          }
-         return compilationErrors to TaxiSchema(
+         val schema = TaxiSchema(
             doc,
             sourcePackagesWithConvertedCode,
             functionRegistry,
+            environmentVariables = environmentVariables,
+            compilerMessages = compilationErrors
          )
-
+         // We used to return the compiler messages directly.
+         // However, we have some orbital-only compiler messages we want to return,
+         // such as env varaibles in annotations that can't be resolved
+         // So, we pass the compiler message into the schema, and then return the version
+         // that comes back from the parser, so Orbital can inject it's own
+         return schema.compilerMessages to schema
       }
 
       /**
@@ -356,9 +452,15 @@ class TaxiSchema(
          packages: List<SourcePackage>,
          imports: List<TaxiSchema> = emptyList(),
          onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY,
-         sourceConverters: List<SourceToTaxiConverter> = listOf(TaxiSourceConverter)
+         sourceConverters: List<SourceToTaxiConverter> = listOf(TaxiSourceConverter),
+         environmentVariables: Map<String, String> = System.getenv()
       ): TaxiSchema {
-         val (messages, schema) = compiled(packages, imports, sourceConverters = sourceConverters)
+         val (messages, schema) = compiled(
+            packages,
+            imports,
+            sourceConverters = sourceConverters,
+            environmentVariables = environmentVariables
+         )
          val errors = messages.errors()
          return when {
             errors.isEmpty() -> schema
@@ -371,10 +473,16 @@ class TaxiSchema(
       fun from(
          sourcePackage: SourcePackage,
          importSources: List<TaxiSchema> = emptyList(),
-         onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY
+         onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY,
+         environmentVariables: Map<String, String> = System.getenv()
       ): TaxiSchema {
 
-         return from(listOf(sourcePackage), importSources, onErrorBehaviour)
+         return from(
+            listOf(sourcePackage),
+            importSources,
+            onErrorBehaviour,
+            environmentVariables = environmentVariables
+         )
       }
 
       /**
@@ -383,9 +491,10 @@ class TaxiSchema(
       fun fromStrings(
          vararg taxi: String,
          importSources: List<TaxiSchema> = emptyList(),
-         onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY
+         onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY,
+         environmentVariables: Map<String, String> = System.getenv()
       ): TaxiSchema {
-         return fromStrings(taxi.toList(), importSources, onErrorBehaviour)
+         return fromStrings(taxi.toList(), importSources, onErrorBehaviour, environmentVariables)
       }
 
       /**
@@ -395,9 +504,13 @@ class TaxiSchema(
          taxi: List<String>,
          importSources: List<TaxiSchema> = emptyList(),
          onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY,
+         environmentVariables: Map<String, String> = System.getenv()
       ): TaxiSchema {
          return from(
-            taxi.map { VersionedSource.sourceOnly(it) }.asDummySourcePackages(), importSources, onErrorBehaviour
+            taxi.map { VersionedSource.sourceOnly(it) }.asDummySourcePackages(),
+            importSources,
+            onErrorBehaviour,
+            environmentVariables = environmentVariables
          )
       }
 
@@ -409,12 +522,14 @@ class TaxiSchema(
          sourceName: String = "<unknown>",
          version: String = VersionedSource.DEFAULT_VERSION.toString(),
          importSources: List<TaxiSchema> = emptyList(),
-         onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY
+         onErrorBehaviour: TaxiSchemaErrorBehaviour = TaxiSchemaErrorBehaviour.RETURN_EMPTY,
+         environmentVariables: Map<String, String> = System.getenv()
       ): TaxiSchema {
          return from(
             listOf(VersionedSource(sourceName, version, taxi)).asDummySourcePackages(),
             importSources,
-            onErrorBehaviour
+            onErrorBehaviour,
+            environmentVariables = environmentVariables
          )
       }
 
@@ -423,12 +538,14 @@ class TaxiSchema(
          sourceName: String = "<unknown>",
          version: String = VersionedSource.DEFAULT_VERSION.toString(),
          importSources: List<TaxiSchema> = emptyList(),
-         functionRegistry: FunctionRegistry = FunctionRegistry.default
+         functionRegistry: FunctionRegistry = FunctionRegistry.default,
+         environmentVariables: Map<String, String> = System.getenv()
       ): Pair<List<CompilationError>, TaxiSchema> {
          return compiled(
             listOf(VersionedSource(sourceName, version, taxi)).asDummySourcePackages(),
             importSources,
-            functionRegistry
+            functionRegistry,
+            environmentVariables = environmentVariables
          )
       }
 
@@ -447,7 +564,14 @@ class TaxiSchema(
       }
 
       private fun List<VersionedSource>.asDummySourcePackages(): List<SourcePackage> {
-         return listOf(SourcePackage(PackageMetadata.from(VyneTypes.NAMESPACE, "dummy", "0.1.0"), this, emptyMap(), null))
+         return listOf(
+            SourcePackage(
+               PackageMetadata.from(VyneTypes.NAMESPACE, "dummy", "0.1.0"),
+               this,
+               emptyMap(),
+               null
+            )
+         )
       }
    }
 }

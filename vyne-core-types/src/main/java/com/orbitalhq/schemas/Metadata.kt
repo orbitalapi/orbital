@@ -8,6 +8,14 @@ data class Metadata(
    val name: QualifiedName,
    val params: Map<String, Any?> = emptyMap(),
 ) {
+   companion object {
+      fun getVariableName(key: String): String? {
+         return when {
+            key.startsWith("\${") && key.endsWith("}") -> { key.substring(3, key.length - 2) }
+            else -> null
+         }
+      }
+   }
    fun asTaxi(): String {
       val paramsList = params.map { (key, value) ->
          val valueText = if (value == null) {
