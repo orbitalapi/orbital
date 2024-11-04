@@ -35,7 +35,7 @@ import {RequiresAuthorityDirective} from "../requires-authority.directive";
           <input
               tuiSwitch
               type="checkbox" *appRequiresAuthority="['EditPipelines']" [ngModel]="streamIsRunning" (click)="handleToggleClick($event)" size="m"/>
-          <tui-badge size="m"
+          <tui-badge tuiStatus
                      [appearance]="streamStatusBadge.status">{{ streamStatusBadge.label | titlecase }}</tui-badge>
         </div>
       </ng-container>
@@ -58,7 +58,8 @@ import {RequiresAuthorityDirective} from "../requires-authority.directive";
     PublishedEndpointInfoComponent,
     LineageGraphModule,
     LineageDisplayModule,
-    RequiresAuthorityDirective
+    RequiresAuthorityDirective,
+    TuiStatus,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -74,7 +75,7 @@ export class EndpointMonitorContainerComponent {
   get streamStatusBadge() {
     return {
       label: this.streamStatus?.state || 'Unknown',
-      status: this.streamIsRunning ? 'success' : this.streamStatus?.state ? 'warning' : null as TuiStatus
+      status: this.streamIsRunning ? 'positive' : this.streamStatus?.state ? 'warning' : null as TuiStatus
     }
   }
 

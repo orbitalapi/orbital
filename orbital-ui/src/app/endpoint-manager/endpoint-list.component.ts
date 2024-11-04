@@ -1,4 +1,4 @@
-import { TuiBadge } from "@taiga-ui/kit";
+import {TuiBadge, TuiStatus} from '@taiga-ui/kit';
 import { AsyncPipe, CommonModule, TitleCasePipe } from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject} from '@angular/core';
 import {TuiAlertService, TuiAppearanceOptions, TuiNotification} from '@taiga-ui/core';
@@ -39,7 +39,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
           <tr *ngFor="let query of queries" (click)="navigateToQueryPage(query)">
             <td>{{ query.name.shortDisplayName }}</td>
             <td>
-              <tui-badge [appearance]="queryStateBadgeType(queryState(query))"
+              <tui-badge tuiStatus [appearance]="queryStateBadgeType(queryState(query))"
                          size="m">{{ queryState(query) | titlecase }}</tui-badge>
             </td>
             <td>{{ query.queryKind }}</td>
@@ -67,7 +67,8 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
     AsyncPipe,
     TuiNotification,
     TitleCasePipe,
-    TuiBadge
+    TuiBadge,
+    TuiStatus,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -134,7 +135,7 @@ export class EndpointListComponent {
       case "PAUSED":
         return "warning";
       case "RUNNING":
-        return "success";
+        return "positive";
     }
   }
 
