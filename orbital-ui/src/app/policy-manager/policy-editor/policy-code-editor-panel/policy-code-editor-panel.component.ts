@@ -216,7 +216,7 @@ export class PolicyCodeEditorPanelComponent {
     this.schemaImporterService.submitSchemaEditOperation(schemaEdit)
       .subscribe({
         next: (result) => {
-          this.alerts.open('File saved successfully', {appearance: 'success'})
+          this.alerts.open('Policy saved successfully', {appearance: 'success'})
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe()
           this.policyNeedsSaving.emit(false);
