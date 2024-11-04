@@ -10,6 +10,7 @@ import com.orbitalhq.VersionedSource
 import com.orbitalhq.from
 import com.orbitalhq.query.VyneQlGrammar
 import io.kotest.matchers.booleans.shouldBeTrue
+import lang.taxi.errors
 import org.junit.Test
 
 class TaxiSchemaTest {
@@ -111,5 +112,76 @@ class TaxiSchemaTest {
       person.attribute("fromTypeWithFormat").format!!.patterns.shouldContainExactly("yyyy-MM-dd HH:mm:ss")
       person.attribute("fromTypeWithOffset").format!!.patterns.shouldContainExactly("dd/MM/yy'T'HH:mm:ss")
       person.attribute("fromTypeWithOffset").format!!.utcZoneOffsetInMinutes!!.shouldBe(60)
+   }
+
+   // Should replace ${'STOCK_PRICE_TOPIC'}
+   @Test
+   fun `env variables defined in annotations are replaced when using single-quoted string template`() {
+      val schema = TaxiSchema.from("""
+         annotation KafkaOperation {
+            topic : String
+         }
+
+         model StockPrice {
+            ticker: Ticker inherits String
+         }
+         service QuotesService {
+            @KafkaOperation(topic = "${"$"}{'STOCK_PRICE_TOPIC'}")
+            stream quotes : Stream<StockPrice>
+         }
+      """.trimIndent(),
+         environmentVariables = mapOf("STOCK_PRICE_TOPIC" to "prod.stockQuotes")
+         )
+      val metadata = schema.service("QuotesService")
+         .streamOperations.first { it.name == "quotes" }
+         .firstMetadata("KafkaOperation")
+      metadata.params["topic"].shouldBe("prod.stockQuotes")
+   }
+
+
+   // Should replace ${"STOCK_PRICE_TOPIC"}
+   @Test
+   fun `env variables defined in annotations are replaced when using double-quoted string template`() {
+      val schema = TaxiSchema.from("""
+         annotation KafkaOperation {
+            topic : String
+         }
+
+         model StockPrice {
+            ticker: Ticker inherits String
+         }
+         service QuotesService {
+            @KafkaOperation(topic = '${"$"}{"STOCK_PRICE_TOPIC"}')
+            stream quotes : Stream<StockPrice>
+         }
+      """.trimIndent(),
+         environmentVariables = mapOf("STOCK_PRICE_TOPIC" to "prod.stockQuotes")
+      )
+      val metadata = schema.service("QuotesService")
+         .streamOperations.first { it.name == "quotes" }
+         .firstMetadata("KafkaOperation")
+      metadata.params["topic"].shouldBe("prod.stockQuotes")
+   }
+
+   // Should replace ${"STOCK_PRICE_TOPIC"}
+   @Test
+   fun `env variables defined in annotations that are not present in env variables are reported as an error`() {
+      val schema = TaxiSchema.from("""
+         annotation KafkaOperation {
+            topic : String
+         }
+
+         model StockPrice {
+            ticker: Ticker inherits String
+         }
+         service QuotesService {
+            @KafkaOperation(topic = '${"$"}{"STOCK_PRICE_TOPIC"}')
+            stream quotes : Stream<StockPrice>
+         }
+      """.trimIndent()
+      )
+      schema.compilerMessages.errors().shouldHaveSize(1)
+      schema.compilerMessages.errors().single()
+         .detailMessage.shouldBe("Annotation KafkaOperation specifies env variable STOCK_PRICE_TOPIC which is not defined")
    }
 }

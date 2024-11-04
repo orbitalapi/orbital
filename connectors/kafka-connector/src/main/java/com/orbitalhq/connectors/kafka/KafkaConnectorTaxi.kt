@@ -115,7 +115,8 @@ namespace  ${Annotations.namespace} {
       Partition,
       Offset,
       Timestamp,
-      TimestampType
+      TimestampType,
+      Topic
    }
 
 

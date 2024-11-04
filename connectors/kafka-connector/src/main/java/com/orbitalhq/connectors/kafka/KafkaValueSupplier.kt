@@ -84,6 +84,7 @@ class KafkaValueSupplier(private val record: ReceiverRecord<Any, ByteArray>) : V
          "Partition" -> record.partition()
          "Offset" -> record.offset()
          "Timestamp" -> record.timestamp()
+         "Topic" -> record.topic()
          "TimestampType" -> record.timestampType().name
          else -> error("Unknown message metadata type: $metadataType")
       }
