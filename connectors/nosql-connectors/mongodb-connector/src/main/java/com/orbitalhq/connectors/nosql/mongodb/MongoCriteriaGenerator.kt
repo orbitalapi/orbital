@@ -179,6 +179,8 @@ class MongoCriteriaGenerator(private val taxiSchema: TaxiDocument) {
                attributeName to typedInstance[attributeName].value
           }.toMap()
 
+          val setOnInsertFields = setOnInsertAnnotations(typedInstance.type)
+
           var query: Query? = null
 
           when {
@@ -206,8 +208,14 @@ class MongoCriteriaGenerator(private val taxiSchema: TaxiDocument) {
           }
 
          return if (query != null) {
-            val update = Update.fromDocument(Document(documentMap))
-            query!! to update
+             val documentMapWithoutSetOnUpsertFields = documentMap.filter { entry ->
+                 !setOnInsertFields.contains(entry.key)
+             }.toMap()
+            val update = Update.fromDocument(Document(documentMapWithoutSetOnUpsertFields))
+            val updateWithSetOnInsertFields = setOnInsertFields.fold(update) { initial, setOnInsertField ->
+                 initial.setOnInsert(setOnInsertField, typedInstance[setOnInsertField].value)
+             }
+            query!! to updateWithSetOnInsertFields
          } else {
             null
          }
@@ -225,7 +233,6 @@ class MongoCriteriaGenerator(private val taxiSchema: TaxiDocument) {
 
        private fun uniqueIndexFields(vyneType: com.orbitalhq.schemas.Type): Set<AttributeName> {
            val idFields = vyneType.getAttributesWithAnnotation(MongoConnector.Annotations.UniqueIndexAnnotationName)
-           require(idFields.isEmpty() || idFields.size == 1)
            return if (idFields.isEmpty()) {
                emptySet()
            } else {
@@ -233,6 +240,10 @@ class MongoCriteriaGenerator(private val taxiSchema: TaxiDocument) {
            }
        }
 
+       private fun setOnInsertAnnotations(vyneType: com.orbitalhq.schemas.Type): Set<AttributeName> {
+           val setOnInsertFields = vyneType.getAttributesWithAnnotation(MongoConnector.Annotations.SetOnInsertAnnotationName)
+           return setOnInsertFields.keys
+       }
    }
 
 }

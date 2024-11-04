@@ -11,6 +11,7 @@ import com.winterbe.expekt.should
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.time.Instant
 
 class MongoMutatingQueryInvokerUniqueIndexTest: MongoDbTestcontainer() {
     private lateinit var connectionRegistry: InMemoryMongoConnectionRegistry
@@ -36,6 +37,9 @@ class MongoMutatingQueryInvokerUniqueIndexTest: MongoDbTestcontainer() {
             @UniqueIndex
             accountId : AccountId inherits String
             currency : Currency inherits String
+            @SetOnInsert
+            insertedAt: InsertedAt inherits Instant = now()
+            updatedAt: UpdateAt inherits Instant = now()
          }
 
          @MongoService( connection = "accountsMongo" )
@@ -49,16 +53,21 @@ class MongoMutatingQueryInvokerUniqueIndexTest: MongoDbTestcontainer() {
 
     @Test
     fun `can upsert against a unique index`(): Unit = runBlocking {
+        //val taxiSchema =
         val vyne = testVyne(accountsSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
-
         // Insert a Brand Account with id = 1
         val insertResult = vyne.query("""
-                given { account : Account = { accountId : "1" , currency: "TL" } }
+               given { account : Account = { accountId : "1" , currency: "TL"  } }
                call AccountsDb::upsertAccount
                """.trimIndent())
             .typedObjects()
         insertResult.should.have.size(1)
         insertResult.single()["currency"].value.should.equal("TL")
+
+        val originalInsertedAt =  vyne.query("""
+            find { Account }
+        """.trimIndent()).typedObjects().single()["insertedAt"].value
+
 
         // Update the currency of Account with id = 1
         val updatedResult = vyne.query("""
@@ -69,11 +78,21 @@ class MongoMutatingQueryInvokerUniqueIndexTest: MongoDbTestcontainer() {
         updatedResult.should.have.size(1)
         updatedResult.single()["currency"].value.should.equal("USD")
 
+        val updatedInsertedAt =  vyne.query("""
+            find { Account }
+        """.trimIndent()).typedObjects().single()["insertedAt"].value
+
+        originalInsertedAt.should.equal(originalInsertedAt)
+
         //Now fetch all the accounts, there should only be one!
         val fetchAllAccounts = vyne.query("""
             find { Account }
         """.trimIndent()).typedObjects()
         fetchAllAccounts.should.have.size(1)
         fetchAllAccounts.single()["currency"].value.should.equal("USD")
+        val insertedAt = fetchAllAccounts.single()["insertedAt"].value as Instant
+        val updatedAt = fetchAllAccounts.single()["updatedAt"].value as Instant
+
+        insertedAt.isBefore(updatedAt).should.be.`true`
     }
 }
