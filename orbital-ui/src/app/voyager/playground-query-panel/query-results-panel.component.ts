@@ -1,5 +1,5 @@
-import { TuiSegmented } from "@taiga-ui/kit";
-import { TuiExpand } from "@taiga-ui/core";
+import {TuiPulse, TuiSegmented} from '@taiga-ui/kit';
+import {TuiExpand} from '@taiga-ui/core';
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import {JsonViewerModule} from "../../json-viewer/json-viewer.module";
 import {NgIf} from "@angular/common";
@@ -23,18 +23,23 @@ import {LineageDisplayModule} from "../../lineage-display/lineage-display.module
     TuiSegmented,
     CallExplorerModule,
     SequenceDiagramModule,
-    LineageDisplayModule
+    LineageDisplayModule,
+    TuiPulse,
   ],
   template: `
     <app-panel-header [collapsible]="true" [(expanded)]="expanded"
                       [isSecondary]="true"
                       title="Results">
       <div class="spacer"></div>
-      <tui-segmented size="s" [(activeItemIndex)]="viewModeActiveIndex" class="dark" *ngIf="queryResult"
+      <tui-segmented size="s" [activeItemIndex]="viewModeActiveIndex" (activeItemIndexChange)="viewModeActiveIndexChanged($event)" class="dark view-mode-segments" *ngIf="queryResult"
                      (click)="$event.stopImmediatePropagation()">
         <button [class.active]="viewModeActiveIndex === 0">Results</button>
-        <button [class.active]="viewModeActiveIndex === 1">Lineage Diagram</button>
-        <button [class.active]="viewModeActiveIndex === 2">Requests</button>
+        <button [class.active]="viewModeActiveIndex === 1">
+          Lineage Diagram<tui-pulse *ngIf="!hasLineageDiagramViewModeBeenActivated" />
+        </button>
+        <button [class.active]="viewModeActiveIndex === 2">
+          Requests<tui-pulse *ngIf="!hasRequestViewModeBeenActivated"/>
+        </button>
       </tui-segmented>
     </app-panel-header>
     <tui-expand [expanded]="expanded" class="flex-expand">
@@ -92,5 +97,16 @@ export class QueryResultsPanelComponent {
   @Input()
   queryResult: string
 
+  viewModeActiveIndexChanged(index: number) {
+    this.viewModeActiveIndex = index
+    if (this.viewModeActiveIndex === 1) {
+      this.hasLineageDiagramViewModeBeenActivated = true
+    } else if (this.viewModeActiveIndex === 2) {
+      this.hasRequestViewModeBeenActivated = true
+    }
+  }
+
+  hasLineageDiagramViewModeBeenActivated = false
+  hasRequestViewModeBeenActivated = false
 
 }

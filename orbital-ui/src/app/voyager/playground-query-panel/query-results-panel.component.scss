@@ -72,3 +72,15 @@ app-query-lineage.inline {
   height: calc(100% - 2rem);
   z-index: 2000;
 }
+
+.view-mode-segments {
+  button {
+    position: relative;
+
+    tui-pulse {
+      position: absolute;
+      top: 2px;
+      right: 4px;
+    }
+  }
+}
