@@ -11,7 +11,7 @@ data class Metadata(
    companion object {
       fun getVariableName(key: String): String? {
          return when {
-            key.startsWith("\${") && key.endsWith("}") -> { key.substring(3, key.length - 2) }
+            key.startsWith("\${") && key.endsWith("}") -> { key.substring(2, key.length - 1) }
             else -> null
          }
       }
