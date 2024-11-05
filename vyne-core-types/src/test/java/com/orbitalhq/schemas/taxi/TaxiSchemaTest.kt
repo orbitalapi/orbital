@@ -126,7 +126,7 @@ class TaxiSchemaTest {
             ticker: Ticker inherits String
          }
          service QuotesService {
-            @KafkaOperation(topic = "${"$"}{'STOCK_PRICE_TOPIC'}")
+            @KafkaOperation(topic = "${"$"}{STOCK_PRICE_TOPIC}")
             stream quotes : Stream<StockPrice>
          }
       """.trimIndent(),
@@ -151,7 +151,7 @@ class TaxiSchemaTest {
             ticker: Ticker inherits String
          }
          service QuotesService {
-            @KafkaOperation(topic = '${"$"}{"STOCK_PRICE_TOPIC"}')
+            @KafkaOperation(topic = '${"$"}{STOCK_PRICE_TOPIC}')
             stream quotes : Stream<StockPrice>
          }
       """.trimIndent(),
@@ -175,7 +175,7 @@ class TaxiSchemaTest {
             ticker: Ticker inherits String
          }
          service QuotesService {
-            @KafkaOperation(topic = '${"$"}{"STOCK_PRICE_TOPIC"}')
+            @KafkaOperation(topic = '${"$"}{STOCK_PRICE_TOPIC}')
             stream quotes : Stream<StockPrice>
          }
       """.trimIndent()
