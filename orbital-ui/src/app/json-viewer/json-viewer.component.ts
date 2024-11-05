@@ -29,9 +29,10 @@ import {Disposable} from "vscode-languageclient";
   selector: 'app-json-viewer',
   template: `
     <app-panel-header *ngIf="showHeader" [title]="title" [isSecondary]="true">
-     <label tuiLabel> <input tuiCheckbox type="checkbox" [(ngModel)]="showTypeHints" *ngIf="hasTypes" size="s">
-        Show types
-      </label>
+     <label tuiLabel *ngIf="hasTypes">
+       <input tuiCheckbox type="checkbox" [(ngModel)]="showTypeHints" size="s">
+       Show types
+     </label>
       <tui-notification size="m" *ngIf="showResultsSizeWarning || isResponseLarge" appearance="warning" class="alert"><div>
         The response is really big.
         <ng-container *ngIf="isResponseLarge">Some features have been disabled.</ng-container>
