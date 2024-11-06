@@ -3,6 +3,7 @@ package com.orbitalhq.connectors.nosql.mongodb
 import com.orbitalhq.connectors.config.mongodb.MongoConnection
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.nosql.mongodb.registry.InMemoryMongoConnectionRegistry
+import com.orbitalhq.firstRawObject
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.testVyne
@@ -129,5 +130,40 @@ class MongoMutatingQueryInvokerTest: MongoDbTestcontainer() {
                )
            ))
 
+   }
+
+   @Test
+   fun `can insert a mongo collection with nested array`(): Unit = runBlocking {
+      val schema = """
+          ${MongoConnector.Annotations.imports}
+          type MongoObjectId inherits String
+
+         @Collection(connection = "flightsMongo", collection = "people")
+         parameter model Person {
+            @Id
+            objectId: MongoObjectId?
+            name : Name inherits String
+            contacts : Contact[]
+         }
+         model Contact {
+            name : String
+            email : String
+         }
+
+         @MongoService( connection = "flightsMongo" )
+         service PeopleDb {
+            table people : Person[]
+
+            @UpsertOperation
+            write operation insertPerson(Person):Person
+         }
+      """
+      val vyne = testVyne(listOf(schema, MongoConnector.schema,VyneQlGrammar.QUERY_TYPE_TAXI,)) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      val result = vyne.query("""
+         given { Person = { objectId: null, name : 'Jimmy', contacts: [ { name : "Jimmy's Mum", email : "mum@jimmy.com" }, { name : "Jimmy's Dad", email : "dad@jimmy.com" } ] } }
+         call PeopleDb::insertPerson
+      """)
+         .firstRawObject()
+      result["objectId"].shouldNotBeNull()
    }
 }
