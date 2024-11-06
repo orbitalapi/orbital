@@ -18,7 +18,6 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.models.format.ModelFormatSpec
-import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.QueryEventConsumer
@@ -28,7 +27,6 @@ import com.orbitalhq.query.history.RemoteCallResponse
 import com.orbitalhq.query.history.RemoteCallResponseDto
 import com.orbitalhq.query.history.toDto
 import com.orbitalhq.query.runtime.core.ModelFormatSpecSerializer
-import com.orbitalhq.query.runtime.core.QueryResponseFormatter
 import com.orbitalhq.query.runtime.core.RawResultsSerializer
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.taxi.TaxiSchema
@@ -93,14 +91,27 @@ class StubQueryService(
        */
       addDelayToStreams: Boolean = false
    ): Pair<Publisher<Any>, ContentTypeString> {
-
-
       val schema = TaxiSchema.fromStrings(query.schema, builtInTypes)
       val (vyne, stub) = StubService.stubbedVyne(schema)
+      return submitQuery(vyne, stub, query, queryId, addDelayToStreams)
+   }
+
+   fun submitQuery(
+      vyne: Vyne,
+      stub: StubService,
+      query: StubQueryMessage,
+      queryId: String = Ids.id(prefix = "query", size = 12),
+      /**
+       * When query calls a stream, this will add a delay on each
+       * message, to simulate a 'streaming' response.
+       * If false, all data is returned instantly
+       */
+      addDelayToStreams: Boolean = false,
+   ): Pair<Publisher<Any>, ContentTypeString> {
       configureStubs(query, vyne, stub, addDelayToStreams)
 
       val (dispatcher, remoteCallCollector) = buildQueryEventConsumer()
-      val queryPlanEventHandler = QueryPlanEventHandler.createFor(schema)
+      val queryPlanEventHandler = QueryPlanEventHandler.createFor(vyne.schema)
       val eventBroker = QueryContextEventBroker()
          .addHandlers(listOf(remoteCallCollector, queryPlanEventHandler))
       val resultFlux = runBlocking {
@@ -116,15 +127,16 @@ class StubQueryService(
 
       val (taxiQlQuery, queryOptions, querySchema) = vyne.parseQuery(query.query)
       val queryResultType = taxiQlQuery.discoveryType?.type ?: taxiQlQuery.returnType
-      val formatSerializer = FormatDetector(formatSpecs).getFormatType(querySchema.type(taxiQlQuery.returnType))?.let { (metadata, spec) ->
-         ModelFormatSpecSerializer(spec, metadata)
-      } ?: RawResultsSerializer(queryOptions)
+      val formatSerializer =
+         FormatDetector(formatSpecs).getFormatType(querySchema.type(taxiQlQuery.returnType))?.let { (metadata, spec) ->
+            ModelFormatSpecSerializer(spec, metadata)
+         } ?: RawResultsSerializer(queryOptions)
 
       val serializedResults = resultFlux
          .filter { it !is TypedNull }
          .map {
-         formatSerializer.serialize(it, querySchema)
-      }.filter { it != null } as Flux<Any>
+            formatSerializer.serialize(it, querySchema)
+         }.filter { it != null } as Flux<Any>
       val publisher = when {
          taxiQlQuery.queryMode == QueryMode.STREAM -> serializedResults
          Arrays.isArray(queryResultType) -> serializedResults
@@ -204,16 +216,21 @@ class StubQueryService(
             if (operation.returnType.isStream) {
                configureStubStream(operation, vyne, operationStub, stub, addDelayToStreams)
             } else {
-               if (operationStub.conditionalResponses.isNotEmpty()) {
-                  configureConditionalResponses(stub, operationStub, vyne)
-               } else {
-                  val parsedInstance = TypedInstance.from(
-                     operation.returnType,
-                     operationStub.response,
-                     vyne.schema,
-                     formatSpecs = formatSpecs
-                  )
-                  stub.addResponse(operationStub.operationName, parsedInstance, modifyDataSource = true)
+               when {
+                  operationStub.echoInput -> stub.addResponseReturningInputs(operationStub.operationName)
+                  operationStub.conditionalResponses.isNotEmpty() -> {
+                     configureConditionalResponses(stub, operationStub, vyne)
+                  }
+
+                  else -> {
+                     val parsedInstance = TypedInstance.from(
+                        operation.returnType,
+                        operationStub.response,
+                        vyne.schema,
+                        formatSpecs = formatSpecs
+                     )
+                     stub.addResponse(operationStub.operationName, parsedInstance, modifyDataSource = true)
+                  }
                }
 
             }
@@ -271,6 +288,8 @@ class StubQueryService(
       stub: StubService,
       addDelayToStreams: Boolean
    ) {
+      FormatDetector.get(specs = formatSpecs)
+         .getFormatType(operation.returnType.typeParameters[0])
       val collectionType = operation.returnType.typeParameters[0].asArrayType()
       val result = vyne.parseJson(collectionType.paramaterizedName, operationStub.response)
       require(result is TypedCollection) { "Operation ${operationStub.operationName} is a stream, so stubbed results should be provided as an array" }

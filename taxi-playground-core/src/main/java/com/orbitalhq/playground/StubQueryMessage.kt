@@ -17,6 +17,7 @@ data class StubQueryMessage(
 data class OperationStub(
    val operationName: String,
    val response: String,
+   val echoInput: Boolean = false,
    val conditionalResponses: List<ResponseCondition> = emptyList()
 )
 
