@@ -44,7 +44,8 @@ class NebulaWebsocketClient(
 
    init {
       CoroutineScope(Dispatchers.IO).launch {
-         websockets.connect()
+         websockets
+            .connect()
             .collect { websocketSession ->
                logger.info { "Nebula client connected" }
                Flux.just(schemaWatcher.currentState).concatWith(schemaWatcher.stacksUpdated.map { it.currentState })
@@ -60,9 +61,7 @@ class NebulaWebsocketClient(
                         } catch (e: Exception) {
                            logger.warn { "Failed to send message to Nebula websocket - ${e.message}" }
                         }
-
                      }
-
                   }
                websocketSession.incoming.consumeAsFlow()
                   .collect { frame ->

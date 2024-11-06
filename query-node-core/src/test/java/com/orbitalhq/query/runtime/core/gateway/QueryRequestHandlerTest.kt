@@ -87,31 +87,31 @@ class QueryRequestHandlerTest {
    lateinit var mockWebServerRule: MockWebServerRule
 
 
-    @Autowired
-    lateinit var schemaProvider: SchemaProvider
+   @Autowired
+   lateinit var schemaProvider: SchemaProvider
 
-    companion object {
-        const val CsvQueryEndPoint = "/api/q/csv"
-        const val FilmRatingQueryEndPoint = "/api/q/films"
-        const val CorrelationHeaderName = "x-api-correlationId"
-        const val StreamProvidersQueryEndPoint = "/api/q/streamProviders"
-    }
+   companion object {
+      const val CsvQueryEndPoint = "/api/q/csv"
+      const val FilmRatingQueryEndPoint = "/api/q/films"
+      const val CorrelationHeaderName = "x-api-correlationId"
+      const val StreamProvidersQueryEndPoint = "/api/q/streamProviders"
+   }
 
    @Test
    fun `can send csv in payload and project and get a json response back as part of vyne http endpoint query`() {
-       val schema = schemaProvider.schema
-       schemaStore.setSchema(schema)
-       mockWebServerRule.prepareResponse { response ->
-           //Response is not important as the operation returns void in the schema.
-           response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody("""{ "status" : "OK" }""")
-       }
+      val schema = schemaProvider.schema
+      schemaStore.setSchema(schema)
+      mockWebServerRule.prepareResponse { response ->
+         //Response is not important as the operation returns void in the schema.
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody("""{ "status" : "OK" }""")
+      }
 
       Awaitility.await().atMost(60000, TimeUnit.SECONDS).until<Boolean> { handler.routes.isNotEmpty() }
-       val orbitalHttpQueryCorrelationId = "correlationId-1"
-       val result = webClient.post()
+      val orbitalHttpQueryCorrelationId = "correlationId-1"
+      val result = webClient.post()
          .uri(CsvQueryEndPoint)
          .contentType(MediaType.parseMediaType("text/csv"))
-          .header(CorrelationHeaderName, orbitalHttpQueryCorrelationId)
+         .header(CorrelationHeaderName, orbitalHttpQueryCorrelationId)
          .body(BodyInserters.fromValue("givenName,surname\nfoo,bar"))
          .exchange()
          .expectStatus().isOk
@@ -119,110 +119,115 @@ class QueryRequestHandlerTest {
 
       val responseBody = result.responseBody.blockLast()
       responseBody["status"].should.equal("OK")
-       mockWebServerRule.takeRequest().headers[CorrelationHeaderName]!!.should.equal(orbitalHttpQueryCorrelationId)
+      mockWebServerRule.takeRequest().headers[CorrelationHeaderName]!!.should.equal(orbitalHttpQueryCorrelationId)
    }
 
-    @Test
-    fun `can accept value through request headers and echo them back in response headers`() {
-        val schema = schemaProvider.schema
-        schemaStore.setSchema(schema)
-        mockWebServerRule.prepareResponse { response ->
-            //Response is not important as the operation returns void in the schema.
-            response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
-                .setBody("""{ "filmId" : 1, "rating": "Good" }""")
-        }
+   @Test
+   fun `can accept value through request headers and echo them back in response headers`() {
+      val schema = schemaProvider.schema
+      schemaStore.setSchema(schema)
+      mockWebServerRule.prepareResponse { response ->
+         //Response is not important as the operation returns void in the schema.
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""{ "filmId" : 1, "rating": "Good" }""")
+      }
 
-        val orbitalHttpQueryCorrelationId = "film-rating-query-1"
+      val orbitalHttpQueryCorrelationId = "film-rating-query-1"
 
-        val result = webClient.get()
-            .uri("$FilmRatingQueryEndPoint/1")
-            .header(CorrelationHeaderName, orbitalHttpQueryCorrelationId)
-            .exchange()
-            .expectStatus().isOk
-            .expectHeader().value(CorrelationHeaderName, CoreMatchers.`is`(orbitalHttpQueryCorrelationId))
-            .expectHeader().value("Content-Type", CoreMatchers.`is`("application/json"))
-            .expectHeader().value("x-vyne-query-id", CoreMatchers.startsWith("routed"))
-            .expectHeader().value("x-vyne-client-query-id", CoreMatchers.startsWith("routed"))
-            .expectHeader().value("filmId", CoreMatchers.`is`("1"))
-            .returnResult<Map<String, Any>>()
+      val result = webClient.get()
+         .uri("$FilmRatingQueryEndPoint/1")
+         .header(CorrelationHeaderName, orbitalHttpQueryCorrelationId)
+         .exchange()
+         .expectStatus().isOk
+         .expectHeader().value(CorrelationHeaderName, CoreMatchers.`is`(orbitalHttpQueryCorrelationId))
+         .expectHeader().value("Content-Type", CoreMatchers.`is`("application/json"))
+         .expectHeader().value("x-vyne-query-id", CoreMatchers.startsWith("routed"))
+         .expectHeader().value("x-vyne-client-query-id", CoreMatchers.startsWith("routed"))
+         .expectHeader().value("filmId", CoreMatchers.`is`("1"))
+         .returnResult<Map<String, Any>>()
 
-        val responseBody = result.responseBody.blockLast()
-        responseBody["rating"].should.equal("Good")
-        mockWebServerRule.takeRequest()
-    }
+      val responseBody = result.responseBody.blockLast()
+      responseBody["rating"].should.equal("Good")
+      mockWebServerRule.takeRequest()
+   }
 
-    @Test
-    fun `can still return response headers in case there is a policy error`() {
-        val schema = schemaProvider.schema
-        schemaStore.setSchema(schema)
-        mockWebServerRule.prepareResponse { response ->
-            //Response is not important as the operation returns void in the schema.
-            response
-                .setHeader("Content-Type", MediaType.APPLICATION_JSON)
-                .setBody("""{ "filmId" : 1, "provider": "Disney" }""")
-        }
+   @Test
+   fun `can still return response headers in case there is a policy error`() {
+      val schema = schemaProvider.schema
+      schemaStore.setSchema(schema)
+      mockWebServerRule.prepareResponse { response ->
+         //Response is not important as the operation returns void in the schema.
+         response
+            .setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""{ "filmId" : 1, "provider": "Disney" }""")
+      }
 
-        val orbitalHttpQueryCorrelationId = "stream-provider-query-1"
+      val orbitalHttpQueryCorrelationId = "stream-provider-query-1"
 
-        val result = webClient
-            .mutate()
-            .responseTimeout(Duration.ofMinutes(30000))
-            .build()
-            .get()
-            .uri("$StreamProvidersQueryEndPoint/1")
-            .header(CorrelationHeaderName, orbitalHttpQueryCorrelationId)
-            .exchange()
+      val result = webClient
+         .mutate()
+         .responseTimeout(Duration.ofMinutes(30000))
+         .build()
+         .get()
+         .uri("$StreamProvidersQueryEndPoint/1")
+         .header(CorrelationHeaderName, orbitalHttpQueryCorrelationId)
+         .exchange()
 //            .expectStatus().isBadRequest
-            .expectHeader().value(CorrelationHeaderName, CoreMatchers.`is`(orbitalHttpQueryCorrelationId))
-            .expectHeader().value("Content-Type", CoreMatchers.`is`("application/json"))
-            .expectHeader().value("filmId", CoreMatchers.`is`("1"))
-            .returnResult<Map<String, Any>>()
+         .expectHeader().value(CorrelationHeaderName, CoreMatchers.`is`(orbitalHttpQueryCorrelationId))
+         .expectHeader().value("Content-Type", CoreMatchers.`is`("application/json"))
+         .expectHeader().value("filmId", CoreMatchers.`is`("1"))
+         .returnResult<Map<String, Any>>()
 
-        result.responseBody.blockLast().shouldBe(mapOf(
+      result.responseBody.blockLast().shouldBe(
+         mapOf(
             "Code" to "xyz.abc.def",
             "Id" to "correlationId",
-            "Message" to  "Invalid API Status",
-            "Errors" to  listOf("An unexpected error occurred")))
-        mockWebServerRule.takeRequest()
+            "Message" to "Invalid API Status",
+            "Errors" to listOf("An unexpected error occurred")
+         )
+      )
+      mockWebServerRule.takeRequest()
 
-    }
+   }
 
 
    @SpringBootApplication
    @TestConfiguration
    @Import(QueryGatewayRouterConfig::class)
    class TestConfig {
-       @Rule
-       @JvmField
-       final val server = MockWebServerRule()
-       @Bean
-       fun queryRouteService(
-           schemaStore: SimpleSchemaStore,
-           queryExecutor: RoutedQueryExecutor,
-           metricsReporter: QueryMetricsReporter
-       ): QueryRouteService {
-           return QueryRouteService(schemaStore, queryExecutor, metricsReporter = metricsReporter)
-       }
+      @Rule
+      @JvmField
+      final val server = MockWebServerRule()
 
-       @Bean
-       fun mockWebServerRule(): MockWebServerRule {
-           return this.server
-       }
+      @Bean
+      fun queryRouteService(
+         schemaStore: SimpleSchemaStore,
+         queryExecutor: RoutedQueryExecutor,
+         metricsReporter: QueryMetricsReporter
+      ): QueryRouteService {
+         return QueryRouteService(schemaStore, queryExecutor, metricsReporter = metricsReporter)
+      }
 
-       @Bean
-       fun schemaStore(): SimpleSchemaStore = SimpleSchemaStore()
+      @Bean
+      fun mockWebServerRule(): MockWebServerRule {
+         return this.server
+      }
 
-       @Bean
-       fun queryMetricsReporter() = com.orbitalhq.metrics.NoOpMetricsReporter
+      @Bean
+      fun schemaStore(): SimpleSchemaStore = SimpleSchemaStore()
 
-       @Bean
-       @Primary
-       fun schemaProvider(): SchemaProvider {
+      @Bean
+      fun queryMetricsReporter() = com.orbitalhq.metrics.NoOpMetricsReporter
 
-           return SimpleSchemaProvider(
-               TaxiSchema.fromStrings(
-                   listOf(AuthClaimsTypeDefinition, ErrorTypeDefinition,
-                       """
+      @Bean
+      @Primary
+      fun schemaProvider(): SchemaProvider {
+
+         return SimpleSchemaProvider(
+            TaxiSchema.fromStrings(
+               listOf(
+                  AuthClaimsTypeDefinition, ErrorTypeDefinition,
+                  """
          type CorrelationId inherits String
          type FilmId inherits Int
          @com.orbitalhq.formats.Csv
@@ -325,89 +330,91 @@ class QueryRequestHandlerTest {
               given { filmId }
               find { StreamProvider }
             }
-      """.trimIndent())
+      """.trimIndent()
                )
-           )
-       }
+            )
+         )
+      }
 
 
-       @Bean
-       @Primary
-       fun vyneProvider( schemaProvider: SchemaProvider): VyneProvider {
-           val restTemplateInvoker = RestTemplateInvoker(
-               schemaProvider,
-               WebClient.builder(),
-               AuthWebClientCustomizer.empty()
-           )
-           val queryEngineFactory =
-               QueryEngineFactory.withOperationInvokers(
-                   VyneCacheConfiguration.default(),
-                   formatSpecs = emptyList(),
-                   invokers = listOf(restTemplateInvoker),
-                   projectionProvider = LocalProjectionProvider(),
-                   stateStoreProvider = null
-               )
-           val vyne = Vyne(listOf(schemaProvider.schema), queryEngineFactory)
-           return SimpleVyneProvider(vyne)
-       }
+      @Bean
+      @Primary
+      fun vyneProvider(schemaProvider: SchemaProvider): VyneProvider {
+         val restTemplateInvoker = RestTemplateInvoker(
+            schemaProvider,
+            WebClient.builder(),
+            AuthWebClientCustomizer.empty()
+         )
+         val queryEngineFactory =
+            QueryEngineFactory.withOperationInvokers(
+               VyneCacheConfiguration.default(),
+               formatSpecs = emptyList(),
+               invokers = listOf(restTemplateInvoker),
+               projectionProvider = LocalProjectionProvider(),
+               stateStoreProvider = null
+            )
+         val vyne = Vyne(listOf(schemaProvider.schema), queryEngineFactory)
+         return SimpleVyneProvider(vyne)
+      }
 
-       @Bean
-       fun streamResultStreamProvider(): StreamResultStreamProvider  {
-           val streamResultStreamProvider =  object: StreamResultStreamProvider {
-               override fun getResultStream(streamName: String, principal: Principal?): Flux<Any> {
-                   TODO("Not yet implemented")
-               }
+      @Bean
+      fun streamResultStreamProvider(): StreamResultStreamProvider {
+         val streamResultStreamProvider = object : StreamResultStreamProvider {
+            override fun getResultStream(streamName: String, principal: Principal?): Flux<Any> {
+               TODO("Not yet implemented")
+            }
 
-           }
-           return streamResultStreamProvider
-       }
-       @Bean
-       fun queryService(
-           vyneProvider: VyneProvider,
-           schemaProvider: SchemaProvider
-       ): QueryService {
+         }
+         return streamResultStreamProvider
+      }
 
-           val queryEventConsumer = object: QueryEventConsumer {
-               override fun handleEvent(event: QueryEvent) {
+      @Bean
+      fun queryService(
+         vyneProvider: VyneProvider,
+         schemaProvider: SchemaProvider
+      ): QueryService {
 
-               }
+         val queryEventConsumer = object : QueryEventConsumer {
+            override fun handleEvent(event: QueryEvent) {
 
-               override fun recordResult(operation: OperationResult, queryId: String) {
+            }
 
-               }
+            override fun recordResult(operation: OperationResult, queryId: String) {
 
-           }
+            }
 
-           val historyEventConsumerProvider =  object: HistoryEventConsumerProvider {
-               override fun createEventConsumer(queryId: String, schema: Schema): QueryEventConsumer {
-                   return queryEventConsumer
-               }
+         }
 
-           }
+         val historyEventConsumerProvider = object : HistoryEventConsumerProvider {
+            override fun createEventConsumer(queryId: String, schema: Schema): QueryEventConsumer {
+               return queryEventConsumer
+            }
 
-          val  queryService = QueryService(
-               SimpleSchemaProvider(schemaProvider.schema),
-               vyneProvider,
-              historyEventConsumerProvider,
-               Jackson2ObjectMapperBuilder().build(),
-               ActiveQueryMonitor(TestHazelcastInstanceFactory().newHazelcastInstance()),
-               QueryResponseFormatter(listOf(CsvFormatSpec))
-           )
-           return queryService
-       }
+         }
 
-       @Bean
-       fun springWebFilterChainNoAuthentication(http: ServerHttpSecurity): SecurityWebFilterChain? {
+         val queryService = QueryService(
+            SimpleSchemaProvider(schemaProvider.schema),
+            vyneProvider,
+            historyEventConsumerProvider,
+            Jackson2ObjectMapperBuilder().build(),
+            ActiveQueryMonitor(TestHazelcastInstanceFactory().newHazelcastInstance()),
+            QueryResponseFormatter(listOf(CsvFormatSpec))
+         )
+         return queryService
+      }
 
-           return http
-               .csrf().disable()
-               .cors().disable()
-               .headers().disable()
-               .authorizeExchange()
-               .anyExchange().permitAll()
-               .and()
-               .build()
-       }
+      @Bean
+      fun springWebFilterChainNoAuthentication(http: ServerHttpSecurity): SecurityWebFilterChain? {
+
+         return http
+            .csrf().disable()
+            .cors().disable()
+            .headers().disable()
+            .authorizeExchange()
+            .anyExchange().permitAll()
+            .and()
+            .build()
+      }
    }
 
 }

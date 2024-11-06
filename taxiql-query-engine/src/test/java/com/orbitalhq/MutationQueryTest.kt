@@ -8,6 +8,7 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
@@ -370,5 +371,58 @@ class MutationQueryTest {
          .firstRawObject()
       val params = stub.calls["deletePerson"].single()
       params[1].value.shouldBe("foo")
+   }
+
+   @Test
+   fun `streaming source with spread operator projection into mutating target`():Unit = runBlocking {
+      val (vyne,stub) = testVyne(
+         """
+            model StockRating {
+               creditRating : CreditRating inherits String
+            }
+            model StockQuote {
+               ticker : Ticker inherits String
+               price : Price inherits Decimal
+               quantity : Quantity inherits Int
+            }
+            parameter model SavedQuote {
+               ticker : Ticker
+               price : Price
+               quantity : Quantity
+               message : Message inherits String
+               rating : StockRating[]
+            }
+            service StockApi {
+               stream quotes : Stream<StockQuote>
+               write operation saveQuote(SavedQuote):SavedQuote
+               operation getRating(Ticker):StockRating
+            }
+         """.trimIndent()
+      )
+      stub.addResponseReturningInputs("saveQuote")
+      stub.addResponse("getRating", """{ "creditRating" : "AAA" }""")
+      stub.addResponseFlow("quotes") { _,_, ->
+         flowOf(
+            vyne.parseJson("StockQuote", """{ "ticker" : "AAPL", "price" : 234.56, "quantity" : 100000 }""")
+         )
+      }
+
+      val result = vyne.query("""stream { StockQuote } as {
+         |  message : Message = 'Hello, world'
+         |  rating : StockRating[] = listOf(StockRating)
+         |  ...
+         |}[]
+         |call StockApi::saveQuote
+      """.trimMargin())
+         .firstRawObject()
+      result.shouldBe(mapOf(
+         "ticker" to "AAPL",
+         "price" to 234.56.toBigDecimal(),
+         "quantity" to 100000,
+         "message" to "Hello, world",
+         "rating" to listOf(
+            mapOf("creditRating" to "AAA")
+         )
+      ))
    }
 }
