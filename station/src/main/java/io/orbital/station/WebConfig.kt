@@ -6,9 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.cockpit.core.WebUiUrlSupportFilter
 import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.models.format.ModelFormatSpec
-import com.orbitalhq.query.TaxiJacksonModule
-import com.orbitalhq.query.VyneJacksonModule
-import com.orbitalhq.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
+import com.orbitalhq.serde.TaxiJacksonModule
 import com.orbitalhq.spring.config.LoadBalancerFilterFunction
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
@@ -25,7 +23,6 @@ import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.stereotype.Component
-import org.springframework.web.filter.CommonsRequestLoggingFilter
 import org.springframework.web.reactive.config.CorsRegistry
 import org.springframework.web.reactive.config.WebFluxConfigurer
 import org.springframework.web.server.ServerWebExchange
@@ -99,11 +96,10 @@ class JacksonConfig {
    @Bean
    fun csvFormatSpec(): ModelFormatSpec = CsvFormatSpec
 
-   @Bean
-   fun vyneJacksonModule() = VyneJacksonModule()
 
    @Bean
-   fun taxiJacksonModule() = TaxiJacksonModule()
+   fun taxiJacksonModule() = TaxiJacksonModule
+
 
    @Bean
    fun jacksonCustomizer(): Jackson2ObjectMapperBuilderCustomizer {

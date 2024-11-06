@@ -17,8 +17,7 @@ import com.orbitalhq.models.TypeNamedInstance
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.formats.csv.CsvImporterUtil
 import com.orbitalhq.formats.csv.CsvIngestionParameters
-import com.orbitalhq.query.TaxiJacksonModule
-import com.orbitalhq.query.VyneJacksonModule
+import com.orbitalhq.serde.TaxiJacksonModule
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.utils.log
@@ -49,8 +48,7 @@ class ExecuteTestCommand : Callable<Int> {
       .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false)
       .enable(MapperFeature.ACCEPT_CASE_INSENSITIVE_ENUMS)
       .registerModule(JavaTimeModule())
-      .registerModule(VyneJacksonModule())
-      .registerModule(TaxiJacksonModule())
+      .registerModule(TaxiJacksonModule)
 
    private val schemaCache = CacheBuilder
       .newBuilder()

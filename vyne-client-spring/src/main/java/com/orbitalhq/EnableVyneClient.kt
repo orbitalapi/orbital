@@ -1,6 +1,5 @@
 package com.orbitalhq
 
-import com.orbitalhq.query.VyneJacksonModule
 import com.orbitalhq.remote.RemoteVyneClient
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.cloud.client.loadbalancer.LoadBalanced
@@ -21,9 +20,6 @@ class VyneClientConfiguration {
    fun vyneWebClient(): WebClient.Builder {
       return WebClient.builder()
    }
-
-   @Bean
-   fun vyneJacksonModule() = VyneJacksonModule()
 
    @Bean
    fun vyneClient(vyneWebClientBuilder: WebClient.Builder): VyneClient {
