@@ -3,6 +3,7 @@ package com.orbitalhq.schemas
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.models.json.Jackson
+import com.orbitalhq.serde.TaxiJacksonModule
 import lang.taxi.annotations.HttpResponseHeader
 import lang.taxi.query.Parameter
 import lang.taxi.query.TaxiQlQuery
@@ -74,7 +75,7 @@ object QueryOptionParameterKeys {
          }
       }
    }
-   
+
    fun httpResponseParameters(taxiQlQuery: TaxiQlQuery): List<Parameter> {
       return taxiQlQuery.parameters.filter { parameter ->
          parameter.annotation(HttpResponseHeader.NAME) != null
@@ -132,7 +133,7 @@ data class QueryOptions(
       if (omitNulls) {
          mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
       }
-      return mapper
+      return mapper.registerModule(TaxiJacksonModule)
    }
 
    fun newObjectMapper(): ObjectMapper {
