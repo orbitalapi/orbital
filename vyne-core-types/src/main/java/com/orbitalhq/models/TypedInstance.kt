@@ -51,9 +51,9 @@ interface TypedInstance {
    // set to the value of the typeAlias.
    fun withTypeAlias(typeAlias: Type): TypedInstance
 
-   fun toRawObject(): Any? {
-      return TypedInstanceConverter(RawObjectMapper).convert(this)
-//      return convert { it.value }
+   fun toRawObject(config: ObjectMapperConfig = ObjectMapperConfig.DEFAULT_CONFIG): Any? {
+      val mapper = ConfigurableRawObjectMapper.forConfig(config)
+      return TypedInstanceConverter(mapper).convert(this)
    }
 
    fun toTypeNamedInstance(): Any? {

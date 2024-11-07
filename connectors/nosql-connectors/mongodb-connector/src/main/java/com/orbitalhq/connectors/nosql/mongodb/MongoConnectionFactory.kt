@@ -8,8 +8,22 @@ import com.mongodb.reactivestreams.client.MongoClients
 import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.nosql.mongodb.registry.MongoConnectionRegistry
+import org.bson.BsonReader
+import org.bson.BsonWriter
+import org.bson.codecs.Codec
+import org.bson.codecs.DecoderContext
+import org.bson.codecs.EncoderContext
+import org.springframework.core.convert.converter.Converter
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
+import org.springframework.data.mongodb.core.SimpleReactiveMongoDatabaseFactory
+import org.springframework.data.mongodb.core.convert.MappingMongoConverter
+import org.springframework.data.mongodb.core.convert.MongoConverter
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions
+import org.springframework.data.mongodb.core.convert.NoOpDbRefResolver
+import org.springframework.data.mongodb.core.mapping.MongoMappingContext
 import reactor.core.publisher.Mono
+import java.time.Instant
+import java.util.*
 
 class MongoConnectionFactory(private val connectionRegistry: MongoConnectionRegistry) {
    private val mongoClientCache = CacheBuilder.newBuilder()
@@ -23,9 +37,9 @@ class MongoConnectionFactory(private val connectionRegistry: MongoConnectionRegi
 
    fun reactiveMongoTemplate(connection: MongoConnectionConfiguration): ReactiveMongoTemplate {
       val mongoDbConnectionString = connection.connectionString
-     val mongoClient =  mongoClientCache.get(connection.connectionName) {
+      val mongoClient = mongoClientCache.get(connection.connectionName) {
          val mongoClientSettings = MongoClientSettings.builder()
-           .applyConnectionString(mongoDbConnectionString)
+            .applyConnectionString(mongoDbConnectionString)
             .build()
 
          MongoClients.create(mongoClientSettings)

@@ -4,6 +4,7 @@ import com.orbitalhq.connectors.collectionTypeOrType
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.resultType
 import com.orbitalhq.models.DataSource
+import com.orbitalhq.models.ObjectMapperConfig
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
@@ -193,7 +194,9 @@ abstract class MongoBaseInvoker(
          val value =  if (fieldValue is TypedObject) {
             typedInstanceToMap(fieldValue, false)
          } else {
-            fieldValue.toRawObject()
+            // When writing the object out, don't apply formats, as we want
+            // dates persisted as dates, not strings
+            fieldValue.toRawObject(ObjectMapperConfig(applyFormats = false))
          }
          val mongoFieldName = if (idField == name) MongoIdField else name
          val mongoValue = if (mongoFieldName == MongoIdField)  {
