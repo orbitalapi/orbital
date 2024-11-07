@@ -24,7 +24,7 @@ private object TypeFormatter {
          return typedInstance.value.toString()
       }
       require(typedInstance.value is TemporalAccessor) { "Formatted types only supported on TemporalAccessors currently.  If you're seeing this error, time to do some work!" }
-      require(typedInstance is TypedValue) { "Formatted types are only applicable to scalar TypedValues at present"}
+      require(typedInstance is TypedValue) { "Formatted types are only applicable to scalar TypedValues at present" }
       val instant = typedInstance.value as TemporalAccessor
       val dateTimeFormat = findFormatWith("'T'", typedInstance.format?.patterns ?: emptyList())?.let { dateTimeFormat ->
          // Handle down-cast date time times (eg., a Time type that was ingested with a dateTime format)
@@ -72,6 +72,7 @@ private object TypeFormatter {
             }
             formatter.format(typedInstance.value as LocalDate)
          }
+
          else -> DateTimeFormatter.ISO_DATE.withZone(UtcZoneId).format(typedInstance.value as LocalDate)
       }
    }
@@ -91,6 +92,7 @@ private object TypeFormatter {
             }
 
          }
+
          else -> DateTimeFormatter.ISO_TIME.withZone(UtcZoneId)
       }
       return formatter.format(typedInstance.value as LocalTime)
@@ -112,17 +114,66 @@ private object TypeFormatter {
    }
 }
 
-object RawObjectMapper : TypedInstanceMapper {
+
+/**
+ * Converts TypedInstances to their raw objects, allowing configuration of behaviour
+ */
+class ConfigurableRawObjectMapper private constructor(
+   private val config: ObjectMapperConfig = DEFAULT_CONFIG
+) : TypedInstanceMapper {
    override fun map(typedInstance: TypedInstance): Any? {
       if (typedInstance.value == null) {
          return typedInstance.value
       }
-      return if (typedInstance is TypedValue && !typedInstance.format.isNullOrEmpty()) {
+      return if (typedInstance is TypedValue && !typedInstance.format.isNullOrEmpty() && config.applyFormats) {
          TypeFormatter.applyFormat(typedInstance)
       } else {
          typedInstance.value
       }
    }
+
+   companion object {
+      // Avoid creating lots of these
+      private val DEFAULT_MAPPER = ConfigurableRawObjectMapper(ObjectMapperConfig.DEFAULT_CONFIG)
+      fun default() = DEFAULT_MAPPER
+      fun forConfig(config: ObjectMapperConfig = DEFAULT_CONFIG): ConfigurableRawObjectMapper {
+         return if (config == DEFAULT_CONFIG) {
+            DEFAULT_MAPPER
+         } else {
+            ConfigurableRawObjectMapper(config)
+         }
+      }
+
+
+
+      val DEFAULT_CONFIG = ObjectMapperConfig()
+   }
+
+}
+
+data class ObjectMapperConfig(
+   /**
+    * Controls if formatted types (such as dates) have their formats applied.
+    * Note that this will convert dates to strings.
+    * For JSON, this is probably fine. But for other data types you may to disable this
+    * to leave as a temporal type. (However, that will disable the output format)
+    */
+   val applyFormats: Boolean = true
+) {
+   companion object {
+      val DEFAULT_CONFIG = ObjectMapperConfig()
+   }
+}
+/**
+ * Default mapper for converting TypedInstances to their raw values.
+ * Formats are applied.
+ *
+ * Note - this is just syntactical sugar around ConfigurableRawObjectMapper.default(),
+ * but exists for backwards compatibility
+ */
+object RawObjectMapper : TypedInstanceMapper {
+   private val internalMapper = ConfigurableRawObjectMapper.default()
+   override fun map(typedInstance: TypedInstance): Any? = internalMapper.map(typedInstance)
 }
 
 object TypeNamedInstanceMapper : TypedInstanceMapper {
@@ -156,7 +207,8 @@ interface TypedInstanceMapper {
    fun handleUnwrapped(original: TypedInstance, value: Any?): Any? {
       return value
    }
-   fun handleUnwrappedCollection(original:TypedInstance, value:Any?): Any? {
+
+   fun handleUnwrappedCollection(original: TypedInstance, value: Any?): Any? {
       return value
    }
 }
@@ -229,11 +281,13 @@ class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
             val unwrapped = unwrapMap(value as Map<String, Any>, collectDataSourcesTo)
             mapper.handleUnwrapped(typedInstance, unwrapped)
          }
+
          typedInstance is Collection<*> -> {
             val unwrapped = unwrapCollection(value as Collection<*>, collectDataSourcesTo)
             collectDataSourcesTo?.add(typedInstance to typedInstance.source)
-            mapper.handleUnwrappedCollection(typedInstance,unwrapped)
+            mapper.handleUnwrappedCollection(typedInstance, unwrapped)
          }
+
          typedInstance is TypedEnumValue && value is TypedObject -> {
             convertAndCollectDataSources(value, collectDataSourcesTo)
          }
@@ -248,7 +302,7 @@ class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
 }
 
 fun Operator.toSql(): String {
-   return when(this) {
+   return when (this) {
       Operator.NOT_EQUAL -> "<>"
       Operator.EQUAL -> "="
       else -> this.symbol
