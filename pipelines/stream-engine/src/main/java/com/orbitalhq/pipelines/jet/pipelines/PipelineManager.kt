@@ -12,6 +12,7 @@ import com.orbitalhq.pipelines.jet.api.PipelineMetrics
 import com.orbitalhq.pipelines.jet.api.PipelineStatus
 import com.orbitalhq.pipelines.jet.api.RunningPipelineSummary
 import com.orbitalhq.pipelines.jet.api.SubmittedPipeline
+import com.orbitalhq.pipelines.jet.api.streams.StreamUtils
 import com.orbitalhq.pipelines.jet.api.transport.PipelineKind
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec
@@ -378,7 +379,7 @@ class PipelineManager(
       sinkSpec: PipelineTransportSpec = HazelcastTopicSinkSpec.forStream(managedStream.name)
    ): PipelineSpec<StreamingQueryInputSpec, PipelineTransportSpec> {
       val spec = PipelineSpec(
-         name = "${managedStream.name.longDisplayName}_${managedStream.schemaHash}",
+         name = StreamUtils.toPipelineName(managedStream.name),
          input = StreamingQueryInputSpec(managedStream.query.source),
          transformation = null,
          outputs = listOf(sinkSpec),

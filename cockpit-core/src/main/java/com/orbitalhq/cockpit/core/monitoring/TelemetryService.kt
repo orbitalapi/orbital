@@ -1,9 +1,11 @@
 package com.orbitalhq.cockpit.core.monitoring
 
 import com.orbitalhq.http.ServicesConfig
+import com.orbitalhq.pipelines.jet.api.streams.StreamUtils
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.SavedQuery
 import com.orbitalhq.schemas.taxi.asSavedQuery
+import com.orbitalhq.schemas.toVyneQualifiedName
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.config.LoadBalancerFilterFunction
 import com.orbitalhq.spring.http.NotFoundException
@@ -95,7 +97,7 @@ class TelemetryService(
          loadDataSeries(
             dateRange.start,
             dateRange.endInclusive,
-            spec.promQlQuery(query.name.fullyQualifiedName, stepSize),
+            spec.promQlQuery(StreamUtils.toPipelineName(query.name.toVyneQualifiedName()), stepSize),
             stepSize
          )
             .map { spec to it }
@@ -156,12 +158,14 @@ class TelemetryService(
       val uri =
          "http://${ServicesConfig.METRICS_SERVER_NAME}/api/v1/query_range?query={query}&start={start}&end={end}&step={step}"
 
+      val startTimeIso = startTime.toIsoString()
+      val endTimeIso =  endTime.toIsoString()
       return webClient.get().uri(
          uri,
          mapOf(
             "query" to promQlQuery,
-            "start" to startTime.toIsoString(),
-            "end" to endTime.toIsoString(),
+            "start" to startTimeIso,
+            "end" to endTimeIso,
             "step" to stepSize
          )
       ).retrieve().bodyToMono<PrometheusQueryRangeMetricsResult>()

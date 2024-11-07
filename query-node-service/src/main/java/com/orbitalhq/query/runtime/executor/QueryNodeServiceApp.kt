@@ -11,7 +11,6 @@ import com.orbitalhq.schemas.readers.SourceConverterRegistry
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
 import com.orbitalhq.spring.EnableVyne
 import com.orbitalhq.spring.VyneSchemaConsumer
-import com.orbitalhq.spring.config.ConditionallyLoadBalancedExchangeFilterFunction
 import com.orbitalhq.spring.config.DiscoveryClientConfig
 import com.orbitalhq.spring.config.EnvVariablesConfig
 import com.orbitalhq.spring.config.VyneSpringCacheConfiguration
@@ -31,9 +30,6 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceTransactionManagerA
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
-import org.springframework.cloud.client.discovery.DiscoveryClient
-import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
-import org.springframework.cloud.client.loadbalancer.reactive.WebClientCustomizer
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -106,22 +102,6 @@ class WebConfig {
       ),
       registerWithStaticRegistry = true
    )
-   //   @LoadBalanced
-   @Bean
-   fun webClientCustomizer(
-      loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
-      discoveryClient: DiscoveryClient
-
-   ): WebClientCustomizer {
-      return WebClientCustomizer { webClientBuilder ->
-         webClientBuilder.filter(
-            ConditionallyLoadBalancedExchangeFilterFunction.onlyKnownHosts(
-               discoveryClient.services,
-               loadBalancingFilterFunction
-            )
-         )
-      }
-   }
 
 
    @Bean

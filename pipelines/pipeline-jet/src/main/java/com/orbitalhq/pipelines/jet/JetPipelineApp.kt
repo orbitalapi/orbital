@@ -39,10 +39,7 @@ import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration
 import org.springframework.boot.context.properties.EnableConfigurationProperties
-import org.springframework.boot.web.reactive.function.client.WebClientCustomizer
-import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient
-import org.springframework.cloud.client.loadbalancer.reactive.ReactorLoadBalancerExchangeFilterFunction
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -109,21 +106,6 @@ class JetPipelineApp {
    @Bean
    fun noOpEventConsumer():OperationInvocationEventConsumer = NoOperationInvocationEventConsumer
 
-   @Bean
-   fun webClientCustomizer(
-      loadBalancingFilterFunction: ReactorLoadBalancerExchangeFilterFunction,
-      discoveryClient: DiscoveryClient
-
-   ): WebClientCustomizer {
-      return WebClientCustomizer { webClientBuilder ->
-         webClientBuilder.filter(
-            ConditionallyLoadBalancedExchangeFilterFunction.onlyKnownHosts(
-               discoveryClient.services,
-               loadBalancingFilterFunction
-            )
-         )
-      }
-   }
 
    @Bean
    fun pipelineRepository(
