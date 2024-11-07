@@ -9,6 +9,7 @@ import com.fasterxml.jackson.databind.ser.std.StdSerializer
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.orbitalhq.models.DeferredExpression
+import com.orbitalhq.serde.TaxiJacksonModule
 
 fun isJson(value: Any): Boolean {
    if (value !is String) return false
@@ -35,6 +36,7 @@ object Jackson {
          .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS,false)
          .registerModule(JavaTimeModule())
          .registerModule(SimpleModule().addSerializer(DeferredExpressionSerializer()))
+         .registerModule(TaxiJacksonModule)
 
    val defaultObjectMapper: ObjectMapper = newObjectMapperWithDefaults()
 

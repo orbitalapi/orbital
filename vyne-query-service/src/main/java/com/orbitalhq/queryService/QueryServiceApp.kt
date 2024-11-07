@@ -20,8 +20,7 @@ import com.orbitalhq.licensing.LicenseConfig
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.monitoring.EnableCloudMetrics
 import com.orbitalhq.pipelines.jet.api.transport.PipelineJacksonModule
-import com.orbitalhq.query.TaxiJacksonModule
-import com.orbitalhq.query.VyneJacksonModule
+import com.orbitalhq.serde.TaxiJacksonModule
 import com.orbitalhq.query.runtime.core.EnableVyneQueryNode
 import com.orbitalhq.schema.publisher.SchemaPublisherService
 import com.orbitalhq.search.embedded.EnableVyneEmbeddedSearch
@@ -100,10 +99,7 @@ class QueryServiceApp {
    fun csvFormatSpec(): ModelFormatSpec = CsvFormatSpec
 
    @Bean
-   fun vyneJacksonModule() = VyneJacksonModule()
-
-   @Bean
-   fun taxiJacksonModule() = TaxiJacksonModule()
+   fun taxiJacksonModule() = TaxiJacksonModule
 
    @Bean
    fun jacksonCustomizer(): Jackson2ObjectMapperBuilderCustomizer {

@@ -1,7 +1,7 @@
 package org.taxilang.playground
 
 import com.orbitalhq.playground.StubQueryService
-import com.orbitalhq.query.TaxiJacksonModule
+import com.orbitalhq.serde.TaxiJacksonModule
 import io.micrometer.cloudwatch2.CloudWatchConfig
 import io.micrometer.cloudwatch2.CloudWatchMeterRegistry
 import io.micrometer.core.instrument.Clock
@@ -36,7 +36,7 @@ class VoyagerApp {
    }
 
    @Bean
-   fun taxiJacksonModule() = TaxiJacksonModule()
+   fun taxiJacksonModule() = TaxiJacksonModule
 
    @Bean
    fun restTemplate(): RestTemplate = RestTemplateBuilder().build()

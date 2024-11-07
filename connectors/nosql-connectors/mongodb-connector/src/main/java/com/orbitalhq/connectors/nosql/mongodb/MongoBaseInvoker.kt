@@ -193,7 +193,7 @@ abstract class MongoBaseInvoker(
          val value =  if (fieldValue is TypedObject) {
             typedInstanceToMap(fieldValue, false)
          } else {
-            fieldValue.value
+            fieldValue.toRawObject()
          }
          val mongoFieldName = if (idField == name) MongoIdField else name
          val mongoValue = if (mongoFieldName == MongoIdField)  {

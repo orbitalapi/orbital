@@ -12,13 +12,12 @@ import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.from
 import com.orbitalhq.models.TypeNamedInstance
 import com.orbitalhq.models.TypeNamedInstanceDeserializer
-import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.Query
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.RemoteCall
-import com.orbitalhq.query.VyneJacksonModule
 import com.orbitalhq.query.history.QuerySummary
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.serde.TaxiJacksonModule
 import com.orbitalhq.utils.log
 import java.io.File
 
@@ -45,8 +44,8 @@ import java.io.File
 
 class QueryTester {
    private val objectMapper: ObjectMapper = jacksonObjectMapper()
-      .registerModule(VyneJacksonModule())
       .registerModule(JavaTimeModule())
+      .registerModule(TaxiJacksonModule)
       .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
 

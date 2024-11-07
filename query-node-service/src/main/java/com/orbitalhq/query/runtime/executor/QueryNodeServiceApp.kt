@@ -5,8 +5,7 @@ import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
 import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.history.AnalyticsConfig
 import com.orbitalhq.models.format.ModelFormatSpec
-import com.orbitalhq.query.TaxiJacksonModule
-import com.orbitalhq.query.VyneJacksonModule
+import com.orbitalhq.serde.TaxiJacksonModule
 import com.orbitalhq.query.runtime.core.EnableVyneQueryNode
 import com.orbitalhq.schemas.readers.SourceConverterRegistry
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
@@ -88,10 +87,7 @@ class WebConfig {
    fun csvFormatSpec(): ModelFormatSpec = CsvFormatSpec
 
    @Bean
-   fun vyneJacksonModule() = VyneJacksonModule()
-
-   @Bean
-   fun taxiJacksonModule() = TaxiJacksonModule()
+   fun taxiJacksonModule() = TaxiJacksonModule
 
    @Bean
    fun jacksonCustomizer(): Jackson2ObjectMapperBuilderCustomizer {

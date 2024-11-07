@@ -49,7 +49,7 @@ class AvroFormatDeserializer(
          }
 
          is String -> {
-            if (value.startsWith("[") || value.startsWith("{")) {
+            if (value.trim().startsWith("[") || value.trim().startsWith("{")) {
                DecoderFactory.get().jsonDecoder(avroSchema, value)
             } else {
                return parse(value.toByteArray(), type, metadata, schema, source)

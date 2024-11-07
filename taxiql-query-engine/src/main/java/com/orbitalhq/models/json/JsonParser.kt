@@ -8,6 +8,7 @@ import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.fqn
@@ -54,10 +55,11 @@ fun parseJson(
    json: String,
    source: DataSource = Provided,
    functionRegistry: FunctionRegistry = FunctionRegistry.default,
-   metadata: Map<String, Any> = emptyMap()
+   metadata: Map<String, Any> = emptyMap(),
+   formatSpecs: List<ModelFormatSpec> = emptyList(),
 ): TypedInstance {
    val type = schema.type(typeName.fqn().parameterizedName)
-   return TypedInstance.from(type, json, schema, source = source, functionRegistry = functionRegistry, metadata = metadata)
+   return TypedInstance.from(type, json, schema, source = source, functionRegistry = functionRegistry, metadata = metadata, formatSpecs = formatSpecs)
 }
 
 fun ModelContainer.parseJson(
@@ -65,9 +67,10 @@ fun ModelContainer.parseJson(
    json: String,
    source: DataSource = Provided,
    functionRegistry: FunctionRegistry = FunctionRegistry.default,
-   metadata: Map<String, Any> = emptyMap()
+   metadata: Map<String, Any> = emptyMap(),
+   formatSpecs: List<ModelFormatSpec> = emptyList(),
 ): TypedInstance {
-   return parseJson(this.schema, typeName, json, source, functionRegistry, metadata)
+   return parseJson(this.schema, typeName, json, source, functionRegistry, metadata, formatSpecs = formatSpecs)
 }
 
 @Deprecated("Call TypedInstance.from() instead.  This method has bugs with nested objects, and does not handle accessors or advanced features.")

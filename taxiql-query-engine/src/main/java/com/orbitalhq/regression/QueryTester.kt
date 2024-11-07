@@ -18,7 +18,6 @@ import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.Query
 import com.orbitalhq.query.QueryEngineFactory
-import com.orbitalhq.query.VyneJacksonModule
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.utils.log
 import kotlinx.coroutines.runBlocking

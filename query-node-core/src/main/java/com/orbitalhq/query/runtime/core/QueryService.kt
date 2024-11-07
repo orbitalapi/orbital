@@ -370,7 +370,7 @@ class QueryService(
 
                      else -> {
                         emit(ErrorType.errorMessage(throwable.message ?: "No message provided", schemaProvider.schema))
-                        logger.error { "Query $queryId failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}" }
+                        logger.error(throwable) { "Query $queryId failed with an unexpected exception of type: ${throwable::class.simpleName}.  ${throwable.message ?: "No message provided"}" }
                      }
                   }
                }

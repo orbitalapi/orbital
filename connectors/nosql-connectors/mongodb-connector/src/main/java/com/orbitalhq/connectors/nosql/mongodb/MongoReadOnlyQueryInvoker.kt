@@ -41,13 +41,14 @@ class MongoReadOnlyQueryInvoker(
       if (typesToCollectionNames.size > 1) {
          error("Mongo Joins are not yet supported - can only select from a single collection")
       }
+      val criteriaJson = if (criterias.isEmpty()) SelectAllCriteria else criterias.first().criteriaObject.toJson()
 
       logger.withQueryId(queryId).debug { "Starting Mongo Query" }
       val stopwatch = Stopwatch.createStarted()
       val resultFlux = if (criterias.isEmpty()) {
          reactiveMongoTemplate.findAll(Map::class.java, typesToCollectionNames.values.first())
       } else {
-         logger.withQueryId(queryId).info { "Using the Mongo Criteria => ${criterias.first().criteriaObject.toJson()}" }
+         logger.withQueryId(queryId).info { "Using the Mongo Criteria => $criteriaJson" }
          reactiveMongoTemplate.find(
             Query().addCriteria(criterias.first()),
             Map::class.java,
@@ -57,7 +58,7 @@ class MongoReadOnlyQueryInvoker(
                service,
                operation,
                parameters,
-               if (criterias.isNotEmpty()) criterias.first().toString() else SelectAllCriteria,
+               criteriaJson,
                mongoConnectionConfig.connectionString.hosts.joinToString(),
                stopwatch.elapsed(),
                recordCount = -1
@@ -71,7 +72,7 @@ class MongoReadOnlyQueryInvoker(
          service,
          operation,
          constructedQueryDataSource.inputs,
-         if (criterias.isNotEmpty()) criterias.first().toString() else SelectAllCriteria,
+         criteriaJson,
          mongoConnectionConfig.connectionString.hosts.joinToString(),
          elapsed,
          recordCount = -1
