@@ -35,3 +35,10 @@ app-project-selector {
 .config-container {
   margin-top: 2rem;
 }
+
+tui-select {
+  &.disabled {
+    pointer-events: none;
+    opacity: 0.7;
+  }
+}

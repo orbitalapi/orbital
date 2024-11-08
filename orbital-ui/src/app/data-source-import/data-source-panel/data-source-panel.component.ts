@@ -41,7 +41,7 @@ import {UiCustomisations} from "../../../environments/ui-customisations";
     ConnectionFiltersModule,
     TuiHint,
     TuiDataList,
-    TuiDropdown,
+    ...TuiDropdown,
   ],
   template: `
     <div class="selectors">
@@ -53,10 +53,10 @@ import {UiCustomisations} from "../../../environments/ui-customisations";
         (ngModelChange)="isDataSourceSelectorOpen = true"
       ></app-project-selector>
       <tui-select
-        tuiTextfieldSize="l"
         [stringify]="stringify"
         [(ngModel)]="schemaType"
-        [disabled]="!selectedPackage"
+        [class.disabled]="!selectedPackage"
+        [(tuiDropdownOpen)]="isDataSourceSelectorOpen"
       >
         {{ !selectedPackage ? 'Select a project first' : 'Select a data source to add' }}
         <tui-data-list *tuiDataList class="data-source-list">

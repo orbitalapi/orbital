@@ -16,6 +16,7 @@ import {ControlValueAccessor, NG_VALUE_ACCESSOR} from "@angular/forms";
       [stringify]="stringify"
       [ngModel]="selectedPackage"
       (ngModelChange)="setValue($event)"
+      [tuiDropdownOpen]="startOpened"
     >
       {{ prompt }}
       <input
