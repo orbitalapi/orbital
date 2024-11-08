@@ -15,30 +15,34 @@ import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
+import reactor.kotlin.core.publisher.switchIfEmpty
 import reactor.kotlin.core.publisher.toFlux
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.readBytes
 
 class FileSystemPackageLoader(
-    override val config: FileProjectSpec,
-    private val adaptor: SchemaSourcesAdaptor,
-    private val fileMonitor: ReactiveFileSystemMonitor,
-    private val eventThrottleSize: Int = 100,
-    private val eventThrottleDuration: Duration = Duration.ofMillis(50),
+   override val config: FileProjectSpec,
+   private val adaptor: SchemaSourcesAdaptor,
+   private val fileMonitor: ReactiveFileSystemMonitor,
+   private val eventThrottleSize: Int = 100,
+   private val eventThrottleDuration: Duration = Duration.ofMillis(50),
 
    // Allows things like Git (which is a proxy for this)
    // to act as the decorator to the underlying transport, and
    // do things like filter out uris etc
-    private val transportDecorator: SchemaPackageTransport? = null
+   private val transportDecorator: SchemaPackageTransport? = null
 ) : SchemaPackageTransport, LoaderExposingTaxiProject {
 
    companion object {
       private val logger = KotlinLogging.logger {}
    }
+
    override val description: String = "FileLoader at ${config.path}"
    override val publisherType: PublisherType = PublisherType.FileSystem
 
@@ -50,12 +54,18 @@ class FileSystemPackageLoader(
       .distinctUntilChanged()
       .doOnNext { status -> logger.info { "File project loader at ${config.path} changed state: $status" } }
 
+
+   private val cachedPackage = AtomicReference<Mono<SourcePackage>>(Mono.empty())
+
+
    init {
       this.stateSink.emitNext(LoaderStatus.STARTING, Sinks.EmitFailureHandler.FAIL_FAST)
       this.fileEvents
 //         .bufferTimeout(eventThrottleSize, eventThrottleDuration)
          .subscribe { _ ->
             logger.info { "Received change event from file system, triggering reload of package" }
+            // Invalidate the cached version
+            cachedPackage.set(Mono.empty())
             triggerLoad()
          }
    }
@@ -96,7 +106,19 @@ class FileSystemPackageLoader(
          }
    }
 
+   // We call this method a lot - and the adaptor.convert() can be expensive
+   // if we're loading from Avro or OAS.
+   // However, we're also battling memory issues.
+   // Can we consider loadIfDifferent(Hash)?
    override fun loadNow(): Mono<SourcePackage> {
+      return cachedPackage.updateAndGet { current ->
+         current.switchIfEmpty {
+            doLoad().doOnNext { cachedPackage.set(Mono.just(it)) }
+         }
+      }
+   }
+
+   private fun doLoad(): Mono<SourcePackage> {
       return adaptor.buildMetadata(transport)
          .flatMap { packageMetadata: PackageMetadata ->
             adaptor.convert(packageMetadata, this)
