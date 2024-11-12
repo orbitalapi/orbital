@@ -60,28 +60,6 @@ export class TypeListComponent implements OnInit {
     this.filteredMembers = members;
   }
 
-  memberType(member: SchemaMember): string {
-    switch (member.kind) {
-      case 'OPERATION':
-        return (member.member as Service).operationKind;
-      case 'TYPE':
-        return (member.member as Type).isScalar ? "Type" : "Model";
-      case 'SERVICE':
-        return (member.member as Service).serviceKind;
-      default:
-        return '?';
-    }
-  }
-
-  memberTypeForCSS(member: SchemaMember): string {
-    if (member.kind === 'OPERATION') {
-      return 'service';
-    } else if (member.kind === 'TYPE' && !(member.member as Type).isScalar) {
-      return 'model'
-    }
-    return member.kind.toLowerCase();
-  }
-
   startNewQuery(member: SchemaMember) {
     this.router.navigate(['/query-wizard'], {
       queryParams: { 'types': [member.name.fullyQualifiedName] },
@@ -105,3 +83,25 @@ export class TypeListComponent implements OnInit {
 
 }
 
+
+export function memberType(member: SchemaMember): string {
+  switch (member.kind) {
+    case 'OPERATION':
+      return (member.member as Service).operationKind;
+    case 'TYPE':
+      return (member.member as Type).isScalar ? "Type" : "Model";
+    case 'SERVICE':
+      return (member.member as Service).serviceKind;
+    default:
+      return '?';
+  }
+}
+
+export function memberTypeForCSS(member: SchemaMember): string {
+  if (member.kind === 'OPERATION') {
+    return 'service';
+  } else if (member.kind === 'TYPE' && !(member.member as Type).isScalar) {
+    return 'model'
+  }
+  return member.kind.toLowerCase();
+}

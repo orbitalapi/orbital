@@ -4,7 +4,32 @@ tui-select, tui-input, app-project-selector, tui-notification {
 
 .row {
   display: flex;
+
   .spacer {
     flex-grow: 1;
+  }
+}
+
+.filename-input {
+
+  // The taiga tuiTextfieldPostfix
+  // adds an empty space, which we don't want.
+  // We have to account for this with a negative margin.
+  // However, only apply this when there's text in the
+  // input, otherwise the cursor cuts across the postfix
+  &:not(.empty) {
+    ::ng-deep {
+      .t-postfix {
+        // Make it obvious this isn't editable
+        margin-left: -0.3em;
+      }
+    }
+  }
+
+  ::ng-deep {
+    .t-postfix {
+      // Make it obvious this isn't editable
+      opacity: 0.5;
+    }
   }
 }

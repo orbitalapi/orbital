@@ -3,11 +3,15 @@ import {isNullOrUndefined, isString} from 'util';
 import {PackageIdentifier} from "../package-viewer/packages.service";
 import {SavedQuery} from "./types.service";
 import {QualifiedNameParser} from "./qualified-name-parser";
+import {isObjectWithProperty} from "../utils/utils";
 
 export function fqn(input: string): QualifiedName {
   return QualifiedNameParser.parse(input);
 }
 
+export function isQualifiedName(value: unknown): value is QualifiedName {
+  return isObjectWithProperty(value, 'parameterizedName')
+}
 export type QualifiedNameAsString = string;
 
 export class QualifiedName {

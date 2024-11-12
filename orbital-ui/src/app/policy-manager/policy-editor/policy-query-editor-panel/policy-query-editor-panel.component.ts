@@ -62,13 +62,14 @@ import { TuiNotification, TuiButton, TuiHint } from '@taiga-ui/core';
         </button>
       </div>
     </app-panel-header>
-    <tui-notification size="m" (close)="showQueryEditorHelp = false" appearance="info" *ngIf="showQueryEditorHelp">
+    <tui-notification size="m" appearance="info" *ngIf="showQueryEditorHelp">
       @if (policyNeedsSaving) {
         You have unsaved changes. Save your policy for it to be applied to query results
       } @else {
         Test that the policy is giving the desired output by running a query here.
       }
-     <button tuiIconButton iconStart="@tui.x"></button></tui-notification>
+      <button (click)="showQueryEditorHelp = false" tuiIconButton iconStart="@tui.x"></button>
+    </tui-notification>
     <as-split direction="vertical">
       <as-split-area>
         <app-code-editor

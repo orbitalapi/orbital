@@ -1,5 +1,5 @@
-import { ChangeDetectorRef, Component, EventEmitter, Input, Output } from '@angular/core';
-import { UiCustomisations } from '../../environments/ui-customisations';
+import {ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
+import {UiCustomisations} from '../../environments/ui-customisations';
 import {AppConfig, AppInfoService} from '../services/app-info.service';
 import {
   NamedAndDocumented,
@@ -10,13 +10,13 @@ import {
   Type,
   VersionedSource
 } from '../services/schema';
-import { Contents } from './toc-host.directive';
-import { OperationQueryResult } from '../services/types.service';
-import { Router } from '@angular/router';
-import { isNullOrUndefined } from 'src/app/utils/utils';
-import { Observable } from 'rxjs';
-import { Inheritable } from 'src/app/inheritence-graph/build.inheritable';
-import { EditMemberDescriptionEvent, SchemaEditOperation } from '../project-import/schema-importer.service';
+import {Contents} from './toc-host.directive';
+import {OperationQueryResult} from '../services/types.service';
+import {Router} from '@angular/router';
+import {isNullOrUndefined} from 'src/app/utils/utils';
+import {Observable} from 'rxjs';
+import {Inheritable} from 'src/app/inheritence-graph/build.inheritable';
+import {EditMemberDescriptionEvent, SchemaEditOperation} from '../project-import/schema-importer.service';
 
 /**
  * Whether changes should be saved immediately, or
@@ -59,7 +59,7 @@ export class TypeViewerComponent {
   private _editable = false;
 
   @Output()
-  typeUpdated: EventEmitter<{schemaEditOperation: SchemaEditOperation, member: Type}> = new EventEmitter();
+  typeUpdated: EventEmitter<{ schemaEditOperation: SchemaEditOperation, member: Type }> = new EventEmitter();
 
   @Output()
   newTypeCreated = new EventEmitter<Type>()

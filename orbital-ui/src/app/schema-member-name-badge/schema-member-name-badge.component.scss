@@ -1,0 +1,20 @@
+@import "src/common";
+
+:host { // Note - the host also has a mono-badge class
+  font-size: 0.9rem;
+  display: flex !important; // override what's set in mono-badge
+  align-items: center;
+  width: fit-content;
+  margin: 0 !important; // override what's set in mono-badge
+}
+.badge {
+  @extend %type-badge;
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+  line-height: normal;
+}
+
+a {
+  line-height: normal;
+  padding: 0;
+}

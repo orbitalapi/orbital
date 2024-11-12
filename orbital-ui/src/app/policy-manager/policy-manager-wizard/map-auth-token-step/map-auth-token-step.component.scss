@@ -22,9 +22,13 @@ p {
   }
 
   .checkbox {
-    display: block;
+    display: flex;
     break-inside: avoid;
     margin-bottom: 0.5rem;
+
+    .row {
+      flex-grow: 1;
+    }
 
     .key {
       font-weight: 600;

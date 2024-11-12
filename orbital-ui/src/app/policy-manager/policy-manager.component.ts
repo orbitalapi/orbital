@@ -10,11 +10,13 @@ import { TuiButton, TuiHint } from '@taiga-ui/core';
 import {PoliciesService, PolicySetupReadiness} from '../services/policies.service';
 import {SchemaNotificationService} from '../services/schema-notification.service';
 import {Policy, TypesService} from '../services/types.service';
+import {FilenameDisplayComponent} from "../filename-display/filename-display.component";
+import {SchemaMemberNameBadgeComponent} from "../schema-member-name-badge/schema-member-name-badge.component";
 
 @Component({
   selector: 'app-policy-manager',
   standalone: true,
-  imports: [CommonModule, HeaderComponentLayoutModule, TuiButton, RouterLink, TuiBadge, TuiHint],
+  imports: [CommonModule, HeaderComponentLayoutModule, TuiButton, RouterLink, TuiBadge, TuiHint, FilenameDisplayComponent, SchemaMemberNameBadgeComponent],
   template: `
     <app-header-component-layout
       title="Policies"
@@ -42,6 +44,7 @@ import {Policy, TypesService} from '../services/types.service';
           <thead>
           <tr>
             <th>Policy name</th>
+            <th>File</th>
             <th>Policy defined against</th>
             <th>Read</th>
             <th>Write</th>
@@ -50,7 +53,8 @@ import {Policy, TypesService} from '../services/types.service';
           <tbody>
           <tr *ngFor="let policy of policies" (click)="navigateToPolicyPage(policy)">
             <td>{{ policy.name.shortDisplayName }}</td>
-            <td>{{ policy.targetType.shortDisplayName }}</td>
+            <td><app-filename-display [source]="policy.sourceFile"></app-filename-display></td>
+            <td><app-schema-member-name-badge [member]="policy.targetType"></app-schema-member-name-badge></td>
             <td [tuiHint]="policy.definesReadPolicy ? 'Defines a read policy' : 'Does not define a read policy'" tuiHintAppearance="dark">
               <img src="assets/img/tabler/check.svg" class="policy-icon" [class.has-policy]="policy.definesReadPolicy">
             </td>
