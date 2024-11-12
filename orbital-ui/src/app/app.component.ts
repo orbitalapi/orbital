@@ -125,8 +125,8 @@ export class AppComponent implements OnInit {
     this.packagesService.loadWorkspaceConfigStatus()
       .subscribe(status => {
         if (status.state === "ERROR") {
-          this.alerts.push({
-            id: 'project-config-errors',
+          this.addAlertIfNotPresent({
+            id: 'workspace-config-errors',
             severity: "Error",
             message: `Your workspace cannot be loaded: ${status.message}`,
             actionLabel: 'Read docs',
@@ -134,6 +134,8 @@ export class AppComponent implements OnInit {
               window.open(UiCustomisations.docsLinks.workspaceConfigFile, '_blank');
             }
           })
+        } else {
+          this.removeAlertById('workspace-config-errors')
         }
       })
 

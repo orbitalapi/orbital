@@ -127,7 +127,7 @@ class SwaggerSchemaConverterTest : BaseSchemaConverterServiceTest() {
          .should.be.empty
 
       conversionResponse.compilationMessages.errors().should.be.empty
-      conversionResponse.types.should.have.size(434)
+      conversionResponse.types.should.have.size(497)
       conversionResponse.services.should.have.size(219)
    }
 
