@@ -1,25 +1,24 @@
-import { TuiBlock, TuiCheckbox, TuiButtonLoading } from "@taiga-ui/kit";
-import { CommonModule, NgIf } from '@angular/common';
+import {TuiBlock, TuiButtonLoading, TuiCheckbox} from "@taiga-ui/kit";
+import {CommonModule, NgIf} from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
-  Component, EventEmitter,
+  Component,
+  EventEmitter,
   Input,
   OnChanges,
   Output,
   SimpleChanges
 } from '@angular/core';
 import {FormsModule} from '@angular/forms';
-import { TuiNotification, TuiButton } from '@taiga-ui/core';
+import {TuiButton, TuiNotification} from '@taiga-ui/core';
 import {Observable} from 'rxjs/internal/Observable';
 import {UiCustomisations} from '../../../../environments/ui-customisations';
 import {ConvertSchemaEvent} from '../../../data-source-import/data-source-import.models';
 import {PackagesService, SourcePackageDescription} from '../../../package-viewer/packages.service';
 import {CreateOrReplaceSource, SchemaImporterService} from '../../../project-import/schema-importer.service';
 import {ProjectSelectorModule} from '../../../project-selector/project-selector.module';
-import {PolicySetupReadiness} from '../../../services/policies.service';
 import {SchemaSubmissionResult} from '../../../services/types.service';
-import {__values} from "tslib";
 
 @Component({
   selector: 'app-map-auth-token-step',
@@ -53,18 +52,20 @@ import {__values} from "tslib";
 
     <div class="checkbox-container" *ngIf="claims" [class.is-readonly]="!selectedProject">
 
-      <tui-checkbox-block
-        *ngFor="let checkbox of checkboxes; trackBy: key"
-        class="checkbox"
-        [(ngModel)]="checkbox.checked"
-        [name]="checkbox.key"
-        contenAlight="right"
+      <label *ngFor="let checkbox of checkboxes; trackBy: key"
+             class="checkbox" tuiBlock
+             contenAlight="right"
       >
-        <div class="key">{{ checkbox.key }}</div>
-        <div class="value">{{ checkbox.value }}</div>
-      </tui-checkbox-block>
-      <tui-notification (close)="schemaConversionError = ''" status="error" *ngIf="schemaConversionError"
-                        class="notification-error">{{ schemaConversionError }}
+        <div class="row">
+          <div class="key">{{ checkbox.key }}</div>
+          <div class="value">{{ checkbox.value }}</div>
+        </div>
+        <input tuiCheckbox type="checkbox" [(ngModel)]="checkbox.checked"/>
+      </label>
+      <tui-notification appearance="error" *ngIf="schemaConversionError"
+                        class="notification-error">
+        <div>{{ schemaConversionError }}</div>
+        <button tuiIconButton iconStart="@tui.x" (click)="schemaConversionError = ''"></button>
       </tui-notification>
     </div>
     <div class="form-button-bar">

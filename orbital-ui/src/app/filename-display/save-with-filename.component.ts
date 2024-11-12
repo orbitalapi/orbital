@@ -1,26 +1,21 @@
-import { TuiLink } from "@taiga-ui/core";
-import {Component, EventEmitter, Input, Output} from '@angular/core';
+import {TuiLink} from "@taiga-ui/core";
+import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
 import {NgIf} from "@angular/common";
 import {VersionedSource} from "../services/schema";
+import {FilenameDisplayComponent} from "./filename-display.component";
 
 @Component({
   selector: 'app-save-with-filename',
   standalone: true,
   imports: [
     NgIf,
-    TuiLink
+    TuiLink,
+    FilenameDisplayComponent
   ],
+  changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="filename" *ngIf="source">
-      <span>
-        <img src="assets/img/tabler/package.svg">
-        {{ source.packageIdentifier.unversionedId }}
-      </span>
-      <span>
-        <img src="assets/img/tabler/file-description.svg">
-        {{ source.name }}
-      </span>
-    </div>
+    <app-filename-display [source]="source"  *ngIf="source"/>
+
     <a
       *ngIf="showSaveButton"
       tuiLink

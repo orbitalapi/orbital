@@ -132,6 +132,8 @@ import { TuiActiveZone, TuiAutoFocus } from '@taiga-ui/cdk';
     CopilotPanelComponent,
     TuiAppearance,
     TuiLink,
+    TuiFieldErrorPipe,
+    TuiError,
   ],
   exports: [
     QueryPanelComponent,

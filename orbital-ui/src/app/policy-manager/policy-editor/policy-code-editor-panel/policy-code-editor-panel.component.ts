@@ -35,6 +35,7 @@ import {SaveWithFilenameComponent} from "../../../filename-display/save-with-fil
 import {PoliciesService, PolicySetupReadiness} from "../../../services/policies.service";
 import {JsonViewerModule} from "../../../json-viewer/json-viewer.module";
 import {toSourceWithTypeHints} from "../../../model-designer/taxi-parser.service";
+import {SchemaMemberNameBadgeComponent} from "../../../schema-member-name-badge/schema-member-name-badge.component";
 
 @Component({
   selector: 'app-policy-code-editor-panel',
@@ -49,7 +50,8 @@ import {toSourceWithTypeHints} from "../../../model-designer/taxi-parser.service
     SaveWithFilenameComponent,
     TuiAccordion,
     JsonViewerModule,
-    TuiNotification
+    TuiNotification,
+    SchemaMemberNameBadgeComponent
   ],
   template: `
     <app-panel-header title="Policy editor" [isSecondary]="true">
@@ -57,9 +59,12 @@ import {toSourceWithTypeHints} from "../../../model-designer/taxi-parser.service
       <app-save-with-filename (saveFile)="saveFile()" [source]="versionedSource"
                               [isDisabled]="!source"></app-save-with-filename>
     </app-panel-header>
-    <tui-notification size="m" (close)="showPolicyEditorHelp = false" appearance="info" *ngIf="showPolicyEditorHelp"><div>
-      <div>Create a policy here, and then ensure the output is correct by running a query against it.</div>
-    </div> <button tuiIconButton iconStart="@tui.x"></button></tui-notification>
+    <tui-notification size="m" appearance="info" *ngIf="showPolicyEditorHelp">
+      <div>
+        <div>Create a policy here, and then ensure the output is correct by running a query against it.</div>
+      </div>
+      <button tuiIconButton iconStart="@tui.x" (click)="showPolicyEditorHelp = false"></button>
+    </tui-notification>
     <div class="code-editor-container">
       <app-code-editor
         [content]="source"
@@ -70,12 +75,17 @@ import {toSourceWithTypeHints} from "../../../model-designer/taxi-parser.service
     <tui-accordion [rounded]="false" [class.expanded]="authTokenOpen">
       <tui-accordion-item class="accordion-with-panel-header" [(open)]="authTokenOpen">
         <app-panel-header title="Auth Token:" [isSecondary]="true">
-          <span class="mono-badge auth-token-label">{{ userTokenTypeName }}<span class="badge model">Model</span></span>
+          <app-schema-member-name-badge [member]="userTokenTypeName"></app-schema-member-name-badge>
         </app-panel-header>
         <ng-template tuiAccordionItemContent>
-          <tui-notification size="m" (close)="showAuthTokenHelp = false" appearance="info" *ngIf="showAuthTokenHelp"><div>
-            <div>This is the contents of your auth token. We're showing it here for reference while you build your policy.</div>
-          </div> <button tuiIconButton iconStart="@tui.x"></button></tui-notification>
+          <tui-notification size="m" appearance="info" *ngIf="showAuthTokenHelp">
+            <div>
+              <div>This is the contents of your auth token. We're showing it here for reference while you build your
+                policy.
+              </div>
+            </div>
+            <button tuiIconButton iconStart="@tui.x" (click)="showAuthTokenHelp = false"></button>
+          </tui-notification>
           <app-json-viewer [json]="userTokenWithTypeHints" [readOnly]="true" [showHeader]="false"></app-json-viewer>
         </ng-template>
       </tui-accordion-item>

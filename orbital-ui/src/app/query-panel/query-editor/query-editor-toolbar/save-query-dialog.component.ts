@@ -18,7 +18,7 @@ import {
   SchemaImporterService
 } from '../../../project-import/schema-importer.service';
 import {VersionedSource} from '../../../services/schema';
-import {schema} from "@angular-devkit/core";
+import {capitalizeFirstLetter} from "../../../utils/strings";
 
 export interface SaveQueryRequestProps {
   query: string,
@@ -49,9 +49,10 @@ export interface SaveQueryRequestProps {
           formControlName="schemaPackage"
           [error]="[] | tuiFieldError | async"
         ></tui-error>
-        <tui-input formControlName="queryName"
+        <tui-input formControlName="queryName" tuiTextfieldPostfix=".taxi" class="filename-input"
+                   [class.empty]="!formGroup.get('queryName')?.value?.trim()"
         >
-          {{context.data.label}} name
+          {{capitalizedLabel}} file name
           <input [disableControl]="!hasEditablePackages"
                  tuiTextfieldLegacy
           />
@@ -96,7 +97,7 @@ export interface SaveQueryRequestProps {
       useValue: {
         required: 'This is required',
         pattern: 'Names must start with a letter, and contain letters, numbers and underscores only.',
-        isExisting: 'A query with that name already exists',
+        isExisting: 'A schema member with that name already exists',
       },
     },
   ],
@@ -129,6 +130,10 @@ export class SaveQueryDialogComponent {
       });
   }
 
+  get capitalizedLabel(): string {
+    return capitalizeFirstLetter(this.context.data.label)
+  }
+
   get hasEditablePackages(): boolean {
     return this.editablePackages.length > 0;
   }
@@ -155,7 +160,7 @@ export class SaveQueryDialogComponent {
     this.schemaImporterService.submitSchemaEditOperation(schemaEdit)
       .subscribe({
         next: (result) => {
-          this.alerts.open('Query saved successfully', {appearance: 'success'})
+          this.alerts.open(`${capitalizeFirstLetter(this.context.data.label)} saved successfully`, {appearance: 'success'})
             //.pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe()
 

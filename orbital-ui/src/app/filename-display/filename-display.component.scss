@@ -1,0 +1,23 @@
+@import "src/common";
+
+:host {
+  display: flex;
+  font-size: 0.9rem;
+  align-items: center;
+  border: 1px solid $slate-300;
+  border-radius: 4px;
+  padding: 0.1rem 0.25rem;
+  gap: 0.5rem;
+}
+
+.filename {
+  display: flex;
+  gap: 0.35rem;
+  opacity: 0.8;
+
+  > span {
+    display: flex;
+    align-items: center;
+    gap: 0.15rem;
+  }
+}

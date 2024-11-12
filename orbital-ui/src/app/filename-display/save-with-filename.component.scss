@@ -7,21 +7,6 @@
   gap: 0.5rem;
 }
 
-.filename {
-  display: flex;
-  gap: 0.35rem;
-  opacity: 0.8;
-  border: 1px solid $slate-300;
-  border-radius: 4px;
-  padding: 0.1rem 0.25rem;
-
-  > span {
-    display: flex;
-    align-items: center;
-    gap: 0.15rem;
-  }
-}
-
 .button-link {
   transition: opacity 150ms ease-in-out;
 
