@@ -21,6 +21,11 @@ import com.orbitalhq.query.TaxiQlQueryResultEvent
 import com.orbitalhq.query.history.RemoteCallResponse
 import com.orbitalhq.schemas.Schema
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.consumeEach
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import java.util.concurrent.atomic.AtomicLong
@@ -48,6 +53,15 @@ class PersistingQueryEventConsumer(
    schema: Schema
 
 ) : QuerySummaryPersister(queryHistoryDao, queryId, schema), QueryEventConsumer, RemoteCallOperationResultHandler {
+
+   /**
+    * Lazily executed coroutine jobs are passed to the channel to be run in sequence.
+    */
+   private val channel = Channel<Job>(capacity = Channel.UNLIMITED).apply {
+      scope.launch {
+         consumeEach { it.join() }
+      }
+   }
    val lastWriteTime = AtomicLong(System.currentTimeMillis())
 
    private val resultRowPersistenceStrategy =
@@ -62,7 +76,29 @@ class PersistingQueryEventConsumer(
    }
 
    override fun handleEvent(event: QueryEvent) {
-      scope.launch {
+      logger.trace { "Launching coroutine to dispatch ${event.javaClass.name}" }
+      /**
+       * Our scope is backed by a thread pool. and a typical query yields the following event sequence:
+       * QueryStartEvent
+       * TaxiQlQueryResultEvent
+       * QueryCompletedEvent
+       *
+       * If we were not to use the below approach, and directly call scope.launch { when(even) {....} }
+       * QueryCompletedEvent can be processed before QueryStartEvent due to context switching, i.e.
+       *
+       * QueryStartEvent arrived here at T0
+       * TaxiQlQueryResultEvent arrived here at T0 + 100 microseconds
+       * QueryCompletedEvent arrived here T0 + 102 microseconds
+       *
+       * a simple scope.launch { } will process QueryStartEvent, TaxiQlQueryResultEvent and  QueryCompletedEvent
+       * on 3 different threads as th1, th2 and th3. Due to context switching th3 can finish before th1 in which case
+       * we failed to update the QUERY_SUMMARY table correctly and hence query history will present missing queries.
+       *
+       * To avoid his, we launch our jobs lazily here scope.launch(start = CoroutineStart.LAZY) and push the lazy jobs to a channel
+       * which guarantees the sequential execution.
+       */
+      val job = scope.launch(start = CoroutineStart.LAZY) {
+         logger.trace { "Launched coroutine to dispatch ${event.javaClass.name}" }
          lastWriteTime.set(System.currentTimeMillis())
          when (event) {
             is TaxiQlQueryResultEvent -> persistEvent(event)
@@ -75,6 +111,10 @@ class PersistingQueryEventConsumer(
             is StreamingQueryCancelledEvent -> processStreamingQueryCancelledEvent(event)
          }
       }
+      if (logger.isTraceEnabled) {
+         job.invokeOnCompletion { logger.trace { "coroutine for ${event.javaClass.name} is completed, ${scope.isActive}" } }
+      }
+      channel.trySend(job)
    }
 
    private fun persistEvent(event: QueryStartEvent) {
