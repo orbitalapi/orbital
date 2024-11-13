@@ -35,7 +35,7 @@ import { sanitiseNamespace } from '../../../utils/utils';
   template: `
     <div class="form-container">
       <form class="form-body" #swaggerForm="ngForm">
-        <tui-notification status="info" class="open-api-notification" [tuiHint]="tooltip" tuiHintAppearance="onDark" tuiHintShowDelay="100">
+        <tui-notification appearance="info" class="open-api-notification" [tuiHint]="tooltip" tuiHintAppearance="onDark" tuiHintShowDelay="100">
           Understanding the difference between adding a project vs adding a data source
         </tui-notification>
         <ng-template #tooltip>
