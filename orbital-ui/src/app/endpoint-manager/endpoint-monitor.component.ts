@@ -96,13 +96,13 @@ type MetricsPeriodToDescription = {
       new
       *ngIf="isChartLoading"
     ></progress>
-    <tui-notification status="error" class="error-notification" *ngIf="chartLoadingError">
+    <tui-notification appearance="error" class="error-notification" *ngIf="chartLoadingError">
       {{ chartLoadingError }}
     </tui-notification>
-    <tui-notification status="error" class="error-notification" *ngIf="streamLoadingError">
+    <tui-notification appearance="error" class="error-notification" *ngIf="streamLoadingError">
       {{ streamLoadingError }}
     </tui-notification>
-    <tui-notification status="neutral" class="error-notification" *ngIf="!metricsAvailable">
+    <tui-notification appearance="neutral" class="error-notification" *ngIf="!metricsAvailable">
       It looks like metrics are unavailable. Check the docs on <a target="_blank" class="link"
                                                                   [href]="UiCustomisations.docsLinks.configureMetricsReporting">how
       to configure Prometheus</a> to capture observability data on queries and streams.
