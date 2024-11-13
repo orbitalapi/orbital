@@ -16,6 +16,9 @@ import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.utils.asA
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
+import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import org.junit.Rule
@@ -25,6 +28,7 @@ import reactor.test.StepVerifier
 import java.nio.file.Files
 import java.time.Duration
 import java.util.concurrent.TimeUnit
+import kotlin.io.path.writeText
 
 class GitRepositoryIntegrationTest : BaseGitTest() {
 
@@ -102,6 +106,48 @@ class GitRepositoryIntegrationTest : BaseGitTest() {
          }
          .thenCancel()
          .verify()
+   }
+
+   @Test
+   fun `if working copy cannot be updated because of local changes then loader becomes unhealthy`() {
+      deployTestProjectToRemoteGitPath()
+
+      val (eventDispatcher, workspaceProjectsService) = createWorkspaceProjectService()
+      val (repositoryManager, schemaClient) = createProjectManager(eventDispatcher)
+
+      // Test: Add the git repository
+      workspaceProjectsService.createGitProjectStore(
+         GitProjectStoreChangeRequest(
+            "my-git-repo",
+            uri = remoteRepoDir.root.toURI().toASCIIString(),
+            branch = "master",
+         )
+      )
+
+      StepVerifier
+         .create(eventDispatcher.gitSpecAdded)
+         .expectNextMatches { gitSpecAddedEvent ->
+            gitSpecAddedEvent.spec.name == "my-git-repo"
+         }.verifyTimeout(Duration.ofSeconds(1))
+
+      await().atMost(1, TimeUnit.SECONDS)
+         .until<Boolean> { repositoryManager.gitLoaders.size == 1 }
+
+      val gitLoader = repositoryManager.gitLoaders.single()
+      gitLoader.syncNow()
+
+      // Modify a file in the working dir, so that future syncs will break
+      gitLoader.workingDir.resolve("src/hello.taxi")
+         .writeText("// This will prevent a git pull")
+      // Make similar changes on the remote to the same file
+      commitChanges()
+
+      val syncResult = gitLoader.syncNow()
+      syncResult.isClean.shouldBeFalse()
+      syncResult.behindCount.shouldBe(1)
+
+      repositoryManager.unhealthyLoaders.shouldHaveSize(1)
+
    }
 
    @Test

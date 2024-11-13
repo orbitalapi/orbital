@@ -88,7 +88,7 @@ class GitWorkspaceConfigLoader(
 
    override fun load(createDefaultIfAbsent: Boolean): WorkspaceConfig {
       val sync = repoSync.syncNow()
-      if (sync.successful) {
+      if (sync.successful && sync.isClean) {
          gitStatusSink.emitNext(LoaderStatus.OK, Sinks.EmitFailureHandler.FAIL_FAST)
          return loadWorkspace()
       } else {
