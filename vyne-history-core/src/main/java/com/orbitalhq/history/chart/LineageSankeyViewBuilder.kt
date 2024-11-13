@@ -1,7 +1,18 @@
 package com.orbitalhq.history.chart
 
 import com.google.common.collect.MultimapBuilder
-import com.orbitalhq.models.*
+import com.orbitalhq.models.DataSource
+import com.orbitalhq.models.EvaluatedExpression
+import com.orbitalhq.models.FailedSearch
+import com.orbitalhq.models.OperationResult
+import com.orbitalhq.models.Provided
+import com.orbitalhq.models.TypeNamedInstance
+import com.orbitalhq.models.TypedCollection
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
+import com.orbitalhq.models.TypedObject
+import com.orbitalhq.models.TypedValue
+import com.orbitalhq.models.UndefinedSource
 import com.orbitalhq.query.history.QuerySankeyChartRow
 import com.orbitalhq.query.history.SankeyNodeType
 import com.orbitalhq.query.history.SankeyOperationNodeDetails
@@ -9,7 +20,6 @@ import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.utils.orElse
-import com.sun.jna.platform.unix.X11.Atom
 import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
@@ -41,7 +51,22 @@ class LineageSankeyViewBuilder(private val schema: Schema) {
    fun append(instance: TypedInstance) {
       when (instance) {
          is TypedObject -> buildForObject(instance)
+         is TypedValue -> buildForForTypedValue(instance)
          else -> logger.warn { "No Sankey build strategy for TypedInstance of type ${instance::class.simpleName}" }
+      }
+   }
+
+   private fun buildForForTypedValue(instance: TypedValue) {
+      when {
+         instance.type.isScalar -> {
+            val target = SankeyNode(SankeyNodeType.ProvidedInput, instance.typeName)
+               // SankeyNode.forAttribute(instance.nodeId, emptyList())
+            appendDataSource(instance.source, target)
+         }
+         instance.value is TypedObject -> buildForObject(instance.value as TypedObject, emptyList())
+         else -> {
+            logger.warn { "Appending sankey chart data failed.  Expected either a scalar value, or a TypedObject - but neither condition was true.  ValueType = ${instance::class.simpleName}" }
+         }
       }
    }
 
