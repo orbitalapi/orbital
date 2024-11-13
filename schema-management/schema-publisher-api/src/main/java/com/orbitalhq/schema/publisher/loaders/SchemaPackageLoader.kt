@@ -66,12 +66,14 @@ data class LoaderStatus(
    companion object {
       val STARTING = LoaderStatus(LoaderState.STARTING, "Starting...")
       val OK = LoaderStatus(LoaderState.OK, "Ok")
+      fun warning(message: String) = LoaderStatus(LoaderState.WARNING, message)
       fun error(message: String) = LoaderStatus(LoaderState.ERROR, message)
    }
 
    enum class LoaderState {
       OK,
       ERROR,
+      WARNING,
       STARTING
 
    }

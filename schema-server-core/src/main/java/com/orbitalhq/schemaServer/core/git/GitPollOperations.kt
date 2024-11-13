@@ -5,6 +5,7 @@ import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.MergeCommand
 import org.eclipse.jgit.api.PullResult
 import org.eclipse.jgit.api.TransportConfigCallback
+import org.eclipse.jgit.lib.BranchTrackingStatus
 import org.eclipse.jgit.lib.Ref
 import org.eclipse.jgit.lib.Repository
 import org.eclipse.jgit.merge.MergeStrategy
@@ -14,15 +15,16 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Collections.singleton
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
+
 /**
  * Provides a wrapper around polling / fetching / pulling from a git repository
  */
 open class GitPollOperations(
-    val workingDir: File,
-    private val config: GitRepositoryConnectionConfig,
+   val workingDir: File,
+   private val config: GitRepositoryConnectionConfig,
 
-    ) : AutoCloseable {
+   ) : AutoCloseable {
    protected val gitDir: File = workingDir.resolve(".git")
 
    @Suppress("JoinDeclarationAndAssignment")
@@ -35,9 +37,9 @@ open class GitPollOperations(
 
    init {
       transportConfigCallback = if (config.sshAuth != null) {
-          SshTransportConfigCallback(config.sshAuth!!)
+         SshTransportConfigCallback(config.sshAuth!!)
       } else if (config.credentials != null) {
-          CredentialsTransportConfigCallback(config.credentials!!)
+         CredentialsTransportConfigCallback(config.credentials!!)
       } else {
          null
       }
@@ -74,10 +76,14 @@ open class GitPollOperations(
             val pullResult = pull()
             logger.debug { "Pull for ${config.redactedUrl} completed" }
             val branchRef = pullResult.fetchResult.getAdvertisedRef(checkoutRef.name)
+            val trackingStatus = BranchTrackingStatus.of(git.repository, git.repository.branch)
             GitSyncStatus(
                successful = true,
                pulledChanges = pullResult.fetchResult.trackingRefUpdates.isNotEmpty(),
                hasUnresolvedMerges = pullResult.mergeResult?.mergedCommits?.isNotEmpty() ?: false,
+               hasUnresolvedRebase = pullResult.rebaseResult?.conflicts?.isNotEmpty() ?: false,
+               aheadCount = trackingStatus.aheadCount,
+               behindCount = trackingStatus.behindCount,
                repository = config,
                checkoutRoot = workingDir.toPath(),
                currentRef = GitRef(branchRef),
@@ -95,18 +101,25 @@ open class GitPollOperations(
                successful = true,
                pulledChanges = true,
                hasUnresolvedMerges = false,
+               hasUnresolvedRebase = false,
+               aheadCount = 0,
+               behindCount = 0,
                repository = config,
                checkoutRoot = workingDir.toPath(),
                currentRef = GitRef(ref)
             )
          }
-      } catch (e:Exception) {
-         val errorMessage = "Failed to perform git sync to config ${config.name} at ${config.redactedUrl} - ${e::class.simpleName} - ${e.message}"
+      } catch (e: Exception) {
+         val errorMessage =
+            "Failed to perform git sync to config ${config.name} at ${config.redactedUrl} - ${e::class.simpleName} - ${e.message}"
          logger.warn { errorMessage }
          GitSyncStatus(
             successful = false,
             pulledChanges = false,
             hasUnresolvedMerges = false,
+            hasUnresolvedRebase = false,
+            aheadCount = 0,
+            behindCount = 0,
             repository = config,
             checkoutRoot = workingDir.toPath(),
             errorMessage = errorMessage
@@ -123,7 +136,7 @@ open class GitPollOperations(
          .setDirectory(workingDir)
          .setURI(config.uri)
          .setBranchesToClone(singleton(refBranchName))
-         .setBranch( refBranchName )
+         .setBranch(refBranchName)
          .setTransportConfigCallback(transportConfigCallback)
          .call()
          .use {
@@ -167,27 +180,43 @@ data class GitRef(
    val name: String
 ) {
    constructor(ref: Ref) : this(ref.objectId.toString(), ref.name)
+
    companion object {
       val UNKNOWN = GitRef("UNKNOWN", "UNKNOWN")
    }
 }
+
 data class GitSyncStatus(
    val successful: Boolean,
    val pulledChanges: Boolean,
    val hasUnresolvedMerges: Boolean,
+   val hasUnresolvedRebase: Boolean,
+   val aheadCount: Int,
+   val behindCount: Int,
    val repository: GitRepositoryConnectionConfig,
    val checkoutRoot: Path,
    val currentRef: GitRef? = null,
    val errorMessage: String? = null
 ) {
+   val isClean = aheadCount == 0 && behindCount == 0 && !hasUnresolvedRebase && !hasUnresolvedMerges
    val description: String
       get() {
 
-         val stateMessage = if (successful) {
-            "success"
-         } else {
-            "failed: $errorMessage"
+         val stateMessage = when {
+            successful && isClean -> "success"
+            successful && !isClean -> "has warnings"
+            else -> "failed: $errorMessage"
          }
-         return "Git sync for ${repository.description} $stateMessage"
+         val cleanMessage = if (isClean) {
+            "repository up to date"
+         } else {
+            listOfNotNull(
+               if (aheadCount > 0) "repository is ahead by $aheadCount commit(s)" else null,
+               if (behindCount > 0) "repository is behind by $behindCount commit(s)" else null,
+               if (hasUnresolvedRebase) "repository has unresolved rebase conflicts" else null,
+               if (hasUnresolvedMerges) "repository has unresolved merge conflicts" else null,
+            ).joinToString(", ")
+         }
+         return "Git sync for ${repository.description} $stateMessage, $cleanMessage"
       }
 }

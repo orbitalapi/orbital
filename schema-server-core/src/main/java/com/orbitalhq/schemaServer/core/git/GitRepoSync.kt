@@ -27,6 +27,9 @@ class GitRepoSync(
                successful = false,
                pulledChanges = false,
                hasUnresolvedMerges = false,
+               hasUnresolvedRebase = false,
+               aheadCount = 0,
+               behindCount = 0,
                repository = config,
                checkoutRoot = workingDir,
                errorMessage = e.message
@@ -76,6 +79,9 @@ class GitRepoSync(
             successful = false,
             pulledChanges = false,
             hasUnresolvedMerges = false,
+            hasUnresolvedRebase = false,
+            aheadCount = 0,
+            behindCount = 0,
             repository = config,
             checkoutRoot = workingDir,
             errorMessage = e.message
@@ -83,7 +89,7 @@ class GitRepoSync(
       } finally {
           afterGitOp()
       }
-      if (result.successful) {
+      if (result.successful && result.isClean) {
          logger.debug { result.description }
       } else {
          logger.warn { result.description }

@@ -125,25 +125,33 @@ class GitSchemaPackageLoader(
             }
          }
          .filter { p -> p != null }
+         .doOnNext { p ->
+            logger.debug { "New source package event: ${p.hashCode()}" }
+         }
          .distinctUntilChanged()
    }
 
-   fun syncNow() {
+   fun syncNow(): GitSyncStatus {
       logger.info { "syncing git repo to $workingDir" }
-      updateLoaderStatus(GitRepoSync.syncNow(workingDir, config))
+      val status = updateLoaderStatus(GitRepoSync.syncNow(workingDir, config))
       logger.info { "synced git repo to $workingDir" }
+      return status
    }
 
-   private fun updateLoaderStatus(syncStatus: GitSyncStatus) {
-      if (syncStatus.successful) {
-         gitStatusSink.emitNext(LoaderStatus.OK, RetryFailOnSerializeEmitHandler)
-      } else {
-         gitStatusSink.emitNext(
-            LoaderStatus.error(
-               syncStatus.errorMessage ?: "An unknown error occurred whilst pulling the git repository"
-            ), RetryFailOnSerializeEmitHandler
+   private fun updateLoaderStatus(syncStatus: GitSyncStatus):GitSyncStatus {
+      val loaderStatus = when {
+         syncStatus.successful && syncStatus.isClean -> LoaderStatus.OK
+         !syncStatus.successful -> LoaderStatus.error(
+            syncStatus.errorMessage ?: "An unknown error occurred whilst pulling the git repository"
          )
+         syncStatus.successful && !syncStatus.isClean -> LoaderStatus.warning(
+            syncStatus.description
+         )
+         // You shouldn't hit this
+         else -> error("The loader is in an unknown state: ${syncStatus}")
       }
+      gitStatusSink.emitNext(loaderStatus, RetryFailOnSerializeEmitHandler)
+      return syncStatus
    }
 
    override val root: URI

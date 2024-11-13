@@ -18,7 +18,9 @@ object GitFileLoaderStatus {
 
          val mergedStatus = when {
             gitStatusMessage.state == LoaderStatus.LoaderState.ERROR -> gitStatusMessage
+            gitStatusMessage.state == LoaderStatus.LoaderState.WARNING -> gitStatusMessage
             fileStatusMessage.state == LoaderStatus.LoaderState.ERROR -> fileStatusMessage
+            fileStatusMessage.state == LoaderStatus.LoaderState.WARNING -> fileStatusMessage
             gitStatusMessage == LoaderStatus.STARTING || fileStatusMessage == LoaderStatus.STARTING -> LoaderStatus.STARTING
             gitStatusMessage == LoaderStatus.OK && fileStatusMessage == LoaderStatus.OK -> fileStatusMessage
             else -> {

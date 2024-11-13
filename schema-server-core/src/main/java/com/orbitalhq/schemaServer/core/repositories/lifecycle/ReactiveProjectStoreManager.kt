@@ -140,6 +140,7 @@ class ReactiveProjectStoreManager(
       val stateSubscription = loader.loaderStatus.subscribe { status ->
          when (status.state) {
             LoaderStatus.LoaderState.ERROR -> _unhealthyLoaders[loader] = status
+            LoaderStatus.LoaderState.WARNING -> _unhealthyLoaders[loader] = status
             else -> _unhealthyLoaders.remove(loader)
          }
       }
