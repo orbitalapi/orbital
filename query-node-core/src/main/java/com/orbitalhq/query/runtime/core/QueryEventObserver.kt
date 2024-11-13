@@ -15,17 +15,13 @@ import com.orbitalhq.query.StreamingQueryCancelledEvent
 import com.orbitalhq.query.TaxiQlQueryExceptionEvent
 import com.orbitalhq.query.TaxiQlQueryResultEvent
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.onEach
 import lang.taxi.query.TaxiQLQueryString
 import mu.KotlinLogging
 import java.time.Instant
-import java.util.concurrent.Executors
 
-private val statsDispatcher = Executors.newFixedThreadPool(16).asCoroutineDispatcher()
 
 /**
  * Observes lifecycle events from the query, and creates QueryEventConsumer events.
@@ -44,8 +40,6 @@ class QueryLifecycleEventObserver(
    companion object {
       private val logger = KotlinLogging.logger {}
    }
-
-   private val statisticsScope = CoroutineScope(statsDispatcher)
 
    /**
     * Attaches an observer to the result flow of the QueryResponse, returning
