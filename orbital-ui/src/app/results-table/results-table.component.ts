@@ -322,8 +322,20 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   private isValidDate(dateString) {
     if (!dateString) return false;
-    const date = new Date(dateString);
-    return !isNaN(date.getTime());
+    const formats = [
+      "YYYY-MM-DD",
+      "YYYY/MM/DD",
+      "DD-MM-YYYY",
+      "DD/MM/YYYY",
+      "MM-DD-YYYY",
+      "MM/DD/YYYY",
+      "YYYY-MM-DDTHH:mm:ss.sssZ", // ISO 8601 with time (including ms) and timezone
+      "YYYY-MM-DDTHH:mm:ss.sss", // ISO 8601 with time (including ms)
+      "YYYY-MM-DDTHH:mm:ssZ", // ISO 8601 with time and timezone
+      "YYYY-MM-DDTHH:mm:ss",  // ISO 8601 with time
+    ];
+    const isDate = moment(dateString, formats, true).isValid();
+    return isDate;
   }
 
   private reinstateColumnState() {

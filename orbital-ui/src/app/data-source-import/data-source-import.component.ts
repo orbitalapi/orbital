@@ -12,7 +12,7 @@ import {ActivatedRoute, Router} from '@angular/router';
 import {BehaviorSubject} from 'rxjs';
 import {Observable} from 'rxjs/internal/Observable';
 import {shareReplay} from 'rxjs/operators';
-import { TuiAlertService, TuiNotification } from '@taiga-ui/core';
+import {TuiAlertService, TuiButton, TuiNotification} from '@taiga-ui/core';
 import {SchemaSubmissionResult, TypesService} from '../services/types.service';
 import {Message, Schema} from '../services/schema';
 import {
@@ -39,7 +39,7 @@ import {showAlertForMessage} from "../alert-with-dismiss/alert-with-dismiss.comp
   selector: 'app-data-source-import',
   styleUrls: ['./data-source-import.component.scss'],
   standalone: true,
-  imports: [CommonModule, DataSourcePanelComponent, TuiNotification, SchemaMemberTypeExplorerModule, NgIf],
+  imports: [CommonModule, DataSourcePanelComponent, TuiNotification, SchemaMemberTypeExplorerModule, NgIf, TuiButton],
   template: `
     <div class="importer-step step" *ngIf="(wizardStep | async) === 'importSchema'">
       <h3 *ngIf="title">{{ title }}</h3>
@@ -55,8 +55,12 @@ import {showAlertForMessage} from "../alert-with-dismiss/alert-with-dismiss.comp
           [working]="working"
           [useIslandContainer]="useIslandContainer"
         ></app-data-source-panel>
-        <tui-notification (close)="schemaConversionError = ''" status="error" *ngIf="schemaConversionError"
-                          class="notification-error">{{ schemaConversionError }}
+        <tui-notification appearance="error"
+                          *ngIf="schemaConversionError"
+                          class="notification-error"
+        >
+          {{ schemaConversionError }}
+          <button tuiIconButton iconStart="@tui.x" type="button" (click)="schemaConversionError = ''">Close</button>
         </tui-notification>
       </div>
     </div>
@@ -76,12 +80,12 @@ import {showAlertForMessage} from "../alert-with-dismiss/alert-with-dismiss.comp
       ></app-schema-member-type-explorer>
     </div>
     <tui-notification
-      [status]="schemaSaveResultMessage.severity.toLowerCase()"
-      *ngIf="schemaSaveResultMessage && schemaSaveResultMessage.severity === 'FAILURE'"
+      *ngIf="schemaSaveResultMessage?.severity === 'FAILURE'"
+      appearance="error"
       class="notification-error"
-      (close)="schemaSaveResultMessage = null"
     >
-      {{ schemaSaveResultMessage.message }}
+      {{ schemaSaveResultMessage?.message }}
+      <button tuiIconButton iconStart="@tui.x" type="button" (click)="schemaSaveResultMessage = null">Close</button>
     </tui-notification>
   `,
   host: {'class': appInstanceType.appType},

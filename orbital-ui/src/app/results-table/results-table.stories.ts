@@ -1,6 +1,10 @@
-import { moduleMetadata } from "@storybook/angular";
+import {HttpClientModule} from '@angular/common/http';
+import {importProvidersFrom} from '@angular/core';
+import {applicationConfig, moduleMetadata} from '@storybook/angular';
 import { CommonModule } from "@angular/common";
-import { BrowserModule } from "@angular/platform-browser";
+import {of} from 'rxjs';
+import {Environment, ENVIRONMENT} from '../services/environment';
+import {QueryService} from '../services/query.service';
 import {
   findType,
   TypeCollection,
@@ -14,10 +18,11 @@ const schema = testSchema;
 const typeNamedInstance: TypeNamedInstance = {
   typeName: "demo.Customer",
   value: {
-    id: { typeName: "demo.CustomerId", value: 1 },
+    id: { typeName: "demo.CustomerId", value: "1812" },
     name: { typeName: "demo.CustomerName", value: "Jimmy" },
     email: { typeName: "demo.CustomerEmailAddress", value: "jimmy@demo.com" },
     postcode: { typeName: "demo.Postcode", value: "SW11" },
+    date: { typeName: "demo.Date", value: "2007-09-10T16:46:03.905Z" },
     balance: {
       typeName: "demo.RewardsAccountBalance",
       value: {
@@ -70,27 +75,41 @@ const typedInstance: TypedInstance = {
 
 export default {
   title: "Result table",
-
   decorators: [
     moduleMetadata({
       declarations: [],
-      imports: [CommonModule, BrowserModule, ResultsTableModule],
+      imports: [CommonModule, ResultsTableModule],
     }),
+    applicationConfig({
+      providers: [
+        {
+          provide: ENVIRONMENT,
+          useValue: {
+            serverUrl: "http://localhost:9022",
+            production: false,
+          } as Environment,
+        },
+        QueryService,
+        importProvidersFrom(
+          HttpClientModule,
+        )
+      ]
+    })
   ],
 };
 
 export const Default = () => {
   return {
     template: `<div style="padding: 40px; width: 100%; height: 250px" >
-    <app-results-table  [type]="type" [schema]="schema" [instance]="typedInstance"></app-results-table>
+    <app-results-table  [type]="type" [schema]="schema" [instances$]="typedInstance"></app-results-table>
     <hr>
-    <app-results-table  [type]="type" [schema]="schema" [instance]="typeNamedInstance"></app-results-table>
+    <app-results-table  [type]="type" [schema]="schema" [instances$]="typeNamedInstance"></app-results-table>
     </div>`,
     props: {
       schema,
       type: typedInstance.type,
-      typeNamedInstance,
-      typedInstance,
+      typeNamedInstance: of(typeNamedInstance),
+      typedInstance: of(typedInstance),
     },
   };
 };
@@ -103,18 +122,18 @@ export const Collections = () => {
   return {
     template: `<div style="padding: 40px; width: 100%; height: 250px" >
     <app-results-table [schema]="schema"
-        [instance]="typedInstanceArray"
+        [instances$]="typedInstanceArray"
         [type]="type"></app-results-table>
     <hr>
     <app-results-table [schema]="schema"
                         [type]="type"
-                        [instance]="typeNamedInstanceArray"></app-results-table>
+                        [instances$]="typeNamedInstanceArray"></app-results-table>
     </div>`,
     props: {
       type: typedInstance.type,
       schema,
-      typeNamedInstanceArray: [typeNamedInstance, typeNamedInstance],
-      typedInstanceArray: [typedInstance, typedInstance],
+      typeNamedInstanceArray: of([typeNamedInstance, typeNamedInstance]),
+      typedInstanceArray: of([typedInstance, typedInstance]),
     },
   };
 };

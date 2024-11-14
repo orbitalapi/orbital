@@ -25,7 +25,7 @@ import {TaxiPackageConfigComponent} from './taxi-package-config.component';
   template: `
     <div class='form-header-text' *ngIf="editable">
       <p>Read projects directly from the local machine.</p>
-      <tui-notification status='warning'>Disk based projects are great for getting started and dev-local
+      <tui-notification appearance='warning'>Disk based projects are great for getting started and dev-local
         experiments,
         however you should consider storing your project in a git repository in production
       </tui-notification>

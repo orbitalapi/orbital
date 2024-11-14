@@ -24,12 +24,12 @@ import { Message } from '../../../services/schema';
           You can make any required changes below before continuing.
       </p>
       <tui-notification
-              [status]="schemaSaveResultMessage.severity.toLowerCase()"
-              *ngIf="schemaSaveResultMessage"
-              class="notification"
-              (close)="schemaSaveResultMessage = null"
+        [appearance]="schemaSaveResultMessage.severity.toLowerCase()"
+        *ngIf="schemaSaveResultMessage"
+        class="notification"
       >
-          {{ schemaSaveResultMessage.message }}
+        {{ schemaSaveResultMessage.message }}
+        <button tuiIconButton iconStart="@tui.x" type="button" (click)="schemaSaveResultMessage = null">Close</button>
       </tui-notification>
       <app-code-editor class="code-editor" [(content)]="pendingEdits.sources[0].content"></app-code-editor>
       <div class="form-button-bar">
