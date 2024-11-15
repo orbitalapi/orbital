@@ -1,6 +1,7 @@
 package com.orbitalhq.models
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.orbitalhq.errors.OrbitalQueryException
 import com.orbitalhq.models.conditional.ConditionalFieldSetEvaluator
 import com.orbitalhq.models.facts.*
 import com.orbitalhq.models.format.FormatDetector
@@ -598,6 +599,21 @@ class TypedObjectFactory(
                   inPlaceQueryEngine.findType(requestedType)
                      .toList()
                } catch (e: Exception) {
+                  // OrbitalQueryException comes from a policy expression: e.g.when below `else` branch is triggered:
+                  /*policy AdminRestrictedInstrument against Instrument  (userInfo : UserInfo) -> {
+                     read {
+                        when {
+                           userInfo.roles.contains('QueryRunner') -> Instrument
+                           else -> throw((NotAuthorizedError) { message: 'Not Authorized' })
+                        }
+                     }
+                  }*/
+                  // so, we need to catch OrbitalQueryException and re-throw to halt the execution.
+                  // a query like find { fist(Instrument[]) } against the above policy would hit the debug point placed here.
+                  if (e is OrbitalQueryException) {
+                     throw e
+                  }
+
                   // handle com.orbitalhq.query.UnresolvedTypeInQueryException
                   emptyList()
                }

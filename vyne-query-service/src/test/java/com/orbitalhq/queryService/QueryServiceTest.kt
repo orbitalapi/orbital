@@ -1,24 +1,23 @@
 package com.orbitalhq.queryService
 
-import app.cash.turbine.test
 import app.cash.turbine.testIn
-import com.winterbe.expekt.should
+import com.orbitalhq.errors.OrbitalQueryException
 import com.orbitalhq.models.json.parseJsonModel
 import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.ValueWithTypeName
 import com.orbitalhq.query.runtime.core.TEXT_CSV
-import com.orbitalhq.schemas.fqn
+import com.winterbe.expekt.should
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runBlockingTest
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Test
 import org.springframework.http.MediaType
+import reactor.test.StepVerifier
 import kotlin.test.assertEquals
 import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
@@ -33,8 +32,6 @@ class QueryServiceTest : BaseQueryServiceTest() {
       setupTestService()
    }
 
-
-
    @Test
    fun `csv request produces expected results regardless of resultmode`() = runTest {
       ResultMode.values().forEach { resultMode ->
@@ -44,8 +41,6 @@ class QueryServiceTest : BaseQueryServiceTest() {
 orderId_0,john,Instrument_0""".trimMargin().withoutWhitespace()
          assertEquals(expected, (next as String).withoutWhitespace())
       }
-
-
    }
 
    @Test
@@ -185,7 +180,65 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
       val turbine =
          queryService.submitVyneQlQueryStreamingResponse("""find { Empty[] }""", ResultMode.TYPED, MediaType.APPLICATION_JSON_VALUE).testIn(this)
 
-      turbine.awaitError()
+      val errorResponse = turbine.awaitItem()
+      errorResponse.should.not.be.`null`
+      (errorResponse as ValueWithTypeName).typeName.should.equal("com.orbitalhq.errors.ErrorMessage")
+      (errorResponse as ValueWithTypeName).value.should.equal("No data sources were found that can return Empty[]")
+      turbine.awaitComplete()
+   }
+
+   @Test
+   fun `policy thrown errors propagated`() = runTest {
+      stubService.addResponse(
+         "getClients", vyne.parseJsonModel(
+            "Client[]", """
+            [{
+               "clientId": 1,
+               "clientName": "name"
+            }]
+         """.trimIndent()
+         )
+      )
+      val response = queryService.submitVyneQlQuery(
+         """find { Client[] }""".trimIndent(),
+         ResultMode.TYPED,
+         MediaType.APPLICATION_JSON_VALUE,
+         authenticationWithRoles(listOf("QueryRunners"))
+      ).block()
+
+      StepVerifier.create(response.body)
+         .expectSubscription()
+         .expectErrorMatches {
+            (it is OrbitalQueryException) && it.message == "Not Authorized"
+         }
+         .verify()
+   }
+
+   @Test
+   fun `policy thrown errors propagated for queries with function expressions`() = runTest {
+      stubService.addResponse(
+         "getClients", vyne.parseJsonModel(
+            "Client[]", """
+            [{
+               "clientId": 1,
+               "clientName": "name"
+            }]
+         """.trimIndent()
+         )
+      )
+      val response = queryService.submitVyneQlQuery(
+         """find { first(Client[]) }""".trimIndent(),
+         ResultMode.TYPED,
+         MediaType.APPLICATION_JSON_VALUE,
+         authenticationWithRoles(listOf("QueryRunners"))
+      ).block()
+
+      StepVerifier.create(response.body)
+         .expectSubscription()
+         .expectErrorMatches {
+            (it is OrbitalQueryException) && it.message == "Not Authorized"
+         }
+         .verify()
    }
 
 
