@@ -5,8 +5,11 @@ import com.hazelcast.test.TestHazelcastInstanceFactory
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
+import com.orbitalhq.AuthClaimType
+import com.orbitalhq.UserType.UsernameTypeDefinition
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneProvider
+import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.metrics.NoOpMetricsReporter
@@ -27,21 +30,28 @@ import com.orbitalhq.spring.config.TestDiscoveryClientConfig
 import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.testVyne
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
+import org.jose4j.jwk.RsaJwkGenerator
+import org.jose4j.jws.AlgorithmIdentifiers
+import org.jose4j.jws.JsonWebSignature
+import org.jose4j.jwt.JwtClaims
 import org.junit.jupiter.api.BeforeAll
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder
+import org.springframework.security.core.Authentication
+import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 import java.io.ByteArrayOutputStream
+import java.util.UUID
 
 @Testcontainers
 abstract class BaseQueryServiceTest {
@@ -66,6 +76,7 @@ abstract class BaseQueryServiceTest {
          type TradeId inherits String
          type InstrumentName inherits String
          type EmptyId inherits String
+         type Role inherits String
 
          model Order {
             orderId: OrderId
@@ -96,12 +107,33 @@ abstract class BaseQueryServiceTest {
             id: EmptyId
          }
 
+         model Client {
+            clientId: ClientId inherits String
+            clientName: ClientName inherits String
+         }
+         
+         model UserInfo inherits com.orbitalhq.auth.AuthClaims {
+            roles: Role[]
+         }
+         
+         policy AdminRestrictedClients against Client  (userInfo : UserInfo) -> {
+            read {
+               when {
+                  userInfo.roles.contains('Admin') -> Client
+                  else -> throw((NotAuthorizedError) { message: 'Not Authorized' })
+               }
+            }
+         }
+         
          service MultipleInvocationService {
             operation getOrders(): Order[]
             operation getTrades(orderIds: OrderId): Trade
             operation getTrades(orderIds: OrderId[]): Trade[]
             operation getInstrument(instrumentId: InstrumentId): Instrument
+            operation getClients(): Client[]
          }
+         
+         
       """.trimIndent()
    }
 
@@ -125,7 +157,7 @@ abstract class BaseQueryServiceTest {
       schema: String = testSchema,
       prepareStubCallback: (StubService, Vyne) -> Unit = { stub, vyne -> this.prepareStubService(stub, vyne) }
    ) {
-      val (vyne, stubService) = testVyne(schema)
+      val (vyne, stubService) = testVyne(schema, AuthClaimType.AuthClaimsTypeDefinition, ErrorType.ErrorTypeDefinition, UsernameTypeDefinition)
       setupTestService(vyne, stubService, historyDbWriter)
       prepareStubCallback(stubService, vyne)
    }
@@ -150,6 +182,40 @@ abstract class BaseQueryServiceTest {
          QueryResponseFormatter(listOf(CsvFormatSpec))
       )
       return queryService
+   }
+
+   protected fun authenticationWithRoles(roles: List<String>): Authentication {
+      val rsaJsonWebKey = RsaJwkGenerator.generateJwk(2048)
+      rsaJsonWebKey.apply {
+         keyId = UUID.randomUUID().toString()
+         algorithm = AlgorithmIdentifiers.RSA_USING_SHA256
+         use = "sig"
+      }
+      val claims = JwtClaims().apply {
+         jwtId = UUID.randomUUID().toString() // unique identifier for the JWT
+         issuer = "https://login.microsoftonline.com/0592515b-94ca-42b2-ad9b-65bfb2104867/v2.0" // identifies the principal that issued the JWT
+         subject = "4f76ac09-a587-48ec-a22a-43060003ba2f" // identifies the principal that is the subject of the JWT
+         setAudience("https://host/api") // identifies the recipients that the JWT is intended for
+         setExpirationTimeMinutesInTheFuture(10F) // identifies the expiration time on or after which the JWT MUST NOT be accepted for processing
+         setIssuedAtToNow() // identifies the time at which the JWT was issued
+         setClaim("azp", "example-client-id") // Authorized party - the party to which the ID Token was issued
+         setClaim("scope", "openid profile email") // Scope Values
+         setClaim("roles", roles)
+      }
+
+      val clientCredentialsBearerToken = JsonWebSignature().apply {
+         payload = claims.toJson()
+         key = rsaJsonWebKey.privateKey // the key to sign the JWS with
+         algorithmHeaderValue = rsaJsonWebKey.algorithm // Set the signature algorithm on the JWT/JWS that will integrity protect the claims
+         keyIdHeaderValue = rsaJsonWebKey.keyId // a hint indicating which key was used to secure the JWS
+         setHeader("typ", "JWT") // the media type of this JWS
+      }.compactSerialization
+
+
+      return JwtAuthenticationToken( NimbusReactiveJwtDecoder.withPublicKey(rsaJsonWebKey.getRsaPublicKey()).build().decode(clientCredentialsBearerToken).block())
+
+
+
    }
 
    public fun prepareStubService(stubService: StubService, vyne: Vyne) {
