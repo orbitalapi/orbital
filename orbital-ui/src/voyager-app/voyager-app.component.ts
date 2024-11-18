@@ -227,7 +227,7 @@ export class VoyagerAppComponent implements OnInit {
 
   ngOnInit() {
     if (this.router.url === '/') {
-      this.router.navigate([`examples/${ExampleGroups[0].snippets[0].slug}`])
+      this.router.navigate([`examples/${ExampleGroups[0].snippets[0].slug}`], {replaceUrl: true})
     }
   }
 
