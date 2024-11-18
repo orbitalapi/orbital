@@ -8,21 +8,24 @@ import {
   Output
 } from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {fromEventPattern, Observable} from 'rxjs';
-import {Subscription} from 'rxjs';
+import {fromEventPattern, Observable, Subscription} from 'rxjs';
 import {bufferTime, filter, map} from 'rxjs/operators';
 import * as moment from 'moment';
 import {
   AgGridEvent,
   CellClickedEvent,
   ColDef,
+  ColumnMovedEvent,
+  ColumnResizedEvent,
+  FilterChangedEvent,
+  GridApi,
   GridReadyEvent,
-  ValueGetterParams,
-  ColumnMovedEvent, ColumnResizedEvent, GridApi, FilterChangedEvent
+  ValueGetterParams
 } from 'ag-grid-community';
 import {AppConfig, AppInfoService} from '../services/app-info.service';
 import {QueryEditorStoreService} from '../services/query-editor-store.service';
 import {
+  findType,
   InstanceLike,
   isTypedInstance,
   isTypedNull,
@@ -34,9 +37,10 @@ import {
 } from '../services/schema';
 import {BaseTypedInstanceViewer, unwrapValue} from '../object-view/BaseTypedInstanceViewer';
 import {InstanceSelectedEvent} from '../query-panel/instance-selected-event';
-import {ValueWithTypeName} from '../services/models';
+import {isValueWithTypeName, ValueWithTypeName} from '../services/models';
 import {isScalar} from "../object-view/object-view.component";
 import {isNullOrUndefined} from '../utils/utils';
+import {isDateType, isNumericType, PrimitiveTypeNames} from "../services/taxi";
 
 // Define a union of the event types we're interested in persisting,
 // unfortunately ag-grid doesn't expose these in a type safe way
@@ -166,7 +170,9 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       .subscribe((next) => {
         if (this.columnDefs.length === 0) {
           if (next.length > 0) {
-            this.rebuildGridData(next[0]);
+            // Because the results have been reversed, the first item (which
+            // contains the type definition) is actually at the end
+            this.rebuildGridData(next[next.length - 1]);
           }
         }
 
@@ -196,6 +202,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
    * present will be used to determine column names.
    */
   private buildColumnDefinitions(value: InstanceLike) {
+
     const instanceValue = unwrapValue(value);
     const scalar = isScalar(instanceValue);
     if (scalar) {
@@ -208,34 +215,58 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       }];
     } else {
       const attributeNames = Object.keys(instanceValue);
-      const columnDefinitions: ColDef[] = attributeNames.map((fieldName, index) => {
-        const filter = typeof instanceValue[fieldName] === 'number' ?
-          'agNumberColumnFilter' :
-          this.isValidDate(instanceValue[fieldName]) ?
-            'agDateColumnFilter' :
-            'agTextColumnFilter';
+      const modelType = isValueWithTypeName(value) ? findType(this.schema, value.typeName, value.anonymousTypes) : null;
+      this.columnDefs = attributeNames.map((fieldName, index) => {
+        const [filter, fieldType] = this.getColumnFilterAndType(instanceValue, fieldName, modelType, (value as ValueWithTypeName)?.anonymousTypes);
         return {
           resizable: true,
           headerName: fieldName,
           field: fieldName,
           valueGetter: (params: ValueGetterParams) => {
-            return this.unwrap(params.data, fieldName);
+            return this.unwrap(params.data, fieldName, fieldType);
           },
           filter,
           sortable: true
         };
       });
-      this.columnDefs = columnDefinitions;
     }
   }
 
-  private unwrap(instance: any, fieldName: string | null): any {
+
+  /**
+   * Returns the filter based on the type of the column, and the field type (if possible)
+   */
+  private getColumnFilterAndType(instanceValue: InstanceLike, fieldName: string, modelType: Type | null, anonymousTypes: Type[]): [string, Type | null] {
+    if (isNullOrUndefined(modelType) || isNullOrUndefined(anonymousTypes)) {
+      // We don't have a type, do have to guess by looking at the content. This should be rare
+      const filter = typeof instanceValue[fieldName] === 'number' ?
+        'agNumberColumnFilter' :
+        this.isValidDate(instanceValue[fieldName]) ?
+          'agDateColumnFilter' :
+          'agTextColumnFilter';
+      return [filter, null];
+    }
+
+    const field = modelType.attributes[fieldName]
+    const fieldType = findType(this.schema, field.type.parameterizedName, anonymousTypes)
+    const baseType = fieldType.basePrimitiveTypeName;
+    switch (true) {
+      case isDateType(baseType):
+        return ['agDateColumnFilter', fieldType];
+      case isNumericType(baseType):
+        return ['agNumberColumnFilter', fieldType];
+      default:
+        return ['agTextColumnFilter', fieldType];
+    }
+  }
+
+  private unwrap(instance: any, fieldName: string | null, fieldType: Type | null): any {
     if (isTypedInstance(instance) || isTypeNamedInstance(instance)) {
       const object = instance.value;
       if (fieldName === null) {
         return object;
       } else {
-        return this.unwrap(object[fieldName], null);
+        return this.unwrap(object[fieldName], null, fieldType);
       }
     } else if (isTypedNull(instance) || isTypeNamedNull(instance)) {
       return null;
@@ -247,20 +278,22 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
         // In the operation explorer, we can end up with typed instances
         // at the field level, even if the top-level object isn't
         // a typed instance.  We should fix that, but for now, just unwrap
-        return this.unwrap(instance[fieldName], null);
+        return this.unwrap(instance[fieldName], null, fieldType);
       }
     } else if (Array.isArray(instance)) {
       return 'View collections in tree mode';
     } else if (typeof instance === 'object' && instance !== null) {
       return 'View nested structures in tree mode';
+    } else if (isDateType(fieldType?.name)) {
+      return new Date(instance)
     } else {
-      return typeof instance !== 'number' && this.isValidDate(instance) ? new Date(instance) : instance
+      return instance
     }
   }
 
   onCellClicked($event: CellClickedEvent) {
     const rowInstance: ValueWithTypeName = $event.data;
-    const cellInstance = this.unwrap(rowInstance, $event.colDef.field);
+    const cellInstance = this.unwrap(rowInstance, $event.colDef.field, null);
     const untypedCellInstance: UntypedInstance = {
       value: cellInstance,
       type: UnknownType.UnknownType,
@@ -345,7 +378,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       this.gridApi.setFilterModel(filterModel)
     }
     if (!isNullOrUndefined(columnState)) {
-      this.gridApi.applyColumnState({ state: columnState, applyOrder: true })
+      this.gridApi.applyColumnState({state: columnState, applyOrder: true})
     }
     this.gridApi.setGridOption('suppressColumnMoveAnimation', false)
   }
