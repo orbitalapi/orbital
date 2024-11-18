@@ -4,6 +4,7 @@ import {PackageIdentifier} from "../package-viewer/packages.service";
 import {SavedQuery} from "./types.service";
 import {QualifiedNameParser} from "./qualified-name-parser";
 import {isObjectWithProperty} from "../utils/utils";
+import {ValueWithTypeName} from "./models";
 
 export function fqn(input: string): QualifiedName {
   return QualifiedNameParser.parse(input);
@@ -812,7 +813,7 @@ export enum UnknownType {
   UnknownType = 'UnknownType'
 }
 
-export type InstanceLike = TypedInstance | TypedObjectAttributes | TypeNamedInstance;
+export type InstanceLike = TypedInstance | TypedObjectAttributes | TypeNamedInstance | ValueWithTypeName;
 export type InstanceLikeOrCollection = InstanceLike | InstanceLike[];
 export type TypeInstanceOrAttributeSet = TypedInstance | TypedObjectAttributes;
 
