@@ -15,6 +15,11 @@
 
 @include thin-splitter();
 
+.toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
 .row {
   display: flex;
   align-items: center;
@@ -145,4 +150,15 @@ button.disabled {
 
 .parameter-input {
   flex-grow: 1;
+}
+
+
+.will-echo-panel {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: $slate-200;
+  border: 1px solid $slate-300;
 }

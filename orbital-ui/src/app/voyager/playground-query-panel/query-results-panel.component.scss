@@ -84,3 +84,9 @@ app-query-lineage.inline {
     }
   }
 }
+
+tui-notification {
+  font-size: 0.9rem !important;
+  border-bottom: 1px solid $slate-300 !important;
+  border-radius: 0 !important;
+}

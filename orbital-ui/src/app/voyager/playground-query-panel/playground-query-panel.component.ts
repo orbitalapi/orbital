@@ -11,7 +11,7 @@ import {CommonModule} from '@angular/common';
 import {BehaviorSubject, EMPTY, switchMap} from "rxjs";
 import {ExpandingPanelSetModule} from "../../expanding-panelset/expanding-panel-set.module";
 import { TuiAccordion, TuiBadge, TuiTabs, TuiChip } from "@taiga-ui/kit";
-import { TuiExpand, TuiButton } from "@taiga-ui/core";
+import {TuiExpand, TuiButton, TuiNotification} from "@taiga-ui/core";
 import {AngularSplitModule, IOutputData} from "angular-split";
 import {CodeEditorModule} from "../../code-editor/code-editor.module";
 import {StubPanelComponent} from "./stub-panel.component";
@@ -32,7 +32,7 @@ import {isNullOrUndefined} from "../../utils/utils";
   selector: 'app-playground-query-panel',
   standalone: true,
   providers: [ResizeObservableService],
-  imports: [CommonModule, ExpandingPanelSetModule, TuiAccordion, TuiButton, AngularSplitModule, TuiTabs, CodeEditorModule, StubPanelComponent, HttpClientModule, JsonViewerModule, QueryConfigPanelComponent, ExpandablePanelComponent, QueryResultsPanelComponent, LineageDisplayModule, TuiBadge, TuiChip, TuiExpand],
+  imports: [CommonModule, ExpandingPanelSetModule, TuiAccordion, TuiButton, AngularSplitModule, TuiTabs, CodeEditorModule, StubPanelComponent, HttpClientModule, JsonViewerModule, QueryConfigPanelComponent, ExpandablePanelComponent, QueryResultsPanelComponent, LineageDisplayModule, TuiBadge, TuiChip, TuiExpand, TuiNotification],
   template: `
     <as-split direction="vertical" unit="percent" gutterSize="1">
       <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
@@ -49,6 +49,7 @@ import {isNullOrUndefined} from "../../utils/utils";
           </button>
 
         </app-panel-header>
+        <tui-notification *ngIf="usesStubs" size="s">This query has stubs configured</tui-notification>
         <app-code-editor
           wordWrap="on"
           [content]="content.getValue()"
@@ -63,10 +64,10 @@ import {isNullOrUndefined} from "../../utils/utils";
                           [isSecondary]="true" title="Stubs and Parameters">
           <div class="stubs-params-header">
             <tui-badge appearance="info"
-                      *ngIf="queryMessage.stubs?.length > 0">{{ queryMessage.stubs.length | i18nPlural: stubsPluralMap }}
+                       *ngIf="queryMessage.stubs?.length > 0">{{ queryMessage.stubs.length | i18nPlural: stubsPluralMap }}
             </tui-badge>
             <tui-badge appearance="info"
-                      *ngIf="queryMessage.parameters?.length > 0">{{ queryMessage.parameters.length | i18nPlural: paramsPluralMap }}
+                       *ngIf="queryMessage.parameters?.length > 0">{{ queryMessage.parameters.length | i18nPlural: paramsPluralMap }}
               defined
             </tui-badge>
           </div>
@@ -82,6 +83,7 @@ import {isNullOrUndefined} from "../../utils/utils";
           [(expanded)]="queryResultsExpanded"
           [queryResult]="queryResult"
           [profileData]="queryProfileData"
+          [usesStubs]="usesStubs"
         ></app-query-results-panel>
       </as-split-area>
 
@@ -156,6 +158,9 @@ export class PlaygroundQueryPanelComponent implements AfterViewInit {
 
   private _queryMessage: StubQueryMessage = emptyQueryMessage();
 
+  get usesStubs() {
+    return this.queryMessage?.stubs?.length > 0  ?? false;
+  }
   @Input()
   get queryMessage(): StubQueryMessage {
     return this._queryMessage;

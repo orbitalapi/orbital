@@ -87,3 +87,9 @@ tui-badge[tuiAppearance][data-appearance='info']  {
   display: flex;
   flex-direction: column;
 }
+
+tui-notification {
+  border-bottom: 1px solid $slate-300;
+  font-size: 0.9rem !important;
+  border-radius: 0 !important;
+}

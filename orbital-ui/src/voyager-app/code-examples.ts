@@ -10,6 +10,7 @@ import {BasicCsvReading} from "./code-examples/etl/basic-csv-reading";
 import {NormalizingCsv} from "./code-examples/etl/normalizing-csv";
 import {EnrichingCsvData} from "./code-examples/etl/enriching-csv";
 import {AggregateAndStoreCsv} from "./code-examples/etl/aggregate-and-store-csv";
+import {HttpMutation} from "./code-examples/http-services/calling-a-mutation";
 
 export interface CodeSample {
   title: string;
@@ -188,6 +189,12 @@ export const ExampleGroups = [
       DatabaseApiEnrich,
       KafkaApiWebsocket,
       KafkaDbApi
+    ]
+  },
+  {
+    title: 'Working with HTTP Services',
+    snippets: [
+      HttpMutation
     ]
   },
   {

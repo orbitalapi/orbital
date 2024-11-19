@@ -610,6 +610,7 @@ export interface OperationStub {
   operationName: string;
   response: string;
   conditionalResponses?: ResponseCondition[];
+  echoInput?: boolean;
 }
 
 

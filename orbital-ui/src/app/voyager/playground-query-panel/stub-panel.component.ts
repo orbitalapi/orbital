@@ -155,6 +155,9 @@ export class StubPanelComponent {
   }
 
   stubbedResponseLabel(stub: OperationStub): string {
+    if (stub.echoInput) {
+      return 'Echoes input';
+    }
     return stub.conditionalResponses?.length ? stub.conditionalResponses?.length + " conditional response" : stub.response
   }
 

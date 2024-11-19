@@ -349,7 +349,7 @@ export class VoyagerAppComponent implements OnInit {
 
     const wrapperObjectJson = JSON.stringify(wrapperObject, null, 3)
     const exampleAsJs = wrapperObjectJson.replace('"REPLACEME"', queryAsJson);
-    const formattedJsSnippet = `import {StubQueryMessageWithSlug} from "../../app/services/query.service";
+    const formattedJsSnippet = `import {StubQueryMessageWithSlug} from "src/app/services/query.service";
 
 export const example: StubQueryMessageWithSlug = ${exampleAsJs}`
     return formattedJsSnippet

@@ -1,4 +1,4 @@
-import { TuiTextfieldControllerModule, TuiInputModule } from "@taiga-ui/legacy";
+import {TuiTextfieldControllerModule, TuiInputModule} from "@taiga-ui/legacy";
 import {ChangeDetectionStrategy, Component, Inject} from '@angular/core';
 import {AngularSplitModule} from 'angular-split';
 import {CodeEditorModule} from '../../code-editor/code-editor.module';
@@ -7,8 +7,8 @@ import {ExpandingPanelSetModule} from "../../expanding-panelset/expanding-panel-
 import {CommonModule} from '@angular/common';
 import {TypesService} from '../../services/types.service';
 import {SimpleCodeEditorComponent} from "../../simple-code-editor/simple-code-editor.component";
-import { TuiAccordion, TuiChip, TuiSegmented } from "@taiga-ui/kit";
-import { TuiDialogContext, TuiNotification, TuiButton, TuiHint } from '@taiga-ui/core';
+import {TuiAccordion, TuiChip, TuiSegmented, TuiSwitch} from "@taiga-ui/kit";
+import {TuiDialogContext, TuiNotification, TuiButton, TuiHint} from '@taiga-ui/core';
 import {FormsModule} from "@angular/forms";
 import {OperationStub, ParameterValue, ResponseCondition} from "../../services/query.service";
 import {TypeViewerModule} from '../../type-viewer/type-viewer.module';
@@ -34,6 +34,7 @@ import {POLYMORPHEUS_CONTEXT} from "@taiga-ui/polymorpheus";
     TuiChip,
     TypeViewerModule,
     TuiNotification,
+    TuiSwitch,
   ],
   template: `
     <app-panel-header tablerIcon="switch-horizontal" title="Stub response editor">
@@ -51,7 +52,21 @@ import {POLYMORPHEUS_CONTEXT} from "@taiga-ui/polymorpheus";
         <tui-notification size="m" *ngIf="operationStub.conditionalResponses?.length > 0" appearance="info">
           You already have conditional stubs, they will be favoured over anything you configure in here
         </tui-notification>
-        <div>Paste a response which will be used for every call to {{ operation?.name }}</div>
+        <div class="row">
+          <div>Paste a response which will be used for every call to {{ operation?.name }}</div>
+          <div class="spacer"></div>
+          <div class="toggle-container" [tuiHint]="echoInputHint">
+            <span>Echo input as response</span>
+            <input
+              [disabled]="!canUseEchoInput"
+              tuiSwitch
+              type="checkbox"
+              [(ngModel)]="operationStub.echoInput"
+              [showIcons]="true"
+              size="s"
+            />
+          </div>
+        </div>
         <as-split direction="horizontal" unit="percent" gutterSize="1">
           <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
             <div class="thin-splitter-gutter-icon"></div>
@@ -69,7 +84,11 @@ import {POLYMORPHEUS_CONTEXT} from "@taiga-ui/polymorpheus";
             ></app-type-viewer>
           </as-split-area>
           <as-split-area size="60" class="simple-view">
-            <app-simple-code-editor [(content)]="operationStub.response"></app-simple-code-editor>
+            <app-simple-code-editor [(content)]="operationStub.response"
+                                    *ngIf="!operationStub.echoInput"></app-simple-code-editor>
+            <div *ngIf="operationStub.echoInput" class="will-echo-panel">
+              Operation will echo the provided input
+            </div>
           </as-split-area>
         </as-split>
       </ng-container>
@@ -89,8 +108,8 @@ import {POLYMORPHEUS_CONTEXT} from "@taiga-ui/polymorpheus";
             Add new condition
           </button>
           <tui-segmented size="s" [(activeItemIndex)]="advancedViewEditModeIndex">
-            <button [class.active]="advancedViewEditModeIndex === 0">Form</button>
-            <button [class.active]="advancedViewEditModeIndex === 1">JSON</button>
+            <button [class.active]="advancedViewEditModeIndex === 0" [disabled]="operationStub?.echoInput">Form</button>
+            <button [class.active]="advancedViewEditModeIndex === 1" [disabled]="operationStub?.echoInput">JSON</button>
           </tui-segmented>
         </div>
         <div class="advanced-mode-form-container" *ngIf="advancedViewEditModeIndex===0">
@@ -135,7 +154,9 @@ import {POLYMORPHEUS_CONTEXT} from "@taiga-ui/polymorpheus";
         </div>
       </div>
       <div class="footer">
-        <button tuiButton size="m" appearance="outline-grayscale" (click)="context.completeWith(context.data.stub)">Cancel</button>
+        <button tuiButton size="m" appearance="outline-grayscale" (click)="context.completeWith(context.data.stub)">
+          Cancel
+        </button>
         <button tuiButton size="m" appearance="primary" (click)="context.completeWith(operationStub)">Update</button>
       </div>
     </div>
@@ -160,12 +181,25 @@ export class StubDesignerComponent {
     this.operation = context.data.operation;
     this.schema = context.data.schema;
 
-    this.type =  findMemberTypeOrType(this.schema, this.operation.returnTypeName)
+    this.type = findMemberTypeOrType(this.schema, this.operation.returnTypeName)
+  }
+
+  get canUseEchoInput(): boolean {
+    return this.operation.parameters.length == 1 &&
+      this.operation.parameters[0].typeName.parameterizedName == this.operation.returnTypeName.parameterizedName
+  }
+  get echoInputHint(): string {
+    if (!this.canUseEchoInput) {
+      return `Requires an operation that takes a single parameter, with a return value of the same type as the input parameter`
+    } else {
+      return `When enabled, the stub simply echoes back the input provided`
+    }
   }
 
   get advancedModeJson() {
     return JSON.stringify(this.operationStub.conditionalResponses, null, 2);
   }
+
   set advancedModeJson(value) {
     try {
       this.operationStub.conditionalResponses = JSON.parse(value);
@@ -177,6 +211,7 @@ export class StubDesignerComponent {
   get advancedModeDisabled() {
     return isNullOrUndefined(this.operation?.parameters) || this.operation.parameters.length == 0;
   }
+
   get advancedModeHint() {
     if (this.advancedModeDisabled) {
       return `Disabled as ${this.operation.qualifiedName.shortDisplayName} has no parameters`
@@ -185,7 +220,7 @@ export class StubDesignerComponent {
     }
   }
 
-  get conditionalResponses():ResponseCondition[] {
+  get conditionalResponses(): ResponseCondition[] {
     return this.operationStub?.conditionalResponses || [];
   }
 
