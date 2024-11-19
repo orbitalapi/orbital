@@ -4,14 +4,24 @@ import {
   EventEmitter,
   input,
   Input,
-  InputSignal,
-  Output, Signal,
+  InputSignal, Optional,
+  Output, Signal, SkipSelf,
 } from '@angular/core';
+import {ControlContainer} from '@angular/forms';
 import {Schema, SchemaMember, Type} from '../services/schema';
 
 @Component({
   selector: 'app-type-autocomplete-tui',
   styleUrls: ['./type-autocomplete-tui.component.scss'],
+  // Need this to be optional for when the ControlContainer (ie. ngForm) doesn't wrap
+  // this component and Angular complains about injection issues
+  viewProviders: [
+    {
+      provide: ControlContainer,
+      useFactory: (controlContainer: ControlContainer | null) => controlContainer,
+      deps: [[new Optional(), new SkipSelf(), ControlContainer]]
+    }
+  ],
   template: `
     <tui-combo-box
       class="type-input"
@@ -21,9 +31,13 @@ import {Schema, SchemaMember, Type} from '../services/schema';
       [valueContent]="value"
       [(ngModel)]="selectedType"
       (ngModelChange)="handleSelectedTypeChanged($event)"
+      name="typeName"
       [tuiTextfieldCleaner]="true"
+      [required]="isRequired"
+      [disabled]="isDisabled"
     >
       {{ label }}
+      <span *ngIf="isRequired" class="tui-required"></span>
       <input tuiTextfieldLegacy [placeholder]="label"/>
       <ng-template #value let-item>
         <div class="type-option">
@@ -78,6 +92,12 @@ export class TypeAutocompleteTuiComponent {
 
   @Input()
   size: 's' | 'm' | 'l' = 's'
+
+  @Input()
+  isRequired: boolean
+
+  @Input()
+  isDisabled: boolean
 
   @Output()
   selectedTypeChanged = new EventEmitter<SchemaMember>();

@@ -50,7 +50,7 @@ export class MermaidComponent implements OnInit, AfterViewInit {
       themeCSS: themeCSS,
       // Docs suggest this should be mermaid.sequenceConfig -- but that doesn't work
       sequence: {
-        useMaxWidth: false,
+        useMaxWidth: true,
         actorFontFamily: '"DM Sans", "nunito-sans", "sans-serif',
         messageFontFamily: '"nunito-sans", "sans-serif"'
       }

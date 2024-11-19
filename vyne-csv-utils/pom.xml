@@ -55,6 +55,79 @@
          <version>0.34.0-SNAPSHOT</version>
          <scope>test</scope>
       </dependency>
+
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>lang-to-taxi-api</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>compiler</artifactId>
+         <type>test-jar</type>
+         <version>${taxi.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>taxi-annotations</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>compiler</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>taxi-stdlib-annotations</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>taxi-jvm-common</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>compiler</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.jetbrains.kotlinx</groupId>
+         <artifactId>dataframe</artifactId>
+         <version>${kotlin.dataframe.version}</version>
+         <exclusions>
+            <exclusion>
+               <groupId>org.slf4j</groupId>
+               <artifactId>slf4j-simple</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
    </dependencies>
+
+   <dependencyManagement>
+      <dependencies>
+         <dependency>
+            <!-- Causes runtime failures with Spring Boot:
+             LoggerFactory is not a Logback LoggerContext but Logback is on the classpath. Either remove Logback or the competing implementation (class org.slf4j.simple.SimpleLoggerFactory loaded from file ...
+             -->
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-simple</artifactId>
+            <version>2.0.16</version>
+            <scope>runtime</scope>
+            <exclusions>
+               <exclusion>
+                  <groupId>*</groupId>
+                  <artifactId>*</artifactId>
+               </exclusion>
+            </exclusions>
+         </dependency>
+      </dependencies>
+   </dependencyManagement>
 
 </project>

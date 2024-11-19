@@ -10,12 +10,17 @@ import {ConvertSchemaEvent} from '../data-source-import.models';
 import {Schema} from '../../services/schema';
 import {SourcePackageDescription} from '../../package-viewer/packages.service';
 import {ProjectSelectorModule} from '../../project-selector/project-selector.module';
+import {S3ConfigComponent} from './config-panels/s3-config.component';
 import {SwaggerConfigComponent} from './config-panels/swagger-config.component';
 import {JsonSchemaConfigComponent} from './config-panels/jsonschema-config.component';
 import {DatabaseTableConfigComponent} from './config-panels/database-table-config.component';
 import {KafkaTopicConfigComponent} from './config-panels/kafka-topic-config.component';
 import {ProtobufConfigComponent} from './config-panels/protobuf-config.component';
-import {ConnectionFiltersModule} from '../../utils/connections.pipe';
+import {
+  AwsConnectionsPipe,
+  DbConnectionsPipe,
+  MessageBrokersConnectionsPipe,
+} from '../../utils/connections.pipe';
 import {UiCustomisations} from "../../../environments/ui-customisations";
 
 @Component({
@@ -38,7 +43,10 @@ import {UiCustomisations} from "../../../environments/ui-customisations";
     DatabaseTableConfigComponent,
     KafkaTopicConfigComponent,
     ProtobufConfigComponent,
-    ConnectionFiltersModule,
+    S3ConfigComponent,
+    DbConnectionsPipe,
+    MessageBrokersConnectionsPipe,
+    AwsConnectionsPipe,
     TuiHint,
     TuiDataList,
     ...TuiDropdown,
@@ -92,25 +100,33 @@ import {UiCustomisations} from "../../../environments/ui-customisations";
                                [working]="working"
                                (loadSchema)="convertSchema.emit({convertSchemaEvent: $event, dataSourceType: 'JSON'})">
         </app-jsonschema-config>
-        <app-database-table-config [connections]="dbConnections | databases"
-                                   *ngSwitchCase="'databaseTable'"
+        <app-database-table-config *ngSwitchCase="'databaseTable'"
+                                   [connections]="dbConnections | databases"
                                    [tables$]="tables$"
                                    [packageIdentifier]="selectedPackage?.identifier"
                                    (connectionChanged)="dbConnectionChanged.emit($event)"
                                    (loadSchema)="convertSchema.emit({convertSchemaEvent: $event, dataSourceType: 'Database'})"
                                    [working]="working"
         ></app-database-table-config>
-        <app-kafka-topic-config [connections]="dbConnections | messageBrokers"
+        <app-kafka-topic-config *ngSwitchCase="'kafkaTopic'"
+                                [connections]="dbConnections | messageBrokers"
                                 [schema]="schema"
                                 [working]="working"
                                 [packageIdentifier]="selectedPackage?.identifier"
                                 (loadSchema)="convertSchema.emit({convertSchemaEvent: $event, dataSourceType: 'Kafka'})"
-                                *ngSwitchCase="'kafkaTopic'"></app-kafka-topic-config>
-        <app-protobuf-config [working]="working"
+        ></app-kafka-topic-config>
+        <app-protobuf-config *ngSwitchCase="'protobuf'"
+                             [working]="working"
                              [packageIdentifier]="selectedPackage?.identifier"
                              (loadSchema)="convertSchema.emit({convertSchemaEvent: $event, dataSourceType: 'Protobuf'})"
-                             *ngSwitchCase="'protobuf'"
         ></app-protobuf-config>
+        <app-s3-config *ngSwitchCase="'s3'"
+                       [connections]="dbConnections | awsConnections"
+                       [schema]="schema"
+                       [packageIdentifier]="selectedPackage?.identifier"
+                       [working]="working"
+                       (loadSchema)="convertSchema.emit({convertSchemaEvent: $event, dataSourceType: 'S3'})"
+        ></app-s3-config>
       </div>
     </ng-template>
   `
@@ -123,6 +139,7 @@ export class DataSourcePanelComponent {
     {label: 'Database table', id: 'databaseTable', icon: '/assets/img/tabler/database.svg'},
     {label: 'Kafka topic', id: 'kafkaTopic', icon: '/assets/img/data-source-icons/kafka-icon.svg'},
     {label: 'Protobuf', id: 'protobuf', icon: '/assets/img/data-source-icons/protobuf-icon.svg'},
+    {label: 'S3', id: 's3', icon: '/assets/img/data-source-icons/aws-icon.svg'},
     {
       label: 'DynamoDb',
       id: 'dynamodb',
@@ -134,12 +151,6 @@ export class DataSourcePanelComponent {
       id: 'lambda',
       icon: '/assets/img/data-source-icons/aws-icon.svg',
       externalLink: UiCustomisations.docsLinks.lambdaDbConnection
-    },
-    {
-      label: 'S3',
-      id: 's3',
-      icon: '/assets/img/data-source-icons/aws-icon.svg',
-      externalLink: UiCustomisations.docsLinks.s3Connection
     },
     {
       label: 'SQS',
@@ -195,4 +206,4 @@ export interface SchemaType {
   isDisabled?: boolean
 }
 
-export type DataSourceType = 'Swagger' | 'Database' | 'Kafka' | 'Protobuf' | 'JSON';
+export type DataSourceType = 'Swagger' | 'Database' | 'Kafka' | 'Protobuf' | 'JSON' | 'S3';

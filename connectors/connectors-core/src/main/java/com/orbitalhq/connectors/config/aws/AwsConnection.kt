@@ -18,47 +18,72 @@ object AwsConnection {
          ConnectionDriverParam(
             "AWS access key",
             SimpleDataType.STRING,
-            templateParamName = "awsAccessKey",
+            templateParamName = AwsConnectionConfiguration::accessKey.name,
+            description = "Description in here about why accessKey is optional",
             defaultValue = null,
             required = false,
+            isConstructorParameter = true
          )
       ),
       SECRET_KEY(
          ConnectionDriverParam(
             "AWS secret key",
             SimpleDataType.STRING,
-            templateParamName = "awsSecretKey",
+            description = "Description in here about why secretKey is optional",
+            templateParamName = AwsConnectionConfiguration::secretKey.name,
             defaultValue = null,
             required = false,
+            isConstructorParameter = true
          )
       ),
       AWS_REGION(
          ConnectionDriverParam(
             "AWS region",
             SimpleDataType.STRING,
+            description = "Description in here about why region is optional",
             defaultValue = null,
             required = false,
-            templateParamName = "awsRegion",
+            templateParamName = AwsConnectionConfiguration::region.name,
+            isConstructorParameter = true
          )
       ),
       ENDPOINT_OVERRIDE(
          ConnectionDriverParam(
             "AWS endpoint override",
             SimpleDataType.STRING,
-            templateParamName = "endPointOverride",
+            templateParamName = AwsConnectionConfiguration::endPointOverride.name,
             defaultValue = null,
             required = false,
-            visible = false
+            visible = false,
+            isConstructorParameter = true
          )
       ),
-      SQS_RECEIVE_REQUEST_WAIT_TIME(ConnectionDriverParam("SQS Receive Message Request Wait Time In Seconds", SimpleDataType.NUMBER, defaultValue = 1, templateParamName = "sqsReceiveRequestWaitTime")),
-      SQS_RECEIVE_MAX_NUMBER_OF_MESSAGES(ConnectionDriverParam("SQS The maximum number of messages to return.", SimpleDataType.NUMBER, defaultValue = 10, templateParamName = "sqsReceiveRequestWaitTime")),
+      SQS_RECEIVE_REQUEST_WAIT_TIME(
+         ConnectionDriverParam(
+            "SQS receive message request wait time in seconds",
+            SimpleDataType.NUMBER,
+            defaultValue = 1,
+            templateParamName = "sqsReceiveRequestWaitTime",
+            visible = false,
+         )
+      ),
+      SQS_RECEIVE_MAX_NUMBER_OF_MESSAGES(
+         ConnectionDriverParam(
+            "SQS maximum number of messages to return.",
+            SimpleDataType.NUMBER,
+            defaultValue = 10,
+            templateParamName = "sqsReceiveMaxNumberOfMessages",
+            visible = false,
+         )
+      ),
       SQS_RECEIVE_VISIBILITY_TIMEOUT(
          ConnectionDriverParam(
-            "SQS Receive  duration (in seconds) that the received messages are hidden from subsequent retrieve requests after being retrieved by a ReceiveMessage request.",
+            "SQS receive duration (in seconds)",
             SimpleDataType.NUMBER,
             defaultValue = 300,
             templateParamName = "sqsReceiveVisibilityTimeout",
+            visible = false,
+            description = "The duration that the received messages are hidden from subsequent retrieve requests after being retrieved by a ReceiveMessage request."
          )
       ),
    }

@@ -39,9 +39,10 @@ export type SchemaConverterOptions =
   | JsonSchemaConverterOptions
   | TableSchemaConverterOptions
   | KafkaTopicConverterOptions
+  | S3SchemaConverterOptions
   | ProtobufSchemaConverterOptions
   | MapConverterOptions;
-export type SchemaType = 'jsonSchema' | 'swagger' | 'databaseTable' | 'kafkaTopic' | 'protobuf' | 'map';
+export type SchemaType = 'jsonSchema' | 'swagger' | 'databaseTable' | 'kafkaTopic' | 'protobuf' | 'map' | 's3';
 
 export type KafkaOffset = 'EARLIEST' | 'LATEST' | 'NONE';
 
@@ -53,6 +54,18 @@ export class KafkaTopicConverterOptions {
   public targetNamespace?: string;
   public serviceName?: string;
   public operationName?: string;
+}
+
+export class S3SchemaConverterOptions {
+  public connectionName: string;
+  public targetNamespace: string;
+  public bucketName: string;
+  public filenamePattern: string;
+  public fileSchemaType: string;
+  public serviceName?: string;
+  public operationName?: string;
+  public newModelName?: string;
+  public fileToGenerateSchemaFrom?: string;
 }
 
 export interface MapConverterOptions {

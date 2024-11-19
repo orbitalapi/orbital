@@ -13,7 +13,7 @@ import {
   DbConnectionEditorDialogComponent
 } from '../../../db-connection-editor/db-connection-editor-dialog.component';
 import { PackageIdentifier } from '../../../package-viewer/packages.service';
-import { ConnectionFiltersModule } from '../../../utils/connections.pipe';
+import {DbConnectionsPipe} from '../../../utils/connections.pipe';
 import { sanitiseNamespace } from '../../../utils/utils';
 
 @Component({
@@ -24,7 +24,7 @@ import { sanitiseNamespace } from '../../../utils/utils';
     FormsModule,
     TuiDataList,
     TuiIcon,
-    ConnectionFiltersModule,
+    DbConnectionsPipe,
     TuiDataListWrapper,
     TuiStringifyContentPipe,
     TuiFilterByInputPipe,
@@ -34,7 +34,7 @@ import { sanitiseNamespace } from '../../../utils/utils';
     TuiMultiSelectModule,
     TuiTextfieldControllerModule,
     TuiButtonLoading
-],
+  ],
   template: `
     <div class="form-container">
       <form class="form-body" #databaseForm="ngForm">

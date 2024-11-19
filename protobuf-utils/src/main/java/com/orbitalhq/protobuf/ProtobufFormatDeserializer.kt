@@ -14,7 +14,7 @@ class ProtobufFormatDeserializer : ModelFormatDeserializer {
       .expireAfterAccess(Duration.ofHours(1))
       .build<Type, com.squareup.wire.schema.Schema>()
 
-   override fun canParse(value: Any, metadata: Metadata): Boolean = value is ByteArray
+   override fun canParse(value: Any, metadata: Metadata, type: Type): Boolean = value is ByteArray
 
    override fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema, source: DataSource): Any {
       val protobufSchema = protoSchemaCache.get(type) {

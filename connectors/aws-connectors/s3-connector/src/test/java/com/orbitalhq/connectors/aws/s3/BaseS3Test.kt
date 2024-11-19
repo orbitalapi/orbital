@@ -1,6 +1,5 @@
 package com.orbitalhq.connectors.aws.s3
 
-import com.google.common.io.Resources
 import com.orbitalhq.Vyne
 import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
@@ -10,9 +9,7 @@ import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.stubbing.StubService
-import com.orbitalhq.testVyne
 import com.orbitalhq.testVyneWithStub
-import kotlinx.coroutines.flow.DEFAULT_CONCURRENCY
 import org.junit.Before
 import org.junit.Rule
 import org.testcontainers.containers.localstack.LocalStackContainer
@@ -24,7 +21,6 @@ import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.s3.S3Client
 import software.amazon.awssdk.services.s3.model.CreateBucketRequest
 import java.nio.file.Path
-import java.nio.file.Paths
 import kotlin.random.Random
 
 @Testcontainers
@@ -36,7 +32,7 @@ abstract class BaseS3Test {
    var localstack: LocalStackContainer = LocalStackContainer(localStackImage)
       .withServices(LocalStackContainer.Service.S3)
 
-   private val connectionRegistry = AwsInMemoryConnectionRegistry()
+   val connectionRegistry = AwsInMemoryConnectionRegistry()
 
    lateinit var s3Client: S3Client
    val AWS_CONNECTION_NAME = "TestAwsConnection"

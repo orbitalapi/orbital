@@ -16,6 +16,12 @@ interface PartialSchema {
          return emptySet()
       }
 
+   fun containsType(name: String): Boolean {
+      return types.any { it.name.parameterizedName == name }
+   }
+   fun containsType(name: QualifiedName): Boolean {
+      return types.any { it.name == name }
+   }
    fun type(name: QualifiedName): PartialType {
       return types.single { it.name == name }
    }

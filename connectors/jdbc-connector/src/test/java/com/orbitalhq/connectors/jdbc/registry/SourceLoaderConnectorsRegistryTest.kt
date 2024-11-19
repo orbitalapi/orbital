@@ -22,6 +22,7 @@ import com.orbitalhq.schemaServer.core.repositories.WorkspaceProjectsService
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
+import io.kotest.assertions.timing.eventually
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
@@ -42,6 +43,7 @@ import java.nio.file.Path
 import java.time.Duration
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
+import kotlin.time.Duration.Companion.seconds
 
 class SourceLoaderConnectorsRegistryTest : BaseGitTest() {
    @Rule
@@ -124,6 +126,9 @@ class SourceLoaderConnectorsRegistryTest : BaseGitTest() {
       // Configure the stack to watch the git repo, and use it as a source
       // for config
       val projectStoreManager = buildProjectStoreManager()
+      Awaitility.await().atMost(com.jayway.awaitility.Duration.FIVE_SECONDS).until<Boolean> {
+         projectStoreManager.gitLoaders.isNotEmpty()
+      }
       val gitLoader = projectStoreManager.gitLoaders.single()
       waitForSuccessfulGitClone(projectStoreManager, gitLoader)
 

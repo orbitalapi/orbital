@@ -32,6 +32,13 @@
          <version>${taxi.version}</version>
       </dependency>
       <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>compiler</artifactId>
+         <version>${taxi.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
+      </dependency>
+      <dependency>
          <groupId>org.jetbrains.kotlinx</groupId>
          <artifactId>kotlinx-coroutines-reactor</artifactId>
       </dependency>

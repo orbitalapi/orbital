@@ -11,13 +11,11 @@ import com.orbitalhq.models.UndefinedSource
 import com.orbitalhq.models.format.ModelFormatDeserializer
 import com.orbitalhq.models.xml.XmlParsedList
 import com.orbitalhq.models.xml.XmlParsedMap
-import com.orbitalhq.models.xml.XmlTypedInstanceParser
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import mu.KotlinLogging
 import org.apache.commons.io.IOUtils
-import org.w3c.dom.Document
 import java.nio.charset.Charset
 import java.util.concurrent.TimeUnit
 import javax.xml.parsers.DocumentBuilderFactory
@@ -26,7 +24,7 @@ import javax.xml.xpath.XPathFactory
 
 object XmlFormatDeserializer : ModelFormatDeserializer {
    private val deserializer = XmlDeserializer()
-   override fun canParse(value: Any, metadata: Metadata): Boolean = true
+   override fun canParse(value: Any, metadata: Metadata, type: Type): Boolean = true
 
    override fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema, source: DataSource): Any =
       deserializer.parse(value, type, metadata, schema, source) ?: error("Parsing XML from root returned null")

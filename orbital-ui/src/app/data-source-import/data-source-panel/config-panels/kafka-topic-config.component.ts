@@ -2,7 +2,7 @@ import { TuiInputModule, TuiSelectModule } from "@taiga-ui/legacy";
 import { Component, EventEmitter, Inject, Injector, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TuiDialogService, TuiDataList, TuiIcon, TuiButton } from '@taiga-ui/core';
+import {TuiDialogService, TuiDataList, TuiIcon, TuiButton, TuiGroup} from '@taiga-ui/core';
 import { TuiDataListWrapper, TuiButtonLoading } from '@taiga-ui/kit';
 import { PolymorpheusComponent } from '@taiga-ui/polymorpheus';
 import { ConnectorSummary } from '../../../db-connection-editor/db-importer.service';
@@ -15,7 +15,7 @@ import {
 } from '../../../db-connection-editor/db-connection-editor-dialog.component';
 import { PackageIdentifier } from '../../../package-viewer/packages.service';
 import { UiCustomisations } from '../../../../environments/ui-customisations';
-import { ConnectionFiltersModule } from '../../../utils/connections.pipe';
+import {MessageBrokersConnectionsPipe} from '../../../utils/connections.pipe';
 import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
 
 @Component({
@@ -30,10 +30,11 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
     TuiInputModule,
     TuiDataList,
     TuiIcon,
-    ConnectionFiltersModule,
+    MessageBrokersConnectionsPipe,
     TypeAutocompleteTuiModule,
-    TuiButtonLoading
-],
+    TuiButtonLoading,
+    TuiGroup,
+  ],
   template: `
     <div class="form-container">
       <form class="form-body" #kafkaForm="ngForm">
@@ -145,7 +146,6 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
               <div>
                 <tui-input
                   [(ngModel)]="kafkaTopicOptions.serviceName"
-                  tuiTextfieldExampleText="Service name"
                   class="tui-group__inherit-item"
                   name="serviceName"
                 >
@@ -155,7 +155,6 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
               <div>
                 <tui-input
                   [(ngModel)]="kafkaTopicOptions.operationName"
-                  tuiTextfieldExampleText="Operation name"
                   class="tui-group__inherit-item"
                   name="operationName"
                 >

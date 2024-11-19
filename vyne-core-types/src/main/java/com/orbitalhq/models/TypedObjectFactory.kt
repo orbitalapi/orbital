@@ -383,7 +383,7 @@ class TypedObjectFactory(
       val metadataAndFormat = formatDetector.getFormatType(type)
       if (metadataAndFormat != null) {
          val (metadata, modelFormatSpec) = metadataAndFormat
-         if (modelFormatSpec.deserializer.canParse(value, metadata)) {
+         if (modelFormatSpec.deserializer.canParse(value, metadata, type)) {
             return readWithFormatSpecDeserializer(metadata, modelFormatSpec)
          }
       }
@@ -1043,7 +1043,7 @@ class TypedObjectFactory(
       val (metadata, modelFormatSpec) = modelFormatSpecPair
       val parsed = when {
          // "canParse" here can indicate "is any more deserializaiton required?"
-         modelFormatSpec.deserializer.canParse(valueToRead, metadata) -> modelFormatSpec.deserializer.parse(
+         modelFormatSpec.deserializer.canParse(valueToRead, metadata, type) -> modelFormatSpec.deserializer.parse(
             valueToRead,
             type,
             metadata,

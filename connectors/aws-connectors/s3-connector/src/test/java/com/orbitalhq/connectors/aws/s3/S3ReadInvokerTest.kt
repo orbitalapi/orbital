@@ -22,23 +22,32 @@ class S3ReadInvokerTest : BaseS3Test() {
          type ClosePrice inherits Price
          type HighPrice inherits Price
          type Symbol inherits String
-
+   """.trimIndent()
+   val columnIndexedSchema = """
          @com.orbitalhq.formats.Csv
-         type OrderSummary {
+         closed model OrderSummary {
              symbol : Symbol by column(2)
              open : OpenPrice by column(3)
              high : HighPrice by column(4)
              close : ClosePrice by column(6)
          }
-
    """.trimIndent()
-
+   val namedFieldsSchema = """
+         @com.orbitalhq.formats.Csv
+         closed model OrderSummary {
+             Symbol : Symbol
+             Open : OpenPrice
+             High : HighPrice
+             Close : ClosePrice
+         }
+   """.trimIndent()
    @Test
-   fun `can read a single file from s3 using a default value for filename`(): Unit = runBlocking {
+   fun `can read a single file from s3 using a default value for filename and column indexed csv`(): Unit = runBlocking {
       val bucketName = createBucketWithRandomName("Trades")
       uploadResourceToS3(bucketName, "trades.csv", Resources.getResource("Coinbase_BTCUSD_3rows.csv").toURI().toPath())
       val schema = """
           $baseSchema
+          $columnIndexedSchema
           @S3Service( connectionName = "$AWS_CONNECTION_NAME" )
           service AwsBucketService {
               @S3Operation(bucket = "$bucketName")
@@ -74,6 +83,47 @@ class S3ReadInvokerTest : BaseS3Test() {
    }
 
    @Test
+   fun `can read a single file from s3 using a default value for filename and name indexed csv`(): Unit = runBlocking {
+      val bucketName = createBucketWithRandomName("Trades")
+      uploadResourceToS3(bucketName, "trades.csv", Resources.getResource("Coinbase_BTCUSD_3rows.csv").toURI().toPath())
+      val schema = """
+          $baseSchema
+          $namedFieldsSchema
+          @S3Service( connectionName = "$AWS_CONNECTION_NAME" )
+          service AwsBucketService {
+              @S3Operation(bucket = "$bucketName")
+              operation readBucket(filename:FilenamePattern = "trades.csv"):OrderSummary[]
+          }
+      """.trimIndent()
+      val (vyne) = vyneWithS3Invoker(schema)
+
+      val results = vyne.query("""find { OrderSummary[] }""")
+         .rawObjects()
+
+      results.shouldHaveSize(3)
+      results.shouldContainExactlyInAnyOrder(
+         mapOf(
+            "Symbol" to "BTCUSD",
+            "Open" to 6300.toBigDecimal(),
+            "High" to 6330.toBigDecimal(),
+            "Close" to 6235.2.toBigDecimal(),
+         ),
+         mapOf(
+            "Symbol" to "BTCUSD",
+            "Open" to 6262.37.toBigDecimal(),
+            "High" to 6441.37.toBigDecimal(),
+            "Close" to 6300.toBigDecimal(),
+         ),
+         mapOf(
+            "Symbol" to "BTCUSD",
+            "Open" to 6257.15.toBigDecimal(),
+            "High" to 6282.12.toBigDecimal(),
+            "Close" to 6262.37.toBigDecimal(),
+         ),
+      )
+   }
+
+   @Test
    fun `can read multiple files from s3 using a default value for filename`():Unit = runBlocking {
       val bucketName = createBucketWithRandomName("Trades")
       uploadResourceToS3(bucketName, "trades1.csv", Resources.getResource("Coinbase_BTCUSD_3rows.csv").toURI().toPath())
@@ -81,6 +131,7 @@ class S3ReadInvokerTest : BaseS3Test() {
       uploadResourceToS3(bucketName, "orders1.csv", Resources.getResource("Coinbase_BTCGBP_3rows.csv").toURI().toPath())
       val schema = """
          $baseSchema
+         $columnIndexedSchema
           @S3Service( connectionName = "$AWS_CONNECTION_NAME" )
           service AwsBucketService {
               @S3Operation(bucket = "$bucketName")
@@ -141,6 +192,7 @@ class S3ReadInvokerTest : BaseS3Test() {
       uploadResourceToS3(bucketName, "orders1.csv", Resources.getResource("Coinbase_BTCGBP_3rows.csv").toURI().toPath())
       val schema = """
           $baseSchema
+          $columnIndexedSchema
           @S3Service( connectionName = "$AWS_CONNECTION_NAME" )
           service AwsBucketService {
               @S3Operation(bucket = "$bucketName")

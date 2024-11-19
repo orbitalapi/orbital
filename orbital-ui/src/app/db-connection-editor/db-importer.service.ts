@@ -40,6 +40,7 @@ export interface ConnectionDriverConfigOptions {
 
 export interface ConnectionParam {
   displayName: string;
+  description: string | null,
   dataType: SimpleDataType;
   defaultValue: any | null;
   sensitive: boolean;
@@ -47,6 +48,7 @@ export interface ConnectionParam {
   visible: boolean;
   templateParamName: string;
   allowedValues: any[];
+  isConstructorParameter: boolean,
 }
 
 export type ConnectorType = 'JDBC' | 'MESSAGE_BROKER' | 'AWS' | 'AZURE_STORAGE' | 'NO_SQL';

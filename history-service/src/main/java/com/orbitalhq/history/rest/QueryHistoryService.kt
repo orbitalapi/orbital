@@ -147,7 +147,8 @@ class QueryHistoryService(
       }
 
       val strings = remoteCallResponseRepository.findAllByRemoteCallId(remoteCallId)
-         .map { remoteCallResponse -> remoteCallResponse.response }
+         .map { remoteCallResponse -> remoteCallResponse.response ?: "Response not captured" }
+
 
       val just = if (strings.size == 1) {
          strings.first()

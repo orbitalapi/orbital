@@ -21,7 +21,7 @@ import {
   UntypedFormGroup,
   Validators
 } from '@angular/forms';
-import {isNullOrUndefined} from 'util';
+import {isNullOrUndefined} from '../utils/utils';
 import {SourcePackageDescription} from "../package-viewer/packages.service";
 import {Observable} from "rxjs";
 
@@ -162,9 +162,11 @@ export class ConnectionEditorComponent {
         return new DynamicFormComponentSpec(
           param.templateParamName,
           param.displayName,
+          param.description,
           param.required,
           inputType,
-          param.defaultValue,
+          param.isConstructorParameter,
+          param.defaultValue
         );
       });
     const connectionParameters = {};
@@ -202,15 +204,31 @@ export class ConnectionEditorComponent {
 
   private getConnectionConfiguration(): JdbcConnectionConfiguration {
     const connectionParameters = this.connectionDetails.getRawValue().connectionParameters || {};
+    const constructorParameters = this.selectedDriver.parameters
+      .filter(param => param.isConstructorParameter)
+      .reduce((previousValue, currentValue) => {
+        if (!isNullOrUndefined(connectionParameters[currentValue.templateParamName])) {
+          return {[currentValue.templateParamName]: connectionParameters[currentValue.templateParamName], ...previousValue}
+        } else {
+          return previousValue
+        }
+      }, {})
     // ConnectionParams must be sent to the server as a Map<String,String>,
     // or deserialization errors occur
     // See: ORB-132
     Object.keys(connectionParameters).map(key => {
-      connectionParameters[key] = String(connectionParameters[key]);
+      if (constructorParameters[key]) {
+        delete connectionParameters[key]
+      } else if (isNullOrUndefined(connectionParameters[key])) {
+        delete connectionParameters[key]
+      } else {
+        connectionParameters[key] = String(connectionParameters[key]);
+      }
     });
     return {
       ...this.connectionDetails.getRawValue(),
       connectionParameters,
+      ...constructorParameters,
       jdbcDriver: this.selectedDriver.driverName,
       type: this.selectedDriver.connectorType
     }

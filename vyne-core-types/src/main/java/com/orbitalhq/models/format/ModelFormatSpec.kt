@@ -63,7 +63,7 @@ interface ModelFormatDeserializer {
     * Therefore, canParse() may return false for a correctly configured deserializer,
     * indicating "no more parsing is required".
     */
-   fun canParse(value: Any, metadata: Metadata): Boolean
+   fun canParse(value: Any, metadata: Metadata, type: Type): Boolean
 
    /**
     * Should return either List<Map<String,Any>> or Map<String,Any>, or a TypedInstance
