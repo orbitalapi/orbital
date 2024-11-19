@@ -11,6 +11,10 @@ import {NormalizingCsv} from "./code-examples/etl/normalizing-csv";
 import {EnrichingCsvData} from "./code-examples/etl/enriching-csv";
 import {AggregateAndStoreCsv} from "./code-examples/etl/aggregate-and-store-csv";
 import {HttpMutation} from "./code-examples/http-services/calling-a-mutation";
+import {HttpMutationWithProjection} from "./code-examples/http-services/calling-a-mutation-with-projection";
+import {
+  MutationWithProjectionAndEnrichment
+} from "./code-examples/http-services/calling-a-mutation-with-projection-and-enrichment";
 
 export interface CodeSample {
   title: string;
@@ -194,7 +198,9 @@ export const ExampleGroups = [
   {
     title: 'Working with HTTP Services',
     snippets: [
-      HttpMutation
+      HttpMutation,
+      HttpMutationWithProjection,
+      MutationWithProjectionAndEnrichment
     ]
   },
   {
