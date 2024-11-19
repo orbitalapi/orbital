@@ -1,0 +1,29 @@
+@import "./config-panels";
+
+tui-segmented {
+  display: inline-block;
+}
+
+.filename-pattern-input {
+  position: relative;
+
+  .filename-pattern-loader {
+    position: absolute;
+    top: 0.75rem;
+    right: 1rem;
+  }
+
+  .file-list-container {
+    margin-top: 0.5rem;
+    padding: 0.5rem;
+    border: 1px solid $slate-300;
+    max-height: 100px;
+    overflow-y: auto;
+    border-radius: 0.25rem;
+  }
+}
+
+tui-notification {
+  margin: 0.5rem 0;
+  word-break: break-word; // account for long error message string
+}

@@ -6,10 +6,10 @@ data class CsvIngestionParameters(
    val delimiter: Char = ',',
    val firstRecordAsHeader: Boolean = true,
    val nullValue: Set<String> = emptySet(),
-   val ignoreContentBefore: String? = null,
+   val preludeText: String? = null,
    val containsTrailingDelimiters: Boolean = false,
    val debug: Boolean = false,
-   val withQuote: Char? = '"',
+   val quote: Char? = '"',
    val recordSeparator: String = "\r\n"
 ) : Serializable {
    companion object {
@@ -23,5 +23,15 @@ data class CsvIngestionParameters(
 
    fun withGuessedRecordSeparator(content: String): CsvIngestionParameters {
       return copy(recordSeparator = guessRecordSeparator(content))
+   }
+   fun toAnnotation():CsvFormatSpecAnnotation {
+      return CsvFormatSpecAnnotation(
+         delimiter = delimiter,
+         firstRecordAsHeader = firstRecordAsHeader,
+         nullValue = nullValue.firstOrNull(),
+         ignoreContentBefore = preludeText,
+         recordSeparator = recordSeparator,
+         quoteChar = quote,
+      )
    }
 }

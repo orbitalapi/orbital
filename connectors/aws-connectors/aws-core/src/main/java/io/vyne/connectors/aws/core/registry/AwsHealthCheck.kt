@@ -25,6 +25,6 @@ fun AwsConnectionConfiguration.test(): Either<String, ConnectionSucceeded> {
         logger.trace { "AWS health check response => account: ${response.account()}  userId: ${response.userId()}" }
         return ConnectionSucceeded.right()
     } catch (e: Exception) {
-        "Error in AWS Connection ${this.connectionName}, error => ${e.message}".left()
+        "Failed to connect to AWS connection ${this.connectionName} - ${e.message}".left()
     }
 }

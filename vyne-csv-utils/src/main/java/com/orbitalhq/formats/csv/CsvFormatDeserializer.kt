@@ -12,25 +12,36 @@ import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
+import lang.taxi.accessors.ColumnAccessor
 import lang.taxi.types.FormatsAndZoneOffset
 import org.apache.commons.csv.CSVParser
+import org.apache.commons.csv.CSVRecord
 import reactor.core.publisher.Flux
 import java.io.InputStream
 import java.nio.charset.Charset
 
 object CsvFormatDeserializer : ModelFormatDeserializer, StreamingModelFormatDeserializer {
-   override fun canParse(value: Any, metadata: Metadata): Boolean {
-      return value is String
+   override fun canParse(value: Any, metadata: Metadata, type: Type): Boolean {
+      val isReadable = value is String || value is CSVRecord
+      if (!isReadable) {
+         return false
+      }
+
+      // If the type uses `by column(...)` then we can't parse it here.
+      val isUsingLegacyColumnMappings = type.attributes.values.any { it.accessor is ColumnAccessor }
+      return !isUsingLegacyColumnMappings
    }
 
    override fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema, source: DataSource): Any {
-
+      if (value is CSVRecord) {
+         return value.toMap()
+      }
       val csvAnnotation = CsvFormatSpecAnnotation.from(metadata)
       require(value is String)
       val format = CsvFormatFactory.fromParameters(csvAnnotation.ingestionParameters)
-      val content = CsvImporterUtil.trimContent(value, csvAnnotation.ingestionParameters.ignoreContentBefore)
+      val content = CsvImporterUtil.trimContent(value, csvAnnotation.ingestionParameters.preludeText)
       val parsed = CSVParser.parse(content, format)
-      return parsed.records.map { it.toMap() }
+      return parsed.records.map { record -> record.toMap() }
 //      return records
 
    }

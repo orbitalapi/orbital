@@ -27,6 +27,13 @@
    <dependencies>
       <dependency>
          <groupId>com.orbitalhq</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+         <type>test-jar</type>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>plugin-loader</artifactId>
          <version>${project.version}</version>
       </dependency>
@@ -148,6 +155,13 @@
          <groupId>com.orbitalhq</groupId>
          <artifactId>s3-connector</artifactId>
          <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>s3-connector</artifactId>
+         <version>${project.version}</version>
+         <type>test-jar</type>
+         <scope>test</scope>
       </dependency>
       <dependency>
          <groupId>com.orbitalhq</groupId>
@@ -511,6 +525,13 @@
          <artifactId>postgresql</artifactId>
          <scope>test</scope>
       </dependency>
+
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>localstack</artifactId>
+         <scope>test</scope>
+      </dependency>
+
       <dependency>
          <groupId>com.hazelcast</groupId>
          <artifactId>hazelcast</artifactId>

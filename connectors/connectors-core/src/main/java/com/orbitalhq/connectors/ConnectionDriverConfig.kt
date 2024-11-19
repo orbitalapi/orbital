@@ -30,6 +30,8 @@ data class ConnectionDriverParam(
    val visible: Boolean = true,
    val templateParamName: ConnectionParameterName = displayName,
    val allowedValues: List<Any> = emptyList(),
+   val isConstructorParameter: Boolean = false,
+   val description: String? = null,
 )
 
 /**

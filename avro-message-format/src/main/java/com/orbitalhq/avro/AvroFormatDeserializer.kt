@@ -6,8 +6,6 @@ import com.orbitalhq.models.format.ModelFormatDeserializer
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
-import io.confluent.kafka.schemaregistry.client.SchemaRegistryClientFactory
-import io.confluent.kafka.serializers.KafkaAvroDeserializer
 import org.apache.avro.generic.GenericArray
 import org.apache.avro.generic.GenericContainer
 import org.apache.avro.generic.GenericData
@@ -29,7 +27,7 @@ class AvroFormatDeserializer(
    }
 
 
-   override fun canParse(value: Any, metadata: Metadata): Boolean = value is ByteArray || value is String
+   override fun canParse(value: Any, metadata: Metadata, type: Type): Boolean = value is ByteArray || value is String
 
    override fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema, source: DataSource): Any {
       val avroSchema = schemaCache.get(schema, type)

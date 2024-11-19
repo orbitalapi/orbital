@@ -68,6 +68,14 @@ namespace  ${Annotations.namespace} {
                )
             )
          }
+
+         val parameterMap = mapOf("connectionName" to connectionName)
+         fun asMetadata():Metadata {
+            return com.orbitalhq.schemas.Metadata(
+               NAME.fqn(),
+               parameterMap
+            )
+         }
       }
 
       data class S3Operation(val bucket: String) : AnnotationWrapper {

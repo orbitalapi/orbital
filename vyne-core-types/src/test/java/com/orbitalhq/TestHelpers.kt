@@ -1,6 +1,8 @@
 package com.orbitalhq
 
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import io.kotest.matchers.collections.shouldContain
+import lang.taxi.TaxiDocument
 import java.time.Instant
 
 fun List<VersionedSource>.asPackage(
@@ -69,3 +71,8 @@ fun TaxiSchema.Companion.from(source: VersionedSource): TaxiSchema {
    return TaxiSchema.from(listOf(source).asPackage())
 }
 
+
+
+fun SourcePackage.shouldCompileTheSameAs(expected: String):TaxiDocument {
+   return lang.taxi.testing.TestHelpers.expectToCompileTheSame(this.sources.map { it.content }, expected)
+}

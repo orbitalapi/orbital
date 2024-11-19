@@ -27,6 +27,7 @@ import { Message } from '../../../services/schema';
         [appearance]="schemaSaveResultMessage.severity.toLowerCase()"
         *ngIf="schemaSaveResultMessage"
         class="notification"
+        size="m"
       >
         {{ schemaSaveResultMessage.message }}
         <button tuiIconButton iconStart="@tui.x" type="button" (click)="schemaSaveResultMessage = null">Close</button>

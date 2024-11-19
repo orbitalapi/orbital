@@ -54,7 +54,23 @@ class CsvFormatSpecAnnotation(
    val recordSeparator: String = "\r\n"
 ) : Serializable, AnnotationWrapper {
    override fun asAnnotation(schema: TaxiDocument): Annotation {
-      TODO("Not yet implemented")
+      return Annotation(
+         CsvAnnotationSpec.NAME.parameterizedName,
+         parameters = mapOf(
+            nullIfDefault(CsvFormatSpecAnnotation::delimiter.name to delimiter, ','),
+            nullIfDefault(CsvFormatSpecAnnotation::firstRecordAsHeader.name to firstRecordAsHeader, true),
+            CsvFormatSpecAnnotation::nullValue.name to nullValue,
+            nullIfDefault(CsvFormatSpecAnnotation::containsTrailingDelimiters.name to containsTrailingDelimiters, false),
+            CsvFormatSpecAnnotation::ignoreContentBefore.name to ignoreContentBefore,
+            nullIfDefault(CsvFormatSpecAnnotation::quoteChar.name to quoteChar, '"'),
+            nullIfDefault(CsvFormatSpecAnnotation::recordSeparator.name to recordSeparator, recordSeparator),
+      ).filter { (_,v) -> v != null })
+   }
+
+   private fun <K,V> nullIfDefault(pair: Pair<K,V>, default: V): Pair<K, V?> {
+      return if (pair.second == default) {
+         pair.first to null
+      } else pair
    }
 
    val ingestionParameters: CsvIngestionParameters = CsvIngestionParameters(
@@ -62,8 +78,8 @@ class CsvFormatSpecAnnotation(
       firstRecordAsHeader,
       nullValue = nullValue?.let { setOf(it) } ?: emptySet(),
       containsTrailingDelimiters = containsTrailingDelimiters,
-      ignoreContentBefore = ignoreContentBefore,
-      withQuote = quoteChar,
+      preludeText = ignoreContentBefore,
+      quote = quoteChar,
       recordSeparator = recordSeparator
    )
 

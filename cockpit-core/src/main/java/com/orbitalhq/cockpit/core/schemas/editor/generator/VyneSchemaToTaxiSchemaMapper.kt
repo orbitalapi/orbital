@@ -33,6 +33,7 @@ import lang.taxi.types.PrimitiveType
 import lang.taxi.types.StreamType
 import lang.taxi.types.Type
 import lang.taxi.types.TypeKind
+import lang.taxi.types.UnresolvedImportedType
 
 /**
  * This class is only used where we're sendng edits from the UI
@@ -109,12 +110,26 @@ class VyneSchemaToTaxiSchemaMapper(
 
    private fun convertParameter(
       sourceParam: PartialParameter
-   ) = Parameter(
-      convertAnnotations(sourceParam.metadata),
-      getOrCreateType(sourceParam.typeName),
-      sourceParam.name!!,
-      emptyList(), // TODO : Contraints
-   )
+   ): Parameter {
+      if (sourceParam is com.orbitalhq.schemas.Parameter) {
+         return Parameter(
+            convertAnnotations(sourceParam.metadata),
+            getOrCreateType(sourceParam.typeName),
+            sourceParam.name!!,
+            constraints = sourceParam.constraints,
+            nullable = sourceParam.nullable,
+            defaultValue = sourceParam.defaultValue
+         )
+      } else {
+         return Parameter(
+            convertAnnotations(sourceParam.metadata),
+            getOrCreateType(sourceParam.typeName),
+            sourceParam.name!!,
+            emptyList(), // TODO : Contraints
+         )
+      }
+
+   }
 
    private fun generateQueryOperation(source: PartialQueryOperation): QueryOperation {
       return QueryOperation(
@@ -142,9 +157,16 @@ class VyneSchemaToTaxiSchemaMapper(
          return referenceSchema.taxiType(name)
       }
       return _generatedTypes.getOrPut(name) {
-         // This allows us to support recursion - the undefined type will prevent us getting into an endless loop
-         _generatedTypes[name] = ObjectType.undefined(name.fullyQualifiedName)
-         createTaxiType(schema.type(name))
+         // Some schemas generate with references to types that are
+         // not present, because they're imported.
+         // If the type isn't present in the schema, treat it as an import
+         if (name.parameters.isEmpty() && !schema.containsType(name)) {
+            UnresolvedImportedType(name.parameterizedName)
+         } else {
+            // This allows us to support recursion - the undefined type will prevent us getting into an endless loop
+            _generatedTypes[name] = ObjectType.undefined(name.fullyQualifiedName)
+            createTaxiType(schema.type(name))
+         }
       }
    }
 

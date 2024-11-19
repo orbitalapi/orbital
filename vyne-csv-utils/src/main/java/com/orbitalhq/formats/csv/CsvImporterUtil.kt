@@ -18,7 +18,7 @@ object CsvImporterUtil {
 
       val format = CsvFormatFactory.fromParameters(parameters.withGuessedRecordSeparator(rawContent))
 
-      val content = trimContent(rawContent, parameters.ignoreContentBefore)
+      val content = trimContent(rawContent, parameters.preludeText)
       // This is very odd, but finding in debugging that sometimes
       // when using parsed.records, we get an empty list,
       // but CSVParser.parse(content,format).records returns a populated list.
@@ -51,7 +51,7 @@ object CsvImporterUtil {
                      parameters: CsvIngestionParameters
    ): ParsedCsvContent {
       val format = CsvFormatFactory.fromParameters(parameters)
-      val content = trimContent(rawContent, parameters.ignoreContentBefore)
+      val content = trimContent(rawContent, parameters.preludeText)
 
       val parsed = CSVParser.parse(content, format)
       val records = parsed.records
