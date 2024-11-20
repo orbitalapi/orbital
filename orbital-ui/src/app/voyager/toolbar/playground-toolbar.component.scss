@@ -20,8 +20,10 @@
   }
 }
 
-a, a:link, a:visited, a:hover, a:active {
-  color: white !important;
+a.toolbar-link {
+  &:link, &:visited, &:hover, &:active {
+    color: white !important;
+  }
 }
 
 .divider {
