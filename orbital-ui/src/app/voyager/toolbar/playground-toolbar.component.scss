@@ -169,7 +169,11 @@ button.dropdown-host {
   }
 
   .examples-list {
-    line-height: 2.5;
+    line-height: 1.5;
+  }
+
+  .group {
+    max-width: 225px;
   }
 
   ul {
@@ -177,7 +181,12 @@ button.dropdown-host {
     margin: 0;
     padding: 0;
 
+    li:not(:last-child) {
+      padding-bottom: 0.25rem;
+    }
+
     a {
+      display: block;
       text-decoration: none;
       font-weight: bold;
       padding: 0.5rem;
