@@ -3,8 +3,14 @@ import { Component, EventEmitter, Inject, Injector, Input, Output } from '@angul
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Observable } from 'rxjs/internal/Observable';
-import { TuiDialogService, TuiDataList, TuiIcon, TuiButton } from '@taiga-ui/core';
-import { TuiDataListWrapper, TuiStringifyContentPipe, TuiFilterByInputPipe, TuiButtonLoading } from '@taiga-ui/kit';
+import {TuiDialogService, TuiDataList, TuiIcon, TuiButton} from '@taiga-ui/core';
+import {
+  TuiDataListWrapper,
+  TuiStringifyContentPipe,
+  TuiFilterByInputPipe,
+  TuiButtonLoading,
+  TuiBadge,
+} from '@taiga-ui/kit';
 import { PolymorpheusComponent } from '@taiga-ui/polymorpheus';
 import { ConvertSchemaEvent, TableSchemaConverterOptions } from '../../data-source-import.models';
 import { ConnectorSummary, MappedTable } from '../../../db-connection-editor/db-importer.service';
@@ -33,7 +39,8 @@ import { sanitiseNamespace } from '../../../utils/utils';
     TuiSelectModule,
     TuiMultiSelectModule,
     TuiTextfieldControllerModule,
-    TuiButtonLoading
+    TuiButtonLoading,
+    TuiBadge,
   ],
   template: `
     <div class="form-container">
@@ -64,7 +71,12 @@ import { sanitiseNamespace } from '../../../utils/utils';
                   Add new connection...
                 </button>
                 <button *ngFor="let connection of connections | databases" tuiOption
-                        [value]="connection">{{ connection.connectionName }}
+                        [value]="connection"
+                        [disabled]="connection.connectionStatus.status === 'ERROR'"
+                >
+                  {{ connection.connectionName }}
+                  <tui-badge style="margin-left: 4px" size="s" appearance="negative"
+                             *ngIf="connection.connectionStatus.status === 'ERROR'">Unhealthy</tui-badge>
                 </button>
               </tui-data-list>
             </tui-select>

@@ -9,9 +9,10 @@ import {
 } from '@angular/core';
 import { CommonModule, NgIf } from '@angular/common';
 import {ActivatedRoute, Router} from '@angular/router';
-import {BehaviorSubject} from 'rxjs';
+import {TuiValidationError} from '@taiga-ui/cdk';
+import {BehaviorSubject, of} from 'rxjs';
 import {Observable} from 'rxjs/internal/Observable';
-import {shareReplay} from 'rxjs/operators';
+import {catchError, shareReplay} from 'rxjs/operators';
 import {TuiAlertService, TuiButton, TuiNotification} from '@taiga-ui/core';
 import {SchemaSubmissionResult, TypesService} from '../services/types.service';
 import {Message, Schema} from '../services/schema';
