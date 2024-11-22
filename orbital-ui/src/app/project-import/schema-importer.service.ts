@@ -1,7 +1,12 @@
 import {Injectable} from '@angular/core';
 import {VyneServicesModule} from '../services/vyne-services.module';
 import {HttpClient, HttpParams} from '@angular/common/http';
-import {FileSystemPackageSpec, GitRepositoryConfig, LoadablePackageType} from './project-import.models';
+import {
+  CreateEmptyProjectRequest,
+  FileSystemPackageSpec,
+  GitRepositoryConfig,
+  LoadablePackageType
+} from './project-import.models';
 import {ConvertSchemaEvent} from '../data-source-import/data-source-import.models';
 import {environment} from '../../environments/environment';
 import {Observable} from 'rxjs/internal/Observable';
@@ -90,6 +95,9 @@ export class SchemaImporterService {
     return this.httpClient.post<ModifyWorkspaceResponse>(`${environment.serverUrl}/api/repositories/file`, request)
   }
 
+  createEmptyProject(request: CreateEmptyProjectRequest): Observable<ModifyWorkspaceResponse> {
+    return this.httpClient.post<ModifyWorkspaceResponse>(`${environment.serverUrl}/api/repositories/new`, request)
+  }
 
   removeRepository(packageDescription: SourcePackageDescription): Observable<any> {
     return this.httpClient.delete<any>(`${environment.serverUrl}/api/packages/${packageDescription.identifier.uriSafeId}`)

@@ -11,6 +11,7 @@ import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.PackageType
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
 import com.orbitalhq.schemaServer.repositories.AddFileProjectRequest
+import com.orbitalhq.schemaServer.repositories.CreateEmptyProjectRequest
 import com.orbitalhq.schemaServer.repositories.FileProjectStoreTestRequest
 import com.orbitalhq.schemaServer.repositories.FileProjectTestResponse
 import com.orbitalhq.schemaServer.repositories.GitConnectionTestRequest
@@ -36,7 +37,7 @@ import java.nio.file.Paths
 class WorkspaceProjectsService(
    private val configRepo: WorkspaceConfigLoader,
    private val projectUploadHandlers: List<ProjectUploadHandler> = ProjectUploadHandler.DEFAULT
-   ) {
+) {
    companion object {
       private val logger = KotlinLogging.logger {}
    }
@@ -66,6 +67,20 @@ class WorkspaceProjectsService(
       }
    }
 
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
+   @PostMapping("/api/repositories/new")
+   fun createNewEmptyRepository(@RequestBody request: CreateEmptyProjectRequest): Mono<ModifyWorkspaceResponse> {
+      val fileSpec = request.toRepositorySpec()
+      return Mono.just(configRepo.addFileSpec(fileSpec)).map {
+         if (it.status == ModifyProjectResponseStatus.Failed) {
+            throw BadRequestException(it.message!!)
+         } else {
+            it
+         }
+      }
+   }
+
+
    /**
     * Allows users to upload a project or spec which will get created as a
     * project within the workspace.
@@ -86,7 +101,7 @@ class WorkspaceProjectsService(
          .fileConfigOrDefault
          .newProjectsPath
 
-      val projectRoot = workspaceProjectsRoot.resolve(packageIdentifier.unversionedId.replace(".","/"))
+      val projectRoot = workspaceProjectsRoot.resolve(packageIdentifier.unversionedId.replace(".", "/"))
       logger.info { "Project $uriSafeProjectId will be saved to $projectRoot" }
       projectRoot.toFile().mkdirs()
 
@@ -101,7 +116,7 @@ class WorkspaceProjectsService(
 
    @VisibleForTesting
    fun removeFileRepository(repositoryPath: Path, packageIdentifier: PackageIdentifier): List<PackageIdentifier> {
-      return configRepo.removeFileRepository(repositoryPath,packageIdentifier)
+      return configRepo.removeFileRepository(repositoryPath, packageIdentifier)
    }
 
    @PostMapping("/api/repositories/file", params = ["test"])
@@ -143,12 +158,14 @@ class WorkspaceProjectsService(
                )
             }
       } catch (e: Exception) {
-         Mono.just(GitConnectionTestResult(
-            successful = false,
-            errorMessage = e.cause.toString(),
-            branchNames = null,
-            defaultBranch = null
-         ))
+         Mono.just(
+            GitConnectionTestResult(
+               successful = false,
+               errorMessage = e.cause.toString(),
+               branchNames = null,
+               defaultBranch = null
+            )
+         )
       }
 
    }
@@ -161,6 +178,15 @@ fun GitProjectStoreChangeRequest.toRepositorySpec(): GitProjectSpec {
       this.branch,
       path = Paths.get(this.path),
       loader = this.loader
+   )
+}
+
+fun CreateEmptyProjectRequest.toRepositorySpec(): FileProjectSpec {
+
+   return FileProjectSpec(
+      Paths.get("workspace/projects/${this.newProjectIdentifier.id}"),
+      isEditable = true,
+      packageIdentifier = this.newProjectIdentifier,
    )
 }
 

@@ -23,8 +23,13 @@ data class GitConnectionTestResult(
    val errorMessage: String?,
    val branchNames: List<String>?,
    val defaultBranch: String?
-
 )
+
+data class CreateEmptyProjectRequest(
+   val newProjectIdentifier: PackageIdentifier
+)
+
+
 
 data class AddFileProjectRequest(
    val path: String,
