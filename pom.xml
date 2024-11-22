@@ -86,6 +86,8 @@ Transitive dependency in wire-compiler and calcite-core
       <!-- CVE-2024-47554 in <2.14.0 -->
       <commons-io.version>2.17.0</commons-io.version>
 
+      <bouncycastle.version>1.78</bouncycastle.version>
+
 
    </properties>
 
@@ -542,6 +544,13 @@ Transitive dependency in wire-compiler and calcite-core
             <type>pom</type>
             <scope>import</scope>
          </dependency>
+         <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on -->
+         <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.78</version>
+         </dependency>
+
       </dependencies>
    </dependencyManagement>
 
