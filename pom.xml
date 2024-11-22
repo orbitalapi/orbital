@@ -551,6 +551,13 @@ Transitive dependency in wire-compiler and calcite-core
             <version>1.78</version>
          </dependency>
 
+         <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-jdk18on -->
+         <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <version>1.78</version>
+         </dependency>
+
       </dependencies>
    </dependencyManagement>
 
