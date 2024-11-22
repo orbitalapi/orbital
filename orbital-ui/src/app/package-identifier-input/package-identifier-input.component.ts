@@ -34,7 +34,7 @@ import {SemverValidatorDirective} from "../project-import/project-source-config/
       <tui-input [(ngModel)]="packageIdentifier.name" required name="openApiPackageName"
                  [readOnly]="!editable"
                  (ngModelChange)="updateDefaultNamespace()" validIdentifier #openApiPackageName="ngModel">
-        Name
+        Project name
         <span class="tui-required"></span>
       </tui-input>
       <tui-input [(ngModel)]="packageIdentifier.version" required name="openApiPackageVersion" semver
@@ -47,7 +47,7 @@ import {SemverValidatorDirective} from "../project-import/project-source-config/
     <tui-error [error]="openApiPackageOrg$ && openApiPackageOrg$.invalid && (openApiPackageOrg$.dirty || openApiPackageOrg$.touched)
       ? 'Organisation names must start with a letter, and only contain letters, underscores, hyphens, dots or numbers' : null"></tui-error>
     <tui-error [error]="openApiPackageOrg$ && openApiPackageName$.invalid && (openApiPackageName$.dirty || openApiPackageName$.touched)
-      ? 'Package names must start with a letter, and only contain letters, underscores, hyphens or numbers' : null"></tui-error>
+      ? 'Project names must start with a letter, and only contain letters, underscores, hyphens or numbers' : null"></tui-error>
     <tui-error [error]="openApiPackageOrg$ && openApiPackageVersion$.invalid && (openApiPackageVersion$.dirty || openApiPackageVersion$.touched)
       ? 'Versions need to follow the convention of 0.0.0 (eg., 1.0.3)' : null"></tui-error>
   `,

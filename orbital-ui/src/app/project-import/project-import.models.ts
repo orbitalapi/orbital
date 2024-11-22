@@ -13,6 +13,9 @@ export class GitRepositoryConfig {
   public loader: PackageLoaderSpec = new TaxiPackageLoaderSpec();
 }
 
+export interface CreateEmptyProjectRequest {
+  newProjectIdentifier: PackageIdentifier
+}
 export class FileSystemPackageSpec {
   public path: string;
   public loader: PackageLoaderSpec = new TaxiPackageLoaderSpec();

@@ -25,9 +25,8 @@ import {TaxiPackageConfigComponent} from './taxi-package-config.component';
   template: `
     <div class='form-header-text' *ngIf="editable">
       <p>Read projects directly from the local machine.</p>
-      <tui-notification appearance='warning'>Disk based projects are great for getting started and dev-local
-        experiments,
-        however you should consider storing your project in a git repository in production
+      <tui-notification appearance='info'>Disk based projects are great for getting started and dev-local
+        experiments, however you should consider storing your project in a git repository in production
       </tui-notification>
     </div>
     <form #fileForm='ngForm'>
@@ -236,7 +235,7 @@ export class FileConfigComponent {
     console.log(JSON.stringify(error));
     this.working = false;
     this.saveResultMessage = {
-      message: `There was a problem adding the local disk repository: ${error.error.message}`,
+      message: `There was a problem adding the local disk repository: ${error.error?.message ?? error.message ?? 'An error occurred'}`,
       severity: 'ERROR'
     };
     this.changeDetector.markForCheck();

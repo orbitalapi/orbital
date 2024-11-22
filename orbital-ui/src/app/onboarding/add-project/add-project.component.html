@@ -21,6 +21,27 @@
 ></app-project-list>
 
 <!--Options-->
+<h3 *ngIf="step === 'options' || step === 'projectAdded'">Add new</h3>
+<div class="island-container tui-space_top-4 tui-space_bottom-8" *ngIf="step === 'options' || step === 'projectAdded'">
+  <tui-island>
+    <div>
+      <tui-avatar [src]="'assets/img/tabler/folder-plus.svg'"
+                  [round]="true"
+                  size="l"
+                  class="icon"
+      ></tui-avatar>
+      <h3 class="tui-island__title">Create new project</h3>
+      <p class="tui-island__paragraph">
+        Create a new server-hosted project.
+      </p>
+    </div>
+    <p class="tui-island__paragraph tui-island__paragraph_button">
+      <button tuiButton appearance="whiteblock" size="m" iconEnd="@tui.plus" (click)="step = 'createNew'">Add</button>
+    </p>
+  </tui-island>
+</div>
+
+<h3 *ngIf="step === 'options' || step === 'projectAdded'">Use existing</h3>
 <div class="island-container tui-space_top-4" *ngIf="step === 'options' || step === 'projectAdded'">
   <tui-island>
     <div>
@@ -69,6 +90,23 @@
   </tui-island>-->
 </div>
 
+<!--Create new project-->
+<tui-island class="tui-space_top-4" *ngIf="step === 'createNew'">
+  <div>
+    <tui-avatar [src]="'assets/img/tabler/folder-plus.svg'"
+                [round]="true"
+                size="l"
+                class="icon"
+    ></tui-avatar>
+    <h3 class="tui-island__title">Create new project</h3>
+    <app-create-new-config
+      [isOnboardingMode]="isOnboardingMode"
+      (newProjectCreated)="step = 'projectAdded'; hasAddedProject = true"
+      (goBackOnboarding)="step = 'options'">
+    </app-create-new-config>
+  </div>
+</tui-island>
+
 <!--Git Repo-->
 <tui-island class="tui-space_top-4" *ngIf="step === 'gitRepo'">
   <div>
@@ -106,7 +144,7 @@
 </tui-island>
 
 <!--Microservice-->
-<tui-island class="tui-space_top-4" *ngIf="step === 'microService'">
+<!--<tui-island class="tui-space_top-4" *ngIf="step === 'microService'">
   <div class="tui-space_bottom-2">
     <tui-avatar [src]="'assets/img/tabler/server.svg'"
       [round]="true"
@@ -126,5 +164,5 @@
   >
     Cancel
   </button>
-</tui-island>
+</tui-island>-->
 
