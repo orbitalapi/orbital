@@ -132,6 +132,16 @@ const whitelist = {
          spdxCode: '',
          url: 'http://golang.org/LICENSE'
       },
+      {
+         licenseName: 'BSD License',
+         spdxCode: '',
+         url: 'https://opensource.org/licenses/BSD-3-Clause'
+      },
+      {
+         licenseName: 'Mozilla Public License 2.0',
+         spdxCode: 'MPL-2.0',
+         url: 'https://opensource.org/license/mpl-2-0'
+      },
       /*{
          licenseName: 'GNU Library General Public License v2 only',
          spdxCode: 'LGPL-2.0-only',
