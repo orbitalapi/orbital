@@ -25,11 +25,7 @@
 <div class="island-container tui-space_top-4 tui-space_bottom-8" *ngIf="step === 'options' || step === 'projectAdded'">
   <tui-island>
     <div>
-      <tui-avatar [src]="'assets/img/tabler/folder-plus.svg'"
-                  [round]="true"
-                  size="l"
-                  class="icon"
-      ></tui-avatar>
+      <img src="assets/img/tabler/folder-plus.svg" class="icon">
       <h3 class="tui-island__title">Create new project</h3>
       <p class="tui-island__paragraph">
         Create a new server-hosted project.
@@ -45,14 +41,10 @@
 <div class="island-container tui-space_top-4" *ngIf="step === 'options' || step === 'projectAdded'">
   <tui-island>
     <div>
-      <tui-avatar [src]="'assets/img/tabler/brand-git.svg'"
-        [round]="true"
-        size="l"
-        class="icon"
-      ></tui-avatar>
+      <img src="assets/img/tabler/brand-git.svg" class="icon">
       <h3 class="tui-island__title">Git Repository</h3>
       <p class="tui-island__paragraph">
-        Connect {{ uiConfig.productName }} to a Git repository to add individual OpenAPI schemas, or entire Taxi projects
+        Connect {{ uiConfig.productName }} to a Git repository to add individual OpenAPI schemas, or entire Taxi projects.
       </p>
     </div>
     <p class="tui-island__paragraph tui-island__paragraph_button">
@@ -61,11 +53,17 @@
   </tui-island>
   <tui-island>
     <div>
-      <tui-avatar [src]="'assets/img/tabler/server.svg'"
-        [round]="true"
-        size="l"
-        class="icon"
-      ></tui-avatar>
+      <img src="assets/img/tabler/upload.svg" class="icon">
+      <h3 class="tui-island__title">Upload a project</h3>
+      <p class="tui-island__paragraph">Upload a zip of an existing Taxi project {{ uiConfig.productName }}.</p>
+    </div>
+    <p class="tui-island__paragraph tui-island__paragraph_button">
+      <button tuiButton appearance="whiteblock" size="m" iconEnd="@tui.plus" (click)="step = 'upload'">Add</button>
+    </p>
+  </tui-island>
+  <tui-island>
+    <div>
+      <img src="assets/img/tabler/server.svg" class="icon">
       <h3 class="tui-island__title">Local disk</h3>
       <p class="tui-island__paragraph">Read projects directly from the local machine.</p>
     </div>
@@ -75,12 +73,7 @@
   </tui-island>
   <!--<tui-island>
     <div>
-      <tui-avatar
-        avatarUrl="assets/img/tabler/topology-star-3.svg"
-        [rounded]="true"
-        size="l"
-        class="icon"
-      ></tui-avatar>
+      <img src="assets/img/tabler/topology-star-3.svg" class="icon">
       <h3 class="tui-island__title">Microservice</h3>
       <p class="tui-island__paragraph">Need a description (and action) for this...</p>
     </div>
@@ -90,14 +83,11 @@
   </tui-island>-->
 </div>
 
+
 <!--Create new project-->
 <tui-island class="tui-space_top-4" *ngIf="step === 'createNew'">
   <div>
-    <tui-avatar [src]="'assets/img/tabler/folder-plus.svg'"
-                [round]="true"
-                size="l"
-                class="icon"
-    ></tui-avatar>
+    <img src="assets/img/tabler/folder-plus.svg" class="icon">
     <h3 class="tui-island__title">Create new project</h3>
     <app-create-new-config
       [isOnboardingMode]="isOnboardingMode"
@@ -110,11 +100,7 @@
 <!--Git Repo-->
 <tui-island class="tui-space_top-4" *ngIf="step === 'gitRepo'">
   <div>
-    <tui-avatar [src]="'assets/img/tabler/brand-git.svg'"
-      [round]="true"
-      size="l"
-      class="icon"
-    ></tui-avatar>
+    <img src="assets/img/tabler/brand-git.svg" class="icon">
     <h3 class="tui-island__title">Git Repository</h3>
     <app-git-config
       [isOnboardingMode]="isOnboardingMode"
@@ -125,14 +111,24 @@
   </div>
 </tui-island>
 
+<!--Upload-->
+<tui-island class="tui-space_top-4" *ngIf="step === 'upload'">
+  <div>
+    <img src="assets/img/tabler/upload.svg" class="icon">
+    <h3 class="tui-island__title">Upload a project</h3>
+    <app-upload-config
+      [isOnboardingMode]="isOnboardingMode"
+      (projectUploaded)="step = 'projectAdded'; hasAddedProject = true"
+      (goBackOnboarding)="step = 'options'"
+    >
+    </app-upload-config>
+  </div>
+</tui-island>
+
 <!--Local disk-->
 <tui-island class="tui-space_top-4" *ngIf="step === 'localDisk'">
   <div>
-    <tui-avatar [src]="'assets/img/tabler/server.svg'"
-      [round]="true"
-      size="l"
-      class="icon"
-    ></tui-avatar>
+    <img src="assets/img/tabler/server.svg" class="icon">
     <h3 class="tui-island__title">Local disk</h3>
     <app-file-config
       [isOnboardingMode]="isOnboardingMode"
@@ -146,11 +142,7 @@
 <!--Microservice-->
 <!--<tui-island class="tui-space_top-4" *ngIf="step === 'microService'">
   <div class="tui-space_bottom-2">
-    <tui-avatar [src]="'assets/img/tabler/server.svg'"
-      [round]="true"
-      size="l"
-      class="icon"
-    ></tui-avatar>
+    <img src="assets/img/tabler/topology-star-3.svg" class="icon">
     <h3 class="tui-island__title">Microservice</h3>
     <p class="tui-island__content ">What to put in here???</p>
   </div>

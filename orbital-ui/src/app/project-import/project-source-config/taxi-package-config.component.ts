@@ -34,6 +34,9 @@ import { TuiNotification, TuiLoader, TuiGroup, TuiButton } from '@taiga-ui/core'
                        (ngModelChange)='filePathUpdated($event)'>
               Path
             </tui-input>
+            <tui-notification size="m" appearance='neutral' class="tui-space_top-2" *ngIf="editable">
+              Using Docker? Enter paths relative to your mounted volume (e.g., /opt/service/workspace )
+            </tui-notification>
             <div style='display: flex; margin-top: 0.5rem'>
               <tui-loader [showLoader]='true' size='s'
                           *ngIf='editable && !filePathTestResult && fileSystemPackageConfig.path'
@@ -96,7 +99,7 @@ import { TuiNotification, TuiLoader, TuiGroup, TuiButton } from '@taiga-ui/core'
         <input
             tuiCheckbox
             type="checkbox" [(ngModel)]='fileSystemPackageConfig.isEditable' name='editable'
-                      required [readOnly]='!editable' size="s"/>
+            required [disabled]='!editable' size="s"/>
       </div>
     </div>
   `,

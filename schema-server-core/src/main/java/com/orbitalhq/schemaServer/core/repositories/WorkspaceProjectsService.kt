@@ -5,6 +5,7 @@ import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitUtils
+import com.orbitalhq.schemaServer.core.repositories.upload.PackageIdentifyingUploadHandler
 import com.orbitalhq.schemaServer.core.repositories.upload.ProjectUploadHandler
 import com.orbitalhq.schemaServer.packages.AvroPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
@@ -96,7 +97,14 @@ class WorkspaceProjectsService(
       @RequestBody payload: ByteArray
    ): Mono<ModifyWorkspaceResponse> {
       logger.info { "Attempting to import $packageType project $uriSafeProjectId" }
-      val packageIdentifier = PackageIdentifier.fromUriSafeId(uriSafeProjectId)
+      val uploadHandler = projectUploadHandlers.firstOrNull { it.packageType == packageType }
+         ?: throw BadRequestException("Upload of projects with format of $packageType is not supported")
+
+      val packageIdentifier = if (uploadHandler is PackageIdentifyingUploadHandler) {
+         uploadHandler.readPackageIdentifier(payload)
+      } else {
+         PackageIdentifier.fromUriSafeId(uriSafeProjectId)
+      }
       val workspaceProjectsRoot = configRepo.load()
          .fileConfigOrDefault
          .newProjectsPath
@@ -105,10 +113,9 @@ class WorkspaceProjectsService(
       logger.info { "Project $uriSafeProjectId will be saved to $projectRoot" }
       projectRoot.toFile().mkdirs()
 
-      val uploadHandler = projectUploadHandlers.firstOrNull { it.packageType == packageType }
-         ?: throw BadRequestException("Upload of projects with format of $packageType is not supported")
 
-      val createProjectRequest = uploadHandler.processUpload(packageIdentifier, parameters.toMap(), payload, projectRoot)
+      val createProjectRequest =
+         uploadHandler.processUpload(packageIdentifier, parameters.toMap(), payload, projectRoot)
       return createFileRepository(createProjectRequest)
 
    }

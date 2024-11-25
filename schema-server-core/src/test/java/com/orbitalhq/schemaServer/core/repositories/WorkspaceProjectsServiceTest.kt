@@ -243,4 +243,41 @@ class WorkspaceProjectsServiceTest {
          .file!!.projects.should.have.size(1)
    }
 
+   @Test
+   fun `can upload a zipped taxi project`() {
+      val result = workspaceProjectsService.uploadProject(
+         "ignored:ignored:1.0.0",
+         PackageType.Taxi,
+         LinkedMultiValueMap(
+            emptyMap()
+         ),
+         Resources.toByteArray(Resources.getResource("zipped-projects/sample-zip-without-parent-folder.zip"))
+      ).block()
+      result!!.status.shouldBe(ModifyProjectResponseStatus.Ok)
+      val taxiConfFile = folder.root.resolve("orbital/workspace/projects/org/taxi/sample/taxi.conf")
+      taxiConfFile.shouldExist()
+
+      val repositoryConfig = workspaceProjectsService.listRepositories()
+      repositoryConfig
+         .file!!.projects.should.have.size(1)
+   }
+
+   @Test
+   fun `can upload a zipped taxi project with parent folder`() {
+      val result = workspaceProjectsService.uploadProject(
+         "ignored:ignored:1.0.0",
+         PackageType.Taxi,
+         LinkedMultiValueMap(
+            emptyMap()
+         ),
+         Resources.toByteArray(Resources.getResource("zipped-projects/sample-zip-with-parent-folder.zip"))
+      ).block()
+      result!!.status.shouldBe(ModifyProjectResponseStatus.Ok)
+      val taxiConfFile = folder.root.resolve("orbital/workspace/projects/org/taxi/sample/sample-zipped-project/taxi.conf")
+      taxiConfFile.shouldExist()
+
+      val repositoryConfig = workspaceProjectsService.listRepositories()
+      repositoryConfig
+         .file!!.projects.should.have.size(1)
+   }
 }

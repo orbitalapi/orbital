@@ -1,7 +1,15 @@
 import { TuiInputModule } from "@taiga-ui/legacy";
 import { TuiError } from "@taiga-ui/core";
-import {Component, EventEmitter, Input, Output, ViewChild} from '@angular/core';
-import {ControlContainer, FormControl, FormsModule, NgControl, NgModelGroup, ReactiveFormsModule} from '@angular/forms';
+import {Component, EventEmitter, Input, OnInit, Optional, Output, SkipSelf, ViewChild} from '@angular/core';
+import {
+  ControlContainer,
+  FormControl,
+  FormsModule,
+  NgControl,
+  NgForm,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import {Observable, of, Subject, switchMap} from 'rxjs';
 import {CommonModule} from '@angular/common';
 import { TuiFileLike, TuiFiles } from '@taiga-ui/kit';
@@ -11,7 +19,17 @@ import {FileExtensionValidatorDirective} from './file-extension-validator.direct
 // It also handles the validation that's required for the path based flow.
 @Component({
   selector: 'app-file-path-or-upload',
-  viewProviders: [{provide: ControlContainer, useExisting: NgModelGroup}],
+  // Need this rather lengthy bit of Angular magic to cross the bridge between
+  // the ngForm (aka template-driven) approach in the parent component and the
+  // formControl (aka reactive forms) approach in here to get validation working
+  viewProviders: [
+    {
+      provide: ControlContainer,
+      useFactory: (controlContainer: ControlContainer) =>
+        controlContainer instanceof NgForm ? controlContainer : null,
+      deps: [[new SkipSelf(), ControlContainer]],
+    },
+  ],
   standalone: true,
   imports: [
     TuiFiles,
@@ -31,8 +49,6 @@ import {FileExtensionValidatorDirective} from './file-extension-validator.direct
         <input
           tuiInputFiles
           [accept]="filesAccepted.join(',')"
-          [link]="uploadLabel"
-          [lable]="uploadLabel"
           [formControl]="fileDropControl"
           (reject)="onReject($event)"
         />
@@ -72,16 +88,19 @@ import {FileExtensionValidatorDirective} from './file-extension-validator.direct
     }
   `,
 })
-export class FilePathOrUploadComponent {
+export class FilePathOrUploadComponent implements OnInit {
   @Input()
   editable: boolean = true;
 
+  @Input()
+  readContentsAs: 'string' | 'bytes' = 'string';
   @Input()
   path: string;
 
   @Input()
   mode: 'path' | 'upload';
 
+  /** Deprecated in Taiga v4 (no link or label props on the input anymore)  */
   @Input()
   uploadLabel: string;
 
@@ -102,12 +121,26 @@ export class FilePathOrUploadComponent {
 
   errorMessage: string;
 
-  readonly fileDropControl = new FormControl<TuiFileLike | null>(null);
+  readonly fileDropControl = new FormControl<TuiFileLike | null>(
+    null,
+    Validators.required
+  );
 
   readonly rejectedFiles$ = new Subject<TuiFileLike | null>();
   readonly loadedFiles$ = this.fileDropControl.valueChanges.pipe(
     switchMap(file => (file ? this.makeRequest(file) : of(null))),
   );
+
+  constructor(
+    @Optional() @SkipSelf() private parentFormGroup: NgForm
+  ) {}
+
+  ngOnInit() {
+    if (this.parentFormGroup) {
+      // Add the child control to the parent form dynamically
+      this.parentFormGroup.form.addControl('fileUpload', this.fileDropControl);
+    }
+  }
 
   onPathChanged(value: string) {
     this.path = value;
@@ -124,7 +157,14 @@ export class FilePathOrUploadComponent {
     fileReader.onloadend = () => {
       this.fileChanged.emit(fileReader.result as string)
     }
-    fileReader.readAsText(file as File);
+    switch (this.readContentsAs) {
+      case "string":
+        fileReader.readAsText(file as File);
+        break;
+      case "bytes":
+        fileReader.readAsArrayBuffer(file as File);
+        break;
+    }
     return of(file)
   }
 

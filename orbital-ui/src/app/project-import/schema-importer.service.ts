@@ -81,7 +81,7 @@ export class SchemaImporterService {
     }
   }
 
-  uploadProject(uriSafeProjectId: string, parameters: {format: LoadablePackageType, defaultNamespace?: string, serviceBasePath?: string}, payload: string): Observable<ModifyWorkspaceResponse> {
+  uploadProject(uriSafeProjectId: string = null, parameters: {format: LoadablePackageType, defaultNamespace?: string, serviceBasePath?: string}, payload: string): Observable<ModifyWorkspaceResponse> {
     const params = Object.keys(parameters).reduce(
       (httpParams, key) => {
         return parameters[key] !== undefined ? httpParams.append(key, parameters[key]) : httpParams
