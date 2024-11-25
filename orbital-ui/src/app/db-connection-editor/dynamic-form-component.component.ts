@@ -9,8 +9,9 @@ import {
   UntypedFormGroup
 } from '@angular/forms';
 import { TuiFieldErrorPipe, TuiCheckbox } from '@taiga-ui/kit';
-import { TUI_NUMBER_FORMAT, TuiError, TuiLabel } from '@taiga-ui/core';
+import {TUI_NUMBER_FORMAT, TuiError, TuiLabel, TuiNotification} from '@taiga-ui/core';
 import {of} from 'rxjs';
+import {HostNameWarningDirective} from '../utils/host-name-warning.directive';
 
 export class DynamicFormComponentSpec {
   constructor(readonly key: string,
@@ -46,7 +47,7 @@ export type InputType = 'text' | 'password' | 'number' | 'checkbox';
     <div [formGroup]="form" class="tui-form-field">
 
       <ng-container [ngSwitch]="spec.inputType">
-        <tui-input *ngSwitchCase="'text'" [formControlName]="spec.key">{{ spec.label }}</tui-input>
+        <tui-input *ngSwitchCase="'text'" [formControlName]="spec.key" appHostNameWarning>{{ spec.label }}</tui-input>
         <tui-input-password *ngSwitchCase="'password'" [formControlName]="spec.key">{{ spec.label }}
         </tui-input-password>
         <tui-input-number *ngSwitchCase="'number'" [formControlName]="spec.key">{{ spec.label }}</tui-input-number>
@@ -72,8 +73,10 @@ export type InputType = 'text' | 'password' | 'number' | 'checkbox';
     TuiError,
     TuiFieldErrorPipe,
     AsyncPipe,
-    TuiCheckbox
-],
+    TuiCheckbox,
+    HostNameWarningDirective,
+    TuiNotification,
+  ],
   standalone: true
 })
 export class DynamicFormComponentComponent implements ControlValueAccessor {
