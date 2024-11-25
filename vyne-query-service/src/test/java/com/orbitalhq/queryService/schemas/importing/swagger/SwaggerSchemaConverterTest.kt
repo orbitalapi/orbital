@@ -55,7 +55,7 @@ class SwaggerSchemaConverterTest : BaseSchemaConverterServiceTest() {
          )
       ).block(Duration.ofSeconds(5))!!
 
-      conversionResponse.types.should.have.size(3)
+      conversionResponse.types.should.have.size(2)
       conversionResponse.services.should.have.size(2)
    }
 
