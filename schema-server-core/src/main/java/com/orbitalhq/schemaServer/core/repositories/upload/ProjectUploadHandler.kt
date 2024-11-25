@@ -17,8 +17,17 @@ interface ProjectUploadHandler {
    ): AddFileProjectRequest
 
    companion object {
-      val DEFAULT = listOf(AvroProjectUploadHandler(), OpenApiProjectUploadHandler())
+      val DEFAULT = listOf(AvroProjectUploadHandler(), OpenApiProjectUploadHandler(), TaxiProjectUploadHandler())
    }
+}
+
+
+/**
+ * Extension of ProjectUploadHandler for cases where the packageId is determined by
+ * reading the upload payload, rather than provided in a request parameter
+ */
+interface PackageIdentifyingUploadHandler : ProjectUploadHandler {
+   fun readPackageIdentifier(payload: ByteArray):PackageIdentifier
 }
 
 fun Map<String,List<String>>.singleOrNullOrBadRequest(property: KProperty1<*,*>): String? {

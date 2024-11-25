@@ -14,8 +14,13 @@
   gap: 1rem;
 
   @media #{$tui-desktop-min} {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+  }
+
+  @media #{$tui-desktop-interval} {
     grid-template-columns: repeat(2, 1fr);
-    gap: 2rem;
+    gap: 1.5rem;
   }
 
   tui-island {
@@ -30,9 +35,8 @@
 }
 
 .icon {
-  background-color: var(--tui-background-neutral-1);
-  padding: 0.5rem;
   float: right;
+  opacity: 0.5;
 
   ::ng-deep img {
     filter: invert(41%) sepia(0%) saturate(405%) hue-rotate(134deg) brightness(92%) contrast(83%);
