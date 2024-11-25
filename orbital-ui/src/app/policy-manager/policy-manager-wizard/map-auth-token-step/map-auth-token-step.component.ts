@@ -34,7 +34,7 @@ import {SchemaSubmissionResult} from '../../../services/types.service';
       access policies.
     </p>
     <p>
-      To make these available, you need to define a model in your schema that inherits from <code>com.orbitalhq.auth.AuthClaims</code>,
+      To make these available, you need to define a model in your schema that inherits from <code>{{UiCustomisations.packageNamespace}}.auth.AuthClaims</code>,
       which contains your user credentials.
     </p>
     <app-project-selector

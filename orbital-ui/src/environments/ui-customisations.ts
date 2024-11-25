@@ -24,5 +24,6 @@ export const UiCustomisations = {
   customSidebarElements: function (appConfig: AppConfig): SidebarElement[] {
     return [];
   },
-  docsLinks: orbitalDocsLinks
+  docsLinks: orbitalDocsLinks,
+  packageNamespace: 'com.orbitalhq'
 }
