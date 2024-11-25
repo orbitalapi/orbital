@@ -172,7 +172,8 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
           if (next.length > 0) {
             // Because the results have been reversed, the first item (which
             // contains the type definition) is actually at the end
-            this.rebuildGridData(next[next.length - 1]);
+            const indexOfItemWithTypeData = this.isStreamingQuery ? next.length - 1 : 0;
+            this.rebuildGridData(next[indexOfItemWithTypeData]);
           }
         }
 
