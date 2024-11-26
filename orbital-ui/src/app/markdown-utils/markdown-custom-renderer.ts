@@ -16,7 +16,7 @@ export class CustomMarkdownRenderer {
   ) {}
 
   code(code: string, language: string, escaped: boolean, delegateFunction):string {
-    if (language === 'components') {
+    if (language === 'components' || language === 'schemaDiagram') {
       // Create a unique identifier for the placeholder
       const id = `orb-diagram-${Math.random().toString(36).substr(2, 9)}`;
       setTimeout(() => this.replacePlaceholderWithComponent(id, code), 0);
