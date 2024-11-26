@@ -36,16 +36,18 @@
   </div>
   <ng-container *ngIf="unhealthyConnections()?.length">
     <h4>Unhealthy connections:</h4>
-    <div *ngFor="let conn of unhealthyConnections()" class="connection-error">
-      <strong>{{conn.connectionName}}</strong>
-      <app-connection-status [status]="conn.connectionStatus" [hideTimestamp]="true"></app-connection-status>
-      <a
-        class="link"
-        [routerLink]="'/data-source-manager/' + conn.packageIdentifier.uriSafeId + '/' + conn.connectionName"
-        [title]="conn.connectionStatus.message"
-      >
-        {{conn.connectionStatus.message}}
-      </a>
+    <div class="connection-error-grid">
+      <ng-container *ngFor="let conn of unhealthyConnections()">
+        <strong>{{conn.connectionName}}</strong>
+        <app-connection-status [status]="conn.connectionStatus" [hideTimestamp]="true"></app-connection-status>
+        <a
+          class="link"
+          [routerLink]="'/data-source-manager/' + conn.packageIdentifier.uriSafeId + '/' + conn.connectionName"
+          [title]="conn.connectionStatus.message"
+        >
+          {{conn.connectionStatus.message}}
+        </a>
+      </ng-container>
     </div>
   </ng-container>
   <ng-container *ngIf="definitionsWithErrors()?.length">

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import {TuiAppearanceOptions} from '@taiga-ui/core';
-import { TuiBadge } from '@taiga-ui/kit';
+import {TuiBadge, TuiStatus} from '@taiga-ui/kit';
 import { ConnectionStatus } from "../../db-connection-editor/db-importer.service";
 import { CommonModule } from "@angular/common";
 import { MomentModule } from "ngx-moment";
@@ -9,7 +9,7 @@ import { MomentModule } from "ngx-moment";
   selector: 'app-connection-status',
   template: `
     <div *ngIf="status" class="status">
-      <tui-badge [appearance]="getBadgeState()" size="m">{{ getBadgeLabel() }}</tui-badge>
+      <tui-badge tuiStatus [appearance]="getBadgeState()" size="m">{{ getBadgeLabel() }}</tui-badge>
       <span *ngIf="!hideTimestamp" class="timestamp">({{ status.timestamp | amTimeAgo }})</span>
     </div>
   `,
@@ -17,8 +17,8 @@ import { MomentModule } from "ngx-moment";
   changeDetection: ChangeDetectionStrategy.OnPush,
   standalone: true,
   imports: [
-    CommonModule, MomentModule, TuiBadge
-  ]
+    CommonModule, MomentModule, TuiBadge, TuiStatus,
+  ],
 })
 export class ConnectionStatusComponent {
 
@@ -44,13 +44,13 @@ export class ConnectionStatusComponent {
   getBadgeState(): TuiAppearanceOptions["appearance"] {
     switch(this.status.status) {
       case 'OK' :
-        return 'success'
+        return 'positive'
       case 'UNKNOWN' :
         return 'neutral'
       case 'CONNECTING' :
         return 'neutral'
       case 'ERROR' :
-        return 'error'
+        return 'negative'
     }
   }
 }

@@ -33,4 +33,9 @@ export class StatisticComponent {
     return `size-${this.size}`;
   }
 
+  @HostBinding('class')
+  get statusClass() {
+    return `status-${this.status}`;
+  }
+
 }
