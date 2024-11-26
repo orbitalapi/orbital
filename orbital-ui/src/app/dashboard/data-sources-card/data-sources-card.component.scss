@@ -1,10 +1,10 @@
 @import "src/common";
 
-.connection-error {
-  margin-top: 0.5rem;
-  display: flex;
+.connection-error-grid {
+  display: grid;
+  grid-template-columns: max-content max-content auto;
+  gap: 0.75rem;
   align-items: center;
-  gap: 0.5rem;
 
   a {
     text-overflow: ellipsis;
@@ -25,7 +25,7 @@
 }
 
 h4 {
-  margin: 1rem 0 0 0;
+  margin: 1rem 0 0.5rem 0;
 }
 
 app-statistic::ng-deep {
