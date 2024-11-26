@@ -1,4 +1,4 @@
-import { TuiExpand } from "@taiga-ui/core";
+import {TuiExpand, TuiHintOverflow} from '@taiga-ui/core';
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {CompilationMessageListComponent} from '../compilation-message-list.component';
@@ -19,6 +19,7 @@ import {TuiAccordion, TuiBadge, TuiBadgeNotification} from '@taiga-ui/kit';
     TuiBadge,
     ...TuiExpand,
     TuiBadgeNotification,
+    TuiHintOverflow,
   ],
 })
 export class CompilationMessageListModule {

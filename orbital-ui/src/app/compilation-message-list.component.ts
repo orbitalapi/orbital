@@ -23,7 +23,7 @@ import {isNullOrUndefined} from "./utils/utils";
                    (click)="messageClicked.emit(compilationMessage)">
                 <img [attr.src]="getSeverityIcon(compilationMessage.severity)"
                      [class]="compilationMessage.severity === 'ERROR' ? 'filter-error-light' : 'filter-warning-dark'">
-                <div class="message-line">{{ compilationMessage.detailMessage }}</div>
+                <div class="message-line" tuiHintOverflow tuiHintAppearance="dark">{{ compilationMessage.detailMessage }}</div>
                 <div class="message-position">[Ln {{ compilationMessage.line }}, Col {{ compilationMessage.char }}]
                 </div>
               </div>
