@@ -135,7 +135,7 @@ export class MapAuthTokenStepComponent implements OnChanges {
         // TODO: do we need an input field for this?
         createdTypeName: 'UserCredentials',
         // This must be the below value
-        inheritedTypeName: 'com.orbitalhq.auth.AuthClaims',
+        inheritedTypeName: `${UiCustomisations.packageNamespace}.auth.AuthClaims`,
         // TODO: is this correct value for fieldsToInclude?
         fieldsToInclude: selectedCheckboxes
       },
