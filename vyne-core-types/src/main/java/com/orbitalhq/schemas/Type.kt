@@ -9,15 +9,12 @@ import com.orbitalhq.VersionedSource
 import com.orbitalhq.models.*
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
-import com.orbitalhq.utils.ImmutableEquality
-import com.orbitalhq.utils.cached
 import lang.taxi.expressions.Expression
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.*
-import lang.taxi.types.TypedValue
 import lang.taxi.utils.takeHead
 import mu.KotlinLogging
 
@@ -81,7 +78,7 @@ data class Type(
 
    // if this is a collection of anonymous types, we can't resovle
    // the type from the typeCache, so pass it here
-   private val collectionAnonymousType: Type? = null,
+   private val innerAnonymousTypes: Type? = null,
 ) : SchemaMember, PartialType, CompareByDefinition<Type> {
    constructor(
       name: String,
@@ -137,7 +134,8 @@ data class Type(
       appendAllReferencedTypes(set)
       set
    }
-   private fun appendAllReferencedTypes(set:MutableSet<Type>) {
+
+   private fun appendAllReferencedTypes(set: MutableSet<Type>) {
       if (set.contains(this)) return
       set.add(this)
       set.addAll(this.inheritanceGraph.filter { !it.isPrimitive })
@@ -161,6 +159,7 @@ data class Type(
    override fun hashCode(): Int {
       return cachedHashCode
    }
+
    /**
     * Returns the anonymous types present on the attributes of this type, including
     * any nested anoymous types present on fields
@@ -172,22 +171,24 @@ data class Type(
     * Collects all anoymous types on fields, including any inner anonymous types present on those fields.
     * ie., recurses through all anonymous types to build a full tree of anonymous types.
     */
-   private fun collectAnonymousTypes(type:Type = this): Set<Type> {
+   private fun collectAnonymousTypes(type: Type = this): Set<Type> {
       val result = mutableSetOf<Type>()
       if (type.taxiType.anonymous) {
          result.add(type)
       }
-      if (type.collectionAnonymousType != null) {
-         result.addAll(collectAnonymousTypes(type.collectionAnonymousType))
+      if (type.taxiType is SumType) {
+         result.add(type)
       }
-      type.attributes.values.flatMapTo(result) {field ->
+      if (type.innerAnonymousTypes != null) {
+         result.addAll(collectAnonymousTypes(type.innerAnonymousTypes))
+      }
+      type.attributes.values.flatMapTo(result) { field ->
          field.anonymousType?.collectAnonymousTypes() ?: emptySet()
       }
       return result
    }
 
    val isAnonymous: Boolean = taxiType.anonymous
-
 
 
    override fun isDefinedSameAs(other: Type): Boolean {
@@ -247,8 +248,8 @@ data class Type(
       this.aliasForTypeName?.let { typeCache.type(it) }
 
    @get:JsonIgnore
-   val typeParameters: List<Type> = if (this.collectionAnonymousType != null) {
-      listOf(this.collectionAnonymousType)
+   val typeParameters: List<Type> = if (this.innerAnonymousTypes != null) {
+      listOf(this.innerAnonymousTypes)
    } else this.typeParametersTypeNames.map { typeCache.type(it) }
 
    // TODO : This name sucks.  Need a consistent term for "the real thing, unwrapping the aliases if they exist"
@@ -286,7 +287,11 @@ data class Type(
 
    }
 
-   fun enumTypedInstance(value: Any, source: DataSource, preferredEnumValueKind: EnumValueKind? = null): TypedEnumValue {
+   fun enumTypedInstance(
+      value: Any,
+      source: DataSource,
+      preferredEnumValueKind: EnumValueKind? = null
+   ): TypedEnumValue {
       // Edge case - we allow parsing of boolean values, treated as strings
       val searchValue = if (value is Boolean) value.toString() else value
       // Use the TaxiType to resolve the value, so that defaults and lenients are used.
@@ -377,11 +382,11 @@ data class Type(
    @get:JsonIgnore
    val collectionType: Type? =
       if (isCollection || isStream) {
-         collectionAnonymousType ?: underlyingTypeParameters.firstOrNull()
+         innerAnonymousTypes ?: underlyingTypeParameters.firstOrNull()
          ?: inheritanceGraph.firstNotNullOfOrNull { superType ->
             // If we're a subtype of Array<T>, then the collection type
             // is in the supertype
-            val inheritedCollectionType =   superType.collectionType
+            val inheritedCollectionType = superType.collectionType
             if (inheritedCollectionType != null && inheritedCollectionType.taxiType != PrimitiveType.ANY) {
                inheritedCollectionType
             } else null
@@ -675,9 +680,27 @@ data class Type(
    }
 
    fun getMetadata(name: QualifiedName): Metadata {
-      return this.metadata.firstOrNull { it.name == name } ?: error("Type ${this.name.longDisplayName} does not contain an annotation for name ${name.longDisplayName} ")
+      return this.metadata.firstOrNull { it.name == name }
+         ?: error("Type ${this.name.longDisplayName} does not contain an annotation for name ${name.longDisplayName} ")
    }
 
+   fun asTypeParameterOfType(baseTypeName: String, parameterizedTaxiType: lang.taxi.types.Type): Type {
+      // Don't create anonymous taxiTypes from the cache
+      if (this.taxiType.anonymous || this.taxiType is SumType) {
+         val baseType = this.typeCache.type(baseTypeName)
+         val parameterisedType =
+            baseType.copy(
+               name = QualifiedName.from(baseTypeName, listOf(this.name.parameterizedName.fqn())),
+               typeParametersTypeNames = listOf(this.name),
+               innerAnonymousTypes = this,
+               taxiType = parameterizedTaxiType
+            )
+         return parameterisedType
+      }
+      return this.typeCache.type(QualifiedName.from(baseTypeName, listOf(this.name.parameterizedName.fqn())))
+   }
+
+   @Deprecated("us asTypeParameterOfType instead")
    fun asArrayType(): Type {
       // Don't create anonymous taxiTypes from the cache
       if (this.taxiType.anonymous) {
@@ -686,7 +709,7 @@ data class Type(
             baseType.copy(
                name = Arrays.nameOfArray(this.name.toTaxiQualifiedName()).toVyneQualifiedName(),
                typeParametersTypeNames = listOf(this.name),
-               collectionAnonymousType = this,
+               innerAnonymousTypes = this,
             )
 
          return parameterisedType

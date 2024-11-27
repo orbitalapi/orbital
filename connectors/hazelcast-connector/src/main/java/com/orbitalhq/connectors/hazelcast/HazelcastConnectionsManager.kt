@@ -16,7 +16,7 @@ class HazelcastConnectionsManager(private val connectors: SourceLoaderConnectors
    override fun hazelcastConnection(connectionName: String?): Pair<HazelcastInstance, HazelcastConfiguration> {
       return if (connectionName == null) {
          val defaultHazelcastConnection = connectors.defaultHazelcastConfiguration()
-         require(defaultHazelcastConnection != null)
+            ?: error("Cannot fetch Hazelcast connection, as no connection name was provided, and there are no default Hazelcast connections configured.")
          val hzInstance = hazelcastConnections.getOrPut(defaultHazelcastConnection) {
             if (defaultHazelcastConnection.configType == HazelcastConfigurationType.Embedded) {
                orbitalHazelcastInstance

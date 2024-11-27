@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.isActive
 import lang.taxi.types.Arrays
+import lang.taxi.types.StreamType
 import mu.KotlinLogging
 import java.time.Instant
 import java.util.concurrent.LinkedBlockingQueue

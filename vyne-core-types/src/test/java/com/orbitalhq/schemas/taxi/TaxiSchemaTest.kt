@@ -117,7 +117,8 @@ class TaxiSchemaTest {
    // Should replace ${'STOCK_PRICE_TOPIC'}
    @Test
    fun `env variables defined in annotations are replaced when using single-quoted string template`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          annotation KafkaOperation {
             topic : String
          }
@@ -131,7 +132,7 @@ class TaxiSchemaTest {
          }
       """.trimIndent(),
          environmentVariables = mapOf("STOCK_PRICE_TOPIC" to "prod.stockQuotes")
-         )
+      )
       val metadata = schema.service("QuotesService")
          .streamOperations.first { it.name == "quotes" }
          .firstMetadata("KafkaOperation")
@@ -142,7 +143,8 @@ class TaxiSchemaTest {
    // Should replace ${"STOCK_PRICE_TOPIC"}
    @Test
    fun `env variables defined in annotations are replaced when using double-quoted string template`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          annotation KafkaOperation {
             topic : String
          }
@@ -166,7 +168,8 @@ class TaxiSchemaTest {
    // Should replace ${"STOCK_PRICE_TOPIC"}
    @Test
    fun `env variables defined in annotations that are not present in env variables are reported as an error`() {
-      val schema = TaxiSchema.from("""
+      val schema = TaxiSchema.from(
+         """
          annotation KafkaOperation {
             topic : String
          }
@@ -184,4 +187,43 @@ class TaxiSchemaTest {
       schema.compilerMessages.errors().single()
          .detailMessage.shouldBe("Annotation KafkaOperation specifies env variable STOCK_PRICE_TOPIC which is not defined")
    }
+
+   @Test
+   fun `sum types of queries are present as anonymous types`() {
+      val schema = TaxiSchema.from(
+         """
+namespace foo.test
+
+model Tweet {
+   id : TweetId inherits Int
+   user : UserId
+}
+model User {
+   id : UserId inherits Int
+}
+      """.trimIndent()
+      )
+      val (taxiQuery, b, querySchema) = schema.parseQuery("stream { Tweet | User }")
+      val discoveryType = querySchema.type(taxiQuery.discoveryType!!.type)
+      discoveryType.anonymousTypes.shouldHaveSize(1)
+      val anonymousType = discoveryType.anonymousTypes.single()
+      anonymousType.taxiType
+   }
+
+   @Test
+   fun `array types have correct inner name`() {
+      val schema = TaxiSchema.from(
+         """
+model Person {
+   id : PersonId inherits Int
+   friends : Person[]
+}
+      """.trimIndent()
+      )
+      val type = schema.type(schema.type("Person")
+         .attribute("friends")
+         .type)
+      type
+   }
+
 }

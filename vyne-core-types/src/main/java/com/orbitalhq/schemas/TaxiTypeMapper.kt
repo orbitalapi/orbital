@@ -11,6 +11,8 @@ import lang.taxi.types.ArrayType
 import lang.taxi.types.EnumType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
+import lang.taxi.types.StreamType
+import lang.taxi.types.SumType
 import lang.taxi.types.TypeAlias
 import lang.taxi.types.UnionType
 
@@ -138,12 +140,18 @@ object TaxiTypeMapper {
             )
          }
 
-         is ArrayType -> {
-            val collectionType = typeCache.type(taxiType.parameters[0].qualifiedName)
 
+         is ArrayType -> {
+
+            val collectionType = typeCache.type(taxiType.parameters[0].qualifiedName)
             collectionType.asArrayType()
          }
-         is UnionType -> {
+         is StreamType -> {
+            val innerType = typeCache.type(taxiType.parameters[0].qualifiedName)
+            val streamType = StreamType.of(innerType.taxiType)
+            innerType.asTypeParameterOfType(StreamType.NAME, streamType)
+         }
+         is SumType -> {
             Type(
                taxiType.toVyneQualifiedName(),
                modifiers = parseModifiers(taxiType),

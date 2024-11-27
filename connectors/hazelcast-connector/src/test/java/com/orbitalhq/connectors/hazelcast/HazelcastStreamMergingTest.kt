@@ -8,6 +8,8 @@ import com.orbitalhq.expectTypedObject
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.query.caching.StateStore
+import com.orbitalhq.query.caching.StateStoreAnnotation
+import com.orbitalhq.query.caching.StateStoreConfig
 import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.taxi.TaxiSchema
@@ -18,17 +20,21 @@ import io.kotest.core.spec.IsolationMode
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.MutableSharedFlow
+import lang.taxi.types.SumType
 import mu.KotlinLogging
 import kotlin.time.Duration.Companion.seconds
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
+
 class HazelcastStreamMergingTest : DescribeSpec({
    isolationMode = IsolationMode.InstancePerTest
    describe("Joining multiple streams using Hazelcast") {
       fun buildVyneAndHazelcast(mapName: String = Ids.id("Hazelcast-")): Triple<Vyne, StubService, HazelcastInstance> {
          val hazelcast = TestHazelcastInstanceFactory(1).newHazelcastInstance()
 
-         val schema = TaxiSchema.from(
+         val schema = TaxiSchema.fromStrings(
+            listOf(
+            StateStoreAnnotation.StateStoreTaxi,
             """
         model Tweet {
          @Id messageId : MessageId inherits String
@@ -46,13 +52,20 @@ class HazelcastStreamMergingTest : DescribeSpec({
          operation analytics():Stream<TweetAnalytics>
       }
          """.trimIndent()
-         )
+         ))
 
          val stateStoreProvider: StateStoreProvider = object : StateStoreProvider {
-            override fun getCacheStore(connectionName: String?, key: String, schema: Schema): StateStore {
-               connectionName.shouldBe("localHzc")
-                return HazelcastStateStore(hazelcast, mapName, schema)
+            override fun getStateStore(
+               stateStoreConfig: StateStoreConfig,
+               sumType: SumType,
+               schema: Schema,
+               emitMode: StateStoreProvider.EmitMode,
+               namePrefix: String
+            ): StateStore? {
+               stateStoreConfig.connection.shouldBe("localHzc")
+               return HazelcastStateStore(hazelcast.getMap(mapName), schema, sumType, emitMode)
             }
+
          }
          val (vyne, stub) = testVyne(
             schema,
@@ -63,14 +76,14 @@ class HazelcastStreamMergingTest : DescribeSpec({
 
       it("should run a query that joins multiple streams") {
 
-         val (vyne,stub, hz) = buildVyneAndHazelcast()
+         val (vyne, stub, hz) = buildVyneAndHazelcast()
          val tweetFlow = MutableSharedFlow<TypedInstance>(replay = 1)
          val analyticsFlow = MutableSharedFlow<TypedInstance>(replay = 1)
          stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
          stub.addResponseFlow("analytics") { _, _ -> analyticsFlow }
          logger.info { "running a query with StateStore" }
          val results = vyne.query(
-            """@StateStore(connection = "localHzc")
+            """@com.orbitalhq.state.StateStore(connection = "localHzc")
            | stream { Tweet | TweetAnalytics }
            | as {
            |   id : MessageId
@@ -113,7 +126,7 @@ class HazelcastStreamMergingTest : DescribeSpec({
       }
 
       it("streams should not be joined when statestore is not specified") {
-         val (vyne,stub, hz) = buildVyneAndHazelcast()
+         val (vyne, stub, hz) = buildVyneAndHazelcast()
          val tweetFlow = MutableSharedFlow<TypedInstance>(replay = 1)
          val analyticsFlow = MutableSharedFlow<TypedInstance>(replay = 1)
          stub.addResponseFlow("tweets") { _, _ -> tweetFlow }

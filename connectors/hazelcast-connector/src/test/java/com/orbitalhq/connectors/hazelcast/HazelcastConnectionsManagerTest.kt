@@ -113,7 +113,7 @@ class HazelcastConnectionsManagerTest {
 
    @Test
    fun `should throw when requested connection name is null and there is no default hz connection`() {
-      assertThrows<IllegalArgumentException> {
+      assertThrows<IllegalStateException> {
          HazelcastConnectionsManager(buildRegistry("hz-no-default-connection.conf"),
             TestHazelcastFactory().newHazelcastInstance())
             .hazelcastConnection(null)

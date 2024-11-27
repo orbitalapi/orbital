@@ -47,6 +47,7 @@ import lang.taxi.query.FactValue
 import lang.taxi.query.Parameter
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
+import lang.taxi.types.StreamType
 import lang.taxi.types.TypedValue
 import java.util.UUID
 
@@ -594,11 +595,22 @@ fun QueryExpression.applyProjection(
    if (projectedType == null) {
       return this
    }
+
+   val unwrappedScope= projectionScope.map { scopeMember ->
+      // When building a projection, streams that are in scope should be unpacked to their individual items.
+      // Otherwise, when we're projecting a stream the scope contains a reference to the stream itself, not the emitted items.
+      // Given we don't have an instance of the stream, this triggers another discovery, searching for the stream again.
+      if (scopeMember.type is StreamType) {
+         scopeMember.copy(type = (scopeMember.type as StreamType).type)
+      } else {
+         scopeMember
+      }
+   }
    return ProjectedExpression(
       this,
       Projection(
          ProjectionAnonymousTypeProvider.projectedTo(projectedType, schema),
-         projectionScope,
+         unwrappedScope,
       )
    )
 }
