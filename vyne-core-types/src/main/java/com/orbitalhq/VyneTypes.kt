@@ -25,3 +25,16 @@ object AuthClaimType {
          |   }
          |}""".trimMargin()
 }
+
+object OmitNullsType {
+   val namespace = "${VyneTypes.NAMESPACE}.models"
+   val NAME = "$namespace.OmitNulls"
+
+   val imports: String =  listOf(NAME).joinToString("\n") { "import $it" }
+
+   val schema = """
+   namespace  $namespace {
+      annotation ${NAME.fqn().name} 
+   }
+""".trimMargin()
+}

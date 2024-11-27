@@ -1,7 +1,9 @@
 package com.orbitalhq.models
 
+import com.orbitalhq.OmitNullsType
 import com.orbitalhq.utils.log
 import lang.taxi.Operator
+import lang.taxi.types.annotation
 import lang.taxi.types.isNullOrEmpty
 import mu.KotlinLogging
 import java.time.LocalDate
@@ -223,10 +225,20 @@ class DataSourceMutatingMapper(val dataSource: DataSource) : TypedInstanceMapper
    }
 }
 
+data class TypeInstanceConverterConfig(
+   val ignoreNulls: Boolean = false
+) {
+   companion object {
+      val DEFAULT_CONFIG = TypeInstanceConverterConfig()
+      val IGNORE_NULLS_CONFIG = TypeInstanceConverterConfig(ignoreNulls = true)
+   }
+}
+
 class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
 
    private fun unwrapMap(
       valueMap: Map<String, Any>,
+      config: TypeInstanceConverterConfig,
       collectDataSourcesTo: MutableList<Pair<TypedInstance, DataSource>>? = null,
       metadata: Map<String, Any>? = null
    ): Map<String, Any?> {
@@ -237,7 +249,12 @@ class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
          }
          converted
       }.toMap()
-      return unwrapped
+
+      return if (config.ignoreNulls) {
+         unwrapped.filter { entry -> entry.value != null }
+      } else {
+         unwrapped
+      }
    }
 
    private fun unwrapCollection(
@@ -276,9 +293,10 @@ class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
       collectDataSourcesTo: MutableList<Pair<TypedInstance, DataSource>>?
    ): Any? {
       val value = typedInstance.value
+      val typedInstanceMapperConfig = typedInstance.type.taxiType.annotation(OmitNullsType.NAME)?.let { TypeInstanceConverterConfig.IGNORE_NULLS_CONFIG } ?: TypeInstanceConverterConfig.DEFAULT_CONFIG
       val converted = when {
          typedInstance is Map<*, *> -> {
-            val unwrapped = unwrapMap(value as Map<String, Any>, collectDataSourcesTo)
+            val unwrapped = unwrapMap(value as Map<String, Any>, typedInstanceMapperConfig, collectDataSourcesTo)
             mapper.handleUnwrapped(typedInstance, unwrapped)
          }
 

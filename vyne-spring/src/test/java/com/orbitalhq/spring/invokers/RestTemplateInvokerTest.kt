@@ -44,6 +44,7 @@ import org.junit.Test
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.client.WebClient
+import java.math.BigDecimal
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Consumer
 import kotlin.test.assertEquals
@@ -437,6 +438,77 @@ namespace vyne {
          headers.requestHeaders.shouldHaveSize(2)
          headers.responseHeaders.shouldHaveSize(2)
       }
+
+   }
+
+   @Test
+   fun `When @OmitNulls annotation is set on parameter object null values are filtered`() {
+      val testSchema = """
+         namespace vyne {   
+             @com.orbitalhq.models.OmitNulls
+             parameter model CreditScoreRequest {
+                 clientId : ClientId inherits String
+                 clientName: ClientName? inherits String
+             }
+         
+             type ClientId inherits String
+         
+              model CreditScoreResponse {
+                 score : CreditScore inherits Decimal
+             }
+         
+            
+             service CreditScoreService {
+                 @HttpOperation(method = "POST",url = "http://localhost:{{PORT}}/score/doCalculate")
+                 operation calculateCreditScore(@RequestBody CreditScoreRequest ) : CreditScoreResponse
+             }
+        
+         }      """
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""{ "score" : 90.9 }""")
+      }
+
+      val schema = TaxiSchema.from(testSchema.replace("{{PORT}}", "${server.port}")).withBuiltIns()
+      val service = schema.service("vyne.CreditScoreService")
+      val operation = service.operation("calculateCreditScore")
+
+      val (context, events) = eventCapturingQueryContext()
+      runTest {
+         val turbine = RestTemplateInvoker(
+            webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
+            schemaProvider = SimpleSchemaProvider(schema)
+         ).invoke(
+            service, operation, listOf(
+               paramAndType("vyne.CreditScoreRequest", mapOf("clientId" to "123", "clientName" to null), schema)
+            ), context, "testQuery", QueryOptions()
+         ).testIn(this)
+
+         val typedInstance = turbine.expectTypedObject()
+         expect(typedInstance.type.fullyQualifiedName).to.equal("vyne.CreditScoreResponse")
+         val score = typedInstance["score"].value
+         expect(score).to.equal(BigDecimal("90.9"))
+         turbine.awaitComplete()
+
+         expectRequestCount(1)
+         expectRequest { request ->
+            assertEquals("/score/doCalculate", request.path)
+            assertEquals(HttpMethod.POST.name(), request.method)
+            val body = String(request.body.readByteArray())
+            assertEquals(body, """{"clientId":"123"}""")
+            assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+         }
+
+         events.shouldHaveSize(1)
+         val event = events.single()
+         val headers = event.remoteCall.exchange
+            .shouldBeInstanceOf<HttpExchange>()
+            .headers
+         headers.requestHeaders.shouldHaveSize(2)
+         headers.responseHeaders.shouldHaveSize(2)
+      }
+
 
    }
 

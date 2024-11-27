@@ -10,7 +10,6 @@ import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvi
 import com.orbitalhq.cockpit.core.content.DefaultContentRepository
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.formats.csv.CsvFormatSpec
-import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.TypedCollection
@@ -105,7 +104,9 @@ class VyneQueryIntegrationTest : DatabaseTest() {
                userId : UserId inherits String
                userName : Username inherits String
             }
-            type UserWithNulls {
+            
+            @com.orbitalhq.models.OmitNulls
+            model UserWithNulls {
                userId : UserId inherits String
                userName : Username inherits String
             }
@@ -478,7 +479,7 @@ str2|2"""
       val headers = HttpHeaders()
       headers.contentType = MediaType.APPLICATION_JSON
       headers.set("Accept", MediaType.APPLICATION_JSON_VALUE)
-      val entity = HttpEntity("@OmitNulls query MyQuery { find { UserWithNulls[] } }", headers)
+      val entity = HttpEntity("query MyQuery { find { UserWithNulls[] } }", headers)
       val response = restTemplate.exchange("/api/vyneql?resultMode=RAW", HttpMethod.POST, entity, String::class.java)
       response.statusCodeValue.should.be.equal(200)
       response.headers["Content-Type"].should.equal(listOf("application/json"))
