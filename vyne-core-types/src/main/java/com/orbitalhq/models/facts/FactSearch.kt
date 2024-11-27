@@ -9,7 +9,6 @@ import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.TypeMatchingPredicate
 import com.orbitalhq.schemas.TypeMatchingStrategy
 import com.orbitalhq.schemas.or
-import com.orbitalhq.utils.ImmutableEquality
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -224,6 +223,33 @@ enum class FactDiscoveryStrategy {
                null
             }
 
+         }
+      }
+   },
+
+   /**
+    * Will return the last value returned from the fact bag
+    * (generally, this is the last inserted value - ie,. the latest)
+    */
+   ANY_DEPTH_TAKE_LAST {
+      override fun getFact(
+         facts: FactBag,
+         search: FactSearch
+      ): TypedInstance? {
+         val matches = facts
+            .breadthFirstFilter(
+               ANY_DEPTH_ALLOW_MANY,
+               FactMapTraversalStrategy.enterIfHasFieldOfType(search.targetType)
+            ) { search.filterPredicate.predicate(it) }
+            .toList()
+         return applyToResults(matches, search)
+
+      }
+
+      override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): TypedInstance? {
+         return when {
+            matches.isEmpty() -> null
+            else -> matches.last()
          }
       }
    },

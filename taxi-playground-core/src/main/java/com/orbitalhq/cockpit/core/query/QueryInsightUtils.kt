@@ -1,5 +1,6 @@
 package com.orbitalhq.cockpit.core.query
 
+import arrow.core.getOrElse
 import com.orbitalhq.Message
 import com.orbitalhq.query.QueryParseMetadata
 import com.orbitalhq.query.QueryPlan
@@ -23,7 +24,7 @@ class QueryInsightUtils() {
       query: TaxiQLQueryString,
       schema: Schema,
    ): Mono<QueryParseMetadata> {
-      require(query.isNotEmpty()) { "No query was provided"}
+      require(query.isNotEmpty()) { "No query was provided" }
       return Mono.fromCallable {
          val (compiledQuery, querySchema) = try {
             val (compiledQuery, _, querySchema) = schema.parseQuery(query)
@@ -35,8 +36,19 @@ class QueryInsightUtils() {
             )
          }
          val queryPlan = try {
-            val queryPlanSteps = visualizerService.visualizeQuery(query, querySchema)
-            QueryPlan(queryPlanSteps, emptyList())
+            visualizerService.visualizeQuery(query, querySchema)
+               .map { queryPlanSteps ->
+                  QueryPlan(queryPlanSteps, emptyList())
+               }
+               .getOrElse { e ->
+                  QueryPlan(
+                     emptyList(), listOf(
+                        Message(
+                           Severity.ERROR, e.message ?: e::class.simpleName!!
+                        )
+                     )
+                  )
+               }
          } catch (e: SearchFailedException) {
             QueryPlan(
                emptyList(), listOf(

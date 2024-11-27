@@ -65,8 +65,20 @@ class TypedObjectFactory(
     * parameter to a call
     */
    private val constructClosedParameterTypes: Boolean = false,
-   private val policyEngine: ScopedPolicyEngine? = null
-) : EvaluationValueSupplier, ValueProjector {
+   private val policyEngine: ScopedPolicyEngine? = null,
+
+   /**
+    * Controls how we read from a fact bag.
+    * Practically speaking, this determines what to do if there are multiple facts of the same
+    * type found in the fact bag.
+    *
+    * A long standing reasonable default is ANY_DEPTH_EXPECT_ONE_DISTINCT.
+    * When performing merges over time (eg., merging values of multiple streams),
+    * you may want ANY_DEPTH_TAKE_LAST
+    */
+   private val factBagSearchStrategy: FactDiscoveryStrategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT,
+
+   ) : EvaluationValueSupplier, ValueProjector {
 
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -247,7 +259,8 @@ class TypedObjectFactory(
          formatSpecs,
          parsingErrorBehaviour,
          functionResultCache,
-         scope
+         scope,
+         factBagSearchStrategy = factBagSearchStrategy
       )
    }
 
@@ -303,7 +316,8 @@ class TypedObjectFactory(
          formatSpecs,
          parsingErrorBehaviour,
          functionResultCache,
-         scope
+         scope,
+         factBagSearchStrategy = factBagSearchStrategy
       )
    }
 
@@ -387,8 +401,8 @@ class TypedObjectFactory(
             return readWithFormatSpecDeserializer(metadata, modelFormatSpec)
          }
       }
-      if (value is FactBag && value.hasFactOfType(type, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)) {
-         return value.getFact(type, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
+      if (value is FactBag && value.hasFactOfType(type, factBagSearchStrategy)) {
+         return value.getFact(type, factBagSearchStrategy)
       }
       if (isJson(value)) {
          val jsonParsedStructure = JsonParsedStructure.from(value as String, objectMapper)
@@ -534,7 +548,7 @@ class TypedObjectFactory(
       val fromFactBag = currentValueFactBag.getFactOrNull(
          FactSearch.findType(
             requestedType,
-            strategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT
+            strategy = factBagSearchStrategy
          )
       )
       if (fromFactBag != null) {
@@ -946,7 +960,7 @@ class TypedObjectFactory(
             val searchStrategy = if (fieldType.isCollection) {
                FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY
             } else {
-               FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT
+               factBagSearchStrategy
             }
             val searchedValue = value.getFactOrNull(
                FactSearch.findType(

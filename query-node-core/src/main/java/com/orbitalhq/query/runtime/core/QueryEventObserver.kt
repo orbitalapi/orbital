@@ -109,7 +109,7 @@ class QueryLifecycleEventObserver(
                }
                activeQueryMonitor?.reportComplete(queryResult.queryId)
             }.catch {
-               logger.warn { "An error in emitting results - has consumer gone away?? ${it.message} ${it.javaClass}" }
+               logger.warn { "Failed to emit results - ${it.message} ${it.javaClass}" }
                activeQueryMonitor?.reportComplete(queryResult.queryId)
                throw it
             }

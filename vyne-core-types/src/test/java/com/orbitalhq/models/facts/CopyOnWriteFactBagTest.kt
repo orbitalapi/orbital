@@ -1,5 +1,6 @@
 package com.orbitalhq.models.facts
 
+import com.orbitalhq.from
 import com.orbitalhq.models.Provided
 import com.winterbe.expekt.should
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -247,6 +248,29 @@ class CopyOnWriteFactBagTest {
       factBag.getFactOrNull(schema.type("ErrorDetails"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE).shouldNotBeNull()
       factBag.getFactOrNull(schema.type("ErrorCode"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE).shouldNotBeNull()
       factBag.getFactOrNull(schema.type("ErrorMessage"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE).shouldNotBeNull()
+   }
+
+   @Test
+   fun `when using take last search strategy insertion order is respected`() {
+      val schema = TaxiSchema.from("""
+         model Person {
+            name : PersonName inherits String
+         }
+         model NameUpdatedEvent {
+            name : PersonName
+         }
+      """.trimIndent())
+      val person = TypedInstance.from(schema.type("Person"), """{ "name" : "Jimmy" }""", schema)
+      val updateEvent = TypedInstance.from(schema.type("NameUpdatedEvent"), """{ "name" : "Jack" }""", schema)
+
+      val factBag = CopyOnWriteFactBag(listOf(person,updateEvent), schema)
+      val fact = factBag.getFactOrNull(schema.type("PersonName"), FactDiscoveryStrategy.ANY_DEPTH_TAKE_LAST)
+      fact!!.value.shouldBe("Jack")
+
+      // Swap the insertion order
+      val factBag2 = CopyOnWriteFactBag(listOf(updateEvent, person), schema)
+      val fact2 = factBag2.getFactOrNull(schema.type("PersonName"), FactDiscoveryStrategy.ANY_DEPTH_TAKE_LAST)
+      fact2!!.value.shouldBe("Jimmy")
    }
 
 }

@@ -42,7 +42,7 @@ class QueryVisualizerTest {
       """
       val diagramRows = service.visualizeQuery(
          query.trimMargin(), schema
-      )
+      ).getOrNull()!!
       diagramRows.shouldHaveSize(3)
    }
 
@@ -80,7 +80,7 @@ class QueryVisualizerTest {
       """
       val diagramRows = service.visualizeQuery(
          query.trimMargin(), schema
-      )
+      ).getOrNull()!!
       diagramRows.shouldHaveSize(3)
    }
 }
