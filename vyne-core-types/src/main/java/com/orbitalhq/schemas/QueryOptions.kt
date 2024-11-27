@@ -1,6 +1,5 @@
 package com.orbitalhq.schemas
 
-import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.serde.TaxiJacksonModule
@@ -85,16 +84,6 @@ object QueryOptionParameterKeys {
 
 data class QueryOptions(
    /**
-    * indciates that fields which are null
-    * should not be serialized in the result.
-    *
-    * As a result, reponses may not satisfy the query contract
-    * which expects fields to be present, and consumers should apply
-    * leineint parsing.
-    */
-   val omitNulls: Boolean = false,
-
-   /**
     * Indicates that the query should leverage the global cache for operation invocations.
     * The default (false) uses a query-scoped cache, which is discarded at the end of the
     * query.
@@ -124,30 +113,14 @@ data class QueryOptions(
    val responseHeaders: List<Parameter > = emptyList()
 ) {
 
-   /**
-    * Indicates if these query options mean a custom mapper
-    * should be used.
-    */
-   val requiresCustomMapper = omitNulls
+
    fun configure(mapper: ObjectMapper): ObjectMapper {
-      if (omitNulls) {
-         mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
-      }
       return mapper.registerModule(TaxiJacksonModule)
    }
 
    fun newObjectMapper(): ObjectMapper {
       return configure(Jackson.newObjectMapperWithDefaults())
    }
-
-   fun newObjectMapperIfRequired(): ObjectMapper? {
-      return if (requiresCustomMapper) {
-         newObjectMapper()
-      } else {
-         null
-      }
-   }
-
    companion object {
       fun default() = QueryOptions()
 
@@ -157,7 +130,6 @@ data class QueryOptions(
          val streamConsumerId = QueryOptionParameterKeys.streamConsumerId(query)
          val responseHeaders = QueryOptionParameterKeys.httpResponseParameters(taxiQlQuery)
          return QueryOptions(
-            omitNulls = query.annotation("OmitNulls") != null,
             cachingStrategy = cachingStrategy,
             stateStoreConnectionName = stateStoreConnectionName,
             useStateStore = useStateStore,

@@ -1,6 +1,7 @@
 package com.orbitalhq.cockpit.core.schemas
 
 import com.orbitalhq.AuthClaimType
+import com.orbitalhq.OmitNullsType
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.UserType
@@ -123,6 +124,11 @@ object BuiltInTypesProvider {
             "HttpIgnoreErrorsAnnotationSchema",
             "0.1.0",
             HttpIgnoreErrorsAnnotationSchema.schema
+         ),
+         VersionedSource(
+            "VyneModels",
+            "0.1.0",
+            OmitNullsType.schema
          ),
       ),
       emptyMap()
