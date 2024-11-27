@@ -27,9 +27,6 @@
     <div>
       <img src="assets/img/tabler/folder-plus.svg" class="icon">
       <h3 class="tui-island__title">Create new project</h3>
-      <p class="tui-island__paragraph">
-        Create a new server-hosted project.
-      </p>
     </div>
     <p class="tui-island__paragraph tui-island__paragraph_button">
       <button tuiButton appearance="whiteblock" size="m" iconEnd="@tui.plus" (click)="step = 'createNew'">Add</button>
@@ -64,8 +61,8 @@
   <tui-island>
     <div>
       <img src="assets/img/tabler/server.svg" class="icon">
-      <h3 class="tui-island__title">Local disk</h3>
-      <p class="tui-island__paragraph">Read projects directly from the local machine.</p>
+      <h3 class="tui-island__title">Read from disk</h3>
+      <p class="tui-island__paragraph">Add projects already on your server</p>
     </div>
     <p class="tui-island__paragraph tui-island__paragraph_button">
       <button tuiButton appearance="whiteblock" size="m" iconEnd="@tui.plus" (click)="step = 'localDisk'">Add</button>
@@ -129,7 +126,7 @@
 <tui-island class="tui-space_top-4" *ngIf="step === 'localDisk'">
   <div>
     <img src="assets/img/tabler/server.svg" class="icon">
-    <h3 class="tui-island__title">Local disk</h3>
+    <h3 class="tui-island__title">Read from disk</h3>
     <app-file-config
       [isOnboardingMode]="isOnboardingMode"
       (localFileAdded)="step = 'projectAdded'; hasAddedProject = true"

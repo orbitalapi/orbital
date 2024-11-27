@@ -16,10 +16,8 @@ import {Router} from "@angular/router";
   styleUrls: ['./create-new-config.component.scss'],
   template: `
     <div class='form-header-text' *ngIf="editable">
-      <p>Create a new server-hosted project.</p>
       <tui-notification appearance='info'>
-        Server hosted projects are great for getting started, though for production use cases we recommend deploying
-        Git-backed projects
+        This creates a project on your server. For production use cases we recommend deploying Git-backed projects.
       </tui-notification>
     </div>
     <form #fileForm='ngForm'>

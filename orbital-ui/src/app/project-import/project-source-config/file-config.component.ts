@@ -24,9 +24,9 @@ import {TaxiPackageConfigComponent} from './taxi-package-config.component';
   standalone: true,
   template: `
     <div class='form-header-text' *ngIf="editable">
-      <p>Read projects directly from the local machine.</p>
-      <tui-notification appearance='info'>Disk based projects are great for getting started and dev-local
-        experiments, however you should consider storing your project in a git repository in production
+      <p>Add a project that already exists on your server into your Orbital workspace</p>
+      <tui-notification appearance='info'>
+        This is great for getting started and dev local experiments (eg. running locally in Docker), however you should consider pulling your project from a git repository in production.
       </tui-notification>
     </div>
     <form #fileForm='ngForm'>

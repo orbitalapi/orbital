@@ -19,7 +19,9 @@ import {FilePathOrUploadComponent} from './file-path-or-upload.component';
   styleUrls: ['./upload-config.component.scss'],
   template: `
     <div class='form-header-text' *ngIf="editable">
-      <p>Upload a zipped Taxi project</p>
+      <tui-notification appearance='info'>
+        This creates a project on your server. For production use cases we recommend deploying Git-backed projects.
+      </tui-notification>
     </div>
     <form #fileForm='ngForm'>
       <div class='form-container'>
