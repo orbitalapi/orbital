@@ -95,5 +95,8 @@ tui-badge-notification {
     padding: .425rem .75rem .425rem 1rem !important;
     min-height: unset !important;
   }
+}
 
+::ng-deep tui-hint {
+  max-width: 400px !important;
 }

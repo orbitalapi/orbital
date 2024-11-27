@@ -1,7 +1,7 @@
 import { TuiTabs } from "@taiga-ui/kit";
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {ActivatedRoute, Router} from '@angular/router';
+import {ActivatedRoute, NavigationEnd, Router} from '@angular/router';
 import {SchemaNotificationService} from '../services/schema-notification.service';
 import {
   PackagesService,
@@ -12,7 +12,7 @@ import {
 import {Badge} from '../simple-badge-list/simple-badge-list.component';
 import moment from 'moment';
 import {ChangeLogEntry, ChangelogService} from 'src/app/changelog/changelog.service';
-import {Observable} from 'rxjs';
+import {filter, Observable} from 'rxjs';
 import {TypesService} from 'src/app/services/types.service';
 import {PartialSchema, Schema} from 'src/app/services/schema';
 import {appInstanceType} from 'src/app/app-config/app-instance.vyne';
@@ -75,6 +75,8 @@ export class ProjectExplorerComponent implements OnInit {
     return this._fileTreeNodes;
   }
 
+  private packageRouteFragment: string | null = null;
+
   constructor(private packagesService: PackagesService,
               private schemaNotificationService: SchemaNotificationService,
               private activatedRoute: ActivatedRoute,
@@ -100,6 +102,25 @@ export class ProjectExplorerComponent implements OnInit {
           }
         }
       )
+    // Required for ORB-829
+    // When navigating to a different package name when this component is already loaded,
+    // we don't go through the ngOnInit phase and so don't call the loadPackages function.
+    // A decent catch22 as when this component initialises, the router.events subscription
+    // doesn't fire, so still need to rely on the loadPackages in ngOnInit being there 🤷‍♂️
+    this.router.events
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        filter((event) => event instanceof NavigationEnd)
+      )
+      .subscribe(() => {
+        const currentFragment = this.getPackageFromRoute();
+        if (currentFragment !== this.packageRouteFragment) {
+          if (this.packageRouteFragment) {
+            this.loadPackages();
+          }
+          this.packageRouteFragment = currentFragment;
+        }
+      });
   }
 
   ngOnInit() {
@@ -116,7 +137,7 @@ export class ProjectExplorerComponent implements OnInit {
   changelogEntries: Observable<ChangeLogEntry[]>
 
   private loadPackages() {
-    const packageName = this.activatedRoute.snapshot.paramMap.get('packageName');
+    const packageName = this.getPackageFromRoute();
     this.packagesService.loadPackage(packageName)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
@@ -174,5 +195,9 @@ export class ProjectExplorerComponent implements OnInit {
 
       this._fileTreeNodes = newFileTreeNodes;
     }
+  }
+
+  private getPackageFromRoute(): string | null {
+    return this.activatedRoute.snapshot.paramMap.get('packageName');
   }
 }
