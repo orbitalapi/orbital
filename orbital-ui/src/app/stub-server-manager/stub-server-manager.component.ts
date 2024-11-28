@@ -7,6 +7,8 @@ import {TypesService} from "../services/types.service";
 import {Observable} from "rxjs";
 import {NebulaStacksResponse, StubsApiService} from '../services/stubs-api.service';
 import {isNullOrUndefined} from "../utils/utils";
+import {ConnectionStatusComponent} from "../data-source-manager/connection-status/connection-status.component";
+import { ConnectionStatus } from '../db-connection-editor/db-importer.service';
 
 @Component({
   selector: 'app-stub-server-manager',
@@ -15,13 +17,20 @@ import {isNullOrUndefined} from "../utils/utils";
     AsyncPipe,
     HeaderComponentLayoutModule,
     StubServerTreeComponent,
-    NgIf
+    NgIf,
+    ConnectionStatusComponent
   ],
   template: `
     <app-header-component-layout
       title="Stub servers"
       [description]="'Stub servers are temporary APIs, databases, Kafka instances etc., used for testing or development'"
     >
+      <ng-container ngProjectAs="header-components">
+        <div class="server-status" *ngIf="serverStatus">
+          <app-connection-status [status]="serverStatus"></app-connection-status>
+          <span *ngIf="serverStatus.status != 'OK'">{{ serverStatus.message }}</span>
+        </div>
+      </ng-container>
       <app-stub-server-tree *ngIf="showServerTree" [stackState]="stacksState"></app-stub-server-tree>
       <div *ngIf="hasErrors" class="errors-panel">
         <h3>Stub servers could not be loaded:</h3>
@@ -45,6 +54,7 @@ export class StubServerManagerComponent {
 
   protected readonly UiCustomisations = UiCustomisations;
   stacksState: NebulaStacksResponse;
+  serverStatus: ConnectionStatus;
 
   constructor(stubsService: StubsApiService,
               changeDetectorRef: ChangeDetectorRef
@@ -52,6 +62,11 @@ export class StubServerManagerComponent {
     stubsService.getStubStateStream()
       .subscribe(next => {
         this.stacksState = next;
+        changeDetectorRef.markForCheck();
+      })
+    stubsService.getStubServerStatus()
+      .subscribe(next => {
+        this.serverStatus = next;
         changeDetectorRef.markForCheck();
       })
   }
