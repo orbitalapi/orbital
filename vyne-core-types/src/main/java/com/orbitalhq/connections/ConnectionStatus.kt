@@ -5,7 +5,8 @@ import java.time.Instant
 data class ConnectionStatus(val status: Status, val message: String, val timestamp: Instant = Instant.now()) {
    companion object {
       fun unknown() = ConnectionStatus(Status.UNKNOWN, "Connection status unknown", Instant.now())
-      fun healthy() = ConnectionStatus(Status.OK, "Healthy", Instant.now())
+      fun healthy(message: String = "Healthy") = ConnectionStatus(Status.OK, "Healthy", Instant.now())
+      fun notStarted() = ConnectionStatus(Status.NOT_STARTED, "Not started", Instant.now())
       fun error(message:String) = ConnectionStatus(Status.ERROR, message, Instant.now())
    }
    enum class Status {
@@ -13,5 +14,6 @@ data class ConnectionStatus(val status: Status, val message: String, val timesta
       ERROR,
       UNKNOWN,
       CONNECTING,
+      NOT_STARTED
    }
 }

@@ -5,6 +5,7 @@ import com.orbitalhq.nebula.core.NebulaStackState
 import com.orbitalhq.spring.http.websocket.OrbitalWebSocketConfiguration
 import com.orbitalhq.spring.http.websocket.WebSocketController
 import mu.KotlinLogging
+import org.springframework.stereotype.Component
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
@@ -53,8 +54,28 @@ class NebulaService(
          this, session, outbound
       )
    }
+}
 
-
+/**
+ * Simple controller that returns a websocket with the
+ * nebula status.
+ * Not folded into NebulaService as exposing mulitple websocket paths is awkward
+ */
+@Component
+class NebulaServerConnectionStatusService(
+   private val websocketClient: NebulaWebsocketClient,
+   private val mapper: ObjectMapper,
+   private val orbitalWebSocketConfiguration: OrbitalWebSocketConfiguration
+) : WebSocketController {
+   override val paths: List<String> = listOf("/api/stubs/server-status")
+   override fun handle(session: WebSocketSession): Mono<Void> {
+      val outbound = websocketClient.websocket.status
+         .map { mapper.writeValueAsString(it) }
+         .map(session::textMessage)
+      return orbitalWebSocketConfiguration.applyPingConfiguration(
+         this, session, outbound
+      )
+   }
 }
 
 /**

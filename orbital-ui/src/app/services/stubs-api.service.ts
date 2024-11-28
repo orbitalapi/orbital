@@ -5,12 +5,15 @@ import {concatWith, Observable} from "rxjs";
 import {WebsocketService} from "./websocket.service";
 import {shareReplay} from "rxjs/operators";
 import {SchemaUpdatedNotification} from "./schema-notification.service";
+import {ConnectionStatus} from "../db-connection-editor/db-importer.service";
 
 @Injectable({
   providedIn: 'root',
 })
 export class StubsApiService {
   private readonly stubStateStream$: Observable<NebulaStacksResponse>;
+  private serverStatus$: Observable<ConnectionStatus>;
+
   constructor(private http: HttpClient,
               private websocketService: WebsocketService,
               @Inject(ENVIRONMENT) private environment: Environment,
@@ -22,6 +25,11 @@ export class StubsApiService {
         concatWith(websocketService.connect<NebulaStacksResponse>('/api/stubs/updates')),
         shareReplay(1)
       );
+
+    this.serverStatus$ = this.websocketService.connect<ConnectionStatus>('/api/stubs/server-status')
+      .pipe(
+        shareReplay(1)
+      )
   }
 
 
@@ -29,8 +37,12 @@ export class StubsApiService {
     return this.http.get<NebulaStacksResponse>(`${this.environment.serverUrl}/api/stubs`)
   }
 
-  getStubStateStream():Observable<NebulaStacksResponse> {
+  getStubStateStream(): Observable<NebulaStacksResponse> {
     return this.stubStateStream$
+  }
+
+  getStubServerStatus(): Observable<ConnectionStatus> {
+    return this.serverStatus$;
   }
 }
 
@@ -45,7 +57,7 @@ export interface NebulaStacksResponse {
 
   // A list of env variables for each stack, grouped by the stack name
   // eg: Map<String,Map<String,String>>
-  environmentVariables: { [key: StackName]: { [key: ComponentType]: { [key: EnvVarKey]  : EnvVarValue } } };
+  environmentVariables: { [key: StackName]: { [key: ComponentType]: { [key: EnvVarKey]: EnvVarValue } } };
   hasError: boolean;
   error: string | null;
   hasPendingUpdates: boolean;
@@ -59,6 +71,7 @@ export interface ComponentInfo {
   id: string;
 
 }
+
 export interface ComponentInfoWithState {
   name: ComponentName,
   type: ComponentType,
@@ -68,8 +81,9 @@ export interface ComponentInfoWithState {
 }
 
 export type ComponentState = 'NotStarted' | 'Starting' | 'Running' | 'Stopping' | 'Stopped' | 'Failed';
+
 export interface ComponentLifecycleEvent {
-  state : ComponentState
+  state: ComponentState
   message?: string // on LifecycleEventWithMessage
 }
 
