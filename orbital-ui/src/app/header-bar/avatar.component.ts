@@ -34,6 +34,8 @@ import {TuiAlertService, TuiDialogContext, TuiDialogService} from '@taiga-ui/cor
               [licenseServerEndpoint]="(appInfoService.getConfig() | async).licenseServerEndpoint"
               (refreshLicense)="licenseService.getLicenseDetails(true)"
             ></app-license-display>
+            <app-cluster-members-display *appRequiresAuthority="['ViewClusterInfo']">
+            </app-cluster-members-display>
             <button tuiOption (click)="showDialog(template)" *ngIf="user?.isAuthenticated" class="logout-button">
               <img class="logout-icon filter-black-ish" src="assets/img/tabler/logout.svg">
               Logout
