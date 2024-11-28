@@ -81,21 +81,21 @@ export class SidenavComponent implements OnInit {
       icon: 'assets/img/tabler/tools.svg',
       route: 'designer',
       testId: 'designer',
-      requiredAuthority: VynePrivileges.BrowseSchema
+      requiredAuthority: VynePrivileges.EditSchema
     },
     {
       title: 'Endpoints',
       icon: 'assets/img/tabler/broadcast.svg',
       route: 'endpoints',
       testId: 'endpoints',
-      requiredAuthority: VynePrivileges.BrowseSchema
+      requiredAuthority: VynePrivileges.ViewPipelines
     },
     {
       title: 'Policies',
       icon: 'assets/img/tabler/lock-code.svg',
       route: 'policies',
       testId: 'policies',
-      requiredAuthority: VynePrivileges.BrowseSchema,
+      requiredAuthority: VynePrivileges.EditSchema,
       featureToggle: 'policiesEnabled'
     },
     {
