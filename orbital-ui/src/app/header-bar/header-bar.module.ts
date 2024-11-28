@@ -2,6 +2,8 @@ import { TuiAvatar, TuiButtonLoading } from "@taiga-ui/kit";
 import { NgModule } from '@angular/core';
 import {RouterLink} from '@angular/router';
 import {LicenseDisplayComponent} from '../license-display/license-display.component';
+import {ClusterMembersDisplayComponent} from '../cluster-members-display/cluster-members-display.component';
+import {RequiresAuthorityDirective} from '../requires-authority.directive';
 import { HeaderBarComponent } from './header-bar.component';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { SearchModule } from '../search/search.module';
@@ -16,28 +18,30 @@ import {WorkspaceSelectorModule} from "../workspace-selector/workspace-selector.
 import { TuiAlert, TuiNotification, TuiDataList, TuiDropdown, TuiButton, TuiFallbackSrcPipe, TuiInitialsPipe } from '@taiga-ui/core';
 
 @NgModule({
-    imports: [
-        MatToolbarModule,
-        SearchModule,
-        CommonModule,
-        MatButtonModule,
-        MatIconModule,
-        MatMenuModule,
-        MatDialogModule,
-        ConfirmationDialogModule,
-        WorkspaceSelectorModule,
-        TuiAvatar,
-        ...TuiDropdown,
-        ...TuiDataList,
-        TuiButton,
-        TuiAlert,
-        TuiNotification,
-        RouterLink,
-        LicenseDisplayComponent,
-        TuiButtonLoading,
-        TuiFallbackSrcPipe,
-        TuiInitialsPipe
-    ],
+  imports: [
+    MatToolbarModule,
+    SearchModule,
+    CommonModule,
+    MatButtonModule,
+    MatIconModule,
+    MatMenuModule,
+    MatDialogModule,
+    ConfirmationDialogModule,
+    WorkspaceSelectorModule,
+    TuiAvatar,
+    ...TuiDropdown,
+    ...TuiDataList,
+    TuiButton,
+    TuiAlert,
+    TuiNotification,
+    RouterLink,
+    LicenseDisplayComponent,
+    TuiButtonLoading,
+    TuiFallbackSrcPipe,
+    TuiInitialsPipe,
+    ClusterMembersDisplayComponent,
+    RequiresAuthorityDirective,
+  ],
   exports: [HeaderBarComponent, AvatarComponent],
   declarations: [HeaderBarComponent, AvatarComponent],
   providers: [],

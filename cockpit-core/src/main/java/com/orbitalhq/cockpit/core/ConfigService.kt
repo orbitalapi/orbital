@@ -1,11 +1,13 @@
 package com.orbitalhq.cockpit.core
 
+import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.http.ServicesConfig
 import com.orbitalhq.licensing.License
 import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.plugins.LoadedPlugin
 import com.orbitalhq.plugins.PluginLoader
+import com.orbitalhq.security.VynePrivileges
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.actuate.autoconfigure.metrics.MeterRegistryCustomizer
@@ -13,8 +15,10 @@ import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.RestController
+import reactor.core.publisher.Mono
 import java.net.InetAddress
 import java.time.Instant
 
@@ -28,9 +32,10 @@ class ConfigService(
    customSettings: CustomSettings,
    pluginLoader: PluginLoader,
    discoveryClient: DiscoveryClient,
+   private val hazelcastInstance: HazelcastInstance,
 ) {
 
-   private lateinit var configSummary:ConfigSummary
+   private lateinit var configSummary: ConfigSummary
 
    init {
       val defaultLicenseServerUrl =
@@ -53,8 +58,20 @@ class ConfigService(
    fun getConfig(): ConfigSummary {
       return configSummary
    }
+
+   @GetMapping("/api/config/cluster")
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewClusterInfo}')")
+   fun getClusterInfo(): Mono<ClusterInfo> {
+      val members = hazelcastInstance.cluster.members
+         .map { it.address.host }
+      return Mono.just(ClusterInfo(members))
+   }
 }
 
+
+data class ClusterInfo(
+   val members: List<String>
+)
 // For sending to the UI
 data class ConfigSummary(
    val analytics: QueryAnalyticsConfig,

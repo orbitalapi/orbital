@@ -50,7 +50,7 @@ object VynePrivileges {
    const val ViewQueryHistory = "VIEW_HISTORIC_QUERY_LIST"
    const val ViewUsers = "VIEW_USERS"
    const val ViewWorkspaces = "VIEW_WORKSPACES"
-
+   const val ViewClusterInfo  = "VIEW_CLUSTER_INFO"
 }
 
 
@@ -79,7 +79,8 @@ enum class VyneGrantedAuthority(val constantValue: GrantedAuthorityName) {
    ViewPipelines(VynePrivileges.ViewPipelines),
    ViewQueryHistory(VynePrivileges.ViewQueryHistory),
    ViewUsers(VynePrivileges.ViewUsers),
-   ViewWorkspaces(VynePrivileges.ViewWorkspaces);
+   ViewWorkspaces(VynePrivileges.ViewWorkspaces),
+   ViewClusterInfo(VynePrivileges.ViewClusterInfo);
 
    companion object {
       private val byConstant = values().associateBy { it.constantValue }

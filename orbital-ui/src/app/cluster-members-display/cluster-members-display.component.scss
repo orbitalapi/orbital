@@ -1,0 +1,24 @@
+@import "src/common";
+
+:host {
+  padding: 0.625rem;
+  border-top: 1px solid $gray-200;
+}
+
+.cluster-members-header {
+  margin-bottom: 0.5rem;
+
+  h3 {
+    margin: 0 0 0.5rem 0;
+  }
+}
+
+.cluster-members {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  background: $slate-100;
+  border-radius: 0.25rem;
+  padding: 0.25rem 1rem;
+  margin-top: 0.75rem;
+}

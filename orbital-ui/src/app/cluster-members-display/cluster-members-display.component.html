@@ -1,0 +1,17 @@
+<ng-container *ngIf="(clusterMembersService.nodeClusterDetails | async)?.members as clusterMembers">
+  <div class="cluster-members-header">
+    <h3>Cluster members</h3>
+    @if (clusterMembers.length) {
+      <div>There {{clusterMembers.length | i18nPlural: clustersPluralMap}} in your cluster </div>
+      <div class="cluster-members">
+        <div *ngFor="let cluster of clusterMembers">
+          {{cluster}}
+        </div>
+      </div>
+    } @else if (clusterMembers?.length === 0) {
+      <div>There are no cluster members found.</div>
+    } @else {
+      <tui-notification appearance="negative" size="s">An error occurred retrieving the cluster members</tui-notification>
+    }
+  </div>
+</ng-container>
