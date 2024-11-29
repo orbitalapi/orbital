@@ -25,10 +25,4 @@
   display: flex;
   gap: 1rem;
   align-items: center;
-
-  ::ng-deep {
-    tui-badge {
-      font-size: 0.8rem;
-    }
-  }
 }

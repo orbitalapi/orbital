@@ -220,3 +220,11 @@ tui-icon[tuiIcons]:after {
 [tuiLink][tuiIcons]:after {
   vertical-align: unset !important;
 }
+
+tui-badge[data-size="m"] {
+  font-size: 0.8rem
+}
+
+tui-badge[data-size="l"] {
+  font-size: 0.9rem
+}
