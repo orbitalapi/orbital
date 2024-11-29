@@ -7,6 +7,7 @@ import {CommonModule, TitleCasePipe} from '@angular/common';
 import {memberType, memberTypeForCSS} from "../type-list/type-list.component";
 import {getTypeNameToView} from "../type-viewer/type-viewer.component";
 import {RouterLink} from "@angular/router";
+import {isNullOrUndefined} from '../utils/utils';
 
 @Component({
   selector: 'app-schema-member-name-badge',
@@ -38,6 +39,7 @@ export class SchemaMemberNameBadgeComponent {
   showFullyQualifiedName = input(true)
   route = computed(() => {
     const qualifiedName = this.qualifiedName();
+    if (isNullOrUndefined(qualifiedName)) return
     const typeNameToView = getTypeNameToView(qualifiedName);
     return ['/catalog', typeNameToView.fullyQualifiedName]
   })
@@ -56,12 +58,12 @@ export class SchemaMemberNameBadgeComponent {
   })
 
   schemaMember = computed(() => {
-    return findSchemaMember(this.schema(), this.qualifiedName().parameterizedName)
+    return findSchemaMember(this.schema(), this.qualifiedName()?.parameterizedName)
   })
 
   displayName = computed(() => {
     const qualifiedName = this.qualifiedName();
-    return (this.showFullyQualifiedName()) ? qualifiedName.longDisplayName : qualifiedName.shortDisplayName;
+    return this.showFullyQualifiedName() ? qualifiedName?.longDisplayName : qualifiedName?.shortDisplayName;
   })
   protected readonly memberTypeForCSS = memberTypeForCSS;
 }
