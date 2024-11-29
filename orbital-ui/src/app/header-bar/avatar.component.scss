@@ -39,3 +39,8 @@
 tui-notification {
   margin-top: 1rem;
 }
+
+tui-opt-group:before {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid $gray-200;
+}

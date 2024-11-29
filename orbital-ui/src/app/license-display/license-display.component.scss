@@ -1,9 +1,7 @@
 @import "src/common";
 
 :host {
-  border-top: 1px solid $slate-200;
   border-bottom: 1px solid $slate-200;
-  margin: 0.5rem 0;
   padding: 0.75rem 0.625rem;
   line-height: 1.6rem;
 }
@@ -12,7 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 
   h3 {
     margin: 0;
@@ -22,14 +20,6 @@
     display: flex;
     align-items: center;
     gap: 0.5rem;
-  }
-
-  .plan-badge {
-    padding: 0 0.25rem;
-    border-radius: 0.25rem;
-    background: $sky-600;
-    color: $whiteish;
-    font-weight: 600;
   }
 }
 

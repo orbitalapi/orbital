@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from "@angular/core";
 import { TuiLink, TuiButton, TuiHint } from "@taiga-ui/core";
+import {TuiChip} from '@taiga-ui/kit';
 import { ShortNumberPipe } from "../utils/short-number.pipe";
 import {LicenseService, LicenseWithUsage} from "./license.service";
 import { CommonModule, NgIf } from "@angular/common";
@@ -12,7 +13,8 @@ import { CommonModule, NgIf } from "@angular/common";
     TuiButton,
     ShortNumberPipe,
     TuiLink,
-    TuiHint
+    TuiHint,
+    TuiChip,
   ],
   template: `
     @if (!license) {
@@ -30,7 +32,7 @@ import { CommonModule, NgIf } from "@angular/common";
       <div class="plan-header">
         <h3>Plan</h3>
         <div class="right-content">
-          <span class="plan-badge">{{ license.licenseSummary.plan }}</span>
+          <tui-chip appearance="primary" size="xs">{{ license.licenseSummary.plan }}</tui-chip>
           <a
             tuiLink
             tuiHint="Refresh license"
