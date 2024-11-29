@@ -1,8 +1,10 @@
+import {TuiLet} from '@taiga-ui/cdk';
 import { TuiBadge } from "@taiga-ui/kit";
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
-import {Observable, switchMap} from 'rxjs';
+import {Observable, of, switchMap} from 'rxjs';
+import {catchError, tap} from 'rxjs/operators';
 import {UiCustomisations} from '../../environments/ui-customisations';
 import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
@@ -16,7 +18,17 @@ import {SchemaMemberNameBadgeComponent} from "../schema-member-name-badge/schema
 @Component({
   selector: 'app-policy-manager',
   standalone: true,
-  imports: [CommonModule, HeaderComponentLayoutModule, TuiButton, RouterLink, TuiBadge, TuiHint, FilenameDisplayComponent, SchemaMemberNameBadgeComponent],
+  imports: [
+    CommonModule,
+    HeaderComponentLayoutModule,
+    TuiButton,
+    RouterLink,
+    TuiBadge,
+    TuiHint,
+    FilenameDisplayComponent,
+    SchemaMemberNameBadgeComponent,
+    TuiLet,
+  ],
   template: `
     <app-header-component-layout
       title="Policies"
@@ -39,8 +51,8 @@ import {SchemaMemberNameBadgeComponent} from "../schema-member-name-badge/schema
           Create a policy
         </button>
       </ng-container>
-      <div *ngIf="policies$ | async as policies">
-        <table *ngIf="policies.length" class="policy-list">
+      <ng-container *tuiLet="policies$ | async as policies">
+        <table *ngIf="policies?.length" class="policy-list">
           <thead>
           <tr>
             <th>Policy name</th>
@@ -64,7 +76,11 @@ import {SchemaMemberNameBadgeComponent} from "../schema-member-name-badge/schema
           </tr>
           </tbody>
         </table>
-      </div>
+        <div *ngIf="!policies?.length && !isLoading" class="empty-state-container">
+          <img src="assets/img/illustrations/authentication.svg">
+          <p>No policies have been created yet.</p>
+        </div>
+      </ng-container>
     </app-header-component-layout>
   `,
   styleUrls: ['./policy-manager.component.scss'],
@@ -73,14 +89,16 @@ import {SchemaMemberNameBadgeComponent} from "../schema-member-name-badge/schema
 export class PolicyManagerComponent {
   policies$: Observable<Policy[]>;
   setupReadiness: PolicySetupReadiness | null = null;
+  isLoading: boolean;
+  primaryAction: 'getStarted' | 'createPolicy'
 
-  get primaryAction(): 'getStarted' | 'createPolicy' {
+  setPrimaryAction = () => {
     if (!this.setupReadiness) {
-      return null
+      this.primaryAction = null
     } else if (!this.setupReadiness.authTokenTypes.length) {
-      return 'getStarted'
+      this.primaryAction = 'getStarted'
     } else {
-      return 'createPolicy'
+      this.primaryAction = 'createPolicy'
     }
   }
 
@@ -94,18 +112,36 @@ export class PolicyManagerComponent {
     private router: Router,
     private activeRoute: ActivatedRoute,
   ) {
-    this.policiesService.getPolicySetupReadiness().pipe(
-      takeUntilDestroyed()
-    ).subscribe(value => {
-      this.setupReadiness = value;
-      this.changeDetector.markForCheck();
-    })
-
     this.policies$ = this.schemaNotificationService.createSchemaNotificationsSubscription()
       .pipe(
-        switchMap(() => this.typeService.getPolicies()
-        )
+        takeUntilDestroyed(),
+        tap(() => {
+          this.isLoading = true;
+          this.setPrimaryAction();
+        }),
+        switchMap(() =>
+          this.policiesService.getPolicySetupReadiness().pipe(
+            tap(value => {
+              this.setupReadiness = value; // Update setup readiness
+              this.changeDetector.markForCheck();
+            }),
+            switchMap(() =>
+              this.typeService.getPolicies().pipe(
+                tap(() => {
+                  this.isLoading = false;
+                  this.setPrimaryAction();
+                })
+              )
+            )
+          )
+        ),
+        catchError(error => {
+          this.isLoading = false;
+          console.error(error);
+          return of([]); // Return an empty observable on error
+        })
       );
+
   }
 
   navigateToPolicyPage(policy: Policy) {
