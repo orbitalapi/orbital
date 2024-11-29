@@ -12,8 +12,9 @@ import {
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {TuiAlertService} from '@taiga-ui/core';
 import {IOutputData} from 'angular-split';
-import {debounceTime, filter} from "rxjs/operators";
+import {debounceTime, filter, skip} from 'rxjs/operators';
 import {editor, IPosition, MarkerSeverity} from 'monaco-editor';
+import {SchemaNotificationService} from '../services/schema-notification.service';
 import {createTaxiEditor, createTaxiEditorModel} from "./language-server-commons";
 import {ITextFileEditorModel} from "@codingame/monaco-vscode-api/monaco";
 import {DiagnosticSeverity, DidOpenTextDocumentNotification} from "vscode-languageclient";
@@ -181,11 +182,11 @@ export class CodeEditorComponent implements OnInit, OnDestroy {
 
   constructor(
     private languageServerService: MonacoLanguageServerService,
+    private schemaNotificationService: SchemaNotificationService,
     private destroyRef: DestroyRef,
     private changeDetectorRef: ChangeDetectorRef,
     @Inject(TuiAlertService) private readonly alertService: TuiAlertService,
   ) {
-
     this.languageServerService.languageServicesInit$
       .subscribe(() => {
         // editor.defineTheme('vyne', this.editorTheme as any);
@@ -197,6 +198,16 @@ export class CodeEditorComponent implements OnInit, OnDestroy {
     ).subscribe(async(e) => {
       this.updateContent(this.monacoModel.textEditorModel.getValue());
     })
+
+    this.schemaNotificationService.createSchemaNotificationsSubscription()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        skip(1),
+        debounceTime(300)
+      )
+      .subscribe(async () => {
+        await this.sendOpenNotification();
+      });
 
     effect(() => {
       if (this.cursorPosition()) {
