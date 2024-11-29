@@ -841,10 +841,18 @@ class TypedObjectFactory(
       // When we're building a field, if there's a projection on it,
       // we build the source type initially.  Once the source is built, we
       // then project to the target type.
-      val fieldType = if (field.fieldProjection != null) {
-         schema.type(field.fieldProjection.sourceType)
+      val (fieldType, constraints) = if (field.fieldProjection != null) {
+         // MP: 29-Nov-24:
+         // Two different scenarios for constraints here:
+         // Constraint on expression as input to projection:
+         // existing : Deal[] = ExistingDeals(BorrowerId == deal.borrowerId) as Deal[]
+         //
+         // or constraint on source type:
+         // repayments: Repayment[]( LoanId == Loan::LoanId ) as  (repayments:Repayment) -> {
+         // There are tests that cover both of these scenarios
+         schema.type(field.fieldProjection.sourceType) to field.constraints + field.fieldProjection.sourceTypeConstraints
       } else {
-         field.resolveType(schema)
+         field.resolveType(schema) to field.constraints
       }
       val fieldTypeName = fieldType.qualifiedName
 
@@ -927,7 +935,7 @@ class TypedObjectFactory(
          }
          // Not a map, so could be an object, try the value reader - but this is an expensive
          // call, so we defer to last-ish
-         valueReader.contains(value, attributeName) && field.constraints.isNullOrEmpty() -> readWithValueReader(attributeName, fieldType, field.format)
+         valueReader.contains(value, attributeName) && constraints.isNullOrEmpty() -> readWithValueReader(attributeName, fieldType, field.format)
 
          // Support embedded formats.
          // Eg: A field in a JSON message that contains an XML payload.
@@ -972,7 +980,7 @@ class TypedObjectFactory(
                searchedValue != null -> searchedValue
                // Since we know that the value isn't present in the fact bag,
                // and that it's scalar, the only thing left to do is query.
-               fieldType.isScalar -> queryForFieldValue(field, fieldType, attributeName)
+               fieldType.isScalar -> queryForFieldValue(field, fieldType, attributeName, constraints)
 
                fieldType.isCollection -> {
                   // TODO : I suspect this needs to be richer.
@@ -980,7 +988,7 @@ class TypedObjectFactory(
                   // from a query result onto a field.  (see
                   // VyneProjectionTest.will populate collection on inline projection)
                   // However, there's likely other nuanced cases we need to support.
-                  queryForFieldValue(field, fieldType, attributeName)
+                  queryForFieldValue(field, fieldType, attributeName, constraints)
 
                }
 
@@ -989,15 +997,15 @@ class TypedObjectFactory(
                   // Otherwise, we're calling into TypedObjectFactory with a scalar type,
                   // which is incorrect (it's intended for Object types).
                   attemptToBuildFieldObject(field, fieldType, attributeName, fieldTypeName)
-                     ?: queryForFieldValue(field, fieldType, attributeName)
+                     ?: queryForFieldValue(field, fieldType, attributeName, constraints)
                }
             }
          }
 
-         else -> queryForFieldValue(field, fieldType, attributeName)
+         else -> queryForFieldValue(field, fieldType, attributeName, constraints)
       }.let { value ->
-         if (!field.constraints.isNullOrEmpty()) {
-            verifyValueSatisfiesConstraints(value, field, type, attributeName, )
+         if (!constraints.isNullOrEmpty()) {
+            verifyValueSatisfiesConstraints(value, field, type, attributeName, constraints)
          } else {
             value
          }
@@ -1024,11 +1032,12 @@ class TypedObjectFactory(
       value: TypedInstance,
       field: Field,
       type: Type,
-      attributeName: AttributeName
+      attributeName: AttributeName,
+      constraints: List<Constraint>
    ): TypedInstance {
       val validator = DataSourceConstraintValidator()
-      return if (!validator.sourceSatisfiesConstraint(field.constraints, value, schema)) {
-         queryForFieldValue(field, field.resolveType(schema), attributeName)
+      return if (!validator.sourceSatisfiesConstraint(constraints, value, schema)) {
+         queryForFieldValue(field, field.resolveType(schema), attributeName, constraints)
       } else {
          value
       }
@@ -1121,6 +1130,7 @@ class TypedObjectFactory(
       field: Field,
       type: Type,
       attributeName: AttributeName,
+      constraints: List<Constraint>
    ): TypedInstance {
       return if (inPlaceQueryEngine != null) {
          val searchFailureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.defaultBehaviour(field)
@@ -1130,7 +1140,7 @@ class TypedObjectFactory(
             searchFailureBehaviour,
             fieldInstanceValidPredicate,
             attributeName,
-            field.constraints
+            constraints
          )
       } else {
          failWithTypedNull(type, attributeName)

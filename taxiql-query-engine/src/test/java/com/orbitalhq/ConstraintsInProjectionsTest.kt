@@ -276,4 +276,54 @@ service LoanApplicationService {
          )
    }
 
+   @Test
+   fun `can project a discovered nested attribute to an array`():Unit = kotlinx.coroutines.runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         closed model Deal {
+           id : DealId inherits Int
+           borrowerId : BorrowerId inherits Int
+         }
+         closed model ExistingDeals {
+           deals: Deal[]
+         }
+
+         service DealApi {
+           operation getDeal(DealId):Deal(...)
+           operation getExistingDeals(BorrowerId):ExistingDeals(...)
+         }
+      """
+      )
+      stub.addResponse("getDeal", """{ "id" : 1, "borrowerId" : 100 }""")
+      stub.addResponse(
+         "getExistingDeals", """{
+ "deals" : [
+    { "id" : 2, "borrowerId" : 100 } ,
+    { "id" : 3, "borrowerId" : 100 }
+  ]
+}"""
+      )
+      val result = vyne.query(
+         """
+given { id: DealId = 1}
+find { Deal(DealId == id )} as(deal: Deal) -> {
+//    existing :  ExistingDeals(BorrowerId == deal.borrowerId)
+    existing : Deal[] = ExistingDeals(BorrowerId == deal.borrowerId) as Deal[]
+    ...
+}
+"""
+      ).firstRawObject()
+      result.shouldBe(
+         mapOf(
+            "existing" to listOf(
+               mapOf("id" to 2, "borrowerId" to 100),
+               mapOf("id" to 3, "borrowerId" to 100),
+            ),
+            "id" to 1,
+            "borrowerId" to 100
+         )
+      )
+
+   }
+
 }
