@@ -24,4 +24,8 @@ data class JdbcUrlCredentialsConnectionConfiguration(
    override fun getConnectionParameterOrNull(parameter: IConnectionParameter): String? {
       return params[parameter]
    }
+
+   override fun connectionPoolProperties(): ConnectionPoolProperties {
+     return JdbcConnectionPoolParameters.connectionPoolProperties(emptyMap())
+   }
 }

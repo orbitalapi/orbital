@@ -43,6 +43,10 @@ data class DefaultJdbcConnectionConfiguration(
       return connectionParameters[parameter.param.templateParamName]
    }
 
+   override fun connectionPoolProperties(): ConnectionPoolProperties {
+      return JdbcConnectionPoolParameters.connectionPoolProperties(connectionParameters)
+   }
+
    override fun buildUrlAndCredentials(urlBuilder: JdbcUrlBuilder): JdbcUrlAndCredentials {
       return urlBuilder.build(connectionParameters)
    }
@@ -69,6 +73,8 @@ interface JdbcConnectionConfiguration : ConnectorConfiguration {
 
    fun getConnectionParameter(parameter: IConnectionParameter):String
    fun getConnectionParameterOrNull(parameter: IConnectionParameter):String?
+
+   fun connectionPoolProperties(): ConnectionPoolProperties
 }
 
 

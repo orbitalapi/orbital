@@ -2,12 +2,13 @@ package com.orbitalhq.connectors.jdbc
 
 import com.google.common.cache.CacheBuilder
 import com.orbitalhq.config.UpdatableConfigRepository
-import com.zaxxer.hikari.HikariConfig
-import com.zaxxer.hikari.HikariDataSource
-import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
+import com.orbitalhq.connectors.config.jdbc.ConnectionPoolProperties
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.drivers.DatabaseSupport
 import com.orbitalhq.connectors.jdbc.registry.JdbcConnectionRegistry
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
+import com.zaxxer.hikari.metrics.micrometer.MicrometerMetricsTrackerFactory
 import mu.KotlinLogging
 import org.jooq.DSLContext
 import org.jooq.conf.RenderQuotedNames
@@ -51,15 +52,35 @@ class HikariJdbcConnectionFactory(
    private val metricsFactory: MicrometerMetricsTrackerFactory? = null
 ) : JdbcConnectionFactory {
    private val dataSourceCache = CacheBuilder.newBuilder()
-      .build<String, DataSource>()
+      .build<String, HikariDataSource>()
 
    init {
       logger.info { "New HikariJdbcConnectionFactory created" }
       if (connectionRegistry is UpdatableConfigRepository<*>) {
          connectionRegistry.configUpdated.subscribe {
             logger.info { "Connection registry changed, invalidating data source cache" }
-            dataSourceCache.invalidateAll()
-            dataSourceCache.cleanUp()
+            val jdbcConnectionConfiguration = it as JdbcConnectionConfiguration
+            val cacheKey = jdbcConnectionConfiguration.connectionName
+            dataSourceCache.getIfPresent(cacheKey)?.let { dataSource ->
+               val (hikariConfig, connectionPoolProps) = this.hikariConfigFor(cacheKey)
+               if (hikariConfig.jdbcUrl != dataSource.jdbcUrl ||
+                   connectionPoolProps.connectionTimeout != dataSource.connectionTimeout ||
+                   connectionPoolProps.minimumIdleConnections != dataSource.minimumIdle ||
+                   connectionPoolProps.maxLifeTime != dataSource.maxLifetime ||
+                   connectionPoolProps.maxPoolSize != dataSource.maximumPoolSize ||
+                   connectionPoolProps.idleTimeout != dataSource.idleTimeout
+                  ) {
+                  logger.info { "DataSource properties for $cacheKey updated, removing the existing datasource from cache!" }
+                  dataSourceCache.invalidate(cacheKey)
+                  dataSource.close()
+                  cacheKey
+               } else {
+                  logger.info { "DataSource properties for $cacheKey NOT updated, keeping the existing datasource in cache!" }
+               }
+               cacheKey
+            }?.let {
+               logger.info { "There is no datasource for $it in the cache, no update is required." }
+            }
          }
       }
    }
@@ -70,16 +91,23 @@ class HikariJdbcConnectionFactory(
    override fun dataSource(connectionName: String): DataSource {
       return dataSourceCache.get(connectionName) {
          logger.info { "Creating HikariDataSource for $connectionName" }
-         val connection = connectionRegistry.getConnection(connectionName)
-         val url = connection.buildUrlAndCredentials()
-         val hikariConfig = HikariConfig(hikariConfigTemplate.dataSourceProperties)
-         hikariConfig.poolName = "HikariPool-$connectionName"
-         hikariConfig.jdbcUrl = url.url
-         hikariConfig.username = url.username
-         hikariConfig.password = url.password
-         hikariConfig.metricsTrackerFactory = metricsFactory
+         val (hikariConfig, connectionPoolProps) = this.hikariConfigFor(connectionName)
+         logger.info { "Updated connection pool properties for $connectionName with $connectionPoolProps" }
          HikariDataSource(hikariConfig)
       }
+   }
+
+   private fun hikariConfigFor(connectionName: String): Pair<HikariDataSource, ConnectionPoolProperties> {
+      val connection = connectionRegistry.getConnection(connectionName)
+      val url = connection.buildUrlAndCredentials()
+      val hikariConfig = HikariConfig(hikariConfigTemplate.dataSourceProperties)
+      hikariConfig.poolName = "HikariPool-$connectionName"
+      hikariConfig.jdbcUrl = url.url
+      hikariConfig.username = url.username
+      hikariConfig.password = url.password
+      hikariConfig.metricsTrackerFactory = metricsFactory
+      val connectionPoolProps = connection.decorateHikariConnectionPool(hikariConfig)
+      return HikariDataSource(hikariConfig) to connectionPoolProps
    }
 
    override fun dataSource(connectionConfiguration: JdbcConnectionConfiguration): DataSource {
