@@ -1,6 +1,6 @@
 import { TuiButtonLoading } from "@taiga-ui/kit";
 import { TuiComboBoxModule, TuiInputModule, TuiSelectModule } from "@taiga-ui/legacy";
-import {NgIf} from '@angular/common';
+import {CommonModule} from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {UiCustomisations} from '../../../environments/ui-customisations';
@@ -37,9 +37,9 @@ export const projectTypeToString = (item: LoadablePackageType) => {
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormsModule,
+    CommonModule,
     TuiInputModule,
     TuiButton,
-    NgIf,
     TuiComboBoxModule,
     TuiDataList,
     TuiSelectModule,
