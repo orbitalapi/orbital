@@ -1,8 +1,10 @@
 package com.orbitalhq.connectors.jdbc
 
 import com.orbitalhq.connectors.IConnectionParameter
+import com.orbitalhq.connectors.config.jdbc.ConnectionPoolProperties
 import com.orbitalhq.connectors.config.jdbc.DatabaseDriverName
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
+import com.orbitalhq.connectors.config.jdbc.JdbcConnectionPoolParameters
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlBuilder
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
@@ -33,6 +35,11 @@ data class NamedTemplateConnection(
    override fun getConnectionParameterOrNull(parameter: IConnectionParameter): String? {
       error("Not supported on NamedTemplateConnection - use a real one instead")
    }
+
+   override fun connectionPoolProperties(): ConnectionPoolProperties {
+      return JdbcConnectionPoolParameters.connectionPoolProperties(mapOf())
+   }
+
    override fun buildUrlAndCredentials(urlBuilder: JdbcUrlBuilder): JdbcUrlAndCredentials {
       return JdbcUrlAndCredentials(
           metadata.url,

@@ -15,10 +15,16 @@ spring:
          import-check:
             enabled: false
    datasource:
-      url: jdbc:postgresql://${vyne.db.host}:${vyne.db.port:5432}/${vyne.db.database:orbital}
+      url: jdbc:postgresql://${vyne.db.host}:${vyne.db.port:5432}/${vyne.db.database:orbital}?ApplicationName=${spring.application.name}
       username: ${vyne.db.username}
       password: ${vyne.db.password}
       driver-class-name: org.postgresql.Driver
+      hikari:
+         connection-timeout: ${vyne.db.datasource.connectionTimeout:30000} #default is 30 seconds (specified in milliseconds)
+         max-lifetime: ${vyne.db.datasource.maxLifetime:1800000} # default is 30 minutes (specified in milliseconds)
+         idle-timeout: ${vyne.db.datasource.idleTimout:600000} # default is 60 minutes (specified in milliseconds)
+         minimum-idle: ${vyne.db.datasource.minimumIdle:10} # default is 10
+         maximum-pool-size: ${vyne.db.datasource.maxPoolSize:10} # default is 10
    sql:
       init:
          mode: never

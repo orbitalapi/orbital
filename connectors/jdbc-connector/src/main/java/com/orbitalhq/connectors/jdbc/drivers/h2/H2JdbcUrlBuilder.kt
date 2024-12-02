@@ -4,6 +4,7 @@ import com.orbitalhq.connectors.ConnectionDriverParam
 import com.orbitalhq.connectors.ConnectionParameterName
 import com.orbitalhq.connectors.ConnectorUtils
 import com.orbitalhq.connectors.SimpleDataType
+import com.orbitalhq.connectors.config.jdbc.JdbcConnectionPoolParameters
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlBuilder
 import com.orbitalhq.utils.substitute
@@ -18,7 +19,7 @@ class H2JdbcUrlBuilder : JdbcUrlBuilder {
       ConnectionDriverParam("catalog", SimpleDataType.STRING),
       ConnectionDriverParam("username", SimpleDataType.STRING, "sa"),
       ConnectionDriverParam("password", SimpleDataType.STRING, ""),
-   )
+   ) + JdbcConnectionPoolParameters.connectionPoolParameters
 
    override fun build(inputs: Map<ConnectionParameterName, Any?>): JdbcUrlAndCredentials {
       val inputsWithDefaults = ConnectorUtils.assertAllParametersPresent(parameters, inputs)
