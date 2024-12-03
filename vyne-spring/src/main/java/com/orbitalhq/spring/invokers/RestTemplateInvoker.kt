@@ -54,13 +54,17 @@ import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
+private val logger = KotlinLogging.logger {}
 class RestTemplateInvoker(
    val schemaProvider: SchemaProvider,
    private val webClientFactory: WebClientFactory,
    private val requestFactory: HttpRequestFactory = DefaultRequestFactory(FormatSpecRegistry.default().formats),
    val formats: FormatSpecRegistry = FormatSpecRegistry.default(),
 ) : OperationInvoker {
-   private val logger = KotlinLogging.logger {}
+   companion object {
+      val defaultAcceptHeaderValue = listOf(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML)
+   }
+
 
    constructor(
       schemaProvider: SchemaProvider,
@@ -121,6 +125,10 @@ class RestTemplateInvoker(
             (queryParams?.let { uriBuilder.queryParams(it) } ?: uriBuilder).build(uriVariables)
          }
          .headers { consumer ->
+            if (httpEntity.headers.accept.isEmpty()) {
+               // If Accept header value is not explicitly specified, set it to default Orbital values.
+               consumer.accept = defaultAcceptHeaderValue
+            }
             consumer.addAll(httpEntity.headers)
          }
          .addAuthTokenAttributes(service.name.fullyQualifiedName)
@@ -134,7 +142,6 @@ class RestTemplateInvoker(
       val remoteCallId = UUID.randomUUID().toString()
 
       val results = request
-         .accept(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML)
          .exchange()
          .onErrorMap { error -> mapError(
             error,

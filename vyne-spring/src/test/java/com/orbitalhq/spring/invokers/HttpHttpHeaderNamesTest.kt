@@ -4,9 +4,9 @@ import com.orbitalhq.Vyne
 import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
-import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.testVyne
+import com.winterbe.expekt.should
 import io.kotest.common.runBlocking
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -237,6 +237,53 @@ class HttpHttpHeaderNamesTest {
       val lastRequest = server.takeRequest()
       lastRequest.getHeader("Accept-Encoding").shouldBe("GZIP")
    }
+
+    @Test
+    fun `when accept is not specified for http operation default accept values are passed to request`(): Unit = runBlocking {
+        val src = """
+         model Person {
+            name : Name inherits String
+         }
+         service PeopleService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people")
+            operation findPeople():Person[]
+         }
+      """
+        val vyne = vyneWithHttpInvoker(src)
+        prepareServerResponse()
+        vyne.query(
+            """
+            given { s : String = "" }
+            find { Person[] } """.trimIndent()
+        )
+            .rawObjects()
+        val lastRequest = server.takeRequest()
+        lastRequest.getHeader("Accept").should.equal(RestTemplateInvoker.defaultAcceptHeaderValue.joinToString { "$it" })
+    }
+
+    @Test
+    fun `when accept is specified for http operation default accept values are not passed to request`(): Unit = runBlocking {
+        val src = """
+         model Person {
+            name : Name inherits String
+         }
+         service PeopleService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people")
+            @HttpHeader(name = "Accept", value = "application/json")
+            operation findPeople():Person[]
+         }
+      """
+        val vyne = vyneWithHttpInvoker(src)
+        prepareServerResponse()
+        vyne.query(
+            """
+            given { s : String = "" }
+            find { Person[] } """.trimIndent()
+        )
+            .rawObjects()
+        val lastRequest = server.takeRequest()
+        lastRequest.getHeader("Accept").should.equal("application/json")
+    }
 }
 
 fun vyneWithHttpInvoker(src: String): Vyne {
