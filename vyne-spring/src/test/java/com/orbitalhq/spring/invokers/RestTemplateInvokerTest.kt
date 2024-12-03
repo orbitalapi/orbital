@@ -180,6 +180,7 @@ namespace vyne {
          turbine.awaitComplete()
          expectRequestCount(1)
          expectRequest { request ->
+            request.getHeader("Accept").should.equal(RestTemplateInvoker.defaultAcceptHeaderValue.joinToString { "$it" })
             assertEquals("/clients/notional", request.path)
             // There is no request body and hence we don't set the content-type header for the request.
             assertEquals(null, request.getHeader("Content-Type"))
