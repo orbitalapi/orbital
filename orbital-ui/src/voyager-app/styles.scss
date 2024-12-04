@@ -178,15 +178,23 @@ tui-hint {
 
 
 .fullscreen {
-  $sidenav-width: 50px;
+  $header-height: 53px;
+  $sidenav-width: 58px;
   position: fixed;
-  top: 1rem;
-  left: calc(1rem + $sidenav-width) !important;
-  width: calc(100% - $sidenav-width - 2rem) !important;
-  height: calc(100% - 2rem);
+  top: calc(0.5rem + $header-height) !important;
+  left: calc(0.5rem + $sidenav-width) !important;
+  width: calc(100% - $sidenav-width - 1rem) !important;
+  height: calc(100% - $header-height - 1rem) !important;
   z-index: 2000;
 }
 
+::ng-deep.toolbar.is-full-screen {
+  $header-height: 53px;
+  $sidenav-width: 58px;
+  top: calc(1rem + $header-height) !important;
+  left: calc(1rem + $sidenav-width) !important;
+  right: 1rem !important;
+}
 
 app-panel-header {
   color: $slate-50 !important;

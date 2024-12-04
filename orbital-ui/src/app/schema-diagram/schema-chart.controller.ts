@@ -1,3 +1,4 @@
+import {SchemaDiagramSpec} from '../schema-diagram-markdown-wrapper/schema-diagram-markdown-wrapper.component';
 import {findSchemaMember, Schema, SchemaMember, SchemaMemberKind, ServiceMember, Type} from '../services/schema';
 import { Edge, EdgeMarkerType, MarkerType, Node, XYPosition } from '@xyflow/react';
 import {
@@ -5,7 +6,6 @@ import {
   collectionOperations,
   collectLinks,
   EdgeParams,
-  getNodeId,
   Link, edgeSourceAndTargetExist,
   MemberWithLinks,
   LinkKind
@@ -55,10 +55,10 @@ export class SchemaChartController {
 
   build(buildOptions: {
     autoAppendLinks: boolean,
-    layoutAlgo: 'full' | 'incremental',
     appendLinksHandler: AppendLinksHandler,
     clickHandler: SchemaMemberClickHandler,
     isNavigable: boolean,
+    existingPositions: Omit<SchemaDiagramSpec, 'showTypeToolbar'>
   }): ChartBuildResult {
     const builtNodesById = new Map<string, Node<MemberWithLinks>>();
 
@@ -74,8 +74,9 @@ export class SchemaChartController {
         return null;
       }
 
-      const nodeId = getNodeId(schemaMember.kind, schemaMember.name);
-      const existingPosition = this.currentNodesById.get(nodeId)?.position;
+      const nodeId = schemaMember.name.fullyQualifiedName;
+      const {x, y} = buildOptions.existingPositions?.members?.[nodeId] ?? {};
+      const existingPosition = !isNullOrUndefined(x) && !isNullOrUndefined(y) ? {x, y} : this.currentNodesById.get(nodeId)?.position;
       return buildSchemaNode(
         this.schema,
         schemaMember,

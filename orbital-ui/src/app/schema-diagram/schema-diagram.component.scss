@@ -36,7 +36,7 @@
 
 ::ng-deep {
   .react-flow__node {
-    &.selected {
+    &.selected > div {
       box-shadow: rgb(0 0 0 / 40%) 0 2px 14px 0;
     }
 

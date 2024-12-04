@@ -26,6 +26,7 @@ import {isNullOrUndefined} from "../utils/utils";
       [schema$]="schema$"
       [memberNameNavigable]="true"
       [displayedMembers]="displayedMembers"
+      [displayedMemberPositions]="displayedMemberPositions"
       [showTypeToolbar]="diagramSpec?.showTypeToolbar"
       hasBorder="true"
     ></app-schema-diagram>
@@ -35,14 +36,15 @@ import {isNullOrUndefined} from "../utils/utils";
 })
 export class SchemaDiagramMarkdownWrapperComponent {
   schema$: Observable<Schema>;
+  displayedMembers: string[] | 'everything' | 'services' = 'everything'
+  displayedMemberPositions = {members: {}}
+  diagramSpec: SchemaDiagramSpec;
 
   constructor(@Inject(SCHEMA_PROVIDER_TOKEN) private schemaProvider: SchemaProvider, changeDetector: ChangeDetectorRef) {
     this.schema$ = schemaProvider.getSchema();
   }
 
   private _code: string;
-  diagramSpec: SchemaDiagramSpec;
-
   @Input()
   get code(): string {
     return this._code;
@@ -52,8 +54,6 @@ export class SchemaDiagramMarkdownWrapperComponent {
     this._code = value;
     this.parseCode();
   }
-
-
 
   private parseCode() {
     try {
@@ -66,25 +66,27 @@ export class SchemaDiagramMarkdownWrapperComponent {
         ...defaultDiagramSpec,
         ...parsedDiagramSpec
       }
-      this.displayedMembers = this.parseDisplayedMembers();
+      const parsedData = this.parseDisplayedData();
+      this.displayedMembers = parsedData.members;
+      this.displayedMemberPositions = parsedData.memberPositions;
     } catch (e) {
       console.log(e, 'Diagram is invalid')
     }
   }
 
-  displayedMembers: string[] | 'everything' | 'services' = 'everything'
-
-  parseDisplayedMembers():string[] {
-    if (isNullOrUndefined(this.diagramSpec)) {
-      return [];
+  private parseDisplayedData(): { members: string[]; memberPositions: Omit<SchemaDiagramSpec, 'showTypeToolbar'> } {
+    if (!this.diagramSpec) {
+      return { members: [], memberPositions: {members: {}} };
     }
+
     try {
-      return Object.keys(this.diagramSpec.members)
+      const members = Object.keys(this.diagramSpec.members);
+      const memberPositions = this.diagramSpec;
+      return { members, memberPositions };
     } catch (e) {
-      console.log(e, 'Diagram is invalid')
-      return [];
+      console.error(e, 'Error parsing diagram data');
+      return { members: [], memberPositions: {members: {}} };
     }
-
   }
 }
 
