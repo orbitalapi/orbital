@@ -1,7 +1,8 @@
-import { TuiTabs } from "@taiga-ui/kit";
+import {TuiSkeleton, TuiTabs} from '@taiga-ui/kit';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, NavigationEnd, Router} from '@angular/router';
+import {tap} from 'rxjs/operators';
 import {SchemaNotificationService} from '../services/schema-notification.service';
 import {
   PackagesService,
@@ -33,7 +34,16 @@ import {CommonModule} from '@angular/common';
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { 'class': appInstanceType.appType },
     standalone: true,
-    imports: [CommonModule, SimpleBadgeListModule, TuiTabs, SchemaMemberTypeExplorerModule, ChangelogModule, CodeViewerModule, ProjectSettingsComponent]
+  imports: [
+    CommonModule,
+    SimpleBadgeListModule,
+    TuiTabs,
+    SchemaMemberTypeExplorerModule,
+    ChangelogModule,
+    CodeViewerModule,
+    ProjectSettingsComponent,
+    TuiSkeleton,
+  ],
 })
 export class ProjectExplorerComponent implements OnInit {
 
@@ -55,12 +65,10 @@ export class ProjectExplorerComponent implements OnInit {
   }
 
   badges: Badge[] = [];
-
   partialSchema$: Observable<PartialSchema>;
-
   activeTabIndex: number = 0;
-
   schema: Schema;
+  isPackageLoading: boolean = true;
 
   get parsedPackage(): ParsedPackage {
     return this.packageWithDescription?.parsedPackage
@@ -139,16 +147,23 @@ export class ProjectExplorerComponent implements OnInit {
   private loadPackages() {
     const packageName = this.getPackageFromRoute();
     this.packagesService.loadPackage(packageName)
-      .pipe(takeUntilDestroyed(this.destroyRef))
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        tap(() => this.isPackageLoading = true)
+      )
       .subscribe({
         next: packageWithDescription => {
+          this.isPackageLoading = false;
           this.packageWithDescription = packageWithDescription;
           this.updateBadges();
           this.updateFileTree();
           this.changeDetector.markForCheck();
         },
         // there's a good chance that project no longer exists, pull the ripcord and eject back to the /projects route
-        error: () => this.router.navigate(['/projects'])
+        error: () => {
+          this.isPackageLoading = false;
+          this.router.navigate(['/projects'])
+        }
       });
     this.partialSchema$ = this.packagesService.getPartialSchemaForPackage(packageName);
     this.changelogEntries = this.changelogService.getChangelogForPackage(packageName);

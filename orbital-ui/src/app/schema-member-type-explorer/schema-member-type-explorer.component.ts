@@ -1,7 +1,6 @@
 import {
   ChangeDetectorRef,
   Component,
-  ComponentFactoryResolver,
   EventEmitter,
   Input, NgZone,
   OnInit,
@@ -13,13 +12,15 @@ import 'prismjs/plugins/toolbar/prism-toolbar';
 import {BehaviorSubject, combineLatest, Observable, of, ReplaySubject} from 'rxjs';
 import {filter, map, startWith, tap} from 'rxjs/operators';
 import {
+  collectAllServiceOperations,
+  findType,
   Message,
   Operation,
   PartialSchema,
   Schema,
   ServiceMember,
   Type,
-  VersionedSource
+  VersionedSource,
 } from 'src/app/services/schema';
 import {QueryPanelStoreService} from '../services/query-panel-store.service';
 import {combineAndCloneWithPartialSchema, SchemaSubmissionResult} from '../services/types.service';
@@ -29,7 +30,8 @@ import {
   Links,
   buildLinksForModelWithAttributes,
   buildLinksForType,
-  buildOperationLinks, findServiceAssociatedWithOperation
+  buildOperationLinks,
+  findServiceAssociatedWithOperation,
 } from '../schema-diagram/schema-chart-builder';
 import {taxi} from '../utils/prism.languages';
 import {MarkdownService} from "ngx-markdown";
@@ -62,7 +64,7 @@ import {InlineRunQueryButtonComponent} from "../inline-run-query-button/inline-r
           <as-split direction="horizontal">
             <as-split-area [size]="selectedOperation ? 100 : 50">
               <div class="documentation-content-container">
-                <div class="documentation-content">
+                <div class="documentation-content" [class.no-margin-bottom]="readmeDiagramSegmentIndex === 1">
                   <app-type-viewer *ngIf="selectedModel"
                                    [type]="selectedModel"
                                    [schema]="schema"
@@ -86,12 +88,31 @@ import {InlineRunQueryButtonComponent} from "../inline-run-query-button/inline-r
                                       (newTypeCreated)="handleNewTypeCreated($event, selectedOperation)"
                                       (updateDeferred)="handleSchemaEditOperation($event.schemaEditOperation, $event.member, selectedOperation)"
                   ></app-operation-view>
-                  <div *ngIf="!selectedModel && !selectedOperation" appCaptureLocalNavigation>
-                    @if (readme) {
-                      <markdown [data]="readme" class="markdown-body" [disableSanitizer]="true"/>
-                    } @else {
-                      Select a schema member from the panel on the left to view here.
-                    }
+                  <div *ngIf="!selectedModel && !selectedOperation" appCaptureLocalNavigation class="readme-diagram-container">
+                    <tui-segmented size="s" [(activeItemIndex)]="readmeDiagramSegmentIndex">
+                      <button type="button">Readme</button>
+                      <button type="button">Project diagram</button>
+                    </tui-segmented>
+                    <ng-container *ngIf="readmeDiagramSegmentIndex === 0">
+                      @if (readme) {
+                        <markdown [data]="readme" class="markdown-body" [disableSanitizer]="true"/>
+                      } @else {
+                        <div class="add-readme-call-to-action">
+                          <img [tuiSkeleton]="isReadmeLoading && 2" src="assets/img/tabler/book.svg" class="book-icon">
+                          <h2 [tuiSkeleton]="isReadmeLoading ? 'Add a README' : ''">{{isReadmeLoading ? '' : 'Add a README'}}</h2>
+                          <div [tuiSkeleton]="isReadmeLoading && 70">
+                            There's no README for this project. Markdown is supported (including Github flavoured markdown goodies).<br/>
+                            <a href="https://orbitalhq.com/docs/workspace/projects#readme-md-file" target="_blank">Learn more</a> about adding README's to projects.
+                          </div>
+                          <div [tuiSkeleton]="isReadmeLoading && 30">(or select a schema member from the panel on the left to view here)</div>
+                        </div>
+                      }
+                    </ng-container>
+                    <app-schema-diagram
+                      *ngIf="readmeDiagramSegmentIndex === 1"
+                      [schema$]="combinedSchema$"
+                      [displayedMembers]="allMemberLinks"
+                    ></app-schema-diagram>
                   </div>
                 </div>
               </div>
@@ -128,10 +149,12 @@ import {InlineRunQueryButtonComponent} from "../inline-run-query-button/inline-r
 export class SchemaMemberTypeExplorerComponent  {
 
   activeTabIndex: number = 0;
+  readmeDiagramSegmentIndex: number = 0
 
   selectedModel: Type;
   selectedOperation: ServiceMember;
   availableMemberLinks: string[];
+  allMemberLinks: string[];
   private combinedSchema: Schema;
 
   // TODO: this should only be handling the error state - be good to align these around the TUI notification
@@ -150,6 +173,9 @@ export class SchemaMemberTypeExplorerComponent  {
 
   @Input()
   readme: string
+
+  @Input()
+  isReadmeLoading: boolean
 
   @Input()
   working: boolean = false;
@@ -225,6 +251,7 @@ export class SchemaMemberTypeExplorerComponent  {
       this._partialSchema$ = value.pipe(
         tap(value => {
           this._partialSchema = value;
+          this.allMemberLinks = this.getAllMemberLinks();
           this.detectorRef.markForCheck();
         })
       )
@@ -347,6 +374,33 @@ export class SchemaMemberTypeExplorerComponent  {
     ]
     console.log("availableLinkages", availableMemberLinks);
     return availableMemberLinks;
+  }
+
+  private getAllMemberLinks() {
+    // return all the services and the models they return for the selected project
+    // first get a list of the services from partialSchema
+    const allMemberLinks = this.partialSchema.services.flatMap(service => {
+      // then get the operations associated with that Service
+      const operations = collectAllServiceOperations(service)
+      return operations.flatMap(operation => {
+        const serviceAssociatedWithOperation = findServiceAssociatedWithOperation(this.partialSchema.services, operation);
+        const links = buildOperationLinks(operation, serviceAssociatedWithOperation, this.partialSchema as Schema);
+        return [
+          ...links.inputs.map(input => input.sourceNodeName.fullyQualifiedName),
+          ...links.outputs.map(output => output.targetNodeName.fullyQualifiedName)
+        ]
+          .filter(parameterizedName => {
+          // we don't want primitive types (ie. taxi.lang...) showing up
+          try {
+            return !findType(this.partialSchema as Schema, parameterizedName)?.isPrimitive
+          } catch (e) {}
+        })
+          // don't forget to add the operation name in!
+          .concat(operation.qualifiedName.fullyQualifiedName)
+      })
+    })
+    console.log("allMemberLinks", [...new Set(allMemberLinks)]);
+    return [...new Set(allMemberLinks)]
   }
 
   private clearQueryParams() {

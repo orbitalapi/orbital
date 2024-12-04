@@ -8,7 +8,7 @@ import {
   EdgeParams,
   Link, edgeSourceAndTargetExist,
   MemberWithLinks,
-  LinkKind
+  LinkKind, getNodeId
 } from './schema-chart-builder';
 import { colors } from 'src/app/schema-diagram/tailwind.colors';
 import { CSSProperties } from 'react';
@@ -74,7 +74,7 @@ export class SchemaChartController {
         return null;
       }
 
-      const nodeId = schemaMember.name.fullyQualifiedName;
+      const nodeId = getNodeId(schemaMember.kind, schemaMember.name);
       const {x, y} = buildOptions.existingPositions?.members?.[nodeId] ?? {};
       const existingPosition = !isNullOrUndefined(x) && !isNullOrUndefined(y) ? {x, y} : this.currentNodesById.get(nodeId)?.position;
       return buildSchemaNode(

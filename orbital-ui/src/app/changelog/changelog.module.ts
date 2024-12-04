@@ -1,4 +1,4 @@
-import { TuiIcon } from "@taiga-ui/core";
+import {TuiHintOverflow, TuiIcon} from '@taiga-ui/core';
 import { TuiPagination } from "@taiga-ui/kit";
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
@@ -28,11 +28,12 @@ import {DiffListComponent} from './diff-list.component';
         InputParamsChangeComponent,
         DiffListComponent
     ],
-    imports: [
-        CommonModule,
-        MomentModule,
-        TuiIcon,
-        TuiPagination,
-    ]
+  imports: [
+    CommonModule,
+    MomentModule,
+    TuiIcon,
+    TuiPagination,
+    TuiHintOverflow,
+  ],
 })
 export class ChangelogModule { }

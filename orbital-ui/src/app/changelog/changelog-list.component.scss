@@ -3,7 +3,7 @@
 
 .changelog-entry {
   display: flex;
-
+  gap: 1rem;
   border-bottom: 1px solid $borer-light;
   margin-bottom: 1rem;
   padding-bottom: 1rem;
@@ -11,9 +11,18 @@
 
 .changelog-header {
   width: 25rem;
+
+  h3 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 }
 
-app-diff-entry {
-
+.diff-list-container {
+  flex: auto;
 }
 
+::ng-deep tui-hint {
+  max-width: 4000px !important;
+}
