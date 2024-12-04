@@ -1,3 +1,4 @@
+import {QualifiedNameParser} from '../services/qualified-name-parser';
 import {
   arrayMemberTypeNameOrTypeNameFromName,
   collectAllServiceOperations,
@@ -81,7 +82,7 @@ export class ModelLinks implements HasChildLinks {
 
 function buildModelLinks(type: Type, schema: Schema, operations: ServiceMember[]): ModelLinks {
   const modelLinks = buildLinksForType(type.name, schema, operations, null);
-  const thisNodeId = getNodeId('TYPE', type.name);
+  const thisNodeId = type.name.fullyQualifiedName;
   const attributeLinks: { [key: string]: Links } = {};
   Object.keys(type.attributes).map(fieldName => {
     const fieldType = type.attributes[fieldName].type;
@@ -126,7 +127,7 @@ export function buildLinksForModelWithAttributes(model: QualifiedName, attribute
 }
 
 export function buildLinksForType(typeName: QualifiedName, schema: Schema, operations: ServiceMember[], parent: { name: QualifiedName, nodeId: string, field: string } | null): Links {
-  const typeNodeId = getNodeId('TYPE', typeName);
+  const typeNodeId = typeName.fullyQualifiedName;
   const consumingOperations: Link[] = [];
 
   try {
@@ -165,7 +166,7 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
       consumingOperations.push({
         ...source,
 
-        targetNodeId: getNodeId('SERVICE', QualifiedName.from(nameParts.serviceName)),
+        targetNodeId: QualifiedNameParser.parse(nameParts.serviceName).name,
         targetHandleId: HandleIds.serviceOperationInbound(QualifiedName.from(nameParts.serviceName), QualifiedName.from(nameParts.operationName)),
         targetNodeName: QualifiedName.from(nameParts.serviceName),
         targetMemberType: 'OPERATION',
@@ -188,7 +189,7 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
           consumingOperations.push({
             ...source,
 
-            targetNodeId: getNodeId('SERVICE', QualifiedName.from(nameParts.serviceName)),
+            targetNodeId: QualifiedNameParser.parse(nameParts.serviceName).name,
             targetHandleId: HandleIds.serviceOperationInbound(QualifiedName.from(nameParts.serviceName), QualifiedName.from(nameParts.operationName)),
             targetNodeName: QualifiedName.from(nameParts.serviceName),
             targetMemberType: 'OPERATION',
@@ -208,7 +209,7 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
     const returnType = operation.returnTypeName;
     if (returnType.parameterizedName == typeName.parameterizedName || returnType.parameters.length === 1 && returnType.parameters[0].parameterizedName === typeName.parameterizedName) {
       producedByOperations.push({
-        sourceNodeId: getNodeId('SERVICE', QualifiedName.from(nameParts.serviceName)),
+        sourceNodeId: QualifiedNameParser.parse(nameParts.serviceName).name,
         sourceHandleId: HandleIds.serviceOperationOutbound(QualifiedName.from(nameParts.serviceName), QualifiedName.from(nameParts.operationName)),
         sourceNodeName: QualifiedName.from(nameParts.serviceName),
         sourceMemberType: 'OPERATION',
@@ -255,7 +256,7 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
             sourceMemberType: 'TYPE' as SchemaMemberKind,
             inverseSourceHandleId: HandleIds.modelInbound(typeName),
 
-            targetNodeId: getNodeId('TYPE', typeInSchema.name),
+            targetNodeId: typeInSchema.name.fullyQualifiedName,
             targetNodeName: typeInSchema.name,
             targetHandleId: HandleIds.modelFieldInbound(typeInSchema.name, fieldName),
             targetMemberType: 'TYPE',
@@ -271,7 +272,7 @@ export function buildLinksForType(typeName: QualifiedName, schema: Schema, opera
 
           // Commented out, as model links are bidirectional, so we only need one.
           // producedByOtherTypes.push({
-          //   sourceNodeId: getNodeId('TYPE', typeInSchema.name),
+          //   sourceNodeId: typeInSchema.name.fullyQualifiedName,
           //   sourceNodeName: typeInSchema.name,
           //   sourceHandleId: HandleIds.modelFieldOutbound(typeInSchema.name, fieldName),
           //   sourceMemberType: 'TYPE',
@@ -318,11 +319,11 @@ function buildServiceLinks(service: Service, schema: Schema, operations: Service
   const serviceInboundLinks = consumedOperations.map(consumedOperation => {
     const serviceQualifiedName = QualifiedName.from(consumedOperation.serviceName);
     return {
-      sourceNodeId: getNodeId('SERVICE', serviceQualifiedName),
+      sourceNodeId: serviceQualifiedName.fullyQualifiedName,
       sourceHandleId: HandleIds.serviceOperationOutbound(serviceQualifiedName, QualifiedName.from(consumedOperation.operationName)),
       sourceMemberType: 'OPERATION',
 
-      targetNodeId: getNodeId('SERVICE', service.name),
+      targetNodeId: service.name.fullyQualifiedName,
       targetHandleId: HandleIds.serviceInbound(service.name),
       targetMemberType: 'SERVICE',
       linkKind: 'lineage'
@@ -360,12 +361,12 @@ export interface Link {
 }
 
 export function buildOperationLinks(operation: ServiceMember, service: Service, schema: Schema): Links {
-  const serviceNodeId = getNodeId('SERVICE', service.name);
+  const serviceNodeId = service.name.fullyQualifiedName;
   const nameParts = splitOperationQualifiedName(operation.qualifiedName.fullyQualifiedName);
   const inputs: Link[] = operation.parameters.map(param => {
     let paramTypeName = arrayMemberTypeNameOrTypeNameFromName(param.typeName);
     return {
-      sourceNodeId: getNodeId('TYPE', paramTypeName),
+      sourceNodeId: paramTypeName.fullyQualifiedName,
       sourceHandleId: HandleIds.modelOutbound(paramTypeName),
       sourceNodeName: paramTypeName,
       sourceMemberType: 'TYPE',
@@ -387,7 +388,7 @@ export function buildOperationLinks(operation: ServiceMember, service: Service, 
       if (isPrimaryKey) {
         let fieldTypeName = field.type;
         primaryKeys.push({
-          sourceNodeId: getNodeId('TYPE', fieldTypeName),
+          sourceNodeId: fieldTypeName.fullyQualifiedName,
           sourceHandleId: HandleIds.modelOutbound(fieldTypeName),
           sourceNodeName: fieldTypeName,
           sourceMemberType: 'TYPE',
@@ -408,7 +409,7 @@ export function buildOperationLinks(operation: ServiceMember, service: Service, 
     sourceNodeName: service.name,
     sourceMemberType: 'OPERATION',
 
-    targetNodeId: getNodeId('TYPE', returnTypeName),
+    targetNodeId: returnTypeName.fullyQualifiedName,
     targetHandleId: HandleIds.modelInbound(returnTypeName),
     targetNodeName: returnTypeName,
     targetMemberType: 'TYPE',
@@ -434,17 +435,18 @@ function buildLinks(member: SchemaMember, schema: Schema, operations: ServiceMem
   }
 }
 
-export function getNodeId(schemaMemberType: SchemaMemberKind, name: QualifiedName): string {
-  return `${schemaMemberType.toLowerCase()}-${name.fullyQualifiedName}`;
-}
-
-export function buildSchemaNode(schema: Schema, member: SchemaMember, operations: ServiceMember[], appendLinksHandler: AppendLinksHandler, clickHandler: SchemaMemberClickHandler, position: XYPosition = {
-  x: 100,
-  y: 100
-}, isNavigable: boolean): Node<MemberWithLinks> {
+export function buildSchemaNode(
+  schema: Schema,
+  member: SchemaMember,
+  operations: ServiceMember[],
+  appendLinksHandler: AppendLinksHandler,
+  clickHandler: SchemaMemberClickHandler,
+  position: XYPosition = {x: 100, y: 100},
+  isNavigable: boolean
+): Node<MemberWithLinks> {
   const links = buildLinks(member, schema, operations);
   return {
-    id: getNodeId(member.kind, member.name),
+    id: member.name.fullyQualifiedName,
     draggable: true,
     selectable: true,
     data: {

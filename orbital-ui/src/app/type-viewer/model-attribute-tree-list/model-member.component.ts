@@ -30,7 +30,7 @@ export interface TypeMemberTreeNode {
         [childrenHandler]="treeChildrenHandler"
       ></tui-tree>
       <ng-template #treeContent let-item>
-        <div class="tree-node" [ngClass]="{child: !item.isRoot, isLastChild: item.isLastChild}">
+        <div *ngIf=item class="tree-node" [ngClass]="{child: !item.isRoot, isLastChild: item.isLastChild}">
           <app-model-member-tree-node [treeNode]="item"
                                       [editable]="editable && item.isRoot"
                                       [schemaMemberNavigable]="schemaMemberNavigable"
@@ -140,7 +140,7 @@ export class ModelMemberComponent extends BaseDeferredEditComponent<Field> {
   private readonly loadedChildren = new Set<TypeMemberTreeNode>();
 
   protected readonly treeChildrenHandler: TuiHandler<TypeMemberTreeNode, readonly TypeMemberTreeNode[]> = (item) =>
-    item.children || EMPTY_ARRAY;
+    item?.children || EMPTY_ARRAY;
 
   private buildTreeRootNode(): TypeMemberTreeNode {
     return {

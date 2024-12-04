@@ -12,9 +12,11 @@ import {
 } from '@xyflow/react';
 import { ElementRef } from '@angular/core';
 import * as ReactDOM from 'react-dom';
+import {SchemaDiagramSpec} from '../schema-diagram-markdown-wrapper/schema-diagram-markdown-wrapper.component';
 import ModelNode from './diagram-nodes/model-node';
 import ApiNode from './diagram-nodes/api-service-node';
-import LayoutDirectionIcon from './icons/layout-direction-icon';
+import CopyAsMarkdownIcon from './icons/copy-as-markdown-icon';
+import FlyoutMenu from './icons/flyout-menu';
 import { SchemaChartController } from './schema-chart.controller';
 import {
   arrayMemberTypeNameOrTypeNameFromName,
@@ -60,9 +62,10 @@ interface SchemaFlowDiagramProps {
 export interface SchemaAndRequiredMembersProps {
   schema: Schema | null;
   memberNames: string[];
+  memberNamePositions?: Omit<SchemaDiagramSpec, 'showTypeToolbar'>
 }
 
-const fitViewOptions: FitViewOptions = { padding: 0.2, includeHiddenNodes: true, duration: 1000 };
+const fitViewOptions: FitViewOptions = { padding: 0.75, includeHiddenNodes: true, duration: 1000 };
 let previousDimensions: {width?: number, height?: number};
 
 const useEscapeKey = (onEscape) => {
@@ -85,7 +88,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isShiftKeyPressed, setIsShiftKeyPressed] = useState(false);
-  const [layoutDirection, setLayoutDirection] = useState<'DOWN' | 'RIGHT'>('RIGHT');
+  const [layoutDirection, setLayoutDirection] = useState<'DOWN' | 'RIGHT' | 'NONE'>('RIGHT');
 
   const instance = useReactFlow();
 
@@ -94,6 +97,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
 
   const [schema, setSchema] = useState<Schema>(emptySchema);
   const [requiredMembers, setRequiredMembers] = useState<string[]>([]);
+  const [requiredMemberPositions, setRequiredMemberPositions] = useState<Omit<SchemaDiagramSpec, 'showTypeToolbar'>>();
   const updateNodeInternals = useUpdateNodeInternals();
 
   const appendNodesAndEdgesForLinks = (memberUpdatedHandler: Subject<Set<string>>, props: AppendLinksProps) => {
@@ -111,6 +115,16 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
     const subscription = props.schemaAndMembersToDisplay$.subscribe(event => {
       setSchema(event.schema);
       setRequiredMembers(event.memberNames);
+      setRequiredMemberPositions(event.memberNamePositions);
+      const nodesWithStaticPositions =
+        Object.keys(event.memberNamePositions?.members ?? {}).filter(
+          (key) =>
+            event.memberNamePositions.members[key].x ||
+            event.memberNamePositions.members[key].y
+        ) ?? [];
+      if (nodesWithStaticPositions.length) {
+        setLayoutDirection('NONE')
+      }
     });
     return () => {
       subscription.unsubscribe();
@@ -133,23 +147,11 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
 
   useEffect(() => {
     if (nodesInitialized) {
-      console.log('Performing layout');
-      applyElkLayout(instance.getNodes(), instance.getEdges(), layoutDirection)
-        .then(async result => {
-          setNodes(result)
-          if (result.length === 1) {
-            // This is mostly to avoid the silly animation when the component starts up
-            const node = result[0];
-            instance.updateNode(node.id, {hidden: true})
-            await instance.fitBounds({x: node.position.x, y: node.position.y, width: node.measured?.width, height: node.measured?.height}, {padding: fitViewOptions.padding})
-            instance.updateNode(node.id, {hidden: false})
-            setAwaitingRefit(null);
-          } else {
-            setAwaitingRefit('delayed');
-          }
-        });
+      performLayout();
+      // reset this here so the user can move nodes around without everything reverting to the original layout passed in
+      setRequiredMemberPositions({members: {}})
     }
-  }, [nodesInitialized, layoutDirection] );
+  }, [nodesInitialized, layoutDirection]);
 
   useEffect(() => {
     if (awaitingRefit) {
@@ -171,10 +173,10 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
     const buildResult = new SchemaChartController(schema, nodes, edges, requiredMembers)
       .build({
         autoAppendLinks: true,
-        layoutAlgo: 'full',
         appendLinksHandler: (event) => appendNodesAndEdgesForLinks(props.memberUpdatedHandler$, event),
         clickHandler,
-        isNavigable: props.isNavigable
+        isNavigable: props.isNavigable,
+        existingPositions: requiredMemberPositions
       });
     setNodes(buildResult.nodes);
     console.log("buildResult.nodesRequiringUpdate", buildResult.nodesRequiringUpdate);
@@ -184,14 +186,58 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
     }));
   }, [requiredMembers.join(','), schema.hash]);
 
+  const performLayout = async () => {
+    if (layoutDirection === 'NONE') {
+      console.log('NOT performing layout');
+      setAwaitingRefit('immediate');
+      return;
+    }
+
+    console.log('Performing layout');
+    const result = await applyElkLayout(
+      instance.getNodes(),
+      instance.getEdges(),
+      layoutDirection
+    );
+
+    setNodes(result);
+    if (result.length === 1) {
+      // Avoid silly animation when the component starts up
+      const node = result[0];
+      instance.updateNode(node.id, { hidden: true });
+      await instance.fitBounds(
+        {
+          x: node.position.x,
+          y: node.position.y,
+          width: node.measured?.width,
+          height: node.measured?.height,
+        },
+        { padding: fitViewOptions.padding }
+      );
+      instance.updateNode(node.id, { hidden: false });
+      setAwaitingRefit(null);
+    } else {
+      setAwaitingRefit('delayed');
+    }
+  };
+
   useEscapeKey(() => {
     setAwaitingRefit('immediate');
     props.fullScreenClickHandler$.next(false)
     setIsFullScreen(false)
   })
 
-  function switchLayoutDirection() {
-    setLayoutDirection(layoutDirection === 'DOWN' ? 'RIGHT' : 'DOWN')
+  async function copyAsMarkdown() {
+    const textToCopy = `
+\`\`\`schemaDiagram
+{
+  "members" : {
+    ${nodes.map(node => `"${node.id}": {"x": ${Math.round(node.position.x)}, "y": ${Math.round(node.position.y)}}`).join(',\n    ')}
+  }
+}
+\`\`\`
+`
+    await navigator.clipboard.writeText(textToCopy)
   }
 
   function downloadImage() {
@@ -398,8 +444,11 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
       <Controls
         showInteractive={false}
       >
-        <ControlButton onClick={switchLayoutDirection} title={"switch layout direction"}>
-          <LayoutDirectionIcon layoutDirection={layoutDirection} />
+        <ControlButton>
+          <FlyoutMenu onDirectionChange={setLayoutDirection} layoutDirection={layoutDirection} />
+        </ControlButton>
+        <ControlButton onClick={copyAsMarkdown} title={"copy as markdown"}>
+          <CopyAsMarkdownIcon />
         </ControlButton>
         <ControlButton onClick={downloadImage} title={"download image"}>
           <DownloadIcon />

@@ -4,7 +4,7 @@ import {
   Component, computed,
   DestroyRef,
   ElementRef,
-  EventEmitter, Injector,
+  EventEmitter, Injector, input,
   Input, model,
   Output, signal,
   ViewChild, WritableSignal,
@@ -13,6 +13,7 @@ import { Router } from '@angular/router';
 import {takeUntilDestroyed, toObservable} from '@angular/core/rxjs-interop';
 import {combineLatest, Observable, Subject} from 'rxjs';
 import {map} from 'rxjs/operators';
+import {SchemaDiagramSpec} from '../schema-diagram-markdown-wrapper/schema-diagram-markdown-wrapper.component';
 import {QualifiedName, Schema, SchemaMemberKind, splitOperationQualifiedName} from '../services/schema';
 import {
   ClickHandlerPayload,
@@ -105,6 +106,7 @@ export class SchemaDiagramComponent implements AfterViewInit {
   hasBorder: boolean;
 
   displayedMembers = model<string[] | 'everything' | 'services'>('services')
+  displayedMemberPositions = input<Omit<SchemaDiagramSpec, 'showTypeToolbar'>>()
   computedDisplayedMembers = computed(() => Array.isArray(this.displayedMembers()) ? this.displayedMembers() as string[] : [])
   schemaQualifiedNames: WritableSignal<QualifiedName[]> = signal([])
 
@@ -234,7 +236,7 @@ export class SchemaDiagramComponent implements AfterViewInit {
                 memberNames
               }
             } else {
-              return { schema, memberNames: displayedMembers }
+              return { schema, memberNames: displayedMembers, memberNamePositions: this.displayedMemberPositions() }
             }
           })
         );
