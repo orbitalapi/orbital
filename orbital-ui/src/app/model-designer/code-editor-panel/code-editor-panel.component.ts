@@ -6,7 +6,7 @@ import {CompilationMessage, Schema, SchemaMember, Type} from "../../services/sch
 @Component({
     selector: 'app-designer-code-editor-panel',
     template: `
-        <tui-notification *ngIf="disabled" class="onboarding-text" appearance="neutral" size="s">
+        <tui-notification *ngIf="disabled" class="onboarding-text" appearance="floating" size="s">
           Once you've provided your data sample, create a Taxi schema here to describe your data
         </tui-notification>
         <app-panel-header title="Taxi model editor" [isSecondary]="true">

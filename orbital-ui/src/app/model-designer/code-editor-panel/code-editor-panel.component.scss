@@ -7,8 +7,8 @@
   flex-direction: column;
 
   &.is-disabled {
-    *:not(.onboarding-text) {
-      opacity: 0.5;
+    *:not(tui-notification) {
+      opacity: 0.35;
       pointer-events: none;
     }
   }
