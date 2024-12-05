@@ -65,6 +65,10 @@ app-schema-diagram {
       margin-top: 0;
     }
   }
+
+  &.no-margin-bottom {
+    margin-bottom: 0;
+  }
 }
 
 .island {
@@ -73,6 +77,34 @@ app-schema-diagram {
   flex: 1;
   flex-direction: column;
   overflow: auto;
+}
+
+.readme-diagram-container{
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-right: 1rem;
+  height: 99%; // schema diagram layout goes haywire if set to 100%
+
+  tui-segmented {
+    align-self: flex-start;
+    flex-shrink: 0;
+  }
+
+  h2 {
+    margin: 0;
+  }
+
+  .add-readme-call-to-action {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+
+    img {
+      height: 50px
+    }
+  }
 }
 
 :host ::ng-deep {

@@ -199,7 +199,7 @@ export class SchemaDiagramComponent implements AfterViewInit {
             console.log('delete the following member(s)', fullyQualifiedName)
             if (Array.isArray(this.displayedMembers()) && fullyQualifiedName) {
               this.displayedMembers.update(members => {
-                return (members as string[]).filter(member => member !== fullyQualifiedName)
+                return (members as string[]).filter(member => member.split("@@")[0] !== fullyQualifiedName)
               })
             }
         }

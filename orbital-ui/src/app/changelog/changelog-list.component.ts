@@ -11,7 +11,7 @@ import { paginate } from 'src/app/utils/arrays';
           {{ changeLogEntry.timestamp | date:'longDate' }}
         </h2>
         <span>{{ changeLogEntry.timestamp | amTimeAgo }}</span>
-        <h3>{{ changeLogEntry.affectedPackages[0] }}</h3>
+        <h3 tuiHintOverflow tuiHintAppearance="dark">{{ changeLogEntry.affectedPackages[0] }}</h3>
       </div>
       <div class="diff-list-container">
         <h3>{{changeLogEntry.diffs.length}} Change{{changeLogEntry.diffs.length > 1 ? 's' : null}}</h3>

@@ -1,7 +1,7 @@
-<div *ngIf="parsedPackage" class="header-bar">
+<div class="header-bar">
   <div class="titles">
-    <h2>{{parsedPackage.metadata.identifier.name}}</h2>
-    <app-simple-badge-list [badges]="badges"></app-simple-badge-list>
+    <h2 [tuiSkeleton]="isPackageLoading && 5">{{parsedPackage?.metadata.identifier.name}}</h2>
+    <app-simple-badge-list [tuiSkeleton]="isPackageLoading && 12" [badges]="badges"></app-simple-badge-list>
   </div>
 </div>
 <div class="tab-bar">
@@ -22,6 +22,7 @@
   [schema]="schema"
   [allowTryItOut]="true"
   [readme]="parsedPackage?.readme?.content"
+  [isReadmeLoading]="isPackageLoading"
 ></app-schema-member-type-explorer>
 <app-changelog-list *ngIf="activeTabIndex == 1" [changeLogEntries]="changelogEntries | async"></app-changelog-list>
 <app-code-viewer

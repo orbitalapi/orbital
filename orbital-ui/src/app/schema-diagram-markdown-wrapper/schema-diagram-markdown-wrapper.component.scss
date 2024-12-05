@@ -10,6 +10,8 @@ We simply unset them here, so the child's component css takes precedence.
 ::ng-deep {
   .markdown-body {
     font-family: unset;
+    background: unset;
+
     table {
       overflow: unset;
       width: unset;

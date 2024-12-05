@@ -44,3 +44,7 @@ app-changelog-list {
   display: block;
   overflow: auto;
 }
+
+app-simple-badge-list {
+  min-height: 24px; // keep it's height when it's in skeleton mode
+}
