@@ -14,6 +14,7 @@ const orbitalDocsLinks : DocsLinks = {
   s3Connection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#s3',
   sqsConnection : 'https://orbitalhq.com/docs/describing-data-sources/aws-services#sqs',
   dataPolicies : 'https://orbitalhq.com/docs/data-policies/data-policies',
+  projectReadme: "https://orbitalhq.com/docs/workspace/projects#readme-md-file",
   docsHome : 'https://orbitalhq.com/docs',
   nebulaDocs: 'https://orbitalhq.com/docs/testing/stubbing-services'
 }

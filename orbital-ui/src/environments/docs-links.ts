@@ -14,6 +14,7 @@ export type DocsLinks = {
   s3Connection: string;
   sqsConnection: string;
   dataPolicies: string;
+  projectReadme: string;
   docsHome: string;
   nebulaDocs?: string;
 }

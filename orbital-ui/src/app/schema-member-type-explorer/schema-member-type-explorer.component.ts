@@ -22,6 +22,7 @@ import {
   Type,
   VersionedSource,
 } from 'src/app/services/schema';
+import {UiCustomisations} from '../../environments/ui-customisations';
 import {QueryPanelStoreService} from '../services/query-panel-store.service';
 import {combineAndCloneWithPartialSchema, SchemaSubmissionResult} from '../services/types.service';
 import {SchemaEditOperation} from '../project-import/schema-importer.service';
@@ -102,7 +103,7 @@ import {InlineRunQueryButtonComponent} from "../inline-run-query-button/inline-r
                           <h2 [tuiSkeleton]="isReadmeLoading ? 'Add a README' : ''">{{isReadmeLoading ? '' : 'Add a README'}}</h2>
                           <div [tuiSkeleton]="isReadmeLoading && 70">
                             There's no README for this project. Markdown is supported (including Github flavoured markdown goodies).<br/>
-                            <a href="https://orbitalhq.com/docs/workspace/projects#readme-md-file" target="_blank">Learn more</a> about adding README's to projects.
+                            <a [href]="UiCustomisations.docsLinks.projectReadme" target="_blank">Learn more</a> about adding README's to projects.
                           </div>
                           <div [tuiSkeleton]="isReadmeLoading && 30">(or select a schema member from the panel on the left to view here)</div>
                         </div>
@@ -417,4 +418,5 @@ export class SchemaMemberTypeExplorerComponent  {
   }
 
   protected readonly of = of;
+  protected readonly UiCustomisations = UiCustomisations;
 }
