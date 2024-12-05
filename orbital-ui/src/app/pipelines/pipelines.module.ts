@@ -35,7 +35,6 @@ import {SchemaDisplayTableModule} from '../schema-display-table/schema-display-t
 import { TuiDataList, TuiIcon, TuiButton } from '@taiga-ui/core';
 import {SqsS3InputConfigComponent} from './pipeline-builder/sqs-s3-input-config.component';
 import {JdbcOutputConfigComponent} from './pipeline-builder/jdbc-output-config.component';
-import {ConnectionFiltersModule} from '../utils/connections.pipe';
 import {
   PollingScheduleFormInputComponent
 } from './pipeline-builder/polling-schedule-form-input/polling-schedule-form-input.component';
@@ -93,7 +92,6 @@ import {VyneServicesModule} from 'src/app/services/vyne-services.module';
     TuiIcon,
     ...TuiDataList,
     FormsModule,
-    ConnectionFiltersModule,
     VyneServicesModule,
     RouterModule.forChild([
       {

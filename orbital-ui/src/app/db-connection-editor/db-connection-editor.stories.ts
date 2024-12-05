@@ -59,14 +59,16 @@ const dbConnectionParams: ConnectionDriverConfigOptions[] = [
     connectorType: "JDBC",
     parameters: [
       {
-        displayName: "host",
-        dataType: "STRING",
+        displayName: 'host',
+        dataType: 'STRING',
         defaultValue: null,
         sensitive: false,
         required: true,
         visible: true,
-        templateParamName: "host",
+        templateParamName: 'host',
         allowedValues: [],
+        isConstructorParameter: false,
+        description: '',
       },
       {
         displayName: "port",
@@ -77,6 +79,8 @@ const dbConnectionParams: ConnectionDriverConfigOptions[] = [
         visible: true,
         templateParamName: "port",
         allowedValues: [],
+        isConstructorParameter: false,
+        description: '',
       },
       {
         displayName: "database",
@@ -87,6 +91,8 @@ const dbConnectionParams: ConnectionDriverConfigOptions[] = [
         visible: true,
         templateParamName: "database",
         allowedValues: [],
+        isConstructorParameter: false,
+        description: '',
       },
       {
         displayName: "user",
@@ -97,6 +103,8 @@ const dbConnectionParams: ConnectionDriverConfigOptions[] = [
         visible: true,
         templateParamName: "user",
         allowedValues: [],
+        isConstructorParameter: false,
+        description: '',
       },
       {
         displayName: "password",
@@ -107,6 +115,8 @@ const dbConnectionParams: ConnectionDriverConfigOptions[] = [
         visible: true,
         templateParamName: "password",
         allowedValues: [],
+        isConstructorParameter: false,
+        description: '',
       },
     ],
   },

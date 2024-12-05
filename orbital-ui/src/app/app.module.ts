@@ -14,7 +14,7 @@ import {SCHEMA_PROVIDER_TOKEN, TypesService} from './services/types.service';
 import { QueryService } from './services/query.service';
 import { SearchService } from './search/search.service';
 import { SidenavComponent } from './sidenav/sidenav.component';
-import { SystemAlertModule } from './system-alert/system-alert.module';
+import {SystemAlertComponent} from './system-alert/system-alert.component';
 import { AuthModule } from './auth/auth.module';
 import { AuthService } from './auth/auth.service';
 import { TUI_ALERT_POSITION, TuiRoot, TuiAlert, TuiScrollbar, TuiLink, TuiDialog, TuiButton } from '@taiga-ui/core';
@@ -59,7 +59,7 @@ const oauth2OidcModule = [AuthModule];
     DraftManagementBarModule,
     HeaderBarModule,
     SidenavComponent,
-    SystemAlertModule,
+    SystemAlertComponent,
     ...TuiProgress,
   ],
   providers: [
