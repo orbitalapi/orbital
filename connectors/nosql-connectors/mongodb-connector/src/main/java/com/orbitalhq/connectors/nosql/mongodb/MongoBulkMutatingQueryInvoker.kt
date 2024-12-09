@@ -1,8 +1,8 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
 import com.mongodb.client.model.InsertOneModel
-import com.mongodb.client.model.ReplaceOneModel
-import com.mongodb.client.model.ReplaceOptions
+import com.mongodb.client.model.UpdateOneModel
+import com.mongodb.client.model.UpdateOptions
 import com.orbitalhq.connectors.BatchWriteCacheProvider
 import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.TypedInstance
@@ -85,7 +85,7 @@ class MongoBulkMutatingQueryInvoker(
             val writeModels = items.map { item ->
                 val recordToWrite = item.first
                 val documentMap = typedInstanceToMap(recordToWrite)
-                val upsertDefinition = MongoCriteriaGenerator.upsertFor(recordToWrite, documentMap)
+                val upsertDefinition = MongoCriteriaGenerator.bulkUpsertFor(recordToWrite, documentMap)
                 if (upsertDefinition == null) {
                     InsertOneModel(Document(documentMap))
                 } else {
@@ -94,8 +94,7 @@ class MongoBulkMutatingQueryInvoker(
                     /**
                      * With replaceOne() you can only replace the entire document, while updateOne() allows for updating fields.
                      */
-
-                    ReplaceOneModel(documentQuery, documentUpdate, ReplaceOptions().upsert(true))
+                    UpdateOneModel(documentQuery, documentUpdate, UpdateOptions().upsert(true))
                 }
             }
 

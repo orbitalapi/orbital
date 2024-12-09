@@ -55,6 +55,9 @@ class MongoBulkMutatingQueryInvokerTest: MongoDbTestcontainer() {
             departure: DepartureAirport
             arrival: ArrivalAirport
             airline: Airline
+            @SetOnInsert
+            _inserted: InsertedTimeStamp inherits Instant = now()
+            _updated: UpdatedTimeStamp inherits Instant = now()
          }
 
          @MongoService( connection = "flightsMongo" )
@@ -117,8 +120,12 @@ class MongoBulkMutatingQueryInvokerTest: MongoDbTestcontainer() {
             .typedObjects()
 
         result.should.have.size(1)
-        result.first().toRawObject()
-            .should.equal(mapOf(
+
+        val resultFiltered = (result.first().toRawObject() as Map<String, Any>)
+            .filter { it.key != "_inserted" && it.key !="_updated" }
+            .toMap()
+
+        resultFiltered.should.equal(mapOf(
                 "objectId" to "1",
                 "code" to "TK 1990",
                 "departure" to "IST",
@@ -129,6 +136,5 @@ class MongoBulkMutatingQueryInvokerTest: MongoDbTestcontainer() {
                     "starAlliance" to true
                 )
             ))
-
     }
 }

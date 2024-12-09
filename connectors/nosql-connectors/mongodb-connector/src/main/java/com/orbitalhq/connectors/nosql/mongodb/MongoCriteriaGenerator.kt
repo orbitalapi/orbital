@@ -221,6 +221,59 @@ class MongoCriteriaGenerator(private val taxiSchema: TaxiDocument) {
          }
       }
 
+       fun bulkUpsertFor(typedInstance: TypedInstance, documentMap: Map<String, Any?>): Pair<Query, Update>? {
+           require(typedInstance is TypedObject) { "Writes not supported on instances of type ${typedInstance::class.simpleName}" }
+           val attributeNameForId = idField(typedInstance.type)
+           val uniqueIndexFields = uniqueIndexFields(typedInstance.type)
+           val uniqueIndexFieldsAndValues =  uniqueIndexFields.map { attributeName ->
+               attributeName to typedInstance[attributeName].value
+           }.toMap()
+
+           val setOnInsertFields = setOnInsertAnnotations(typedInstance.type)
+
+           var query: Query? = null
+
+           when {
+               attributeNameForId != null && typedInstance[attributeNameForId].value != null -> query =
+                   Query().addCriteria(Criteria.where(MongoIdField).`is`(typedInstance[attributeNameForId].value))
+
+               uniqueIndexFieldsAndValues.isNotEmpty() && query != null -> uniqueIndexFieldsAndValues.forEach { (attributeName, attributeValue) ->
+                   query = query!!.addCriteria(
+                       Criteria.where(attributeName).`is`(attributeValue)
+                   )
+               }
+
+               uniqueIndexFieldsAndValues.isNotEmpty() && query == null ->
+                   uniqueIndexFieldsAndValues.forEach { (attributeName, attributeValue) ->
+                       if (query == null) {
+                           query = Query().addCriteria(Criteria.where(attributeName).`is`(attributeValue))
+                       } else {
+                           query = query!!.addCriteria(
+                               Criteria.where(attributeName).`is`(attributeValue)
+                           )
+                       }
+                   }
+
+               else -> null
+           }
+
+           return if (query != null) {
+               val documentMapWithoutSetOnUpsertFields = documentMap.filter { entry ->
+                   !setOnInsertFields.contains(entry.key)
+               }.toMap()
+               val update = Update()
+               documentMapWithoutSetOnUpsertFields.forEach { entry ->
+                   update.set(entry.key, entry.value)
+               }
+               val updateWithSetOnInsertFields = setOnInsertFields.fold(update) { initial, setOnInsertField ->
+                   initial.setOnInsert(setOnInsertField, typedInstance[setOnInsertField].value)
+               }
+               query!! to updateWithSetOnInsertFields
+           } else {
+               null
+           }
+       }
+
       private fun idField(vyneType: com.orbitalhq.schemas.Type): AttributeName? {
          val idFields = vyneType.getAttributesWithAnnotation("Id".fqn())
          require(idFields.isEmpty() || idFields.size == 1)
