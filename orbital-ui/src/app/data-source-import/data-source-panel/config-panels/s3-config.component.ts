@@ -20,7 +20,7 @@ import { PolymorpheusComponent } from '@taiga-ui/polymorpheus';
 import {combineLatestWith, finalize, Observable, of, Subject, switchMap} from 'rxjs';
 import {catchError, debounceTime, tap} from 'rxjs/operators';
 import { ConnectorSummary } from '../../../db-connection-editor/db-importer.service';
-import { TypeAutocompleteTuiModule } from '../../../type-autocomplete-tui/type-autocomplete-tui.module';
+import {TypeAutocompleteTuiComponent} from '../../../type-autocomplete-tui/type-autocomplete-tui.component';
 import {AwsConnectionsPipe} from '../../../utils/connections.pipe';
 import {isNullOrUndefined, sanitiseNamespace} from '../../../utils/utils';
 import {ConvertSchemaEvent, S3SchemaConverterOptions,} from '../../data-source-import.models';
@@ -45,7 +45,7 @@ import {ListBucketsResponse, ListObjectsResponse, S3ConnectionService} from './s
     TuiInputModule,
     TuiDataList,
     TuiIcon,
-    TypeAutocompleteTuiModule,
+    TypeAutocompleteTuiComponent,
     TuiButtonLoading,
     AwsConnectionsPipe,
     TuiGroup,

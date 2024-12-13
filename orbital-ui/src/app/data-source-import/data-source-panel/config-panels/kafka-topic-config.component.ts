@@ -6,7 +6,7 @@ import {TuiDialogService, TuiDataList, TuiIcon, TuiButton, TuiGroup} from '@taig
 import { TuiDataListWrapper, TuiButtonLoading } from '@taiga-ui/kit';
 import { PolymorpheusComponent } from '@taiga-ui/polymorpheus';
 import { ConnectorSummary } from '../../../db-connection-editor/db-importer.service';
-import { TypeAutocompleteTuiModule } from '../../../type-autocomplete-tui/type-autocomplete-tui.module';
+import {TypeAutocompleteTuiComponent} from '../../../type-autocomplete-tui/type-autocomplete-tui.component';
 import { ConvertSchemaEvent, KafkaOffset, KafkaTopicConverterOptions } from '../../data-source-import.models';
 import { Schema, Type } from '../../../services/schema';
 import {
@@ -31,7 +31,7 @@ import { isNullOrUndefined, sanitiseNamespace } from '../../../utils/utils';
     TuiDataList,
     TuiIcon,
     MessageBrokersConnectionsPipe,
-    TypeAutocompleteTuiModule,
+    TypeAutocompleteTuiComponent,
     TuiButtonLoading,
     TuiGroup,
   ],

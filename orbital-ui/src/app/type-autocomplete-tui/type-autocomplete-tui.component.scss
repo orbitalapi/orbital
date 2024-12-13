@@ -1,19 +1,24 @@
+@import '@taiga-ui/core/styles/taiga-ui-local.scss';
+
+.type-option-container {
+  margin: 0.25rem 0;
+}
+
 .type-option {
   font-size: 0.9rem;
   display: flex;
   align-items: center;
+  gap: 0.5rem;
 
-  .type-name {
-    margin-right: 0.5rem;
-  }
   .mono-badge.small {
     font-size: 0.7rem !important;
     margin-top: 0;
   }
-
 }
 
-tui-opt-group:before {
-  margin: 0.5rem 0 0 0.5rem;
-  font-size: 0.8rem;
+.scroll {
+  @include scrollbar-hidden();
+
+  min-block-size: 4rem;
+  max-block-size: 100%;
 }
