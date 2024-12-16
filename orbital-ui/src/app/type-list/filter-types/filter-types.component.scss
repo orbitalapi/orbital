@@ -19,7 +19,7 @@ td-highlight {
 }
 
 .filterPanelContainer{
-  border-radius: 0px;
+  border-radius: 0;
   background: #eef2f9;
 }
 
@@ -33,11 +33,14 @@ td-highlight {
 form {
   display: flex;
   width: 100%;
-  tui-checkbox-block {
-    width: 10rem;
-  }
+  gap: 1rem;
+
   tui-input {
-    margin-left: 1rem;
     flex-grow: 1;
   }
+}
+
+[tuiGroup] {
+  // Not sure why this is required to bring the Taiga styles back into obedience, but it works
+  display: block;
 }
