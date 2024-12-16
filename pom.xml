@@ -145,6 +145,7 @@ Transitive dependency in wire-compiler and calcite-core
       <module>plugin-api</module>
       <module>plugin-loader</module>
       <module>nebula-support</module>
+       <module>orbital-taxi-publisher</module>
    </modules>
    <scm>
       <developerConnection>scm:git:git@gitlab.com:vyne/vyne.git</developerConnection>

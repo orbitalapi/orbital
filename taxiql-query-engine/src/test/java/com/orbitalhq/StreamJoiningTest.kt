@@ -145,6 +145,106 @@ class StreamJoiningTest : DescribeSpec({
             }
          }
 
+
+
+         it("a query that joins multiple streams using intersection can be enriched in projection") {
+            logger.info { "starting should run a query that joins multiple streams" }
+            val tweetFlow = MutableSharedFlow<TypedInstance>()
+            val analyticsFlow = MutableSharedFlow<TypedInstance>()
+            val (vyne, stub) = testVyne(defaultSchema, stateStoreProvider = MapBackedStateStoreProvider())
+            stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
+            stub.addResponseFlow("analytics") { _, _ -> analyticsFlow }
+            stub.addResponse("getUser", """{ "userName" : "Jimmy" }""")
+            val results = vyne.query(
+               """
+           | @com.orbitalhq.StateStore
+           | stream { Tweet & TweetAnalytics }
+           | as {
+           |   id : MessageId
+           |   body : Message
+           |   // returned from external service
+           |   userName : UserName
+           |   views : ViewCount
+           |}[]
+        """.trimMargin()
+            )
+               .results
+
+            results.test(timeout = Duration.parse("5s")) {
+               tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
+//               expectNoEvents()
+               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
+               val first = expectTypedObject()
+               first.toRawObject().shouldBe(
+                  mapOf(
+                     "id" to "a",
+                     "body" to "Hello",
+                     "views" to 100,
+                     "userName" to "Jimmy",
+                  )
+               )
+               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 150 }"""))
+               val second = expectTypedObject()
+               second.toRawObject().shouldBe(
+                  mapOf(
+                     "id" to "a",
+                     "body" to "Hello",
+                     "views" to 150,
+                     "userName" to "Jimmy",
+                  )
+               )
+            }
+         }
+
+         it("can use field shorthand in a projection of an intersection type") {
+            logger.info { "starting should run a query that joins multiple streams" }
+            val tweetFlow = MutableSharedFlow<TypedInstance>()
+            val analyticsFlow = MutableSharedFlow<TypedInstance>()
+            val (vyne, stub) = testVyne(defaultSchema, stateStoreProvider = MapBackedStateStoreProvider())
+            stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
+            stub.addResponseFlow("analytics") { _, _ -> analyticsFlow }
+            stub.addResponse("getUser", """{ "userName" : "Jimmy" }""")
+            val results = vyne.query(
+               """
+           | @com.orbitalhq.StateStore
+           | stream { Tweet & TweetAnalytics }
+           | as {
+           |   messageId,
+           |   message,
+           |   // returned from external service
+           |   userName : UserName
+           |   views : ViewCount
+           |}[]
+        """.trimMargin()
+            )
+               .results
+
+            results.test(timeout = Duration.parse("5s")) {
+               tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
+//               expectNoEvents()
+               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
+               val first = expectTypedObject()
+               first.toRawObject().shouldBe(
+                  mapOf(
+                     "messageId" to "a",
+                     "message" to "Hello",
+                     "views" to 100,
+                     "userName" to "Jimmy",
+                  )
+               )
+               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 150 }"""))
+               val second = expectTypedObject()
+               second.toRawObject().shouldBe(
+                  mapOf(
+                     "messageId" to "a",
+                     "message" to "Hello",
+                     "views" to 150,
+                     "userName" to "Jimmy",
+                  )
+               )
+            }
+         }
+
          // Not yet implemented - ORB-830
          xit("can filter one side of a stream") {
             val tweetFlow = MutableSharedFlow<TypedInstance>()
@@ -259,9 +359,11 @@ class StreamJoiningTest : DescribeSpec({
       }
 
       it("can merge and project a stream where source streams have fields of the same name with different types") {
-         val (vyne, stub) = testVyne(TaxiSchema.fromStrings(listOf(
-            StateStoreAnnotation.StateStoreTaxi,
-            """
+         val (vyne, stub) = testVyne(
+            TaxiSchema.fromStrings(
+               listOf(
+                  StateStoreAnnotation.StateStoreTaxi,
+                  """
             parameter model OrderEvent {
               @Id id: OrderId inherits Int
               timestamp: OrderTimestamp inherits Instant
@@ -278,7 +380,9 @@ class StreamJoiningTest : DescribeSpec({
                stream orders : Stream<OrderEvent>
                stream shipments : Stream<ShipmentEvent>
             }
-         """)), stateStoreProvider = MapBackedStateStoreProvider()
+         """
+               )
+            ), stateStoreProvider = MapBackedStateStoreProvider()
          )
          val ordersFlow = MutableSharedFlow<TypedInstance>()
          val shipmentEventsFlow = MutableSharedFlow<TypedInstance>()

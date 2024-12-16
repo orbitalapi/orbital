@@ -11,6 +11,7 @@ import com.orbitalhq.from
 import com.orbitalhq.query.VyneQlGrammar
 import io.kotest.matchers.booleans.shouldBeTrue
 import lang.taxi.errors
+import org.junit.Ignore
 import org.junit.Test
 
 class TaxiSchemaTest {
@@ -189,6 +190,7 @@ class TaxiSchemaTest {
    }
 
    @Test
+   @Ignore // Sum types are now registered in the schema, so shouldn't appear as anonymous.
    fun `sum types of queries are present as anonymous types`() {
       val schema = TaxiSchema.from(
          """
