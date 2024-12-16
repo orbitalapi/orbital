@@ -401,7 +401,6 @@ export function buildOperationLinks(operation: ServiceMember, service: Service, 
     })
   }
 
-
   const outputs: Link[] = [{
     sourceNodeId: serviceNodeId,
     sourceHandleId: HandleIds.serviceOperationOutbound(QualifiedName.from(nameParts.serviceName), QualifiedName.from(nameParts.operationName)),
@@ -417,9 +416,17 @@ export function buildOperationLinks(operation: ServiceMember, service: Service, 
   }];
   // Not sure if returning operation links here is helpful.
   return {
-    inputs: inputs.concat(primaryKeys),
-    outputs
+    inputs: inputs.concat(primaryKeys).filter((link: Link) => filterOutPrimitives(link.sourceNodeName, schema)),
+    outputs: outputs.filter((link: Link) => filterOutPrimitives(link.targetNodeName, schema))
   };
+}
+
+function filterOutPrimitives(qualifiedName: QualifiedName, schema: Schema): boolean {
+  let paramTypeName = arrayMemberTypeNameOrTypeNameFromName(qualifiedName);
+  try {
+    const type = findType(schema, paramTypeName.parameterizedName);
+    return !type?.isPrimitive
+  } catch (e) {}
 }
 
 function buildLinks(member: SchemaMember, schema: Schema, operations: ServiceMember[]): Links {
