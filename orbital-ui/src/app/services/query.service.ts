@@ -283,9 +283,21 @@ export function isEvaluatedExpressionDataSource(source: DataSource): source is E
   return source.dataSourceName === 'Evaluated expression';
 }
 
+export function isWhenCaseDataSource(source: DataSource): source is EvaluatedWhenCaseSelection {
+  return source.dataSourceName === 'Select case';
+}
+
 export interface EvaluatedExpressionDataSource extends DataSource {
   expressionTaxi: string;
   inputs: TypeNamedInstance[];
+}
+
+export interface EvaluatedWhenCaseSelection extends DataSource {
+  expressionTaxi: string;
+  valueToMatch: TypeNamedInstance
+  matchedExpressionTaxi: string | null;
+  evaluatedCases: TypeNamedInstance[];
+
 }
 
 export function isFailedEvaluatedExpressionDataSource(source: DataSource): source is FailedEvaluatedExpressionDataSource {

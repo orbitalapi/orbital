@@ -12,6 +12,7 @@ import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.toVyneQualifiedName
 import lang.taxi.expressions.Expression
 import lang.taxi.types.*
+import java.util.*
 
 class WhenBlockEvaluator(
    private val factory: EvaluationValueSupplier,
@@ -33,14 +34,17 @@ class WhenBlockEvaluator(
          dataSource = source,
          format = format
       )
-      val caseBlock = selectCaseBlock(selectorValue, readCondition, value, format)
-         ?: return TypedNull.create(targetType, FailedEvaluation("No matching cases found in when clause"))
+      val (caseBlock, whenCaseBlockSelection) = selectCaseBlock(selectorValue, readCondition, value, format)
+      if (caseBlock == null) {
+         // TODO : Update this to a WhenCaseEvalution data source
+         return TypedNull.create(targetType, FailedEvaluation("No matching cases found in when clause"))
+      }
       return accessorReader.read(
          value,
          targetType,
          caseBlock.getSingleAssignment().assignment,
          schema,
-         source = source,
+         source = whenCaseBlockSelection,
          allowContextQuerying = true,
          format = format
       )
@@ -51,9 +55,10 @@ class WhenBlockEvaluator(
       readCondition: WhenExpression,
       value: Any,
       format: FormatsAndZoneOffset?
-   ): WhenCaseBlock? {
+   ): Pair<WhenCaseBlock?, EvaluatedWhenCaseSelection> {
       var index = 0
-      return readCondition.cases.firstOrNull { caseBlock ->
+      val evaluations = mutableListOf<TypedInstance>()
+      val selectedCase = readCondition.cases.firstOrNull { caseBlock ->
          index = ++index
          if (caseBlock.matchExpression is ElseMatchExpression) {
             true
@@ -73,11 +78,13 @@ class WhenBlockEvaluator(
 //                  TypedNull.create(selectorValue.type)
 //               }
             }
+            evaluations.add(valueToCompare)
             selectorValue.valueEquals(valueToCompare)
          }
 
 
       }
+      return selectedCase to EvaluatedWhenCaseSelection(readCondition.asTaxi(), selectorValue, selectedCase?.asTaxi(), evaluations)
    }
 
    private fun evaluateExpression(
@@ -114,5 +121,22 @@ class WhenBlockEvaluator(
       }
 
    }
+
+}
+
+data class EvaluatedWhenCaseSelection(
+   val expressionTaxi: String,
+   val valueToMatch: TypedInstance,
+   val matchedExpressionTaxi: String?,
+   /**
+    * All the case blocks that were evaluated.
+    * The final entry will be the value that matched.
+    * Not all case blocks are evaluated, only those up until a match is made
+    */
+   val evaluatedCases: List<TypedInstance>,
+   override val id: String = UUID.randomUUID().toString()
+) : DataSource {
+   override val name: String = "Select case"
+   override val failedAttempts: List<DataSource> = emptyList()
 
 }
