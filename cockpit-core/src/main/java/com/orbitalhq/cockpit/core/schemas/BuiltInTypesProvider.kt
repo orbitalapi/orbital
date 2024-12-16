@@ -30,6 +30,15 @@ import lang.taxi.annotations.HttpService
 import lang.taxi.generators.avro.AvroAnnotationSchema
 import mu.KotlinLogging
 
+/**
+ * Provides the sources that we use to power things like
+ * connectors, etc.
+ *
+ * These are exported / published as a standalone taxi project
+ * as part of the Orbital build.
+ *
+ * See OrbitalPackagePublisher
+ */
 object BuiltInTypesProvider {
    private val builtInSources = SourcePackage(
       PackageMetadata.from(VyneTypes.NAMESPACE, "core-types", "1.0.0"),
