@@ -25,13 +25,25 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.runApplication
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.context.annotation.Bean
+import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.ImportRuntimeHints
+import org.springframework.core.Ordered
+import org.springframework.core.annotation.Order
+import org.springframework.http.HttpHeaders
+import org.springframework.http.server.reactive.ServerHttpRequestDecorator
+import org.springframework.security.config.web.server.ServerHttpSecurity
+import org.springframework.security.web.server.SecurityWebFilterChain
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.server.ServerWebExchange
+import org.springframework.web.server.WebFilter
+import org.springframework.web.server.WebFilterChain
+
 
 private val logger = KotlinLogging.logger {}
 
 @SpringBootApplication(
-   exclude = [JdbcRepositoriesAutoConfiguration::class,
+   exclude = [
+      JdbcRepositoriesAutoConfiguration::class,
       JdbcTemplateAutoConfiguration::class,
       DataSourceAutoConfiguration::class,
    ]
@@ -45,6 +57,14 @@ private val logger = KotlinLogging.logger {}
 @ImportRuntimeHints(NativeQueryNodeRuntimeHints::class)
 @RegisterReflectionForBinding(QueryResponseMessage::class)
 class QueryFunctionApp {
+
+//   @Bean
+//   fun securityFilterChain(http: HttpSecurity): SecurityFilterChain {
+//      http
+//         .authorizeHttpRequests { it.anyRequest().permitAll() } // Allow all requests
+//         .csrf { it.disable() } // Disable CSRF for simplicity (not recommended for production)
+//      return http.build()
+//   }
 
    @Bean
    fun meterRegistry() = SimpleMeterRegistry()
@@ -60,7 +80,7 @@ class QueryFunctionApp {
    }
 
    @Bean
-   fun formatSpecRegistry():FormatSpecRegistry = FormatSpecRegistry.default()
+   fun formatSpecRegistry(): FormatSpecRegistry = FormatSpecRegistry.default()
 
    @Bean
    fun sourceConverterRegistry(): SourceConverterRegistry = SourceConverterRegistry(
@@ -71,6 +91,43 @@ class QueryFunctionApp {
       registerWithStaticRegistry = true
    )
 }
+
+@Configuration
+class SecurityConfig {
+
+   /**
+    * Issue in spring security with Spring boot 3.3.5:
+    * java.lang.UnsupportedOperationException: null
+    * 	at org.springframework.http.ReadOnlyHttpHeaders.set(ReadOnlyHttpHeaders.java:110) ~[spring-web-6.1.14.jar:6.1.14]
+    *
+    * https://github.com/spring-projects/spring-security/issues/15989
+    * https://github.com/spring-projects/spring-framework/issues/33789
+    * Workaround:
+    * https://github.com/spring-projects/spring-security/issues/15989#issuecomment-2442660753
+    *
+    */
+   @Bean
+   @Order(Ordered.HIGHEST_PRECEDENCE)
+   fun writeableHeaders(): WebFilter = WebFilter { exchange, chain ->
+      val writeableHeaders = HttpHeaders.writableHttpHeaders(exchange.request.headers)
+      val writeableRequest = object : ServerHttpRequestDecorator(exchange.request) {
+         override fun getHeaders(): HttpHeaders = writeableHeaders
+      }
+      val writeableExchange = exchange.mutate()
+         .request(writeableRequest)
+         .build()
+      chain.filter(writeableExchange)
+   }
+
+   @Bean
+   fun securityWebFilterChain(http: ServerHttpSecurity): SecurityWebFilterChain {
+      http
+         .authorizeExchange { it.anyExchange().permitAll() } // Allow all requests
+         .csrf { it.disable() } // Disable CSRF (not recommended for production)
+      return http.build()
+   }
+}
+
 
 fun main(args: Array<String>) {
    logger.info { "Available processors (cores): ${Runtime.getRuntime().availableProcessors()}" }
