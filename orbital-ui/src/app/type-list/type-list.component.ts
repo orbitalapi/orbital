@@ -80,7 +80,8 @@ export class TypeListComponent implements OnInit {
     this.applyFilter();
   }
 
-
+  protected readonly memberTypeForCSS = memberTypeForCSS;
+  protected readonly memberType = memberType;
 }
 
 
