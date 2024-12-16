@@ -508,6 +508,7 @@ export type SchemaGraphNodeType =
   | 'CALLER'
   | 'SOURCE_VALUE'
   | 'REQUEST_OBJECT'
+  | 'WHEN_BLOCK_RESULT'
   | 'SERVICE';
 
 export interface SchemaGraphNode {
@@ -940,6 +941,7 @@ export type DataSourceType =
   | 'Undefined source'
   | 'Failed evaluated expression'
   | 'Evaluated expression'
+  | 'Select case'
   | 'Multiple sources';
 
 

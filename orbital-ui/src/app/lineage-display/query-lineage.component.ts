@@ -272,7 +272,7 @@ export class QueryLineageComponent extends BaseGraphComponent implements AfterVi
         const serviceDisplayName = serviceName.split('.').pop();
         return [serviceDisplayName, `${serviceName} | Operation: ${operationName}`];
       } else if (nodeType === 'Expression') {
-        return ['Custom formula', nodeText];
+        return [nodeText, nodeText];
       } else {
         return [nodeText, null];
       }
@@ -281,6 +281,7 @@ export class QueryLineageComponent extends BaseGraphComponent implements AfterVi
     rows.forEach((row, index) => {
       const sourceId = this.toSafeId(row.sourceNode);
       if (!nodes.has(sourceId)) {
+        const debugging = row
         const [header, subheader] = getNodeLabel(row.sourceNode, row.sourceNodeType, row.sourceNodeOperationData);
         const [nodeType, nodeTypeLabel] = rowTypeToGraphType(row.sourceNodeType);
         nodes.set(sourceId, {

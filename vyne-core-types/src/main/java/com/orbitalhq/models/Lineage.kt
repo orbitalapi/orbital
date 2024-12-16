@@ -271,7 +271,7 @@ object Calculated : DataSource {
    override val failedAttempts: List<DataSource> = emptyList()
 }
 
-data class  EvaluatedExpression(
+data class EvaluatedExpression(
    val expressionTaxi: String,
    override val inputs: List<TypedInstance>,
    override val id: String = UUID.randomUUID().toString()

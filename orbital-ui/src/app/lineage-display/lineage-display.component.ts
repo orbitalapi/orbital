@@ -1,10 +1,10 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input} from '@angular/core';
 import {
-  EvaluatedExpressionDataSource,
+  EvaluatedExpressionDataSource, EvaluatedWhenCaseSelection,
   FailedEvaluatedExpressionDataSource,
   isEvaluatedExpressionDataSource,
   isFailedEvaluatedExpressionDataSource,
-  isOperationResult,
+  isOperationResult, isWhenCaseDataSource,
   OperationResultReference,
   QueryService,
   RemoteCall,
@@ -28,6 +28,7 @@ import {Subject} from 'rxjs';
 import {isNullOrUndefined} from 'util';
 import {QueryResultMemberCoordinates} from '../query-panel/instance-selected-event';
 import {QualifiedNameParser} from "../services/qualified-name-parser";
+import {isObjectWithProperty} from "../utils/utils";
 
 type LineageElement = TypeNamedInstance | TypeNamedInstance[] | DataSource;
 
@@ -105,12 +106,26 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     return dataSource.serviceDisplayName;
   }
 
+  /**
+   * Adds the provided node to the set of existing nodes if not already present.
+   * Returns the node in the collection (either the newly added node, or the existing
+   * one that was already present)
+   */
+  private addNodeIfNotPresent(nodes:SchemaGraphNode[], newNode: SchemaGraphNode):SchemaGraphNode {
+    const existing = nodes.find(existing => existing.id == newNode.id )
+    if (existing) {
+      return existing
+    } else {
+      nodes.push(newNode)
+      return newNode
+    }
+  }
 
   private buildExpressionNode(node: EvaluatedExpressionDataSource, dataSourceToNode: (dataSource: DataSource) => SchemaGraphNode, nodes: SchemaGraphNode[], links: SchemaGraphLink[], linkTo: SchemaGraphNode, instanceToNode: (instance: TypeNamedInstance) => SchemaGraphNode, nodeSet: SchemaNodeSet) {
     const expressionDataSource = node as EvaluatedExpressionDataSource;
     const dataSourceNode = dataSourceToNode(expressionDataSource);
     this.appendLoadedDataSource(node);
-    nodes.push(dataSourceNode)
+    this.addNodeIfNotPresent(nodes, dataSourceNode)
     links.push({
       source: dataSourceNode.nodeId,
       target: linkTo.nodeId,
@@ -118,17 +133,53 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     })
 
 
-    expressionDataSource.inputs.forEach(param => {
+
+    expressionDataSource.inputs
+      // Don't add nodes for constants - which turn up as 'Undefined source' -- it makes the diagram ugly,
+      // and we don't need a node that shows the creation of a constant - the constant value is shown in the label
+      .filter(inputNode => inputNode.source.id !== 'Undefined source')
+      .forEach(param => {
         const inputNode = instanceToNode(param);
-        nodes.push(inputNode);
+        const addedInputNode = this.addNodeIfNotPresent(nodes, inputNode)
         links.push({
-          source: inputNode.nodeId,
+          source: addedInputNode.nodeId,
           target: dataSourceNode.nodeId,
           label: 'input'
         });
-        const inputNodes = this.buildGraph(param, inputNode, []);
+        const inputNodes = this.buildGraph(param, addedInputNode, []);
         this.appendNodeSet(inputNodes, nodeSet);
     })
+  }
+
+  private buildWhenClauseNode(node: EvaluatedWhenCaseSelection, dataSourceToNode: (dataSource: DataSource) => SchemaGraphNode, nodes: SchemaGraphNode[], links: SchemaGraphLink[], linkTo: SchemaGraphNode, instanceToNode: (instance: TypeNamedInstance) => SchemaGraphNode, nodeSet: SchemaNodeSet) {
+    const expressionDataSource = node as EvaluatedWhenCaseSelection;
+    const dataSourceNode = dataSourceToNode(expressionDataSource);
+    const thisWhenClauseNodes: SchemaGraphNode[] = [];
+    const thisWhenClauseLinks: SchemaGraphLink[] = [];
+    const thisNodeSet: SchemaNodeSet = {
+      nodes: thisWhenClauseNodes,
+      links: thisWhenClauseLinks
+    }
+    this.appendLoadedDataSource(node);
+    const addedWhenNode = this.addNodeIfNotPresent(thisWhenClauseNodes, dataSourceNode)
+    links.push({
+      source: addedWhenNode.nodeId,
+      target: linkTo.nodeId,
+      label: 'returned value'
+    })
+
+    expressionDataSource.evaluatedCases.forEach(evaluatedCase => {
+      const inputNode = instanceToNode(evaluatedCase);
+      const addedCaseNode = this.addNodeIfNotPresent(thisWhenClauseNodes, inputNode)
+      links.push({
+        source: addedCaseNode.nodeId,
+        target: dataSourceNode.nodeId,
+        label: 'input'
+      });
+      const inputNodes = this.buildGraph(evaluatedCase, inputNode, [], thisNodeSet);
+      this.appendNodeSet(inputNodes, thisNodeSet);
+    })
+    this.appendNodeSet(thisNodeSet, nodeSet)
   }
 
   nodeSelected(selectedNode: SchemaGraphNode) {
@@ -165,7 +216,13 @@ export class LineageDisplayComponent extends BaseGraphComponent {
 
   nodeId(instance: any, generator: () => string): string {
     if (!instance[LineageDisplayComponent.NODE_ID]) {
-      instance[LineageDisplayComponent.NODE_ID] = this.makeSafeId(generator());
+      // Attempting to prevent the same object being added to the chart multiple times.
+      // If there's a server-side id here, use it.
+      if (isObjectWithProperty(instance, "nodeId")) {
+        instance[LineageDisplayComponent.NODE_ID] = instance.nodeId;
+      } else {
+        instance[LineageDisplayComponent.NODE_ID] = this.makeSafeId(generator());
+      }
     }
     return instance[LineageDisplayComponent.NODE_ID];
   }
@@ -200,7 +257,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     } as SchemaGraphNode;
   };
 
-  private buildGraph(node: LineageElement, linkTo: SchemaGraphNode = null, nodesUnderConstruction: LineageElement[] = []): SchemaNodeSet {
+  private buildGraph(node: LineageElement, linkTo: SchemaGraphNode = null, nodesUnderConstruction: LineageElement[] = [], appendTo: SchemaNodeSet = {nodes: [], links: []}): SchemaNodeSet {
     if (!node || !this.dataSource) {
       return this.emptyGraph();
     }
@@ -210,10 +267,6 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       return this.emptyGraph();
     }
     const self = this;
-    if (nodesUnderConstruction.includes(node)) {
-      return this.emptyGraph()
-    }
-
 
     const collectionToNode = (instance: TypeNamedInstance[]): SchemaGraphNode => {
       var typeName = instance[0] ? instance[0].typeName : 'asd'
@@ -264,6 +317,13 @@ export class LineageDisplayComponent extends BaseGraphComponent {
           label = failedEvaluatedExpression.expressionTaxi;
           type = 'ERROR'
           break;
+        case 'Select case':
+          const evaluatedWhenCase = dataSource as EvaluatedWhenCaseSelection;
+          subHeader = 'Evaluated when block'
+          label = evaluatedWhenCase.matchedExpressionTaxi || 'No case matched';
+          type = 'WHEN_BLOCK_RESULT';
+
+          break;
         case 'Mapped':
           label = dataSource.dataSourceName;
           if (isMappedSynonym(dataSource)) {
@@ -283,12 +343,9 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       };
     }
 
-    const nodes: SchemaGraphNode[] = [];
-    const links: SchemaGraphLink[] = [];
-    const nodeSet: SchemaNodeSet = {
-      nodes,
-      links
-    };
+    const nodes: SchemaGraphNode[] = appendTo.nodes;
+    const links: SchemaGraphLink[] = appendTo.links;
+    const nodeSet: SchemaNodeSet = appendTo;
 
     const buildDataSourceTo = (source: DataSource, typedInstanceNode: SchemaGraphNode) => {
       const dataSourceNodes = this.buildGraph(source, typedInstanceNode);
@@ -300,7 +357,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
 
     if (isTypeNamedInstance(node)) {
       const typedInstanceNode = this.instanceToNode(node);
-      nodes.push(typedInstanceNode);
+      this.addNodeIfNotPresent(nodes, typedInstanceNode);
 
       if (node.source) {
 
@@ -310,7 +367,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       }
     } else if (isTypedCollection(node)) {
       const typedCollectionNode = collectionToNode(node);
-      nodes.push(typedCollectionNode);
+      this.addNodeIfNotPresent(nodes,typedCollectionNode)
 
       // Take the datasource from the first node for now. THat's the best we can do
       // IN the future, enrich the API response to include datasource for TypedCOllections
@@ -322,7 +379,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     } else if (isOperationResult(node)) {
       const remoteCallNode = remoteCallToNode(node);
       if (remoteCallNode.nodeId !== linkTo.nodeId) {
-        nodes.push(remoteCallNode);
+        this.addNodeIfNotPresent(nodes, remoteCallNode)
         links.push({
           source: remoteCallNode.nodeId,
           target: linkTo.nodeId,
@@ -337,7 +394,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
           } else {
             inputNode = this.instanceToNode(param.value);
           }
-          nodes.push(inputNode);
+          this.addNodeIfNotPresent(nodes, inputNode)
           links.push({
             source: inputNode.nodeId,
             target: remoteCallNode.nodeId,
@@ -351,7 +408,7 @@ export class LineageDisplayComponent extends BaseGraphComponent {
     } else if (isMappedSynonym(node)) {
       const synonymSource = node.source
       const inputNode = this.instanceToNode(synonymSource);
-      nodes.push(inputNode)
+      this.addNodeIfNotPresent(nodes, inputNode)
       links.push({
         source: inputNode.nodeId,
         target: linkTo.nodeId,
@@ -359,12 +416,14 @@ export class LineageDisplayComponent extends BaseGraphComponent {
       })
     } else if (isEvaluatedExpressionDataSource(node) || isFailedEvaluatedExpressionDataSource(node)) {
       this.buildExpressionNode(node, dataSourceToNode, nodes, links, linkTo, this.instanceToNode.bind(this), nodeSet);
+    } else if (isWhenCaseDataSource(node)) {
+      this.buildWhenClauseNode(node, dataSourceToNode, nodes, links, linkTo, this.instanceToNode.bind(this), nodeSet);
     } else {
       const dataSource = node as DataSource;
       this.appendLoadedDataSource(dataSource);
       const dataSourceNode = dataSourceToNode(dataSource);
       if (dataSourceNode.nodeId !== linkTo.nodeId) {
-        nodes.push(dataSourceNode);
+        this.addNodeIfNotPresent(nodes, dataSourceNode)
         links.push({
           source: dataSourceNode.nodeId,
           target: linkTo.nodeId,
@@ -385,12 +444,12 @@ export class LineageDisplayComponent extends BaseGraphComponent {
 
   private appendRequestObject(nodes: SchemaGraphNode[], links: SchemaGraphLink[], requestObject: TypeNamedInstance, targetNodeId: string): SchemaGraphNode {
     const requestObjectNode = this.instanceToNode(requestObject, "Request Payload")
-    nodes.push(requestObjectNode);
+    this.addNodeIfNotPresent(nodes, requestObjectNode);
 
     Object.keys(requestObject.value).forEach(fieldName => {
       const fieldValue = requestObject.value[fieldName] as TypeNamedInstance;
       const fieldValueNode = this.instanceToNode(fieldValue);
-      nodes.push(fieldValueNode);
+      this.addNodeIfNotPresent(nodes, fieldValueNode);
       links.push({
         source: fieldValueNode.nodeId,
         target: requestObjectNode.nodeId,

@@ -95,13 +95,13 @@ class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>) {
    }
 
    fun buildStreamingSerializer(resultMode: ResultMode, queryResponse: QueryResult, contentType: String, queryOptions: QueryOptions): QueryResultSerializer {
-      logger.info { "Building streaming serializer for Query Response Type ${queryResponse.responseType} " +
+      logger.debug { "Building streaming serializer for Query Response Type ${queryResponse.responseType} " +
          "with Accept header value $contentType and result mode $this" }
       return tryGetModelFormatSerialiser(resultMode, queryResponse) ?: buildSerializer(resultMode, queryResponse, contentType, queryOptions)
    }
 
    private fun buildSerializer(resultMode: ResultMode, queryResponse: QueryResult, requestedContentType: String, queryOptions: QueryOptions): QueryResultSerializer {
-      logger.info {
+      logger.debug {
          "Building serializer for Query Response Type ${queryResponse.responseType} " +
             "with ContentSerializationFormat header value $requestedContentType and result mode $resultMode"
       }

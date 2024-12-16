@@ -118,7 +118,7 @@ class PersistingQueryEventConsumer(
    }
 
    private fun persistEvent(event: QueryStartEvent) {
-      logger.info { "Recording that the query ${event.queryId} has started. The query is:\n${event.taxiQuery}" }
+      logger.debug { "Recording that the query ${event.queryId} has started. The query is:\n${event.taxiQuery}" }
 
       createQuerySummaryRecord(event.queryId) {
          QueryResultEventMapper.toQuerySummary(event)
