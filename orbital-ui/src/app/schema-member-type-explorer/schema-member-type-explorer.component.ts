@@ -54,7 +54,7 @@ import {InlineRunQueryButtonComponent} from "../inline-run-query-button/inline-r
         </button>
       </tui-tabs>
       <as-split direction="horizontal" unit="pixel" *ngIf="activeTabIndex === 0">
-        <as-split-area size="260" maxSize="260">
+        <as-split-area size="260" maxSize="360">
           <app-schema-member-tree [partialSchema$]="partialSchema$" #schemaEntryTable
                                   (modelSelected)="onModelSelected($event)"
                                   (operationSelected)="onOperationSelected($event)"
@@ -65,7 +65,7 @@ import {InlineRunQueryButtonComponent} from "../inline-run-query-button/inline-r
           <as-split direction="horizontal">
             <as-split-area [size]="selectedOperation ? 100 : 50">
               <div class="documentation-content-container">
-                <div class="documentation-content" [class.no-margin-bottom]="readmeDiagramSegmentIndex === 1">
+                <div class="documentation-content">
                   <app-type-viewer *ngIf="selectedModel"
                                    [type]="selectedModel"
                                    [schema]="schema"

@@ -28,12 +28,11 @@ app-code-viewer {
   height: 10px;
   flex-grow: 1;
   border: 1px solid rgba($vyne-lilac, 0.4);
-  border-radius: 4px;
+  border-radius: 0.25rem;
+  margin-top: 1rem;
 }
 
 .tab-bar {
-  margin-bottom: 1rem;
-
   img {
     margin-right: 0.5rem;
     opacity: 0.5;
