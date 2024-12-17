@@ -187,7 +187,14 @@ export class QueryEditorState {
         this.payload.queryReturnedResults.set(true);
         if (!isNullOrUndefined(message.typeName)) {
           this.payload.anonymousTypes.set(message.anonymousTypes);
-          this.payload.resultType.set(findType(this.schema, message.typeName, message.anonymousTypes));
+          try {
+            this.payload.resultType.set(findType(this.schema, message.typeName, message.anonymousTypes));
+          } catch (e) {
+            // TODO : A bug exists where union / intersection types aren't returned as anonymous types.
+            // causing an error here.
+            // Fix this as part of ORB-850
+          }
+
         }
         this.payload.results().next(message);
       } else {

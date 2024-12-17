@@ -170,10 +170,10 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       .subscribe((next) => {
         if (this.columnDefs.length === 0) {
           if (next.length > 0) {
-            // Because the results have been reversed, the first item (which
-            // contains the type definition) is actually at the end
-            const indexOfItemWithTypeData = this.isStreamingQuery ? next.length - 1 : 0;
-            this.rebuildGridData(next[indexOfItemWithTypeData]);
+            const itemWithTypeData = next.find(data => data['typeName'] && data['typeName'] !== null)
+            if (itemWithTypeData) {
+              this.rebuildGridData(itemWithTypeData);
+            }
           }
         }
 
@@ -216,7 +216,18 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
       }];
     } else {
       const attributeNames = Object.keys(instanceValue);
-      const modelType = isValueWithTypeName(value) ? findType(this.schema, value.typeName, value.anonymousTypes) : null;
+      let modelType:Type;
+      if (isValueWithTypeName(value) && !isNullOrUndefined(value.typeName)) {
+        try {
+          modelType = findType(this.schema, value.typeName, value.anonymousTypes)
+        } catch (e) {
+          // TODO : There's an issue here where union / intersection types aren't
+          // being returned as anonymous types.
+          // Need to fix - but for now, just leave modelType as null.
+          // Only affects the types of filters we perform in the UI
+          // Need to be fixed as part of ORB-850
+        }
+      }
       this.columnDefs = attributeNames.map((fieldName, index) => {
         const [filter, fieldType] = this.getColumnFilterAndType(instanceValue, fieldName, modelType, (value as ValueWithTypeName)?.anonymousTypes);
         return {
