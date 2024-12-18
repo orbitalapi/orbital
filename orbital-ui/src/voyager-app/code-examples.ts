@@ -15,6 +15,14 @@ import {HttpMutationWithProjection} from "./code-examples/http-services/calling-
 import {
   MutationWithProjectionAndEnrichment
 } from "./code-examples/http-services/calling-a-mutation-with-projection-and-enrichment";
+import {QueryingWithCriteria} from "./code-examples/querying/query-constraints";
+import {NamedScopesInQueries} from "./code-examples/querying/named-scopes";
+import {EnrichingDataWithLoading} from "./code-examples/querying/enriching-data-with-loading";
+import {UsingNestedFieldsInConstraints} from "./code-examples/querying/nested-fields-in-contraints";
+import {UsingWhenClauses} from "./code-examples/language-features/using-when-blocks";
+import {Casting} from "./code-examples/language-features/casting";
+import {DateFormatting} from "./code-examples/language-features/date-formatting";
+import {Expressions} from "./code-examples/language-features/expressions";
 
 export interface CodeSample {
   title: string;
@@ -188,8 +196,21 @@ export const ExampleGroups = [
     snippets: StubExamples
   },
   {
+    title: 'Language basics',
+    snippets: [
+      Casting,
+      Expressions,
+      DateFormatting,
+      UsingWhenClauses
+    ]
+  },
+  {
     title: 'Querying & Streaming',
     snippets: [
+      QueryingWithCriteria,
+      EnrichingDataWithLoading,
+      UsingNestedFieldsInConstraints,
+      NamedScopesInQueries,
       DatabaseApiEnrich,
       KafkaApiWebsocket,
       KafkaDbApi
@@ -234,9 +255,10 @@ export const ExampleGroups = [
 function codeSamplesToStubExamples(codeSample: CodeSample[]): StubQueryMessageWithSlug[] {
   return codeSample.map(m => codeSampleToQueryMessage(m));
 }
+
 function codeSampleToQueryMessage(codeSample: CodeSample): StubQueryMessageWithSlug {
   return {
-    title : codeSample.title,
+    title: codeSample.title,
     slug: codeSample.slug,
     query: {
       schema: codeSample.code,
