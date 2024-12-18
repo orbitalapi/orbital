@@ -58,7 +58,7 @@ abstract class BaseHistoryRSocketWriter(
          .retryWhen(
             Retry.fixedDelay(Long.MAX_VALUE, Duration.ofSeconds(10))
                .doBeforeRetry { retrySignal: Retry.RetrySignal? ->
-                  logger.warn { "Connection Closed re-trying {$retrySignal}" }
+                  logger.debug { "Connection Closed re-trying {$retrySignal}" }
                })
          .doOnError {
             logger.warn {

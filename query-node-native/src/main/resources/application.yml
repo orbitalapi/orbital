@@ -26,6 +26,14 @@ spring:
       web-application-type: reactive
    codec:
       max-in-memory-size: 100MB
+   webflux:
+      # Configure the data buffer factory limit
+      databuffer:
+         factory:
+            max-in-memory-size: 100MB
+      # Additional WebFlux specific settings
+      exchange-strategy:
+         max-in-memory-size: 100MB
 management:
    endpoints:
       web:

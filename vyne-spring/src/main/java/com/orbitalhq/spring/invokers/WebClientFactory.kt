@@ -50,7 +50,7 @@ class WebClientFactory(
 
    private val exchangeStrategies = ExchangeStrategies
       .builder()
-      .codecs { it.defaultCodecs().maxInMemorySize(16 * 1024 * 1024) }.build()
+      .codecs { it.defaultCodecs().maxInMemorySize(32 * 1024 * 1024) }.build()
 
    // WebClient for non-ssl requests.
    private val nonSslContextWebClient = webClientBuilder
