@@ -412,6 +412,9 @@ class AccessorReader(
       if (valueProjector == null) {
          error("Cannot project, as no ValueProjector has been supplied. Understand this use-case")
       }
+      if (valueToProject is TypedCollection && valueToProject.isEmpty()) {
+         return TypedCollection.empty(targetType)
+      }
       // TODO PERF: When we have projecting statements within an
       // expression (vs on a field or as a top-level concern), then they're not currently converted to Vyne types.
       // So, we have to convert them here.

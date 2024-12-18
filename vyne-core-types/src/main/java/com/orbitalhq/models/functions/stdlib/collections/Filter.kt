@@ -5,6 +5,7 @@ import com.orbitalhq.models.EvaluatedExpression
 import com.orbitalhq.models.EvaluationValueSupplier
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.functions.NamedFunctionInvoker
 import com.orbitalhq.schemas.Schema
@@ -25,6 +26,13 @@ object Filter : NamedFunctionInvoker, CollectionFilteringFunction() {
       rawMessageBeingParsed: Any?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
+      // MP: 2024-12-18 -- this seems wrong, but
+      // needed for a customer fix.
+      // We should test coalescing instead in the query layer.
+      // See ticket ORB-851 for specifics
+      if (inputValues[0] is TypedNull) {
+         return TypedCollection.empty(returnType)
+      }
       val result = applyFilter(inputValues, schema, returnType, function, objectFactory, rawMessageBeingParsed)
          .map {
             if (it.isEmpty()) {

@@ -5,6 +5,7 @@ import com.orbitalhq.query.runtime.QueryMessageCborWrapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import reactor.core.publisher.Mono;
 
 import java.util.function.Function;
 
@@ -22,10 +23,10 @@ import java.util.function.Function;
 public class FunctionRegistrationConfig {
 
    @Bean
-   public Function<QueryMessageCborWrapper, CompressedQueryResultWrapper> queryFunction(
+   public Function<QueryMessageCborWrapper, Mono<CompressedQueryResultWrapper>> queryFunction(
       ServerlessQueryExecutor queryExecutor
    ) {
-      return queryExecutor::executeQuery;
+      return queryExecutor::executeQueryReactive;
    }
 }
 
