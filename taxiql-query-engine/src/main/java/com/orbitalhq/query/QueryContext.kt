@@ -550,7 +550,8 @@ data class QueryContext(
          val orbitalType = schema.type(parameter.type)
          val headerValue = facts.getFactOrNull(orbitalType)?.toRawObject()
          headerValue?.let {
-            val paramName =  parameter.annotation(HttpResponseHeader.NAME)!!.defaultParameterValue.toString()!!
+            val httpResponseHeader = HttpResponseHeader.fromAnnotation(parameter.annotation(HttpResponseHeader.NAME)!!)
+            val paramName =  httpResponseHeader.name
             paramName to listOf(it.toString())
          }
       }.toMap()

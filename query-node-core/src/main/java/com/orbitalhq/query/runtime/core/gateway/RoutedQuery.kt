@@ -88,7 +88,8 @@ data class RoutedQuery(
             }
 
             responseHeaderName(parameter) != null -> {
-               Mono.justOrEmpty(null)
+               val responseHeaderAnnotation = responseHeaderName((parameter))
+               Mono.justOrEmpty(responseHeaderAnnotation!!.value)
             }
 
             // TODO : This should result in a BadRequest, somehow...
@@ -118,8 +119,10 @@ data class RoutedQuery(
          return parameter.annotation(HttpHeader.NAME)?.let { it.parameters["name"]?.toString() }
       }
 
-      private fun responseHeaderName(parameter: Parameter): String? {
-         return parameter.annotation(HttpResponseHeader.NAME)?.let { it.defaultParameterValue?.toString() }
+      private fun responseHeaderName(parameter: Parameter): HttpResponseHeader? {
+         return parameter.annotation(HttpResponseHeader.NAME)?.let {
+            HttpResponseHeader.fromAnnotation(it)
+         }
       }
    }
 }
