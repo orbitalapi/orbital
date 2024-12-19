@@ -3,17 +3,16 @@ package com.orbitalhq.query.runtime.core.gateway
 import com.hazelcast.test.TestHazelcastInstanceFactory
 import com.jayway.awaitility.Awaitility
 import com.nhaarman.mockito_kotlin.*
-import com.orbitalhq.AuthClaimType
 import com.orbitalhq.AuthClaimType.AuthClaimsTypeDefinition
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.VyneProvider
-import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.errors.ErrorType.ErrorTypeDefinition
 import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.OperationResult
+import com.orbitalhq.query.Fact
 import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.QueryEvent
@@ -26,9 +25,9 @@ import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
+import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.taxi.TaxiSchema
-import com.orbitalhq.spring.SimpleVyneProvider
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.spring.invokers.RestTemplateInvoker
 import com.winterbe.expekt.should
@@ -54,12 +53,11 @@ import org.springframework.test.web.reactive.server.returnResult
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Flux
-import reactor.core.publisher.Mono
 import java.security.Principal
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 
-//@SpringBootTest
+
 @RunWith(SpringRunner::class)
 @SpringBootTest(
    classes = [QueryRequestHandlerTest.TestConfig::class],
@@ -99,14 +97,40 @@ class QueryRequestHandlerTest {
 
    @Test
    fun `can send csv in payload and project and get a json response back as part of vyne http endpoint query`() {
-      val schema = schemaProvider.schema
-      schemaStore.setSchema(schema)
+      setSchema("""
+               type CorrelationId inherits String
+               
+               @com.orbitalhq.formats.Csv
+               model CsvModel {
+                 givenName : FirstName inherits String
+                 surname : LastName inherits String
+               }
+
+               model RestResponse {
+                 status: ResponseStatus inherits String
+               }
+               
+               service CsvConsumerApi {
+                 @taxi.http.HttpOperation(method = "POST", url = "http://localhost:${mockWebServerRule.port}/csv")
+                 write operation saveCsv(@taxi.http.RequestBody CsvModel,
+                                         @taxi.http.HttpHeader(name = "x-api-correlationId") correlationId: CorrelationId
+                                         ): RestResponse
+              }
+        
+             @taxi.http.HttpOperation(method = "POST", url = "$CsvQueryEndPoint")
+             query CsvQuery(
+               @taxi.http.RequestBody csvModel: CsvModel,
+               @taxi.http.HttpHeader(name = "$CorrelationHeaderName") correlationId: CorrelationId) {
+                 given { csvModel }
+                 call CsvConsumerApi::saveCsv
+              }
+         """.trimIndent())
       mockWebServerRule.prepareResponse { response ->
          //Response is not important as the operation returns void in the schema.
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON).setBody("""{ "status" : "OK" }""")
       }
 
-      Awaitility.await().atMost(60000, TimeUnit.SECONDS).until<Boolean> { handler.routes.isNotEmpty() }
+      Awaitility.await().atMost(60, TimeUnit.SECONDS).until<Boolean> { handler.routes.isNotEmpty() }
       val orbitalHttpQueryCorrelationId = "correlationId-1"
       val result = webClient.post()
          .uri(CsvQueryEndPoint)
@@ -124,8 +148,35 @@ class QueryRequestHandlerTest {
 
    @Test
    fun `can accept value through request headers and echo them back in response headers`() {
-      val schema = schemaProvider.schema
-      schemaStore.setSchema(schema)
+      setSchema("""
+               type CorrelationId inherits String
+               type FilmId inherits Int
+               
+               model Film {
+                 filmId: FilmId
+               }
+      
+               model FilmRating {
+                 filmId: FilmId
+                 rating: Rating inherits String
+               }
+      
+              service FilmRatingsApi {
+                     @taxi.http.HttpOperation(method = "GET", url = "http://localhost:${mockWebServerRule.port}/{filmId}")
+                     operation filmRating(@taxi.http.PathVariable("fimlId") filmId: FilmId): FilmRating
+              } 
+      
+              @taxi.http.HttpOperation(method = "GET", url = "$FilmRatingQueryEndPoint/{filmId}")
+              query FilmRatingQuery(
+                   @taxi.http.PathVariable("filmId") filmId: FilmId,
+                   @taxi.http.HttpHeader(name = "$CorrelationHeaderName") correlationId: CorrelationId,
+                   @taxi.http.ResponseHeader("$CorrelationHeaderName") correlationId: CorrelationId,
+                   @taxi.http.ResponseHeader("filmId") filmId: FilmId) {
+                    given { filmId}
+                    find { FilmRating }
+                  }
+      """.trimIndent())
+
       mockWebServerRule.prepareResponse { response ->
          //Response is not important as the operation returns void in the schema.
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
@@ -134,7 +185,11 @@ class QueryRequestHandlerTest {
 
       val orbitalHttpQueryCorrelationId = "film-rating-query-1"
 
-      val result = webClient.get()
+      val result = webClient
+         .mutate()
+         .responseTimeout(Duration.ofSeconds(10))
+         .build()
+         .get()
          .uri("$FilmRatingQueryEndPoint/1")
          .header(CorrelationHeaderName, orbitalHttpQueryCorrelationId)
          .exchange()
@@ -153,8 +208,63 @@ class QueryRequestHandlerTest {
 
    @Test
    fun `can still return response headers in case there is a policy error`() {
-      val schema = schemaProvider.schema
-      schemaStore.setSchema(schema)
+      setSchema("""
+              type FilmId inherits Int
+              type CorrelationId inherits String
+              enum ErrorEnum {
+               TR_ORBITAL_UnexpectedError("An unexpected error occurred")
+              }
+              
+              model OrbitalBaseError inherits com.orbitalhq.errors.Error {
+               Code: OrbitalErrorCode inherits String
+               Id: OrbitalErrorId inherits String
+               Message: OrbitalErrorMessage inherits String
+               Errors: ErrorEnum[]
+             }
+              
+              @taxi.http.ResponseBody
+              model OrbitalUnexpectedError inherits OrbitalBaseError {
+               Code: OrbitalErrorCode inherits String
+               Id: OrbitalErrorId inherits String
+               Message: OrbitalErrorMessage inherits String
+               Errors: ErrorEnum[]
+             }
+              
+              model StreamProvider {
+               filmId: FilmId
+               provider: ProviderName inherits String
+              }
+             
+             service StreamProvidersApi {
+                @taxi.http.HttpOperation(method = "GET", url = "http://localhost:${mockWebServerRule.port}/streaming/{filmId}")
+                operation filmRating(@taxi.http.PathVariable("fimlId") filmId: FilmId): StreamProvider
+             }
+
+
+             policy AllAccessStreamProviders against StreamProvider (filmId : FilmId, correlationId: CorrelationId?) -> {
+               read {
+                  when {
+                     filmId == 2 -> StreamProvider
+                     else ->  throw( (OrbitalUnexpectedError) {
+                     Code: 'xyz.abc.def',
+                     Message: 'Invalid API Status',
+                     Id: "correlationId",
+                     Errors: [ErrorEnum.TR_ORBITAL_UnexpectedError]
+                   })
+                  }
+               }
+            }
+             @taxi.http.HttpOperation(method = "GET", url = "$StreamProvidersQueryEndPoint/{filmId}")
+             query FilmRatingQuery(
+                @taxi.http.PathVariable("filmId") filmId: FilmId,
+                @taxi.http.HttpHeader(name = "$CorrelationHeaderName") correlationId: CorrelationId,
+                @taxi.http.ResponseHeader("$CorrelationHeaderName") correlationId: CorrelationId,
+                @taxi.http.ResponseHeader("filmId") filmId: FilmId) {
+              given { filmId }
+              find { StreamProvider }
+            }
+         """.trimIndent())
+
       mockWebServerRule.prepareResponse { response ->
          //Response is not important as the operation returns void in the schema.
          response
@@ -166,13 +276,12 @@ class QueryRequestHandlerTest {
 
       val result = webClient
          .mutate()
-         .responseTimeout(Duration.ofMinutes(30000))
+         .responseTimeout(Duration.ofSeconds(10))
          .build()
          .get()
          .uri("$StreamProvidersQueryEndPoint/1")
          .header(CorrelationHeaderName, orbitalHttpQueryCorrelationId)
          .exchange()
-//            .expectStatus().isBadRequest
          .expectHeader().value(CorrelationHeaderName, CoreMatchers.`is`(orbitalHttpQueryCorrelationId))
          .expectHeader().value("Content-Type", CoreMatchers.`is`("application/json"))
          .expectHeader().value("filmId", CoreMatchers.`is`("1"))
@@ -188,6 +297,44 @@ class QueryRequestHandlerTest {
       )
       mockWebServerRule.takeRequest()
 
+   }
+
+   @Test
+   fun `returns status code correctly when query directly throws`() {
+      setSchema("""
+             @taxi.http.ResponseCode(400)
+             @taxi.http.ResponseBody
+             model BadRequestError inherits Error {
+               message: ErrorMessage
+             }
+        
+            type ResponseContentType inherits String
+        
+            @taxi.http.HttpOperation(url = '/api/q/accounts/', method = 'GET')
+            query getAccountWithoutId(@taxi.http.ResponseHeader(name = "Content-Type", value = "application/json") contentType: ResponseContentType) { 
+               find { throw( (BadRequestError) {
+                  message: 'xyz.abc.def'
+                })}
+            }
+         """.trimIndent())
+
+      val result = webClient
+         .get()
+         .uri("/api/q/accounts/")
+         .exchange()
+         .expectStatus().isBadRequest
+         .expectHeader().value("Content-Type", CoreMatchers.`is`("application/json"))
+         .returnResult<Map<String, Any>>()
+
+      val responseBody = result.responseBody.blockLast()
+      responseBody["message"].should.equal("xyz.abc.def")
+   }
+
+   private fun setSchema(testSchema: String) {
+      (schemaProvider as SimpleSchemaProvider).schema = TaxiSchema.fromStrings(
+         listOf(AuthClaimsTypeDefinition, ErrorTypeDefinition, testSchema))
+      val schema = schemaProvider.schema
+      schemaStore.setSchema(schema)
    }
 
 
@@ -222,118 +369,7 @@ class QueryRequestHandlerTest {
       @Bean
       @Primary
       fun schemaProvider(): SchemaProvider {
-
-         return SimpleSchemaProvider(
-            TaxiSchema.fromStrings(
-               listOf(
-                  AuthClaimsTypeDefinition, ErrorTypeDefinition,
-                  """
-         type CorrelationId inherits String
-         type FilmId inherits Int
-         @com.orbitalhq.formats.Csv
-         model CsvModel {
-           givenName : FirstName inherits String
-           surname : LastName inherits String
-         }
-
-         model RestResponse {
-           status: ResponseStatus inherits String
-         }
-
-         model Film {
-           filmId: FilmId
-         }
-
-         model FilmRating {
-           filmId: FilmId
-           rating: Rating inherits String
-         }
-
-         model StreamProvider {
-           filmId: FilmId
-           provider: ProviderName inherits String
-         }
-
-         enum ErrorEnum {
-           TR_ORBITAL_UnexpectedError("An unexpected error occurred")
-         }
-
-         model OrbitalBaseError inherits com.orbitalhq.errors.Error {
-           Code: OrbitalErrorCode inherits String
-           Id: OrbitalErrorId inherits String
-           Message: OrbitalErrorMessage inherits String
-           Errors: ErrorEnum[]
-         }
-
-         @taxi.http.ResponseBody
-         model OrbitalUnexpectedError inherits OrbitalBaseError {
-           Code: OrbitalErrorCode inherits String
-           Id: OrbitalErrorId inherits String
-           Message: OrbitalErrorMessage inherits String
-           Errors: ErrorEnum[]
-         }
-
-         policy AllAccessStreamProviders against StreamProvider (filmId : FilmId, correlationId: CorrelationId?) -> {
-            read {
-               when {
-                  filmId == 2 -> StreamProvider
-                  else ->  throw( (OrbitalUnexpectedError) {
-                  Code: 'xyz.abc.def',
-                  Message: 'Invalid API Status',
-                  Id: "correlationId",
-                  Errors: [ErrorEnum.TR_ORBITAL_UnexpectedError]
-                })
-               }
-            }
-         }
-
-        service CsvConsumerApi {
-           @taxi.http.HttpOperation(method = "POST", url = "http://localhost:${server.port}/csv")
-           write operation saveCsv(@taxi.http.RequestBody CsvModel,
-                                   @taxi.http.HttpHeader(name = "x-api-correlationId") correlationId: CorrelationId
-                                   ): RestResponse
-        }
-
-        service FilmRatingsApi {
-               @taxi.http.HttpOperation(method = "GET", url = "http://localhost:${server.port}/{filmId}")
-               operation filmRating(@taxi.http.PathVariable("fimlId") filmId: FilmId): FilmRating
-        }
-
-        service StreamProvidersApi {
-           @taxi.http.HttpOperation(method = "GET", url = "http://localhost:${server.port}/streaming/{filmId}")
-               operation filmRating(@taxi.http.PathVariable("fimlId") filmId: FilmId): StreamProvider
-        }
-
-        @taxi.http.HttpOperation(method = "POST", url = "$CsvQueryEndPoint")
-        query CsvQuery(
-         @taxi.http.RequestBody csvModel: CsvModel,
-         @taxi.http.HttpHeader(name = "$CorrelationHeaderName") correlationId: CorrelationId) {
-           given { csvModel }
-           call CsvConsumerApi::saveCsv
-        }
-
-        @taxi.http.HttpOperation(method = "GET", url = "$FilmRatingQueryEndPoint/{filmId}")
-        query FilmRatingQuery(
-             @taxi.http.PathVariable("filmId") filmId: FilmId,
-             @taxi.http.HttpHeader(name = "$CorrelationHeaderName") correlationId: CorrelationId,
-             @taxi.http.ResponseHeader("$CorrelationHeaderName") correlationId: CorrelationId,
-             @taxi.http.ResponseHeader("filmId") filmId: FilmId) {
-              given { filmId}
-              find { FilmRating }
-            }
-        @taxi.http.HttpOperation(method = "GET", url = "$StreamProvidersQueryEndPoint/{filmId}")
-        query FilmRatingQuery(
-             @taxi.http.PathVariable("filmId") filmId: FilmId,
-             @taxi.http.HttpHeader(name = "$CorrelationHeaderName") correlationId: CorrelationId,
-             @taxi.http.ResponseHeader("$CorrelationHeaderName") correlationId: CorrelationId,
-             @taxi.http.ResponseHeader("filmId") filmId: FilmId) {
-              given { filmId }
-              find { StreamProvider }
-            }
-      """.trimIndent()
-               )
-            )
-         )
+         return SimpleSchemaProvider(TaxiSchema.fromStrings(listOf(AuthClaimsTypeDefinition, ErrorTypeDefinition)))
       }
 
 
@@ -353,8 +389,29 @@ class QueryRequestHandlerTest {
                projectionProvider = LocalProjectionProvider(),
                stateStoreProvider = null
             )
-         val vyne = Vyne(listOf(schemaProvider.schema), queryEngineFactory)
-         return SimpleVyneProvider(vyne)
+
+         return object: VyneProvider {
+            override fun createVyne(facts: Set<Fact>): Vyne {
+               return if (facts.isEmpty()) {
+                  Vyne(listOf(schemaProvider.schema), queryEngineFactory)
+               } else {
+                  val clone = Vyne(listOf(schemaProvider.schema), queryEngineFactory)
+                  facts.forEach { clone.addModel(it.toTypedInstance(clone.schema), it.factSetId) }
+                  clone
+               }
+
+            }
+
+            override fun createVyne(facts: Set<Fact>, schema: Schema, queryOptions: QueryOptions): Vyne {
+               return if (facts.isEmpty()) {
+                  Vyne(listOf(schemaProvider.schema), queryEngineFactory)
+               } else {
+                  val clone = Vyne(listOf(schemaProvider.schema), queryEngineFactory)
+                  facts.forEach { clone.addModel(it.toTypedInstance(clone.schema), it.factSetId) }
+                  clone
+               }
+            }
+         }
       }
 
       @Bean
@@ -392,30 +449,26 @@ class QueryRequestHandlerTest {
 
          }
 
-         val queryService = QueryService(
-            SimpleSchemaProvider(schemaProvider.schema),
+         return QueryService(
+            schemaProvider,
             vyneProvider,
             historyEventConsumerProvider,
             Jackson2ObjectMapperBuilder().build(),
             ActiveQueryMonitor(TestHazelcastInstanceFactory().newHazelcastInstance()),
             QueryResponseFormatter(listOf(CsvFormatSpec))
          )
-         return queryService
       }
 
       @Bean
       fun springWebFilterChainNoAuthentication(http: ServerHttpSecurity): SecurityWebFilterChain? {
-
-         return http
-            .csrf().disable()
-            .cors().disable()
-            .headers().disable()
-            .authorizeExchange()
-            .anyExchange().permitAll()
-            .and()
-            .build()
+         return  http
+            .csrf { it.disable() }
+            .cors { it.disable() }
+            .headers { it.disable() }
+            .authorizeExchange {
+               it.anyExchange().permitAll()
+            }.build()
       }
    }
-
 }
 
