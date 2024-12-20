@@ -64,12 +64,9 @@ data class ConfigSourceRepository(
          .filter { it.sources.isNotEmpty() }
    }
 
-   val contentUpdated: Flux<Class<out ConfigSourceLoader>>
-      get() {
-         return this.loaders
-            .map { it.contentUpdated }
-            .let { fluxes -> Flux.merge(fluxes) }
-      }
+   val contentUpdated: Flux<Class<out ConfigSourceLoader>> = this.loaders
+      .map { it.contentUpdated }
+      .let { fluxes -> Flux.merge(fluxes) }
 
    override fun getWriter(identifier: PackageIdentifier): ConfigSourceWriter {
       this.writerProviders
@@ -98,8 +95,8 @@ data class ConfigSourceRepository(
 // support ui-based writes for Auth tokens
 // for a while
 interface ConfigSourceWriter : ConfigSourceLoader {
-   fun saveConfig(updated: Config):ResultWithMessage
-   fun save(source: VersionedSource):ResultWithMessage
+   fun saveConfig(updated: Config): ResultWithMessage
+   fun save(source: VersionedSource): ResultWithMessage
 
    val packageIdentifier: PackageIdentifier
 }
