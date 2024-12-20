@@ -57,32 +57,55 @@ class HikariJdbcConnectionFactory(
    init {
       logger.info { "New HikariJdbcConnectionFactory created" }
       if (connectionRegistry is UpdatableConfigRepository<*>) {
-         connectionRegistry.configUpdated.subscribe {
+         connectionRegistry.configUpdated.subscribe { currentState ->
             logger.info { "Connection registry changed, invalidating data source cache" }
-            val jdbcConnectionConfiguration = it as JdbcConnectionConfiguration
-            val cacheKey = jdbcConnectionConfiguration.connectionName
-            dataSourceCache.getIfPresent(cacheKey)?.let { dataSource ->
-               val (hikariConfig, connectionPoolProps) = this.hikariConfigFor(cacheKey)
-               if (hikariConfig.jdbcUrl != dataSource.jdbcUrl ||
-                   connectionPoolProps.connectionTimeout != dataSource.connectionTimeout ||
-                   connectionPoolProps.minimumIdleConnections != dataSource.minimumIdle ||
-                   connectionPoolProps.maxLifeTime != dataSource.maxLifetime ||
-                   connectionPoolProps.maxPoolSize != dataSource.maximumPoolSize ||
-                   connectionPoolProps.idleTimeout != dataSource.idleTimeout
-                  ) {
-                  logger.info { "DataSource properties for $cacheKey updated, removing the existing datasource from cache!" }
-                  dataSourceCache.invalidate(cacheKey)
-                  dataSource.close()
-                  cacheKey
-               } else {
-                  logger.info { "DataSource properties for $cacheKey NOT updated, keeping the existing datasource in cache!" }
+            // This code was recently changed expecting a JdbcConnectionConfiguration,
+            // but can't see why ...
+            val keysToInvalidate = when (currentState) {
+               is Map<*, *> -> currentState.keys as Collection<String>
+               is JdbcConnectionConfiguration -> listOf(currentState.connectionName)
+               else -> {
+                  logger.error { "Unexpected type of update message - got ${currentState::class.simpleName} - cannot invalidate caches" }
+                  emptyList()
                }
-               cacheKey
-            }?.let {
-               logger.info { "There is no datasource for $it in the cache, no update is required." }
             }
+            keysToInvalidate.forEach { connectionName ->
+               dataSourceCache.getIfPresent(connectionName)?.let { dataSource ->
+                  if (configChanged(connectionName, dataSource)) {
+                     logger.info { "DataSource properties for $connectionName updated, removing the existing datasource from cache" }
+                     dataSourceCache.invalidate(connectionName)
+                     dataSource.close()
+                     connectionName
+                  } else {
+                     logger.debug { "DataSource properties for $connectionName NOT updated, keeping the existing datasource in cache" }
+                  }
+                  connectionName
+               }?.let {
+                  logger.debug { "There is no datasource for $connectionName in the cache, no update is required." }
+               }
+            }
+
          }
       }
+   }
+
+   /**
+    * Indicates if the config now present in the connection registry has changed for the current, stored state.
+    * Does not create any actual connections, so safe to call repeatedly.
+    */
+   private fun configChanged(connectionName: String, previousState: HikariDataSource): Boolean {
+      val connection = connectionRegistry.getConnection(connectionName)
+      val jdbcUrlAndCredentials = connection.buildUrlAndCredentials()
+      if (previousState.jdbcUrl != jdbcUrlAndCredentials.url || previousState.username != jdbcUrlAndCredentials.username || previousState.password != jdbcUrlAndCredentials.password) {
+         return true
+      }
+
+      val connectionPoolProperties = connection.connectionPoolProperties()
+      return connectionPoolProperties.connectionTimeout != previousState.connectionTimeout ||
+         connectionPoolProperties.minimumIdleConnections != previousState.minimumIdle ||
+         connectionPoolProperties.maxLifeTime != previousState.maxLifetime ||
+         connectionPoolProperties.maxPoolSize != previousState.maximumPoolSize ||
+         connectionPoolProperties.idleTimeout != previousState.idleTimeout
    }
 
    override fun config(connectionName: String): JdbcConnectionConfiguration =
@@ -97,6 +120,11 @@ class HikariJdbcConnectionFactory(
       }
    }
 
+   /**
+    * Returns a Hikari data source for the provided connectio name.
+    * Be careful - this constructs an Hikari connection pool, which will throw an exception if there
+    * are too many connected clients already
+    */
    private fun hikariConfigFor(connectionName: String): Pair<HikariDataSource, ConnectionPoolProperties> {
       val connection = connectionRegistry.getConnection(connectionName)
       val url = connection.buildUrlAndCredentials()
