@@ -91,6 +91,7 @@ stages:
          - "query-node-native/target/query-node-native.jar"
 #         - "vyne-query-service/target/vyne.zip"
          - "station/target/orbital.zip"
+         - "orbital-taxi-publisher/target/packagePublisher.zip"
 #         - "test-cli/target/*.zip"
          - "voyager/target/voyager.jar"
       expire_in: 1 hours
@@ -490,4 +491,32 @@ validate-license-compliance:
    script:
       - node processLicenses.js
 
+publish-core-types:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.9.6-eclipse-temurin-21
+   stage: deploy
+   only:
+      - tags
+      - develop
+      - master
+   before_script:
+      - 'command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )'
+      - apt-get install zip -y
+      - mkdir -p ~/.ssh
+      - echo "$GITHUB_PRIVATE_KEY"  > $HOME/.ssh/id_rsa
+      - chmod -R 600 ~/.ssh
+      - eval $(ssh-agent -s)
+      - ssh-add ~/.ssh/id_rsa
+   script:
+      - PROJECT_VERSION=$(cat build-version.txt)
+      - cd orbital-taxi-publisher/target
+      - unzip packagePublisher.zip
+      - cd packagePublisher
+      - mkdir -p schema
+      - echo ${PROJECT_VERSION}
+      - > 
+         ./bin/packagePublisher 
+         --output=./schema 
+         --version=${PROJECT_VERSION} 
+         --remote-url=git@github.com:orbitalapi/orbital-core-taxi 
+         --ssh-key=/root/.ssh/id_rsa
 
