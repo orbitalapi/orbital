@@ -4,6 +4,7 @@ import picocli.CommandLine
 import picocli.CommandLine.Command
 import picocli.CommandLine.Option
 import java.util.concurrent.Callable
+import kotlin.system.exitProcess
 
 @Command(
    name = "Internal schema extractor",
@@ -20,24 +21,25 @@ class OrbitalPackagePublisher : Callable<Int> {
       commandLine.out.println(message)
    }
 
-   @Option(names = ["--output", "-o"], description = ["Taxi project directory"], arity = "1")
+   @Option(names = ["--output", "-o"], description = ["Taxi project directory"], arity = "1", required = true)
    private var outputPath: String? = null
 
    @Option(
       names = ["--version", "-v"],
       description = ["Defines the version, will update the taxi.conf file"],
-      arity = "1"
+      arity = "1",
+      required = true
    )
    private var version: String? = null
 
 
-   @Option(names = ["--commit"], description = ["Commit changes"])
+   @Option(names = ["--commit"], description = ["Commit changes"], defaultValue = "false")
    private var commit: Boolean = false
 
-   @Option(names = ["--push"], description = ["Push changes"])
+   @Option(names = ["--push"], description = ["Push changes"], defaultValue = "false")
    private var push: Boolean = false
 
-   @Option(names = ["--tag"], description = ["Add tag"])
+   @Option(names = ["--tag"], description = ["Add tag"], required = false)
    private var tag: String? = null
 
    @Option(
@@ -47,13 +49,35 @@ class OrbitalPackagePublisher : Callable<Int> {
    )
    private lateinit var sshKeyPath: String
 
+   @Option(
+      names = ["--remote-url"],
+      description = ["Git Repository Remote URL"],
+      required = false
+   )
+   private var remoteRepositoryUrl: String? = null
+
    override fun call(): Int {
-      BuiltInsSourcePackageWriter(outputPath!!, version!!, spec.commandLine())
-         .write()
+      val config = OrbitalPackagePublisherConfig(
+         outputPath = outputPath!!,
+         version = version!!,
+         commitChanges = commit,
+         pushChanges = push,
+         tagName = tag,
+         sshKeyPath = sshKeyPath,
+         remoteRepositoryUrl = remoteRepositoryUrl
+      )
+      BuiltInsSourcePackageWriter(config, spec.commandLine()).write()
       return 0
    }
-
-
 }
 
-fun main(args: Array<String>): Unit = System.exit(CommandLine(OrbitalPackagePublisher()).execute(*args))
+data class OrbitalPackagePublisherConfig(val outputPath: String,
+                                         val version: String,
+                                         val commitChanges: Boolean,
+                                         val pushChanges: Boolean,
+                                         val tagName: String?,
+                                         val sshKeyPath: String,
+                                         val remoteRepositoryUrl: String?)
+
+
+fun main(args: Array<String>): Unit = exitProcess(CommandLine(OrbitalPackagePublisher()).execute(*args))

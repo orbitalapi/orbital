@@ -377,7 +377,35 @@ const whitelist = {
             'https://build.shibboleth.net/maven/releases/net/shibboleth/parent/17.1.3/parent-17.1.3.pom',
             'https://build.shibboleth.net/maven/releases/org/opensaml/'
          ]
-      }
+      },
+      {
+               project: 'org.apache.sshd:sshd-osgi',
+               license: 'Apache 2.0',
+               rationale: 'Maven issue appears to be propagating through from the parent pom - where the Apache 2.0 is declared',
+               relatedLinks: [
+                  'https://github.com/apache/mina-sshd/blob/master/sshd-osgi/pom.xml',
+                  'https://github.com/apache/mina-sshd/blob/master/pom.xml',
+                  'https://github.com/apache/mina-sshd?tab=Apache-2.0-1-ov-file'
+               ]
+      },
+      {
+                     project: 'org.apache.sshd:sshd-sftp',
+                     license: 'Apache 2.0',
+                     rationale: 'Maven issue appears to be propagating through from the parent pom - where the Apache 2.0 is declared',
+                     relatedLinks: [
+                        'https://github.com/apache/mina-sshd/blob/master/sshd-osgi/pom.xml',
+                        'https://github.com/apache/mina-sshd/blob/master/pom.xml',
+                        'https://github.com/apache/mina-sshd?tab=Apache-2.0-1-ov-file'
+                     ]
+            },
+            {
+                           project: 'net.i2p.crypto:eddsa',
+                           license: 'CC0-1.0',
+                           rationale: 'Maven issue',
+                           relatedLinks: [
+                              'https://github.com/str4d/ed25519-java/blob/master/LICENSE.txt'
+                           ]
+                  }
    ]
 }
 

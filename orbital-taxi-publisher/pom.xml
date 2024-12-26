@@ -13,6 +13,7 @@
 
    <properties>
       <picocli.version>4.7.6</picocli.version>
+      <main.class>com.orbitalhq.internal.packagePublisher.OrbitalPackagePublisherKt</main.class>
    </properties>
 
    <dependencies>
@@ -33,8 +34,98 @@
       </dependency>
       <dependency>
          <groupId>org.eclipse.jgit</groupId>
-         <artifactId>org.eclipse.jgit.ssh.jsch</artifactId>
+         <artifactId>org.eclipse.jgit.ssh.apache</artifactId>
          <version>${jgit.version}</version>
       </dependency>
    </dependencies>
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>org.jetbrains.kotlin</groupId>
+            <artifactId>kotlin-maven-plugin</artifactId>
+            <version>${kotlin.version}</version>
+            <executions>
+               <execution>
+                  <id>kapt</id>
+                  <goals>
+                     <goal>kapt</goal>
+                  </goals>
+                  <configuration>
+                     <sourceDirs>
+                        <sourceDir>src/main/java</sourceDir>
+                     </sourceDirs>
+                     <annotationProcessorPaths>
+                        <annotationProcessorPath>
+                           <groupId>info.picocli</groupId>
+                           <artifactId>picocli-codegen</artifactId>
+                           <version>${picocli.version}</version>
+                        </annotationProcessorPath>
+                     </annotationProcessorPaths>
+                  </configuration>
+               </execution>
+               <execution>
+                  <id>compile</id>
+                  <phase>compile</phase>
+                  <goals>
+                     <goal>compile</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <groupId>org.codehaus.mojo</groupId>
+            <artifactId>appassembler-maven-plugin</artifactId>
+            <version>2.1.0</version>
+            <executions>
+               <execution>
+                  <id>assemble-script</id>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>assemble</goal>
+                  </goals>
+                  <configuration>
+                     <showConsoleWindow>true</showConsoleWindow>
+                     <programs>
+                        <program>
+                           <mainClass>${main.class}</mainClass>
+                           <id>packagePublisher</id>
+                        </program>
+                     </programs>
+                     <repositoryLayout>flat</repositoryLayout>
+                     <repositoryName>lib</repositoryName>
+                     <extraJvmArguments>
+                        --add-exports=java.base/jdk.internal.ref=ALL-UNNAMED
+                        --add-exports=java.base/sun.nio.ch=ALL-UNNAMED
+                        --add-exports=jdk.unsupported/sun.misc=ALL-UNNAMED
+                        --add-opens=java.base/java.lang=ALL-UNNAMED
+                        --add-opens=java.base/java.lang.reflect=ALL-UNNAMED
+                        --add-opens=java.base/java.io=ALL-UNNAMED
+                        --add-opens=java.base/java.util=ALL-UNNAMED
+                     </extraJvmArguments>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
+         <plugin>
+            <artifactId>maven-assembly-plugin</artifactId>
+            <version>3.4.2</version>
+            <configuration>
+               <descriptors>
+                  <descriptor>src/main/assembly/assembly.xml</descriptor>
+               </descriptors>
+               <appendAssemblyId>false</appendAssemblyId>
+               <finalName>packagePublisher</finalName>
+            </configuration>
+            <executions>
+               <execution>
+                  <id>make-assembly</id> <!-- this is used for inheritance merges -->
+                  <phase>package</phase> <!-- bind to the packaging phase -->
+                  <goals>
+                     <goal>single</goal>
+                  </goals>
+               </execution>
+            </executions>
+         </plugin>
+      </plugins>
+   </build>
 </project>
