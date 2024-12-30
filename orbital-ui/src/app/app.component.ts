@@ -170,7 +170,7 @@ export class AppComponent implements OnInit {
           this.addAlertIfNotPresent({
             id: 'project-config-errors',
             severity: "Error",
-            message: `${projectsWithErrors.length} of your projects has a configuration problem`,
+            message: projectsWithErrors.length === 1 ? '1 of your projects has a configuration problem' : `${projectsWithErrors.length} of your projects have configuration problems`,
             actionLabel: 'See details',
             handler: () => {
               this.router.navigate(['projects', 'problems'])

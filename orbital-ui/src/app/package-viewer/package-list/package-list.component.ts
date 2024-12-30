@@ -35,7 +35,7 @@ type SortOrder = 'A-Z' | 'Updated'
       <div *ngIf="projectsWithProblems?.length > 0" class="source-package-card error-state"
            (click)="showProjectsWithProblems.emit()">
         <img src="assets/img/tabler/exclamation-circle.svg">
-        <h3 class="package-title">{{ projectsWithProblems.length }} of your projects has a configuration problem</h3>
+        <h3 class="package-title">{{ projectsWithProblems.length === 1 ? '1 of your projects has a configuration problem' : projectsWithProblems.length + ' of your projects have configuration problems' }}</h3>
       </div>
       <div
         *ngFor="let sourcePackage of sortedPackages()"
