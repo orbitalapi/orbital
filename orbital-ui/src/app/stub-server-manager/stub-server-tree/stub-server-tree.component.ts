@@ -113,6 +113,8 @@ export class StubServerTreeComponent {
         return 'assets/img/tabler/api.svg';
       case 's3':
         return 'assets/img/chart-icons/amazons3.svg'
+      case 'hazelcast':
+        return 'assets/img/data-source-icons/hazelcast_node.svg'
       default :
         return 'assets/img/chart-icons/api-icon.svg'
     }
