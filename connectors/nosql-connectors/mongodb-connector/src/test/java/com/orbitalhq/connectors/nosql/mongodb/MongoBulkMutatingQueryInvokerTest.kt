@@ -3,24 +3,36 @@ package com.orbitalhq.connectors.nosql.mongodb
 import com.orbitalhq.connectors.config.mongodb.MongoConnection
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.nosql.mongodb.registry.InMemoryMongoConnectionRegistry
+import com.orbitalhq.models.Provided
+import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.testVyne
+import com.orbitalhq.testVyneWithStub
 import com.orbitalhq.typedObjects
 import com.winterbe.expekt.should
+import io.kotest.assertions.timing.eventually
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.subscribe
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import kotlin.time.Duration.Companion.seconds
 
-class MongoBulkMutatingQueryInvokerTest: MongoDbTestcontainer() {
-    private lateinit var connectionRegistry: InMemoryMongoConnectionRegistry
-    private lateinit var connectionFactory: MongoConnectionFactory
+class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
+   private lateinit var connectionRegistry: InMemoryMongoConnectionRegistry
+   private lateinit var connectionFactory: MongoConnectionFactory
 
-    private val flightInfoSchema = listOf(
-        MongoConnector.schema,
-        VyneQlGrammar.QUERY_TYPE_TAXI,
-        """
+   private val flightInfoSchema = listOf(
+      MongoConnector.schema,
+      VyneQlGrammar.QUERY_TYPE_TAXI,
+      """
          ${MongoConnector.Annotations.imports}
          import ${VyneQlGrammar.QUERY_TYPE_NAME}
          type FlightCode inherits String
@@ -39,7 +51,7 @@ class MongoBulkMutatingQueryInvokerTest: MongoDbTestcontainer() {
             starAlliance: StarAllianceMember
          }
 
-         @Collection(connection = "flightsMongo", collection = "flightInfo")
+         @Collection(connection = "testMongo", collection = "flightInfo")
          model FlightInfo {
             code: FlightCode
             depTime : DepartureTime
@@ -47,7 +59,7 @@ class MongoBulkMutatingQueryInvokerTest: MongoDbTestcontainer() {
             airline: Airline
          }
 
-         @Collection(connection = "flightsMongo", collection = "flightInfo")
+         @Collection(connection = "testMongo", collection = "flightInfo")
          model FlightInfoWithObjectId {
             @Id
             objectId: MongoObjectId?
@@ -60,7 +72,7 @@ class MongoBulkMutatingQueryInvokerTest: MongoDbTestcontainer() {
             _updated: UpdatedTimeStamp inherits Instant = now()
          }
 
-         @MongoService( connection = "flightsMongo" )
+         @MongoService( connection = "testMongo" )
          service FlightsDb {
             table FlightInfo : FlightInfo[]
             table mongoFlights: FlightInfoWithObjectId[]
@@ -69,72 +81,152 @@ class MongoBulkMutatingQueryInvokerTest: MongoDbTestcontainer() {
             @UpsertOperation(batchSize = 1, batchDuration = 10000)
             write operation insertFlight(FlightInfo):FlightInfo
 
-           
+
             @UpsertOperation(batchSize = 1, batchDuration = 10000)
             write operation upsertFlightWithObjectId(FlightInfoWithObjectId):FlightInfoWithObjectId
          }
       """
-    )
+   )
 
-    @BeforeEach
-    fun setup() {
-        val connectionParams = mapOf(MongoConnection.Parameters.CONNECTION_STRING.templateParamName to connectionString)
-        val mongo1ConnectionConfig = MongoConnectionConfiguration("flightsMongo", connectionParams)
-        connectionRegistry = InMemoryMongoConnectionRegistry(listOf(mongo1ConnectionConfig))
-        connectionFactory =  MongoConnectionFactory(connectionRegistry)
-    }
+   @BeforeEach
+   fun setup() {
+      val connectionParams = mapOf(MongoConnection.Parameters.CONNECTION_STRING.templateParamName to connectionString)
+      val mongo1ConnectionConfig = MongoConnectionConfiguration("testMongo", connectionParams)
+      connectionRegistry = InMemoryMongoConnectionRegistry(listOf(mongo1ConnectionConfig))
+      connectionFactory = MongoConnectionFactory(connectionRegistry)
+   }
 
-    @Test
-    fun `Can Insert Into Mongo Collection`(): Unit = runBlocking {
-        val vyne = testVyne(flightInfoSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+   @Test
+   fun `can stream batches into Mongo`(): Unit = runBlocking {
+      val schemaSrc = listOf(
+         MongoConnector.schema,
+         VyneQlGrammar.QUERY_TYPE_TAXI,
+         """
+         ${MongoConnector.Annotations.imports}
+          @Collection(connection = "testMongo", collection = "prices")
+          parameter model StockPrice {
+            symbol : Symbol inherits String
+            price : Price inherits Decimal
+         }
+         service PriceStream {
+            stream prices : Stream<StockPrice>
+         }
+         @MongoService( connection = "testMongo" )
+         service MongoService {
+            // Small batch size, long duration - should write when the batch is filled
+            @UpsertOperation(batchSize = 2, batchDuration = 100000)
+            write operation insertStockPrice(StockPrice):StockPrice
+         }
+         """
+      )
+      val (vyne, stub) = testVyneWithStub(schemaSrc) { schema ->
+         listOf(
+            MongoDbInvoker(
+               connectionFactory,
+               SimpleSchemaProvider(schema)
+            )
+         )
+      }
 
-        // Insert a Brand New Flight Into flightInfo, note we pass 'null' objectId so that Mongo will perform 'insert'
-        val insertResult = vyne.query("""
+      val pricesFlow = MutableSharedFlow<TypedInstance>(replay = 1)
+      stub.addResponseFlow("prices") { _, _ -> pricesFlow }
+
+      val resultFlow = vyne.query(
+         """stream { StockPrice }
+         call MongoService::insertStockPrice
+      """.trimMargin()
+      )
+         .results
+      val collectedResults = mutableListOf<Any>()
+
+      launch {
+         resultFlow.onEach { collectedResults.add(it) }
+            .collect()
+      }
+
+      listOf(
+         mapOf("symbol" to "AAPL", "price" to 1.112.toBigDecimal()),
+         mapOf("symbol" to "IBM", "price" to 2.112.toBigDecimal()),
+         mapOf("symbol" to "HZC", "price" to 3.112.toBigDecimal()),
+      ).forEach {
+         val typedInstance = TypedInstance.from(vyne.schema.type("StockPrice"), it, vyne.schema)
+         pricesFlow.emit(typedInstance)
+         println("Emitted item")
+      }
+
+      eventually(50.seconds) {
+         collectedResults shouldHaveSize 3
+      }
+
+      TODO()
+
+
+   }
+
+   @Test
+   fun `Can Insert Into Mongo Collection`(): Unit = runBlocking {
+      val vyne = testVyne(flightInfoSchema) { schema ->
+         listOf(
+            MongoDbInvoker(
+               connectionFactory,
+               SimpleSchemaProvider(schema)
+            )
+         )
+      }
+
+      // Insert a Brand New Flight Into flightInfo, note we pass 'null' objectId so that Mongo will perform 'insert'
+      val insertResult = vyne.query(
+         """
                 given { movie : FlightInfoWithObjectId = { objectId : "1" , code : "TK 1989", departure: "IST", arrival: "LHR", airline: { code: "TK", name: "Turkish Airlines", starAlliance: true} } }
                call FlightsDb::upsertFlightWithObjectId
-               """.trimIndent())
-            .typedObjects()
-        insertResult.should.have.size(1)
-        insertResult.single()["objectId"].shouldNotBeNull()
-        val objectId = insertResult.first()["objectId"].value!!
+               """.trimIndent()
+      )
+         .typedObjects()
+      insertResult.should.have.size(1)
+      insertResult.single()["objectId"].shouldNotBeNull()
+      val objectId = insertResult.first()["objectId"].value!!
 
 
-        // Now Update the previous flight Info with a new flight code.
-        val updateResult = vyne.query("""
+      // Now Update the previous flight Info with a new flight code.
+      val updateResult = vyne.query(
+         """
                 given { movie : FlightInfoWithObjectId = { objectId : "$objectId" , code : "TK 1990", departure: "IST", arrival: "LHR", airline: { code: "TK", name: "Turkish Airlines", starAlliance: true} } }
                call FlightsDb::upsertFlightWithObjectId
-               """.trimIndent())
-            .typedObjects()
-        updateResult.should.have.size(1)
-        updateResult.single()["objectId"].shouldNotBeNull()
-        val updateObjectId = updateResult.first()["objectId"].value!!
+               """.trimIndent()
+      )
+         .typedObjects()
+      updateResult.should.have.size(1)
+      updateResult.single()["objectId"].shouldNotBeNull()
+      val updateObjectId = updateResult.first()["objectId"].value!!
 
-        // objectIds should match.
-        updateObjectId.should.equal(objectId)
+      // objectIds should match.
+      updateObjectId.should.equal(objectId)
 
-        // verify the updated field.
-        updateResult.first()["code"].value.should.equal("TK 1990")
+      // verify the updated field.
+      updateResult.first()["code"].value.should.equal("TK 1990")
 
-        //re query
-        val result = vyne.query("""find { FlightInfoWithObjectId[]( MongoObjectId == "1" ) } """)
-            .typedObjects()
+      //re query
+      val result = vyne.query("""find { FlightInfoWithObjectId[]( MongoObjectId == "1" ) } """)
+         .typedObjects()
 
-        result.should.have.size(1)
+      result.should.have.size(1)
 
-        val resultFiltered = (result.first().toRawObject() as Map<String, Any>)
-            .filter { it.key != "_inserted" && it.key !="_updated" }
-            .toMap()
+      val resultFiltered = (result.first().toRawObject() as Map<String, Any>)
+         .filter { it.key != "_inserted" && it.key != "_updated" }
+         .toMap()
 
-        resultFiltered.should.equal(mapOf(
-                "objectId" to "1",
-                "code" to "TK 1990",
-                "departure" to "IST",
-                "arrival" to "LHR",
-                "airline" to mapOf<String, Any>(
-                    "code" to "TK",
-                    "name" to "Turkish Airlines",
-                    "starAlliance" to true
-                )
-            ))
-    }
+      resultFiltered.should.equal(
+         mapOf(
+            "objectId" to "1",
+            "code" to "TK 1990",
+            "departure" to "IST",
+            "arrival" to "LHR",
+            "airline" to mapOf<String, Any>(
+               "code" to "TK",
+               "name" to "Turkish Airlines",
+               "starAlliance" to true
+            )
+         )
+      )
+   }
 }
