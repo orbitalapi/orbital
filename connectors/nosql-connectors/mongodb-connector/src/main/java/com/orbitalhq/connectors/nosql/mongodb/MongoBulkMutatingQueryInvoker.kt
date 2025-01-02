@@ -19,6 +19,7 @@ import mu.KotlinLogging
 import org.bson.Document
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
 import reactor.core.publisher.Mono
+import java.util.concurrent.atomic.AtomicInteger
 
 private val logger = KotlinLogging.logger { }
 
@@ -28,6 +29,10 @@ class MongoBulkMutatingQueryInvoker(
    private val batchWriteCacheProvider: BatchWriteCacheProvider
 ) : MongoBaseInvoker(connectionFactory, schemaProvider) {
 
+   private val counter = AtomicInteger(0)
+   init {
+       logger.debug { "New MongoBulkMutatingQueryInvoker created" }
+   }
    suspend fun invoke(
       service: Service,
       operation: RemoteOperation,
@@ -37,6 +42,7 @@ class MongoBulkMutatingQueryInvoker(
       batchAttribute: MongoConnector.Annotations.BatchAttribute
 
    ): Flow<TypedInstance> {
+      logger.debug { "Received item ${counter.incrementAndGet()} into bulk mutator" }
       require(operation.parameters.size == 1) { "Operations annotated with ${MongoConnector.Annotations.UpsertOperationAnnotationName} should accept exactly one type" }
       val inputType = operation.parameters.single().type.let { type -> type.collectionType ?: type }
       require(inputType.hasMetadata(MongoConnector.Annotations.Collection.NAME.fqn()))
@@ -54,6 +60,7 @@ class MongoBulkMutatingQueryInvoker(
          batchAttribute.batchSize,
          batchAttribute.batchDurationInMillis
       ) { items ->
+         logger.info { "Batch update triggered with ${items.size} items" }
          doBulkInsert(reactiveMongoTemplate, collectionName, items)
             .elapsed()
             .map { durationAndData ->
@@ -63,7 +70,7 @@ class MongoBulkMutatingQueryInvoker(
                   service,
                   operation,
                   items,
-                  "upsert",
+                  "Upsert ${items.size} items to collection $collectionName",
                   connectionConfig.connectionString.hosts.joinToString(),
                   java.time.Duration.ofMillis(duration),
                   recordCount = items.size,
@@ -72,10 +79,14 @@ class MongoBulkMutatingQueryInvoker(
                operationResult.asOperationReferenceDataSource()
             }
       }
+
+
+
       return batchWriteBatcher.emit(recordToWrite)
          .map { operationResult ->
             DataSourceUpdater.update(recordToWrite, operationResult)
-         }.asFlow()
+         }
+         .asFlow()
    }
 
    private fun doBulkInsert(

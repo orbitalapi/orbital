@@ -3,7 +3,6 @@ package com.orbitalhq.connectors.nosql.mongodb
 import com.orbitalhq.connectors.config.mongodb.MongoConnection
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.nosql.mongodb.registry.InMemoryMongoConnectionRegistry
-import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schema.api.SimpleSchemaProvider
@@ -14,15 +13,15 @@ import com.winterbe.expekt.should
 import io.kotest.assertions.timing.eventually
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.subscribe
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
 class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
@@ -114,7 +113,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
          @MongoService( connection = "testMongo" )
          service MongoService {
             // Small batch size, long duration - should write when the batch is filled
-            @UpsertOperation(batchSize = 2, batchDuration = 100000)
+            @UpsertOperation(batchSize = 3, batchDuration = 100000)
             write operation insertStockPrice(StockPrice):StockPrice
          }
          """
@@ -128,7 +127,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
          )
       }
 
-      val pricesFlow = MutableSharedFlow<TypedInstance>(replay = 1)
+      val pricesFlow = MutableSharedFlow<TypedInstance>(replay = 10)
       stub.addResponseFlow("prices") { _, _ -> pricesFlow }
 
       val resultFlow = vyne.query(
@@ -139,8 +138,10 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
          .results
       val collectedResults = mutableListOf<Any>()
 
-      launch {
-         resultFlow.onEach { collectedResults.add(it) }
+      val job = launch {
+         resultFlow.onEach {
+            collectedResults.add(it)
+         }
             .collect()
       }
 
@@ -154,14 +155,86 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
          println("Emitted item")
       }
 
-      eventually(50.seconds) {
+      eventually(5.seconds) {
          collectedResults shouldHaveSize 3
       }
-
-      TODO()
-
-
+      job.cancelAndJoin()
    }
+
+   @Test
+   fun `can stream batches with projection into Mongo`(): Unit = runBlocking {
+      val schemaSrc = listOf(
+         MongoConnector.schema,
+         VyneQlGrammar.QUERY_TYPE_TAXI,
+         """
+         ${MongoConnector.Annotations.imports}
+          model StockPrice {
+            symbol : Symbol inherits String
+            price : Price inherits Decimal
+         }
+         @Collection(connection = "testMongo", collection = "prices")
+         parameter model MongoStockPrice {
+            ticker : Symbol
+            realPrice : Price
+            retailPrice : RetailPrice inherits Decimal
+         }
+         service PriceStream {
+            stream prices : Stream<StockPrice>
+         }
+         @MongoService( connection = "testMongo" )
+         service MongoService {
+            // Small batch size, long duration - should write when the batch is filled
+            @UpsertOperation(batchSize = 25, batchDuration = 100000)
+            write operation insertStockPrice(MongoStockPrice):MongoStockPrice
+         }
+         """
+      )
+      val (vyne, stub) = testVyneWithStub(schemaSrc) { schema ->
+         listOf(
+            MongoDbInvoker(
+               connectionFactory,
+               SimpleSchemaProvider(schema)
+            )
+         )
+      }
+
+      val pricesFlow = MutableSharedFlow<TypedInstance>(replay = 1000)
+      stub.addResponseFlow("prices") { _, _ -> pricesFlow }
+
+      val resultFlow = vyne.query(
+         """stream { StockPrice } as {
+               ticker: Symbol
+               cost : Price
+               retailPrice : RetailPrice = Price + 1
+            }[]
+         call MongoService::insertStockPrice
+      """.trimMargin()
+      )
+         .results
+      val collectedResults = mutableListOf<Any>()
+
+      val thread = launch {
+         resultFlow.onEach {
+            collectedResults.add(it)
+         }
+            .collect()
+      }
+
+      val recordsToEmit = 50
+      (0..recordsToEmit).mapIndexed { index, i ->
+         val item = mapOf("symbol" to "AAPL", "price" to Random.nextDouble(1.000005, 5.500000).toBigDecimal())
+         val typedInstance = TypedInstance.from(vyne.schema.type("StockPrice"), item, vyne.schema)
+         pricesFlow.emit(typedInstance)
+      }
+
+      // Make sure this is less than the batch write timeout, to assert that
+      // writes are triggered by batch size, not timeout
+      eventually(5.seconds) {
+         collectedResults shouldHaveSize recordsToEmit
+      }
+      thread.cancelAndJoin()
+   }
+
 
    @Test
    fun `Can Insert Into Mongo Collection`(): Unit = runBlocking {

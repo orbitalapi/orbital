@@ -2,12 +2,11 @@ package com.orbitalhq.connectors
 
 import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.RetryFailOnSerializeEmitHandler
 import mu.KotlinLogging
-import reactor.core.publisher.FluxSink
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
-import reactor.core.scheduler.Schedulers
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
@@ -30,25 +29,23 @@ class BatchWriteCacheProvider {
       writeOperation: (List<TypedInstance>) -> Mono<OperationResultReference>
    ): BatchWriteCache {
       return batchDataCache.getOrPut(queryId) {
-         val sink = Sinks.many().multicast().onBackpressureBuffer<Pair<TypedInstance, Sinks.One<OperationResultReference>>>(1000)
+
+         val sink = Sinks.many().multicast()
+            .onBackpressureBuffer<Pair<TypedInstance, Sinks.One<OperationResultReference>>>()
          sink.asFlux()
             .doOnEach { next ->
-               logger.info { "Next item recevied" }
+               logger.debug { "Batch writer provider received item for queryId $queryId" }
             }
-//            .delayElements(Duration.ofSeconds(5))
             .bufferTimeout(batchSize, Duration.ofMillis(batchTimeoutInMillis))
-            .publishOn(Schedulers.boundedElastic())
-            .subscribe { batch ->
+            .subscribe { batch -> //batch ->
 
-               // HACK... this is me exprimenting with delays...
-//               val batch = listOf(next)
                val instancesToWrite = batch.map { it.first }
                val callbacks = batch.map { it.second }
-               writeOperation(instancesToWrite).subscribe { operationResult->
+               writeOperation(instancesToWrite).subscribe { operationResult ->
                   callbacks.forEach { it.tryEmitValue(operationResult) }
                }
             }
-         return BatchWriteCache(sink, batchSize, batchTimeoutInMillis)
+         BatchWriteCache(sink, batchSize, batchTimeoutInMillis)
       }
    }
 
