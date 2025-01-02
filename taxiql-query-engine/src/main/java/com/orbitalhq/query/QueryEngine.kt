@@ -48,7 +48,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.collectIndexed
 import kotlinx.coroutines.flow.emptyFlow
-import kotlinx.coroutines.flow.flatMapConcat
+import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
@@ -886,7 +886,8 @@ class StatefulQueryEngine(
              * If we are projecting we are already on a LocalProjectionProvider context here, i.e. on one of the orbital_projection threads
              * so continue the mutation on the same thread.
              */
-            projectedResults.flatMapConcat { queryResult ->
+            projectedResults
+               .flatMapMerge(concurrency = Int.MAX_VALUE) { queryResult ->
                mutate(target.mutation!!, target, context, queryResult.instance).results
                   .map { typedInstance ->
                      typedInstance.withProcessingMetadata(asOf = queryResult.processingStart)
