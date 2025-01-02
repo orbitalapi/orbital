@@ -308,6 +308,13 @@ export interface FailedEvaluatedExpressionDataSource extends EvaluatedExpression
   errorMessage: string;
 }
 
+export function isValueLookupReturnedNull(source: DataSource): source is ValueLookupReturnedNull {
+  return source.dataSourceName === 'Failed lookup'
+}
+export interface ValueLookupReturnedNull extends DataSource {
+  message: string;
+  requestedTypeName: QualifiedName;
+}
 export interface OperationParam {
   parameterName: string;
   value: TypeNamedInstance;
