@@ -50,6 +50,8 @@ import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
 import org.reactivestreams.Publisher
+import org.springframework.core.io.buffer.DataBufferUtils
+import org.springframework.core.io.buffer.PooledDataBuffer
 import org.springframework.http.HttpHeaders
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -468,7 +470,7 @@ class QueryService(
          }
 
 
-      return session.send(output)
+      return session.send(output).doOnDiscard(PooledDataBuffer::class.java, DataBufferUtils::release)
    }
 
    private fun extractJwtClaimFactFromQueryParameters(

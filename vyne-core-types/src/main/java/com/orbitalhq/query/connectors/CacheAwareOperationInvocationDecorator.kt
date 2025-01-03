@@ -10,6 +10,8 @@ import com.orbitalhq.utils.abbreviate
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.ObsoleteCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
@@ -166,10 +168,11 @@ class DefaultCachingOperatorInvoker(
    override val readCacheOrCallInvokerHandler: ReadCacheOrCallInvokerHandler
 ) : CachingOperatorInvoker, CacheInvokerWithHandler {
    override fun invoke(message: OperationInvocationParamMessage): Flux<TypedInstance> {
-      return readCacheOrCallInvokerHandler.getCachedOrCallLoader(cacheKey, message) {
+      /*return readCacheOrCallInvokerHandler.getCachedOrCallLoader(cacheKey, message) {
          logger.debug { "${cacheKey.abbreviate()} cache miss, loading from Operation Invoker" }
          invokeUnderlyingService(message)
-      }
+      }*/
+      return  invokeUnderlyingService(message)
    }
 
    /**
@@ -188,6 +191,10 @@ class DefaultCachingOperatorInvoker(
       // caching (not supported in Flow).
       // So we have to do our deferred flux work on the current coroutine context.
 //      val context = currentCoroutineContext()
+
+      return flow<TypedInstance> {
+         emitAll(invoker.invoke(service, operation, parameters, eventDispatcher, queryId, queryOptions))
+      }.asFlux()
 
       return Flux.create<TypedInstance> { sink ->
          // This isn't really blocking anything. We just didn't understand how suspend / flux functions
@@ -213,7 +220,7 @@ class DefaultCachingOperatorInvoker(
                sink.error(exception)
             }
          }
-      }.share()
+      }
 
 
    }
