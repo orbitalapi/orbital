@@ -4,24 +4,28 @@ import com.google.common.io.Resources
 import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
+import com.orbitalhq.schemaServer.core.file.FileChangeDetectionMethod
 import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.file.WorkspaceFileProjectConfig
 import com.orbitalhq.schemaServer.core.git.GitProjectSpec
+import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.git.WorkspaceGitProjectConfig
 import com.orbitalhq.schemaServer.core.repositories.FileWorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.SoapPackageLoaderSpec
+import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.equality.shouldBeEqualToIgnoringFields
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import org.apache.commons.io.IOUtils
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import reactor.test.StepVerifier
 import java.nio.file.Paths
+import java.time.Duration
 
 class ConfigTest {
 
@@ -31,9 +35,10 @@ class ConfigTest {
 
    @Test
    fun `returns an empty config if config file doesn't exist`() {
-      val empty = FileWorkspaceConfigLoader(Paths.get("/this/path/doesnt/exist"),
+      val empty = FileWorkspaceConfigLoader(
+         Paths.get("/this/path/doesnt/exist"),
          eventDispatcher = mock { },
-         projectManager = mock {  })
+         projectManager = mock { })
          .load()
       // MP 06-Sep-24: We now populate the file with defaults,
       // as we need to make the paths relative to the config file.
@@ -69,9 +74,10 @@ class ConfigTest {
          )
 
       val path = folder.root.toPath().resolve("repo.conf")
-      val configRepo = FileWorkspaceConfigLoader(path,
+      val configRepo = FileWorkspaceConfigLoader(
+         path,
          eventDispatcher = mock { },
-         projectManager = mock {  })
+         projectManager = mock { })
       configRepo.save(config)
       val loaded = configRepo.load()
       loaded.should.equal(config)
@@ -85,8 +91,9 @@ class ConfigTest {
       val targetConfigFile = folder.newFile("workspace.conf")
       IOUtils.copy(configFile.toURL().openStream(), targetConfigFile.outputStream())
 
-      val configRepo = FileWorkspaceConfigLoader(targetConfigFile.toPath(),
-         eventDispatcher = mock { }, projectManager = mock {  })
+      val configRepo = FileWorkspaceConfigLoader(
+         targetConfigFile.toPath(),
+         eventDispatcher = mock { }, projectManager = mock { })
       val config = configRepo.load()
       config.file!!.projects.should.have.size(1)
       val path = config.file!!.projects[0].path
@@ -102,8 +109,9 @@ class ConfigTest {
       val targetConfigFile = folder.newFile("server.conf")
       IOUtils.copy(configFile.toURL().openStream(), targetConfigFile.outputStream())
 
-      val configRepo = FileWorkspaceConfigLoader(targetConfigFile.toPath(),
-         eventDispatcher = mock { }, projectManager = mock {  })
+      val configRepo = FileWorkspaceConfigLoader(
+         targetConfigFile.toPath(),
+         eventDispatcher = mock { }, projectManager = mock { })
       val config = configRepo.load()
 
       config.file!!.projects.should.have.size(3)
@@ -116,14 +124,38 @@ class ConfigTest {
    }
 
    @Test
+   fun `can configure a git package loader factory to use file system polling`() {
+      val configFile = Resources.getResource("config-files/git-with-polling-file-watcher.conf")
+         .toURI()
+      val targetConfigFile = folder.newFile("server.conf")
+      IOUtils.copy(configFile.toURL().openStream(), targetConfigFile.outputStream())
+
+      val configRepo = FileWorkspaceConfigLoader(
+         targetConfigFile.toPath(),
+         eventDispatcher = mock { }, projectManager = mock { })
+      val config = configRepo.load()
+
+      config.git!!.diskChangeDetectionMethod.shouldBe(FileChangeDetectionMethod.POLL)
+      config.git!!.diskPollFrequency.shouldBe(Duration.ofSeconds(120))
+
+      val constructedLoader = GitSchemaPackageLoaderFactory()
+         .build(config.git!!, config.git!!.repositories.single())
+
+      val fileWatcher = constructedLoader.fileMonitor.shouldBeInstanceOf<ReactivePollingFileSystemMonitor>()
+      fileWatcher.pollFrequency.shouldBe(Duration.ofSeconds(120))
+
+   }
+
+   @Test
    fun `syntax errors reported for an invalid workspace conf`() {
       val configFile = Resources.getResource("config-files/workspace-syntax-error.conf")
          .toURI()
       val targetConfigFile = folder.newFile("workspace-syntax-error.conf")
       IOUtils.copy(configFile.toURL().openStream(), targetConfigFile.outputStream())
 
-      val configRepo = FileWorkspaceConfigLoader(targetConfigFile.toPath(),
-         eventDispatcher = mock { }, projectManager = mock {  })
+      val configRepo = FileWorkspaceConfigLoader(
+         targetConfigFile.toPath(),
+         eventDispatcher = mock { }, projectManager = mock { })
 
       StepVerifier.create(configRepo.loaderStatus.take(1))
          .expectNextMatches {

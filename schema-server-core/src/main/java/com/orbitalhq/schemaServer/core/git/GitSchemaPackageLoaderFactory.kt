@@ -14,10 +14,6 @@ import java.time.Duration
  */
 class GitSchemaPackageLoaderFactory(
    private val adaptorFactory: SchemaSourcesAdaptorFactory = SchemaSourcesAdaptorFactory(),
-
-   private val changeDetectionMethod: FileChangeDetectionMethod = FileChangeDetectionMethod.WATCH,
-   private val pollFrequency: Duration = Duration.ofSeconds(5L),
-
    ) {
    private val logger = KotlinLogging.logger {}
 
@@ -26,9 +22,9 @@ class GitSchemaPackageLoaderFactory(
       val workingDir = rootPath.resolve(spec.name + "/")
       logger.info { "Building a git package loader for git repo at  ${spec.uri} checking out to $workingDir, polling ${config.pollFrequency}" }
 
-      val fileMonitor = when (changeDetectionMethod) {
+      val fileMonitor = when (config.diskChangeDetectionMethod) {
          FileChangeDetectionMethod.WATCH -> ReactiveWatchingFileSystemMonitor(workingDir, listOf(".git"))
-         FileChangeDetectionMethod.POLL -> ReactivePollingFileSystemMonitor(workingDir, pollFrequency)
+         FileChangeDetectionMethod.POLL -> ReactivePollingFileSystemMonitor(workingDir, config.diskPollFrequency)
       }
       return GitSchemaPackageLoader(
          workingDir,

@@ -3,20 +3,19 @@ package com.orbitalhq.schemaServer.changesets
 import com.google.common.io.Resources
 import com.jayway.awaitility.Awaitility.await
 import com.jcraft.jsch.JSch
-import com.winterbe.expekt.expect
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
-import com.orbitalhq.schemaServer.core.file.FileChangeDetectionMethod
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleEventSource
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.RepositorySpecLifecycleEventSource
 import com.orbitalhq.schemaServer.editor.*
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
+import com.winterbe.expekt.expect
 import org.apache.commons.io.FileUtils
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.transport.RefSpec
@@ -91,7 +90,7 @@ class GitChangesetsTest {
    internal class TestConfig {
 
       @Bean
-      fun gitLoaderFactory() = GitSchemaPackageLoaderFactory(changeDetectionMethod = FileChangeDetectionMethod.POLL)
+      fun gitLoaderFactory() = GitSchemaPackageLoaderFactory()
 
       @Primary
       @Bean
