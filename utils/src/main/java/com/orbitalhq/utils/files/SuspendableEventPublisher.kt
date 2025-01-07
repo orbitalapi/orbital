@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 private val logger = KotlinLogging.logger {  }
 class SuspendableEventPublisher<T>(private val sink: Sinks.Many<T>,
+                                   private val publishOnlyOneWhenResumed: Boolean = true,
                                    comparator: Comparator<T>) {
     private val suspended: AtomicBoolean = AtomicBoolean(false)
     private val suspendedEvents = ConcurrentSkipListSet(comparator)
@@ -19,8 +20,13 @@ class SuspendableEventPublisher<T>(private val sink: Sinks.Many<T>,
     fun resume() {
         if (suspended.compareAndExchange(true, false)) {
             logger.debug { "resuming the suspendable event injection with stored even count => ${suspendedEvents.size}" }
-            suspendedEvents.forEach {
-                sink.emitNext(it, RetryFailOnSerializeEmitHandler)
+            if (suspendedEvents.isNotEmpty() && publishOnlyOneWhenResumed) {
+                logger.debug {"injecting only one event after resumed"}
+                sink.emitNext(suspendedEvents.first(), RetryFailOnSerializeEmitHandler)
+            } else {
+                suspendedEvents.forEach {
+                    sink.emitNext(it, RetryFailOnSerializeEmitHandler)
+                }
             }
             suspendedEvents.clear()
         }

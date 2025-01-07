@@ -43,7 +43,7 @@ class ReactivePollingFileSystemMonitor(
       observer = FileAlterationObserver(rootPath.toFile(), filter).apply {
          addListener(object : FileAlterationListener {
             override fun onStart(observer: FileAlterationObserver) {
-               logger.debug("File poll starting")
+               logger.debug("File poll starting path => ${rootPath.toFile().canonicalPath}")
             }
 
             override fun onDirectoryCreate(directory: File) {
