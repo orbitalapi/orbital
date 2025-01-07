@@ -16,7 +16,7 @@ import java.time.Duration
 
 class ReactivePollingFileSystemMonitor(
    private val rootPath: Path,
-   pollFrequency: Duration
+   val pollFrequency: Duration
 ) : ReactiveFileSystemMonitor {
 
    private val sink = Sinks.many().replay().latest<List<FileSystemChangeEvent>>()

@@ -3,6 +3,7 @@ package com.orbitalhq.schemaServer.core.git
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.orbitalhq.schema.publisher.loaders.ProjectTransportConfig
+import com.orbitalhq.schemaServer.core.file.FileChangeDetectionMethod
 import com.orbitalhq.schemaServer.packages.PackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
 import com.orbitalhq.schemaServer.repositories.git.GitUpdateFlowConfig
@@ -21,6 +22,15 @@ data class WorkspaceGitProjectConfig(
    val checkoutRoot: Path = Paths.get("orbital/workspace/projects/"),
    val pollFrequency: Duration = Duration.ofSeconds(30),
    val repositories: List<GitProjectSpec> = emptyList(),
+
+   /**
+    * Configures how the local disk is monitored for changes.
+    */
+   val diskChangeDetectionMethod: FileChangeDetectionMethod = FileChangeDetectionMethod.WATCH,
+   /**
+    * The poll frequency if the diskChangeDetectionMethod is set to POLL
+    */
+   val diskPollFrequency: Duration = Duration.ofSeconds(30),
 ) {
    companion object {
       fun default():WorkspaceGitProjectConfig = WorkspaceGitProjectConfig()
