@@ -116,7 +116,7 @@ class LocalCacheFetcher : ReadCacheOrCallInvokerHandler {
    }
 }
 
-class LocalCacheProviderBuilder(private val ticker: Ticker) : OperationCacheProviderBuilder {
+class LocalCacheProviderBuilder(private val ticker: Ticker = Ticker.systemTicker()) : OperationCacheProviderBuilder {
    companion object {
       private val logger = KotlinLogging.logger {}
 
