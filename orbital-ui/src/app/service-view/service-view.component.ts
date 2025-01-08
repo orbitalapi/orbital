@@ -56,7 +56,7 @@ import { LineageGraphModule } from '../type-viewer/lineage-graph/lineage-graph.m
                 <td><span class="mono-badge"><a
                   [routerLink]="['/catalog',navigationTargetForType(operation.returnType)]">{{ operation.returnType.shortDisplayName }}</a></span>
                 </td>
-                <td><span class="url">{{ operation.url }}asdasd</span></td>
+                <td><span class="url">{{ operation.url }}</span></td>
               </tr>
             </table>
           </div>
