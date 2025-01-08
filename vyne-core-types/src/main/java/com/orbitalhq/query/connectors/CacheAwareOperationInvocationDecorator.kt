@@ -17,8 +17,10 @@ import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
 import lang.taxi.services.OperationScope
 import lang.taxi.types.EnumMember
+import lang.taxi.types.EnumValue
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
+import java.time.Duration
 
 private val logger = KotlinLogging.logger {}
 
@@ -74,7 +76,9 @@ class CacheAwareOperationInvocationDecorator(
          queryOptions
       )
 
-      val cachingInvoker = cacheProvider.getCachingInvoker(key, invoker)
+      val ttl = getCacheTtl(operation)
+
+      val cachingInvoker = cacheProvider.getCachingInvoker(key, invoker, ttl)
       var emittedRecords = 0
       var evictedFromCache = false
 
@@ -95,6 +99,22 @@ class CacheAwareOperationInvocationDecorator(
       return flux.asFlow()
    }
 
+   private fun getCacheTtl(operation: RemoteOperation): Duration {
+      return getCacheTtlFromSchemaMember(operation)
+         ?: getCacheTtlFromSchemaMember(operation.returnType)
+         ?: DEFAULT_CACHE_TTL
+   }
+   private fun getCacheTtlFromSchemaMember(schemaMember: MetadataTarget): Duration? {
+      if (!schemaMember.hasMetadata(CacheAnnotation.CacheTypeName.parameterizedName)) {
+         return null
+      }
+      val cachingMetadata = schemaMember.firstMetadata(CacheAnnotation.CacheTypeName.parameterizedName)
+      val maxIdleSeconds = cachingMetadata.params[CacheAnnotation.maxIdleSecondsFieldName] as? Int?
+         ?: return null
+      return Duration.ofSeconds(maxIdleSeconds.toLong())
+
+   }
+
    private fun isCacheable(operation: RemoteOperation, service: Service, invoker: OperationInvoker): Boolean {
       return when {
          cachingIsDisabledWithAnnotation(operation) -> false
@@ -111,8 +131,17 @@ class CacheAwareOperationInvocationDecorator(
          return false
       }
       val cachingMetadata = schemaMember.firstMetadata(CacheAnnotation.CacheTypeName.parameterizedName)
-      val mode = cachingMetadata.params[CacheAnnotation.modeFieldName] as EnumMember
-      return mode.value.value == "Disabled"
+      val mode = cachingMetadata.params[CacheAnnotation.modeFieldName].let {
+         // Hack: We seem to get EnumMember when the value is set explicitly,
+         // and EnumValue when it's set by default.
+         // This is likely a bug elsewhere
+         when (it) {
+            is EnumMember -> it.value.value.toString()
+            is EnumValue -> it.value.toString()
+            else -> error("Expected EnumMember or EnumValue, got ${it!!::class.simpleName}")
+         }
+      }
+      return mode == "Disabled"
    }
 
 
@@ -150,6 +179,8 @@ class CacheAwareOperationInvocationDecorator(
             }
          }"""
       }
+
+      val DEFAULT_CACHE_TTL: Duration = Duration.ofSeconds(180)
    }
 }
 
@@ -163,6 +194,7 @@ interface ReadCacheOrCallInvokerHandler {
    fun getCachedOrCallLoader(
       operationCacheKey: OperationCacheKey,
       operationInvocationParamMessage: OperationInvocationParamMessage,
+      cacheTTL: Duration,
       invoker: () -> Flux<TypedInstance>
    ): Flux<TypedInstance>
 }
@@ -176,10 +208,11 @@ interface ReadCacheOrCallInvokerHandler {
 class DefaultCachingOperatorInvoker(
    private val cacheKey: OperationCacheKey,
    private val invoker: OperationInvoker,
+   private val ttl: Duration,
    override val readCacheOrCallInvokerHandler: ReadCacheOrCallInvokerHandler
 ) : CachingOperatorInvoker, CacheInvokerWithHandler {
    override fun invoke(message: OperationInvocationParamMessage): Flux<TypedInstance> {
-      return readCacheOrCallInvokerHandler.getCachedOrCallLoader(cacheKey, message) {
+      return readCacheOrCallInvokerHandler.getCachedOrCallLoader(cacheKey, message, ttl) {
          logger.debug { "${cacheKey.abbreviate()} cache miss, loading from Operation Invoker" }
          invokeUnderlyingService(message)
       }

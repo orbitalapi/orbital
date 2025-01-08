@@ -18,7 +18,7 @@ object CacheNames {
    fun cacheReadOperationName(operationName: String):String = "readCache_$operationName"
 }
 interface CachingInvokerProvider {
-   fun getCachingInvoker(operationKey: OperationCacheKey, invoker: OperationInvoker): CachingOperatorInvoker
+   fun getCachingInvoker(operationKey: OperationCacheKey, invoker: OperationInvoker, ttl: Duration): CachingOperatorInvoker
    fun evict(operationKey: OperationCacheKey)
 }
 
@@ -41,7 +41,6 @@ interface OperationCacheProviderBuilder {
    fun buildOperationCache(
       strategy: CachingStrategy,
       maxCachedOperations: Int,
-      cachedOperationTtl: Duration,
       /**
        * Accepts the cache factory, to allow caches to create other caches.
        * This lets remote caches create local caches that operate as level-one caches

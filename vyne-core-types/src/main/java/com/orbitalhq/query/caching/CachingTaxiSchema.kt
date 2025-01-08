@@ -5,6 +5,7 @@ import com.orbitalhq.schemas.fqn
 
 object CacheAnnotation {
    val modeFieldName = "mode"
+   val maxIdleSecondsFieldName = "maxIdleSeconds"
    val CacheTypeName = "${VyneTypes.NAMESPACE}.caching.Cache".fqn()
    val CacheTaxi = """
 namespace ${CacheTypeName.namespace} {
@@ -16,8 +17,8 @@ namespace ${CacheTypeName.namespace} {
    annotation Cache {
       $modeFieldName: CachePolicy = CachePolicy.Enabled
       connection : String?
-      [[ If an entry is not accessed (read or write) for this duration, it is evicted from the state store ]]
-      maxIdleSeconds: Int = 180
+      [[ If an entry is not accessed (read or write) for this duration, it is evicted from the cache ]]
+      $maxIdleSecondsFieldName: Int = 180
    }
 }
    """.trimIndent()
