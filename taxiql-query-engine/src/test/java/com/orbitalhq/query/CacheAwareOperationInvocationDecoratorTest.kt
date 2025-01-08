@@ -335,6 +335,7 @@ class CacheAwareOperationInvocationDecoratorTest {
          }
       }
 
+
    @Test
    fun `multiple requests with the same key are processed sequentially`(): Unit = runBlocking {
       val invoker = ConcurrentAccessProhibitedInvoker { inputs ->

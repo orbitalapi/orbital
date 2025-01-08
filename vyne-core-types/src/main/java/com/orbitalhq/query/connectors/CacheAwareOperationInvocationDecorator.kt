@@ -2,6 +2,8 @@ package com.orbitalhq.query.connectors
 
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.caching.CacheAnnotation
+import com.orbitalhq.schemas.MetadataTarget
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
@@ -14,6 +16,7 @@ import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
 import lang.taxi.services.OperationScope
+import lang.taxi.types.EnumMember
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 
@@ -93,13 +96,23 @@ class CacheAwareOperationInvocationDecorator(
    }
 
    private fun isCacheable(operation: RemoteOperation, service: Service, invoker: OperationInvoker): Boolean {
-      // TODO : Make this richer
       return when {
+         cachingIsDisabledWithAnnotation(operation) -> false
+         cachingIsDisabledWithAnnotation(operation.returnType) -> false
          invoker.getCachingBehaviour(service, operation) == OperationCachingBehaviour.NO_CACHE -> false
          operation.operationType == OperationScope.MUTATION -> false
          operation.returnType.isStream -> false
          else -> true
       }
+   }
+
+   private fun cachingIsDisabledWithAnnotation(schemaMember: MetadataTarget): Boolean {
+      if (!schemaMember.hasMetadata(CacheAnnotation.CacheTypeName.parameterizedName)) {
+         return false
+      }
+      val cachingMetadata = schemaMember.firstMetadata(CacheAnnotation.CacheTypeName.parameterizedName)
+      val mode = cachingMetadata.params[CacheAnnotation.modeFieldName] as EnumMember
+      return mode.value.value == "Disabled"
    }
 
 

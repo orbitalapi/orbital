@@ -79,7 +79,7 @@ data class Type(
    // if this is a collection of anonymous types, we can't resovle
    // the type from the typeCache, so pass it here
    private val innerAnonymousTypes: Type? = null,
-) : SchemaMember, PartialType, CompareByDefinition<Type> {
+) : SchemaMember, PartialType, CompareByDefinition<Type>, MetadataTarget {
    constructor(
       name: String,
       attributes: Map<AttributeName, Field> = emptyMap(),
