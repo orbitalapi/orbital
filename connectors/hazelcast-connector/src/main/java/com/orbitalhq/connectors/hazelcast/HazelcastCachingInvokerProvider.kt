@@ -50,12 +50,14 @@ class HazelcastCachingInvokerProvider(
     */
    override fun getCachingInvoker(
       operationKey: OperationCacheKey,
-      invoker: OperationInvoker
+      invoker: OperationInvoker,
+      ttl: Duration
    ): CachingOperatorInvoker {
       return CascadingCacheInvoker(
          operationKey,
          localCache,
-         getHazelcastCachingInvoker(operationKey, invoker)
+         getHazelcastCachingInvoker(operationKey, invoker, ttl),
+         ttl
       )
    }
 
@@ -64,18 +66,20 @@ class HazelcastCachingInvokerProvider(
     */
    fun getHazelcastCachingInvoker(
       operationKey: OperationCacheKey,
-      invoker: OperationInvoker
+      invoker: OperationInvoker,
+      ttl: Duration
    ) = DefaultCachingOperatorInvoker(
-      operationKey, invoker, this
+      operationKey, invoker, ttl, this
    )
 
    override fun getCachedOrCallLoader(
       operationCacheKey: OperationCacheKey,
       operationInvocationParamMessage: OperationInvocationParamMessage,
+      cacheTTL: Duration,
       invoker: () -> Flux<TypedInstance>
    ): Flux<TypedInstance> {
       return HazelcastCacheProviderFactory
-         .instance(hazelcast, schemaStore, connectionName, connectionAddress, clock)
+         .instance(hazelcast, schemaStore, connectionName, connectionAddress, clock, cacheTTL)
          .load(operationCacheKey, operationInvocationParamMessage, invoker)
    }
 
@@ -108,7 +112,6 @@ class HazelcastOperationCacheBuilder(
    override fun buildOperationCache(
       strategy: CachingStrategy,
       maxCachedOperations: Int,
-      cachedOperationTtl: Duration,
       cacheFactory: CacheFactory
    ): CachingInvokerProvider {
       require(strategy is RemoteCache) { "Only RemoteCache is supported, but got ${strategy::class.simpleName}" }

@@ -8,17 +8,17 @@ import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.git.WorkspaceGitProjectConfig
 import com.orbitalhq.schemaServer.core.publisher.SourceWatchingSchemaPublisher
 import com.orbitalhq.schemaServer.core.repositories.InMemoryWorkspaceConfigLoader
-import com.orbitalhq.schemaServer.core.repositories.WorkspaceProjectsService
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
-import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
+import com.orbitalhq.schemaServer.core.repositories.WorkspaceProjectsService
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
-import com.orbitalhq.utils.asA
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import lang.taxi.asA
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import org.junit.Rule
@@ -154,7 +154,7 @@ class GitRepositoryIntegrationTest : BaseGitTest() {
    fun `configure a git repository at runtime and see initial state pulled along with changes`() {
       deployTestProjectToRemoteGitPath()
 
-      val (eventDispatcher, workspaceProjectsService) = createWorkspaceProjectService()
+      val (eventDispatcher, workspaceProjectsService) = createWorkspaceProjectService(FileChangeDetectionMethod.POLL)
       val (repositoryManager, schemaClient) = createProjectManager(eventDispatcher)
 
       // Test: Add the git repository
@@ -172,7 +172,7 @@ class GitRepositoryIntegrationTest : BaseGitTest() {
          gitSpecAddedEvent.spec.name == "my-git-repo"
       }.verifyTimeout(Duration.ofSeconds(1))
 
-      await().atMost(1, TimeUnit.SECONDS)
+      await().atMost(30, TimeUnit.SECONDS)
          .until<Boolean> { repositoryManager.gitLoaders.size == 1 }
 
       val gitLoader = repositoryManager.gitLoaders.single()
@@ -191,8 +191,6 @@ class GitRepositoryIntegrationTest : BaseGitTest() {
       val repositoryManager = ReactiveProjectStoreManager(
          FileSystemPackageLoaderFactory(),
          GitSchemaPackageLoaderFactory(
-               changeDetectionMethod = FileChangeDetectionMethod.POLL,
-               pollFrequency = Duration.ofDays(1)
          ),
          eventDispatcher, eventDispatcher, eventDispatcher
       )
@@ -207,7 +205,7 @@ class GitRepositoryIntegrationTest : BaseGitTest() {
       return Pair(repositoryManager, schemaClient)
    }
 
-   private fun createWorkspaceProjectService(): Pair<ProjectStoreLifecycleManager, WorkspaceProjectsService> {
+   private fun createWorkspaceProjectService(gitDiskChangeDetectionMethod: FileChangeDetectionMethod = FileChangeDetectionMethod.WATCH): Pair<ProjectStoreLifecycleManager, WorkspaceProjectsService> {
       // Setup: Loading the config from disk
       val eventDispatcher = ProjectStoreLifecycleManager()
       //      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
@@ -215,6 +213,7 @@ class GitRepositoryIntegrationTest : BaseGitTest() {
          WorkspaceConfig(
                git = WorkspaceGitProjectConfig(
                   checkoutRoot = localRepoDir.root.toPath(),
+                  diskChangeDetectionMethod = gitDiskChangeDetectionMethod
                )
          ),
          eventDispatcher

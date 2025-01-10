@@ -335,6 +335,7 @@ class CacheAwareOperationInvocationDecoratorTest {
          }
       }
 
+
    @Test
    fun `multiple requests with the same key are processed sequentially`(): Unit = runBlocking {
       val invoker = ConcurrentAccessProhibitedInvoker { inputs ->
@@ -356,7 +357,7 @@ class CacheAwareOperationInvocationDecoratorTest {
       listOf("A", "B", "C", "D", "E").map { input ->
          results.count { it is TypedValue && it.value == "Hello $input" }.should.equal(5)
       }
-      await().atMost(1, TimeUnit.SECONDS).until {
+      await().atMost(1, TimeUnit.SECONDS).until<Boolean> {
          invoker.invokedCalls.size == 5
       }
    }
@@ -388,7 +389,7 @@ class CacheAwareOperationInvocationDecoratorTest {
          }
       }
       job.join()
-      await().atMost(1, TimeUnit.SECONDS).until { results.size == 25 }
+      await().atMost(1, TimeUnit.SECONDS).until<Boolean> { results.size == 25 }
       cachingInvoker.should.not.be.`null`
       results
    }

@@ -4,6 +4,7 @@ import com.jayway.awaitility.Awaitility
 import com.orbitalhq.schemaServer.core.file.deployProject
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
+import mu.KotlinLogging
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder
 import org.junit.Before
@@ -13,6 +14,7 @@ import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
 
+private val logger = KotlinLogging.logger {  }
 abstract class BaseGitTest {
 
    lateinit var remoteRepo: Git
@@ -40,8 +42,7 @@ abstract class BaseGitTest {
       remoteRepoDir.root.resolve(pathInRepository.toString()).toPath().deployProject(projectName)
       remoteRepo.add().addFilepattern(".").call()
       remoteRepo.commit().apply { message = "initial" }.call()
-
-
+      logger.info { "Deployed the test project: ${remoteRepoDir.root.resolve(pathInRepository.toString()).toPath()}" }
    }
 
    protected fun waitForSuccessfulGitClone(projectStoreManager: ReactiveProjectStoreManager, gitLoader: GitSchemaPackageLoader) {

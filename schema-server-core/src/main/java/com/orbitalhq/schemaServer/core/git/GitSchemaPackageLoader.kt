@@ -121,7 +121,7 @@ class GitSchemaPackageLoader(
                   LoaderStatus.error("Failed to read git repository from disk: ${e.message ?: e::class.simpleName!!}"),
                   Sinks.EmitFailureHandler.FAIL_FAST
                )
-               null
+               Flux.empty()
             }
          }
          .filter { p -> p != null }

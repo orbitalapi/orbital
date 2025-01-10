@@ -13,8 +13,8 @@ import com.orbitalhq.schemaServer.core.file.FileChangeDetectionMethod
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoaderFactory
 import com.orbitalhq.schemaServer.core.git.GitProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoaderFactory
-import com.orbitalhq.schemaServer.core.git.WorkspaceGitProjectConfig
 import com.orbitalhq.schemaServer.core.git.GitWriterDecorator
+import com.orbitalhq.schemaServer.core.git.WorkspaceGitProjectConfig
 import com.orbitalhq.schemaServer.core.git.packages.BaseGitTest
 import com.orbitalhq.schemaServer.core.repositories.InMemoryWorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
@@ -22,7 +22,6 @@ import com.orbitalhq.schemaServer.core.repositories.WorkspaceProjectsService
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
-import io.kotest.assertions.timing.eventually
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContain
@@ -43,7 +42,6 @@ import java.nio.file.Path
 import java.time.Duration
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
-import kotlin.time.Duration.Companion.seconds
 
 class SourceLoaderConnectorsRegistryTest : BaseGitTest() {
    @Rule
@@ -461,6 +459,8 @@ jdbc {
       val loader = InMemoryWorkspaceConfigLoader(
          WorkspaceConfig(
             git = WorkspaceGitProjectConfig(
+               diskChangeDetectionMethod = FileChangeDetectionMethod.POLL,
+               diskPollFrequency = Duration.ofDays(1L),
                checkoutRoot = localRepoDir.root.toPath(),
                repositories = listOf(
                   GitProjectSpec(
@@ -480,10 +480,7 @@ jdbc {
       // create new repositories as config is added
       val repositoryManager = ReactiveProjectStoreManager(
          FileSystemPackageLoaderFactory(),
-         GitSchemaPackageLoaderFactory(
-            changeDetectionMethod = FileChangeDetectionMethod.POLL,
-            pollFrequency = Duration.ofDays(1)
-         ),
+         GitSchemaPackageLoaderFactory(),
          eventDispatcher, eventDispatcher, eventDispatcher
       )
 

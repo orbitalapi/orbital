@@ -16,7 +16,7 @@ import java.time.Duration
 
 class ReactivePollingFileSystemMonitor(
    private val rootPath: Path,
-   pollFrequency: Duration
+   val pollFrequency: Duration
 ) : ReactiveFileSystemMonitor {
 
    private val sink = Sinks.many().replay().latest<List<FileSystemChangeEvent>>()
@@ -43,7 +43,7 @@ class ReactivePollingFileSystemMonitor(
       observer = FileAlterationObserver(rootPath.toFile(), filter).apply {
          addListener(object : FileAlterationListener {
             override fun onStart(observer: FileAlterationObserver) {
-               logger.debug("File poll starting")
+               logger.debug("File poll starting path => ${rootPath.toFile().canonicalPath}")
             }
 
             override fun onDirectoryCreate(directory: File) {

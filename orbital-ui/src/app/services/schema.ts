@@ -940,6 +940,7 @@ export type DataSourceType =
   | 'Defined in schema'
   | 'Undefined source'
   | 'Failed evaluated expression'
+  | 'Failed lookup'
   | 'Evaluated expression'
   | 'Select case'
   | 'Multiple sources';

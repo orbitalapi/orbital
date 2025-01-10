@@ -62,7 +62,11 @@ class HazelcastMapCachingProvider(
    private val schemaStore: SchemaStore,
    private val connectionName: String,
    private val connectionAddress: String,
-   private val defaultTTL: Duration = Duration.ofMinutes(60),
+   /**
+    * The default TTL for this cache - could be informed by annotations on either the operation
+    * or the operation return type, or fallback to DEFAULT_TTL
+    */
+   private val defaultTTL: Duration,
    private val clock: Clock = Clock.systemUTC()
 ) : HazelcastCachingProvider(hazelcast) {
    companion object {

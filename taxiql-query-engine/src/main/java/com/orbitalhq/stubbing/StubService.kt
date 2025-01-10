@@ -192,7 +192,10 @@ class StubService(
 
       val paramValues = parameters.map { it.second }
       invocations.put(stubResponseKey, paramValues)
-      calls.put(stubResponseKey, paramValues)
+      synchronized(calls) {
+         calls.put(stubResponseKey, paramValues)
+      }
+
       if (!responses.containsKey(stubResponseKey) && !handlers.containsKey(stubResponseKey) && !flowHandlers.containsKey(
             stubResponseKey
          ) && wildcardHandler == null

@@ -7,7 +7,7 @@ import {
   isOperationResult, isWhenCaseDataSource,
   OperationResultReference,
   QueryService,
-  RemoteCall,
+  RemoteCall, ValueLookupReturnedNull,
 } from '../services/query.service';
 
 import {
@@ -310,6 +310,12 @@ export class LineageDisplayComponent extends BaseGraphComponent {
           const evaluatedExpression = dataSource as EvaluatedExpressionDataSource;
           subHeader = 'Evaluated expression'
           label = evaluatedExpression.expressionTaxi;
+          break;
+        case 'Failed lookup':
+          const failedLookup = dataSource as ValueLookupReturnedNull;
+          subHeader = failedLookup.message;
+          label = 'Parser error';
+          type = 'ERROR'
           break;
         case 'Failed evaluated expression':
           const failedEvaluatedExpression = dataSource as FailedEvaluatedExpressionDataSource;
