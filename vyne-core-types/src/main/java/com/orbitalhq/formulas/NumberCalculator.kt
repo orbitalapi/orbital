@@ -65,7 +65,7 @@ internal class NumberCalculator : Calculator {
       // but it's just a huge amount of typing to cover all the possible scenarios
       val numberTypes = values.map { it!!::class.java }.distinct()
       if (numberTypes.size > 1) {
-         log().warn("Multiple number types found: ${numberTypes.joinToString { it.simpleName }}. Current support for this is limited, so casting all to BigDecimal to proceed")
+         log().debug("Multiple number types found: ${numberTypes.joinToString { it.simpleName }}. Current support for this is limited, so casting all to BigDecimal to proceed")
          val bigDecimals = values.map { BigDecimal(it.toString()) }
          return doCalculate(operator, bigDecimals)
 //         error("Numeric formulas with differing number types is not yet supported - found ${numberTypes.joinToString { it.simpleName }}")

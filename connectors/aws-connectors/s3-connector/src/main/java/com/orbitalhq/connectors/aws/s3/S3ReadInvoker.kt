@@ -1,12 +1,9 @@
 package com.orbitalhq.connectors.aws.s3
 
-import com.orbitalhq.connectors.aws.s3.S3ConnectorTaxi.FilenamePatternFqn
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.format.FormatRegistry
-import com.orbitalhq.query.EmptyExchangeData
-import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.ObjectStoreExchange
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
@@ -17,14 +14,14 @@ import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
 import software.amazon.awssdk.services.s3.model.S3Object
-import java.net.URI
 import java.time.Duration
 import java.time.Instant
-import java.util.*
 
 /**
  * Invoker for s3 that reads directly from files.
@@ -120,7 +117,7 @@ class S3ReadInvoker : BaseS3Invoker() {
                formatRegistry = formatRegistry,
             )
          }
-         .asFlow()
+         .asFlow().flowOn(Dispatchers.IO)
    }
 
 

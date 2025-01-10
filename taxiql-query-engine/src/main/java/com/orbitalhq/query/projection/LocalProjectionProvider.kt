@@ -46,9 +46,10 @@ private val logger = KotlinLogging.logger {}
 @OptIn(FlowPreview::class)
 class LocalProjectionProvider : ProjectionProvider {
    companion object {
-      private const val  threadPoolSize: Int = 16
+      private const val threadPoolSize: Int = 16
       private val projectingDispatcher =
-         ThreadPoolExecutor(threadPoolSize, threadPoolSize,
+         ThreadPoolExecutor(
+            threadPoolSize, threadPoolSize,
             0L, TimeUnit.MILLISECONDS,
             LinkedBlockingQueue(),
             OrbitalProjectionProviderThreadFactory()
@@ -60,7 +61,11 @@ class LocalProjectionProvider : ProjectionProvider {
    /**
     * processes the given source
     */
-   override  fun process(source: Flow<TypedInstanceWithMetadata>, context: QueryContext, block: suspend kotlinx.coroutines.CoroutineScope.(item: TypedInstanceWithMetadata) -> Flow<TypedInstanceWithMetadata>): Flow<TypedInstanceWithMetadata> {
+   override fun process(
+      source: Flow<TypedInstanceWithMetadata>,
+      context: QueryContext,
+      block: suspend kotlinx.coroutines.CoroutineScope.(item: TypedInstanceWithMetadata) -> Flow<TypedInstanceWithMetadata>
+   ): Flow<TypedInstanceWithMetadata> {
       context.cancelFlux.subscribe {
          logger.info { "QueryEngine for queryId ${context.queryId} is cancelling" }
          projectingScope.cancel()
@@ -72,23 +77,23 @@ class LocalProjectionProvider : ProjectionProvider {
          .takeWhile { !context.cancelRequested }
          .filter { !context.cancelRequested }
          .distinctUntilChanged()
-          .map { emittedResult ->
-           //  logger.trace { "Starting to project instance of ${emittedResult.value.type.qualifiedName.shortDisplayName} (index ${emittedResult.index}) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
-             projectingScope.async {
+         .map { emittedResult ->
+            //  logger.trace { "Starting to project instance of ${emittedResult.value.type.qualifiedName.shortDisplayName} (index ${emittedResult.index}) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
+            projectingScope.async {
 
-                val startTime = Instant.now()
-                if (!isActive) {
-                   logger.warn { "Query Cancelled exiting!" }
-                   cancel()
-                }
-                block(emittedResult.value)
-             }
-          }
-          .buffer(threadPoolSize).map {
-             val result = it.await()
+               val startTime = Instant.now()
+               if (!isActive) {
+                  logger.warn { "Query Cancelled exiting!" }
+                  cancel()
+               }
+               block(emittedResult.value)
+            }
+         }
+         .buffer(threadPoolSize).map {
+            val result = it.await()
             // logger.trace { "projected or mapped instance of ${projection.type.qualifiedName.shortDisplayName} completed" }
-             result
-          }.flatMapMerge { it }
+            result
+         }.flatMapMerge { it }
    }
 
    override fun project(
@@ -140,7 +145,7 @@ class LocalProjectionProvider : ProjectionProvider {
             }
          }
          .buffer(threadPoolSize).map {
-           val result = it.await()
+            val result = it.await()
             logger.trace { "projected or mapped instance of ${projection.type.qualifiedName.shortDisplayName} completed" }
             result
          }.flatMapMerge { it }
@@ -157,7 +162,7 @@ class LocalProjectionProvider : ProjectionProvider {
       projection: Projection,
       emittedResult: IndexedValue<TypedInstance>,
       context: QueryContext
-   ):List<ScopedFact> {
+   ): List<ScopedFact> {
       return ProjectionFunctionScopeEvaluator.build(
          projection.scopedVars,
          listOf(emittedResult.value),
@@ -186,6 +191,7 @@ class LocalProjectionProvider : ProjectionProvider {
          scopedFacts.isEmpty() -> {
             emittedResult.value
          }
+
          scopedFacts.size == 1 -> scopedFacts.single().fact
          else -> {
             // 26-Feb-24:
@@ -268,7 +274,7 @@ class LocalProjectionProvider : ProjectionProvider {
       projectionType: Type,
       startTime: Instant
    ): Flow<TypedInstanceWithMetadata> {
-      if (scopedFact.fact is TypedNull){
+      if (scopedFact.fact is TypedNull) {
          return emptyFlow()
       }
       val collection = scopedFact!!.fact as TypedCollection

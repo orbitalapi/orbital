@@ -18,7 +18,7 @@ import org.apache.commons.csv.CSVParser
 import org.apache.commons.csv.CSVRecord
 import reactor.core.publisher.Flux
 import java.io.InputStream
-import java.nio.charset.Charset
+import java.util.stream.StreamSupport
 
 object CsvFormatDeserializer : ModelFormatDeserializer, StreamingModelFormatDeserializer {
    override fun canParse(value: Any, metadata: Metadata, type: Type): Boolean {
@@ -68,23 +68,24 @@ object CsvFormatDeserializer : ModelFormatDeserializer, StreamingModelFormatDese
       val csvAnnotation = CsvFormatSpecAnnotation.from(csvSpecMetadata)
       val csvFormat = CsvFormatFactory.fromParameters(csvAnnotation.ingestionParameters)
       require(value is InputStream) { "Parsing CSV to a stream is not supported for input value of ${value::class.simpleName}" }
-      val parsed = CSVParser.parse(value, Charset.defaultCharset(), csvFormat)
-      return Flux.fromStream(parsed.stream())
-         .map { csvRecord ->
-            TypedInstance.from(
-               type = memberType,
-               value = csvRecord,
-               schema = schema,
-               source = source,
-               functionRegistry = functionRegistry,
-               formatSpecs = formatRegistry.formats,
-               inPlaceQueryEngine = inPlaceQueryEngine,
-               parsingErrorBehaviour = parsingErrorBehaviour,
-               format = format,
-               metadata = metadata,
-               valueSuppliers = valueSuppliers
-            )
-         }
+      val parsed = csvFormat.parse(value.bufferedReader())
+     val typedInstanceStream = StreamSupport.stream(parsed.spliterator(), false).map {
+         csvRecord -> TypedInstance.from(
+         type = memberType,
+         value = csvRecord,
+         schema = schema,
+         source = source,
+         functionRegistry = functionRegistry,
+         formatSpecs = formatRegistry.formats,
+         inPlaceQueryEngine = inPlaceQueryEngine,
+         parsingErrorBehaviour = parsingErrorBehaviour,
+         format = format,
+         metadata = metadata,
+         valueSuppliers = valueSuppliers
+      )
+
+      }
+      return Flux.fromStream(typedInstanceStream)
    }
 
 }

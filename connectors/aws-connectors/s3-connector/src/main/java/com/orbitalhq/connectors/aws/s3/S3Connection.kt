@@ -1,11 +1,16 @@
 package com.orbitalhq.connectors.aws.s3
 
+import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream
+import com.google.common.io.ByteStreams
 import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import io.netty.buffer.ByteBufInputStream
+import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import software.amazon.awssdk.core.async.AsyncRequestBody
+import software.amazon.awssdk.core.async.AsyncResponseTransformer
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.S3AsyncClientBuilder
 import software.amazon.awssdk.services.s3.S3Client
@@ -17,10 +22,18 @@ import software.amazon.awssdk.transfer.s3.S3TransferManager
 import software.amazon.awssdk.transfer.s3.model.CompletedUpload
 import software.amazon.awssdk.transfer.s3.model.UploadRequest
 import java.io.InputStream
+import java.io.PipedInputStream
+import java.io.PipedOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Paths
 
+private val logger = KotlinLogging.logger { }
+
 class S3Connection(private val configuration: AwsConnectionConfiguration, private val bucketName: String) {
+   private val asyncClient = S3AsyncClient.builder()
+      .configureWithExplicitValuesIfProvided(configuration)
+      .build()
+
    private fun clientBuilder(): S3ClientBuilder {
       return S3Client
          .builder()
@@ -66,12 +79,11 @@ class S3Connection(private val configuration: AwsConnectionConfiguration, privat
    }
 
    fun listMatchingObjects(filePattern: String?): Flux<S3Object> {
-      val s3Client = asyncClientBuilder().build()
       val hasPattern = filePattern != null && hasPattern(filePattern)
       val pathMatcher = if (hasPattern) {
          FileSystems.getDefault().getPathMatcher("glob:${filePattern}")
       } else null
-      val asyncBucketList = s3Client.listObjectsV2Paginator { builder ->
+      val asyncBucketList = asyncClient.listObjectsV2Paginator { builder ->
          val bucketBuilder = builder.bucket(bucketName)
          when {
             filePattern != null && isPrefixPattern(filePattern) -> {
@@ -97,15 +109,18 @@ class S3Connection(private val configuration: AwsConnectionConfiguration, privat
    }
 
    fun fetchAsInputStream(objectKey: String?): Flux<Pair<S3Object, Mono<InputStream>>> {
-      val s3Client = clientBuilder().build()
       return listMatchingObjects(objectKey)
          .map { s3Object ->
             val getObjectRequest = GetObjectRequest.builder().bucket(bucketName).key(s3Object.key()).build()
-            val deferredInputStream = Mono.defer {
-               val result = s3Client.getObject(getObjectRequest) as InputStream
-               Mono.just(result)
-            }
-            s3Object to deferredInputStream
+            val inputStreamMono = Mono
+               .fromFuture(asyncClient.getObject(getObjectRequest, AsyncResponseTransformer.toPublisher()))
+               .flatMap { response -> Mono.from(response) }
+               .publishOn(Schedulers.boundedElastic())
+               .map { byteBuffer ->
+                  ByteBufferBackedInputStream(byteBuffer) as InputStream
+               }
+               .doOnError { ex -> logger.error(ex) { "Error in consuming $objectKey from AWS connection ${configuration.connectionName}" } }
+            s3Object to inputStreamMono
          }
          .publishOn(Schedulers.boundedElastic())
 
