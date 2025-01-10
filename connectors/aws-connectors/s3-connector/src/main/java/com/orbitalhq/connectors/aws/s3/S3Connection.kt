@@ -1,7 +1,10 @@
 package com.orbitalhq.connectors.aws.s3
 
+import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream
+import com.google.common.io.ByteStreams
 import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import io.netty.buffer.ByteBufInputStream
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -24,11 +27,13 @@ import java.io.PipedOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Paths
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
+
 class S3Connection(private val configuration: AwsConnectionConfiguration, private val bucketName: String) {
    private val asyncClient = S3AsyncClient.builder()
       .configureWithExplicitValuesIfProvided(configuration)
       .build()
+
    private fun clientBuilder(): S3ClientBuilder {
       return S3Client
          .builder()
@@ -104,43 +109,18 @@ class S3Connection(private val configuration: AwsConnectionConfiguration, privat
    }
 
    fun fetchAsInputStream(objectKey: String?): Flux<Pair<S3Object, Mono<InputStream>>> {
-      val pipedOutputStream = PipedOutputStream()
-      val pipedInputStream = PipedInputStream(pipedOutputStream)
       return listMatchingObjects(objectKey)
          .map { s3Object ->
             val getObjectRequest = GetObjectRequest.builder().bucket(bucketName).key(s3Object.key()).build()
-
-          /* val k = Mono.fromFuture(asyncClient.getObject(getObjectRequest, AsyncResponseTransformer.toBytes()))
-               .subscribeOn(Schedulers.boundedElastic())
-               .map { bytes ->
-                  bytes.asContentStreamProvider().newStream()
-               }
-               */
-
-            val foo = Mono
+            val inputStreamMono = Mono
                .fromFuture(asyncClient.getObject(getObjectRequest, AsyncResponseTransformer.toPublisher()))
+               .flatMap { response -> Mono.from(response) }
                .publishOn(Schedulers.boundedElastic())
-               .map { response -> Flux.from(response) }
-
-           val str =  foo.map { byteBufferFlux ->
-               byteBufferFlux
-                  .publishOn(Schedulers.boundedElastic())
-                  .doOnComplete {
-                     pipedOutputStream.close()
-                  }.doOnCancel {
-                     pipedOutputStream.close()
-                  }
-                  .doOnError { ex -> logger.error(ex) { "Error in consuming $objectKey from AWS connection ${configuration.connectionName}" } }
-
-                  .subscribe { byteBuffer ->
-                     val byteArray = byteBuffer.array()
-                     logger.info { "writing to output stream for $objectKey write size ${byteArray.size}" }
-                  pipedOutputStream.write(byteArray)
+               .map { byteBuffer ->
+                  ByteBufferBackedInputStream(byteBuffer) as InputStream
                }
-               pipedInputStream as InputStream
-            }
-
-            s3Object to str
+               .doOnError { ex -> logger.error(ex) { "Error in consuming $objectKey from AWS connection ${configuration.connectionName}" } }
+            s3Object to inputStreamMono
          }
          .publishOn(Schedulers.boundedElastic())
 
