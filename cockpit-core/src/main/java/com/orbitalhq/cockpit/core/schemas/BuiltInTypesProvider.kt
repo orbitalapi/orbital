@@ -23,6 +23,7 @@ import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.formats.csv.CsvAnnotationSpec
 import com.orbitalhq.formats.xml.XmlAnnotationSpec
 import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.query.caching.CacheAnnotation
 import com.orbitalhq.query.caching.StateStoreAnnotation
 import com.orbitalhq.schema.publisher.SchemaPublisherService
 import com.orbitalhq.schemas.taxi.toMessage
@@ -141,9 +142,14 @@ object BuiltInTypesProvider {
             OmitNullsType.schema
          ),
          VersionedSource(
-            "CacheConfig",
+            "StateStore",
             "0.1.0",
             StateStoreAnnotation.StateStoreTaxi
+         ),
+         VersionedSource(
+            "Caching",
+            "0.1.0",
+            CacheAnnotation.CacheTaxi
          ),
       ),
       emptyMap()

@@ -73,7 +73,7 @@ class HazelcastCacheProviderTest : DescribeSpec({
 
       suspend fun invokeCache(cacheKey: String = "testKey"): Flux<TypedInstance> {
          val cache = cacheProvider.getHazelcastCachingInvoker(
-            cacheKey, stub,
+            cacheKey, stub, Duration.ofSeconds(30)
          )
 
          val service = vyne.getService("PersonService")

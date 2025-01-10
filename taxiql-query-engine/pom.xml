@@ -27,6 +27,11 @@
          <scope>test</scope>
       </dependency>
       <dependency>
+         <groupId>com.google.guava</groupId>
+         <artifactId>guava-testlib</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>auth-common</artifactId>
          <version>${project.version}</version>

@@ -1,5 +1,6 @@
 package com.orbitalhq.query.graph.operationInvocation.cache.local
 
+import com.google.common.base.Ticker
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.orbitalhq.LocalOperationCacheConfiguration
@@ -24,12 +25,22 @@ import reactor.core.publisher.Flux
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
+private typealias CacheTtlInMillis = Long
+
 /**
  * Can build Operation Caches that are stored locally, in-process
  * (vs. remote - eg., in Redis or Hazelcast)
  */
 class LocalCachingInvokerProvider(
-   private val actorCache: Cache<OperationCacheKey, CachingOperatorInvoker>,
+   // MP: 8-Jan-25
+   // We used to pass the actorCache (a guava cache) directly here.
+   // But, we need to support differing TTL's per object, to allow things like
+   // long-lived streaming queries that calls cached intermittently throughout the lifecycle of the stream.
+   // So, we now pass a function that will create the cache, given the TTL
+   // (which guava requires at the time of construction)
+   private val actorCache: Cache<OperationCacheKey, Cache<Long, CachingOperatorInvoker>>,
+   private val ticker: Ticker
+//   private val actorCacheBuilder: (Duration) -> Cache<OperationCacheKey, CachingOperatorInvoker>,
 ) :
    CachingInvokerProvider {
    companion object {
@@ -40,28 +51,40 @@ class LocalCachingInvokerProvider(
        * we should be looking up the cache provider using the strategy
        * returned from parsing the query
        */
-      fun default(): LocalCachingInvokerProvider {
+      fun default(ticker: Ticker = Ticker.systemTicker()): LocalCachingInvokerProvider {
          return LocalCachingInvokerProvider(
             LocalCacheProviderBuilder.newCache(
                LocalOperationCacheConfiguration.DEFAULT_MAX_CACHED_OPERATIONS,
-               LocalOperationCacheConfiguration.DEFAULT_MAX_DURATION
-            )
+               ticker = ticker
+            ),
+            ticker = ticker
          )
       }
    }
 
    val cacheSize: Long
       get() {
-         return actorCache.size()
+         return actorCache.asMap()
+            .values
+            .sumOf { it.size() }
       }
 
    override fun getCachingInvoker(
       operationKey: OperationCacheKey,
-      invoker: OperationInvoker
+      invoker: OperationInvoker,
+      ttl: Duration
    ): CachingOperatorInvoker {
-      return actorCache.get(operationKey) {
-         DefaultCachingOperatorInvoker(operationKey, invoker, LocalCacheFetcher())
+      // First, use the cache builder to retrieve or construct a cache, based on the TTL
+      val invokersCachedWithTTL = actorCache.get(operationKey) {
+         CacheBuilder.newBuilder()
+            .ticker(ticker)
+            .expireAfterAccess(ttl)
+            .build()
       }
+      val cachingInvoker = invokersCachedWithTTL.get(ttl.toMillis()) {
+         DefaultCachingOperatorInvoker(operationKey, invoker, ttl, LocalCacheFetcher())
+      }
+      return cachingInvoker
    }
 
    override fun evict(operationKey: OperationCacheKey) {
@@ -74,15 +97,17 @@ class LocalCachingInvokerProvider(
  * Exposes a LocalCacheFetcher, used as L1 cache
  */
 object LocalCache {
-   fun newLocalCache():ReadCacheOrCallInvokerHandler {
+   fun newLocalCache(): ReadCacheOrCallInvokerHandler {
       return LocalCacheFetcher()
    }
 }
+
 class LocalCacheFetcher : ReadCacheOrCallInvokerHandler {
    private val cachedFlux = ConcurrentHashMap<String, Flux<TypedInstance>>()
    override fun getCachedOrCallLoader(
       operationCacheKey: OperationCacheKey,
       operationInvocationParamMessage: OperationInvocationParamMessage,
+      cacheTTL: Duration,
       invoker: () -> Flux<TypedInstance>
    ): Flux<TypedInstance> {
       return cachedFlux.getOrPut(operationCacheKey) {
@@ -91,22 +116,34 @@ class LocalCacheFetcher : ReadCacheOrCallInvokerHandler {
    }
 }
 
-class LocalCacheProviderBuilder : OperationCacheProviderBuilder {
+class LocalCacheProviderBuilder(private val ticker: Ticker = Ticker.systemTicker()) : OperationCacheProviderBuilder {
    companion object {
       private val logger = KotlinLogging.logger {}
 
-      fun newCache(maxSize: Int, maxDuration: Duration): Cache<OperationCacheName, CachingOperatorInvoker> {
+      // We end up building a cache of caches.
+      // This TTL defines how long the cache itself lives for -
+      // not the individual records within the cache
+      // It probably doesn't need to be configurable, and a long value is
+      // probably fine.
+      private val DEFAULT_OUTER_CACHE_TTL: Duration = Duration.ofHours(4)
+      fun newCache(
+         maxSize: Int,
+         outerCacheTTL: Duration = DEFAULT_OUTER_CACHE_TTL,
+         ticker: Ticker
+      ): Cache<OperationCacheKey, Cache<CacheTtlInMillis, CachingOperatorInvoker>> {
          return CacheBuilder.newBuilder()
-            .expireAfterAccess(maxDuration)
+            .expireAfterAccess(outerCacheTTL)
             .maximumSize(maxSize.toLong())
-            .removalListener<String, CachingOperatorInvoker> { notification ->
+            .ticker(ticker)
+            .removalListener<OperationCacheName, Any> { notification ->
                logger.info { "Caching operation invoker removing entry for ${notification.key?.abbreviate()} for reason ${notification.cause}" }
             }
             .build()
       }
    }
 
-   private val caches = ConcurrentHashMap<OperationCacheName, Cache<OperationCacheKey, CachingOperatorInvoker>>()
+   private val caches =
+      ConcurrentHashMap<OperationCacheName, Cache<OperationCacheKey, Cache<CacheTtlInMillis, CachingOperatorInvoker>>>()
    private val globalCacheName = "GLOBAL"
 
    override fun canBuild(strategy: CachingStrategy): Boolean = when (strategy) {
@@ -120,20 +157,19 @@ class LocalCacheProviderBuilder : OperationCacheProviderBuilder {
    override fun buildOperationCache(
       strategy: CachingStrategy,
       maxCachedOperations: Int,
-      cachedOperationTtl: Duration,
       cacheFactory: CacheFactory
    ): CachingInvokerProvider {
-      val cache = when (strategy) {
-         is QueryScopedCache -> newCache(maxCachedOperations, cachedOperationTtl)
-         is GlobalSharedCache -> caches.getOrPut(globalCacheName) { newCache(maxCachedOperations, cachedOperationTtl) }
+      val cacheOfCaches = when (strategy) {
+         is QueryScopedCache -> newCache(maxCachedOperations, ticker = ticker)
+         is GlobalSharedCache -> caches.getOrPut(globalCacheName) { newCache(maxCachedOperations, ticker = ticker) }
          is NamedCache -> caches.getOrPut(strategy.name) {
             logger.info { "Creating new cache ${strategy.name}" }
-            newCache(maxCachedOperations, cachedOperationTtl)
+            newCache(maxCachedOperations, ticker = ticker)
          }
 
          else -> error("${strategy::class.simpleName} is not suppoerted by this builder")
       }
-      return LocalCachingInvokerProvider(cache)
+      return LocalCachingInvokerProvider(cacheOfCaches, ticker)
    }
 
 

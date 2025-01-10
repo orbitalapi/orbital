@@ -2,6 +2,7 @@ package com.orbitalhq.schemas
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.models.json.Jackson
+import com.orbitalhq.query.caching.CacheAnnotation
 import com.orbitalhq.query.caching.StateStore
 import com.orbitalhq.query.caching.StateStoreAnnotation
 import com.orbitalhq.query.caching.StateStoreConfig
@@ -42,11 +43,10 @@ data class NamedCache(val name: String) : CachingStrategy()
 data class RemoteCache(val connectionName: String?) : CachingStrategy()
 
 object QueryOptionParameterKeys {
-   const val Cache = "Cache"
    const val StreamConsumer = "StreamConsumer"
 
    fun cacheStrategy(query: TaxiQlQuery): CachingStrategy {
-      val cacheAnnotation = query.annotation(Cache)
+      val cacheAnnotation = query.annotation(CacheAnnotation.CacheTypeName.parameterizedName)
       return when {
          cacheAnnotation == null -> QueryScopedCache
          cacheAnnotation.parameter("connection") != null -> RemoteCache(cacheAnnotation.parameter("connection") as? String?)
