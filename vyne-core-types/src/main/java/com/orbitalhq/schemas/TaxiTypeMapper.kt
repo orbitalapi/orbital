@@ -8,6 +8,7 @@ import com.orbitalhq.schemas.taxi.toVyneSources
 import lang.taxi.accessors.FieldSourceAccessor
 import lang.taxi.types.Annotation
 import lang.taxi.types.ArrayType
+import lang.taxi.types.EnumMember
 import lang.taxi.types.EnumType
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
@@ -177,7 +178,22 @@ object TaxiTypeMapper {
    }
 
    private fun parseAnnotationsToMetadata(annotations: List<Annotation>): List<Metadata> {
-      return annotations.map { Metadata(it.name.fqn(), it.parameters) }
+      return annotations.map { annotation ->
+         val normalizedParameters = annotation.parameters.mapValues { (key,value) ->
+            // Unwrap enums to their string values.
+            // Note - this is not neccessarily the "best" behaviour, but it got established as the default
+            // by using method='GET' in HttpOperation, which is already widespread adopted.
+            // So, it's the correct behaviour, even if it's not the best
+            when (value) {
+               is lang.taxi.types.EnumValue -> value.value
+               is EnumMember -> value.value.value
+               else -> value
+            }
+
+         }
+         Metadata(annotation.name.fqn(), normalizedParameters)
+
+      }
    }
 
    fun parseModifiers(type: lang.taxi.types.Type): List<Modifier> {
