@@ -27,8 +27,10 @@ abstract class BaseConfigDiscoveryClient : DiscoveryClient {
       }
       val serviceAddress = services[serviceId] ?: emptyMap()
       return if (serviceAddress.isEmpty()) {
+         logger.debug { "${this::class.simpleName} did not resolve $serviceId"  }
          mutableListOf()
       } else {
+         logger.debug { "${this::class.simpleName} resolved service $serviceId to $serviceAddress"  }
          mutableListOf(FileBasedDiscoveryClient.serviceInstance(serviceId, serviceAddress))
       }
    }
