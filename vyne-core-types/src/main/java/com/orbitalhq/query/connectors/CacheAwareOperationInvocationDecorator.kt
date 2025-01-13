@@ -138,6 +138,7 @@ class CacheAwareOperationInvocationDecorator(
          when (it) {
             is EnumMember -> it.value.value.toString()
             is EnumValue -> it.value.toString()
+            is String -> it
             else -> error("Expected EnumMember or EnumValue, got ${it!!::class.simpleName}")
          }
       }
