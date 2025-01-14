@@ -5,6 +5,7 @@ import com.orbitalhq.connectors.hazelcast.HazelcastTaxi
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.QueryContextSchemaProvider
+import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schemas.AttributeName
 import com.orbitalhq.schemas.Field
@@ -12,12 +13,11 @@ import com.orbitalhq.schemas.OperationKind
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.fqn
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import lang.taxi.services.OperationScope
-import kotlin.coroutines.coroutineContext
 
 class HazelcastInvoker(
    private val hazelcastInstanceProvider: HazelcastInstanceProvider
@@ -29,6 +29,56 @@ class HazelcastInvoker(
       return service.hasMetadata(HazelcastTaxi.Annotations.HazelcastServiceAnnotation)
    }
 
+   override fun plan(
+      service: Service,
+      operation: RemoteOperation,
+      parameters: List<Pair<Parameter, TypedInstance>>,
+      schema: Schema
+   ): RemoteCall {
+      val connectionName = getHazelcastConnectionName(service)
+      val (hazelcastInstance, config) = getHazelcastConnection(connectionName)
+
+      return when {
+         operation.operationType == OperationScope.READ_ONLY && operation.operationKind != OperationKind.Stream -> {
+            queryInvoker.plan(
+               hazelcastInstance,
+               config,
+               service,
+               operation,
+               parameters,
+               schema
+            )
+         }
+
+         operation.operationType == OperationScope.READ_ONLY && operation.operationKind == OperationKind.Stream -> {
+            streamInvoker.plan(
+               hazelcastInstance,
+               config,
+               service,
+               operation,
+               parameters,
+               schema
+            )
+
+         }
+
+
+         operation.operationType == OperationScope.MUTATION -> {
+            mutatingInvoker.plan(
+               hazelcastInstance,
+               config,
+               service,
+               operation,
+               parameters,
+               schema
+            )
+         }
+
+         else -> {
+            error("No invoker strategy found for operation ${operation.qualifiedName.longDisplayName}")
+         }
+      }
+   }
    override suspend fun invoke(
       service: Service,
       operation: RemoteOperation,

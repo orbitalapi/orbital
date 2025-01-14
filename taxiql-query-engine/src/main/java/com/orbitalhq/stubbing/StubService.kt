@@ -10,7 +10,6 @@ import com.orbitalhq.models.OperationResultDataSourceWrapper
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedInstanceConverter
-import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.HttpHeaders
@@ -18,21 +17,21 @@ import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
 import com.orbitalhq.query.connectors.OperationInvoker
+import com.orbitalhq.query.connectors.OperationInvocationPlanner
 import com.orbitalhq.query.connectors.OperationResponseFlowProvider
 import com.orbitalhq.query.connectors.OperationResponseHandler
 import com.orbitalhq.query.graph.operationInvocation.DefaultOperationInvocationService
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCachingInvokerProvider
 import com.orbitalhq.query.projection.LocalProjectionProvider
-import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
-import com.orbitalhq.schemas.fqn
 import com.orbitalhq.utils.orElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
@@ -50,7 +49,8 @@ class StubService(
    val handlers: MutableMap<String, OperationResponseHandler> = mutableMapOf(),
    val flowHandlers: MutableMap<String, OperationResponseFlowProvider> = mutableMapOf(),
    // nullable for legacy purposes, you really really should pass a schema here.
-   val schema: Schema?
+   val schema: Schema?,
+   val planners: List<OperationInvocationPlanner> = emptyList()
 ) : OperationInvoker {
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -59,15 +59,22 @@ class StubService(
        * For use outside of test code. (eg., Visualizers, parsers, etc).
        * Inside of tests, call testVyne()
        */
-      fun stubbedVyne(schema: Schema):Pair<Vyne,StubService> {
-         val stubService = StubService(schema = schema)
+      fun stubbedVyne(
+         schema: Schema,
+         planners: List<OperationInvocationPlanner> = emptyList(),
+         stateStoreProvider: StateStoreProvider? = null
+      ): Pair<Vyne, StubService> {
+         val stubService = StubService(schema = schema, planners = planners)
          val queryEngineFactory =
             QueryEngineFactory.withOperationInvokers(
                VyneCacheConfiguration.default(),
                formatSpecs = emptyList(),
-               invokers = CacheAwareOperationInvocationDecorator.decorateAll(listOf(stubService), cacheProvider = LocalCachingInvokerProvider.default()),
+               invokers = CacheAwareOperationInvocationDecorator.decorateAll(
+                  listOf(stubService),
+                  cacheProvider = LocalCachingInvokerProvider.default()
+               ),
                projectionProvider = LocalProjectionProvider(),
-               stateStoreProvider = null
+               stateStoreProvider = stateStoreProvider
             )
          val vyne = Vyne(listOf(schema), queryEngineFactory)
          return vyne to stubService
@@ -108,13 +115,14 @@ class StubService(
     * the dataSource of the response to an OperationResult
     */
    private fun updateDataSourceOnResponse(
+      service: Service,
       remoteOperation: RemoteOperation,
       params: List<Pair<Parameter, TypedInstance>>,
       handler: OperationResponseHandler
    ): List<TypedInstance> {
       require(schema != null) { "Stub service was not created with a schema." }
       val result = handler.invoke(remoteOperation, params)
-      val dataSource = getRemoteCallDataSource(remoteOperation, result, params)
+      val dataSource = getRemoteCallDataSource(service, remoteOperation, result, params)
       return result.map { typedInstance ->
          val updated = TypedInstanceConverter(DataSourceMutatingMapper(dataSource)).convert(typedInstance)
          TypedInstance.from(typedInstance.type, updated, schema, source = dataSource)
@@ -122,31 +130,18 @@ class StubService(
    }
 
    private fun getRemoteCallDataSource(
+      service: Service,
       remoteOperation: RemoteOperation,
       result: List<TypedInstance>,
       params: List<Pair<Parameter, TypedInstance>>
    ): OperationResultDataSourceWrapper {
-      val remoteCall = RemoteCall(
-         service = OperationNames.serviceName(remoteOperation.qualifiedName).fqn(),
-         address = "https://fakeurl.com/",
-         operation = remoteOperation.name,
-         responseTypeName = remoteOperation.returnType.qualifiedName,
-         method = "FAKE",
-         requestBody = "Fake response body",
-         resultCode = 200,
-         durationMs = 0,
-         response = Jackson.defaultObjectMapper.writeValueAsString(result),
-         timestamp = Instant.now(),
-         responseMessageType = ResponseMessageType.FULL,
-         exchange = HttpExchange(
-               url = "https://fakeulr.com",
-               verb = "GET",
-               requestBody = "Fake request body",
-               responseCode = 200,
-               responseSize = 1000,
-               headers = HttpHeaders.empty()
-         )
-      )
+
+      // MP 14-Jan-25: We defer to the operation planners (which in non-test scenarios are
+      // the operation invokers) to provide the remove call details, falling back to a default.
+      // This is to allow our query planners (which use this stub invoker) to generate a query plan with
+      // richer information than this stub can provide.
+      val planner = planners.firstOrNull { it.canSupport(service, remoteOperation) } ?: DefaultStubbedOperationPlanner
+      val remoteCall = planner.plan(service, remoteOperation, params, schema!!)
       val dataSource = OperationResultDataSourceWrapper(OperationResult.from(params, remoteCall))
       return dataSource
    }
@@ -280,8 +275,10 @@ class StubService(
    ): StubService {
       if (modifyDataSource) {
          this.handlers.put(stubOperationKey) { remoteOperation, params ->
+            val service = findServiceFromOperation(remoteOperation)
             // Curry the provided stub
             updateDataSourceOnResponse(
+               service,
                remoteOperation,
                params,
                handler
@@ -292,6 +289,13 @@ class StubService(
       }
 
       return this
+   }
+
+   private fun findServiceFromOperation(remoteOperation: RemoteOperation):Service {
+      // reverse lookup - not efficient, but not called under normal situations, so shouldn't matter.
+      return schema!!.services.first {
+         it.remoteOperations.contains(remoteOperation)
+      }
    }
 
    fun addResponseThrowing(stubOperationKey: String, error: Throwable) {
@@ -305,12 +309,13 @@ class StubService(
       modifyDataSource: Boolean = false,
       handler: OperationResponseFlowProvider,
 
-   ): StubService {
+      ): StubService {
       if (modifyDataSource) {
          this.flowHandlers.put(stubOperationKey) { remoteOperation, params ->
             handler.invoke(remoteOperation, params)
                .map { typedInstance ->
-                  val dataSource = getRemoteCallDataSource(remoteOperation, listOf(typedInstance), params)
+                  val service = findServiceFromOperation(remoteOperation)
+                  val dataSource = getRemoteCallDataSource(service,remoteOperation, listOf(typedInstance), params)
                   val updated = TypedInstanceConverter(DataSourceMutatingMapper(dataSource)).convert(typedInstance)
                   TypedInstance.from(typedInstance.type, updated, schema!!, source = dataSource)
                }
@@ -321,13 +326,16 @@ class StubService(
 
       return this
    }
+
    fun addResponse(stubOperationKey: String, json: String, modifyDataSource: Boolean = false) {
-      val operation = schema!!.operations.firstOrNull { it.name == stubOperationKey } ?: error("Cannot stub $stubOperationKey as it's not a valid operation")
+      val operation = schema!!.operations.firstOrNull { it.name == stubOperationKey }
+         ?: error("Cannot stub $stubOperationKey as it's not a valid operation")
       val response = parseJson(schema!!, operation.returnType.paramaterizedName, json)
       addResponse(stubOperationKey, response, modifyDataSource)
    }
+
    fun addTableFindManyResponse(tableName: String, json: String) {
-      val operation = schema!!.tableOperations.first { it.name== tableName }
+      val operation = schema!!.tableOperations.first { it.name == tableName }
       val response = parseJson(schema!!, operation.returnType.paramaterizedName, json)
       // people_findManyPerson
       val operationName = "${tableName}_findMany${operation.returnType.collectionTypeName}"
@@ -399,12 +407,15 @@ class StubService(
 
    fun returnStubValuesForAllOperations() {
       wildcardHandler = { remoteOperation: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
-         updateDataSourceOnResponse(remoteOperation, params) { _, _ ->
+         val service = findServiceFromOperation(remoteOperation)
+         updateDataSourceOnResponse(service, remoteOperation, params) { _, _ ->
             listOf(MockTypedInstanceBuilder.build(remoteOperation.returnType, schema!!))
          }
 
       }
    }
+}
 
-
+object DefaultStubbedOperationPlanner : OperationInvocationPlanner{
+   override fun canSupport(service: Service, operation: RemoteOperation): Boolean = true
 }

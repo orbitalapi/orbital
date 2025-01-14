@@ -42,11 +42,108 @@ import mu.KotlinLogging
 import java.time.Duration
 import java.time.Instant
 
+private data class HazelcastCallParams(
+   val mapName: String,
+   val map: IMap<Any, Any>,
+   val taxiQlQueryString: TaxiQLQueryString?,
+   val parsedQuery: TaxiQlQuery?,
+   val keyField: Field,
+   val idLookupValue: Any?,
+   val filterCriteria: OperatorExpression?,
+   val unwrappedReturnType: Type
+)
+
 abstract class BaseHazelcastReadInvoker {
    companion object {
       private val logger = KotlinLogging.logger {}
    }
 
+
+   fun plan(
+      hazelcastInstance: HazelcastInstance,
+      hazelcastConfiguration: HazelcastConfiguration,
+      service: Service,
+      operation: RemoteOperation,
+      parameters: List<Pair<Parameter, TypedInstance>>,
+      schema: Schema
+   ):RemoteCall {
+      val executionConfig = getExecutionConfig(operation, hazelcastInstance, parameters, schema)
+      return when {
+         executionConfig.idLookupValue != null -> buildRemoteCall(
+            service,
+            hazelcastConfiguration.addresses.joinToString(),
+            operation,
+            executionConfig.mapName,
+            hazelcastConfiguration.connectionName,
+            executionConfig.idLookupValue.toString(),
+            Duration.ZERO,
+            -1,
+            CacheOperationVerb.GET,
+            true
+         )
+
+         queryIsFindAll(executionConfig.parsedQuery) || executionConfig.parsedQuery == null && operation.operationKind == OperationKind.Stream -> buildRemoteCall(
+            service,
+            hazelcastConfiguration.addresses.joinToString(),
+            operation,
+            executionConfig.mapName,
+            hazelcastConfiguration.connectionName,
+            "find *",
+            Duration.ZERO,
+            -1,
+            CacheOperationVerb.GET_ALL,
+            true
+         )
+
+         executionConfig.filterCriteria != null -> {
+            val predicate = ExpressionToPredicateConverter.convert(executionConfig.parsedQuery!!.discoveryType!!, executionConfig.filterCriteria)
+            buildRemoteCall(
+               service,
+               hazelcastConfiguration.addresses.joinToString(),
+               operation,
+               executionConfig.mapName,
+               hazelcastConfiguration.connectionName,
+               predicate.toString(),
+               Duration.ZERO,
+               -1,
+               CacheOperationVerb.QUERY,
+               true
+            )
+         }
+
+         else -> error("Unsupported read scenario found in query: ${executionConfig.taxiQlQueryString}")
+      }
+   }
+
+   private fun getExecutionConfig(
+      operation: RemoteOperation,
+      hazelcastInstance: HazelcastInstance,
+      parameters: List<Pair<Parameter, TypedInstance>>,
+      schema: Schema
+   ): HazelcastCallParams {
+      val unwrappedReturnType = operation.returnType.collectionType ?: operation.returnType
+      val mapName = getMapName(unwrappedReturnType)
+      val map = hazelcastInstance.getMap<Any, Any>(mapName)
+      val (taxiQlQueryString, parsedQuery) = if (parameters.isNotEmpty()) {
+         val (taxiQlQueryString) = parameters.getTaxiQlQuery()
+         val (parsedQuery) = schema.parseQuery(taxiQlQueryString)
+         taxiQlQueryString to parsedQuery
+      } else null to null
+      val (_, keyField) = findKeyField(unwrappedReturnType)
+      val idLookupValue = parsedQuery?.let { getIdLookupValue(parsedQuery, keyField) }
+      val filterCriteria = parsedQuery?.let { getFilterCriteriaOrNull(parsedQuery) }
+
+      return HazelcastCallParams(
+         mapName,
+         map,
+         taxiQlQueryString,
+         parsedQuery,
+         keyField,
+         idLookupValue,
+         filterCriteria,
+         unwrappedReturnType
+      )
+   }
 
    fun invoke(
       hazelcastInstance: HazelcastInstance,
@@ -60,23 +157,13 @@ abstract class BaseHazelcastReadInvoker {
       schema: Schema,
    ): Flow<TypedInstance> {
       val startTime = Instant.now()
-      val unwrappedReturnType = operation.returnType.collectionType ?: operation.returnType
-      val mapName = getMapName(unwrappedReturnType)
-      val map = hazelcastInstance.getMap<Any, Any>(mapName)
-      val (taxiQlQueryString, parsedQuery) = if (parameters.isNotEmpty()) {
-         val (taxiQlQueryString) = parameters.getTaxiQlQuery()
-         val (parsedQuery) = schema.parseQuery(taxiQlQueryString)
-         taxiQlQueryString to parsedQuery
-      } else null to null
-      val (_, keyField) = findKeyField(unwrappedReturnType)
-      val idLookupValue = parsedQuery?.let { getIdLookupValue(parsedQuery, keyField) }
-      val filterCriteria = parsedQuery?.let { getFilterCriteriaOrNull(parsedQuery) }
+      val executionConfig = getExecutionConfig(operation, hazelcastInstance, parameters, schema)
       return when {
-         idLookupValue != null -> findById(
-            taxiQlQueryString!!,
-            mapName,
-            idLookupValue,
-            map,
+         executionConfig.idLookupValue != null -> findById(
+            executionConfig.taxiQlQueryString!!,
+            executionConfig.mapName,
+            executionConfig.idLookupValue,
+            executionConfig.map,
             service,
             operation,
             parameters,
@@ -84,43 +171,43 @@ abstract class BaseHazelcastReadInvoker {
             startTime,
             eventDispatcher,
             queryId,
-            unwrappedReturnType,
+            executionConfig.unwrappedReturnType,
             schema,
          )
 
-         queryIsFindAll(parsedQuery) || parsedQuery == null && operation.operationKind == OperationKind.Stream -> findAll(
-            taxiQlQueryString,
-            mapName,
+         queryIsFindAll(executionConfig.parsedQuery) || executionConfig.parsedQuery == null && operation.operationKind == OperationKind.Stream -> findAll(
+            executionConfig.taxiQlQueryString,
+            executionConfig.mapName,
             service,
             operation,
             parameters,
             hazelcastConnectionConfig,
             startTime,
-            map,
+            executionConfig.map,
             eventDispatcher,
             queryId,
-            unwrappedReturnType,
+            executionConfig.unwrappedReturnType,
             schema,
          )
 
-         filterCriteria != null -> findByCriteria(
-            taxiQlQueryString!!,
-            parsedQuery,
-            filterCriteria,
-            mapName,
+         executionConfig.filterCriteria != null -> findByCriteria(
+            executionConfig.taxiQlQueryString!!,
+            executionConfig.parsedQuery!!,
+            executionConfig.filterCriteria,
+            executionConfig.mapName,
             service,
             operation,
             parameters,
             hazelcastConnectionConfig,
             startTime,
-            map,
+            executionConfig.map,
             eventDispatcher,
             queryId,
-            unwrappedReturnType,
+            executionConfig.unwrappedReturnType,
             schema,
          )
 
-         else -> error("Unsupported read scenario found in query: $taxiQlQueryString")
+         else -> error("Unsupported read scenario found in query: ${executionConfig.taxiQlQueryString}")
       }
    }
 
@@ -417,7 +504,7 @@ abstract class BaseHazelcastReadInvoker {
 
    private fun buildRemoteCall(
       service: Service,
-      jdbcUrl: String,
+      address: String,
       operation: RemoteOperation,
       cacheName: String,
       connectionName: String,
@@ -428,7 +515,7 @@ abstract class BaseHazelcastReadInvoker {
       success: Boolean
    ) = RemoteCall(
       service = service.name,
-      address = jdbcUrl,
+      address = address,
       operation = operation.name,
       responseTypeName = operation.returnType.name,
       requestBody = sql,

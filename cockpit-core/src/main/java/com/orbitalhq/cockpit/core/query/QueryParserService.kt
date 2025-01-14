@@ -13,9 +13,8 @@ import reactor.core.publisher.Mono
 @RestController
 class QueryParserService(
    private val schemaStore: SchemaStore,
+   private val insightUtils:QueryInsightUtils
 ) {
-   private val insightUtils = QueryInsightUtils()
-
    @PostMapping(
       value = ["/api/taxiql/parse"],
       consumes = [MediaType.APPLICATION_JSON_VALUE, MediaType.TEXT_PLAIN_VALUE, "application/taxiql"],

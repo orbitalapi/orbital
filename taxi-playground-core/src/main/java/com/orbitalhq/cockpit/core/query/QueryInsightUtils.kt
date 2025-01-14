@@ -17,8 +17,11 @@ import reactor.core.scheduler.Schedulers
  * Different from the QueryParser in the taxiql query engine,
  * which is part of the actual query building process
  */
-class QueryInsightUtils() {
-   private val visualizerService = QueryVisualizer()
+class QueryInsightUtils(
+   private val visualizerService: QueryVisualizer = QueryVisualizer()
+
+) {
+
 
    fun parseQuery(
       query: TaxiQLQueryString,

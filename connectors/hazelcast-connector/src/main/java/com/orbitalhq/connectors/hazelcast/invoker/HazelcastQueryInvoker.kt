@@ -18,6 +18,9 @@ class HazelcastQueryInvoker : BaseHazelcastReadInvoker() {
    override fun buildFlowOfCriteriaSearch(
       taxiQlQueryString: TaxiQLQueryString,
       operation: RemoteOperation,
+      /**
+       * The actual map we're invoking.
+       */
       map: IMap<Any, Any>,
       predicate: Predicate<Any, Any>,
    ): Pair<Flow<Any?>, Int> {
