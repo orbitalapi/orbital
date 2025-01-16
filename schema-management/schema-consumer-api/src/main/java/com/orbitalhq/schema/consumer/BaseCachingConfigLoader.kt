@@ -5,6 +5,7 @@ import com.orbitalhq.config.ConfigSourceLoader
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import java.nio.file.FileSystems
 import java.nio.file.InvalidPathException
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentHashMap
@@ -47,7 +48,7 @@ abstract class BaseCachingConfigLoader(
          "glob:**$filePattern"
       }
       val pathMatcher = try {
-         Paths.get(filePattern).fileSystem.getPathMatcher(pathGlob)
+         FileSystems.getDefault().getPathMatcher(pathGlob)
       } catch (e: InvalidPathException) {
          logger.error { "Cannot setup config loader ${this::class.simpleName} as the provided path $filePattern is invalid" }
          return emptyList()

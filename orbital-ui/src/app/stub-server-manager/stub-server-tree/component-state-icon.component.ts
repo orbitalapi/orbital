@@ -11,7 +11,14 @@ import {SvgIconComponent} from "../../svg-icon/svg-icon.component";
     SvgIconComponent
   ],
   template: `
-    <app-svg-icon [src]="stateIcon.img" [ngClass]="stateIcon.className" [width]="16" [height]="16" [strokeWidth]="2"></app-svg-icon>
+    <app-svg-icon
+      [src]="stateIcon.img"
+      [ngClass]="stateIcon.className"
+      [width]="16"
+      [height]="16"
+      [strokeWidth]="2"
+      [title]="state.state"
+    ></app-svg-icon>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './component-state-icon.component.scss'

@@ -8,10 +8,34 @@
 }
 
 .table {
-  @include orbital-table();
+  @include orbital-table($gray-100);
   @include links();
   font-size: 0.9rem;
+  table-layout: fixed;
+  width: 100%;
+
+  td {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover {
+      + .copy-td .copyButton {
+        opacity: 1;
+      }
+    }
+
+    &.label-col {
+      width: 70%;
+    }
+
+    &.copy-td {
+      padding: 0 0.25rem 0 0;
+      width: 24px;
+    }
+  }
 }
+
 section {
   margin-bottom: 2rem;
   .subheader {
@@ -29,8 +53,19 @@ section {
 }
 
 .copyButton {
+  margin-top: -0.25rem;
+  opacity: 0;
+  transition: opacity 150ms ease-in-out;
+
   img {
     width: 16px;
-    margin-left: 0.5rem;
   }
+
+  &:hover {
+    opacity: 1;
+  }
+}
+
+tui-segmented {
+  align-self: flex-start;
 }

@@ -15,23 +15,26 @@ import {DataSourceTreeComponent} from './data-source-tree/data-source-tree.compo
   selector: 'app-data-source-manager',
   template: `
     <as-split direction="horizontal" unit="pixel">
-      <as-split-area size="360">
+      <as-split-area size="360" class="left-column">
         <ng-container *ngIf="(connections$ | async) as connectionList">
-          <div *ngIf="connectionList.definitionsWithErrors.length > 0" class="errors-panel" (click)="showProblemsPanel()">
-            <h3>{{ connectionList.definitionsWithErrors.length }} configuration files have errors</h3>
-<!--            <ul>-->
-<!--              <li *ngFor="let error of connectionList.definitionsWithErrors">-->
-<!--                <h4>{{ error.configFileName}}</h4>-->
-<!--                <span>{{ error.identifier.id }}: {{ error.error }}</span>-->
-<!--              </li>-->
-<!--            </ul>-->
+          <div *ngIf="connectionList.definitionsWithErrors.length > 0" class="errors-panel"
+               (click)="gotoProblemsRoute()">
+            <h3>{{ connectionList.definitionsWithErrors.length | i18nPlural: errorsPluralMap }}</h3>
+            <!--            <ul>-->
+            <!--              <li *ngFor="let error of connectionList.definitionsWithErrors">-->
+            <!--                <h4>{{ error.configFileName}}</h4>-->
+            <!--                <span>{{ error.identifier.id }}: {{ error.error }}</span>-->
+            <!--              </li>-->
+            <!--            </ul>-->
           </div>
         </ng-container>
         <app-data-source-tree [schema$]="schema$" [connections$]="connections$"></app-data-source-tree>
       </as-split-area>
       <as-split-area>
         <router-outlet></router-outlet>
-        <div class="no-route-selected">Click on a connection, service or operation on the left to view it's details here</div>
+        <div class="no-route-selected">Click on a connection, service or operation on the left to view it's details
+          here
+        </div>
       </as-split-area>
     </as-split>
   `,
@@ -70,8 +73,13 @@ export class DataSourceManagerComponent {
       });
   }
 
-  showProblemsPanel() {
+  gotoProblemsRoute() {
     this.router.navigate(['problems'], { relativeTo: this.activatedRoute })
+  }
+
+  errorsPluralMap = {
+    '=1': '1 configuration file has an error',
+    'other': '# configuration files have errors'
   }
 
   protected readonly UiCustomisations = UiCustomisations;

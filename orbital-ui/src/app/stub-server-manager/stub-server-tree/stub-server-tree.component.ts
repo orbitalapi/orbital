@@ -1,14 +1,9 @@
-import { TuiTree } from "@taiga-ui/kit";
 import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
-import {AsyncPipe, KeyValuePipe, NgForOf, NgIf} from "@angular/common";
-import {
-  ComponentInfo,
-  ComponentInfoWithState,
-  ComponentState,
-  NebulaStacksResponse
-} from 'src/app/services/stubs-api.service';
+import { CommonModule} from '@angular/common';
 import {RouterLink, RouterLinkActive, RouterOutlet} from "@angular/router";
 import {AngularSplitModule} from "angular-split";
+import {TuiBadge, TuiTree} from '@taiga-ui/kit';
+import {ComponentInfoWithState, NebulaStacksResponse} from 'src/app/services/stubs-api.service';
 import {ComponentStateIconComponent} from "./component-state-icon.component";
 
 @Component({
@@ -16,15 +11,13 @@ import {ComponentStateIconComponent} from "./component-state-icon.component";
   standalone: true,
   imports: [
     TuiTree,
-    KeyValuePipe,
-    AsyncPipe,
-    NgForOf,
-    NgIf,
+    CommonModule,
     RouterLinkActive,
     RouterLink,
     AngularSplitModule,
     RouterOutlet,
-    ComponentStateIconComponent
+    ComponentStateIconComponent,
+    TuiBadge,
   ],
   template: `
     <as-split direction="horizontal" unit="pixel">
@@ -45,14 +38,16 @@ import {ComponentStateIconComponent} from "./component-state-icon.component";
 
               @for (stackComponent of stackKeyValue.value; let i=$index; track i) {
                 <tui-tree-item class="show-tree-decoration">
-               <span
-                 class="is-navigable tree-item-label"
-                 [routerLink]="getStackPath(stackKeyValue.key, stackComponent.name)"
-                 [routerLinkActiveOptions]="{exact: true}"
-                 routerLinkActive="active">
-                 <app-component-state-icon [state]="stackComponent.state"></app-component-state-icon>
+                  <span
+                    class="is-navigable tree-item-label"
+                    [routerLink]="getStackPath(stackKeyValue.key, stackComponent.name)"
+                    [routerLinkActiveOptions]="{exact: true}"
+                    routerLinkActive="active"
+                  >
+                  <app-component-state-icon [state]="stackComponent.state"></app-component-state-icon>
+                    <!--<tui-badge appearance="badgeState" size="s">{{stackComponent.state.state}}</tui-badge>-->
                   <img class="tree-icon" [src]=serviceIcon(stackComponent.type)>{{ getComponentDisplayName(stackComponent) }}
-                </span>
+                  </span>
                 </tui-tree-item>
               }
 
@@ -66,7 +61,6 @@ import {ComponentStateIconComponent} from "./component-state-icon.component";
         <div class="no-route-selected">Click on a service on the left to view it's details here</div>
       </as-split-area>
     </as-split>
-
   `,
   styleUrl: './stub-server-tree.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
@@ -76,15 +70,13 @@ export class StubServerTreeComponent {
   @Input()
   stackState: NebulaStacksResponse
 
-
   getStackPath(stackName: string, componentType: string): string {
     const stackUri = stackName.replace('[','')
       .replace(']','')
-    return `stacks/${stackUri}/${componentType}`;
+    const [packageId, stackId] = stackUri.split('/', 2)
+    // path: 'stacks/:packageId/:stackId/:componentId',
+    return `stacks/${packageId}/${stackId}/${componentType}`;
   }
-
-
-
 
   getPackageName(stackName: string): string {
     const packageName = stackName.split(']')[0].replace('[','')
@@ -106,13 +98,13 @@ export class StubServerTreeComponent {
       case 'postgres' :
       case 'mysql':
       case 'mssql':
-        return 'assets/img/chart-icons/database-icon.svg'
+        return 'assets/img/tabler/database.svg'
       case 'kafka' :
         return 'assets/img/data-source-icons/kafka-icon.svg'
       case 'http' :
         return 'assets/img/tabler/api.svg';
       case 's3':
-        return 'assets/img/chart-icons/amazons3.svg'
+        return 'assets/img/tabler/bucket.svg'
       case 'hazelcast':
         return 'assets/img/data-source-icons/hazelcast_node.svg'
       default :
