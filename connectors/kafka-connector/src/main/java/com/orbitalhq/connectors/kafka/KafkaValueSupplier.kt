@@ -78,8 +78,7 @@ class KafkaValueSupplier(private val record: ReceiverRecord<Any, ByteArray>) : V
       schema: Schema,
       source: DataSource
    ): TypedInstance {
-      val metadataType = (messageMetadata.params["value"] as EnumMember)
-         .value.value
+      val metadataType = (messageMetadata.params["value"] as String)
       val metadataValue: Any = when (metadataType) {
          "Partition" -> record.partition()
          "Offset" -> record.offset()
