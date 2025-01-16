@@ -4,22 +4,26 @@
   height: 100%;
 }
 
+.left-column {
+  display: flex;
+  flex-direction: column;
+}
+
 .errors-panel {
   padding: 1rem;
-  margin-bottom: 1rem;
-
+  margin-bottom: 0.75rem;
+  margin-right: 0.2rem;
   display: flex;
   align-items: flex-start;
   gap: 1rem;
-
-  h3 {
-    margin: 0;
-  }
-
   font-size: 0.9rem;
   background-color: $red-50;
   border-radius: 4px;
   border: 2px solid $red-400;
+
+  h3 {
+    margin: 0;
+  }
 
   &:hover {
     cursor: pointer;

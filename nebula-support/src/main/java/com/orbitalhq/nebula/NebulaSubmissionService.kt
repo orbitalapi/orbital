@@ -150,6 +150,7 @@ class NebulaSubmissionService(
          val directory = ConfigFileLocationConventions.OrbitalNebulaPathEntry.split("/").dropLast(1)
             .joinToString("/")
          val stackName = source.name
+            .replace("\\", "/") // JLangdon: account for Windows paths :-)
             .replace("${directory}/", "")
             .removeSuffix(".nebula.kts")
 
