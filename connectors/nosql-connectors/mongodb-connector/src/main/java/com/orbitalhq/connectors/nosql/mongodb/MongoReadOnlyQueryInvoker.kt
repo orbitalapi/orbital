@@ -10,7 +10,6 @@ import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
-import com.orbitalhq.utils.withQueryId
 import kotlinx.coroutines.flow.Flow
 import mu.KotlinLogging
 import org.springframework.data.mongodb.core.query.Query
@@ -43,12 +42,12 @@ class MongoReadOnlyQueryInvoker(
       }
       val criteriaJson = if (criterias.isEmpty()) SelectAllCriteria else criterias.first().criteriaObject.toJson()
 
-      logger.withQueryId(queryId).debug { "Starting Mongo Query" }
+      logger.debug { "Starting Mongo Query" }
       val stopwatch = Stopwatch.createStarted()
       val resultFlux = if (criterias.isEmpty()) {
          reactiveMongoTemplate.findAll(Map::class.java, typesToCollectionNames.values.first())
       } else {
-         logger.withQueryId(queryId).info { "Using the Mongo Criteria => $criteriaJson" }
+         logger.info { "Using the Mongo Criteria => $criteriaJson" }
          reactiveMongoTemplate.find(
             Query().addCriteria(criterias.first()),
             Map::class.java,
@@ -67,7 +66,7 @@ class MongoReadOnlyQueryInvoker(
          }
       }
       val elapsed = stopwatch.elapsed()
-      logger.withQueryId(queryId).debug { "Mongo Query completed in $elapsed" }
+      logger.debug { "Mongo Query completed in $elapsed" }
       val operationResult = buildOperationResult(
          service,
          operation,

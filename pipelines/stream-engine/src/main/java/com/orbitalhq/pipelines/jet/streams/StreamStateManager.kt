@@ -3,11 +3,16 @@ package com.orbitalhq.pipelines.jet.streams
 import com.google.common.annotations.VisibleForTesting
 import com.hazelcast.core.EntryEvent
 import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.jet.Job
 import com.hazelcast.map.IMap
 import com.hazelcast.map.MapStore
 import com.hazelcast.map.listener.EntryAddedListener
 import com.hazelcast.map.listener.EntryRemovedListener
 import com.hazelcast.map.listener.EntryUpdatedListener
+import com.orbitalhq.pipelines.jet.api.streams.StreamJobState
+import com.orbitalhq.pipelines.jet.api.streams.StreamJobStateEvent
+import com.orbitalhq.pipelines.jet.api.streams.StreamName
+import com.orbitalhq.pipelines.jet.api.streams.StreamStateWithJobStates
 import com.orbitalhq.pipelines.jet.api.streams.StreamStatus
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec
@@ -33,11 +38,30 @@ class StreamStateManagerHazelcastConfig {
    companion object {
       const val STREAM_STATUS_CACHE_BEAN_NAME = "streamStateCache"
       const val STREAM_STATUS_CACHE_NAME = "streamStatus"
+
+      const val STREAM_JOB_STATUS_CACHE_BEAN_NAME = "streamJobStateCache"
+      const val STREAM_JOB_STATUS_CACHE_NAME = "streamJobStatus"
+
    }
+
    @Bean(STREAM_STATUS_CACHE_BEAN_NAME)
-   fun streamStateCache(hazelcastInstance: HazelcastInstance,  mapStore: StreamStatusMapStore):IMap<String,StreamStatus> {
+   fun streamStateCache(
+      hazelcastInstance: HazelcastInstance,
+      mapStore: StreamStatusMapStore
+   ): IMap<StreamName, StreamStatus> {
       val streamStateCache = hazelcastInstance
-         .getMap<String, StreamStatus>(STREAM_STATUS_CACHE_NAME)
+         .getMap<StreamName, StreamStatus>(STREAM_STATUS_CACHE_NAME)
+
+      return streamStateCache
+   }
+
+   @Bean(STREAM_JOB_STATUS_CACHE_BEAN_NAME)
+   fun streamJobStateCache(
+      hazelcastInstance: HazelcastInstance,
+      mapStore: StreamStatusMapStore
+   ): IMap<String, MutableList<StreamJobStateEvent>> {
+      val streamStateCache = hazelcastInstance
+         .getMap<String, MutableList<StreamJobStateEvent>>(STREAM_JOB_STATUS_CACHE_NAME)
 
       return streamStateCache
    }
@@ -62,6 +86,9 @@ class StreamStateManager(
    @VisibleForTesting
    @Qualifier(StreamStateManagerHazelcastConfig.STREAM_STATUS_CACHE_BEAN_NAME)
    val streamStateCache: MutableMap<String, StreamStatus>,
+
+   @Qualifier(StreamStateManagerHazelcastConfig.STREAM_JOB_STATUS_CACHE_BEAN_NAME)
+   val streamJobStateCache: MutableMap<StreamName, MutableList<StreamJobStateEvent>>,
 ) {
 
 
@@ -69,8 +96,13 @@ class StreamStateManager(
       private val logger = KotlinLogging.logger {}
    }
 
+   init {
+      pipelineManager.jobStatusEvents.subscribe { (job, event) ->
+         handleJobStatusEvent(job, event)
+      }
+   }
 
-   fun getStreamStatusIfExists(name: String):StreamStatus? {
+   fun getStreamStatusIfExists(name: String): StreamStatus? {
       return if (streamStateCache.containsKey(name)) {
          getOrCreateStreamStatus(name)
       } else null
@@ -112,11 +144,26 @@ class StreamStateManager(
       return spec
    }
 
+   private fun handleJobStatusEvent(job: Job, event: StreamJobStateEvent) {
+      val jobName = job.name
+      val (newState, description) = event
+      if (jobName == null) {
+         logger.error { "Jet engine reported job with id ${job.id} changed to state $newState but not sure which job this relates to, as the originating job didn't have a name" }
+         return
+      }
+      streamJobStateCache.compute(jobName) { _, status ->
+         val statusList = status ?: mutableListOf()
+         statusList.add(event)
+         statusList
+      }
+      logger.info { "Updated stream state for ${job.name} to $newState" }
+   }
+
    /**
     * Updates the stream state, and persists to the backing store.
     * This can also have the effect of starting / pausing the stream.
     */
-   fun setStreamState(name: String, state: StreamStatus.State):StreamStatus {
+   fun setStreamState(name: StreamName, state: StreamStatus.State): StreamStatus {
       val streamStatus = StreamStatus(name, state)
       // Set the state in the cache.
       // This will trigger the event listener on the appropriate node on the cluster
@@ -133,38 +180,74 @@ class StreamStateManager(
    fun getAllStreamStates(): List<StreamStatus> {
       return streamStateCache.values.toList()
    }
+   fun getStreamAndJobStates(): Map<StreamName, StreamStateWithJobStates> {
+      return StreamStateMapListener.buildStreamAndJobStates(
+         streamStateCache,
+         streamJobStateCache
+      )
+   }
 }
 
 
 interface StreamStateUpdatesPublisher {
-   val stateUpdates: Flux<List<StreamStatus>>
+   val stateUpdates: Flux<Map<String, StreamStateWithJobStates>>
 }
 
 @Component
 class StreamStateMapListener(
    private val pipelineManager: PipelineManager,
-   private val streamStateCache: IMap<String, StreamStatus>
+   private val streamStateCache: IMap<String, StreamStatus>,
+   @Qualifier(StreamStateManagerHazelcastConfig.STREAM_JOB_STATUS_CACHE_BEAN_NAME)
+   val streamJobStateCache: IMap<StreamName, MutableList<StreamJobStateEvent>>,
 ) :
-   EntryAddedListener<String, StreamStatus>, EntryRemovedListener<String, StreamStatus>,
-   EntryUpdatedListener<String, StreamStatus> ,
+   EntryAddedListener<String, StreamStatus>,
+   EntryRemovedListener<String, StreamStatus>,
+   EntryUpdatedListener<String, StreamStatus>,
    StreamStateUpdatesPublisher {
 
-   private val stateUpdatesSink = Sinks.many().replay().latest<List<StreamStatus>>()
-   override val stateUpdates: Flux<List<StreamStatus>> = stateUpdatesSink.asFlux()
+   private val stateUpdatesSink = Sinks.many().replay().latest<Map<String, StreamStateWithJobStates>>()
+   override val stateUpdates: Flux<Map<String, StreamStateWithJobStates>> = stateUpdatesSink.asFlux()
 
    companion object {
       private val logger = KotlinLogging.logger {}
+
+      fun buildStreamAndJobStates(
+         streamStateCache: Map<String, StreamStatus>,
+         jobStateEvents: Map<StreamName, MutableList<StreamJobStateEvent>>
+      ): Map<StreamName, StreamStateWithJobStates> {
+         val currentStreamStates = streamStateCache.values
+
+         val streamStateWithJobStates = currentStreamStates.map { streamState ->
+            val streamName = streamState.streamName
+            val jobStatusesForStream = jobStateEvents[streamName]?.groupBy { it.jobId } ?: emptyMap()
+            val streamJobState = jobStatusesForStream.map { (jobId, events) -> StreamJobState(jobId, events) }
+            streamState.streamName to StreamStateWithJobStates(
+               streamState,
+               streamJobState
+            )
+         }.toMap()
+         return streamStateWithJobStates
+      }
    }
 
    init {
       emitCurrentState()
       streamStateCache.addEntryListener(this, true)
+      val addedListener = EntryAddedListener<String, StreamStatus> { emitCurrentState() }
+      val changeListener = EntryUpdatedListener<String, StreamStatus> { emitCurrentState() }
+      streamJobStateCache.addEntryListener(addedListener, false)
+      streamJobStateCache.addEntryListener(changeListener, false)
    }
 
    private fun emitCurrentState() {
-      stateUpdatesSink.tryEmitNext(streamStateCache.values
-         .toList())
+      val streamStateWithJobStates = buildStreamAndJobStates(
+         streamStateCache,
+         streamJobStateCache
+      )
+
+      stateUpdatesSink.tryEmitNext(streamStateWithJobStates)
    }
+
    override fun entryAdded(event: EntryEvent<String, StreamStatus>) {
       if (event.value.state == StreamStatus.State.RUNNING && event.oldValue.state != StreamStatus.State.RUNNING && event.member.localMember()) {
          val streamName = event.value.streamName
@@ -202,11 +285,9 @@ class StreamStateMapListener(
       }
       emitCurrentState()
    }
-
 }
 
 interface StreamStatusRepository : JpaRepository<StreamStatus, String>
-
 
 
 @Component
@@ -223,8 +304,9 @@ class StreamStatusMapStore(
    private val unusedTransactionManager: TransactionManager,
 ) : MapStore<String, StreamStatus> {
    init {
-       println()
+      println()
    }
+
    override fun load(key: String): StreamStatus? {
       return repository.findByIdOrNull(key)
    }

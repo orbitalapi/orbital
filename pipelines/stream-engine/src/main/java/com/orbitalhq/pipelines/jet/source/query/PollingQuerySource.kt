@@ -101,6 +101,13 @@ class QueryBufferingPipelineContext(
    private lateinit var queryJob: Job
    private lateinit var querySubscription: Disposable
 
+   /**
+    * Holds an exception thrown by the query execution layer.
+    * We rethrow this on the next poll from Hazelcast Jet, so that the failure is
+    * propogated into the Jet excecution context
+    */
+   private var executionException: Throwable? = null
+
    @PostConstruct
    fun runQuery() {
       val scope = CoroutineScope(Dispatchers.Default)
@@ -124,7 +131,8 @@ class QueryBufferingPipelineContext(
             }
             .doOnComplete { isDone = true }
             .doOnError { error ->
-               logger.severe(error.message)
+               logger.warning("An exception was thrown in the query execution layer of a streaming job: ${error.message}. This message will be propagated back to Jet on the next poll.")
+               executionException = error
                isDone = true
             }
             .subscribe {
@@ -156,6 +164,10 @@ class QueryBufferingPipelineContext(
    private var isDone = false
 
    fun drainTo(buffer: SourceBuffer<MessageContentProvider>) {
+      // If something went wrong on the query execution thread, throw it now.
+      // This ensures that the exception is propigated on Jet's execution threads,
+      // so job states etc., are updated.
+      executionException?.let { throw it }
       logger.finest("Writing ${queue.size} items into the polling query sink's buffer.")
       val tempBuffer: MutableList<MessageContentProvider> = mutableListOf()
       queue.drainTo(tempBuffer)

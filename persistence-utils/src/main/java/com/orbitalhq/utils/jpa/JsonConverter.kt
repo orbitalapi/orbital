@@ -1,4 +1,4 @@
-package com.orbitalhq.query.history
+package com.orbitalhq.utils.jpa
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue

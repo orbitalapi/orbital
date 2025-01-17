@@ -8,6 +8,7 @@ import com.orbitalhq.pipelines.jet.api.streams.StreamStatusUpdateRequest
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.streams.StreamStateManager
 import com.orbitalhq.schema.consumer.SchemaStore
+import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.NotFoundException
@@ -158,6 +159,17 @@ class PipelineService(
    ): Mono<StreamStatus> {
       return Mono.fromCallable {
          stateManager.setStreamState(streamName, request.state)
+      }
+   }
+
+   @PreAuthorize("hasAuthority('${VynePrivileges.EditPipelines}')")
+   @PostMapping("/api/streams/{streamName}/restart")
+   fun restartFailedStream(
+      @PathVariable("streamName") streamName: String,
+   ): Mono<StreamStatus> {
+      return Mono.fromCallable {
+         pipelineManager.startPipelineByName(streamName.fqn())
+         stateManager.getStreamStatusIfExists(streamName)
       }
    }
 

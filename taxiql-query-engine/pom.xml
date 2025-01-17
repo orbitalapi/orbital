@@ -90,6 +90,11 @@
          <artifactId>jakarta.persistence-api</artifactId>
       </dependency>
 
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>persistence-utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
 
       <dependency>
          <groupId>com.orbitalhq</groupId>

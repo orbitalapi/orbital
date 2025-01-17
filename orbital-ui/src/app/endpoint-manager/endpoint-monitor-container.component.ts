@@ -2,13 +2,24 @@ import {CommonModule} from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject, Injector} from '@angular/core';
 import {FormsModule} from '@angular/forms';
 import {ActivatedRoute} from '@angular/router';
-import {tuiButtonOptionsProvider, TuiDialogService,} from '@taiga-ui/core';
-import { TuiConfirm, TuiStatus, TuiBadge, TuiSwitch, TuiConfirmData } from '@taiga-ui/kit';
+import {
+  TuiAppearanceOptions,
+  TuiButton,
+  tuiButtonOptionsProvider,
+  TuiDialogService,
+  TuiNotification,
+} from '@taiga-ui/core';
+import {TuiConfirm, TuiStatus, TuiBadge, TuiSwitch, TuiConfirmData, TuiLineClamp} from '@taiga-ui/kit';
 import {PolymorpheusComponent} from '@taiga-ui/polymorpheus';
 import {combineLatestWith, filter, Observable, of} from 'rxjs';
 import {map, mergeMap, tap} from 'rxjs/operators';
 import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
-import {PipelineService, StreamRunningState, StreamStatus} from '../pipelines/pipelines.service';
+import {
+  PipelineService,
+  StreamRunningState,
+  StreamStateWithJobStates,
+  StreamStatus
+} from '../pipelines/pipelines.service';
 import {
   PublishedEndpointInfoComponent
 } from '../query-panel/query-editor/query-editor-toolbar/published-endpoint-info.component';
@@ -19,6 +30,9 @@ import {QueryParseMetadata, QueryService} from "../services/query.service";
 import {LineageGraphModule} from "../type-viewer/lineage-graph/lineage-graph.module";
 import {LineageDisplayModule} from "../lineage-display/lineage-display.module";
 import {RequiresAuthorityDirective} from "../requires-authority.directive";
+import {jobStatusBadge, streamStateToDisplayLabel} from "./endpoint-list.component";
+import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
+import {SvgIconComponent} from "../svg-icon/svg-icon.component";
 
 @Component({
   selector: 'app-endpoint-monitor-container',
@@ -33,11 +47,31 @@ import {RequiresAuthorityDirective} from "../requires-authority.directive";
         <app-published-endpoint-info [savedQuery]="query" [showTitle]="false"></app-published-endpoint-info>
         <div *ngIf="query.queryKind === 'Stream'" class="row stream-status-and-toggle">
           <input
-              tuiSwitch
-              type="checkbox" *appRequiresAuthority="['EditPipelines']" [ngModel]="streamIsRunning" (click)="handleToggleClick($event)" size="m"/>
+            tuiSwitch
+            type="checkbox" *appRequiresAuthority="['EditPipelines']" [ngModel]="streamIsEnabled"
+            (click)="handleToggleClick($event)" size="m"/>
           <tui-badge tuiStatus
-                     [appearance]="streamStatusBadge.status">{{ streamStatusBadge.label | titlecase }}</tui-badge>
+                     [appearance]="streamStatusBadge.appearance">{{ streamStatusBadge.label | titlecase }}
+          </tui-badge>
+          <ng-container *ngIf="streamStatusBadge.label === 'Enabled'">
+            <tui-badge tuiStatus
+                       [appearance]="jobStatusBadge.appearance">{{ jobStatusBadge.label | titlecase }}
+            </tui-badge>
+            <button *ngIf="streamAndJobState?.jobState?.status !== 'RUNNING'" size="s" tuiButton type="button"
+                    appearance="outline" (click)="restartStream()">
+              <app-svg-icon tabler="refresh"></app-svg-icon>
+              Restart
+            </button>
+          </ng-container>
+
         </div>
+        <tui-notification
+          *ngIf="streamAndJobState?.streamStatus?.state == 'RUNNING' && streamAndJobState?.jobState?.status !== 'RUNNING'"
+          appearance="negative">
+          <tui-line-clamp [lineHeight]="20" [linesLimit]="8" [content]="streamAndJobState?.jobState?.description">
+          </tui-line-clamp>
+        </tui-notification>
+
       </ng-container>
       <app-endpoint-monitor
         [endpointName$]="endpointName$"
@@ -60,6 +94,10 @@ import {RequiresAuthorityDirective} from "../requires-authority.directive";
     LineageDisplayModule,
     RequiresAuthorityDirective,
     TuiStatus,
+    TuiNotification,
+    TuiLineClamp,
+    TuiButton,
+    SvgIconComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
@@ -70,17 +108,31 @@ export class EndpointMonitorContainerComponent {
   streamLoadingError: string
   parsedQuery$: Observable<QueryParseMetadata>
 
-  private streamStatus: StreamStatus
+  streamAndJobState: StreamStateWithJobStates
 
-  get streamStatusBadge() {
+  get streamStatusBadge(): { label: string, appearance: TuiAppearanceOptions["appearance"] } {
+    let appearance: string
+    switch (true) {
+      case this.streamIsEnabled:
+        appearance = 'positive';
+        break;
+      default:
+        appearance = 'warning';
+        break;
+    }
     return {
-      label: this.streamStatus?.state || 'Unknown',
-      status: this.streamIsRunning ? 'positive' : this.streamStatus?.state ? 'warning' : null as TuiStatus
+      label: streamStateToDisplayLabel(this.streamAndJobState?.streamStatus?.state),
+      appearance: appearance
     }
   }
 
-  get streamIsRunning(): boolean {
-    return this.streamStatus?.state === 'RUNNING';
+  get jobStatusBadge(): { label: string, appearance: TuiAppearanceOptions["appearance"] } {
+    return jobStatusBadge(this.streamAndJobState)
+
+  }
+
+  get streamIsEnabled(): boolean {
+    return this.streamAndJobState?.streamStatus?.state === 'RUNNING';
   }
 
   constructor(
@@ -111,12 +163,21 @@ export class EndpointMonitorContainerComponent {
     )
 
     this.endpointName$.pipe(
+      takeUntilDestroyed(),
       combineLatestWith(this.query$),
       filter(([streamName, query]) => query.queryKind === 'Stream'),
-      mergeMap(([streamName, query]) => pipelineService.getStreamStatus(streamName))
+      mergeMap(([streamName, query]) => {
+        return pipelineService.streamsStatus()
+          .pipe(
+            map(event => {
+                return event[streamName]
+              }
+            ))
+      })
     ).subscribe({
       next: value => {
-        this.streamStatus = value;
+        console.log('Updating stream status: ', value)
+        this.streamAndJobState = value;
         this.changeDetector.markForCheck();
       },
       error: err => {
@@ -137,7 +198,7 @@ export class EndpointMonitorContainerComponent {
   }
 
   handleToggleClick($event: Event) {
-    const desiredState: StreamRunningState = (this.streamIsRunning) ? 'PAUSED' : 'RUNNING';
+    const desiredState: StreamRunningState = (this.streamIsEnabled) ? 'PAUSED' : 'RUNNING';
     this.updateStreamRunningState(desiredState);
     $event.preventDefault()
     $event.stopImmediatePropagation();
@@ -167,10 +228,10 @@ export class EndpointMonitorContainerComponent {
         return this.dialogs.open<boolean>(new PolymorpheusComponent(
           TuiConfirm,
           Injector.create({
-            providers: [tuiButtonOptionsProvider({ appearance: targetState === 'RUNNING' ? 'primary' : 'destructive' })],
+            providers: [tuiButtonOptionsProvider({appearance: targetState === 'RUNNING' ? 'primary' : 'destructive'})],
             parent: this.injector,
           })
-        ),{
+        ), {
           label: dialogLabel,
           size: 's',
           data: promptData,
@@ -182,14 +243,28 @@ export class EndpointMonitorContainerComponent {
       }),
       mergeMap(({savedQuery, confirmed}) => {
         if (confirmed) {
+          console.log('Updating stream status: ', this.streamAndJobState)
+          this.changeDetector.markForCheck();
           return this.pipelineService.updateStreamStatus(savedQuery.name.parameterizedName, targetState)
         } else {
-          return of(this.streamStatus)
+          return of(this.streamAndJobState)
         }
       })
     ).subscribe(next => {
-      this.streamStatus = next;
-      this.changeDetector.markForCheck();
+      // Don't update the stream status.
+      // We'll get an event on the websocket
+      // Otherwise, a race condition exists if the stream has already failed by the time the
+      // HTTP call returns.
+      // this.streamStatus = next;
+      // this.changeDetector.markForCheck();
     })
   }
+
+  restartStream() {
+    this.pipelineService.restartStream(this.streamAndJobState.streamStatus.streamName)
+      .subscribe(next => {
+          console.log('Restart of pipeline sent successfully')
+      })
+  }
 }
+

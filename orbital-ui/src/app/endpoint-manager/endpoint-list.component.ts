@@ -1,16 +1,13 @@
 import {TuiBadge, TuiStatus} from '@taiga-ui/kit';
-import { AsyncPipe, CommonModule, TitleCasePipe } from '@angular/common';
+import {AsyncPipe, CommonModule, TitleCasePipe} from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject} from '@angular/core';
 import {TuiAlertService, TuiAppearanceOptions, TuiNotification} from '@taiga-ui/core';
 import {Observable, switchMap} from 'rxjs';
-import { ConnectionStatusComponent } from '../data-source-manager/connection-status/connection-status.component';
-import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
+import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
 import {SchemaNotificationService} from '../services/schema-notification.service';
-import { SavedQuery, TypesService } from '../services/types.service';
+import {SavedQuery, TypesService} from '../services/types.service';
 import {ActivatedRoute, Router} from "@angular/router";
-import {
-  PipelineService, StreamServerStatusEvent,
-} from "../pipelines/pipelines.service";
+import {PipelineService, StreamRunningState, StreamStateWithJobStates} from "../pipelines/pipelines.service";
 import {map, tap} from 'rxjs/operators';
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 
@@ -38,9 +35,13 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
           <tbody>
           <tr *ngFor="let query of queries" (click)="navigateToQueryPage(query)">
             <td>{{ query.name.shortDisplayName }}</td>
-            <td>
+            <td class="badges">
               <tui-badge tuiStatus [appearance]="queryStateBadgeType(queryState(query))"
-                         size="m">{{ queryState(query) | titlecase }}</tui-badge>
+                         size="m">{{ queryState(query) | titlecase }}
+              </tui-badge>
+              <tui-badge  *ngIf="query.queryKind === 'Stream'"  tuiStatus [appearance]="jobState(query).appearance"
+                         size="m">{{ jobState(query).label | titlecase }}
+              </tui-badge>
             </td>
             <td>{{ query.queryKind }}</td>
             <td>
@@ -63,7 +64,6 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
   imports: [
     CommonModule,
     HeaderComponentLayoutModule,
-    ConnectionStatusComponent,
     AsyncPipe,
     TuiNotification,
     TitleCasePipe,
@@ -77,7 +77,7 @@ export class EndpointListComponent {
   queries$: Observable<SavedQuery[]>;
 
   hasStreamingQueries = false;
-  private streamServerState: StreamServerStatusEvent = null;
+  private streamServerState: { [index: string]: StreamStateWithJobStates } = {};
   websocketConnectionError: string | null = null;
 
   constructor(
@@ -109,45 +109,106 @@ export class EndpointListComponent {
     streamServerStatusMessages
       .pipe(takeUntilDestroyed())
       .subscribe(
-      {
-        next: message => {
-          this.streamServerState = message
-          this.websocketConnectionError = null;
-          changeDetector.markForCheck();
-        },
-        error: err => {
-          console.log(err)
-          this.websocketConnectionError = 'Unable to fetch stream statuses'
-          this.alertService
-            .open('Server disconnected, please refresh the browser to reconnect',
-              {appearance: 'warning', autoClose: 0, closeable: false }
-            )
-            .subscribe()
-          changeDetector.markForCheck();
-        }
-      });
+        {
+          next: message => {
+            this.streamServerState = message
+            this.websocketConnectionError = null;
+            changeDetector.markForCheck();
+          },
+          error: err => {
+            console.log(err)
+            this.websocketConnectionError = 'Unable to fetch stream statuses'
+            this.alertService
+              .open('Server disconnected, please refresh the browser to reconnect',
+                {appearance: 'warning', autoClose: 0, closeable: false}
+              )
+              .subscribe()
+            changeDetector.markForCheck();
+          }
+        });
   }
 
-  queryStateBadgeType(state: 'RUNNING' | 'PAUSED' | 'UNKNOWN'): TuiAppearanceOptions["appearance"] {
+  queryStateBadgeType(state:StreamStateDisplayLabel): TuiAppearanceOptions["appearance"] {
     switch (state) {
-      case "UNKNOWN":
-        return "neutral";
-      case "PAUSED":
-        return "warning";
-      case "RUNNING":
+      case "Enabled":
         return "positive";
+      case "Disabled":
+        return 'warning'
+      default:
+        return 'neutral'
     }
   }
 
-  queryState(query: SavedQuery) {
-    if (query.queryKind === "Query") return "RUNNING"; // Can't suspend queries at the moment
-    if (!this.streamServerState) return 'UNKNOWN';
-    const streamStatus = this.streamServerState.streams.find(s => s.streamName === query.name.parameterizedName)
-    if (!streamStatus) return 'UNKNOWN';
-    return streamStatus.state;
+  jobState(query: SavedQuery):{ label: string, appearance: TuiAppearanceOptions["appearance"] } {
+    const unknown = {
+      label: 'Unknown',
+      appearance: 'neutral',
+    };
+    if (!this.streamServerState) return unknown;
+    const streamStatus: StreamStateWithJobStates = this.streamServerState[query.name.parameterizedName]
+    if (!streamStatus) return unknown;
+    return jobStatusBadge(streamStatus)
+  }
+
+
+
+
+  queryState(query: SavedQuery):StreamStateDisplayLabel {
+    if (query.queryKind === "Query") return "Enabled"; // Can't suspend queries at the moment
+    if (!this.streamServerState) return 'Unknown';
+    const streamStatus: StreamStateWithJobStates = this.streamServerState[query.name.parameterizedName]
+    if (!streamStatus) return 'Unknown';
+    return streamStateToDisplayLabel(streamStatus.streamStatus.state)
   }
 
   navigateToQueryPage(query: SavedQuery) {
     this.router.navigate([query.name.parameterizedName], {relativeTo: this.activeRoute})
+  }
+}
+
+export type StreamStateDisplayLabel = 'Enabled' | 'Disabled' | 'Unknown';
+
+export function streamStateToDisplayLabel(streamState: StreamRunningState): StreamStateDisplayLabel {
+  switch (streamState) {
+    case "RUNNING":
+      return 'Enabled';
+    case "PAUSED":
+      return 'Disabled';
+    default:
+      return 'Unknown';
+  }
+}
+
+
+export function jobStatusBadge(streamAndJobState: StreamStateWithJobStates):{ label: string, appearance: TuiAppearanceOptions["appearance"] } {
+  let appearance: TuiAppearanceOptions["appearance"];
+  let label: string;
+  const streamEnabled = streamAndJobState.streamStatus.state === 'RUNNING';
+  switch (streamAndJobState?.jobState?.status) {
+    case "RUNNING":
+      label = 'Running';
+      if (streamEnabled) {
+        appearance = 'positive';
+      } else {
+        appearance = 'warning';
+      }
+      break;
+    case 'SUSPENDED':
+    case "FAILED":
+      if (streamEnabled) {
+        appearance = 'negative';
+        label = 'Error'
+      } else {
+        appearance = 'positive';
+        label = 'Not running'
+      }
+      break;
+    default:
+      label = streamAndJobState?.jobState?.status || 'UNKNOWN';
+      appearance = 'warning';
+  }
+  return {
+    label: label,
+    appearance: appearance
   }
 }
