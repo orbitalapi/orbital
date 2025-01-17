@@ -9,7 +9,8 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.QueryEvent
 import com.orbitalhq.query.QueryEventConsumer
-import com.orbitalhq.query.TaxiQlQueryResultEvent
+import com.orbitalhq.query.caching.StateStoreProvider
+import com.orbitalhq.query.connectors.OperationInvocationPlanner
 import com.orbitalhq.query.history.QuerySankeyChartRow
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.stubbing.StubService
@@ -25,13 +26,16 @@ import mu.KotlinLogging
  * before running it.
  *
  */
-class QueryVisualizer {
+class QueryVisualizer(
+   private val planners: List<OperationInvocationPlanner> = emptyList(),
+   private val stateStoreProvider: StateStoreProvider? = null
+) {
    companion object {
       private val logger = KotlinLogging.logger {}
    }
    fun visualizeQuery(query: TaxiQLQueryString, schema: Schema): Either<Exception, List<QuerySankeyChartRow>> {
       // This belongs in the service
-      val (vyne, stubService) = StubService.stubbedVyne(schema)
+      val (vyne, stubService) = StubService.stubbedVyne(schema, planners, stateStoreProvider)
       stubService.returnStubValuesForAllOperations()
       val lineageEventBroker = QueryContextEventBroker()
       val viewBuilder = LineageSankeyViewBuilder(schema)

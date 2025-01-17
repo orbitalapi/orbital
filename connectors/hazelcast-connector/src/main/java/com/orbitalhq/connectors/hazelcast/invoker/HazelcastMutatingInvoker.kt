@@ -32,6 +32,31 @@ class HazelcastMutatingInvoker {
       private val logger = KotlinLogging.logger {}
    }
 
+   fun plan(
+      hazelcastInstance: HazelcastInstance,
+      config: HazelcastConfiguration,
+      service: Service,
+      operation: RemoteOperation,
+      parameters: List<Pair<Parameter, TypedInstance>>,
+      schema: Schema
+   ): RemoteCall {
+      val (_, valueToSave) = parameters[0]
+      val mapName = getMapName(valueToSave.type)
+
+      return buildRemoteCall(
+         mapName,
+         service,
+         config.addresses.joinToString(),
+         operation,
+         // We could get this now, with further refactoring
+         "Available at execution time",
+         Duration.ZERO,
+         -1,
+         getVerb(operation),
+         config.connectionName
+      )
+   }
+
    private fun doUpsert(
       hazelcastInstance: HazelcastInstance,
       parameters: List<Pair<Parameter, TypedInstance>>,
@@ -39,18 +64,19 @@ class HazelcastMutatingInvoker {
       reportResult: (String, String, Int, CacheExchange.CacheOperationVerb) -> DataSource
    ): Flow<TypedInstance> {
       val (_, valueToSave) = parameters[0]
+      val mapName = getMapName(valueToSave.type)
       require(valueToSave is TypedObject) { "Only TypedObjects are supported - Need to add support for ${valueToSave::class.simpleName}" }
       val (key, serializedValue) = if (valueToSave.type.hasMetadata(HazelcastTaxi.Annotations.CompactObject)) {
          GenericRecordWriter.getGenericRecordAndKey(valueToSave, schema)
       } else {
-         HazelcastJsonValueWriter.getJsonValueAndKey(valueToSave,schema)
+         HazelcastJsonValueWriter.getJsonValueAndKey(valueToSave, schema)
       }
-      val mapName = getMapName(valueToSave.type)
+
 
       logger.debug { "Setting value on map $mapName with key $key to ${serializedValue::class.simpleName}" }
       val map: IMap<Any, Any> = hazelcastInstance.getMap(mapName)
       map[key] = serializedValue
-      val dataSource = reportResult("UPDATE * where key = $key", mapName,  1, CacheExchange.CacheOperationVerb.UPDATE)
+      val dataSource = reportResult("UPDATE * where key = $key", mapName, 1, CacheExchange.CacheOperationVerb.UPDATE)
       val updatedValue = DataSourceUpdater.update(valueToSave, dataSource)
       return flowOf(updatedValue)
    }
@@ -106,7 +132,8 @@ class HazelcastMutatingInvoker {
       logger.info { "Performing deleteAll on map $mapName" }
       val sizeBeforeDelete = map.size
       map.clear()
-      val dataSource = reportAndGenerateDataSource("DELETE *", mapName, sizeBeforeDelete, CacheExchange.CacheOperationVerb.DELETE)
+      val dataSource =
+         reportAndGenerateDataSource("DELETE *", mapName, sizeBeforeDelete, CacheExchange.CacheOperationVerb.DELETE)
       // Not really sure on what we should be returning here.
       return flowOf(TypedNull.create(schema.type(PrimitiveType.VOID), source = dataSource))
    }
@@ -124,7 +151,12 @@ class HazelcastMutatingInvoker {
       schema: Schema
    ): Flow<TypedInstance> {
       val startTime = Instant.now()
-      fun reportResult(sql: String, mapName: String, resultSize: Int, verb: CacheExchange.CacheOperationVerb): DataSource {
+      fun reportResult(
+         sql: String,
+         mapName: String,
+         resultSize: Int,
+         verb: CacheExchange.CacheOperationVerb
+      ): DataSource {
          val result = buildOperationResult(
             service,
             operation,
@@ -140,15 +172,15 @@ class HazelcastMutatingInvoker {
          return result.asOperationReferenceDataSource()
       }
 
-      return when {
-         operation.hasMetadata(HazelcastTaxi.Annotations.UpsertOperation.parameterizedName) -> doUpsert(
+      return when (getVerb(operation)) {
+         CacheExchange.CacheOperationVerb.UPDATE -> doUpsert(
             hazelcastInstance,
             parameters,
             schema,
             ::reportResult
          )
 
-         operation.hasMetadata(HazelcastTaxi.Annotations.DeleteOperation.parameterizedName) -> doDelete(
+         CacheExchange.CacheOperationVerb.DELETE -> doDelete(
             hazelcastInstance,
             parameters,
             schema,
@@ -160,11 +192,19 @@ class HazelcastMutatingInvoker {
       }
    }
 
+   private fun getVerb(operation: RemoteOperation): CacheExchange.CacheOperationVerb {
+      return when {
+         operation.hasMetadata(HazelcastTaxi.Annotations.UpsertOperation.parameterizedName) -> CacheExchange.CacheOperationVerb.UPDATE
+         operation.hasMetadata(HazelcastTaxi.Annotations.DeleteOperation.parameterizedName) -> CacheExchange.CacheOperationVerb.DELETE
+         else -> error("Unexpected type of mutation for Hazelcast: ${operation.qualifiedName.parameterizedName} ")
+      }
+   }
+
 
    private fun buildOperationResult(
       service: Service,
       operation: RemoteOperation,
-      mapName:  String,
+      mapName: String,
       parameters: List<TypedInstance>,
       connectionConfig: HazelcastConfiguration,
       sql: String,
@@ -182,7 +222,8 @@ class HazelcastMutatingInvoker {
             elapsed,
             recordCount,
             verb,
-            connectionConfig.connectionName)
+            connectionConfig.connectionName
+         )
       return OperationResult.fromTypedInstances(
          parameters,
          remoteCall
