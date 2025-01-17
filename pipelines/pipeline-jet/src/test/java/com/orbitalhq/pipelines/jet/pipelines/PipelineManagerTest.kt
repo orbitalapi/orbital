@@ -1,8 +1,11 @@
 package com.orbitalhq.pipelines.jet.pipelines
 
+import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.jet.core.JobStatus
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.pipelines.jet.BaseJetIntegrationTest
+import com.orbitalhq.pipelines.jet.api.streams.StreamJobStateEvent
+import com.orbitalhq.pipelines.jet.api.streams.StreamStatus
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.TypedInstanceContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.http.CronExpressions
@@ -13,11 +16,15 @@ import com.orbitalhq.pipelines.jet.sink.log.LoggingSinkBuilder
 import com.orbitalhq.pipelines.jet.source.fixed.FixedItemsSourceSpec
 import com.orbitalhq.pipelines.jet.source.fixed.ScheduledSourceSpec
 import com.orbitalhq.pipelines.jet.streams.ManagedStream
+import com.orbitalhq.pipelines.jet.streams.StreamStateManager
+import com.orbitalhq.pipelines.jet.streams.StreamStateManagerHazelcastConfig
 import com.orbitalhq.schemas.fqn
 import com.winterbe.expekt.should
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOf
-import org.awaitility.Awaitility
+import org.awaitility.Awaitility.await
+import org.glassfish.jaxb.core.v2.TODO
 import org.junit.Ignore
 import org.junit.Test
 import java.time.Instant
@@ -31,7 +38,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
    fun `can submit stream`() {
       val testSetup = jetWithSpringAndVyne(
          """
-            namespace com.orbitalhq 
+            namespace com.orbitalhq
             model Tweet {
                text : String
             }
@@ -59,11 +66,19 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
       )
       manager.startPipeline(job)
 
-      Awaitility.await().atMost(10, TimeUnit.SECONDS)
+      await().atMost(10, TimeUnit.SECONDS)
          .until { LoggingSinkBuilder.captured.isNotEmpty() }
+   }
 
-
-
+   private fun createStreamStateManager(
+      pipelineManager: PipelineManager,
+      hazelcastInstance: HazelcastInstance
+   ): StreamStateManager {
+      return StreamStateManager(
+         pipelineManager = pipelineManager,
+         streamStateCache = hazelcastInstance.getMap(StreamStateManagerHazelcastConfig.STREAM_STATUS_CACHE_NAME),
+         streamJobStateCache = hazelcastInstance.getMap(StreamStateManagerHazelcastConfig.STREAM_JOB_STATUS_CACHE_NAME)
+      )
    }
 
 
@@ -97,7 +112,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
 
       assertJobStatusEventually(job, JobStatus.RUNNING, 5)
 
-      Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
+      await().atMost(10, TimeUnit.SECONDS).until {
          listSinkTarget.list.size == 1
       }
 
@@ -183,7 +198,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
 
       // manually trigger the execution as its scheduled to run every 5 hours
       pipelineManager.triggerScheduledPipeline(pipelineSpec.id)
-      Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
+      await().atMost(10, TimeUnit.SECONDS).until {
          listSinkTarget.list.size == 3
       }
 
@@ -228,13 +243,13 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
 
       assertJobStatusEventually(job, JobStatus.RUNNING, 5)
 
-      Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
+      await().atMost(10, TimeUnit.SECONDS).until {
          listSinkTarget.list.size == 1
       }
       manager.getPipelines().should.have.size(1)
 
       manager.terminatePipeline(pipelineSpec.id)
-      Awaitility.await().atMost(10, TimeUnit.SECONDS).until {
+      await().atMost(10, TimeUnit.SECONDS).until {
          val pipelineSummary = manager.getPipelines().single()
          pipelineSummary.status.status.isTerminal
       }

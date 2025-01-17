@@ -1,5 +1,6 @@
 package com.orbitalhq.pipelines.jet.streams
 
+import com.hazelcast.jet.Job
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.anyOrNull
 import com.nhaarman.mockito_kotlin.argumentCaptor
@@ -14,6 +15,7 @@ import com.orbitalhq.pipelines.jet.api.JobStatus
 import com.orbitalhq.pipelines.jet.api.PipelineStatus
 import com.orbitalhq.pipelines.jet.api.RunningPipelineSummary
 import com.orbitalhq.pipelines.jet.api.SubmittedPipeline
+import com.orbitalhq.pipelines.jet.api.streams.StreamJobStateEvent
 import com.orbitalhq.pipelines.jet.api.streams.StreamStatus
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.query.StreamingQueryInputSpec
@@ -22,6 +24,8 @@ import com.orbitalhq.schema.consumer.SimpleSchemaStore
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldBeEmpty
+import org.glassfish.jaxb.core.v2.TODO
+import reactor.core.publisher.Flux
 import java.time.Instant
 
 class PersistentStreamManagerTest : DescribeSpec({
@@ -88,7 +92,7 @@ class PersistentStreamManagerTest : DescribeSpec({
          val streamState = streamManager.streamStateManager.streamStateCache
          streamState["MyStream"] = StreamStatus("MyStream", StreamStatus.State.RUNNING)
          whenever(pipelineManager.submitStream(any(), any())).thenReturn(mock())
-         
+
          val querySrc = """ query MyStream {
                stream { Foo }
             }"""
@@ -195,8 +199,11 @@ $querySrc
 
 private fun storeAndManager(): Triple<SimpleSchemaStore, PersistentStreamManager, PipelineManager> {
    val store = SimpleSchemaStore()
-   val pipelineManager: PipelineManager = mock { on {canStartPipelines()} doReturn true  }
-   val stateManager = StreamStateManager(StreamStatus.State.PAUSED, pipelineManager, mutableMapOf())
+   val pipelineManager: PipelineManager = mock {
+      on {canStartPipelines()} doReturn true
+      on { jobStatusEvents } doReturn Flux.empty()
+   }
+   val stateManager = StreamStateManager(StreamStatus.State.PAUSED, pipelineManager, mutableMapOf(), mutableMapOf())
    val manager = PersistentStreamManager(store, pipelineManager, stateManager)
    return Triple(store, manager, pipelineManager)
 }

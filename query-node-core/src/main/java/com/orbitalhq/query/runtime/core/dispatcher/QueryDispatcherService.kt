@@ -4,7 +4,6 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.query.ResultMode
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.BadRequestException
-import com.orbitalhq.utils.withQueryId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.reactive.asFlow
@@ -71,9 +70,9 @@ class QueryDispatcherService(
          .asFlow()
          .onCompletion { throwable ->
             if (throwable == null) {
-               logger.withQueryId(actualClientId).debug { "Query $actualClientId completed" }
+               logger.debug { "Query $actualClientId completed" }
             } else {
-               logger.withQueryId(actualClientId).info(throwable) { "Query $actualClientId failed" }
+               logger.info(throwable) { "Query $actualClientId failed" }
             }
 
          }

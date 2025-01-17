@@ -3,9 +3,8 @@ import {Injectable} from '@angular/core';
 import {VyneServicesModule} from '../services/vyne-services.module';
 import {environment} from '../../environments/environment';
 import {Observable} from 'rxjs/internal/Observable';
-import {map} from 'rxjs/operators';
+import {map, shareReplay} from 'rxjs/operators';
 import {WebsocketService} from "../services/websocket.service";
-import {ConnectionStatus} from "../db-connection-editor/db-importer.service";
 
 // TODO Make the UI support multiple pipeline outputs
 
@@ -27,9 +26,16 @@ export class PipelineService {
   constructor(private http: HttpClient,
               private websocketService: WebsocketService) {
   }
+  private streamStatus = this.websocketService.websocket(`/api/streams/status`)
+    .pipe(
+      shareReplay(1)
+    );
 
-  streamsStatus(): Observable<StreamServerStatusEvent> {
-    return this.websocketService.websocket(`/api/streams/status`)
+  streamsStatus(): Observable<{ [index: string]: StreamStateWithJobStates }> {
+    //MP: @Jase -- shared streamStatus above isn't working - so having to create
+    // a new websocket each time -- can you help?
+    return this.websocketService.websocket(`/api/streams/status`, true)
+    // return this.streamStatus;
   }
 
   getStreamStatus(streamName: string): Observable<StreamStatus> {
@@ -54,6 +60,10 @@ export class PipelineService {
 
   getPipeline(pipelineId: string): Observable<RunningPipelineSummary> {
     return this.http.get<RunningPipelineSummary>(`${environment.serverUrl}/api/pipelines/${pipelineId}`).pipe(map(pipelineSummary => addOutput(pipelineSummary)));
+  }
+
+  restartStream(streamName: string):Observable<StreamStatus> {
+    return this.http.post<StreamStatus>(`${environment.serverUrl}/api/streams/${streamName}/restart`, {});
   }
 }
 
@@ -269,15 +279,9 @@ export interface DagGraphLink {
   label: string;
 }
 
-
-export interface StreamServerStatusWithConnectionMessage {
-  connectionStatus: ConnectionStatus
-  streamServerState: StreamServerStatusEvent
-}
-
-export interface StreamServerStatusEvent {
-  clusterSize: number;
-  streams: StreamStatus[]
+export interface StreamStateWithJobStates {
+  streamStatus: StreamStatus
+  jobState: StreamJobStateEvent
 }
 
 export interface StreamStatus {
@@ -285,7 +289,23 @@ export interface StreamStatus {
   state: StreamRunningState;
   timestamp: Date;
   username: string | null;
-
+  errorMessage: string | null;
 }
 
-export type StreamRunningState = 'RUNNING' | 'PAUSED'
+export interface StreamJobStateEvent {
+  jobId: string
+  streamName: string;
+  timestamp: Date;
+  status: JobStatus;
+  description: string | null;
+}
+
+export type JobStatus = 'NOT_RUNNING' |
+  'STARTING' |
+  'RUNNING' |
+  'SUSPENDED' |
+  'FAILED';
+
+
+
+export type StreamRunningState = 'RUNNING' | 'PAUSED' | 'PENDING';

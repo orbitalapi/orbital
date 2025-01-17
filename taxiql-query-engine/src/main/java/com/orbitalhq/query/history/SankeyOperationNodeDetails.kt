@@ -2,6 +2,7 @@ package com.orbitalhq.query.history
 
 import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.schemas.QualifiedName
+import com.orbitalhq.utils.jpa.JsonConverter
 import jakarta.persistence.Converter
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString

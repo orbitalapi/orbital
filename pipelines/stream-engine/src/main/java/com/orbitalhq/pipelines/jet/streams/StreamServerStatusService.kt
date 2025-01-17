@@ -1,11 +1,12 @@
 package com.orbitalhq.pipelines.jet.streams
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.hazelcast.cluster.MembershipEvent
-import com.hazelcast.cluster.MembershipListener
 import com.hazelcast.core.HazelcastInstance
-import com.orbitalhq.connections.ConnectionStatus
-import com.orbitalhq.pipelines.jet.api.streams.StreamServerStatusEvent
+import com.hazelcast.jet.Job
+import com.hazelcast.jet.core.JobStatus
+import com.orbitalhq.pipelines.jet.api.streams.StreamJobStateEvent
+import com.orbitalhq.pipelines.jet.api.streams.StreamName
+import com.orbitalhq.pipelines.jet.api.streams.StreamStateWithJobStates
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.websocket.OrbitalWebSocketConfiguration
 import com.orbitalhq.spring.http.websocket.WebSocketController
@@ -17,6 +18,7 @@ import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
+import java.time.Duration
 
 
 /**
@@ -28,46 +30,56 @@ import reactor.core.publisher.Sinks
 class StreamServerStatusService(
    private val hazelcastInstance: HazelcastInstance,
    streamStateManager: StreamStateManager,
-   stateUpdatesPublisher: StreamStateUpdatesPublisher,
+   private val stateUpdatesPublisher: StreamStateUpdatesPublisher,
    private val objectMapper: ObjectMapper,
    private val orbitalWebSocketConfiguration: OrbitalWebSocketConfiguration
 ) : WebSocketController {
 
-   private val streamServerStatusSink = Sinks.many().replay().latest<StreamServerStatusEvent>()
-
-   //   private val sink = Sinks.many().replay().latest<StreamServerStatusWithConnectionMessage>()
-   private val statusUpdates = streamServerStatusSink.asFlux()
-   private val clusterSizeChanged = Sinks.many().replay().latest<Int>()
+   private val replayingStatusUpdateSink = Sinks.many().replay().latest<Map<StreamName,StreamStateWithJobStates>>()
+   private val replayingStatusUpdates = replayingStatusUpdateSink.asFlux()
 
    companion object {
       private val logger = KotlinLogging.logger {}
+
+      fun streamJobStatusFromJetJob(job: Job): StreamJobStateEvent {
+         val suspensionCause = if (job.status == JobStatus.SUSPENDED) {
+            job.readVolatile({ it.suspensionCause }, JobStatus.SUSPENDED, null).block()
+         } else null
+         val isUserCancelled = if (job.status == JobStatus.FAILED) {
+            job.readVolatile({ it.isUserCancelled }, JobStatus.FAILED, false).block() ?: false
+         } else {
+            false
+         }
+         val description = suspensionCause?.description()
+            ?: if (isUserCancelled) "UserCancelled" else null
+
+         return StreamJobStateEvent(
+            job.id.toString(),
+            job.name!!,
+            status = StreamJobStateEvent.JobStatus.valueOf(job.status.name),
+            description = description
+         )
+      }
    }
 
    init {
-      val streamStateUpdates = stateUpdatesPublisher.stateUpdates
-         .startWith(streamStateManager.getAllStreamStates())
-// TODO : Why are we doing this subscribe + sink stuff? Shouldn't we just set
-      // streamServerStatusSink to this flux?
-      Flux.combineLatest(clusterSizeChanged.asFlux(), streamStateUpdates) { clusterSize, streamStatuses ->
-         StreamServerStatusEvent(clusterSize, streamStatuses)
-      }
-         .subscribe { streamServerStatusSink.tryEmitNext(it) }
+      stateUpdatesPublisher.stateUpdates
+         .subscribe { event -> replayingStatusUpdateSink.tryEmitNext(event) }
+//      stateUpdatesPublisher.stateUpdates
+//         .subscribe { streamStatuses ->
+//            streamServerStatusSink.tryEmitNext(
+//               StreamServerStatusEvent(
+//                  hazelcastInstance.cluster.members.size,
+//                  streamStatuses
+//               )
+//            )
+//         }
 
-      hazelcastInstance.cluster.addMembershipListener(object : MembershipListener {
-         override fun memberAdded(membershipEvent: MembershipEvent) = emitClusterSize()
-         override fun memberRemoved(membershipEvent: MembershipEvent) = emitClusterSize()
-      })
-      emitClusterSize() // Initial emit
-   }
-
-   private fun emitClusterSize() {
-      val size = hazelcastInstance.cluster.members.size
-      clusterSizeChanged.tryEmitNext(size)
    }
 
    @MessageMapping("stream-server-status")
-   fun clusterSize(): Flux<StreamServerStatusEvent> {
-      return streamServerStatusSink.asFlux()
+   fun getStreamServerStatusEvents(): Flux<Map<StreamName,StreamStateWithJobStates>> {
+      return replayingStatusUpdateSink.asFlux()
    }
 
 
@@ -75,7 +87,7 @@ class StreamServerStatusService(
 
    @PreAuthorize("hasAuthority('${VynePrivileges.EditPipelines}')")
    override fun handle(session: WebSocketSession): Mono<Void> {
-      val outbound =  statusUpdates
+      val outbound = replayingStatusUpdates
          .map { event ->
             session.textMessage(
                objectMapper.writeValueAsString(event)
@@ -86,8 +98,31 @@ class StreamServerStatusService(
    }
 }
 
+/**
+ * We see race conditions when a job enters a state like Suspended, but then asking
+ * for a suspension reason throws an exception.
+ * So, we wrap the exception, and read for a short period.
+ */
+private fun <T> Job.readVolatile(
+   accessor: (Job) -> T?,
+   whileInState: JobStatus,
+   default: T,
+   timeout: Duration = Duration.ofMillis(100),
+   pollPeriod: Duration = Duration.ofMillis(10)
+): Mono<T> {
+   return Flux.interval(pollPeriod)
+      .map {
+         if (this.status != whileInState) {
+            return@map default
+         }
+         try {
+            accessor(this)
+         } catch (e: IllegalStateException) {
+            null
+         }
+      }
+      .filter { it != null }
+      .next()
+      .timeout(timeout, Mono.justOrEmpty(default)) as Mono<T>
+}
 
-data class StreamServerStatusWithConnectionMessage(
-   val connectionStatus: ConnectionStatus,
-   val streamServerState: StreamServerStatusEvent?
-)

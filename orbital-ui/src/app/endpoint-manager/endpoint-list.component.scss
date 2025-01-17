@@ -18,3 +18,8 @@
     border-right: 1px solid $gray-300;
   }
 }
+
+td.badges {
+  display: flex;
+  gap: 1rem;
+}

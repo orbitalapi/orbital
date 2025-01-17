@@ -12,6 +12,8 @@ import com.orbitalhq.pipelines.jet.api.PipelineMetrics
 import com.orbitalhq.pipelines.jet.api.PipelineStatus
 import com.orbitalhq.pipelines.jet.api.RunningPipelineSummary
 import com.orbitalhq.pipelines.jet.api.SubmittedPipeline
+import com.orbitalhq.pipelines.jet.api.streams.StreamJobStateEvent
+import com.orbitalhq.pipelines.jet.api.streams.StreamStatus
 import com.orbitalhq.pipelines.jet.api.streams.StreamUtils
 import com.orbitalhq.pipelines.jet.api.transport.PipelineKind
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
@@ -23,12 +25,16 @@ import com.orbitalhq.pipelines.jet.badRequest
 import com.orbitalhq.pipelines.jet.streams.ClusterLeaderSelector
 import com.orbitalhq.pipelines.jet.streams.HazelcastLeaderSelector
 import com.orbitalhq.pipelines.jet.streams.ManagedStream
+import com.orbitalhq.pipelines.jet.streams.StreamServerStatusService
 import com.orbitalhq.schemas.QualifiedName
 import mu.KotlinLogging
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.scheduling.support.CronExpression
 import org.springframework.stereotype.Component
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 import java.io.Serializable
+import java.time.Duration
 import java.time.Instant
 import java.time.ZonedDateTime
 import java.util.concurrent.TimeUnit
@@ -53,6 +59,18 @@ class PipelineManager(
       Serializable
 
    private val logger = KotlinLogging.logger {}
+
+   /**
+    * Broadcasts events from jobs submitted.
+    * Note: We can't listen directly in the StreamStateManager (which is what responds to these events)
+    * as submission can be triggered reactively by StreamStateMapListener.
+    * Also, when submitting a job, we have a very small window between submission and startup failure
+    * events being emitted, so we want to register the listener as soon as possible to avoid events being dropped.
+    *
+    * Note: A separate cleanup job exists for catching dropped events (StreamJobStatusMonitor)
+    */
+   private val jobStatusEventsSink = Sinks.many().replay().limit<Pair<Job,StreamJobStateEvent>>(Duration.ofSeconds(5))
+   val jobStatusEvents: Flux<Pair<Job, StreamJobStateEvent>> = jobStatusEventsSink.asFlux()
 
    /**
     * These are pipelines that were submitted, but had a state of PAUSED, so haven't been
@@ -86,6 +104,10 @@ class PipelineManager(
       pendingPipelines.remove(pipelineSpec.name)
       val jobConfig = JobConfig()
       jobConfig.setName(pipelineSpec.name)
+      // If an exception is thrown, set to SUSPENDED -- don't set to FAILED.
+      // This lets us interrogate the suspension cause, and get access to any exceptions
+      // after-the-fact.
+      jobConfig.setSuspendOnFailure(true)
       return if (pipelineSpec.input is ScheduledPipelineTransportSpec) {
          scheduleJobToBeExecuted(
             pipelineSpec as PipelineSpec<ScheduledPipelineTransportSpec, *>,
@@ -93,6 +115,15 @@ class PipelineManager(
          ) to null
       } else {
          val job = hazelcastInstance.jet.newJob(pipeline, jobConfig)
+         // See jobStatusEventsSink for why we register this here.
+         job.addStatusListener { event ->
+            val currentJob = hazelcastInstance.jet.getJob(event.jobId) ?: error("Received a job status event ${event.newStatus} on job ${event.jobId} which is not known to the cluster")
+            val streamStateAndDescription = StreamServerStatusService.streamJobStatusFromJetJob(currentJob)
+            jobStatusEventsSink.emitNext(job to streamStateAndDescription) { _, failure ->
+               logger.warn { "Failed to emit Jet Job status event: $event - failed with: $failure" }
+               true
+            }
+         }
          val submittedPipeline = SubmittedPipeline(
             pipelineSpec.name,
             job.idString,
@@ -102,6 +133,7 @@ class PipelineManager(
             cancelled = false
          )
          storeSubmittedPipeline(job.idString, submittedPipeline)
+         logger.info { "Pipeline \"${pipelineSpec.name}\" started" }
          submittedPipeline to job
       }
    }

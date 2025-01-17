@@ -1,10 +1,10 @@
-import { TuiTextfieldControllerModule, TuiSelectModule } from "@taiga-ui/legacy";
-import {CommonModule, DecimalPipe, TitleCasePipe} from '@angular/common';
+import {TuiSelectModule, TuiTextfieldControllerModule} from "@taiga-ui/legacy";
+import {CommonModule, DecimalPipe} from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, Input, OnInit} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {FormsModule} from '@angular/forms';
-import { TuiNotification, TuiDataList, TuiLabel } from '@taiga-ui/core';
-import { TuiBadge, TuiSwitch, TuiProgress, TuiCheckbox } from '@taiga-ui/kit';
+import {TuiDataList, TuiNotification} from '@taiga-ui/core';
+import {TuiCheckbox, TuiProgress} from '@taiga-ui/kit';
 import {
   ApexAxisChartSeries,
   ApexChart,
@@ -27,7 +27,6 @@ import {UiCustomisations} from "../../environments/ui-customisations";
 import {LineageDisplayModule} from "../lineage-display/lineage-display.module";
 import {QueryPlan} from "../services/query.service";
 import {AppInfoService, FeatureToggles} from "../services/app-info.service";
-import {DataSourcesCardComponent} from "../dashboard/data-sources-card/data-sources-card.component";
 import {RequiresAuthorityDirective} from "../requires-authority.directive";
 
 type ChartConfig = {
@@ -136,25 +135,20 @@ type MetricsPeriodToDescription = {
   imports: [
     CommonModule,
     HeaderComponentLayoutModule,
-    TuiSwitch,
-    TuiBadge,
     ExpandingPanelSetModule,
     TuiSelectModule,
     FormsModule,
     TuiDataList,
-    TuiLabel,
     TuiNotification,
     NgApexchartsModule,
     CodeViewerModule,
-    TitleCasePipe,
     DecimalPipe,
     TuiTextfieldControllerModule,
     TuiProgress,
     LineageDisplayModule,
-    DataSourcesCardComponent,
     RequiresAuthorityDirective,
     TuiCheckbox
-],
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EndpointMonitorComponent implements OnInit {
