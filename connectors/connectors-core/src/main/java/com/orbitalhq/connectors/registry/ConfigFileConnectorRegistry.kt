@@ -143,7 +143,8 @@ enum class ConnectorType {
    AWS_S3,
    AZURE_STORAGE,
    CACHE,
-   NO_SQL
+   NO_SQL,
+   AZURE_SERVICE_BUS
 }
 
 /**

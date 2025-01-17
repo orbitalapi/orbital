@@ -47,6 +47,10 @@ interface MetadataTarget {
    fun hasMetadata(name: String): Boolean {
       return metadata.hasMetadata(name)
    }
+
+   fun firstMetadataOrNull(name: String): Metadata? {
+      return metadata.firstOrNull { it.name.fullyQualifiedName == name }
+   }
 }
 
 fun List<Metadata>.hasMetadata(name: String): Boolean {
