@@ -6,6 +6,7 @@ import com.mongodb.client.model.UpdateOneModel
 import com.mongodb.client.model.UpdateOptions
 import com.orbitalhq.connectors.BatchWriteCacheProvider
 import com.orbitalhq.models.DataSourceUpdater
+import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.schema.api.SchemaProvider
@@ -13,7 +14,11 @@ import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.fqn
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.job
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
 import org.bson.Document
@@ -26,7 +31,7 @@ private val logger = KotlinLogging.logger { }
 class MongoBulkMutatingQueryInvoker(
    connectionFactory: MongoConnectionFactory,
    schemaProvider: SchemaProvider,
-   private val batchWriteCacheProvider: BatchWriteCacheProvider
+   private val batchWriteCacheProvider: BatchWriteCacheProvider<TypedInstance, OperationResultReference>
 ) : MongoBaseInvoker(connectionFactory, schemaProvider) {
 
    private val counter = AtomicInteger(0)
@@ -48,17 +53,20 @@ class MongoBulkMutatingQueryInvoker(
       require(inputType.hasMetadata(MongoConnector.Annotations.Collection.NAME.fqn()))
       { "The input type into an ${MongoConnector.Annotations.UpsertOperationAnnotationName} operation should be a type with a ${MongoConnector.Annotations.Collection.NAME.fqn()} annotation" }
 
-      val (param, input) = parameters.singleOrNull()
+      // Validate there's a single parameter.
+      // We don't hold a reference to the parameter, as it's not used (see below)
+      parameters.singleOrNull()
          ?: error("Expected a single parameter, but received ${parameters.size}")
       val collectionName = inputType.taxiType.collectionNameOrTypeName()
 
       val (connectionConfig, reactiveMongoTemplate) = getConnectionConfigAndTemplate(service)
       val recordToWrite = parameters[0].second
 
-      val batchWriteBatcher = batchWriteCacheProvider.forQueryId(
+      val batchWriteCache = batchWriteCacheProvider.forQueryId(
          queryId,
          batchAttribute.batchSize,
-         batchAttribute.batchDurationInMillis
+         batchAttribute.batchDurationInMillis,
+         currentCoroutineContext().job
       ) { items ->
          logger.info { "Batch update triggered with ${items.size} items" }
          doBulkInsert(reactiveMongoTemplate, collectionName, items)
@@ -66,10 +74,19 @@ class MongoBulkMutatingQueryInvoker(
             .map { durationAndData ->
                val duration = durationAndData.t1
                logger.info { "Mongo Upsert call completed in ${duration}ms " }
+
+               /**
+                * Note that we're passing an empty list to parameters argument of buildOperationResult.
+                * as passing the full batch of items ramps up the heap usage when we process large number of items.
+                * The result that's returned here is used for lineage purposes,
+                * the call is already completed.
+                * TODO: Investigate why items are not GC'ed properly during execution"
+                */
+               val emptyParametersList = listOf<TypedInstance>()
                val operationResult = buildOperationResult(
                   service,
                   operation,
-                  items,
+                  emptyParametersList,
                   "Upsert ${items.size} items to collection $collectionName",
                   connectionConfig.connectionString.hosts.joinToString(),
                   java.time.Duration.ofMillis(duration),
@@ -82,11 +99,12 @@ class MongoBulkMutatingQueryInvoker(
 
 
 
-      return batchWriteBatcher.emit(recordToWrite)
+      return batchWriteCache.emit(recordToWrite)
          .map { operationResult ->
             DataSourceUpdater.update(recordToWrite, operationResult)
          }
          .asFlow()
+         .flowOn(Dispatchers.IO)
    }
 
    private fun doBulkInsert(

@@ -1,10 +1,8 @@
 package com.orbitalhq.connectors.aws.s3
 
-import com.fasterxml.jackson.databind.util.ByteBufferBackedInputStream
-import com.google.common.io.ByteStreams
 import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
-import io.netty.buffer.ByteBufInputStream
+import com.orbitalhq.utils.formatAsFileSize
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -26,6 +24,7 @@ import java.io.PipedInputStream
 import java.io.PipedOutputStream
 import java.nio.file.FileSystems
 import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicLong
 
 private val logger = KotlinLogging.logger { }
 
@@ -111,16 +110,13 @@ class S3Connection(private val configuration: AwsConnectionConfiguration, privat
    fun fetchAsInputStream(objectKey: String?): Flux<Pair<S3Object, Mono<InputStream>>> {
       return listMatchingObjects(objectKey)
          .map { s3Object ->
+
             val getObjectRequest = GetObjectRequest.builder().bucket(bucketName).key(s3Object.key()).build()
-            val inputStreamMono = Mono
-               .fromFuture(asyncClient.getObject(getObjectRequest, AsyncResponseTransformer.toPublisher()))
-               .flatMap { response -> Mono.from(response) }
+            val deferredByteBuffers = Mono
+               .fromFuture(asyncClient.getObject(getObjectRequest, AsyncResponseTransformer.toBlockingInputStream()))
                .publishOn(Schedulers.boundedElastic())
-               .map { byteBuffer ->
-                  ByteBufferBackedInputStream(byteBuffer) as InputStream
-               }
-               .doOnError { ex -> logger.error(ex) { "Error in consuming $objectKey from AWS connection ${configuration.connectionName}" } }
-            s3Object to inputStreamMono
+
+            return@map s3Object to deferredByteBuffers as Mono<InputStream>
          }
          .publishOn(Schedulers.boundedElastic())
 

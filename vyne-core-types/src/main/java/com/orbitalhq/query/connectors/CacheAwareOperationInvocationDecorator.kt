@@ -9,12 +9,17 @@ import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import com.orbitalhq.utils.abbreviate
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.ObsoleteCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
-import kotlinx.coroutines.runBlocking
 import lang.taxi.services.OperationScope
 import lang.taxi.types.EnumMember
 import lang.taxi.types.EnumValue
@@ -63,6 +68,10 @@ class CacheAwareOperationInvocationDecorator(
       queryId: String,
       queryOptions: QueryOptions
    ): Flow<TypedInstance> {
+      /**
+       * You can turn off caching for all operations, by directly returning here as:
+       * return invoker.invoke(service, operation, parameters, eventDispatcher, queryId, queryOptions)
+       */
       if (!isCacheable(operation, service, invoker)) {
          return invoker.invoke(service, operation, parameters, eventDispatcher, queryId, queryOptions)
       }
@@ -104,6 +113,7 @@ class CacheAwareOperationInvocationDecorator(
          ?: getCacheTtlFromSchemaMember(operation.returnType)
          ?: DEFAULT_CACHE_TTL
    }
+
    private fun getCacheTtlFromSchemaMember(schemaMember: MetadataTarget): Duration? {
       if (!schemaMember.hasMetadata(CacheAnnotation.CacheTypeName.parameterizedName)) {
          return null
@@ -219,6 +229,12 @@ class DefaultCachingOperatorInvoker(
       }
    }
 
+   val operationScope = CoroutineScope(
+      SupervisorJob() +
+         Dispatchers.Unconfined +
+         CoroutineName("OperationCache-$cacheKey")
+   )
+
    /**
     * Build a flux from the underlying OperationInvoker.
     */
@@ -239,7 +255,7 @@ class DefaultCachingOperatorInvoker(
       return Flux.create<TypedInstance> { sink ->
          // This isn't really blocking anything. We just didn't understand how suspend / flux functions
          // worked when we wrote the underlying interface.
-         runBlocking {
+         operationScope.launch {
             try {
                invoker.invoke(service, operation, parameters, eventDispatcher, queryId, queryOptions)
                   .asFlux()
@@ -247,20 +263,18 @@ class DefaultCachingOperatorInvoker(
                      logger.info { "Operation with cache key ${cacheKey.abbreviate()} failed with exception ${exception::class.simpleName} ${exception.message}.  This operation with params will not be attempted again.  Future attempts will have this error replayed" }
                      sink.error(exception)
                   }
-                  .doOnComplete {
-                     sink.complete()
-                  }
-                  .subscribe {
-                     sink.next(it)
-                  }
-            } catch (exception: Exception) {
+                  .doOnComplete { sink.complete() }
+                  .subscribe { sink.next(it) }
+            } catch (exception:Throwable) {
                logger.error(exception) { "An exception was thrown inside the invoker (${invoker::class.simpleName} calling ${operation.name})" }
                // This is an exception thrown in the invoke method, but not within the flux / flow.
                // ie., something has gone wrong internally, not in the service.
                sink.error(exception)
             }
          }
-      }.share()
+
+      }.cache(ttl)
+         .doFinally { operationScope.cancel() }
 
 
    }
