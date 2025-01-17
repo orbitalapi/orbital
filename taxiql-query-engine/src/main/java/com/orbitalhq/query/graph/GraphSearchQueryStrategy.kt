@@ -89,6 +89,7 @@ class GraphSearchQueryStrategy(
    private val searchPathExclusions = CacheBuilder
       .newBuilder()
       .maximumSize(searchPathExclusionsCacheSize.toLong())
+      .weakKeys()
       .build<SearchPathExclusionKey, SearchPathExclusionKey>()
       .asMap()
 

@@ -3,6 +3,7 @@ package com.orbitalhq.connectors.nosql.mongodb
 import com.orbitalhq.connectors.BatchWriteCacheProvider
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnector.Annotations.BatchSizeAttributeName
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnector.Annotations.batchDurationAttributeName
+import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.connectors.OperationInvoker
@@ -28,7 +29,7 @@ class MongoDbInvoker(
       }
    }
 
-   private val batchWriteCacheProvider = BatchWriteCacheProvider()
+   private val batchWriteCacheProvider = BatchWriteCacheProvider<TypedInstance, OperationResultReference>()
    private val readOnlyInvoker = MongoReadOnlyQueryInvoker(connectionFactory, schemaProvider)
    private val upsertInvoker = MongoMutatingQueryInvoker(connectionFactory, schemaProvider)
    private val bulkUpsertInvoker =

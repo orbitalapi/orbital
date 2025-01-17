@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
+import org.apache.commons.io.FileUtils
+import org.apache.commons.io.FilenameUtils
 import software.amazon.awssdk.services.s3.model.S3Object
 import java.time.Duration
 import java.time.Instant
@@ -73,7 +75,7 @@ class S3ReadInvoker : BaseS3Invoker() {
             val (s3Object, deferredInputStream) = fileNameAndInputStream
             deferredInputStream
                .doOnSubscribe {
-                  logger.info { "Fetching object ${s3Object.key()} from bucket $bucketName on connection ${awsConnection.connectionName}" }
+                  logger.info { "Fetching object ${s3Object.key()} (${FileUtils.byteCountToDisplaySize(s3Object.size())}) from bucket $bucketName on connection ${awsConnection.connectionName}" }
                }
                .map { inputStream -> s3Object to inputStream }
                .onErrorMap { error ->

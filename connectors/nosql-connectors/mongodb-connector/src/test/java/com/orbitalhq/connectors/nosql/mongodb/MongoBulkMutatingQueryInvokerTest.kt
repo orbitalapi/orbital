@@ -9,10 +9,12 @@ import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.testVyne
 import com.orbitalhq.testVyneWithStub
 import com.orbitalhq.typedObjects
+import com.orbitalhq.utils.formatAsFileSize
 import com.winterbe.expekt.should
 import io.kotest.assertions.timing.eventually
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
@@ -21,6 +23,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import reactor.kotlin.core.publisher.toMono
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
 
@@ -198,8 +202,15 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
          )
       }
 
-      val pricesFlow = MutableSharedFlow<TypedInstance>(replay = 1000)
+      val recordsToEmit = 50_000
+      val pricesFlow = MutableSharedFlow<TypedInstance>(replay = recordsToEmit)
       stub.addResponseFlow("prices") { _, _ -> pricesFlow }
+
+      System.gc() // Request garbage collection
+      Thread.sleep(100) // Give GC time to run
+
+      val memoryBefore = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
+
 
       val resultFlow = vyne.query(
          """stream { StockPrice } as {
@@ -211,16 +222,15 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
       """.trimMargin()
       )
          .results
-      val collectedResults = mutableListOf<Any>()
+      val collectedResults = AtomicInteger(0)
 
       val thread = launch {
          resultFlow.onEach {
-            collectedResults.add(it)
+            collectedResults.incrementAndGet()
          }
             .collect()
       }
 
-      val recordsToEmit = 50
       (0..recordsToEmit).mapIndexed { index, i ->
          val item = mapOf("symbol" to "AAPL", "price" to Random.nextDouble(1.000005, 5.500000).toBigDecimal())
          val typedInstance = TypedInstance.from(vyne.schema.type("StockPrice"), item, vyne.schema)
@@ -229,10 +239,24 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
 
       // Make sure this is less than the batch write timeout, to assert that
       // writes are triggered by batch size, not timeout
-      eventually(5.seconds) {
-         collectedResults shouldHaveSize recordsToEmit
+      eventually(60.seconds) {
+         collectedResults.get() shouldBe  recordsToEmit
       }
       thread.cancelAndJoin()
+      val mongo = connectionFactory.reactiveMongoTemplate(connectionFactory.config("testMongo"))
+      val count = mongo.getCollection("prices")
+         .flatMap { it ->
+            it.countDocuments().toMono()
+         }.block()!!
+      count.shouldBe(recordsToEmit)
+
+      System.gc() // Request garbage collection
+      Thread.sleep(100) // Give GC time to run
+
+      val memoryAfter = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
+      println("Memory increase : ${(memoryAfter - memoryBefore).formatAsFileSize}")
+
+
    }
 
 

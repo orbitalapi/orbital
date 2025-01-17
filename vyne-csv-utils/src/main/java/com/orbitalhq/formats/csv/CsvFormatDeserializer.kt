@@ -12,6 +12,7 @@ import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
+import com.orbitalhq.utils.log
 import lang.taxi.accessors.ColumnAccessor
 import lang.taxi.types.FormatsAndZoneOffset
 import org.apache.commons.csv.CSVParser
@@ -69,21 +70,20 @@ object CsvFormatDeserializer : ModelFormatDeserializer, StreamingModelFormatDese
       val csvFormat = CsvFormatFactory.fromParameters(csvAnnotation.ingestionParameters)
       require(value is InputStream) { "Parsing CSV to a stream is not supported for input value of ${value::class.simpleName}" }
       val parsed = csvFormat.parse(value.bufferedReader())
-     val typedInstanceStream = StreamSupport.stream(parsed.spliterator(), false).map {
-         csvRecord -> TypedInstance.from(
-         type = memberType,
-         value = csvRecord,
-         schema = schema,
-         source = source,
-         functionRegistry = functionRegistry,
-         formatSpecs = formatRegistry.formats,
-         inPlaceQueryEngine = inPlaceQueryEngine,
-         parsingErrorBehaviour = parsingErrorBehaviour,
-         format = format,
-         metadata = metadata,
-         valueSuppliers = valueSuppliers
-      )
-
+      val typedInstanceStream = StreamSupport.stream(parsed.spliterator(), false).map { csvRecord ->
+         TypedInstance.from(
+            type = memberType,
+            value = csvRecord,
+            schema = schema,
+            source = source,
+            functionRegistry = functionRegistry,
+            formatSpecs = formatRegistry.formats,
+            inPlaceQueryEngine = inPlaceQueryEngine,
+            parsingErrorBehaviour = parsingErrorBehaviour,
+            format = format,
+            metadata = metadata,
+            valueSuppliers = valueSuppliers
+         )
       }
       return Flux.fromStream(typedInstanceStream)
    }

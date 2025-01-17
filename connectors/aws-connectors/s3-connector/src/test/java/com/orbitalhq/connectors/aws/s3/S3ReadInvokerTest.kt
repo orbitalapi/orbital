@@ -6,11 +6,22 @@ import com.orbitalhq.rawObjects
 import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
+import org.junit.Rule
 import org.junit.Test
+import org.junit.rules.TemporaryFolder
+import java.time.Duration
+import java.time.Instant
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.io.path.toPath
+import kotlin.time.measureTimedValue
 
 
 class S3ReadInvokerTest : BaseS3Test() {
+
+   @Rule
+   @JvmField
+   val tempFolder = TemporaryFolder()
 
    val baseSchema = """
          import com.orbitalhq.formats.Csv
@@ -208,5 +219,51 @@ class S3ReadInvokerTest : BaseS3Test() {
 
       // We want the 6 trades, but not the 3 from orders1.csv
       results.shouldHaveSize(6)
+   }
+
+   @Test
+   fun `can read a large file from s3`():Unit = runBlocking {
+      val bucketName = createBucketWithRandomName("Trades")
+      val tempFile = tempFolder.newFile()
+      val rowCount = 100_000
+      println("Starting to generate $rowCount rows")
+      val writeResult = measureTimedValue {
+         tempFile.appendText("Date,Symbol,Open,High,Low,Close,Volume BTC,Volume USD\n")
+         val line = "2020-03-19 10-PM,BTCGBP,6262.37,6441.37,6240.86,6300,3564.16,22587136.21"
+         repeat(rowCount) { idx ->
+            if (idx == rowCount - 1) {
+               tempFile.appendText(line)
+            } else {
+               tempFile.appendText(line + "\n")
+            }
+
+         }
+      }
+      println("$rowCount rows written in ${writeResult.duration}")
+
+      uploadResourceToS3(bucketName, "trades1.csv", tempFile.toPath())
+      val schema = """
+         $baseSchema
+         $columnIndexedSchema
+          @S3Service( connectionName = "$AWS_CONNECTION_NAME" )
+          service AwsBucketService {
+              @S3Operation(bucket = "$bucketName")
+              operation readBucket(filename:FilenamePattern = "trades*.csv"):OrderSummary[]
+          }
+      """.trimIndent()
+      println("Starting query")
+      val (vyne) = vyneWithS3Invoker(schema)
+      val results = vyne.query("""find { OrderSummary[] }""")
+         .results
+      val counter = AtomicInteger(0)
+      val start = Instant.now()
+      results.collect { next ->
+         val counted = counter.incrementAndGet()
+         if (counted % 10_000 == 0) {
+            println("Processed $counted rows in ${Duration.between(start, Instant.now()).seconds}s")
+         }
+      }
+      counter.get() shouldBe rowCount
+
    }
 }
