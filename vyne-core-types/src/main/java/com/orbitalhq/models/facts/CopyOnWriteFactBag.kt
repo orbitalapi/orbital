@@ -404,7 +404,8 @@ private object TypedInstanceTree {
             when (navigationInstruction) {
                is FullScan -> {
                   // Not sure what to do here. Guide me, o unit tests.
-                  TODO("Not sure what to do here...")
+                  // This call may not be correct. We don't hit this in any unit tests.
+                  navigationInstruction.returnNulls(instance)
                }
                is EvaluateSpecificFields -> {
                   navigationInstruction.returnNulls(instance)

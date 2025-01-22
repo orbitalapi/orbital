@@ -43,7 +43,13 @@ data class EvaluateSpecificFields(val fieldNames: Set<String>) : TreeNavigationI
 
 }
 
-object FullScan : TreeNavigationInstruction()
+object FullScan : TreeNavigationInstruction() {
+   fun returnNulls(instance: TypedNull): List<TypedNull> {
+
+      val result = instance.type.attributes.flatMap { (name,_) -> instance.nullsForPropertyPath(name) }
+      return result
+   }
+}
 
 /**
  * Strategies that determine if a search in a fact bag should
