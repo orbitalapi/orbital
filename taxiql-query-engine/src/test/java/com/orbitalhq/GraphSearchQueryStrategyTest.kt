@@ -651,4 +651,58 @@ class GraphSearchQueryStrategyTest {
          .firstRawObject()
       result.shouldBe(mapOf("director" to "Jimmy"))
    }
+
+   // Note: This actually ends up getting called in the DirectServiceInvocationStrategy,
+   // but wanted to document the expected behaviour.
+   @Test
+   fun `will invoke an operation if fact is subtype of declared parameter type`() : Unit = runBlocking{
+      val (vyne,stub) = testVyne(
+         """
+            type PersonId inherits String
+            type MotherId inherits PersonId
+
+            closed model Person {
+               name : Name inherits String
+            }
+            service PersonApi {
+               operation findPerson(PersonId):Person
+            }
+         """.trimIndent()
+      )
+      stub.addResponse("findPerson", """{ "name" : "Jimmy" }""")
+      val queryResult = vyne.query("""
+         given { MotherId = '123' }
+         find { Person }
+      """.trimIndent())
+         .firstRawObject()
+      queryResult.shouldBe(mapOf("name" to "Jimmy"))
+   }
+
+   @Test
+   fun `will invoke an operation if fact has property of subtype of declared parameter type`() : Unit = runBlocking{
+      val (vyne,stub) = testVyne(
+         """
+            type PersonId inherits String
+            type DirectorId inherits PersonId
+
+            closed model Person {
+               name : Name inherits String
+            }
+            service PersonApi {
+               operation findPerson(PersonId):Person
+            }
+
+            model Film {
+               director : DirectorId
+            }
+         """.trimIndent()
+      )
+      stub.addResponse("findPerson", """{ "name" : "Jimmy" }""")
+      val queryResult = vyne.query("""
+         given { Film = { director: '123' } }
+         find { Person }
+      """.trimIndent())
+         .firstRawObject()
+      queryResult.shouldBe(mapOf("name" to "Jimmy"))
+   }
 }

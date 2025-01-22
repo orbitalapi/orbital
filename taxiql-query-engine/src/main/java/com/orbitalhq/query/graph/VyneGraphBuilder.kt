@@ -560,12 +560,11 @@ class VyneGraphBuilder(
       if (value == null) {
          addConnection(providedInstance, type(type), Relationship.IS_INSTANCE_OF)
       }
-      addConnection(providedInstance, parameter(instanceFqn), Relationship.CAN_POPULATE)
 
-      // This instance can also populate any types that it inherits from.
-      type.inheritanceGraph.forEach { inheritedType ->
-         addConnection(providedInstance, parameter(inheritedType.name.parameterizedName), Relationship.CAN_POPULATE)
+      forTypeAndSuperTypes(type) {
+         addConnection(providedInstance, parameter(it.name.parameterizedName), Relationship.CAN_POPULATE)
       }
+
       if (type.isEnum) {
          logger.warn { "Encountered an enum as a return type in graph builder, which is not currently supported" }
       }
@@ -706,26 +705,17 @@ class VyneGraphBuilder(
          )
          //builder.connect(providedInstance).to(type(instanceFqn)).withEdge(Relationship.IS_INSTANCE_OF)
       }
-      createdConnections.add(
-         HipsterGraphBuilder.Connection(
-            providedInstance,
-            parameter(instanceFqn),
-            Relationship.CAN_POPULATE
-         )
-      )
-      //builder.connect(providedInstance).to(parameter(instanceFqn)).withEdge(Relationship.CAN_POPULATE)
 
-      // This instance can also populate any types that it inherits from.
-      type.inheritanceGraph.forEach { inheritedType ->
+      forTypeAndSuperTypes(type) {
          createdConnections.add(
             HipsterGraphBuilder.Connection(
                providedInstance,
-               parameter(inheritedType.name.parameterizedName),
+               parameter(it.name.parameterizedName),
                Relationship.CAN_POPULATE
             )
          )
-         //builder.connect(providedInstance).to(parameter(inheritedType.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
       }
+
       if (value is TypedEnumValue) {
          val synonymConnections =
             StrategyPerformanceProfiler.profiled("buildCreatedInstancesConnections.buildTypedValueEnums") {
@@ -891,13 +881,16 @@ class VyneGraphBuilder(
       //builder.connect(providedInstanceMember).to(memberInstance).withEdge(Relationship.IS_ATTRIBUTE_OF)
 
       // The member instance we have can populate required params
-      connections.add(
-         HipsterGraphBuilder.Connection(
-            memberInstance,
-            parameter(field.type.parameterizedName),
-            Relationship.CAN_POPULATE
+      forTypeAndSuperTypes(field.type) { type ->
+         connections.add(
+            HipsterGraphBuilder.Connection(
+               memberInstance,
+               parameter(type.name.parameterizedName),
+               Relationship.CAN_POPULATE
+            )
          )
-      )
+      }
+
       //builder.connect(memberInstance).to(parameter(field.type.fullyQualifiedName)).withEdge(Relationship.CAN_POPULATE)
       connections.add(
          HipsterGraphBuilder.Connection(
@@ -921,6 +914,26 @@ class VyneGraphBuilder(
       }
       //builder.connect(memberInstance).to(type(field.type.fullyQualifiedName)).withEdge(Relationship.IS_INSTANCE_OF)
       return connections
+   }
+
+   /**
+    * Calls the provided callback for the provied type, and all it's super types.
+    * (the types this type inherits from).
+    * Excludes primitive types in the callback, as they are excluded from graph building
+    */
+   private fun forTypeAndSuperTypes(type: QualifiedName, callback: (Type) -> Unit) {
+      forTypeAndSuperTypes(schema.type(type),callback)
+   }
+   /**
+    * Calls the provided callback for the provied type, and all it's super types.
+    * (the types this type inherits from).
+    * Excludes primitive types in the callback, as they are excluded from graph building
+    */
+   private fun forTypeAndSuperTypes(type: Type, callback: (Type) -> Unit) {
+      callback(type)
+      type.inheritanceGraph
+         .filter { !it.isPrimitive }
+         .forEach { callback(it) }
    }
 
    private fun buildInstanceAttributesOfDiscoverableInstanceConnections(
