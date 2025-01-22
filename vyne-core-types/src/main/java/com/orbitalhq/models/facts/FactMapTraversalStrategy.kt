@@ -1,7 +1,9 @@
 package com.orbitalhq.models.facts
 
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
+import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.xtimed
 import lang.taxi.types.ArrayType
@@ -27,13 +29,18 @@ sealed class TreeNavigationInstruction {
 }
 
 
-object IgnoreThisElement : TreeNavigationInstruction()
+data object IgnoreThisElement : TreeNavigationInstruction()
 data class EvaluateSpecificFields(val fieldNames: Set<String>) : TreeNavigationInstruction() {
    fun plus(other: EvaluateSpecificFields) = EvaluateSpecificFields(this.fieldNames + other.fieldNames)
    fun filter(instance: TypedObject): List<TypedInstance> {
       val result = fieldNames.flatMap { instance.getAllAtPath(it) }
       return result
    }
+   fun returnNulls(instance: TypedNull): List<TypedNull> {
+      val result = fieldNames.flatMap { instance.nullsForPropertyPath(it) }
+      return result
+   }
+
 }
 
 object FullScan : TreeNavigationInstruction()

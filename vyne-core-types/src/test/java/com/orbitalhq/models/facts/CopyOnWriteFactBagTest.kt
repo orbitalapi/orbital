@@ -6,9 +6,12 @@ import com.winterbe.expekt.should
 import io.kotest.matchers.nulls.shouldNotBeNull
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
+import com.orbitalhq.models.TypedObject
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.Test
 
 class CopyOnWriteFactBagTest {
@@ -271,6 +274,77 @@ class CopyOnWriteFactBagTest {
       val factBag2 = CopyOnWriteFactBag(listOf(updateEvent, person), schema)
       val fact2 = factBag2.getFactOrNull(schema.type("PersonName"), FactDiscoveryStrategy.ANY_DEPTH_TAKE_LAST)
       fact2!!.value.shouldBe("Jimmy")
+   }
+
+   @Test
+   fun `when object has typed null then null is returned`() {
+      val schema = TaxiSchema.from("""
+         model Person {
+            name : PersonName inherits String
+            spouseName : SpouseName inherits String
+         }
+      """.trimIndent())
+      val person = TypedInstance.from(schema.type("Person"), """{ "name" : "Jimmy" }""", schema) as TypedObject
+//      person["spouseName"].shouldBeInstanceOf<TypedNull>()
+
+      val factBag = CopyOnWriteFactBag(listOf(person), schema)
+      val searchResult = factBag.getFactOrNull(schema.type("SpouseName"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
+      searchResult.shouldBeInstanceOf<TypedNull>()
+   }
+
+
+   @Test
+   fun `when object has scoped typed null then null is returned`() {
+      val schema = TaxiSchema.from("""
+         model Person {
+            name : PersonName inherits String
+            spouseName : SpouseName inherits String
+         }
+      """.trimIndent())
+      val person = TypedInstance.from(schema.type("Person"), """{ "name" : "Jimmy" }""", schema) as TypedObject
+//      person["spouseName"].shouldBeInstanceOf<TypedNull>()
+
+      val factBag = CopyOnWriteFactBag(emptyList(), schema)
+         .withAdditionalScopedFacts(listOf(scopedFact(person, "person")), schema)
+
+      val searchResult = factBag.getFactOrNull(schema.type("SpouseName"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
+      searchResult.shouldBeInstanceOf<TypedNull>()
+   }
+
+   /**
+    * This is an important conscious design choice.
+    * If T is present (but null), then searches for properties of T must also be null.
+    *
+    * This is critical to ensure that scopes don't leak.
+    * eg:
+    * find { Film } as {
+    *    filmAward : AwardTitle //comes from film
+    *    // find the star of the film (CastMember), and return their AwardTitle
+    *    starAward = first(CastMember[], (IsStar) -> IsStar == true) as AwardTitle
+    * }
+    *
+    * In the above example, if first(CastMember[]) returns null, then the StarAward must also be null.
+    * However, if we don't yeild a null here, then we'll search elsewhere in higher scopes, and find the
+    * AwardTitle from the parent object - a Film.
+     */
+   @Test
+   fun `when object itself is null then search for child attribute returns null`() {
+      val schema = TaxiSchema.from("""
+         model Person {
+            name : PersonName inherits String
+            spouseName : SpouseName inherits String
+         }
+      """.trimIndent())
+      val person = TypedNull.create(schema.type("Person"))
+
+      val factBag = CopyOnWriteFactBag(emptyList(), schema)
+         .withAdditionalScopedFacts(listOf(scopedFact(person, "person")), schema)
+
+      val searchResult = factBag.getFactOrNull(schema.type("SpouseName"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
+
+      // SearchResult should not be null (which indicates 'nothing found'), but should
+      // be a TypedNull
+      searchResult.shouldBeInstanceOf<TypedNull>()
    }
 
 }
