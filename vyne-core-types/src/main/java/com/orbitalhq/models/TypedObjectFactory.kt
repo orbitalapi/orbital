@@ -147,7 +147,9 @@ class TypedObjectFactory(
                   }
                }
 
-            if (field.fieldProjection != null) {
+            // Do not start a projection if the type we're projecting to is the same as the value we have.
+            // This happens if the projection was processed internally already within the object construction
+            if (field.fieldProjection != null && !field.fieldProjection.projectedType.isAssignableTo(fieldValue.type.taxiType)) {
 //               val sw = Stopwatch.createStarted()
                val projection = xtimed("Project field $attributeName") {
                   projectField(
@@ -272,14 +274,39 @@ class TypedObjectFactory(
       type: Type,
       newValue: Any,
       factsToExclude: Set<TypedInstance> = emptySet(),
+      // TODO : 20-01-25: I suspect this should be List<ProjectionFunctionScope>, as
+      // I'm pretty sure we support multiple scoped variables here.
       scope: ProjectionFunctionScope?
    ): TypedObjectFactory {
+
 
       val newMergedValue = when {
          this.value is FactBag && newValue is TypedInstance -> {
             if (scope != null) {
+
+               // MP: 20-Jan-25:
+               // Added this, as we need to call ProjectionFunctionScopeEvaluator.build
+               // to consistently convert scope into ScopedFacts (previously we were
+               // constructing inline, without evaluating an expression on the scope)
+               // Not sure if this is actually a problem -- could we hit this without a query engine?
+               require(inPlaceQueryEngine != null) { "Cannot evaluate scope $scope as no query engine is present" }
+               val primaryFacts: List<TypedInstance> = listOf(newValue)
+               val inputs: List<Argument> = listOf(scope)
+               val scopedFacts = ProjectionFunctionScopeEvaluator.build(
+                  inputs,
+                  primaryFacts,
+                  this.inPlaceQueryEngine
+               )
+
+               // old way:
+//               val oldScopedFact = ScopedFact(scope, newValue)
+//               if (oldScopedFact != scopedFacts.single()) {
+//                  println("This should be removed.")
+//               }
+
+
                CascadingFactBag(
-                  CopyOnWriteFactBag(CopyOnWriteArrayList(), listOf(ScopedFact(scope, newValue)), schema),
+                  CopyOnWriteFactBag(CopyOnWriteArrayList(), scopedFacts, schema),
                   this.value
                )
             } else {
@@ -777,7 +804,8 @@ class TypedObjectFactory(
                // there could be scoped facts we've been passed that will
                // be needed as inputs
 
-               val queryEngineWithScopedFacts = valueSupplier.inPlaceQueryEngine!!.withAdditionalFacts(emptyList(),  scopedFacts)
+               val queryEngineWithScopedFacts =
+                  valueSupplier.inPlaceQueryEngine!!.withAdditionalFacts(emptyList(), scopedFacts)
                val collectedList = queryEngineWithScopedFacts.findType(
                   argumentExpressionReturnType, constraint = argumentTypeExpression.constraints
                ).toList()
@@ -814,7 +842,15 @@ class TypedObjectFactory(
          evaluationContext.evaluateLambdaExpression(expression.expression as LambdaExpression, format)
       } else {
          //...otherwise, we just evaluate the expression
-         evaluationContext.accessorReader.evaluate(inputsForLambda, schema.type(expression.returnType), expression, schema, nullValues, source, format)
+         evaluationContext.accessorReader.evaluate(
+            inputsForLambda,
+            schema.type(expression.returnType),
+            expression,
+            schema,
+            nullValues,
+            source,
+            format
+         )
       }
       return result
    }
@@ -935,7 +971,11 @@ class TypedObjectFactory(
          }
          // Not a map, so could be an object, try the value reader - but this is an expensive
          // call, so we defer to last-ish
-         valueReader.contains(value, attributeName) && constraints.isNullOrEmpty() -> readWithValueReader(attributeName, fieldType, field.format)
+         valueReader.contains(value, attributeName) && constraints.isNullOrEmpty() -> readWithValueReader(
+            attributeName,
+            fieldType,
+            field.format
+         )
 
          // Support embedded formats.
          // Eg: A field in a JSON message that contains an XML payload.
@@ -1013,14 +1053,14 @@ class TypedObjectFactory(
 
 
          .let { value ->
-         // If there was a format provided (ie., a date format), and it doesn't match,
-         // apply it now
-         if (value is TypedValue && value.format != field.format) {
-            value.copy(format = field.format)
-         } else {
-            value
+            // If there was a format provided (ie., a date format), and it doesn't match,
+            // apply it now
+            if (value is TypedValue && value.format != field.format) {
+               value.copy(format = field.format)
+            } else {
+               value
+            }
          }
-      }
    }
 
    /**
@@ -1263,7 +1303,7 @@ class TypedObjectFactory(
       }
    }
 
-   private fun getCurrentScopedFacts():List<ScopedFact> {
+   private fun getCurrentScopedFacts(): List<ScopedFact> {
       return if (value is FactBag) {
          value.scopedFacts
       } else {

@@ -36,7 +36,7 @@ import lang.taxi.types.StreamType
 object ProjectionFunctionScopeEvaluator {
    fun build(
       inputs: List<Argument>,
-      primaryFacts: List<TypedInstance>,//should be primaryFacts : List<TypedInstance> (I think)
+      primaryFacts: List<TypedInstance>,
       context: InPlaceQueryEngine,
    ):List<ScopedFact> {
       val collectedFacts = mutableListOf<ScopedFact>()

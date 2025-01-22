@@ -230,6 +230,13 @@ data class TypedObject(
       }
    }
 
+   /**
+    * Walks the path of properties (foo.bar.baz), collecting all
+    * typed instances along the property path.
+    *
+    * If one of the properties is a collection, the collection is iterated,
+    * and the remainder of the path is evaluated against all collection members.
+    */
    fun getAllAtPath(path: String): List<TypedInstance> {
       val parts = path.split(".").toMutableList()
       val thisFieldName = parts.removeAt(0)

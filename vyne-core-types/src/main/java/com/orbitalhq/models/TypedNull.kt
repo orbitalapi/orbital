@@ -5,6 +5,7 @@ import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.ImmutableEquality
 import lang.taxi.utils.log
+import lang.taxi.utils.takeHead
 
 // TypedNull is very cachable, except for the source attribute.
 // So, we create an internal wrapper, and cache that.
@@ -72,5 +73,25 @@ data class TypedNull private constructor(private val wrapper: TypedNullWrapper,
 
    override fun valueEquals(valueToCompare: TypedInstance): Boolean {
       return valueToCompare.value == null
+   }
+
+   /**
+    * Returns a typed null for every property in the provided path (foo.bar.baz).
+    *
+    * This is needed when populating a property path, and encountering a null.
+    * eg: In foo.bar.baz, if bar is null, then so is baz.
+    */
+   fun nullsForPropertyPath(path: String): List<TypedNull> {
+      val parts = path.split(".")
+      val (thisPropertyName, remaining) = parts.takeHead()
+      val attributeTypeName = this.type.attribute(thisPropertyName).type
+      val attributeType = this.type.typeCache.type(attributeTypeName)
+      val thisTypedNull = create(attributeType, this.source)
+
+      return if (remaining.isEmpty()) {
+         listOf(thisTypedNull)
+      } else {
+         listOf(thisTypedNull) + nullsForPropertyPath(remaining.joinToString("."))
+      }
    }
 }
