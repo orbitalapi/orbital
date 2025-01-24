@@ -38,7 +38,7 @@ class BatchWriteCacheProvider<TCacheData, TCallBackData> {
       /**
        * Hooks to dispose the subscription when the query completes or is cancelled.
        */
-      job.parent?.invokeOnCompletion { removeBatchWriteCache(queryId) }
+      fetchRootJob(job).invokeOnCompletion { removeBatchWriteCache(queryId) }
       return batchDataCache.get(queryId) {
          logger.info { "Creating the Batch Write Cache for query $queryId" }
          val sink = Sinks.many().multicast()
@@ -56,6 +56,14 @@ class BatchWriteCacheProvider<TCacheData, TCallBackData> {
                }
             }
          BatchWriteCache(sink, batchSize, batchTimeoutInMillis, subscription, queryId)
+      }
+   }
+
+   private fun fetchRootJob(job: Job): Job {
+      return if (job.parent == null) {
+         job
+      } else {
+         fetchRootJob(job.parent!!)
       }
    }
 

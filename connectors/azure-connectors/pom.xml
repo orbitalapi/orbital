@@ -13,6 +13,7 @@
    <packaging>pom</packaging>
    <modules>
       <module>blob-connector</module>
+       <module>servicebus-connector</module>
    </modules>
 
 </project>

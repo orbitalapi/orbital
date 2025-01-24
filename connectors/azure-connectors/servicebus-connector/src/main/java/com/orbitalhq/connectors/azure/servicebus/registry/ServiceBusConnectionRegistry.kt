@@ -1,0 +1,6 @@
+package com.orbitalhq.connectors.azure.servicebus.registry
+
+import com.orbitalhq.connectors.config.azure.ServiceBusConnectionConfiguration
+import com.orbitalhq.connectors.registry.ConnectionRegistry
+
+interface ServiceBusConnectionRegistry: ConnectionRegistry<ServiceBusConnectionConfiguration>

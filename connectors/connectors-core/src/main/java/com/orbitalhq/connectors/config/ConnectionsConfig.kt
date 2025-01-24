@@ -1,6 +1,7 @@
 package com.orbitalhq.connectors.config
 
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import com.orbitalhq.connectors.config.azure.ServiceBusConnectionConfiguration
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
@@ -25,10 +26,11 @@ data class ConnectionsConfig(
    val kafka: Map<String, KafkaConnectionConfiguration> = emptyMap(),
    val aws: Map<String, AwsConnectionConfiguration> = emptyMap(),
    val hazelcast: Map<String,HazelcastConfiguration> = emptyMap(),
-   val mongo: Map<String, MongoConnectionConfiguration> = emptyMap()
+   val mongo: Map<String, MongoConnectionConfiguration> = emptyMap(),
+   val serviceBus: Map<String, ServiceBusConnectionConfiguration> = emptyMap(),
 ) {
    fun listAll(): List<ConnectorConfiguration> {
-      return jdbc.values + kafka.values + aws.values + hazelcast.values + mongo.values
+      return jdbc.values + kafka.values + aws.values + hazelcast.values + mongo.values + serviceBus.values
    }
 
    val jdbcConnectionsHash = jdbc.hashCode()
