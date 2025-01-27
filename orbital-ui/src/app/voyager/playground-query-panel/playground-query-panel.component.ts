@@ -3,9 +3,9 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component, DestroyRef,
-  ElementRef,
-  Input,
-  ViewChild
+  ElementRef, EventEmitter,
+  Input, Output,
+  ViewChild,
 } from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {BehaviorSubject, EMPTY, switchMap} from "rxjs";
@@ -18,7 +18,13 @@ import {StubPanelComponent} from "./stub-panel.component";
 import {Schema} from "../../services/schema";
 import {HttpClientModule} from "@angular/common/http";
 import {VoyagerService} from "../../../voyager-app/voyager.service";
-import {emptyQueryMessage, QueryParseMetadata, QueryProfileData, StubQueryMessage} from "../../services/query.service";
+import {
+  emptyQueryMessage,
+  OperationStub,
+  QueryParseMetadata,
+  QueryProfileData,
+  StubQueryMessage,
+} from '../../services/query.service';
 import {JsonViewerModule} from "../../json-viewer/json-viewer.module";
 import {QueryConfigPanelComponent} from "./query-config-panel.component";
 import {catchError, debounceTime, filter, tap} from "rxjs/operators";
@@ -54,7 +60,7 @@ import {isNullOrUndefined} from "../../utils/utils";
           wordWrap="on"
           [content]="content.getValue()"
           [showCompilationProblemsPanel]="true"
-          (contentChange)="content.next($event)"
+          (contentChange)="content.next($event); queryMessageChange.emit($event)"
           [setFocus]="false"
         >
         </app-code-editor>
@@ -74,7 +80,8 @@ import {isNullOrUndefined} from "../../utils/utils";
         </app-panel-header>
         <tui-expand [expanded]="stubsPanelHeader.expanded">
           <app-query-config-panel [style.height]="expandedPanelHeight"
-                                  [(stubs)]="queryMessage.stubs"
+                                  [stubs]="queryMessage.stubs"
+                                  (stubsChange)="stubsChanged.emit($event)"
                                   [parameters]="queryMessage.parameters"
                                   (parameterValuesChange)="updateQueryParameters($event)"
                                   [schema]="schema"></app-query-config-panel>
@@ -165,6 +172,12 @@ export class PlaygroundQueryPanelComponent implements AfterViewInit {
   get queryMessage(): StubQueryMessage {
     return this._queryMessage;
   }
+
+  @Output()
+  queryMessageChange = new EventEmitter<string>();
+
+  @Output()
+  stubsChanged = new EventEmitter<OperationStub[]>();
 
   set queryMessage(value: StubQueryMessage) {
     this._queryMessage = value;
