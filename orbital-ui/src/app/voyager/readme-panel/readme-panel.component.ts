@@ -85,8 +85,10 @@ export class ReadmePanelComponent {
   }
 
   set markdown(value: string) {
-    this._markdown = value;
-    this.markdownChange.emit(this.markdown);
+    if (value !== this._markdown) {
+      this._markdown = value;
+      this.markdownChange.emit(this.markdown);
+    }
   }
 
   viewModeActiveIndex = 0

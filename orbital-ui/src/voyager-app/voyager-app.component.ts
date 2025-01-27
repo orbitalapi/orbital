@@ -20,7 +20,7 @@ import {
 } from 'rxjs/operators';
 import {combineLatest} from 'rxjs'
 import {emptySchema, Schema} from 'src/app/services/schema';
-import {forkJoin, Observable, of, ReplaySubject} from 'rxjs';
+import {Observable, of, ReplaySubject} from 'rxjs';
 import {ExampleGroups} from 'src/voyager-app/code-examples';
 import {TuiAlertService, TuiDialogService} from '@taiga-ui/core';
 import {ShareDialogComponent} from 'src/app/voyager/share-dialog/share-dialog.component';
@@ -44,19 +44,29 @@ import {PlaygroundSchemaService} from "./playground-schema-service";
                           (clear)="clear()"
       ></playground-toolbar>
       <div class="container">
-        <app-voyager-sidebar [(showDiagram)]="showDiagram" [(showQueryPanel)]="showQueryPanel"
-                             [(showReadme)]="showReadme" [(showSchema)]="showSchema"
-
-                             (copyDevCode)="copyDevCode($event)"/>
-        <as-split direction="horizontal" unit="percent" gutterSize="1" useTransition="true">
+        <app-voyager-sidebar
+          [showDiagram]="showDiagram"
+          (showDiagramChange)="onShowDiagramChanged($event)"
+          [showQueryPanel]="showQueryPanel"
+          (showQueryPanelChange)="onShowQueryPanelChanged($event)"
+          [showReadme]="showReadme"
+          (showReadmeChange)="onShowReadmeChanged($event)"
+          [showSchema]="showSchema"
+          (showSchemaChange)="onShowSchemaChanged($event)"
+          (copyDevCode)="copyDevCode($event)"
+        />
+        <as-split *ngIf="queryMessage" direction="horizontal" unit="percent" gutterSize="1" useTransition="true">
           <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
             <div class="thin-splitter-gutter-icon"></div>
           </div>
           <as-split-area [visible]="!!(showReadme && queryMessage)" [order]="0">
-            <app-readme-panel [(markdown)]="queryMessage.readme"
-                              (onRunQuery)="onRunQueryHandler($event)"></app-readme-panel>
+            <app-readme-panel
+              [markdown]="queryMessage?.readme"
+              (markdownChange)="onReadmeChange($event)"
+              (onRunQuery)="onRunQueryHandler($event)"
+            ></app-readme-panel>
           </as-split-area>
-          <as-split-area  [visible]="showSchema"  [size]="35" [order]="1">
+          <as-split-area [visible]="showSchema" [size]="35" [order]="1">
             <div class="panel-with-header">
               <app-panel-header title="Schema" tablerIcon="code"></app-panel-header>
               <app-code-editor
@@ -64,7 +74,7 @@ import {PlaygroundSchemaService} from "./playground-schema-service";
                 [content]="content"
                 wordWrap="on"
                 [showCompilationProblemsPanel]="true"
-                (contentChange)="codeUpdated$.next($event)"
+                (contentChange)="codeUpdated$.next($event); onSchemaChanged($event)"
                 [setFocus]="false"
               >
               </app-code-editor>
@@ -72,7 +82,10 @@ import {PlaygroundSchemaService} from "./playground-schema-service";
           </as-split-area>
           <as-split-area [visible]="showQueryPanel" [order]="2">
             <app-playground-query-panel [schema]="schema$ | async"
-                                        [queryMessage]="queryMessage"></app-playground-query-panel>
+                                        [queryMessage]="queryMessage"
+                                        (queryMessageChange)="onQueryChanged($event)"
+                                        (stubsChanged)="onStubsChanged($event)"
+            ></app-playground-query-panel>
           </as-split-area>
           <as-split-area [visible]="showDiagram" [order]="3">
             <div class="panel-with-header">
@@ -114,6 +127,8 @@ export class VoyagerAppComponent implements OnInit {
 
   displayedMembers = model<string[] | 'everything' | 'services'>('everything')
 
+  private PLAYGROUND_HISTORY_LOCAL_STORAGE_KEY = 'playgroundHistory'
+
   @ViewChild(PlaygroundQueryPanelComponent) childComponent!: PlaygroundQueryPanelComponent;
 
   @ViewChild(ReadmePanelComponent)
@@ -137,8 +152,15 @@ export class VoyagerAppComponent implements OnInit {
           this.changeDetectorRef.markForCheck();
         }),
         switchMap((source: string) => {
+          const layout = {
+            showDiagram: this.showDiagram,
+            showReadme: this.showReadme,
+            showQuery: this.showQueryPanel,
+            showSchema: this.showSchema
+          }
           if (source && source.length > 0) {
             this.queryMessage.schema = source;
+            this.queryMessage.layout = layout;
             return this.voyagerService.parse(source)
               .pipe(
                 catchError((error) => {
@@ -159,7 +181,8 @@ export class VoyagerAppComponent implements OnInit {
             return of({
               hasErrors: false,
               messages: [],
-              schema: emptySchema()
+              schema: emptySchema(),
+              layout
             } as ParsedSchema)
           }
         }),
@@ -190,7 +213,6 @@ export class VoyagerAppComponent implements OnInit {
       console.log('Updating schema');
       this.schemaService.updateSchema(next)
     });
-    this.setCodeFromExample(ExampleGroups[0].snippets[0].query);
 
     this.router.events
       .pipe(
@@ -219,15 +241,22 @@ export class VoyagerAppComponent implements OnInit {
         })
       )
       .subscribe(stubQueryMessage => {
-        if (stubQueryMessage) {
+        if (stubQueryMessage && this.router.url !== '/') {
           this.setCodeFromExample(stubQueryMessage);
         }
       });
   }
 
-  ngOnInit() {
+  async ngOnInit() {
+    // no example route or pako set, so show them the hello world example if they're a new user,
+    // (e.g. they DO NOT have a playground history), otherwise rehydrate the pako route from localStorage
     if (this.router.url === '/') {
-      this.router.navigate([`examples/${ExampleGroups[0].snippets[0].slug}`], {replaceUrl: true})
+      const playgroundHistory = localStorage.getItem(this.PLAYGROUND_HISTORY_LOCAL_STORAGE_KEY)
+      if (playgroundHistory) {
+        await this.router.navigate(['/'], {fragment: playgroundHistory, replaceUrl: true})
+      } else {
+        await this.router.navigate([`examples/${ExampleGroups[0].snippets[0].slug}`], {replaceUrl: true})
+      }
     }
   }
 
@@ -251,15 +280,18 @@ export class VoyagerAppComponent implements OnInit {
     this.showSchema = queryMessage.layout?.showSchema ?? true;
   }
 
-
   async clear() {
-    await this.router.navigate([''])
+    this.codeUpdated$.next('')
+    this.setCodeFromExample(emptyQueryMessage())
     this.readmePanelComponent.resetViewMode()
+    //await this.router.navigate(['/'])
+    this.updateRouteAndPersistTolocalStorage(true)
   }
 
   setCode(code: string) {
     this.content = code;
     this.codeUpdated$.next(code);
+    this.updateRouteAndPersistTolocalStorage()
   }
 
   onRunQueryHandler($event: string) {
@@ -276,9 +308,14 @@ export class VoyagerAppComponent implements OnInit {
     return object
   }
 
-  showShareDialog() {
-    const deflated = pako.gzip(JSON.stringify(this.queryMessage));
+  private zip(queryMessage: StubQueryMessage): string {
+    const deflated = pako.gzip(JSON.stringify(queryMessage));
     const base64Encoded = btoa(String.fromCharCode.apply(null, deflated))
+    return base64Encoded;
+  }
+
+  showShareDialog() {
+   const base64Encoded = this.zip(this.queryMessage);
 
     const shareUrl = `${window.location.origin}#pako:${base64Encoded}`
 
@@ -378,5 +415,56 @@ export const example: StubQueryMessageWithSlug = ${exampleAsJs}`
 
     // Return the observable of the params from the deepest route
     return route.fragment;
+  }
+
+  onShowDiagramChanged($event: boolean) {
+    this.showDiagram = this.queryMessage.layout.showDiagram = $event;
+    this.updateRouteAndPersistTolocalStorage()
+  }
+
+  onShowQueryPanelChanged($event: boolean) {
+    this.showQueryPanel = this.queryMessage.layout.showQuery = $event;
+    this.updateRouteAndPersistTolocalStorage()
+  }
+
+  onShowReadmeChanged($event: boolean) {
+    this.showReadme = this.queryMessage.layout.showReadme = $event;
+    this.updateRouteAndPersistTolocalStorage()
+  }
+
+  onShowSchemaChanged($event: boolean) {
+    this.showSchema = this.queryMessage.layout.showSchema = $event;
+    this.updateRouteAndPersistTolocalStorage()
+  }
+
+  onReadmeChange($event: string) {
+    this.queryMessage.readme = $event
+    this.updateRouteAndPersistTolocalStorage()
+  }
+
+  onSchemaChanged($event: string) {
+    this.queryMessage.schema = $event
+    this.updateRouteAndPersistTolocalStorage()
+  }
+
+  onQueryChanged($event: string) {
+    this.queryMessage.query = $event;
+    this.updateRouteAndPersistTolocalStorage()
+  }
+
+  onStubsChanged($event: any) {
+    this.queryMessage.stubs = $event;
+    this.updateRouteAndPersistTolocalStorage()
+  }
+
+  private updateRouteAndPersistTolocalStorage(override: boolean = false) {
+    const base64Encoded = this.zip(this.queryMessage)
+    // if it's the same pako, or we're viewing examples, don't overwrite the URL or persist to localStorage
+    if ((!this.router.url.includes(base64Encoded) && !this.router.url.includes('examples')) || override) {
+      // NOTE: we replace the URL, unless we're clearing the code out, then we add a new history state,
+      // which allows undoing if required by hitting the back button :-)
+      this.router.navigate(['/'], {fragment: `pako:${base64Encoded}`, replaceUrl: !override})
+      localStorage.setItem(this.PLAYGROUND_HISTORY_LOCAL_STORAGE_KEY, `pako:${base64Encoded}`);
+    }
   }
 }

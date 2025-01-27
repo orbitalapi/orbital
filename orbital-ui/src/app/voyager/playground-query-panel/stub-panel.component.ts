@@ -52,7 +52,8 @@ import {isNullOrUndefined} from "../../utils/utils";
       <tr tuiTr *ngFor="let stub of stubs">
         <td *tuiCell="'operationName'" tuiTd>
           <tui-combo-box
-            [(ngModel)]="stub.operationName"
+            [ngModel]="stub.operationName"
+            (ngModelChange)="onStubOperationChanged($event, stub)"
           >Operation
             <tui-data-list *tuiDataList>
               <button *ngFor="let operation of operations" tuiOption
@@ -136,6 +137,7 @@ export class StubPanelComponent {
       },
     ).subscribe(next => {
       this.stubs[this.stubs.indexOf(stub)] = next;
+      this.stubsChange.emit(this.stubs);
       this.changeDetector.markForCheck();
     });
 
@@ -159,6 +161,13 @@ export class StubPanelComponent {
       return 'Echoes input';
     }
     return stub.conditionalResponses?.length ? stub.conditionalResponses?.length + " conditional response" : stub.response
+  }
+
+  onStubOperationChanged($event: any, stub: OperationStub) {
+    if (!isNullOrUndefined($event)) {
+      stub.operationName = $event
+      this.stubsChange.emit(this.stubs);
+    }
   }
 
   protected readonly isNullOrUndefined = isNullOrUndefined;

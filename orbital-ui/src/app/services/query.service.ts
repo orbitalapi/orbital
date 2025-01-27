@@ -605,7 +605,6 @@ export interface StubQueryMessage {
   query?: string;
   parameters?: { [index: string]: any };
   stubs?: OperationStub[];
-  expectedJson?: string | null;
   readme?: string;
   layout?: {
     showDiagram?: boolean;
@@ -621,7 +620,13 @@ export function emptyQueryMessage(): StubQueryMessage {
     query: '',
     parameters: {},
     stubs: [],
-    readme: ''
+    readme: '',
+    layout: {
+      showSchema: false,
+      showQuery: false,
+      showReadme: true,
+      showDiagram: true
+    }
   }
 }
 
