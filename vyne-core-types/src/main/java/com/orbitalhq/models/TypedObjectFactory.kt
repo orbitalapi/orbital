@@ -709,7 +709,17 @@ class TypedObjectFactory(
    }
 
    override fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance {
-      return accessorReader.read(value, type, accessor, schema, source = source, format = format)
+      // MP 24-Jan-25:
+      // Changed this to allowContextQuerying = true.
+      // Otherwise, types on projections-with-expressions were not triggering querying - eg:
+      // find { Film } as {
+      //   id : FilmId
+      //   // Here, CastResponse is supposed to be invoked via an operation.
+      //   cast : CastResponse as Actor[] as (actor:Actor) -> {
+      //      personName : PersonName
+      //   }[]
+      //}
+      return accessorReader.read(value, type, accessor, schema, source = source, format = format, allowContextQuerying = true)
    }
 
    override fun readAccessor(
