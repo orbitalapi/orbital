@@ -401,17 +401,22 @@ private object TypedInstanceTree {
 
          is TypedCollection -> instance.value
          is TypedNull -> {
-            when (navigationInstruction) {
-               is FullScan -> {
-                  // Not sure what to do here. Guide me, o unit tests.
-                  // This call may not be correct. We don't hit this in any unit tests.
-                  navigationInstruction.returnNulls(instance)
+            if (instance.type.isCollection) {
+               emptyList()
+            } else {
+               when (navigationInstruction) {
+                  is FullScan -> {
+                     // Not sure what to do here. Guide me, o unit tests.
+                     // This call may not be correct. We don't hit this in any unit tests.
+                     navigationInstruction.returnNulls(instance)
+                  }
+                  is EvaluateSpecificFields -> {
+                     navigationInstruction.returnNulls(instance)
+                  }
+                  else -> emptyList()
                }
-               is EvaluateSpecificFields -> {
-                  navigationInstruction.returnNulls(instance)
-               }
-               else -> emptyList()
             }
+
          }
          else -> throw IllegalStateException("TypedInstance of type ${instance.javaClass.simpleName} is not handled")
       }
