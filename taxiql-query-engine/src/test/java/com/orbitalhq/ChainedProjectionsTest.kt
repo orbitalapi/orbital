@@ -79,6 +79,131 @@ class ChainedProjectionsTest {
    }
 
    @Test
+   fun `can chain projections in nested anonymous object to access iteration scope`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         model Film {
+            id : FilmId inherits Int
+         }
+
+         model Studio {
+            id : StudioId inherits Int
+         }
+
+         model Actor {
+            name : PersonName inherits String
+         }
+         model CastResponse {
+            actors : Actor[]
+         }
+         service FilmsApi {
+            operation getStudio():Studio
+            operation getFilms(StudioId):Film
+            operation getCast(FilmId):CastResponse
+         }
+      """.trimIndent()
+      )
+      stub.addResponse("getStudio", """{ "id" : 456 }""")
+      stub.addResponse("getFilms", """{ "id" : 123 }""")
+      stub.addResponse("getCast", """{ "actors" : [ { "name" : "Jimmy" }, { "name" : "Jane" } ] }""")
+
+      val result = vyne.query(
+         """
+         find { Studio } as {
+            studioId : StudioId
+            film :  Film as {
+               id : FilmId
+               cast : CastResponse as Actor[] as (actor:Actor) -> {
+                  personName : PersonName
+               }[]
+            }
+         }
+      """.trimIndent()
+      )
+         .firstRawObject()
+
+      result.shouldBe(
+         mapOf(
+            "studioId" to 456,
+            "film" to
+               mapOf(
+                  "id" to 123, "cast" to listOf(
+                     mapOf("personName" to "Jimmy"),
+                     mapOf("personName" to "Jane"),
+                  )
+               )
+         )
+      )
+   }
+
+   @Test
+   fun `can chain projections in nested anonymous object with inherited id type to access iteration scope`(): Unit = runBlocking {
+      // This test covers using a graph search to invoke a service,
+      // where input parameter is a supertype of a known fact,
+      // and that fact is coming within a nested scoped projection.
+      // The root cause was not calling .forTypeAndSuperTypes() when adding
+      // a fact into the graph.
+      // However, it's not 100% clear why this appeared in this test, where we have other
+      // tests that cover this behaviour.
+      val (vyne, stub) = testVyne(
+         """
+         type StudioProductionId inherits Int
+         model Film {
+            id : FilmId inherits StudioProductionId
+         }
+
+         model Studio {
+            id : StudioId inherits Int
+         }
+
+         model Actor {
+            name : PersonName inherits String
+         }
+         model CastResponse {
+            actors : Actor[]
+         }
+         service FilmsApi {
+            operation getStudio():Studio
+            operation getFilms(StudioId):Film
+            operation getCast(StudioProductionId):CastResponse
+         }
+      """.trimIndent()
+      )
+      stub.addResponse("getStudio", """{ "id" : 456 }""")
+      stub.addResponse("getFilms", """{ "id" : 123 }""")
+      stub.addResponse("getCast", """{ "actors" : [ { "name" : "Jimmy" }, { "name" : "Jane" } ] }""")
+
+      val result = vyne.query(
+         """
+         find { Studio } as {
+            studioId : StudioId
+            film :  Film as {
+               id : FilmId
+               cast : CastResponse as Actor[] as (actor:Actor) -> {
+                  personName : PersonName
+               }[]
+            }
+         }
+      """.trimIndent()
+      )
+         .firstRawObject()
+
+      result.shouldBe(
+         mapOf(
+            "studioId" to 456,
+            "film" to
+               mapOf(
+                  "id" to 123, "cast" to listOf(
+                     mapOf("personName" to "Jimmy"),
+                     mapOf("personName" to "Jane"),
+                  )
+               )
+         )
+      )
+   }
+
+
+   @Test
    fun `field projection no chaining`():Unit = runBlocking {
       val (vyne,stub) = testVyne("""
          model Film {
