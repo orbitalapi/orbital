@@ -837,7 +837,10 @@ class VyneGraphBuilder(
       val memberInstance = providedInstance(type.name.parameterizedName)
       connections.addConnection(providedInstanceMember, memberInstance, Relationship.IS_ATTRIBUTE_OF)
       // The member instance we have can populate required params
-      connections.addConnection(memberInstance, parameter(type.name.parameterizedName), Relationship.CAN_POPULATE)
+      forTypeAndSuperTypes(type) {
+         connections.addConnection(memberInstance, parameter(it.name.parameterizedName), Relationship.CAN_POPULATE)
+      }
+
       connections.addConnection(memberInstance, type(type), Relationship.IS_INSTANCE_OF)
       val nestedConnections = type.attributes.entries.flatMap { (fieldName, field) ->
          buildProvidedInstanceAttributeConnections(

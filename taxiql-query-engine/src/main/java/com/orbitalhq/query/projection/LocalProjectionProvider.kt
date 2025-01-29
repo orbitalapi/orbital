@@ -334,7 +334,7 @@ private class OrbitalProjectionProviderThreadFactory : ThreadFactory {
       )
       if (t.isDaemon) t.isDaemon = false
       if (t.priority != Thread.NORM_PRIORITY) t.priority = Thread.NORM_PRIORITY
-      logger.info { "created the projection thread - ${t.name}" }
+      logger.debug { "created the projection thread - ${t.name}" }
       return t
    }
 }
