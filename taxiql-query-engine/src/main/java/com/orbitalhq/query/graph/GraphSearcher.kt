@@ -261,7 +261,7 @@ class GraphSearcher(
       previouslyEvaluatedPaths: EvaluatedPathSet
    ): WeightedNode<Relationship, Element, Double>? {
       val graphBuildResult = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
-      logger.trace { """===================Query graph:========================
+      logger.trace { """======Query graph for search $startFact -> $targetFact ===================
          | ${graphBuildResult.graph.displayGraphJson()}
          | ========================================================
       """.trimMargin() }
