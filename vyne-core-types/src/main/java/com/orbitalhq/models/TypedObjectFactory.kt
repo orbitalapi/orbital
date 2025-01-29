@@ -637,7 +637,16 @@ class TypedObjectFactory(
                   error("Cannot perform an inner search for a stream")
                }
                val resultsFromSearch = try {
-                  inPlaceQueryEngine.findType(requestedType)
+                  // MP: 29-Jan-25: Found that facts from the context
+                  // are not being passed when doing an in-place search
+                  // So, in a nested projection, we were not searching with the facts
+                  // from the current scope.
+                  val queryEngine = if (value is FactBag) {
+                     inPlaceQueryEngine.withAdditionalFacts(value.rootFacts(), value.scopedFacts)
+                  } else {
+                     inPlaceQueryEngine
+                  }
+                  queryEngine.findType(requestedType)
                      .toList()
                } catch (e: Exception) {
                   // OrbitalQueryException comes from a policy expression: e.g.when below `else` branch is triggered:
