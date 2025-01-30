@@ -17,6 +17,7 @@ import lang.taxi.types.ArrayType
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.MapType
 import lang.taxi.types.ObjectType
+import lang.taxi.types.PrimitiveType
 import lang.taxi.types.isMapType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
@@ -349,6 +350,13 @@ interface TypedInstance {
                   functionRegistry,
                   formatSpecs
                )
+            }
+
+            type.taxiType == PrimitiveType.ANY -> {
+               when (value) {
+                  is Map<*,*> -> buildUsingObjectFactory()
+                  else -> TypedValue.from(type, value, performTypeConversions, source, parsingErrorBehaviour, format)
+               }
             }
 
             type.isScalar -> {
