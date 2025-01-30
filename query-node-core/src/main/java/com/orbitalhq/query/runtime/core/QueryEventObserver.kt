@@ -212,7 +212,7 @@ class QueryLifecycleEventObserver(
                activeQueryMonitor?.reportComplete(queryResult.queryId)
 //               statsCollector.cancel()
             }.catch {
-               logger.warn { "An error in emitting results - has consumer gone away?? ${it.message}" }
+               logger.warn { "Query failed - ${it.message}" }
                activeQueryMonitor?.reportComplete(queryResult.queryId)
 //               statsCollector.cancel()
                throw it
