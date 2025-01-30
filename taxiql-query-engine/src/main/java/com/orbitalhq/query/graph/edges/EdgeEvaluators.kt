@@ -87,9 +87,16 @@ class RequiresParameterEdgeEvaluator(val parameterFactory: ParameterFactory = Pa
       val operationReference = parts[0]
       val paramIndex = Integer.parseInt(parts[2])
       val (_, operation) = context.schema.operation(operationReference.fqn())
-      val paramType = operation.parameters[paramIndex].type
+      val parameter = operation.parameters[paramIndex]
+      val paramType = parameter.type
 
-      val discoveredParam = parameterFactory.discover(paramType, context, null, operation)
+      val discoveredParam = parameterFactory.discover(
+         paramType,
+         context,
+         null,
+         operation,
+         nullable = parameter.nullable
+      )
       return EvaluatedEdge.success(edge, instanceOfType(discoveredParam.type), discoveredParam)
 
       //return  parameterFactory.discover(paramType, context, operation).map {

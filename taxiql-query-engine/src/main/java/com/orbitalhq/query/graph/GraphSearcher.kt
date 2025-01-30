@@ -167,7 +167,7 @@ class GraphSearcher(
          val nextPathId = nextPath.pathHashExcludingWeights()
          evaluatedPaths.addProposedPath(nextPath)
 
-         logger.info { "[$queryId] $searchDescription - attempting path $nextPathId: \n${nextPath!!.pathDescription()}" }
+         logger.debug { "[$queryId] $searchDescription - attempting path $nextPathId: \n${nextPath!!.simplifyPath().describePath()}" }
 
          val evaluatedPath = evaluator(nextPath)
          evaluatedPaths.addEvaluatedPath(nextPathId, evaluatedPath)

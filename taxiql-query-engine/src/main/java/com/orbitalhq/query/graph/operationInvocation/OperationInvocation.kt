@@ -334,7 +334,8 @@ class OperationInvocationEvaluator(
                context,
                edge.previousValue,
                operation,
-               requiredParam.defaultValue
+               requiredParam.defaultValue,
+               requiredParam.nullable
             )
          }
       } catch (e: Exception) {
