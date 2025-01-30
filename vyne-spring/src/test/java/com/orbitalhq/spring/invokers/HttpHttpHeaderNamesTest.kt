@@ -6,6 +6,7 @@ import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.testVyne
+import com.orbitalhq.testVyneWithStub
 import com.winterbe.expekt.should
 import io.kotest.common.runBlocking
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -287,12 +288,12 @@ class HttpHttpHeaderNamesTest {
 }
 
 fun vyneWithHttpInvoker(src: String): Vyne {
-   return testVyne(src) { schema ->
+   return testVyneWithStub(src, invokerProvider = { schema ->
       listOf(
          RestTemplateInvoker(
             SimpleSchemaProvider(schema),
             webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
          )
       )
-   }
+   }).first
 }

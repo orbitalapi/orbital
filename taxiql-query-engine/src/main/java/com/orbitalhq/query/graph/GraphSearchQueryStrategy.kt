@@ -6,6 +6,7 @@ import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.models.DataSource
+import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.InvocationConstraints
 import com.orbitalhq.query.QueryContext
@@ -33,6 +34,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.mapNotNull
+import lang.taxi.services.operations.constraints.Constraint
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -193,83 +195,15 @@ class GraphSearchQueryStrategy(
    ): QueryStrategyResult {
       val failedAttempts = mutableListOf<DataSource>()
       val rootScopedFacts = context.rootAndScopedFacts()
-      val returnValue = rootScopedFacts
-         .asFlow()
-         .mapNotNull { fact ->
-            val factIndex = rootScopedFacts.indexOf(fact)
-            val startFact = providedStartFact(fact.type, factIndex)
-            val targetType = targetElement.instanceValue as? Type? ?: context.schema.type(targetElement.value as String)
-            // Excluding paths is done by the type, not the fact.
-            // Graph searches work based off of links from types, therefore
-            // we should exclude based on the type, regardless of the value.
-            val exclusionKey = SearchPathExclusionKey(fact, targetElement)
-            if (searchPathExclusions.contains(exclusionKey)) {
-               // if  a previous search for given (searchNode, targetNode) yielded 'null' path, then
-               // don't search.
-               return@mapNotNull null
-            }
-            var searchProvidedAtLeastOnePath = false
-            val searcher = GraphSearcher(
-               startFact,
-               targetElement,
-               targetType,
-               schemaGraphCache.get(context.schema),
-               invocationConstraints
-            )
-            val evaluatedPathTempMap = mutableListOf<PathEvaluation>()
-            val searchResult = searcher.search(
-               context.rootAndScopedFacts(),
-               context.excludedServices.toSet(),
-               invocationConstraints.excludedOperations.plus(context.excludedOperations.map {
-                  SearchGraphExclusion("@Id", it)
-               }),
-               context.queryId
-            )
-            { pathToEvaluate ->
-               searchProvidedAtLeastOnePath = true
-               val evaluations = evaluatePath(pathToEvaluate, context, startFact, fact)
-               evaluatedPathTempMap.addAll(evaluations)
-               evaluations
-            }
-            // Only exclude if the pair of (searchNode, targetNode) didn't provide any paths at all.
-            // It's possible that the search failed, but the path is valid to be considered again.
-            // (eg., if we used a TypedInstance as an input to a service, but the service returned no results,
-            // we shouldn't exclude the type, as future TypedInstances might have better luck)
-            if (searchPathExclusionsCacheSize > 0 && searchResult.path == null && !searchProvidedAtLeastOnePath) {
-               searchPathExclusions[exclusionKey] = exclusionKey
-            }
 
 
-            // Consider the case we try to populate 'Director birthday' for a given movie.
-            // a movie has a director name value
-            // and the following path is discovered
-            // Step 1: with director name invoke nameToDirectorId service that returns Director identifier  value
-            // Step 2: with director identifier invoke Director service that returns DirectorData
-            // Step 3: extract 'Director birthday' from DirectorData's name birthday attribute
-            // Assume that nameToDirectorId service returns:
-            //  {  name: 'Passolini', directorIdentifier: null }
-            // so at the end of 'step 1p above typed object is inserted into context.facts
-            // Step 2 will fail as 'directorId' is null (see RestTemplateInvoker line 113 for the point of exception)
-            // As part of the search, the result of 'Step 1' i.e. {  name: 'Passolini', directorIdentifier: null }  will be reused as the starting fact
-            // and we'll try to execute Step 1, Step 2 and Step 3 again
-            // Step 1 will produce another {  name: 'Passolini', directorIdentifier: null } which will be added into context.facts
-            // Step 2 will fail, but the fact added in the previous step will be used as another start point
-            // which leads to an infinite loop
-            // so here we try to avoid that.
-            if (searchPathExclusionsCacheSize > 0 && searchResult.path == null && evaluatedPathTempMap.isNotEmpty()) {
-               val duplicatedFact = evaluatedPathTempMap
-                  .filter { it is EvaluatedEdge && it.edge.vertex1.elementType == ElementType.OPERATION && it.resultValue == fact }
-                  .map { it.resultValue }
-                  .firstOrNull()
-               if (duplicatedFact != null) {
-                  logger.info { "[${context.queryId}] duplicate $duplicatedFact" }
-                  searchPathExclusions[exclusionKey] = exclusionKey
-               }
-            }
-            failedAttempts.addAll(searchResult.failedAttemptSources)
-            searchResult.typedInstance
-         }
-         .firstOrNull()
+      val returnValue = internalFind(rootScopedFacts, targetElement, context, invocationConstraints, failedAttempts)
+//      val returnValue = rootScopedFacts
+//         .asFlow()
+//         .mapNotNull { fact ->
+//            internalFind(rootScopedFacts, targetElement, context, invocationConstraints, failedAttempts)
+//         }
+//         .firstOrNull()
 
       return if (returnValue != null) {
          if (!returnValue.type.isAssignableTo(targetElement.valueAsQualifiedName())) {
@@ -281,16 +215,102 @@ class GraphSearchQueryStrategy(
       }
    }
 
+   private suspend fun internalFind(
+      startFacts: List<TypedInstance>,
+//      fact: TypedInstance,
+      targetElement: Element,
+      context: QueryContext,
+      invocationConstraints: InvocationConstraints,
+      failedAttempts: MutableList<DataSource>
+   ): TypedInstance? {
+      // TODO :
+      // We no longer iterate and search for each fact.
+      // So, fact exclusion needs to be done within the searcher as paths fail.,
+      // I think this is already handled, but need to be sure.
+//      val factIndex = rootScopedFacts.indexOf(fact)
+//      val startFact = providedStartFact(fact.type, factIndex)
+//      val targetType = targetElement.instanceValue as? Type? ?: context.schema.type(targetElement.value as String)
+//      // Excluding paths is done by the type, not the fact.
+//      // Graph searches work based off of links from types, therefore
+//      // we should exclude based on the type, regardless of the value.
+//      val exclusionKey = SearchPathExclusionKey(fact, targetElement)
+//      if (searchPathExclusions.contains(exclusionKey)) {
+//         // if  a previous search for given (searchNode, targetNode) yielded 'null' path, then
+//         // don't search.
+//         return null
+//      }
+      val targetType = targetElement.instanceValue as? Type? ?: context.schema.type(targetElement.value as String)
+      var searchProvidedAtLeastOnePath = false
+      val searcher = GraphSearcher(
+         targetElement,
+         targetType,
+         schemaGraphCache.get(context.schema),
+         invocationConstraints
+      )
+      val evaluatedPathTempMap = mutableListOf<PathEvaluation>()
+      val searchResult = searcher.search(
+         context.rootAndScopedFacts(),
+         context.excludedServices.toSet(),
+         invocationConstraints.excludedOperations.plus(context.excludedOperations.map {
+            SearchGraphExclusion("@Id", it)
+         }),
+         context.queryId
+      )
+      { pathToEvaluate ->
+         searchProvidedAtLeastOnePath = true
+         val evaluations = evaluatePath(pathToEvaluate, context, GraphSearcher.STARTING_ELEMENT, startFacts)
+         evaluatedPathTempMap.addAll(evaluations)
+         evaluations
+      }
+      // Only exclude if the pair of (searchNode, targetNode) didn't provide any paths at all.
+      // It's possible that the search failed, but the path is valid to be considered again.
+      // (eg., if we used a TypedInstance as an input to a service, but the service returned no results,
+      // we shouldn't exclude the type, as future TypedInstances might have better luck)
+//      if (searchPathExclusionsCacheSize > 0 && searchResult.path == null && !searchProvidedAtLeastOnePath) {
+//         searchPathExclusions[exclusionKey] = exclusionKey
+//      }
+
+
+      // Consider the case we try to populate 'Director birthday' for a given movie.
+      // a movie has a director name value
+      // and the following path is discovered
+      // Step 1: with director name invoke nameToDirectorId service that returns Director identifier  value
+      // Step 2: with director identifier invoke Director service that returns DirectorData
+      // Step 3: extract 'Director birthday' from DirectorData's name birthday attribute
+      // Assume that nameToDirectorId service returns:
+      //  {  name: 'Passolini', directorIdentifier: null }
+      // so at the end of 'step 1p above typed object is inserted into context.facts
+      // Step 2 will fail as 'directorId' is null (see RestTemplateInvoker line 113 for the point of exception)
+      // As part of the search, the result of 'Step 1' i.e. {  name: 'Passolini', directorIdentifier: null }  will be reused as the starting fact
+      // and we'll try to execute Step 1, Step 2 and Step 3 again
+      // Step 1 will produce another {  name: 'Passolini', directorIdentifier: null } which will be added into context.facts
+      // Step 2 will fail, but the fact added in the previous step will be used as another start point
+      // which leads to an infinite loop
+      // so here we try to avoid that.
+//      if (searchPathExclusionsCacheSize > 0 && searchResult.path == null && evaluatedPathTempMap.isNotEmpty()) {
+//         val duplicatedFact = evaluatedPathTempMap
+//            .filter { it is EvaluatedEdge && it.edge.vertex1.elementType == ElementType.OPERATION && it.resultValue == fact }
+//            .map { it.resultValue }
+//            .firstOrNull()
+//         if (duplicatedFact != null) {
+//            logger.info { "[${context.queryId}] duplicate $duplicatedFact" }
+//            searchPathExclusions[exclusionKey] = exclusionKey
+//         }
+//      }
+      failedAttempts.addAll(searchResult.failedAttemptSources)
+      return searchResult.typedInstance
+   }
+
    private suspend fun evaluatePath(
       searchResult: WeightedNode<Relationship, Element, Double>,
       queryContext: QueryContext,
       startFact: Element,
-      startFactValue: TypedInstance
+      startFacts: List<TypedInstance>
    ): List<PathEvaluation> {
       // The actual result of this isn't directly used.  But the queryContext is updated with
       // nodes as they're discovered (eg., through service invocation)
       val evaluatedEdges = mutableListOf<PathEvaluation>(
-         getStartingEdge(startFact, startFactValue)
+         getStartingEdge(startFact, startFacts)
       )
 
       val path = searchResult.path()
@@ -337,9 +357,9 @@ class GraphSearchQueryStrategy(
 
    private fun getStartingEdge(
       startFact: Element,
-      startFactValue: TypedInstance
+      startFactTypedInstances: List<TypedInstance>
    ): StartingEdge {
-      return StartingEdge(startFactValue, startFact)
+      return StartingEdge(TypedCollection.from(startFactTypedInstances), startFact)
    }
 }
 

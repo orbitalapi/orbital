@@ -48,6 +48,7 @@ import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.spring.invokers.Invoker
 import com.orbitalhq.spring.invokers.RestTemplateInvoker
 import com.orbitalhq.testVyne
+import com.orbitalhq.testVyneWithInvokers
 import com.orbitalhq.typedObjects
 import com.orbitalhq.utils.Benchmark
 import com.orbitalhq.utils.Ids
@@ -342,7 +343,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    @Ignore
    fun `failed http calls are present in history`() {
       val randomPort = Random.nextInt(10000, 12000)
-      val vyne = testVyne(
+      val vyne = testVyneWithInvokers(
          """
          model Book {
             title : BookTitle inherits String
@@ -433,7 +434,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    @Ignore // failing, can't work out why
    fun `remote calls leading to duplicate lineage results are persisted without exceptions`() {
       val randomPort = Random.nextInt(10000, 12000)
-      val vyne = testVyne(
+      val vyne = testVyneWithInvokers(
          """
          model Book {
             title : BookTitle inherits String

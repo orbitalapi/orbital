@@ -25,6 +25,7 @@ import com.orbitalhq.query.graph.edges.QueryBuildingEvaluator
 import com.orbitalhq.query.graph.edges.RequiresParameterEdgeEvaluator
 import com.orbitalhq.query.graph.operationInvocation.DefaultOperationInvocationService
 import com.orbitalhq.query.graph.edges.ExpressionEvaluator
+import com.orbitalhq.query.graph.edges.StartFactEdgeEvaluator
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationEvaluator
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.query.policyManager.DatasourceAwareOperationInvocationServiceDecorator
@@ -33,7 +34,9 @@ import com.orbitalhq.query.projection.LocalProjectionProvider
 import com.orbitalhq.query.projection.ProjectionProvider
 import com.orbitalhq.query.streams.StreamMergingQueryStrategy
 import com.orbitalhq.schemas.Schema
+import kotlin.reflect.KClass
 
+typealias QueryStrategyFilter = (QueryStrategy)-> Boolean
 
 interface QueryEngineFactory {
    fun queryEngine(
@@ -55,6 +58,16 @@ interface QueryEngineFactory {
             emptyList(),
             LocalProjectionProvider()
          )
+      }
+
+      val DEFAULT_QUERY_STRATEGY_FILTER:(QueryStrategy) -> Boolean = { true }
+
+      /**
+       * Allows removing specific strategies from the query engine
+       * Only useful for testing
+       */
+      fun excludeQueryStrategies(classes: List<KClass<out QueryStrategy>>):(QueryStrategy) -> Boolean {
+         return { queryStrategy: QueryStrategy -> !classes.contains(queryStrategy::class) }
       }
 
       // Useful for testing.
@@ -95,29 +108,28 @@ interface QueryEngineFactory {
          formatSpecs: List<ModelFormatSpec> = emptyList(),
          projectionProvider: ProjectionProvider = LocalProjectionProvider(),
          queryMetricsReporter: QueryMetricsReporter = NoOpMetricsReporter,
-         stateStoreProvider: StateStoreProvider? = null
+         stateStoreProvider: StateStoreProvider? = null,
+         // Allows excluding query strategies from making into the query engine.
+         // Only useful for testing
+         queryStrategyFilter: (QueryStrategy) -> Boolean = DEFAULT_QUERY_STRATEGY_FILTER
       ): QueryEngineFactory {
          val invocationService = operationInvocationService(invokers)
          val opInvocationEvaluator = OperationInvocationEvaluator(invocationService)
          val edgeEvaluator = EdgeNavigator(edgeEvaluators(opInvocationEvaluator))
          val graphQueryStrategy = GraphSearchQueryStrategy(edgeEvaluator, vyneCacheConfiguration)
 
+         val queryStrategies = listOf(
+            ExpressionEvaluatingQueryStrategy(),
+            ModelsScanStrategy(),
+            StreamMergingQueryStrategy(stateStoreProvider),
+            DirectServiceInvocationStrategy(invocationService),
+            QueryOperationInvocationStrategy(invocationService),
+            graphQueryStrategy,
+            ObjectBuilderStrategy(),
+         ).filter(queryStrategyFilter)
+
          return DefaultQueryEngineFactory(
-            strategies = listOf(
-               ExpressionEvaluatingQueryStrategy(),
-//               CalculatedFieldScanStrategy(CalculatorRegistry()),
-               ModelsScanStrategy(),
-//               ProjectionHeuristicsQueryStrategy(opInvocationEvaluator, vyneCacheConfiguration.vyneGraphBuilderCache),
-               //               PolicyAwareQueryStrategyDecorator(
-               StreamMergingQueryStrategy(stateStoreProvider),
-               DirectServiceInvocationStrategy(invocationService),
-               QueryOperationInvocationStrategy(invocationService),
-               //
-               //              ),
-               graphQueryStrategy,
-               ObjectBuilderStrategy(),
-               //,HipsterGatherGraphQueryStrategy()
-            ),
+            strategies = queryStrategies,
             projectionProvider,
             operationInvocationService = invocationService,
             formatSpecs = formatSpecs,
@@ -127,17 +139,18 @@ interface QueryEngineFactory {
 
       private fun edgeEvaluators(operationInvocationEdgeEvaluator: EdgeEvaluator): List<EdgeEvaluator> {
          return listOf(
+            StartFactEdgeEvaluator,
             RequiresParameterEdgeEvaluator(),
-            AttributeOfEdgeEvaluator(),
-            IsTypeOfEdgeEvaluator(),
-            HasParamOfTypeEdgeEvaluator(),
-            IsInstanceOfEdgeEvaluator(),
-            InstanceHasAttributeEdgeEvaluator(),
-            OperationParameterEdgeEvaluator(),
+            AttributeOfEdgeEvaluator,
+            IsTypeOfEdgeEvaluator,
+            HasParamOfTypeEdgeEvaluator,
+            IsInstanceOfEdgeEvaluator,
+            InstanceHasAttributeEdgeEvaluator,
+            OperationParameterEdgeEvaluator,
             HasAttributeEdgeEvaluator(),
-            CanPopulateEdgeEvaluator(),
-            ExtendsTypeEdgeEvaluator(),
-            EnumSynonymEdgeEvaluator(),
+            CanPopulateEdgeEvaluator,
+            ExtendsTypeEdgeEvaluator,
+            EnumSynonymEdgeEvaluator,
             QueryBuildingEvaluator(),
             ArrayMappingAttributeEvaluator(),
             ExpressionEvaluator(),

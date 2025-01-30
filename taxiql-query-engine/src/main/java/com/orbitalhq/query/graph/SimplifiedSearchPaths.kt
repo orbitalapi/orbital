@@ -41,6 +41,7 @@ private fun WeightedNode<Relationship, Element, Double>.simplify(): Pair<LinkTyp
    return if (this.previousNode() == null) {
       LinkType.START_POINT to this.state().value
    } else when (this.action()) {
+      Relationship.IS_START_FACT -> null
       Relationship.IS_ATTRIBUTE_OF -> null
       Relationship.HAS_ATTRIBUTE -> LinkType.OBJECT_NAVIGATION to this.state().value
       Relationship.IS_TYPE_OF -> null

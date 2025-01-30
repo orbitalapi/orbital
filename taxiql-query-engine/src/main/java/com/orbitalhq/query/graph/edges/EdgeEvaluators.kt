@@ -1,12 +1,15 @@
 package com.orbitalhq.query.graph.edges
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.graph.Element
 import com.orbitalhq.query.graph.ElementType
 import com.orbitalhq.query.graph.GraphConnection
+import com.orbitalhq.query.graph.StartFacts
 import com.orbitalhq.query.graph.instanceOfType
+import com.orbitalhq.query.graph.providedInstance
 import com.orbitalhq.schemas.Relationship
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.utils.assertingThat
@@ -103,16 +106,15 @@ abstract class PassThroughEdgeEvaluator(override val relationship: Relationship)
    }
 }
 
-class AttributeOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_ATTRIBUTE_OF)
-class IsTypeOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_TYPE_OF)
-class HasParamOfTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
-class OperationParameterEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_PARAMETER_ON)
-class IsInstanceOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_INSTANCE_OF)
-class CanPopulateEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.CAN_POPULATE)
-class ExtendsTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.EXTENDS_TYPE)
-class EnumSynonymEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_SYNONYM_OF)
-
-class InstanceHasAttributeEdgeEvaluator : AttributeEvaluator(Relationship.INSTANCE_HAS_ATTRIBUTE)
+object AttributeOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_ATTRIBUTE_OF)
+object IsTypeOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_TYPE_OF)
+object HasParamOfTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.TYPE_PRESENT_AS_ATTRIBUTE_TYPE)
+object OperationParameterEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_PARAMETER_ON)
+object IsInstanceOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_INSTANCE_OF)
+object CanPopulateEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.CAN_POPULATE)
+object ExtendsTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.EXTENDS_TYPE)
+object EnumSynonymEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_SYNONYM_OF)
+object InstanceHasAttributeEdgeEvaluator : AttributeEvaluator(Relationship.INSTANCE_HAS_ATTRIBUTE)
 
 // Note: I suspect this might cause problems.
 // I'm using this because in a solution path, I receive a value from the server, but still end up
@@ -120,3 +122,16 @@ class InstanceHasAttributeEdgeEvaluator : AttributeEvaluator(Relationship.INSTAN
 // I have a feeling that I'm going to hit issues here when I'm evluating some paths PRIOR to fetching values.
 // TODO.
 class HasAttributeEdgeEvaluator : AttributeEvaluator(Relationship.HAS_ATTRIBUTE)
+
+
+object StartFactEdgeEvaluator : EdgeEvaluator {
+   override val relationship: Relationship = Relationship.IS_START_FACT
+
+   override suspend fun evaluate(edge: EvaluatableEdge, context: QueryContext): EvaluatedEdge {
+      val previousValue = edge.previousValue ?: error("Expected a TypedCollection of start facts, but provided value was null")
+      require(previousValue is TypedCollection) { "Expected a TypedCollection of start facts, but found ${previousValue::class.simpleName}"}
+      val startFact = StartFacts.startFactForElement(previousValue.value, edge.vertex2)
+      return EvaluatedEdge.success(edge, providedInstance(startFact), startFact)
+   }
+
+}
