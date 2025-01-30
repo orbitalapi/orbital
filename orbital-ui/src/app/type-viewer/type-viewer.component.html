@@ -85,7 +85,7 @@
       <app-schema-diagram
         [schema$]="schema$"
         [displayedMembers]="[type.name.fullyQualifiedName]"
-        [memberNameNavigable]="editable"
+        [memberNameNavigable]="!editable"
         hasBorder="true"
       ></app-schema-diagram>
       <!--      <app-type-link-graph-container [member]="schemaMember"-->
