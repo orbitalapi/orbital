@@ -9,8 +9,11 @@ import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 //import com.orbitalhq.testVyne
 import kotlinx.coroutines.runBlocking
+import lang.taxi.types.PrimitiveType
 import org.junit.Before
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
@@ -194,6 +197,28 @@ class TypedObjectTest {
          val output = buildResult.firstTypedObject()
          output["livingOrDead"].value!!.should.equal("Dead")
       }
+   }
+
+   @Test
+   fun `parsing json to an object typed as any is parsed as a map`() {
+      val schema = TaxiSchema.empty()
+      val instance = TypedInstance.from(schema.type(PrimitiveType.ANY), """{ "name" : "Jimmy", "age" : 38 }""", schema)
+      instance.shouldBeInstanceOf<TypedObject>()
+      instance.type.paramaterizedName
+         .shouldBe("lang.taxi.Map<lang.taxi.Any,lang.taxi.Any>")
+      instance["name"].value.should.equal("Jimmy")
+      instance["age"].value.should.equal(38)
+   }
+
+   @Test
+   fun `parsing map to an object typed as any is parsed as a map`() {
+      val schema = TaxiSchema.empty()
+      val instance = TypedInstance.from(schema.type(PrimitiveType.ANY), mapOf("name" to "Jimmy", "age" to 38), schema)
+      instance.shouldBeInstanceOf<TypedObject>()
+      instance.type.paramaterizedName
+         .shouldBe("lang.taxi.Map<lang.taxi.Any,lang.taxi.Any>")
+      instance["name"].value.should.equal("Jimmy")
+      instance["age"].value.should.equal(38)
    }
 
 

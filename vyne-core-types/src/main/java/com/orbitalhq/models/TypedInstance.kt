@@ -353,8 +353,11 @@ interface TypedInstance {
             }
 
             type.taxiType == PrimitiveType.ANY -> {
-               when (value) {
-                  is Map<*,*> -> buildUsingObjectFactory()
+               when {
+                  isJson(value) -> buildUsingObjectFactory() // This will end up back in here with a Map<String,Any>, falling through to below.
+                  value is Map<*,*> -> {
+                     from(schema.type(MapType.untyped()), value, schema, performTypeConversions, nullValues, source, evaluateAccessors, functionRegistry, formatSpecs, inPlaceQueryEngine, parsingErrorBehaviour, format, metadata)
+                  }
                   else -> TypedValue.from(type, value, performTypeConversions, source, parsingErrorBehaviour, format)
                }
             }
@@ -367,20 +370,7 @@ interface TypedInstance {
                buildUsingObjectFactory()
             }
             // This is here primarily for readability.  We could just let this fall through to below.
-            isJson(value) -> TypedObjectFactory(
-               type,
-               value,
-               schema,
-               nullValues,
-               source,
-               evaluateAccessors = evaluateAccessors,
-               functionRegistry = functionRegistry,
-               inPlaceQueryEngine = inPlaceQueryEngine,
-               formatSpecs = formatSpecs,
-               parsingErrorBehaviour = parsingErrorBehaviour,
-               metadata = metadata,
-               valueSuppliers = valueSuppliers
-            ).build()
+            isJson(value) -> buildUsingObjectFactory()
 
             else -> buildUsingObjectFactory()
          }
