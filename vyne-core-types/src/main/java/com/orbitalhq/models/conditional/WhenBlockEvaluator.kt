@@ -39,7 +39,7 @@ class WhenBlockEvaluator(
          // TODO : Update this to a WhenCaseEvalution data source
          return TypedNull.create(targetType, FailedEvaluation("No matching cases found in when clause"))
       }
-      return accessorReader.read(
+      val result = accessorReader.read(
          value,
          targetType,
          caseBlock.getSingleAssignment().assignment,
@@ -48,6 +48,7 @@ class WhenBlockEvaluator(
          allowContextQuerying = true,
          format = format
       )
+      return result
    }
 
    private fun selectCaseBlock(
