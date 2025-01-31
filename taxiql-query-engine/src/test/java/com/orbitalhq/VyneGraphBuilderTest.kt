@@ -9,6 +9,7 @@ import com.orbitalhq.schemas.Relationship
 import com.orbitalhq.schemas.Relationship.REQUIRES_PARAMETER
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import io.kotest.matchers.booleans.shouldBeTrue
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
 
@@ -61,7 +62,7 @@ class VyneGraphBuilderTest {
    }
 
    @Test
-   fun `should not generate paths to services accepting primitives as input`() {
+   fun `should not generate paths to services accepting only primitives as input`() {
       val schema = TaxiSchema.from(
          """
             | // Schemas like this can be produced from code-gen tasks,
@@ -74,7 +75,7 @@ class VyneGraphBuilderTest {
             |}
             |
             |service PeopleService {
-            |  operation getDetails(personId: String):PersonDetails
+            |  operation getDetails(personId: String, pageCount: Int):PersonDetails
             |}
          """.trimMargin()
       )
@@ -102,6 +103,51 @@ class VyneGraphBuilderTest {
          )
       }
          .shouldBeFalse()
+   }
+
+   @Test
+   fun `should generate paths to services accepting some primitives as input`() {
+      val schema = TaxiSchema.from(
+         """
+            |type PersonId inherits Int
+            | // Schemas like this can be produced from code-gen tasks,
+            |  // where everything is not semantically typed.
+            |model Person {
+            |   id : String
+            |}
+            |model PersonDetails {
+            |   age : Int
+            |}
+            |
+            |service PeopleService {
+            |  operation getDetails(personId: PersonId, pageCount: Int):PersonDetails
+            |}
+         """.trimMargin()
+      )
+      val graph =
+         VyneGraphBuilder(schema, VyneGraphBuilderCacheSettings(100L, 100L, 100L))
+            .buildDisplayGraph()
+
+      graph.vertices().any {
+         it.elementType == ElementType.OPERATION && it.value == OperationNames.name(
+            "PeopleService",
+            "getDetails"
+         )
+      }
+         .shouldBeTrue()
+
+      val startFact = TypedInstance.from(schema.type(PrimitiveType.STRING.qualifiedName), "jimmy", schema)
+
+      val graphWithStartFact =
+         VyneGraphBuilder(schema, VyneGraphBuilderCacheSettings(100L, 100L, 100L))
+            .build(facts = listOf(startFact), excludedEdges = emptyList(), excludedServices = emptySet())
+      graphWithStartFact.graph.vertices().any {
+         it.elementType == ElementType.OPERATION && it.value == OperationNames.name(
+            "PeopleService",
+            "getDetails"
+         )
+      }
+         .shouldBeTrue()
    }
 
 //   @Test

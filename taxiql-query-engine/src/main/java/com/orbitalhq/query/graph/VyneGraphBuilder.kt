@@ -443,7 +443,7 @@ class VyneGraphBuilder(
                // MP: 30-Jan-25: We can't exclude because it has any primitives,
                // as some operations accept untyped args, as well as typed args.
                // However, we won't add the primitive args to the graph
-//               .filter { !hasRawPrimitivesForInputs(it) }
+               .filter { !hasOnlyRawPrimitivesForInputs(it) }
                .forEach { operation ->
                   val operationNode = operation(service, operation)
                   when (operation) {
@@ -467,8 +467,13 @@ class VyneGraphBuilder(
 
    private fun isReadOnlyOperation(operation: RemoteOperation) = operation.operationType == OperationScope.READ_ONLY
 
-   private fun hasRawPrimitivesForInputs(operation: RemoteOperation): Boolean {
-      return operation.parameters.any { it.type.isPrimitive && it.defaultValue == null }
+   /**
+    * Indicates if the operaton ONLY accepts primitive values.
+    * We don't build connections to primitive (ie., untyped) parameters,
+    * so if all the params are untyped, we shouldn't bother adding this node to the graph.
+    */
+   private fun hasOnlyRawPrimitivesForInputs(operation: RemoteOperation): Boolean {
+      return operation.parameters.all { it.type.isPrimitive && it.defaultValue == null }
    }
 
    private fun buildTableOperationConnections(
