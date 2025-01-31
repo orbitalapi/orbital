@@ -71,6 +71,12 @@ data class TypedValue private constructor(
          // Explode if we're using old code.
          error("Don't used TypedValue with enums, use a TypedEnumValue")
       }
+      if (value is Map<*,*>) {
+         error("Invalid to create a TypedValue with a map")
+      }
+      if (value is List<*>) {
+         error("Invalid to create a TypedValue with a list")
+      }
    }
 
    companion object {

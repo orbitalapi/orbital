@@ -36,19 +36,22 @@ suspend fun QueryResult.typedObjects(): List<TypedObject> {
    return this.typedInstances() as List<TypedObject>
 }
 
-suspend fun QueryResult.firstRawValue():Any? {
+suspend fun QueryResult.firstRawValue(): Any? {
    return this.typedInstances().first().value
 }
-suspend fun QueryResult.rawObjects(): List<Map<String,Any?>> {
-   return this.typedObjects().map { it.toRawObject() as Map<String,Any?> }
+
+suspend fun QueryResult.rawObjects(): List<Map<String, Any?>> {
+   return this.typedObjects().map { it.toRawObject() as Map<String, Any?> }
 }
 
-suspend fun QueryResult.expectReturnsNull():TypedNull {
+suspend fun QueryResult.expectReturnsNull(): TypedNull {
    return this.typedInstances().first() as TypedNull
 }
-suspend fun QueryResult.firstRawObject():Map<String,Any?> {
+
+suspend fun QueryResult.firstRawObject(): Map<String, Any?> {
    return this.rawObjects().first()
 }
+
 suspend fun QueryResult.firstTypedCollection(): TypedCollection {
    return return this.results?.first() as TypedCollection
 }

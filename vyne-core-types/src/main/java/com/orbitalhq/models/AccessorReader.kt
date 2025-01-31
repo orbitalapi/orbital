@@ -21,6 +21,7 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
+import com.orbitalhq.schemas.taxi.toVyneType
 import com.orbitalhq.schemas.toVyneQualifiedName
 import com.orbitalhq.utils.log
 import com.orbitalhq.utils.timeBucket
@@ -48,8 +49,10 @@ import lang.taxi.expressions.ObjectLiteralExpression
 import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.ProjectingExpression
 import lang.taxi.expressions.TypeExpression
+import lang.taxi.functions.Function
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.functions.FunctionExpressionAccessor
+import lang.taxi.services.Parameter
 import lang.taxi.types.ArgumentSelector
 import lang.taxi.types.FieldReferenceSelector
 import lang.taxi.types.FormatsAndZoneOffset
@@ -733,20 +736,7 @@ class AccessorReader(
       } else objectFactory
 
       val functionResult = if (function.hasBody) {
-         val varArgsArgument = varArgsParam?.let { param -> ScopedFact(param, TypedCollection.from(varArgsValue)) }
-         val allInputArguments = (declaredInputs + varArgsArgument)
-            .filterNotNull()
-         val evaluationContext = this.objectFactory //.withAdditionalScopedFacts(allInputArguments)
-         require(objectFactory is TypedObjectFactory) { "Cannot evaluate function ${function.qualifiedName} as evaluation context was instance of ${evaluationContext::class.simpleName} but needed ${TypedObjectFactory::class.simpleName}" }
-
-         // When evaluating a function (which has named, scoped arguments),
-         // names are important - so create a new FactBag containing the scoped arguments.
-         // We don't want to use the old one, as the arguments are named incorrectly
-         // (eg: names are relative to the scope they were declared, not the scope of the inputs
-         // of the function we're about to evaluate).
-         val args = FactBag.empty().withAdditionalScopedFacts(allInputArguments, schema)
-         objectFactory.newFactoryWithOnly(schema.type(function.returnType!!), args)
-            .evaluateExpression(function.body!!)
+         invokeFunctionBody(varArgsParam, varArgsValue, declaredInputs, function, schema, objectFactory, source, format)
       } else {
          functionRegistry.invoke(
             function,
@@ -761,6 +751,47 @@ class AccessorReader(
          )
       }
       return functionResult
+   }
+
+   private fun invokeFunctionBody(
+      varArgsParam: Parameter?,
+      varArgsValue: List<TypedInstance>,
+      declaredInputs: MutableList<ScopedFact>,
+      function: Function,
+      schema: Schema,
+      objectFactory: EvaluationValueSupplier,
+      source: DataSource,
+      format: FormatsAndZoneOffset?
+   ): TypedInstance {
+      val varArgsArgument = varArgsParam?.let { param -> ScopedFact(param, TypedCollection.from(varArgsValue)) }
+      val allInputArguments = (declaredInputs + varArgsArgument)
+         .filterNotNull()
+
+      // When evaluating a function (which has named, scoped arguments),
+      // names are important - so create a new FactBag containing the scoped arguments.
+      // We don't want to use the old one, as the arguments are named incorrectly
+      // (eg: names are relative to the scope they were declared, not the scope of the inputs
+      // of the function we're about to evaluate).
+      val args = FactBag.empty().withAdditionalScopedFacts(allInputArguments, schema)
+
+      val evaluationContext = objectFactory //.withAdditionalScopedFacts(allInputArguments)
+      return when (evaluationContext) {
+          is TypedObjectFactory -> {
+             evaluationContext.newFactoryWithOnly(schema.type(function.returnType!!), args)
+                .evaluateExpression(function.body!!)
+          }
+         is FactBagValueSupplier -> {
+            evaluate(
+               args,
+               function.returnType!!.toVyneType(schema),
+               function.body!!,
+               dataSource = source,
+               format = format
+            )
+         }
+
+         else -> error("Unexpected kind of data source - expected either ${TypedObjectFactory::class.simpleName} or ${FactBagValueSupplier::class.simpleName}, but got ${evaluationContext::class.simpleName}")
+      }
    }
 
    private fun evaluateFunctionExpressionAccessor(
