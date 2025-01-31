@@ -1,6 +1,5 @@
 package com.orbitalhq.query.graph
 
-import com.google.common.base.Stopwatch
 import com.orbitalhq.SchemaPathFindingGraph
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.TypedInstance
@@ -22,12 +21,10 @@ import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.StrategyPerformanceProfiler
 import es.usc.citius.hipster.model.impl.WeightedNode
 import mu.KotlinLogging
-import java.util.concurrent.TimeUnit
 
 
 // This class is not optimized.  Need to investigate how to speed it up.
 class GraphSearcher(
-   private val startFact: Element,
    private val targetFact: Element,
    private val targetType: Type,
    private val graphBuilder: VyneGraphBuilder,
@@ -35,6 +32,15 @@ class GraphSearcher(
 ) {
 
    companion object {
+      /**
+       * All searches start from here.
+       * Known facts are linked to this point.
+       *
+       * This allows us to add all known facts into a single search,
+       * and search from a consistent start point - ensuring that when multiple facts are known,
+       * we pick the shortest path from across all facts.
+       */
+      val STARTING_ELEMENT = Element("Start", ElementType.SEARCH_START_NODE, null)
       const val MAX_SEARCH_COUNT = 25
       private val logger = KotlinLogging.logger {}
    }
@@ -50,7 +56,7 @@ class GraphSearcher(
    }
 
    val searchDescription: String by lazy {
-      "Search ${this.startFact.label()} to ${this.targetFact.label()}"
+      "Search for ${this.targetFact.label()}"
    }
 
    private fun prevalidatePath(
@@ -161,7 +167,7 @@ class GraphSearcher(
          val nextPathId = nextPath.pathHashExcludingWeights()
          evaluatedPaths.addProposedPath(nextPath)
 
-         logger.debug { "[$queryId] $searchDescription - attempting path $nextPathId: \n${nextPath!!.pathDescription()}" }
+         logger.debug { "[$queryId] $searchDescription - attempting path $nextPathId: \n${nextPath!!.simplifyPath().describePath()}" }
 
          val evaluatedPath = evaluator(nextPath)
          evaluatedPaths.addEvaluatedPath(nextPathId, evaluatedPath)
@@ -253,7 +259,7 @@ class GraphSearcher(
 
    }
 
-   private fun findPath(
+   fun findPath(
       facts: List<TypedInstance>,
       excludedOperations: Set<QualifiedName>,
       excludedEdges: List<EvaluatableEdge>,
@@ -261,7 +267,7 @@ class GraphSearcher(
       previouslyEvaluatedPaths: EvaluatedPathSet
    ): WeightedNode<Relationship, Element, Double>? {
       val graphBuildResult = graphBuilder.build(facts, excludedOperations, excludedEdges, excludedServices)
-      logger.trace { """======Query graph for search $startFact -> $targetFact ===================
+      logger.trace { """======Query graph for search for $targetFact ===================
          | ${graphBuildResult.graph.displayGraphJson()}
          | ========================================================
       """.trimMargin() }
@@ -277,7 +283,7 @@ class GraphSearcher(
       evaluatedEdges: EvaluatedPathSet,
       facts: FactBag
    ): WeightedNode<Relationship, Element, Double>? {
-      return graph.findPath(startFact, targetFact, evaluatedEdges, facts)
+      return graph.findPath(STARTING_ELEMENT, targetFact, evaluatedEdges, facts)
    }
 }
 typealias PathEvaluator = suspend (WeightedNode<Relationship, Element, Double>) -> List<PathEvaluation>

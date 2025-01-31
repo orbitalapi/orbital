@@ -38,7 +38,14 @@ import java.util.concurrent.CopyOnWriteArrayList
 class ParameterFactory {
    suspend fun discoverAll(operation: Operation, context: QueryContext): List<Pair<Parameter, TypedInstance>> {
       return operation.parameters.map { param ->
-         param to discover(param.type, context, null, operation, defaultValue = param.defaultValue)
+         param to discover(
+            param.type,
+            context,
+            null,
+            operation,
+            defaultValue = param.defaultValue,
+            param.nullable
+         )
       }
    }
 
@@ -48,7 +55,8 @@ class ParameterFactory {
       context: QueryContext,
       candidateValue: TypedInstance? = null,
       operation: RemoteOperation? = null,
-      defaultValue: Expression? = null
+      defaultValue: Expression? = null,
+      nullable: Boolean
    ): TypedInstance {
       // First, search only the top level for facts
       val firstLevelDiscovery = context.getFactOrNull(paramType, strategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY)
@@ -72,6 +80,10 @@ class ParameterFactory {
       if (defaultValue != null) {
          val evaluatedDefaultValue = context.evaluate(defaultValue)
          return evaluatedDefaultValue
+      }
+
+      if (nullable) {
+         return TypedNull.create(paramType)
       }
 
       if (!canConstructType(paramType)) {

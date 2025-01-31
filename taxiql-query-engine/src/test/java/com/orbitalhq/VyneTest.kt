@@ -84,7 +84,8 @@ service ClientService {
 fun testVyne(
    schema: TaxiSchema,
    projectionProvider: ProjectionProvider = LocalProjectionProvider(),
-   stateStoreProvider: StateStoreProvider? = null
+   stateStoreProvider: StateStoreProvider? = null,
+   queryStrategyFilter: QueryStrategyFilter = QueryEngineFactory.DEFAULT_QUERY_STRATEGY_FILTER
 ): Pair<Vyne, StubService> {
    val stubService = StubService(schema = schema)
    val queryEngineFactory =
@@ -93,7 +94,8 @@ fun testVyne(
          formatSpecs = emptyList(),
          invokers = listOf(stubService),
          projectionProvider = projectionProvider,
-         stateStoreProvider = stateStoreProvider
+         stateStoreProvider = stateStoreProvider,
+         queryStrategyFilter = queryStrategyFilter
       )
    val vyne = Vyne(listOf(schema), queryEngineFactory)
    return vyne to stubService
@@ -112,7 +114,8 @@ fun testVyneWithStub(schema: TaxiSchema, invokers: List<OperationInvoker> = empt
 }
 
 
-fun testVyne(schema: String, invokerProvider: (TaxiSchema) -> List<OperationInvoker>): Vyne {
+
+fun testVyneWithInvokers(schema: String, invokerProvider: (TaxiSchema) -> List<OperationInvoker>): Vyne {
    return testVyne(listOf(schema), invokerProvider)
 }
 
@@ -122,7 +125,10 @@ fun testVyneWithStub(schema: String, invokerProvider: (TaxiSchema) -> List<Opera
 
 fun testVyne(schemas: List<String>, invokerProvider: (TaxiSchema) -> List<OperationInvoker>): Vyne {
    // Note : We bake-in HttpService in our tests, as for years it was impicilty available
-   val schema = TaxiSchema.fromStrings(listOf(HttpService.asTaxi()) + schemas , onErrorBehaviour = TaxiSchema.Companion.TaxiSchemaErrorBehaviour.THROW_EXCEPTION)
+   val schema = TaxiSchema.fromStrings(
+      listOf(HttpService.asTaxi()) + schemas,
+      onErrorBehaviour = TaxiSchema.Companion.TaxiSchemaErrorBehaviour.THROW_EXCEPTION
+   )
    val invokers = invokerProvider(schema)
    return testVyne(schema, invokers)
 }
@@ -131,7 +137,9 @@ fun testVyneWithStub(
    schemas: List<String>,
    invokerProvider: (TaxiSchema) -> List<OperationInvoker>
 ): Pair<Vyne, StubService> {
-   val schema = TaxiSchema.fromStrings(schemas, onErrorBehaviour = TaxiSchema.Companion.TaxiSchemaErrorBehaviour.THROW_EXCEPTION).withBuiltIns()
+   val schema =
+      TaxiSchema.fromStrings(schemas, onErrorBehaviour = TaxiSchema.Companion.TaxiSchemaErrorBehaviour.THROW_EXCEPTION)
+         .withBuiltIns()
    val invokers = invokerProvider(schema)
    return testVyneWithStub(schema, invokers)
 }
@@ -161,12 +169,14 @@ fun testVyne(
    schema: String,
    functionRegistry: FunctionRegistry = FunctionRegistry.default,
    projectionProvider: ProjectionProvider = LocalProjectionProvider(),
-   stateStoreProvider: StateStoreProvider? = null
+   stateStoreProvider: StateStoreProvider? = null,
+   queryStrategyFilter: QueryStrategyFilter = QueryEngineFactory.DEFAULT_QUERY_STRATEGY_FILTER
 ) =
    testVyne(
       TaxiSchema.compileOrFail(schema, functionRegistry = functionRegistry),
       projectionProvider = projectionProvider,
-      stateStoreProvider = stateStoreProvider
+      stateStoreProvider = stateStoreProvider,
+      queryStrategyFilter = queryStrategyFilter
    )
 
 
@@ -506,7 +516,8 @@ class VyneTest {
          parameters.first().second.value.should.be.equal(919)
          listOf(product)
       }
-      val instance = TypedInstance.from(vyne.schema.type("vendorA.LabelledProductType"), "Spot", vyne.schema, source = Provided)
+      val instance =
+         TypedInstance.from(vyne.schema.type("vendorA.LabelledProductType"), "Spot", vyne.schema, source = Provided)
       vyne.addModel(instance)
       runBlocking {
          val queryResult = vyne.query().find("companyX.Product")

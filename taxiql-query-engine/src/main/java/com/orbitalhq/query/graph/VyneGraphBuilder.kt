@@ -19,7 +19,6 @@ import lang.taxi.expressions.FunctionExpression
 import lang.taxi.expressions.TypeExpression
 import lang.taxi.services.OperationScope
 import mu.KotlinLogging
-import kotlin.math.exp
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
 
@@ -27,6 +26,12 @@ enum class ElementType {
    TYPE,
    MEMBER,
    OPERATION,
+
+   // An element that is known at the start of the search.
+   // These elements are "special" as their values are excluded from
+   // the actual graph except by-reference, to minimize the number of times
+   // we have to rebuild the actual graph
+   START_FACT,
 
    // An instance is something we have a real actual instance of.
    // These are available before a search is commenced.
@@ -48,7 +53,12 @@ enum class ElementType {
    // Only used for constructing display graphs
    SERVICE,
 
-   EXPRESSION;
+   EXPRESSION,
+
+   // The start of all searches. Has no meaningful value,
+   // except for allowing our journey to begin.
+   // Perhaps, this makes it the most meaningful of all.
+   SEARCH_START_NODE;
 }
 
 @Deprecated("Do we still need this?")
@@ -160,29 +170,48 @@ fun providedInstance(typedInstance: TypedInstance): Element {
    return providedInstance(nodeId, typedInstance)
 }
 
-/**
- * Similar to providedInstance(), but optimized for start facts.
- * Start facts change frequently, whereas the rest of the graph remains
- * static until the schema changes.
- *
- * We want to reduce the number of times that we trigger a graphBuild(),
- * and part of that is looking for graphs that are equivalent.
- *
- * Therefore, we don't add start fact values into the actual graph,
- * we just add an indexed pointer to it.
- *
- * The actual value is provided in the GraphSearchQueryStrategy.
- *
- * This reduces the number of graphs that are hash-code different
- * simply because the start fact has a different value, and therefore
- * reduces the number of calls to buildGraph().
- */
-fun providedStartFact(type: Type, index: Int): Element {
-   val nodeId = type.paramaterizedName + "@$index"
-   return providedInstance(nodeId, null)
+
+
+
+object StartFacts {
+   /**
+    * Similar to providedInstance(), but optimized for start facts.
+    * Start facts change frequently, whereas the rest of the graph remains
+    * static until the schema changes.
+    *
+    * We want to reduce the number of times that we trigger a graphBuild(),
+    * and part of that is looking for graphs that are equivalent.
+    *
+    * Therefore, we don't add start fact values into the actual graph,
+    * we just add an indexed pointer to it.
+    *
+    * The actual value is provided in the GraphSearchQueryStrategy.
+    *
+    * This reduces the number of graphs that are hash-code different
+    * simply because the start fact has a different value, and therefore
+    * reduces the number of calls to buildGraph().
+    */
+   fun providedStartFact(type: Type, index: Int): Element {
+      // The index is important.
+      // We'll retrieve the fact from the collection of start facts using this index.
+      val nodeId = type.paramaterizedName + "@$index"
+      return providedInstance(nodeId, null, ElementType.START_FACT)
+   }
+
+   fun startFactForElement(startFacts: List<TypedInstance>, element: Element):TypedInstance {
+      val elementValue = element.value.toString()
+      val (typeName, indexString) = elementValue.split("@")
+      val index = indexString.toIntOrNull() ?: error("When selecting a start fact, expected a string containing an index after @ but got $elementValue")
+      val startFact = startFacts.getOrNull(index) ?: error("Start element $elementValue provided, but only ${startFacts.size} start facts were present - IndexOutOfBounds")
+      if (startFact.type.paramaterizedName != typeName) {
+         error("Was passed start fact element $elementValue but fact present at index $index was of type ${startFact.type.paramaterizedName}")
+      }
+      return startFact
+
+   }
 }
 
-fun providedInstance(name: String, value: Any? = null) = Element(name, ElementType.TYPE_INSTANCE, value)
+fun providedInstance(name: String, value: Any? = null, elementType: ElementType = ElementType.TYPE_INSTANCE) = Element(name, elementType, value)
 fun providedInstanceMember(name: String) = Element(name, ElementType.PROVIDED_INSTANCE_MEMBER)
 
 // Note : We don't actually append the value itself to the graph, otherwise the instance node
@@ -230,7 +259,7 @@ class VyneGraphBuilder(
       val baseSchemaConnections = getBaseSchemaConnections(excludedOperations, excludedServices)
 
       val connectionsForFacts = StrategyPerformanceProfiler.profiled("buildCreatedInstancesConnections") {
-         createdInstances(facts, schema)
+         startFacts(facts, schema)
       }
 
       val connections = baseSchemaConnections + connectionsForFacts
@@ -412,7 +441,10 @@ class VyneGraphBuilder(
                .filter { isReadOnlyOperation(it) }
                // Don't include services that accept a raw primitive,
                // such as "string" - as we'll end up feeding it junk
-               .filter { !hasRawPrimitivesForInputs(it) }
+               // MP: 30-Jan-25: We can't exclude because it has any primitives,
+               // as some operations accept untyped args, as well as typed args.
+               // However, we won't add the primitive args to the graph
+               .filter { !hasOnlyRawPrimitivesForInputs(it) }
                .forEach { operation ->
                   val operationNode = operation(service, operation)
                   when (operation) {
@@ -436,8 +468,13 @@ class VyneGraphBuilder(
 
    private fun isReadOnlyOperation(operation: RemoteOperation) = operation.operationType == OperationScope.READ_ONLY
 
-   private fun hasRawPrimitivesForInputs(operation: RemoteOperation): Boolean {
-      return operation.parameters.any { it.type.isPrimitive && it.defaultValue == null }
+   /**
+    * Indicates if the operaton ONLY accepts primitive values.
+    * We don't build connections to primitive (ie., untyped) parameters,
+    * so if all the params are untyped, we shouldn't bother adding this node to the graph.
+    */
+   private fun hasOnlyRawPrimitivesForInputs(operation: RemoteOperation): Boolean {
+      return operation.parameters.all { it.type.isPrimitive && it.defaultValue == null }
    }
 
    private fun buildTableOperationConnections(
@@ -483,7 +520,9 @@ class VyneGraphBuilder(
       operationNode: Element
    ): List<GraphConnection> {
       val connections = mutableListOf<GraphConnection>()
-      operation.parameters.forEachIndexed { _, parameter ->
+      operation.parameters
+         .filter { !it.type.isPrimitive }
+         .forEachIndexed { _, parameter ->
          // When building services, we need to use 'connector nodes'
          // as Hipster4J doesn't support identical vertex pairs with separate edges.
          // eg: Service -[requiresParameter]-> Money && Service -[Provides]-> Money
@@ -650,16 +689,16 @@ class VyneGraphBuilder(
       }
    }
 
-   private fun createdInstances(
+   private fun startFacts(
       instances: List<TypedInstance>,
       schema: Schema
    ): List<GraphConnection> {
       return instances.mapIndexed { index, typedInstance ->
-         createProvidedInstances(typedInstance.type, index, schema, value = typedInstance)
+         createStartFacts(typedInstance.type, index, schema, value = typedInstance)
       }.flatten()
    }
 
-   private fun createProvidedInstances(
+   private fun createStartFacts(
       type: Type,
       index: Int,
       schema: Schema,
@@ -668,11 +707,17 @@ class VyneGraphBuilder(
    ): MutableList<HipsterGraphBuilder.Connection<Element, Relationship>> {
       val instanceFqn = type.paramaterizedName
       val createdConnections = mutableListOf<HipsterGraphBuilder.Connection<Element, Relationship>>()
-      val providedInstance = providedStartFact(type, index)
+      val providedInstance = StartFacts.providedStartFact(type, index)
       if (provider != null) {
          createdConnections.add(HipsterGraphBuilder.Connection(provider, providedInstance, Relationship.PROVIDES))
          // builder.connect(provider).to(providedInstance).withEdge(Relationship.PROVIDES)
       }
+
+      // MP: 30-Jan-25:
+      // New approach - where previously we would add a fact-at-a-time and iterate, using the fact
+      // as the start point,
+      // we now add all facts into the search at the start, and search from a known start of STARTING_ELEMENT.
+      createdConnections.addConnection(GraphSearcher.STARTING_ELEMENT, providedInstance, Relationship.IS_START_FACT)
 
       // Favour taking the type from the instance, as
       // it may be anonymous, and not in the schema
