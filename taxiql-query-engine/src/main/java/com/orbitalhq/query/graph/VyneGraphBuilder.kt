@@ -172,6 +172,7 @@ fun providedInstance(typedInstance: TypedInstance): Element {
 
 
 
+
 object StartFacts {
    /**
     * Similar to providedInstance(), but optimized for start facts.

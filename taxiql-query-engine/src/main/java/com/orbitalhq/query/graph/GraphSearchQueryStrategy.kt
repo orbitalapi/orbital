@@ -217,16 +217,24 @@ class GraphSearchQueryStrategy(
 
    private suspend fun internalFind(
       startFacts: List<TypedInstance>,
-//      fact: TypedInstance,
       targetElement: Element,
       context: QueryContext,
       invocationConstraints: InvocationConstraints,
       failedAttempts: MutableList<DataSource>
    ): TypedInstance? {
-      // TODO :
+      // MP: 31-Jan-25:
+      // This is the previous behaviour.
+      // We dropped this once we moved to doing all searches in a single sweep.
+      // Previously, we iterated start facts, and searched from each fact for a path.
+      // Now we add all search facts to the graph, and run a single search.
+      // That changes the iteration behaviour (we don't iterate), and therefore whatever this was
+      // doing previously.
+      // Leaving this comment here for historic purposes, should regressions appear.
+      //
+      //
       // We no longer iterate and search for each fact.
       // So, fact exclusion needs to be done within the searcher as paths fail.,
-      // I think this is already handled, but need to be sure.
+
 //      val factIndex = rootScopedFacts.indexOf(fact)
 //      val startFact = providedStartFact(fact.type, factIndex)
 //      val targetType = targetElement.instanceValue as? Type? ?: context.schema.type(targetElement.value as String)
@@ -262,6 +270,16 @@ class GraphSearchQueryStrategy(
          evaluatedPathTempMap.addAll(evaluations)
          evaluations
       }
+      // MP: 31-Jan-25:
+      // This is the previous behaviour.
+      // We dropped this once we moved to doing all searches in a single sweep.
+      // Previously, we iterated start facts, and searched from each fact for a path.
+      // Now we add all search facts to the graph, and run a single search.
+      // That changes the iteration behaviour (we don't iterate), and therefore whatever this was
+      // doing previously.
+      // Leaving this comment here for historic purposes, should regressions appear.
+      //
+      // ========History begins=======
       // Only exclude if the pair of (searchNode, targetNode) didn't provide any paths at all.
       // It's possible that the search failed, but the path is valid to be considered again.
       // (eg., if we used a TypedInstance as an input to a service, but the service returned no results,
@@ -297,6 +315,9 @@ class GraphSearchQueryStrategy(
 //            searchPathExclusions[exclusionKey] = exclusionKey
 //         }
 //      }
+
+
+      // ========History ends=======
       failedAttempts.addAll(searchResult.failedAttemptSources)
       return searchResult.typedInstance
    }
