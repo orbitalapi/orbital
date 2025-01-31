@@ -68,7 +68,7 @@ class BatchWriteCacheProvider<TCacheData, TCallBackData> {
    }
 
    private fun removeBatchWriteCache(queryId: String) {
-      logger.info { "Removing Batch Write Cache for query $queryId" }
+      logger.trace { "Removing Batch Write Cache for query $queryId" }
       batchDataCache.getIfPresent(queryId)?.let { batchWriteCache ->
          batchWriteCache.dispose()
       }
