@@ -4,7 +4,9 @@ import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.utils.asA
 import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.Test
 
 class ConstraintsInProjectionsTest {
@@ -324,6 +326,113 @@ find { Deal(DealId == id )} as(deal: Deal) -> {
          )
       )
 
+   }
+
+   @Test
+   fun `can use a nested type reference on a nested projection with constraint`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+type AccountId inherits String
+type AccountName inherits String
+type AccountCompanyNumber inherits String
+
+type BorrowerId inherits AccountId
+type BorrowerName inherits AccountName
+type BorrowerCompanyNumber inherits AccountCompanyNumber
+
+type DealId inherits String
+type DealName inherits String
+
+
+model Borrower {
+  id: BorrowerId,
+  name: BorrowerName,
+  companyNumber: BorrowerCompanyNumber
+}
+
+closed model BorrowerResponse {
+  data: Borrower[]
+}
+
+model Deal {
+  id: DealId
+  name: DealName
+  borrower: {
+    id: BorrowerId
+    name: BorrowerName
+  }
+}
+
+closed model DealResponse {
+  data: Deal[]
+}
+
+service DealService {
+  operation getDeal(dealId: DealId): DealResponse(...)
+  operation getDealByBorrower(borrowerId: BorrowerId): DealResponse(...)
+}""".trimIndent())
+
+      stub.addResponse("getDeal", """{
+    "data":[{
+        "id": "123",
+        "name": "Example Deal",
+        "borrower": {
+            "id": "546",
+            "name": "Borrower Account"
+        }
+    }]
+}""")
+      stub.addResponse("getDealByBorrower", """{
+    "data": [
+        {
+            "id": "4565",
+            "name": "The First Deal",
+            "borrower": {
+                "id": "546",
+                "name": "Borrower Account"
+            }
+        },
+        {
+            "id": "2344",
+            "name": "The Second Deal",
+            "borrower": {
+                "id": "546",
+                "name": "Borrower Account"
+            }
+        },
+        {
+            "id": "8956765",
+            "name": "The Final Deal",
+            "borrower": {
+                "id": "546",
+                "name": "Borrower Account"
+            }
+        },
+        {
+            "id": "123",
+            "name": "Example Deal",
+            "borrower": {
+                "id": "546",
+                "name": "Borrower Account"
+            }
+        }
+    ]
+}""")
+      val result = vyne.query("""
+given {dealId: DealId = "123"}
+find {DealResponse(DealId == dealId)} as  (deal:Deal = first(Deal[])) -> {
+    id: DealId,
+    name: DealName,
+    existingDeals: DealResponse(BorrowerId == deal::BorrowerId)
+  }
+      """.trimIndent())
+         .firstRawObject()
+      result["existingDeals"].shouldBeInstanceOf<Map<String,Any>>()
+         .get("data")
+         .shouldBeInstanceOf<List<*>>()
+         .shouldHaveSize(4)
+
+      // Should've called the right endpoint
+      stub.calls["getDealByBorrower"].shouldHaveSize(1)
    }
 
 }
