@@ -147,24 +147,24 @@ class ObjectBuilder(
       }
 
       return if (targetType.isScalar && !targetType.hasExpression) {
-         // if (allowRecursion)  searchForType(targetType, spec) else null
-         searchForType(targetType, spec)
+         searchForType(targetType, spec, constraints = constraints)
       } else if (targetType.hasExpression) {
          evaluateExpressionType(targetType)
       } else if (targetType.isCollection) {
          buildCollection(targetType, spec, constraints)
       } else {
-         findOrBuildObjectInstance(targetType, spec, facts)
+         findOrBuildObjectInstance(targetType, spec, facts, constraints)
       }
    }
 
    private suspend fun searchForType(
       targetType: Type,
       spec: TypedInstanceValidPredicate,
-      facts: FactBag = FactBag.empty()
+      facts: FactBag = FactBag.empty(),
+      constraints: List<Constraint>
    ): TypedInstance? {
       var failedAttempts: List<DataSource>? = null
-      return findInstance(targetType, spec, facts)
+      return findInstance(targetType, spec, facts, constraints)
          .catch { exception ->
             when (exception) {
                is SearchFailedException -> {
@@ -274,9 +274,10 @@ class ObjectBuilder(
       targetType: Type,
       spec: TypedInstanceValidPredicate,
       // Passing facts here allows for reference to data from parent objects when constructing child objects
-      facts: FactBag = FactBag.empty()
+      facts: FactBag = FactBag.empty(),
+      constraints: List<Constraint>
    ): TypedInstance {
-      val result = searchForType(targetType, spec, facts)
+      val result = searchForType(targetType, spec, facts, constraints)
       val searchFailed = result == null || result is TypedNull && result.source is FailedSearch
       return if (searchFailed) {
          if (!targetType.isClosed) {
@@ -511,13 +512,19 @@ class ObjectBuilder(
       targetType: Type,
       spec: TypedInstanceValidPredicate,
       facts: FactBag,
+      constraints: List<Constraint>
    ): Flow<TypedInstance> {
       // Try searching for it.
       //log().debug("Trying to find instance of ${targetType.fullyQualifiedName}")
       val result = try {
 //         val queryContext = context.copy()
 //         queryContext.addFacts(facts.rootAndScopedFacts())
-         queryEngine.find(targetType, context, spec, ExcludeObjectBuilder)
+         if (constraints.isEmpty()) {
+            queryEngine.find(targetType, context, spec, ExcludeObjectBuilder)
+         } else {
+            queryEngine.find(ConstrainedTypeNameQueryExpression(targetType.paramaterizedName, constraints), context, spec, ExcludeObjectBuilder)
+         }
+
       } catch (e: QueryCancelledException) {
          throw e
       } catch (e: Exception) {
