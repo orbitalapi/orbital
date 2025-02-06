@@ -1055,7 +1055,7 @@ class TypedObjectFactory(
                   // BugFix: Only attempt to build a field object if the fieldType isn't scalar.
                   // Otherwise, we're calling into TypedObjectFactory with a scalar type,
                   // which is incorrect (it's intended for Object types).
-                  attemptToBuildFieldObject(field, fieldType, attributeName, fieldTypeName)
+                  attemptToBuildFieldObject(fieldType, constraints)
                      ?: queryForFieldValue(field, fieldType, attributeName, constraints)
                }
             }
@@ -1154,12 +1154,15 @@ class TypedObjectFactory(
     * which becomes recursive.
     */
    private fun attemptToBuildFieldObject(
-      field: Field,
       fieldType: Type,
-      attributeName: AttributeName,
-      fieldTypeName: QualifiedName
+      constraints: List<Constraint>
    ): TypedInstance? {
       if (type.isScalar) {
+         return null
+      }
+      // Don't try to build something that has constraints - that needs to be
+      // resolved by querying
+      if (constraints.isNotEmpty()) {
          return null
       }
       val result = newFactory(fieldType, this.value, scope = projectionScope).build()
