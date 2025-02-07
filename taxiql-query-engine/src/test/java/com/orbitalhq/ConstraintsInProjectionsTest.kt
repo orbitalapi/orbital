@@ -519,4 +519,94 @@ find {DealResponse(DealId == dealId)} as  (deal:Deal = first(Deal[])) -> {
 
       }
 
+
+   @Test
+   fun `a constraint type reference correctly resolves against the object when using a nested projection with constraint and can then project with chained projection`(): Unit =
+      runBlocking {
+         val (vyne, stub) = testVyne(
+            """
+         model DealResponse {
+            loanApplicationId : LoanApplicationId inherits String
+            deals : Deal[]
+         }
+         model Deal {
+            dealId : DealId inherits String
+            borrowerId : BorrowerId inherits String
+            amount : DealAmount inherits Int
+         }
+         model BorrowerAccount {
+            id : BorrowerId
+            borrowerName : BorrowerName inherits String
+         }
+         service DealApi {
+            operation forLoanApplicationId(LoanApplicationId):DealResponse(...)
+            operation forBorrowerId(BorrowerId):DealResponse(...)
+            operation getBorrower(BorrowerId):BorrowerAccount(...)
+         }
+      """
+         )
+         stub.addResponse("getBorrower", """{ "id" : "b1", "borrowerName" : "Jimmy" }""")
+         // The two api calls return different values.
+         // The point is to ensure that the values from forBorrowerId are used in the
+         // correct place (as defined by the constraints in the query below)
+         stub.addResponse(
+            "forLoanApplicationId", """{
+          "loanApplicationId" : "l1",
+          "deals": [
+          { "dealId" : "d1", "borrowerId" : "b1", "amount" : 100  }
+          ]}""".trimMargin()
+         )
+         stub.addResponse(
+            "forBorrowerId", """{
+          "loanApplicationId" : "l1",
+          "deals": [
+          { "dealId" : "d2", "borrowerId" : "b1", "amount" : 200 }, { "dealId" : "d3", "borrowerId" : "b1", "amount" : 300  }
+          ]}""".trimMargin()
+         )
+
+
+         val result = vyne.query(
+            """
+         given { loanApplicationId: LoanApplicationId = "1234" }
+         find { DealResponse(LoanApplicationId == loanApplicationId) } as (deal:Deal = first(Deal[])) -> {
+             id: LoanApplicationId,
+             borrower: BorrowerAccount as {
+               name : BorrowerName,
+               // This is the test.
+               // We already have a Deal[] in scope on the parent DealResponse
+               // But it's not the correct Deal[].
+               // The test ensures that the result of this projection comes from
+               // projecting the newly loaded DealResponse, not the existing one
+               existingDeals: DealResponse(BorrowerId == deal::BorrowerId) as Deal[] as {
+                  name : BorrowerName
+                  borrowedAmount : DealAmount
+                  id : DealId
+               }[]
+             }
+         }
+      """.trimIndent()
+         )
+            .firstRawObject()
+
+         result.shouldBe(
+            mapOf(
+               "id" to "1234",
+               "borrower" to mapOf(
+                  "name" to "Jimmy",
+                  "existingDeals" to listOf(
+                     mapOf("id" to "d2", "name" to "Jimmy", "borrowedAmount" to 200),
+                     mapOf("id" to "d3", "name" to "Jimmy", "borrowedAmount" to 300),
+                  )
+
+               )
+            ),
+         )
+
+         val borrowerIdCallInputs = stub.calls["forBorrowerId"]
+            .shouldHaveSize(1)
+            .single()
+         borrowerIdCallInputs.single().toRawObject().shouldBe("b1")
+
+      }
+
 }

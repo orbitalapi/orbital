@@ -43,7 +43,7 @@ interface InPlaceQueryEngine : FactBag, QueryContextSchemaProvider {
       type: Type,
       permittedStrategy: PermittedQueryStrategies = PermittedQueryStrategies.EVERYTHING,
       failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
-      constraint: List<Constraint> = emptyList()
+      constraints: List<Constraint> = emptyList()
    ): Flow<TypedInstance>
 
    fun only(fact: TypedInstance, scopedFacts: List<ScopedFact> = emptyList(), inheritParent: Boolean = true): InPlaceQueryEngine {

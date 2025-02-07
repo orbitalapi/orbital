@@ -10,6 +10,7 @@ import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
+import com.orbitalhq.models.constraints.evaluate
 import com.orbitalhq.query.ProfilerOperation
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QuerySpecTypeNode
@@ -206,7 +207,7 @@ class DefaultOperationInvocationService(
             } else {
                paramValue
             }
-            constraints.map { constraint -> constraint.evaluate(value.type, value, context.schema, context)
+            constraints.map { constraint -> constraint.evaluate(value, context.schema, context)
                .let { evaluationResult ->
                   if (path.isNotEmpty()) {
                      NestedConstraintEvaluation(

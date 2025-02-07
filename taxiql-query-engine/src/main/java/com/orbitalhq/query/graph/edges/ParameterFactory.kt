@@ -382,10 +382,10 @@ private class QueryContextWithOperationExclusion(
       type: Type,
       permittedStrategy: PermittedQueryStrategies,
       failureBehaviour: QueryFailureBehaviour,
-      constraint: List<Constraint>
+      constraints: List<Constraint>
    ): Flow<TypedInstance> {
       return context.find(QuerySpecTypeNode(type = type,
-         dataConstraints = constraint), excludedOperations, failureBehaviour, MetricTags.NONE)
+         dataConstraints = constraints), excludedOperations, failureBehaviour, MetricTags.NONE)
          .results
    }
 

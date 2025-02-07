@@ -392,9 +392,9 @@ data class QueryContext(
    override suspend fun findType(type: Type,
                                  permittedStrategy: PermittedQueryStrategies,
                                  failureBehaviour: QueryFailureBehaviour,
-                                 constraint: List<Constraint>): Flow<TypedInstance> {
-      val queryExpression = if (constraint.isEmpty()) TypeQueryExpression(type) else ConstrainedTypeNameQueryExpression(type.paramaterizedName, constraint)
-      return this.find(queryExpression, permittedStrategy, failureBehaviour = failureBehaviour, constraint = constraint)
+                                 constraints: List<Constraint>): Flow<TypedInstance> {
+      val queryExpression = if (constraints.isEmpty()) TypeQueryExpression(type) else ConstrainedTypeNameQueryExpression(type.paramaterizedName, constraints)
+      return this.find(queryExpression, permittedStrategy, failureBehaviour = failureBehaviour, constraint = constraints)
          .results
    }
 

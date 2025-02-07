@@ -8,6 +8,7 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.Argument
+import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.types.FormatsAndZoneOffset
 
 /**
@@ -18,7 +19,8 @@ interface EvaluationValueSupplier : ScopedValueProvider {
    fun getValue(
        typeName: QualifiedName,
        queryIfNotFound: Boolean = false,
-       allowAccessorEvaluation: Boolean = true
+       allowAccessorEvaluation: Boolean = true,
+       constraints: List<Constraint> = emptyList()
    ): TypedInstance
 
    fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance

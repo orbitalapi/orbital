@@ -1,11 +1,11 @@
-package com.orbitalhq.query.graph.operationInvocation
+package com.orbitalhq.models.constraints
 
+import com.orbitalhq.models.InPlaceQueryEngine
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.TypedValue
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.ScopedFact
-import com.orbitalhq.query.QueryContext
 import com.orbitalhq.schemas.ConstraintEvaluation
 import com.orbitalhq.schemas.ConstraintExpressionEvaluationFailed
 import com.orbitalhq.schemas.ConstraintViolationValueUpdater
@@ -13,7 +13,6 @@ import com.orbitalhq.schemas.DefaultConstraintEvaluation
 import com.orbitalhq.schemas.ReplaceFieldValueUpdater
 import com.orbitalhq.schemas.ReplaceValueUpdater
 import com.orbitalhq.schemas.Schema
-import com.orbitalhq.schemas.Type
 import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.expressions.LiteralExpression
 import lang.taxi.expressions.OperatorExpression
@@ -27,42 +26,40 @@ import mu.KotlinLogging
 import kotlin.reflect.KClass
 
 fun Constraint.evaluate(
-   type: Type,
-   paramValue: TypedInstance,
+   value: TypedInstance,
    schema: Schema,
-   context: QueryContext
+   context: InPlaceQueryEngine
 ): ConstraintEvaluation {
    return when {
-      this is ExpressionConstraint -> this.evaluate(type, paramValue, schema, context)
+      this is ExpressionConstraint -> this.evaluate(value, schema, context)
       else -> error("Unsupported constraint type: ${this::class.simpleName}")
    }
 }
 
 fun ExpressionConstraint.evaluate(
-   type: Type,
-   paramValue: TypedInstance,
+   value: TypedInstance,
    schema: Schema,
-   context: QueryContext
+   context: InPlaceQueryEngine
 ): ConstraintEvaluation {
    val scopedFact = ScopedFact(
-      scope = ProjectionFunctionScope.implicitThis(paramValue.type.taxiType),
-      fact = paramValue
+      scope = ProjectionFunctionScope.implicitThis(value.type.taxiType),
+      fact = value
    )
    val evaluationResult =
       context.evaluate(this.expression, FactBag.empty().withAdditionalScopedFacts(listOf(scopedFact), schema))
    return when (evaluationResult.value) {
-      true -> ConstraintEvaluation.valid(paramValue)
+      true -> ConstraintEvaluation.valid(value)
       false -> {
-         val updater = when (paramValue) {
-            is TypedObject -> getFieldUpdater(paramValue, this)
+         val updater = when (value) {
+            is TypedObject -> getFieldUpdater(value, this)
             is TypedValue -> ReplaceValueUpdater
-            else -> error("Can't create constraint updater for type ${paramValue::class.java} ")
+            else -> error("Can't create constraint updater for type ${value::class.java} ")
          }
          DefaultConstraintEvaluation(
-            paramValue,
+            value,
             ConstraintExpressionEvaluationFailed(
-               paramValue,
-               type,
+               value,
+               value.type,
                updater,
                this.expression,
                evaluationResult,
