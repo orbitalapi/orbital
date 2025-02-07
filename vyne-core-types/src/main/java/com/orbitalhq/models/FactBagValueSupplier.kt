@@ -7,6 +7,7 @@ import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.schemas.*
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.Argument
+import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.types.FormatsAndZoneOffset
 
 /**
@@ -64,9 +65,10 @@ class FactBagValueSupplier(
       }
 
    override fun getValue(
-      typeName: QualifiedName,
-      queryIfNotFound: Boolean,
-      allowAccessorEvaluation: Boolean
+       typeName: QualifiedName,
+       queryIfNotFound: Boolean,
+       allowAccessorEvaluation: Boolean,
+       constraints: List<Constraint>
    ): TypedInstance {
       val type = schema.type(typeName)
       val fact = facts.getFactOrNull(

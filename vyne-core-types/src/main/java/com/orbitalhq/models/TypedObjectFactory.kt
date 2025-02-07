@@ -567,10 +567,10 @@ class TypedObjectFactory(
    override fun getValue(
       typeName: QualifiedName,
       queryIfNotFound: Boolean,
-      allowAccessorEvaluation: Boolean
+      allowAccessorEvaluation: Boolean,
+      constraints: List<Constraint>
    ): TypedInstance {
       val requestedType = schema.type(typeName)
-
       // MP - 2-Nov-21:  Added to allow seart
       val fromFactBag = currentValueFactBag.getFactOrNull(
          FactSearch.findType(
@@ -594,7 +594,7 @@ class TypedObjectFactory(
                // that prevents self-referential loops.
                evaluateExpressionType(typeName)
             } else {
-               handleTypeNotFound(requestedType, queryIfNotFound)
+               handleTypeNotFound(requestedType, queryIfNotFound, constraints)
             }
          }
 
@@ -612,6 +612,7 @@ class TypedObjectFactory(
    private fun handleTypeNotFound(
       requestedType: Type,
       queryIfNotFound: Boolean,
+      constraints: List<Constraint>
    ): TypedInstance {
       fun createTypedNull(
          errorMessage: String = "No attribute with type ${requestedType.name.parameterizedName} is present on type ${this.type.name.parameterizedName}"
@@ -646,7 +647,7 @@ class TypedObjectFactory(
                   } else {
                      inPlaceQueryEngine
                   }
-                  queryEngine.findType(requestedType)
+                  queryEngine.findType(requestedType, constraints = constraints)
                      .toList()
                } catch (e: Exception) {
                   // OrbitalQueryException comes from a policy expression: e.g.when below `else` branch is triggered:
@@ -826,7 +827,7 @@ class TypedObjectFactory(
                val queryEngineWithScopedFacts =
                   valueSupplier.inPlaceQueryEngine!!.withAdditionalFacts(emptyList(), scopedFacts)
                val collectedList = queryEngineWithScopedFacts.findType(
-                  argumentExpressionReturnType, constraint = argumentTypeExpression.constraints
+                  argumentExpressionReturnType, constraints = argumentTypeExpression.constraints
                ).toList()
                when {
                   argumentExpressionReturnType.isCollection -> TypedCollection.from(collectedList)

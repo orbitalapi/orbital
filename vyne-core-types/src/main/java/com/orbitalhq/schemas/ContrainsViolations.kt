@@ -4,10 +4,11 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.log
 import com.orbitalhq.utils.orElse
-import lang.taxi.TaxiDocument
+import lang.taxi.expressions.Expression
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
+import mu.KotlinLogging
 
 interface ConstraintViolation : ConstraintViolationValueUpdater {
    // TODO : This is cheating a bit.
@@ -26,6 +27,28 @@ interface ConstraintViolation : ConstraintViolationValueUpdater {
 
 interface ConstraintViolationValueUpdater {
    fun resolveWithUpdatedValue(updatedValue: TypedInstance): TypedInstance
+}
+
+/**
+ * Returned in scenarios where we don't yet support updating values on constraints.
+ * This doesn't mean that we shouldn't support the scneario, but that we haven't.
+ * Note - we don't always NEED to support value updating.
+ *
+ * We need to support value updating when trying to find / resolve inputs for operations.
+ * However, when evaluating a TypedInstance against a constraint, sometimes we just need to know that
+ * it's invalid, rather than know how to update it.
+ *
+ * Basically, if you hit the exception thrown by this class, then we should add support.
+ */
+data class UnsupportedConstraintViolationValueUpdater(private val components: Set<Expression>, private val message: String) : ConstraintViolationValueUpdater {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+   override fun resolveWithUpdatedValue(updatedValue: TypedInstance): TypedInstance {
+      logger.error { message }
+      // Throw an error, but only if someone actually tries to use this updater to actually update values.
+      error(message)
+   }
 }
 
 fun Parameter.matches(propertyIdentifier: PropertyIdentifier, matchOnNameOnly: Boolean = false): Boolean {

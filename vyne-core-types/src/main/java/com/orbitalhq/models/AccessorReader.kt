@@ -511,7 +511,8 @@ class AccessorReader(
       } else {
          objectFactory.getValue(
             accessor.type.toVyneQualifiedName(),
-            queryIfNotFound = allowContextQuerying
+            queryIfNotFound = allowContextQuerying,
+            constraints = accessor.constraints
          )
       }
 
