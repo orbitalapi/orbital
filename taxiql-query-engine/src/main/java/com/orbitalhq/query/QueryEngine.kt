@@ -870,17 +870,20 @@ class StatefulQueryEngine(
                }
          }
       } else {
+         /**
+          * We are not projecting but mutation might require an implicit projection so hope onto projectionProvider coroutine context
+          * so that we can perform the implicit projection concurrently.
+          */
          if (target.projection == null) {
-            /**
-             * We are not projecting but mutation might require an implicit projection so hope onto projectionProvider coroutine context
-             * so that we can perform the implicit projection concurrently.
-             */
-            projectionProvider.process(projectedResults, context) {
-               mutate(target.mutation!!, target, context, it.instance).results
-                  .map { typedInstance ->
-                     typedInstance.withProcessingMetadata(asOf = it.processingStart)
-                  }
-            }
+            projectionProvider
+               .process(projectedResults, context)
+               { flowOf(it) }
+               .flatMapMerge(concurrency = Int.MAX_VALUE) {
+                  mutate(target.mutation!!, target, context, it.instance).results
+                     .map { typedInstance ->
+                        typedInstance.withProcessingMetadata(asOf = it.processingStart)
+                     }
+               }
          } else {
             /**
              * If we are projecting we are already on a LocalProjectionProvider context here, i.e. on one of the orbital_projection threads
