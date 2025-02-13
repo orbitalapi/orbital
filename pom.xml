@@ -12,7 +12,7 @@
    <parent>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-parent</artifactId>
-      <version>3.3.5</version>
+      <version>3.3.8</version>
    </parent>
 
    <url>https://orbitalhq.com</url>
@@ -30,7 +30,7 @@
        Saves us duplicating
        -->
       <owasp-exclusions-file>../whitelisted-cvss-list.xml</owasp-exclusions-file>
-      <taxi.version>1.62.0-SNAPSHOT</taxi.version>
+      <taxi.version>1.63.0-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -74,8 +74,8 @@
       <aws.s3.sdk.version>1.12.778</aws.s3.sdk.version>
       <aws.dynamo.sdk.version>1.12.701</aws.dynamo.sdk.version>
 
-      <!-- CVE-2024-47535 can probably remove after spring boot > 3.3.5 -->
-      <netty.version>4.1.115.Final</netty.version>
+      <!-- CVE-2025-24970 can probably remove after spring boot > 3.4.2 -->
+      <netty.version>4.1.118.Final</netty.version>
 
       <!-- Set protobuf-java to 3.25.5 because of vulnerabilities:
 CVE-2024-7254
@@ -347,6 +347,12 @@ Transitive dependency in wire-compiler and calcite-core
             <version>4.9</version>
          </dependency>
 
+         <!-- CVE-2024-57699 - fixed in 2.5.2 -->
+         <dependency>
+            <groupId>net.minidev</groupId>
+            <artifactId>json-smart</artifactId>
+            <version>2.5.2</version>
+         </dependency>
          <dependency>
             <groupId>org.jooq.pro</groupId>
             <artifactId>jooq</artifactId>
