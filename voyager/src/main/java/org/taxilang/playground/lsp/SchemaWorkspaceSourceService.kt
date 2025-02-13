@@ -15,17 +15,25 @@ import org.springframework.stereotype.Component
  * Otherwise, just a single string.
  */
 class SchemaWorkspaceSourceService() : WorkspaceSourceService {
-   override fun loadSources(): Sequence<SourceCode> {
-      return StubQueryService.builtInTypesSourcePackage.sources
+   override fun loadSources(): List<Pair<TaxiPackageProject?, Sequence<SourceCode>>> {
+      // MP 11-Feb-25:
+      // The API has evolved here allowing us to emit project data as well as the source code files.
+      // We don't have that easily available inside the Orbital code context, so returning null for
+      // the project. We could refactor this at a later date if required.
+      // Variable here is just for readability
+      val nullTaxiPackageProject:TaxiPackageProject? = null
+
+      val codeSequence =  StubQueryService.builtInTypesSourcePackage.sources
          .asSequence()
          .map { SourceCode(it.name, it.content, path = it.pathOrName) }
+      return listOf(nullTaxiPackageProject to codeSequence)
    }
 
    /**
     * Not supported in federated projects
     */
-   override fun loadProject(): TaxiPackageProject? {
-      return null
+   override fun loadProjects(): List<TaxiPackageProject> {
+      return emptyList()
    }
 }
 
