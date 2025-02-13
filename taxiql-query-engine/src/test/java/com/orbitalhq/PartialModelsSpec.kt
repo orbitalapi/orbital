@@ -1,6 +1,8 @@
 package com.orbitalhq
 
 import com.orbitalhq.models.TypedObject
+import com.orbitalhq.query.UnresolvedTypeInQueryException
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -20,25 +22,36 @@ class PartialModelsSpec : DescribeSpec({
          partial model FilmUpdate from Film
          service FilmsApi {
             operation getFilm():Film
-            write operation patchFilm(FilmUpdate):FilmUpdate
+            write operation patchFilmWithOriginal(Film):Film
+            write operation patchFilmWithPartial(FilmUpdate):FilmUpdate
          }
       """.trimIndent()
          )
 
-         stub.addResponseReturningInputs("patchFilm")
+         stub.addResponseReturningInputs("patchFilmWithPartial")
+         shouldThrow<UnresolvedTypeInQueryException> {
+            vyne.query(
+               """
+         given { Revenue = 200 }
+         call FilmsApi::patchFilmWithOriginal
+      """.trimIndent()
+            )
+               .firstRawObject()
+         }
+
 
          vyne.query(
             """
          given { Revenue = 200 }
-         call FilmsApi::patchFilm
+         call FilmsApi::patchFilmWithPartial
       """.trimIndent()
          )
             .firstRawObject()
 
-         val callInput = stub.calls["patchFilm"].single().single()
+         val callInput = stub.calls["patchFilmWithPartial"].single().single()
          callInput.shouldBeInstanceOf<TypedObject>()
             .toRawObject()
             .shouldBe(mapOf("revenue" to 200))
       }
    }
-   })
+})
