@@ -62,10 +62,10 @@ class VyneSchemaToTaxiSchemaMapper(
       val services = schema.services
          .map { generateService(it) }
 
-      val typesByNameSpace =  taxiTypes.groupBy { it.toQualifiedName().namespace }
+      val typesByNameSpace = taxiTypes.groupBy { it.toQualifiedName().namespace }
       val servicesByNameSpace = services.groupBy { it.toQualifiedName().namespace }
       val uniqueNameSpaces = typesByNameSpace.keys + servicesByNameSpace.keys
-      return  uniqueNameSpaces.map { namespace ->
+      return uniqueNameSpaces.map { namespace ->
          val typesForNamespace = typesByNameSpace[namespace]?.toSet() ?: setOf()
          val servicesForNamespace = servicesByNameSpace[namespace]?.toSet() ?: setOf()
          TaxiDocument(typesForNamespace, servicesForNamespace)
@@ -267,8 +267,8 @@ class VyneSchemaToTaxiSchemaMapper(
             false,
             if (fields.isEmpty()) TypeKind.Type else TypeKind.Model,
             type.expression,
-            type.typeDoc,
-            CompilationUnit.Companion.generatedFor(type.fullyQualifiedName)
+            typeDoc = type.typeDoc,
+            compilationUnit = CompilationUnit.Companion.generatedFor(type.fullyQualifiedName)
          )
       )
    }
