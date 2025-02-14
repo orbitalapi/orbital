@@ -71,7 +71,9 @@ class WorkspaceProjectsService(
    @PreAuthorize("hasAuthority('${VynePrivileges.EditSchema}')")
    @PostMapping("/api/repositories/new")
    fun createNewEmptyRepository(@RequestBody request: CreateEmptyProjectRequest): Mono<ModifyWorkspaceResponse> {
-      val fileSpec = request.toRepositorySpec()
+      val workspaceNewProjectsPath = configRepo.load()
+         .fileConfigOrDefault.newProjectsPath
+      val fileSpec = request.toRepositorySpec(workspaceNewProjectsPath)
       return Mono.just(configRepo.addFileSpec(fileSpec)).map {
          if (it.status == ModifyProjectResponseStatus.Failed) {
             throw BadRequestException(it.message!!)
@@ -188,10 +190,10 @@ fun GitProjectStoreChangeRequest.toRepositorySpec(): GitProjectSpec {
    )
 }
 
-fun CreateEmptyProjectRequest.toRepositorySpec(): FileProjectSpec {
+fun CreateEmptyProjectRequest.toRepositorySpec(workspaceNewProjectsPath: Path): FileProjectSpec {
 
    return FileProjectSpec(
-      Paths.get("workspace/projects/${this.newProjectIdentifier.id}"),
+      workspaceNewProjectsPath.resolve(this.newProjectIdentifier.id),
       isEditable = true,
       packageIdentifier = this.newProjectIdentifier,
    )

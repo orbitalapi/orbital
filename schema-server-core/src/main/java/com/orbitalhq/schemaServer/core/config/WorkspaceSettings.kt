@@ -93,19 +93,24 @@ data class WorkspaceSettings(
                logger.info { "Created blank workspace.conf file at $absolutePath" }
                configLoader.save(WorkspaceConfig.defaultEmpty())
             }
-            val config = configLoader.load()
-
-            if (projectFile != null) {
-               if (config.fileConfigOrDefault.projects.none { it.pathString.endsWith(projectFile.toString()) }) {
-                  logger.info { "Workspace file at $absolutePath does not contain project $projectFile so adding it" }
-                  configLoader.addFileSpec(
-                     FileProjectSpec(
-                        projectFile,
-                        isEditable = true
+            try {
+               val config = configLoader.load()
+               if (projectFile != null) {
+                  if (config.fileConfigOrDefault.projects.none { it.pathString.endsWith(projectFile.toString()) }) {
+                     logger.info { "Workspace file at $absolutePath does not contain project $projectFile so adding it" }
+                     configLoader.addFileSpec(
+                        FileProjectSpec(
+                           projectFile,
+                           isEditable = true
+                        )
                      )
-                  )
+                  }
                }
+            } catch (e:Exception) {
+               logger.warn(e) { "Error loading default workspace.conf file - project $projectFile has not been loaded" }
             }
+
+
             configLoader
          }
       }
