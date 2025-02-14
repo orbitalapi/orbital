@@ -8,10 +8,13 @@ import com.orbitalhq.schemaServer.core.git.GitProjectSpec
 import com.orbitalhq.schemaServer.core.git.WorkspaceGitProjectConfig
 import com.orbitalhq.schemaServer.repositories.FileProjectStoreTestRequest
 import com.orbitalhq.schemaServer.repositories.FileProjectTestResponse
+import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.nio.file.Path
 
+
+private val logger = KotlinLogging.logger {}
 /**
  * Class representing the workspace.conf file that defines
  * the various locations that taxi projects are loaded from
@@ -52,6 +55,7 @@ data class ModifyWorkspaceResponse(
  */
 interface WorkspaceConfigLoader {
    fun load(createDefaultIfAbsent: Boolean = true): WorkspaceConfig
+
    fun safeConfigJson(): String
    fun addFileSpec(fileSpec: FileProjectSpec): ModifyWorkspaceResponse
 
