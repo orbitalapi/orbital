@@ -54,4 +54,40 @@ class PartialModelsSpec : DescribeSpec({
             .shouldBe(mapOf("revenue" to 200))
       }
    }
+
+   it("can populate nested attributes of partials where original type was closed") {
+      val (vyne, stub) = testVyne(
+         """
+         closed model Actor {
+            name : Name inherits String
+            salary : Salary inherits Int
+         }
+         closed parameter model Film {
+            title : Title inherits String
+            cast : Actor[]
+         }
+        @com.orbitalhq.models.OmitNulls
+         partial model FilmUpdate from Film
+         service FilmsApi {
+            write operation patchFilmWithPartial(FilmUpdate):FilmUpdate
+         }
+      """.trimIndent()
+      )
+
+      stub.addResponseReturningInputs("patchFilmWithPartial")
+      vyne.query(
+         """
+         given { actorName:Name = 'Jimmy'  }
+         find { data: listOf(Actor${'$'}Partial) }
+         call FilmsApi::patchFilmWithPartial
+      """.trimIndent()
+      )
+         .firstRawObject()
+
+      val callInput = stub.calls["patchFilmWithPartial"].single().single()
+      callInput.shouldBeInstanceOf<TypedObject>()
+         .toRawObject()
+         .shouldBe(mapOf("cast" to listOf(
+            mapOf("name" to "Jimmy"))))
+   }
 })
