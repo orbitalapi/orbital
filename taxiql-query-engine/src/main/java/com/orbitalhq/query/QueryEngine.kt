@@ -371,6 +371,38 @@ class StatefulQueryEngine(
       metricsTags: MetricTags
    ): QueryResult {
       val startTime = Instant.now()
+      // First pass.
+      // TODO : Work out how to pass context (like facts from given clauses etc) into this.
+      val (resultFlow, searchContext) = doMutate(mutation, context, inputValue)
+      val resultFlowWithProcessingTime = resultFlow.map { it.withProcessingMetadata(asOf = startTime) }
+      val resultsWithProjections = performMutationProjection(
+         context,
+         resultFlowWithProcessingTime,
+         mutation)
+
+      val metricsCapturedResultStream = context.metricsReporter.observeEventStream(
+         resultsWithProjections, startTime, metricsTags, false
+      )
+
+      return QueryResult(
+         spec,
+         metricsCapturedResultStream,
+         isFullyResolved = true,
+         profilerOperation = context.profiler.root,
+         anonymousTypes = spec.anonymousTypes(),
+         queryId = context.queryId,
+         responseType = spec.type,
+         onCancelRequestHandler = { context.requestCancel() },
+         schema = schema,
+         responseHeaders = searchContext.populateResponseHeaders()
+      )
+   }
+
+   private suspend fun doMutate(
+      mutation: Mutation,
+      context: QueryContext,
+      inputValue: TypedInstance?,
+   ): Pair<Flow<TypedInstance>, QueryContext> {
       val service = schema.service(mutation.service.qualifiedName)
       val operation = service.operation(mutation.operation.name)
 
@@ -395,18 +427,7 @@ class StatefulQueryEngine(
       )
 
 
-      return QueryResult(
-         spec,
-         resultFlow,
-         isFullyResolved = true,
-         profilerOperation = context.profiler.root,
-         anonymousTypes = spec.anonymousTypes(),
-         queryId = context.queryId,
-         responseType = spec.type,
-         onCancelRequestHandler = { context.requestCancel() },
-         schema = schema,
-         responseHeaders = searchContext.populateResponseHeaders()
-      )
+      return resultFlow to searchContext
    }
 
    private fun objectBuilder(
@@ -819,7 +840,11 @@ class StatefulQueryEngine(
 
       val mutatedResults: Flow<TypedInstanceWithMetadata> = when (target.mutation) {
          null -> projectedResults
-         else -> performMutation(target, projectedResults, context)
+         else ->
+            performMutationProjection(
+               context,
+               performMutation(target, projectedResults, context),
+               target.mutation)
       }
 
 
@@ -864,7 +889,7 @@ class StatefulQueryEngine(
       return if (mutationProps?.mutationOperationHasCollectionParameters == true) {
          val typedCollection = CollectionBuilder.toCollectionType(projectedResults)
          projectionProvider.process(flowOf(typedCollection.withProcessingMetadata(asOf = Instant.now())), context) {
-            mutate(target.mutation!!, target, context, it.instance).results
+            doMutate(target.mutation!!, context, it.instance).first
                .map { typedInstance ->
                   typedInstance.withProcessingMetadata(asOf = it.processingStart)
                }
@@ -879,7 +904,7 @@ class StatefulQueryEngine(
                .process(projectedResults, context)
                { flowOf(it) }
                .flatMapMerge(concurrency = Int.MAX_VALUE) {
-                  mutate(target.mutation!!, target, context, it.instance).results
+                  doMutate(target.mutation!!, context, it.instance).first
                      .map { typedInstance ->
                         typedInstance.withProcessingMetadata(asOf = it.processingStart)
                      }
@@ -891,13 +916,29 @@ class StatefulQueryEngine(
              */
             projectedResults
                .flatMapMerge(concurrency = Int.MAX_VALUE) { queryResult ->
-               mutate(target.mutation!!, target, context, queryResult.instance).results
+                  doMutate(target.mutation!!, context, queryResult.instance).first
                   .map { typedInstance ->
                      typedInstance.withProcessingMetadata(asOf = queryResult.processingStart)
                   }
             }
          }
       }
+   }
+
+   private fun performMutationProjection(
+      context: QueryContext,
+      mutationFlow: Flow<TypedInstanceWithMetadata>,
+      mutation: Mutation?): Flow<TypedInstanceWithMetadata> {
+      return mutation?.projectedType?.let { mutationProjectedType ->
+         val factsToPropagate = initialState.toFactBag(schema)
+         projectionProvider.project(
+            mutationFlow,
+            schema.type(mutation.operation.returnType),
+            Projection(schema.type(mutationProjectedType.first), mutationProjectedType.second),
+            context,
+            factsToPropagate)
+
+      } ?: mutationFlow
    }
 
 

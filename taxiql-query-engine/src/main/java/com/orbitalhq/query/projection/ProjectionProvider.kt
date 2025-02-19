@@ -31,6 +31,14 @@ interface ProjectionProvider {
 
     fun process(source: Flow<TypedInstanceWithMetadata>, context: QueryContext, block: suspend kotlinx.coroutines.CoroutineScope.(item: TypedInstanceWithMetadata) -> Flow<TypedInstanceWithMetadata>): Flow<TypedInstanceWithMetadata>
 
+    fun project(
+        source: Flow<TypedInstanceWithMetadata>,
+        declaredSourceType: Type,
+        projection: Projection,
+        context: QueryContext,
+        globalFacts: FactBag
+    ): Flow<TypedInstanceWithMetadata>
+
 
 
 }
