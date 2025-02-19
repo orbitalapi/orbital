@@ -2710,6 +2710,16 @@ service Broker1Service {
 
          }
 
+          override fun project(
+              source: Flow<TypedInstanceWithMetadata>,
+              declaredSourceType: Type,
+              projection: Projection,
+              context: QueryContext,
+              globalFacts: FactBag
+          ): Flow<TypedInstanceWithMetadata> {
+              TODO("Not yet implemented")
+          }
+
           override fun process(
               source: Flow<TypedInstanceWithMetadata>,
               context: QueryContext,

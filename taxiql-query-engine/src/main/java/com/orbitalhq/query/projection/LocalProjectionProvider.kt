@@ -15,6 +15,7 @@ import com.orbitalhq.query.TypedInstanceWithMetadata
 import com.orbitalhq.query.withProcessingMetadata
 import com.orbitalhq.schemas.Type
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.async
@@ -31,7 +32,6 @@ import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.isActive
 import lang.taxi.types.Arrays
-import lang.taxi.types.StreamType
 import mu.KotlinLogging
 import java.time.Instant
 import java.util.concurrent.LinkedBlockingQueue
@@ -96,6 +96,78 @@ class LocalProjectionProvider : ProjectionProvider {
          }.flatMapMerge { it }
    }
 
+   private suspend fun projectItem(
+      index: Int,
+      emittedResult: TypedInstance,
+      declaredSourceType: Type,
+      projection: Projection,
+      context: QueryContext,
+      globalFacts: FactBag,
+      inputStartTime: Instant? = null): Deferred<Flow<TypedInstanceWithMetadata>> {
+      logger.trace { "Starting to project instance of ${emittedResult.type.qualifiedName.shortDisplayName} (index $index) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
+      return projectingScope.async {
+         val startTime = inputStartTime ?: Instant.now()
+         if (!isActive) {
+            logger.warn { "Query Cancelled exiting!" }
+            cancel()
+         }
+
+         val scopedFacts = buildScopedProjectionFacts(projection, emittedResult, context)
+         logger.trace { "project or map instance of ${emittedResult.type.qualifiedName.shortDisplayName} (index ${index}) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
+
+         projectOrMap(
+            scopedFacts,
+            declaredSourceType,
+            context,
+            globalFacts,
+            emittedResult,
+            projection.type,
+            startTime
+         )
+      }
+   }
+   override fun project(
+      source: Flow<TypedInstanceWithMetadata>,
+      declaredSourceType: Type,
+      projection: Projection,
+      context: QueryContext,
+      globalFacts: FactBag
+   ): Flow<TypedInstanceWithMetadata> {
+
+      context.cancelFlux.subscribe {
+         logger.info { "QueryEngine for queryId ${context.queryId} is cancelling" }
+         projectingScope.cancel()
+      }
+
+      // This pattern aims to allow the concurrent execution of multiple flows.
+      // Normally, flow execution is sequential - ie., one flow must complete befre the next
+      // item is taken.  buffer() is used here to allow up to n parallel flows to execute.
+      // MP: @Anthony - please leave some comments here that describe the rationale for
+      // map { async { .. } }.flatMapMerge { await }
+      return source
+         .buffer()
+         .withIndex()
+         .takeWhile { !context.cancelRequested }
+         .filter { !context.cancelRequested }
+         .distinctUntilChanged()
+         .map { emittedResultWithMetadata ->
+            val emittedResult = emittedResultWithMetadata.value.instance
+            val startTime = emittedResultWithMetadata.value.processingStart
+            projectItem(emittedResultWithMetadata.index,
+               emittedResult,
+               declaredSourceType,
+               projection,
+               context,
+               globalFacts,
+               startTime)
+         }
+         .buffer(threadPoolSize).map {
+            val result = it.await()
+            logger.trace { "projected or mapped instance of ${projection.type.qualifiedName.shortDisplayName} completed" }
+            result
+         }.flatMapMerge { it }
+   }
+
    override fun project(
       source: Flow<TypedInstance>,
       declaredSourceType: Type,
@@ -122,27 +194,12 @@ class LocalProjectionProvider : ProjectionProvider {
          .filter { !context.cancelRequested }
          .distinctUntilChanged()
          .map { emittedResult ->
-            logger.trace { "Starting to project instance of ${emittedResult.value.type.qualifiedName.shortDisplayName} (index ${emittedResult.index}) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
-            projectingScope.async {
-               val startTime = Instant.now()
-               if (!isActive) {
-                  logger.warn { "Query Cancelled exiting!" }
-                  cancel()
-               }
-
-               val scopedFacts = buildScopedProjectionFacts(projection, emittedResult, context)
-               logger.trace { "project or map instance of ${emittedResult.value.type.qualifiedName.shortDisplayName} (index ${emittedResult.index}) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
-
-               projectOrMap(
-                  scopedFacts,
-                  declaredSourceType,
-                  context,
-                  globalFacts,
-                  emittedResult,
-                  projection.type,
-                  startTime
-               )
-            }
+            projectItem(emittedResult.index,
+               emittedResult.value,
+               declaredSourceType,
+               projection,
+               context,
+               globalFacts)
          }
          .buffer(threadPoolSize).map {
             val result = it.await()
@@ -160,12 +217,12 @@ class LocalProjectionProvider : ProjectionProvider {
     */
    private fun buildScopedProjectionFacts(
       projection: Projection,
-      emittedResult: IndexedValue<TypedInstance>,
+      emittedResult: TypedInstance,
       context: QueryContext
    ): List<ScopedFact> {
       return ProjectionFunctionScopeEvaluator.build(
          projection.scopedVars,
-         listOf(emittedResult.value),
+         listOf(emittedResult),
          context
       )
    }
@@ -183,13 +240,13 @@ class LocalProjectionProvider : ProjectionProvider {
       declaredSourceType: Type,
       context: QueryContext,
       globalFacts: FactBag,
-      emittedResult: IndexedValue<TypedInstance>,
+      emittedResult: TypedInstance,
       projectionType: Type,
       startTime: Instant
    ): Flow<TypedInstanceWithMetadata> {
       val primaryFact = when {
          scopedFacts.isEmpty() -> {
-            emittedResult.value
+            emittedResult
          }
 
          scopedFacts.size == 1 -> scopedFacts.single().fact
@@ -270,7 +327,7 @@ class LocalProjectionProvider : ProjectionProvider {
       declaredSourceType: Type,
       context: QueryContext,
       globalFacts: FactBag,
-      emittedResult: IndexedValue<TypedInstance>,
+      emittedResult: TypedInstance,
       projectionType: Type,
       startTime: Instant
    ): Flow<TypedInstanceWithMetadata> {
@@ -297,7 +354,7 @@ class LocalProjectionProvider : ProjectionProvider {
       scopedFacts: List<ScopedFact>,
       context: QueryContext,
       globalFacts: FactBag,
-      emittedResult: IndexedValue<TypedInstance>,
+      emittedResult: TypedInstance,
       projectionType: Type,
       startTime: Instant
    ): Flow<TypedInstanceWithMetadata> {
@@ -309,7 +366,7 @@ class LocalProjectionProvider : ProjectionProvider {
       // Note: In time, we should probably refactor so that there's ALWAYS a root
       // scope, with a name of "this" if not otherwise specified.
       val projectionContext = if (scopedFacts.isEmpty()) {
-         context.only(globalFacts.rootFacts() + emittedResult.value, scopedFacts = context.scopedFacts)
+         context.only(globalFacts.rootFacts() + emittedResult, scopedFacts = context.scopedFacts)
       } else {
          context.only(globalFacts.rootFacts(), scopedFacts = scopedFacts + context.scopedFacts)
       }

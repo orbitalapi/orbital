@@ -1,10 +1,11 @@
 package com.orbitalhq
 
 import app.cash.turbine.test
-import com.winterbe.expekt.should
-import io.kotest.matchers.collections.shouldContainAll
-import com.orbitalhq.http.MockWebServerRule
-import com.orbitalhq.models.*
+import com.orbitalhq.models.Provided
+import com.orbitalhq.models.TypedCollection
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedObject
+import com.orbitalhq.models.TypedValue
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.models.functions.functionOf
 import com.orbitalhq.models.json.parseJson
@@ -19,15 +20,151 @@ import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.TableOperation
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.utils.withoutWhitespace
+import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldContainAll
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
-import org.junit.Rule
 import org.junit.Test
+import java.time.Instant
 import kotlin.test.assertFails
 
 @ExperimentalCoroutinesApi
 class VyneQueryTest {
+
+    @Test
+    fun `can project result of a mutation operation to an anonymous type`(): Unit = runBlocking {
+        val (vyne, stub) = testVyne(
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            """
+         type OrderId inherits String
+          
+         parameter model PostedOrder {
+             ItemName: ItemName inherits String
+             AccountType: AccountType inherits String
+             
+         }
+                 
+         model OrderResponse {
+            code: ResponseCode inherits Int
+         }
+               
+         service Order {
+              write operation PutOrderResponse(orderId: OrderId,
+                                               body: PostedOrder
+               ): OrderResponse
+          }
+            """.trimIndent()
+        )
+
+        stub.addResponse("PutOrderResponse", vyne.parseJsonModel("OrderResponse", """{ "code" : 200 }"""))
+        val mutationResultProjectedToAnonymousType = vyne.query(
+            """
+            given { orderId: OrderId = '1', request: PostedOrder = { ItemName: "name", AccountType: "retail" } }
+            call Order::PutOrderResponse  as {
+                  code: ResponseCode
+                  orderId: OrderId
+               }
+         """.trimIndent()
+        ).rawObjects()
+
+        mutationResultProjectedToAnonymousType.should.have.size(1)
+        mutationResultProjectedToAnonymousType.first()["code"].should.equal(200)
+        mutationResultProjectedToAnonymousType.first()["orderId"].should.equal("1")
+    }
+
+    @Test
+    fun `can project result of a mutation operation to a defined Type`(): Unit = runBlocking {
+        val (vyne, stub) = testVyne(
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            """
+         type OrderId inherits String 
+         parameter model PostedOrder {
+             ItemName: ItemName inherits String
+             AccountType: AccountType inherits String
+         }
+         
+         @OmitNulls
+         parameter model OrderUpdateData {
+             Item_Name: ItemName?
+             Account_Type: AccountType?
+         }
+         
+         parameter model OrderUpdate {
+             data: OrderUpdateData[]
+         }
+         
+         model OrderResponse {
+            code: ResponseCode inherits Int
+         }
+               
+         service Order {
+              write operation PutOrderResponse(orderId: OrderId,
+                                               body: OrderUpdate
+               ): OrderResponse
+          }
+            """.trimIndent()
+        )
+        stub.addResponse("PutOrderResponse", vyne.parseJsonModel("OrderResponse", """{ "code" : 200 }"""))
+
+        val mutationResultProjectedToDefinedModel = vyne.query(
+            """
+            given { orderId: OrderId = '1', request: PostedOrder = { ItemName: "name", AccountType: "retail" } }
+            find { PostedOrder } as {
+              data: listOf(OrderUpdateData)
+             }
+             call Order::PutOrderResponse  as PostedOrder
+         """.trimIndent()
+        ).rawObjects()
+
+        mutationResultProjectedToDefinedModel.should.have.size(1)
+        mutationResultProjectedToDefinedModel.first()["ItemName"].should.equal("name")
+        mutationResultProjectedToDefinedModel.first()["AccountType"].should.equal("retail")
+    }
+
+    @Test
+    fun `can use variables going into a projection`(): Unit = runBlocking {
+        val (vyne, stub) = testVyne(
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            """
+         model Film {
+            id: ImdbId inherits String   
+            lastUpdated: LastUpdated inherits Instant   
+         }
+         
+         model FilmUpdateResponse {
+            films : Film[]
+         }
+         
+         parameter model FilmUpdateRequest {
+           id: ImdbId
+           rating: Rating inherits String
+         }
+
+        service FilmApi {
+             write operation updateFilms(FilmUpdateRequest):FilmUpdateResponse
+        }
+
+   
+            """.trimIndent()
+        )
+        stub.addResponse("updateFilms", vyne.parseJsonModel("FilmUpdateResponse", """{ "films" : [ { "id": "id-1", "lastUpdated": "${Instant.now()}" } ] }"""))
+
+        val mutationResultProjectedToDefinedModel = vyne.query(
+            """
+            given { request: FilmUpdateRequest = { id: "id-1", rating: "10" } }
+            call FilmApi::updateFilms as (film:Film = first(Film[])) -> {
+               id: ImdbId
+               updateTime: LastUpdated
+            }
+
+         """.trimIndent()
+        ).rawObjects()
+
+        mutationResultProjectedToDefinedModel.should.have.size(1)
+        mutationResultProjectedToDefinedModel.first()["id"].should.equal("id-1")
+        mutationResultProjectedToDefinedModel.first()["updateTime"].should.not.be.`null`
+    }
 
    @Test
    fun canQueryAnonymousTypes(): Unit = runBlocking {

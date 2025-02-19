@@ -45,6 +45,20 @@ class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistrib
    val hazelcastScheduler: Scheduler = Schedulers.parallel()
 
    override fun project(
+      results: Flow<TypedInstanceWithMetadata>,
+      declaredSourceType: Type,
+      projection: Projection,
+      context: QueryContext,
+      globalFacts: FactBag
+   ): Flow<TypedInstanceWithMetadata> {
+      return project(
+         results.map { it.instance },
+         declaredSourceType,
+         projection,
+         context,
+         globalFacts)
+   }
+   override fun project(
       results: Flow<TypedInstance>,
       declaredSourceType: Type,
       projection: Projection,
