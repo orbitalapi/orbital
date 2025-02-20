@@ -353,12 +353,15 @@ class FileWorkspaceConfigLoader(
          )
       }
 
-      if (currentGitConfig.repositories.any { it.uri == gitSpec.uri }) {
-         return ModifyWorkspaceResponse(
-            ModifyProjectResponseStatus.Failed,
-            "A git repository already exists for ${gitSpec.uri}"
-         )
-      }
+      // Customers use mono-repos, with lots of taxi projects inside the same repo.
+      // So, this check doesn't make sense.
+      // ORB-715
+//      if (currentGitConfig.repositories.any { it.uri == gitSpec.uri }) {
+//         return ModifyWorkspaceResponse(
+//            ModifyProjectResponseStatus.Failed,
+//            "A git repository already exists for ${gitSpec.uri}"
+//         )
+//      }
 
       val updated = current.copy(
          git = currentGitConfig.copy(
