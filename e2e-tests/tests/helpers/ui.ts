@@ -1,4 +1,12 @@
 import { APIRequestContext, expect, Page } from '@playwright/test';
+import { isAuthEnabled } from '../auth.setup';
+
+export async function waitUntilAuthenticated(page: Page): Promise<void> {
+   if (!isAuthEnabled()) {
+      return;
+   }
+   await page.waitForResponse('https://signin.orbitalhq.dev/oauth2/token')
+}
 
 export async function selectTab(page: Page, text: string, selectorPrefix = ''): Promise<void> {
    await page.click(`${selectorPrefix} tui-tabs button:has-text("${text}")`);

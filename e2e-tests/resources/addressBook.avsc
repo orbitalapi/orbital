@@ -1,0 +1,75 @@
+{
+   "type": "record",
+   "name": "AddressBook",
+   "namespace": "simple",
+   "doc": "A full addressbook of people",
+   "fields": [
+      {
+         "name": "people",
+         "type": {
+            "type": "array",
+            "items": {
+               "type": "record",
+               "name": "Person",
+               "fields": [
+                  {
+                     "name": "name",
+                     "type": "string"
+                  },
+                  {
+                     "name": "id",
+                     "type": "int"
+                  },
+                  {
+                     "name": "email",
+                     "type": [
+                        "string",
+                        "null"
+                     ]
+                  },
+                  {
+                     "name": "phones",
+                     "type": {
+                        "type": "array",
+                        "items": {
+                           "type": "record",
+                           "name": "PhoneNumber",
+                           "fields": [
+                              /** This field decalres a union type with a single type.
+                              This is an oddity seen in the wild, so updated to ensure that we
+                              parse correctly */
+                              {
+                                 "name": "number",
+                                 "type": [
+                                    "string"
+                                 ]
+                              },
+                              {
+                                 "name": "type",
+                                 "type": {
+                                    "type": "enum",
+                                    "name": "PhoneType",
+                                    "symbols": [
+                                       "MOBILE",
+                                       "HOME",
+                                       "WORK"
+                                    ]
+                                 }
+                              }
+                           ]
+                        }
+                     }
+                  },
+                  {
+                     "name": "last_updated",
+                     "type": {
+                        "type": "long",
+                        "logicalType": "timestamp-micros"
+                     }
+                  }
+               ]
+            }
+         }
+      }
+   ]
+}

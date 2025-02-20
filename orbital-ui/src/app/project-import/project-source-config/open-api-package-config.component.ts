@@ -1,11 +1,13 @@
-import { TuiInputModule } from "@taiga-ui/legacy";
+import {TuiInputModule} from "@taiga-ui/legacy";
 import {Component, EventEmitter, Input, Output} from '@angular/core';
-import { tuiNotificationOptionsProvider, TuiNotification, TuiHint } from '@taiga-ui/core';
+import {tuiNotificationOptionsProvider, TuiNotification, TuiHint} from '@taiga-ui/core';
 import {OpenApiPackageLoaderSpec} from 'src/app/project-import/project-import.models';
 import {ControlContainer, FormsModule, NgModelGroup, ReactiveFormsModule} from '@angular/forms';
 import {UiCustomisations} from '../../../environments/ui-customisations';
 import {PackageIdentifierInputComponent} from '../../package-identifier-input/package-identifier-input.component';
 import {FilePathOrUploadComponent} from './file-path-or-upload.component';
+import {AddProjectWorkflowType} from "./file-config.component";
+import {NgIf} from "@angular/common";
 
 @Component({
   selector: 'app-open-api-package-config',
@@ -17,6 +19,7 @@ import {FilePathOrUploadComponent} from './file-path-or-upload.component';
     FormsModule,
     TuiNotification,
     TuiHint,
+    NgIf,
   ],
   providers: [
     tuiNotificationOptionsProvider({
@@ -24,15 +27,18 @@ import {FilePathOrUploadComponent} from './file-path-or-upload.component';
       appearance: 'info',
     }),
   ],
-  viewProviders: [{ provide: ControlContainer, useExisting: NgModelGroup }],
+  viewProviders: [{provide: ControlContainer, useExisting: NgModelGroup}],
   template: `
-    <tui-notification size="m" appearance="info" class="open-api-notification" [tuiHint]="tooltip" tuiHintAppearance="dark" tuiHintShowDelay="100">
+    <tui-notification *ngIf="editable" size="m" appearance="info" class="open-api-notification" [tuiHint]="tooltip"
+                      tuiHintAppearance="dark" tuiHintShowDelay="100">
       Understanding the difference between adding a project vs adding a data source
     </tui-notification>
     <ng-template #tooltip>
-      <p>Using this approach, the OpenAPI spec remains as your source of truth, and you create links between an OpenAPI service and your models by embedding Taxi metadata directly within the spec.</p>
+      <p>Using this approach, the OpenAPI spec remains as your source of truth, and you create links between an OpenAPI
+        service and your models by embedding Taxi metadata directly within the spec.</p>
       <p>Use this when you'd prefer to work with OpenAPI over Taxi.</p>
-      <p>Alternatively, you can add the OpenAPI spec as a data source, which will convert the spec to Taxi, and write it to your project.</p>
+      <p>Alternatively, you can add the OpenAPI spec as a data source, which will convert the spec to Taxi, and write it
+        to your project.</p>
     </ng-template>
     <div class="form-row">
       <div class="form-item-description-container">
@@ -42,10 +48,10 @@ import {FilePathOrUploadComponent} from './file-path-or-upload.component';
       <div class="form-element">
         <app-file-path-or-upload
           [editable]="editable"
-          [mode]="projectType === 'file' ? 'upload' : 'path'"
+          [mode]="projectType"
           [filesAccepted]="['.json', '.yaml']"
           [path]="path"
-          (pathChanged)="onPathChanged($event)"
+          (pathChange)="onPathChanged($event)"
           (fileChanged)="fileChange.emit($event)"
           uploadLabel="choose a .json or .yaml file"
           fileExtensionErrorLabel="Invalid file extension. Allowed extensions are: .json and .yaml"
@@ -103,7 +109,7 @@ import {FilePathOrUploadComponent} from './file-path-or-upload.component';
 })
 export class OpenApiPackageConfigComponent {
   @Input()
-  projectType: 'file' | 'git' = 'file';
+  projectType: AddProjectWorkflowType = 'fileUpload';
 
   @Input()
   openApiPackageSpec: OpenApiPackageLoaderSpec;
@@ -121,10 +127,14 @@ export class OpenApiPackageConfigComponent {
   fileChange = new EventEmitter<string>();
 
   get pathLabel(): string {
-    if (this.projectType === 'file') {
-      return 'Select your OpenAPI spec file'
-    } else {
-      return 'Path from the root of the git repository to the OpenAPI spec file';
+    if (!this.editable) return '';
+    switch (this.projectType) {
+      case 'fileUpload':
+        return 'Select your OpenAPI spec file';
+      case "pathToFile":
+        return 'The path on the server containing to your OpenAPI spec file';
+      case "git":
+        return 'Path from the root of the git repository to the OpenAPI spec file';
     }
   }
 

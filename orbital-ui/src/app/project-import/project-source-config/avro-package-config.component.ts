@@ -4,6 +4,8 @@ import {AvroPackageLoaderSpec} from "../project-import.models";
 import {UiCustomisations} from "../../../environments/ui-customisations";
 import {PackageIdentifierInputComponent} from "../../package-identifier-input/package-identifier-input.component";
 import {FilePathOrUploadComponent} from './file-path-or-upload.component';
+import {AddProjectWorkflowType} from "./file-config.component";
+import {NgIf} from "@angular/common";
 
 @Component({
   selector: 'app-avro-package-config',
@@ -12,10 +14,11 @@ import {FilePathOrUploadComponent} from './file-path-or-upload.component';
   imports: [
     FilePathOrUploadComponent,
     PackageIdentifierInputComponent,
-    FormsModule
+    FormsModule,
+    NgIf
   ],
   template: `
-    <div class='form-row'>
+    <div class='form-row' *ngIf="editable">
       <div class='form-item-description-container'>
         <h3>Avro spec file</h3>
         <div class='help-text'>
@@ -25,10 +28,10 @@ import {FilePathOrUploadComponent} from './file-path-or-upload.component';
       <div class='form-element'>
         <app-file-path-or-upload
           [editable]="editable"
-          [mode]="projectType === 'file' ? 'upload' : 'path'"
+          [mode]="projectType"
           [filesAccepted]="['.avsc']"
           [path]="path"
-          (pathChanged)="onPathChanged($event)"
+          (pathChange)="onPathChanged($event)"
           (fileChanged)="fileChange.emit($event)"
           uploadLabel="choose an .avsc file"
           fileExtensionErrorLabel="Invalid file extension. Allowed extension is: .avsc"
@@ -58,7 +61,7 @@ import {FilePathOrUploadComponent} from './file-path-or-upload.component';
 })
 export class AvroPackageConfigComponent {
   @Input()
-  projectType: 'file' | 'git' = 'file';
+  projectType: AddProjectWorkflowType = 'fileUpload';
 
   @Input()
   packageSpec: AvroPackageLoaderSpec
@@ -78,10 +81,14 @@ export class AvroPackageConfigComponent {
   errorMessage: string;
 
   get pathLabel(): string {
-    if (this.projectType === 'file') {
-      return 'Select your Avro avsc spec file'
-    } else {
-      return 'Path from the root of the git repository to the Avro spec file';
+    if (!this.editable) return '';
+    switch (this.projectType) {
+      case 'fileUpload':
+        return 'Select your Avro avsc spec file';
+      case "pathToFile":
+        return 'The path on the server containing to your Avro asc spec file';
+      case "git":
+        return 'Path from the root of the git repository to the Avro spec file';
     }
   }
 

@@ -19,3 +19,19 @@ export function readSingleFile(fileDropEntry: NgxFileDropEntry): Observable<stri
   });
   return result$;
 }
+
+export function joinWithSeparator(path1: string, path2: string, separator): string {
+  if (path1.endsWith(separator)) {
+    return path1 + path2
+  } else {
+    return path1 + separator + path2;
+  }
+}
+
+export function detectSeperator(path: string): string {
+  if (path.includes("\\")) {
+    return "\\"
+  } else {
+    return "/"
+  }
+}

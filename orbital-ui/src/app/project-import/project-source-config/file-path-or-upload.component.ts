@@ -1,19 +1,23 @@
-import { TuiInputModule } from "@taiga-ui/legacy";
-import { TuiError } from "@taiga-ui/core";
-import {Component, EventEmitter, Input, OnInit, Optional, Output, SkipSelf, ViewChild} from '@angular/core';
+import {TuiInputModule} from "@taiga-ui/legacy";
+import {TuiError, TuiNotification} from "@taiga-ui/core";
+import {Component, EventEmitter, input, Input, model, Optional, Output, SkipSelf, ViewChild} from '@angular/core';
 import {
+  AbstractControl,
   ControlContainer,
   FormControl,
   FormsModule,
-  NgControl,
   NgForm,
+  NgModel,
   ReactiveFormsModule,
+  ValidationErrors,
   Validators,
 } from '@angular/forms';
-import {Observable, of, Subject, switchMap} from 'rxjs';
+import {Observable, of, switchMap} from 'rxjs';
 import {CommonModule} from '@angular/common';
-import { TuiFileLike, TuiFiles } from '@taiga-ui/kit';
+import {TuiFileLike, TuiFiles} from '@taiga-ui/kit';
 import {FileExtensionValidatorDirective} from './file-extension-validator.directive';
+import {AddProjectWorkflowType} from "./file-config.component";
+import {toObservable} from "@angular/core/rxjs-interop";
 
 // A component that combines the Tui components required for file upload and a path based input field.
 // It also handles the validation that's required for the path based flow.
@@ -39,9 +43,10 @@ import {FileExtensionValidatorDirective} from './file-extension-validator.direct
     FormsModule,
     FileExtensionValidatorDirective,
     TuiError,
+    TuiNotification,
   ],
   template: `
-    @if (mode === 'upload' && editable) {
+    @if (mode() === 'fileUpload' && editable) {
       <label
         *ngIf="!fileDropControl.value"
         tuiInputFiles
@@ -55,50 +60,55 @@ import {FileExtensionValidatorDirective} from './file-extension-validator.direct
       </label>
       <tui-files class="tui-space_top-1">
         <tui-file
-          *ngIf="loadedFiles$ | async as file"
+          class="file-ok"
+          *ngIf="!rejectedFile && loadedFiles$ | async as file"
           [file]="file"
           [showDelete]="fileDropControl.enabled"
           (remove)="removeFile()"
         ></tui-file>
         <tui-file
-          *ngIf="rejectedFiles$ | async as file"
+          class="file-error"
+          *ngIf="rejectedFile | tuiFileRejected: {accept: filesAccepted.join(',')} | async as file"
           state="error"
-          [file]="file"
+          [file]="fileDropControl.value"
           [showDelete]="fileDropControl.enabled"
           (remove)="clearRejected()"
         ></tui-file>
       </tui-files>
+      <tui-error
+        [error]="fileDropControl?.invalid && (fileDropControl.dirty || fileDropControl.touched) ? fileExtensionErrorLabel : null"
+      >
+      </tui-error>
     } @else {
       <tui-input
-        [ngModel]="path"
-        (ngModelChange)="onPathChanged($event)"
         appFileExtensionValidator [appFileExtensionValidator]="filesAccepted"
         required
         name="path"
         [readOnly]="!editable"
-        #pathName="ngModel"
+        [formControl]="filePathControl"
       >
         Path
         <span class="tui-required"></span>
       </tui-input>
+      <tui-notification  size="m" appearance='neutral' class="tui-space_top-2" *ngIf="editable && mode() !== 'git'">
+        Using Docker? Enter paths relative to your mounted volume (e.g., /opt/service/workspace )
+      </tui-notification>
       <tui-error
-        [error]="pathName$?.invalid && (pathName$.dirty || pathName$.touched) ? fileExtensionErrorLabel : null"
+        [error]="filePathControl?.invalid && (filePathControl.dirty || filePathControl.touched) ? fileExtensionErrorLabel : null"
       >
       </tui-error>
     }
   `,
 })
-export class FilePathOrUploadComponent implements OnInit {
+export class FilePathOrUploadComponent {
   @Input()
   editable: boolean = true;
 
   @Input()
   readContentsAs: 'string' | 'bytes' = 'string';
-  @Input()
-  path: string;
+  path = model<string>();
 
-  @Input()
-  mode: 'path' | 'upload';
+  mode = input<AddProjectWorkflowType>()
 
   /** Deprecated in Taiga v4 (no link or label props on the input anymore)  */
   @Input()
@@ -110,49 +120,88 @@ export class FilePathOrUploadComponent implements OnInit {
   @Input()
   fileExtensionErrorLabel: string;
 
-  @Output()
-  pathChanged = new EventEmitter<string>();
+  // @Output()
+  // pathChanged = new EventEmitter<string>();
 
   @Output()
   fileChanged = new EventEmitter<string>()
 
   @ViewChild('pathName')
-  pathName$: NgControl
+  pathName$: NgModel
 
+  rejectedFile: TuiFileLike;
   errorMessage: string;
+
+  readonly fileIsCorrectType = (control: AbstractControl): ValidationErrors | null => {
+    if (control.value === this.rejectedFile || Array.isArray(this.rejectedFile) && this.rejectedFile.includes(control.value)) {
+      return {
+        'wrongFileType': this.fileExtensionErrorLabel
+      }
+    } else {
+      return null;
+    }
+
+  }
 
   readonly fileDropControl = new FormControl<TuiFileLike | null>(
     null,
-    Validators.required
+    [Validators.required,
+      this.fileIsCorrectType
+    ]
   );
 
-  readonly rejectedFiles$ = new Subject<TuiFileLike | null>();
+  readonly filePathControl = new FormControl<string | null>(null, Validators.required);
+
   readonly loadedFiles$ = this.fileDropControl.valueChanges.pipe(
     switchMap(file => (file ? this.makeRequest(file) : of(null))),
   );
 
+
   constructor(
     @Optional() @SkipSelf() private parentFormGroup: NgForm
-  ) {}
+  ) {
+    toObservable(this.mode).subscribe(mode => {
+      if (!this.parentFormGroup) {
+        return
+      }
+      if (mode === 'pathToFile') {
+        this.parentFormGroup.form.setControl('filePath', this.filePathControl);
+        this.parentFormGroup.form.removeControl('fileUpload');
+      } else if (mode === 'fileUpload') {
+        this.parentFormGroup.form.setControl('fileUpload', this.fileDropControl);
+        this.parentFormGroup.form.removeControl('filePath');
+      }
+    })
+    this.filePathControl.valueChanges.subscribe(value => {
+      if (value !== this.path()) {
+        this.path.set(value);
+      }
+    })
 
-  ngOnInit() {
-    if (this.parentFormGroup) {
-      // Add the child control to the parent form dynamically
-      this.parentFormGroup.form.addControl('fileUpload', this.fileDropControl);
-    }
-  }
-
-  onPathChanged(value: string) {
-    this.path = value;
-    this.pathChanged.emit(value);
+    // Changes passed in from parent component
+    toObservable(this.path).subscribe(path => {
+      if (this.filePathControl.getRawValue() !== path) {
+        this.filePathControl.setValue(path);
+      }
+    })
   }
 
   onReject(file: TuiFileLike | readonly TuiFileLike[]): void {
-    this.rejectedFiles$.next(file as TuiFileLike);
+    if (Array.isArray(file)) {
+      if (file.length > 1) {
+        console.warn(`Rejected files contains ${file.length} - expected max one`);
+      }
+      if (file.length > 0) {
+        this.rejectedFile = file[0];
+      }
+    } else {
+      this.rejectedFile = file as TuiFileLike;
+    }
+
+
   }
 
   makeRequest(file: TuiFileLike): Observable<TuiFileLike | null> {
-    this.rejectedFiles$.next(null);
     const fileReader = new FileReader();
     fileReader.onloadend = () => {
       this.fileChanged.emit(fileReader.result as string)
@@ -174,6 +223,6 @@ export class FilePathOrUploadComponent implements OnInit {
 
   clearRejected(): void {
     this.removeFile();
-    this.rejectedFiles$.next(null);
+    this.rejectedFile = null;
   }
 }

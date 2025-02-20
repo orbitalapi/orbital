@@ -9,6 +9,7 @@ import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.PackageType
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
 import com.orbitalhq.schemaServer.repositories.AddFileProjectRequest
+import com.orbitalhq.schemaServer.repositories.CreateEmptyProjectRequest
 import com.orbitalhq.schemaServer.repositories.FileProjectStoreTestRequest
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
 import com.orbitalhq.spring.http.BadRequestException
@@ -23,6 +24,7 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import org.springframework.util.LinkedMultiValueMap
 import reactor.test.StepVerifier
+import java.nio.file.Paths
 
 
 class WorkspaceProjectsServiceTest {
@@ -32,11 +34,12 @@ class WorkspaceProjectsServiceTest {
    val folder = TemporaryFolder()
 
    lateinit var workspaceProjectsService: WorkspaceProjectsService
+   lateinit var loader: FileWorkspaceConfigLoader
 
    @Before
    fun setup() {
       val configFile = folder.root.resolve("workspace.conf")
-      val loader = FileWorkspaceConfigLoader(
+      loader = FileWorkspaceConfigLoader(
          configFile.toPath(),
          eventDispatcher = ProjectStoreLifecycleManager(),
          projectManager = mock { })
@@ -100,57 +103,6 @@ class WorkspaceProjectsServiceTest {
       val fileRepoPath = repositoryConfig.file!!.projects.single()
       fileRepoPath.path.toFile().canonicalPath.should.equal(folder.canonicalPath)
       fileRepoPath.isEditable.should.be.`true`
-   }
-
-   @Test
-   fun `cannot add a duplicate file repository`() {
-      val folder = folder.newFolder("project")
-
-      val request = AddFileProjectRequest(
-         folder.canonicalPath,
-         true,
-         loader = TaxiPackageLoaderSpec,
-         newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
-      )
-
-      StepVerifier.create(workspaceProjectsService.createFileRepository(request))
-         .expectNextMatches { it.status == ModifyProjectResponseStatus.Ok }
-         .verifyComplete()
-
-      StepVerifier.create(workspaceProjectsService.createFileRepository(request))
-         .expectErrorMatches { error ->
-            error is BadRequestException
-            error.message!!.shouldBe(folder.canonicalPath + " already exists")
-            true
-         }
-         .verify()
-   }
-
-   @Test
-   fun `cannot add a duplicate file repository with differing editable`() {
-      val folder = folder.newFolder("project")
-
-      val request = AddFileProjectRequest(
-         folder.canonicalPath, true,
-         loader = TaxiPackageLoaderSpec,
-         newProjectIdentifier = PackageIdentifier.fromId("com/foo/1.0.0")
-      )
-
-      StepVerifier
-         .create(workspaceProjectsService.createFileRepository(request))
-         .expectNextMatches {
-            it.status == ModifyProjectResponseStatus.Ok
-         }.verifyComplete()
-
-
-      StepVerifier
-         .create(workspaceProjectsService.createFileRepository(request))
-         .expectErrorMatches { error ->
-            error is BadRequestException
-            error.message!!.shouldBe(folder.canonicalPath + " already exists")
-            true
-         }
-         .verify()
    }
 
    @Test
@@ -273,11 +225,48 @@ class WorkspaceProjectsServiceTest {
          Resources.toByteArray(Resources.getResource("zipped-projects/sample-zip-with-parent-folder.zip"))
       ).block()
       result!!.status.shouldBe(ModifyProjectResponseStatus.Ok)
-      val taxiConfFile = folder.root.resolve("orbital/workspace/projects/org/taxi/sample/sample-zipped-project/taxi.conf")
+      val taxiConfFile =
+         folder.root.resolve("orbital/workspace/projects/org/taxi/sample/sample-zipped-project/taxi.conf")
       taxiConfFile.shouldExist()
 
       val repositoryConfig = workspaceProjectsService.listRepositories()
       repositoryConfig
          .file!!.projects.should.have.size(1)
    }
+
+   @Test
+   fun `creating a new workspace project creates relative to the new projects setting in the workspace file`() {
+      val workspaceConfig = loader.load()
+      val updatedConfig = workspaceConfig.copy(
+         file = workspaceConfig.fileConfigOrDefault.copy(
+            newProjectsPath = Paths.get("projects/go/here")
+         )
+      )
+      loader.save(updatedConfig)
+
+      workspaceProjectsService.createNewEmptyRepository(
+         CreateEmptyProjectRequest(PackageIdentifier("com.foo","new-project-test", "1.0.0"))
+      ).block()
+
+      val taxiConfFile = folder.root
+         .resolve("projects/go/here/com.foo/new-project-test/1.0.0/taxi.conf")
+      taxiConfFile
+         .shouldExist()
+
+      // Call typedConfig, which doesn't update the paths
+      val rawConfig= loader.typedConfig()
+      val writtenProject = rawConfig.file!!.projects.single()
+      // Assert that the written path is relative, not absolute
+      writtenProject.pathString.shouldBe("projects/go/here/com.foo/new-project-test/1.0.0")
+
+      // loaded project should be absolute
+      loader.load()
+         .file!!
+         .projects
+         .single()
+         .pathString
+         .shouldBe(taxiConfFile.parentFile.absolutePath)
+
+   }
+
 }

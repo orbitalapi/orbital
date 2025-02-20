@@ -34,7 +34,7 @@ export const openApiGitProjectImportPostPayload = {
       'defaultNamespace': 'test.petstore'
    },
    'uri': 'https://gitlab.com/vyne/test-project.git',
-   'name': 'test-project',
+   'name': 'test-open-api-git-project',
    'branch': 'main'
 }
 
@@ -45,7 +45,7 @@ export const avroGitProjectImportPostPayload = {
       "hostingProvider": "Github"
    },
    "isEditable": false,
-   "path": "/addressBook.avs",
+   "path": "/addressBook.avsc",
    "loader": {
       "packageType": "Avro",
       "identifier": {
@@ -57,7 +57,7 @@ export const avroGitProjectImportPostPayload = {
       }
    },
    "uri": "https://gitlab.com/vyne/test-project.git",
-   "name": "test-project",
+   "name": "test-avro-git-project",
    "branch": "main"
 }
 

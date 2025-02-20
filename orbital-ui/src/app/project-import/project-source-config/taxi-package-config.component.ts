@@ -1,6 +1,14 @@
 import { TuiInputModule } from "@taiga-ui/legacy";
 import {CommonModule} from '@angular/common';
-import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, EventEmitter, Input} from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  EventEmitter,
+  Input, model,
+  Output
+} from '@angular/core';
 import {HttpErrorResponse} from '@angular/common/http';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ControlContainer, FormsModule, NgModelGroup} from '@angular/forms';
@@ -13,6 +21,9 @@ import {FileSystemPackageSpec} from '../project-import.models';
 import {isNullOrUndefined} from 'src/app/utils/utils';
 import {FileRepositoryTestResponse, SchemaImporterService} from 'src/app/project-import/schema-importer.service';
 import { TuiNotification, TuiLoader, TuiGroup, TuiButton } from '@taiga-ui/core';
+import {AddProjectWorkflowType} from "./file-config.component";
+import {FilePathOrUploadComponent} from "./file-path-or-upload.component";
+import {detectSeperator, joinWithSeparator} from "../../utils/files";
 
 @Component({
   selector: 'app-taxi-package-config',
@@ -20,23 +31,31 @@ import { TuiNotification, TuiLoader, TuiGroup, TuiButton } from '@taiga-ui/core'
     <div class='form-row'>
       <div class='form-item-description-container'>
         <h3>Project path</h3>
-        <div class='help-text'>
-          <p>
-            The path on the server containing the <code>taxi.conf</code> file
-          </p>
-        </div>
+        <div class='help-text'>{{ pathLabel }}</div>
       </div>
       <div class='form-element'>
-        <div class='row'>
+        <app-file-path-or-upload *ngIf="editable && workflowType === 'fileUpload'"
+                                 [mode]="'fileUpload'"
+                                 readContentsAs="bytes"
+                                 [filesAccepted]="['.zip']"
+                                 (fileChanged)="fileChange.emit($event)"
+                                 ngModelGroup="taxiFileUpload"
+                                 uploadLabel="choose a .zip file"
+                                 fileExtensionErrorLabel="Invalid file extension. Allowed extension is: .zip"
+        >
+        </app-file-path-or-upload>
+        <app-file-path-or-upload *ngIf="!editable || workflowType !== 'fileUpload'"
+                                 [editable]="editable"
+                                 [mode]="workflowType"
+                                 [filesAccepted]="['']"
+                                 [path]="fileSystemPackageConfig?.path"
+                                 (pathChange)="filePathUpdated($event)"
+                                 ngModelGroup="taxiFilePath"
+                                 fileExtensionErrorLabel="Set a path to a directory containing a taxi.conf file"
+        >
+        </app-file-path-or-upload>
+        <div class='row' *ngIf="workflowType === 'pathToFile'">
           <div style='flex-grow: 1;'>
-            <tui-input [ngModel]='fileSystemPackageConfig.path' class='flex-grow'
-                       name='pathToTaxi' required [readOnly]='!editable'
-                       (ngModelChange)='filePathUpdated($event)'>
-              Path
-            </tui-input>
-            <tui-notification size="m" appearance='neutral' class="tui-space_top-2" *ngIf="editable">
-              Using Docker? Enter paths relative to your mounted volume (e.g., /opt/service/workspace )
-            </tui-notification>
             <div style='display: flex; margin-top: 0.5rem'>
               <tui-loader [showLoader]='true' size='s'
                           *ngIf='editable && !filePathTestResult && fileSystemPackageConfig.path'
@@ -52,8 +71,8 @@ import { TuiNotification, TuiLoader, TuiGroup, TuiButton } from '@taiga-ui/core'
                   Can't find a project at {{ expectedTaxiConfLocation }}
                 </tui-notification>
                 <button tuiButton size='s' appearance='outline' style='margin-left: 1rem'
-                        (click)='creatingNewProject ? cancelCreateNewProject() : createNewProject()'>
-                  {{ creatingNewProject ? 'Cancel creation' : 'Create new project...'}}
+                        (click)='creatingNewProject() ? cancelCreateNewProject() : createNewProject()'>
+                  {{ creatingNewProject() ? 'Cancel creation' : 'Create new project...' }}
                 </button>
               </div>
               <div style='display: flex; width: 100%; align-items: center;'
@@ -68,7 +87,7 @@ import { TuiNotification, TuiLoader, TuiGroup, TuiButton } from '@taiga-ui/core'
         </div>
       </div>
     </div>
-    <div class='form-row' *ngIf='creatingNewProject'>
+    <div class='form-row' *ngIf='creatingNewProject()'>
       <div class='form-item-description-container'>
         <h3>Package identifier</h3>
         <div class='help-text'>
@@ -97,9 +116,9 @@ import { TuiNotification, TuiLoader, TuiGroup, TuiButton } from '@taiga-ui/core'
       </div>
       <div class='form-element'>
         <input
-            tuiCheckbox
-            type="checkbox" [(ngModel)]='fileSystemPackageConfig.isEditable' name='editable'
-            required [disabled]='!editable' size="s"/>
+          tuiCheckbox
+          type="checkbox" [(ngModel)]='fileSystemPackageConfig.isEditable' name='editable'
+          required [disabled]='!editable' size="s"/>
       </div>
     </div>
   `,
@@ -114,12 +133,16 @@ import { TuiNotification, TuiLoader, TuiGroup, TuiButton } from '@taiga-ui/core'
     PackageIdentifierInputComponent,
     TuiCheckbox,
     TuiButton,
-    TuiGroup
+    TuiGroup,
+    FilePathOrUploadComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   viewProviders: [{provide: ControlContainer, useExisting: NgModelGroup}],
 })
 export class TaxiPackageConfigComponent {
+  @Input()
+  workflowType: AddProjectWorkflowType = 'pathToFile';
+
   @Input()
   fileSystemPackageConfig: FileSystemPackageSpec;
   @Input()
@@ -127,7 +150,11 @@ export class TaxiPackageConfigComponent {
   @Input()
   filePathTestResult: FileRepositoryTestResponse;
 
-  creatingNewProject: boolean;
+  @Output()
+  fileChange = new EventEmitter<string>();
+
+  creatingNewProject = model<boolean>(false)
+
   private filePathChanged$ = new EventEmitter<string>();
 
   constructor(private changeDetector: ChangeDetectorRef,
@@ -153,7 +180,7 @@ export class TaxiPackageConfigComponent {
       .subscribe(result => {
         this.filePathTestResult = result;
         if (result.exists) {
-          this.creatingNewProject = false;
+          this.creatingNewProject.set(false);
           this.fileSystemPackageConfig.newProjectIdentifier = null;
         }
         this.changeDetector.markForCheck();
@@ -164,13 +191,8 @@ export class TaxiPackageConfigComponent {
     if (isNullOrUndefined(this.fileSystemPackageConfig.path)) {
       return null;
     } else {
-      let separator;
-      if (this.fileSystemPackageConfig.path.includes("/")) {
-        separator = this.fileSystemPackageConfig.path.endsWith('/') ? '' : '/';
-      } else {
-        separator = this.fileSystemPackageConfig.path.endsWith('\\') ? '' : '\\';
-      }
-      return this.fileSystemPackageConfig.path + separator + 'taxi.conf';
+      const separator = detectSeperator(this.fileSystemPackageConfig.path)
+      return joinWithSeparator( this.fileSystemPackageConfig.path, 'taxi.conf', separator)
     }
   }
 
@@ -181,7 +203,7 @@ export class TaxiPackageConfigComponent {
   }
 
   createNewProject() {
-    this.creatingNewProject = true;
+    this.creatingNewProject.set(true);
     this.fileSystemPackageConfig.newProjectIdentifier = {
       name: null,
       organisation: null,
@@ -193,8 +215,24 @@ export class TaxiPackageConfigComponent {
     this.changeDetector.markForCheck();
   }
 
+  get pathLabel(): string {
+    if (!this.editable) {
+      return '';
+    }
+    switch (this.workflowType) {
+      case 'fileUpload':
+        return 'Select a zipped Taxi project. Should be a single zip file containing your taxi project, including the taxi.conf file';
+      case "pathToFile":
+        return 'The path on the server to the taxi.conf file';
+      case "git":
+        return 'Path from the root of the git repository to the taxi.conf file';
+    }
+  }
+
+  // The path on the server containing the <code>taxi.conf</code> file
+
   cancelCreateNewProject() {
-    this.creatingNewProject = false
+    this.creatingNewProject.set(false)
     delete this.fileSystemPackageConfig.newProjectIdentifier
     this.changeDetector.markForCheck();
   }

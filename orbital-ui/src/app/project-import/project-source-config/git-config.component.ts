@@ -94,14 +94,14 @@ export const projectTypeToString = (item: LoadablePackageType) => {
           </div>
           <div class="form-row">
             <div class="form-item-description-container">
-              <h3>Repository name</h3>
+              <h3>Project name</h3>
               <div class="help-text">
-                The repository name. We'll guess this from the URL, or you can pick something meaningful.
+                We'll guess this from the URL, or you can pick something meaningful.
               </div>
             </div>
             <div class="form-element">
               <tui-input [(ngModel)]="gitConfig.name" name="repositoryName" required [readOnly]="!editable">
-                Repository name
+                Project name
                 <span class="tui-required"></span>
               </tui-input>
             </div>
