@@ -1,5 +1,6 @@
 package com.orbitalhq.cockpit.core.monitoring.operations
 
+import com.orbitalhq.query.connectors.OperationInvocationCountingEvent
 import com.orbitalhq.schemas.OperationKind
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
@@ -12,6 +13,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Instant
+import java.util.concurrent.LinkedBlockingQueue
 
 /**
  * Captures operation invocation requests, and periodically writes counts
@@ -21,20 +23,27 @@ import java.time.Instant
  */
 @Component
 class OperationInvocationCountWriter(
-   private val queueingOperationInvocationEventConsumer: QueueingOperationInvocationEventConsumer,
+   private val queueingOperationInvocationEventConsumer: ReactiveOperationInvocationEventConsumer,
    private val repository: OperationInvocationCountRepository
 ) {
    companion object {
       private val logger = KotlinLogging.logger {}
    }
 
+   private val queuedEvents = LinkedBlockingQueue<OperationInvocationCountingEvent>(Int.MAX_VALUE)
+
+   init {
+      queueingOperationInvocationEventConsumer.operationInvokedEvents.subscribe {
+         queuedEvents.offer(it)
+      }
+   }
+
    @Scheduled(fixedRateString = "\${vyne.operation-count.write-frequency:PT5M}")
    fun writeNow() {
       val eventsByOperation = try {
-
-
          val drainTime = Instant.now()
-         val events = queueingOperationInvocationEventConsumer.drain()
+         val events = mutableListOf<OperationInvocationCountingEvent>()
+         queuedEvents.drainTo(events)
          if (events.isEmpty()) return
 
          val windowStart = events.minOf { it.timestamp }
@@ -74,9 +83,9 @@ data class OperationInvocationCountWindow(
    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
    val id: Long = 0
 ) {
-   fun merge(other:OperationInvocationCountWindow):OperationInvocationCountWindow {
-      require(this.operationKind == other.operationKind) { "Expected both windows would have same OperationKind"}
-      require(this.operationName == other.operationName) { "Expected both windows would have same Operation name"}
+   fun merge(other: OperationInvocationCountWindow): OperationInvocationCountWindow {
+      require(this.operationKind == other.operationKind) { "Expected both windows would have same OperationKind" }
+      require(this.operationName == other.operationName) { "Expected both windows would have same Operation name" }
       return OperationInvocationCountWindow(
          windowStart = minOf(this.windowStart, other.windowStart),
          windowEnd = maxOf(this.windowEnd, other.windowEnd),
@@ -89,5 +98,5 @@ data class OperationInvocationCountWindow(
 }
 
 interface OperationInvocationCountRepository : JpaRepository<OperationInvocationCountWindow, Long> {
-   fun getAllByWindowStartBetween(start: Instant, end: Instant):List<OperationInvocationCountWindow>
+   fun getAllByWindowStartBetween(start: Instant, end: Instant): List<OperationInvocationCountWindow>
 }

@@ -111,13 +111,13 @@ class Vyne(
    }
 
    suspend fun query(
-      vyneQlQuery: TaxiQLQueryString,
-      queryId: String = UUID.randomUUID().toString(),
-      clientQueryId: String? = null,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
-      arguments: Map<String, Any?> = emptyMap(),
-      metricsTags: MetricTags = MetricTags.NONE,
-      executionContextFacts: Set<Fact> = emptySet()
+       vyneQlQuery: TaxiQLQueryString,
+       queryId: String = UUID.randomUUID().toString(),
+       clientQueryId: String? = null,
+       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+       arguments: Map<String, Any?> = emptyMap(),
+       metricsTags: MetricTags = MetricTags.NONE,
+       executionContextFacts: Set<Fact> = emptySet()
    ): QueryResult {
       val (taxiQlQuery, queryOptions, querySchema) = parseQuery(vyneQlQuery)
       return query(
@@ -139,15 +139,15 @@ class Vyne(
    }
 
    suspend fun query(
-      taxiQl: TaxiQlQuery,
-      queryId: String = UUID.randomUUID().toString(),
-      clientQueryId: String? = null,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
-      arguments: Map<String, Any?> = emptyMap(),
-      queryOptions: QueryOptions,
-      metricsTags: MetricTags = MetricTags.NONE,
-      querySchema: Schema = schema,
-      executionContextFacts: Set<Fact> = emptySet()
+       taxiQl: TaxiQlQuery,
+       queryId: String = UUID.randomUUID().toString(),
+       clientQueryId: String? = null,
+       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+       arguments: Map<String, Any?> = emptyMap(),
+       queryOptions: QueryOptions,
+       metricsTags: MetricTags = MetricTags.NONE,
+       querySchema: Schema = schema,
+       executionContextFacts: Set<Fact> = emptySet()
    ): QueryResult {
       val currentJob = currentCoroutineContext().job
       val (queryContext: QueryContext, expression: QueryExpression) = buildContextAndExpression(

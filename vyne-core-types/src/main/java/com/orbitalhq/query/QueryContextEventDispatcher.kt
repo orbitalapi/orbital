@@ -29,6 +29,23 @@ interface QueryContextEventDispatcher {
 
 
    fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String)
+
+// TODO: This didn't get implemented, as passing tags around was too messy / too easy
+   // to miss.
+   // But, the desire is to be able to see for persistentStreams / endpoint queries the number
+   // of results emitted., to allow monitoring to track end-to-end metrics attributed to a specific
+   // query.
+//   /**
+//    * These metric tags are propagated into child queries.
+//    * They should be used for things that you always want attributed to
+//    * the overall query - like tracking operation calls.
+//    *
+//    * In general, these should be passed onto new QueryContexts that are created.
+//    * By contrast, metric tags that are passed on find() calls are scoped differently,
+//    * so we can treat inner queries separately
+//    *
+//    */
+//   val endToEndMetricTags:MetricTags
 }
 
 /**
