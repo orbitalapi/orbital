@@ -204,7 +204,12 @@ class FileWorkspaceConfigLoader(
 
    }
 
-   private fun makeRelativeToConfigFile(path: Path): Path {
+   /**
+    * Given a workspace file in /foo/bar/workspace.conf,
+    * and paths declared relative (as baz/taxi.conf), will return
+    * /foo/bar/baz/taxi.conf
+    */
+   private fun convertRelativePathsToAbsoluteFromWorkspaceFile(path: Path): Path {
       return if (path.isAbsolute) {
          path
       } else {
@@ -212,41 +217,76 @@ class FileWorkspaceConfigLoader(
       }
    }
 
+   /**
+    * Given a workspace file in /foo/bar/workspace.conf,
+    * and an absolute path declared as /foo/bar/baz/taxi.conf, will return
+    * baz/taxi.conf
+    *
+    * Absolute paths which are not descendants of the workspace.conf file
+    * are not changed
+    */
+   private fun convertDescendantPathsToRelative(path: Path): Path {
+      return when {
+         !path.isAbsolute -> path
+         path.startsWith(configFilePath.parent) -> {
+            configFilePath.parent.relativize(path)
+         }
+         else -> path
+      }
+   }
+
+
+   /**
+    * Updates workspace paths before saving, to keep the workspace file portable.
+    * see convertDescendantPathsToRelative
+    */
+   private fun makeAbsolutePathsRelative(original: WorkspaceConfig): WorkspaceConfig {
+      return updatePaths(original, this::convertDescendantPathsToRelative)
+   }
+
+   /**
+    * Updates workspace paths after loading, so they're absolute
+    * see convertRelativePathsToAbsoluteFromWorkspaceFile
+    */
    private fun resolveRelativePaths(original: WorkspaceConfig): WorkspaceConfig {
+      return updatePaths(original, this::convertRelativePathsToAbsoluteFromWorkspaceFile)
+   }
+
+   private fun updatePaths(original: WorkspaceConfig, updater: (Path) -> Path): WorkspaceConfig {
       // MP: 06-Sep-24: Changed from original.file -> original.fileConfigOrDefault
       // We need to make newPaths relative to the location of the file, and this is the
       // only / best place to do it.
       val updatedFileConfig = original.fileConfigOrDefault.let { fileConfig ->
          val resolvedPaths = fileConfig.projects
             .map { packageSpec ->
-               val relativePath = makeRelativeToConfigFile(packageSpec.path)
+               val updatedPath = updater(packageSpec.path)
                if (packageSpec.loader is TaxiPackageLoaderSpec) {
                   val packageMetadata = try {
                      // If we were passed a file, use it. Otherwise, if it's a dir, resolve taxi.conf file.
                      val pathToLoad = when {
-                        !Files.exists(relativePath) -> error("No file or directory exists at ${relativePath.toFile().canonicalPath}")
-                        relativePath.isDirectory() -> relativePath.resolve("taxi.conf")
-                        relativePath.isRegularFile() -> relativePath
+                        !Files.exists(updatedPath) -> error("No file or directory exists at ${updatedPath.toFile().canonicalPath}")
+                        updatedPath.isDirectory() -> updatedPath.resolve("taxi.conf")
+                        updatedPath.isRegularFile() -> updatedPath
                         else -> error("Provided path is neither a file not a directory - not sure what to do")
                      }
                      TaxiPackageLoader(pathToLoad).load()?.toPackageMetadata()
                   } catch (e: Exception) {
                      val rootCause = Throwables.getRootCause(e)
-                     logger.warn(e) { "Failed to read package metadata for project at $relativePath  ${rootCause.message}" }
+                     logger.warn(e) { "Failed to read package metadata for project at $updatedPath  ${rootCause.message}" }
                      null
                   }
-                  packageSpec.copy(path = relativePath, packageIdentifier = packageMetadata?.identifier)
+                  packageSpec.copy(path = updatedPath, packageIdentifier = packageMetadata?.identifier)
                } else {
-                  packageSpec.copy(path = relativePath)
+                  packageSpec.copy(path = updatedPath)
                }
             }
          fileConfig.copy(
             projects = resolvedPaths,
-            newProjectsPath = makeRelativeToConfigFile(fileConfig.newProjectsPath)
+            newProjectsPath = updater(fileConfig.newProjectsPath)
          )
       }
       val updatedGitConfig = original.gitConfigOrDefault.let { gitConfig ->
-         val checkoutRoot = makeRelativeToConfigFile(gitConfig.checkoutRoot)
+         val checkoutRoot = convertRelativePathsToAbsoluteFromWorkspaceFile(gitConfig.checkoutRoot)
          gitConfig.copy(checkoutRoot = checkoutRoot)
       }
       return original.copy(file = updatedFileConfig, git = updatedGitConfig)
@@ -272,9 +312,10 @@ class FileWorkspaceConfigLoader(
          file = currentFileConfig.copy(
             projects = currentFileConfig.projects.concat(fileSpec)
          )
-      )
+      ).let { makeAbsolutePathsRelative(it) }
       save(updated)
-      val fileSpecWithAbsolutePath = fileSpec.copy(path = makeRelativeToConfigFile(fileSpec.path))
+      val fileSpecWithAbsolutePath =
+         fileSpec.copy(path = convertRelativePathsToAbsoluteFromWorkspaceFile(fileSpec.path))
       eventDispatcher.fileRepositorySpecAdded(FileSpecAddedEvent(fileSpecWithAbsolutePath, updated.file!!))
       return ModifyWorkspaceResponse(ModifyProjectResponseStatus.Ok)
    }
@@ -295,7 +336,7 @@ class FileWorkspaceConfigLoader(
    }
 
    private fun verifyTaxiProjectExists(fileSpec: FileProjectSpec): PackageIdentifier {
-      val projectPath = makeRelativeToConfigFile(fileSpec.path)
+      val projectPath = convertRelativePathsToAbsoluteFromWorkspaceFile(fileSpec.path)
 
       // TODO : Migrate this to TaxiPackageLoader.forDirectoryOrFilePath once available
       val project = if (projectPath.name.endsWith(".conf")) {
@@ -315,7 +356,7 @@ class FileWorkspaceConfigLoader(
          return verifyOpenApiProjectExists(fileSpec)
       }
 
-      val taxiProjectPath = makeRelativeToConfigFile(fileSpec.path)
+      val taxiProjectPath = convertRelativePathsToAbsoluteFromWorkspaceFile(fileSpec.path)
 
       if (!taxiProjectPath.createDirectories().exists()) {
          logger.warn { "Failed to create directory $taxiProjectPath for taxi project" }
@@ -425,7 +466,7 @@ class FileWorkspaceConfigLoader(
    override fun validateProjectExists(request: FileProjectStoreTestRequest): Mono<FileProjectTestResponse> {
       return Mono.fromCallable {
          val path = Paths.get(request.path)
-         val projectHome = makeRelativeToConfigFile(path)
+         val projectHome = convertRelativePathsToAbsoluteFromWorkspaceFile(path)
          try {
             val project = TaxiPackageLoader.forDirectoryContainingTaxiFile(projectHome).load()
             FileProjectTestResponse(request.path, true, project.identifier.toVynePackageIdentifier())
