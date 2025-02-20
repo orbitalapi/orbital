@@ -12,7 +12,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.testcontainers.containers.PostgreSQLContainer
-import org.testcontainers.containers.wait.strategy.Wait
 import org.testcontainers.junit.jupiter.Container
 import org.testcontainers.junit.jupiter.Testcontainers
 
@@ -26,7 +25,8 @@ abstract class BaseOperationInvocationCountTest {
    lateinit var repository: OperationInvocationCountRepository
 
    lateinit var writer: OperationInvocationCountWriter
-   lateinit var eventConsumer: QueueingOperationInvocationEventConsumer
+   lateinit var queueingEventConsumer: QueueingOperationInvocationEventConsumer
+   lateinit var reactiveEventConsumer: ReactiveOperationInvocationEventConsumer
 
    companion object {
 
@@ -42,9 +42,10 @@ abstract class BaseOperationInvocationCountTest {
 
    @BeforeEach()
    fun setup() {
-      eventConsumer = QueueingOperationInvocationEventConsumer()
+      reactiveEventConsumer = ReactiveOperationInvocationEventConsumer()
+      queueingEventConsumer = QueueingOperationInvocationEventConsumer(reactiveEventConsumer)
       writer = OperationInvocationCountWriter(
-         eventConsumer, repository
+         reactiveEventConsumer, repository, countEmittedEvents = true
       )
    }
 }

@@ -620,8 +620,6 @@ object NoOpQueryContextEventDispatcher : QueryContextEventDispatcher {
 
    override fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String) {
    }
-
-   override val endToEndMetricTags: MetricTags = MetricTags.NONE
 }
 
 interface RemoteCallOperationResultHandler : QueryContextEventHandler {

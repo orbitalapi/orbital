@@ -14,6 +14,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Instant
 import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * Captures operation invocation requests, and periodically writes counts
@@ -24,19 +25,29 @@ import java.util.concurrent.LinkedBlockingQueue
 @Component
 class OperationInvocationCountWriter(
    private val queueingOperationInvocationEventConsumer: ReactiveOperationInvocationEventConsumer,
-   private val repository: OperationInvocationCountRepository
+   private val repository: OperationInvocationCountRepository,
+   /**
+    * Only set to true in tests. Otherwise, you could end up with an integer overflow exception
+    */
+   private val countEmittedEvents: Boolean = false
 ) {
    companion object {
       private val logger = KotlinLogging.logger {}
    }
 
    private val queuedEvents = LinkedBlockingQueue<OperationInvocationCountingEvent>(Int.MAX_VALUE)
-
+   private val countedEvents = AtomicInteger(0)
    init {
       queueingOperationInvocationEventConsumer.operationInvokedEvents.subscribe {
          queuedEvents.offer(it)
+         if (countEmittedEvents) {
+            countedEvents.incrementAndGet()
+         }
       }
    }
+
+   // For testing purposes
+   fun getCountedEvents() = countedEvents.get()
 
    @Scheduled(fixedRateString = "\${vyne.operation-count.write-frequency:PT5M}")
    fun writeNow() {

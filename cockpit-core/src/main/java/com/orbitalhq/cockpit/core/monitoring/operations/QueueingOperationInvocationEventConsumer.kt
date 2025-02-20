@@ -32,10 +32,18 @@ class QueueingOperationInvocationEventConsumer(private val reactiveOperationInvo
    init {
        Flux.interval(pollDuration)
           .subscribe {
-             drain(invokeEvents, reactiveOperationInvocationEventConsumer::operationInvoked)
-             drain(resultEvents, reactiveOperationInvocationEventConsumer::operationEmittedResult)
-             drain(errorEvents, reactiveOperationInvocationEventConsumer::operationThrewError)
+             drainAllNow()
           }
+   }
+
+   /**
+    * Drains all the queues, and emits onto the reactive consumer.
+    * Note - you shouldn't really be calling this, unless you're in a test.
+    */
+   fun drainAllNow() {
+      drain(invokeEvents, reactiveOperationInvocationEventConsumer::operationInvoked)
+      drain(resultEvents, reactiveOperationInvocationEventConsumer::operationEmittedResult)
+      drain(errorEvents, reactiveOperationInvocationEventConsumer::operationThrewError)
    }
 
    private fun drain(queue: LinkedBlockingQueue<OperationInvocationCountingEvent>, handler: (OperationInvocationCountingEvent) -> Unit) {
