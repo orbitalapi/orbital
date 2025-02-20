@@ -30,8 +30,7 @@ export class SchemaImporterService {
               private packagesService: PackagesService,
               private workspaceService: WorkspacesService,
               private configService: AppInfoService,
-              private alerts:TuiAlertService,
-
+              private alerts: TuiAlertService,
   ) {
     configService.getConfig().subscribe(next => this.appConfig = next)
 
@@ -74,14 +73,14 @@ export class SchemaImporterService {
   }
 
   addNewGitRepository(request: GitRepositoryConfig): Observable<ModifyWorkspaceResponse> {
-    if (this.appConfig.featureToggles.workspacesEnabled) {
-
-    } else {
-      return this.httpClient.post<ModifyWorkspaceResponse>(`${environment.serverUrl}/api/repositories/git`, request)
-    }
+    return this.httpClient.post<ModifyWorkspaceResponse>(`${environment.serverUrl}/api/repositories/git`, request)
   }
 
-  uploadProject(uriSafeProjectId: string = null, parameters: {format: LoadablePackageType, defaultNamespace?: string, serviceBasePath?: string}, payload: string): Observable<ModifyWorkspaceResponse> {
+  uploadProject(uriSafeProjectId: string = null, parameters: {
+    format: LoadablePackageType,
+    defaultNamespace?: string,
+    serviceBasePath?: string
+  }, payload: string): Observable<ModifyWorkspaceResponse> {
     const params = Object.keys(parameters).reduce(
       (httpParams, key) => {
         return parameters[key] !== undefined ? httpParams.append(key, parameters[key]) : httpParams
@@ -151,6 +150,7 @@ export interface CreateOrReplaceQuery extends SchemaEditOperation {
   editKind: 'CreateOrReplaceQuery'
   sources: VersionedSource[]
 }
+
 export interface CreateOrReplaceSource extends SchemaEditOperation {
   editKind: 'CreateOrReplace'
   sources: VersionedSource[]
@@ -274,14 +274,14 @@ export type ModifyProjectResponseStatus = 'Ok' | 'Warning' | 'Failed'
  *
  * @param savedQuery
  */
-export function dangerouslyConvertToSavedQueryWithSource(savedQuery: SavedQuery):SavedQueryWithSource {
+export function dangerouslyConvertToSavedQueryWithSource(savedQuery: SavedQuery): SavedQueryWithSource {
 
   const savedQuerySource = savedQuery.sources[0]
   // name is stored in form of [demo.vyne/films-demo/0.1.0]/ass1.taxi:0.0.0
   const cleanedFilename = savedQuerySource.name.split(']/')[1]
   return {
     savedQuery: savedQuery,
-    sourceFile:  {
+    sourceFile: {
       ...savedQuerySource,
       name: cleanedFilename
     }

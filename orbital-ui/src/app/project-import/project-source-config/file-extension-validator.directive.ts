@@ -13,16 +13,27 @@ export class FileExtensionValidatorDirective implements Validator {
 
   validate(control: AbstractControl): ValidationErrors | null {
     const value: string = control.value;
+    const errorValue = { invalidFileExtension: true };
     if (!value) {
       return null;
     }
 
+    if (!value.includes('.')) {
+      // no extension provided - is that allowed?
+      if (this.allowedExtensions.includes('')) {
+        return null
+      } else {
+        return errorValue
+      }
+    }
     const extension = value.substring(value.lastIndexOf('.'));
     if (this.allowedExtensions.includes(extension)) {
       return null;
     }
 
-    return { invalidFileExtension: true };
+
+
+    return errorValue;
   }
 
   @HostListener('input', ['$event'])
@@ -38,3 +49,4 @@ export class FileExtensionValidatorDirective implements Validator {
     }
   }
 }
+

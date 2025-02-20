@@ -23,7 +23,7 @@ import {SemverValidatorDirective} from "../project-import/project-source-config/
     ReactiveFormsModule,
   ],
   template: `
-    <div tuiGroup [collapsed]="true">
+    <div tuiGroup [collapsed]="true" *ngIf="packageIdentifier">
       <tui-input [(ngModel)]="packageIdentifier.organisation" required name="openApiPackageOrg"
                  [readOnly]="!editable"
                  (ngModelChange)="updateDefaultNamespace()" validIdentifier #openApiPackageOrg="ngModel">
@@ -34,7 +34,7 @@ import {SemverValidatorDirective} from "../project-import/project-source-config/
       <tui-input [(ngModel)]="packageIdentifier.name" required name="openApiPackageName"
                  [readOnly]="!editable"
                  (ngModelChange)="updateDefaultNamespace()" validIdentifier #openApiPackageName="ngModel">
-        Project name
+        Package name
         <span class="tui-required"></span>
       </tui-input>
       <tui-input [(ngModel)]="packageIdentifier.version" required name="openApiPackageVersion" semver
@@ -47,7 +47,7 @@ import {SemverValidatorDirective} from "../project-import/project-source-config/
     <tui-error [error]="openApiPackageOrg$ && openApiPackageOrg$.invalid && (openApiPackageOrg$.dirty || openApiPackageOrg$.touched)
       ? 'Organisation names must start with a letter, and only contain letters, underscores, hyphens, dots or numbers' : null"></tui-error>
     <tui-error [error]="openApiPackageOrg$ && openApiPackageName$.invalid && (openApiPackageName$.dirty || openApiPackageName$.touched)
-      ? 'Project names must start with a letter, and only contain letters, underscores, hyphens or numbers' : null"></tui-error>
+      ? 'Package names must start with a letter, and only contain letters, underscores, hyphens or numbers' : null"></tui-error>
     <tui-error [error]="openApiPackageOrg$ && openApiPackageVersion$.invalid && (openApiPackageVersion$.dirty || openApiPackageVersion$.touched)
       ? 'Versions need to follow the convention of 0.0.0 (eg., 1.0.3)' : null"></tui-error>
   `,

@@ -51,10 +51,10 @@ const config: PlaywrightTestConfig = {
       { name: 'setup', testMatch: /.*\.setup\.ts/ },
       {
          name: 'chromium',
-         dependencies: ['setup'],
+         // dependencies: ['setup'],
          use: {
             ...devices['Desktop Chrome'],
-            storageState: 'playwright/.auth/user.json',
+            // storageState: 'playwright/.auth/user.json',
             launchOptions: {
                args: ["--start-fullscreen"], // starting the browser in full screen
                slowMo: 500, // a 500 milliseconds pause before each operation. Useful for slow systems.

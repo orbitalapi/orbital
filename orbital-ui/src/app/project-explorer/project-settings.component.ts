@@ -55,8 +55,8 @@ export class ProjectSettingsComponent {
   }
 
   canRemove = computed(() => {
-    const {id} = this.packageDescription()?.identifier
-    return !(id.startsWith('com.orbitalhq/core-types') || id.startsWith('flow/core-types'));
+    const id = this.packageDescription()?.identifier?.id
+    return id && !(id.startsWith('com.orbitalhq/core-types') || id.startsWith('flow/core-types'));
     // return this.packageDescription.publisherType !== 'Pushed';
   })
 

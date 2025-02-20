@@ -53,3 +53,7 @@
 ::ng-deep tui-hint {
   max-width: 460px !important;
 }
+
+tui-segmented {
+  width: fit-content;
+}

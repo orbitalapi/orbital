@@ -1,17 +1,23 @@
-import {TuiButtonLoading, TuiTab, TuiTabsHorizontal} from '@taiga-ui/kit';
+import {TuiButtonLoading} from '@taiga-ui/kit';
 import {CommonModule} from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, EventEmitter, Input, Output} from '@angular/core';
 import {FormsModule, ReactiveFormsModule} from '@angular/forms';
-import {TuiInputModule} from '@taiga-ui/legacy';
+import {TuiInputModule, TuiSelectModule} from '@taiga-ui/legacy';
 import {UiCustomisations} from '../../../environments/ui-customisations';
 import {DataExplorerModule} from '../../data-explorer/data-explorer.module';
-import {PackageIdentifierInputComponent} from '../../package-identifier-input/package-identifier-input.component';
-import {FileSystemPackageSpec, TaxiPackageLoaderSpec} from '../project-import.models';
+import {
+  AvroPackageLoaderSpec,
+  FileSystemPackageSpec,
+  LoadablePackageType,
+  OpenApiPackageLoaderSpec,
+  TaxiPackageLoaderSpec
+} from '../project-import.models';
 import {Message} from 'src/app/services/schema';
 import {SchemaImporterService} from 'src/app/project-import/schema-importer.service';
-import {TuiAlertService, TuiNotification, TuiButton, TuiGroup} from '@taiga-ui/core';
+import {TuiAlertService, TuiButton, TuiDataListComponent, TuiNotification, TuiOption} from '@taiga-ui/core';
 import {Router} from '@angular/router';
 import {FilePathOrUploadComponent} from './file-path-or-upload.component';
+import {projectTypeToString} from "./git-config.component";
 
 @Component({
   selector: 'app-upload-config',
@@ -26,7 +32,32 @@ import {FilePathOrUploadComponent} from './file-path-or-upload.component';
     <form #fileForm='ngForm'>
       <div class='form-container'>
         <div class='form-body'>
+          <div class='form-row'>
+            <div class='form-item-description-container'>
+              <h3>Project type</h3>
+              <div class='help-text'>
+                Add either a full Taxi project, or individual API specs
+              </div>
+            </div>
+            <div class='form-element'>
+              <tui-select
+                [readOnly]='!editable'
+                [stringify]='stringifyProjectType'
+                [ngModel]='fileSystemPackageConfig.loader.packageType'
+                (ngModelChange)='selectedProjectTypeChanged($event)'
+                name='project-type' required
+              >
+                Project type
+                <tui-data-list *tuiDataList>
+                  <button tuiOption value='Taxi'>{{ stringifyProjectType('Taxi') }}</button>
+                  <button tuiOption value='OpenApi'>{{ stringifyProjectType('OpenApi') }}</button>
+                  <button tuiOption value='Avro'>{{ stringifyProjectType('Avro') }}</button>
+                </tui-data-list>
+              </tui-select>
+            </div>
+          </div>
           <div class="form-row">
+
             <div class="form-item-description-container">
               <h3>Project source</h3>
               <div class="help-text">
@@ -69,16 +100,15 @@ import {FilePathOrUploadComponent} from './file-path-or-upload.component';
     CommonModule,
     FormsModule,
     TuiNotification,
-    TuiGroup,
     TuiButton,
     TuiButtonLoading,
-    PackageIdentifierInputComponent,
     DataExplorerModule,
     TuiInputModule,
-    TuiTab,
-    TuiTabsHorizontal,
     ReactiveFormsModule,
     FilePathOrUploadComponent,
+    TuiDataListComponent,
+    TuiOption,
+    TuiSelectModule,
 
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -148,6 +178,24 @@ export class UploadConfigComponent {
       message: `There was a problem uploading the project: ${error.error?.message ?? error.message ?? 'An error occurred'}`,
       severity: 'ERROR',
     };
+    this.changeDetector.markForCheck();
+  }
+
+  protected readonly stringifyProjectType = projectTypeToString;
+
+  selectedProjectTypeChanged(projectType: LoadablePackageType) {
+    this.saveResultMessage = null;
+    switch (projectType) {
+      case 'Taxi':
+        this.fileSystemPackageConfig.loader = new TaxiPackageLoaderSpec();
+        break;
+      case 'OpenApi':
+        this.fileSystemPackageConfig.loader = new OpenApiPackageLoaderSpec();
+        break;
+      case "Avro":
+        this.fileSystemPackageConfig.loader = new AvroPackageLoaderSpec();
+    }
+    delete this.fileSystemPackageConfig.newProjectIdentifier
     this.changeDetector.markForCheck();
   }
 }
