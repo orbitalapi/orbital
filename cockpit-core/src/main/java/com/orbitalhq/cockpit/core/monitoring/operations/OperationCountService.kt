@@ -11,8 +11,7 @@ import java.time.ZonedDateTime
  */
 @RestController
 class OperationCountService(
-   private val writer: OperationInvocationCountWriter,
-   private val repository: OperationInvocationCountRepository
+   private val repository: OperationInvocationCountRepository?
 ) {
 
    @GetMapping("/api/operations/counts")
@@ -20,10 +19,14 @@ class OperationCountService(
       @RequestParam(name = "period", required = false, defaultValue = "MonthToDate") period: MetricsWindow,
       now: ZonedDateTime = ZonedDateTime.now()
    ): Map<String, OperationInvocationCountWindow> {
-      val dateRange = period.asRange(now)
+      if (repository == null) {
+         return emptyMap()
+      }
 
+      val dateRange = period.asRange(now)
       val records = repository.getAllByWindowStartBetween(dateRange.start, dateRange.endInclusive)
-      return records.groupBy { it.operationName }
+      return records
+         .groupBy { it.operationName }
          .mapValues { (_, records) ->
             records.reduce { acc, operationInvocationCountWindow ->
                acc.merge(operationInvocationCountWindow)

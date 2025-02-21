@@ -23,16 +23,15 @@ import com.orbitalhq.query.history.QuerySummary
 import com.orbitalhq.query.history.toDto
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.security.VynePrivileges
+import com.orbitalhq.spring.config.RequiresOrbitalDbEnabled
 import com.orbitalhq.utils.ExceptionProvider
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.reactor.asFlux
 import mu.KotlinLogging
 import org.springframework.dao.EmptyResultDataAccessException
-import org.springframework.data.domain.PageRequest
 import org.springframework.http.MediaType
 import org.springframework.http.server.reactive.ServerHttpResponse
 import org.springframework.jdbc.core.JdbcTemplate
-import org.springframework.jdbc.core.RowMapper
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
@@ -45,13 +44,12 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
 import java.nio.ByteBuffer
-import java.sql.ResultSet
 import java.time.Duration
 import java.util.concurrent.CompletableFuture
-import kotlin.jvm.optionals.getOrNull
 
 private val logger = KotlinLogging.logger {}
 
+@RequiresOrbitalDbEnabled
 @FlowPreview
 @RestController
 class QueryHistoryService(
@@ -66,18 +64,18 @@ class QueryHistoryService(
    private val queryAnalyticsConfig: QueryAnalyticsConfig,
    private val exceptionProvider: ExceptionProvider,
    private val jdbcTemplate: JdbcTemplate
-) {
+) : IQueryHistoryService {
    private val remoteCallAnalyzer = RemoteCallAnalyzer()
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    @DeleteMapping("/api/query/history")
-   fun clearHistory() {
+   override fun clearHistory() {
       queryHistoryRecordRepository.deleteAll()
    }
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewQueryHistory}')")
    @GetMapping("/api/query/history")
-   fun listHistory(): Flux<QuerySummary> {
+   override fun listHistory(): Flux<QuerySummary> {
       val querySummaryStream = jdbcTemplate.queryForStream(
          "SELECT * FROM QUERY_SUMMARY ORDER BY start_time DESC LIMIT ${queryAnalyticsConfig.pageSize} OFFSET 0"
 
@@ -120,7 +118,7 @@ class QueryHistoryService(
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    @GetMapping("/api/query/history/clientId/{clientId}/calls")
-   fun getRemoteCallListByClientId(@PathVariable("clientId") clientQueryId: String): Mono<List<PartialRemoteCallResponse>> {
+   override fun getRemoteCallListByClientId(@PathVariable("clientId") clientQueryId: String): Mono<List<PartialRemoteCallResponse>> {
       val historyRecord = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
          ?: throw exceptionProvider.notFoundException("Client query Id $clientQueryId could not be found")
       val responses = remoteCallResponseRepository.findByQueryId(historyRecord.queryId)
@@ -129,7 +127,7 @@ class QueryHistoryService(
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    @GetMapping("/api/query/history/summary/clientId/{clientId}")
-   fun getQuerySummary(@PathVariable("clientId") clientQueryId: String): Mono<QuerySummary> {
+   override fun getQuerySummary(@PathVariable("clientId") clientQueryId: String): Mono<QuerySummary> {
       logger.info { "Getting query summary for query client id $clientQueryId" }
       return queryHistoryRecordRepository.findByClientQueryId(clientQueryId)?.let {
          Mono.just(it)
@@ -138,7 +136,7 @@ class QueryHistoryService(
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    @GetMapping("/api/query/history/calls/{remoteCallId}")
-   fun getRemoteCallResponse(@PathVariable("remoteCallId") remoteCallId: String): Mono<String> {
+   override fun getRemoteCallResponse(@PathVariable("remoteCallId") remoteCallId: String): Mono<String> {
       logger.info { "getting remote call responses for call id $remoteCallId" }
       if (!queryAnalyticsConfig.persistRemoteCallResponses) {
          throw exceptionProvider.badRequestException(
@@ -171,7 +169,7 @@ class QueryHistoryService(
          MediaType.APPLICATION_JSON_VALUE,
       ]
    )
-   fun getHistoryRecordStream(
+   override fun getHistoryRecordStream(
       @PathVariable("id") queryId: String,
       @RequestParam("limit", required = false) limit: Long?
    ): Flux<ValueWithTypeName> {
@@ -217,7 +215,7 @@ class QueryHistoryService(
 
    @GetMapping("/api/query/history/clientId/{id}/dataSource/{rowId}/{attributePath}")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
-   fun getNodeDetailFromClientQueryId(
+   override fun getNodeDetailFromClientQueryId(
       @PathVariable("id") clientQueryId: String,
       @PathVariable("rowId") rowValueHash: Int,
       @PathVariable("attributePath") attributePath: String
@@ -232,7 +230,7 @@ class QueryHistoryService(
 
    @GetMapping("/api/query/history/{id}/dataSource/{rowId}/{attributePath}")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
-   fun getNodeDetail(
+   override fun getNodeDetail(
       @PathVariable("id") queryId: String,
       @PathVariable("rowId") rowValueHash: Int,
       @PathVariable("attributePath") attributePath: String
@@ -281,7 +279,7 @@ class QueryHistoryService(
 
    @GetMapping("/api/query/history/{id}/{format}/export")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
-   fun exportQueryResults(
+   override fun exportQueryResults(
       @PathVariable("id") queryId: String,
       @PathVariable("format") exportFormat: ExportFormat,
       serverResponse: ServerHttpResponse
@@ -295,7 +293,7 @@ class QueryHistoryService(
 
    @GetMapping("/api/query/history/clientId/{id}/{format}/export")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
-   fun exportQueryResultsFromClientId(
+   override fun exportQueryResultsFromClientId(
       @PathVariable("id") clientQueryId: String,
       @PathVariable("format") exportFormat: ExportFormat,
       serverResponse: ServerHttpResponse
@@ -306,7 +304,7 @@ class QueryHistoryService(
 
    @GetMapping("/api/query/history/{id}/export")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
-   fun exportQueryResultsToModelFormat(
+   override fun exportQueryResultsToModelFormat(
       @PathVariable("id") queryId: String,
       serverResponse: ServerHttpResponse
    ): Mono<Void> {
@@ -319,7 +317,7 @@ class QueryHistoryService(
 
    @GetMapping("/api/query/history/clientId/{id}/export")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
-   fun exportQueryResultsModelFormatFromClientId(
+   override fun exportQueryResultsModelFormatFromClientId(
       @PathVariable("id") clientQueryId: String,
       serverResponse: ServerHttpResponse
    ): Mono<Void> {
@@ -332,7 +330,7 @@ class QueryHistoryService(
 
    @GetMapping("/api/query/history/clientId/{id}/profile")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
-   fun getQueryProfileDataFromClientId(@PathVariable("id") queryClientId: String): Mono<QueryProfileData> {
+   override fun getQueryProfileDataFromClientId(@PathVariable("id") queryClientId: String): Mono<QueryProfileData> {
       logger.info { "getting query profile data for query client id $queryClientId" }
       return queryHistoryRecordRepository.findByClientQueryId(queryClientId)?.let {
          getQueryProfileData(it)
@@ -341,7 +339,7 @@ class QueryHistoryService(
 
    @GetMapping("/api/query/history/{id}/profile")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
-   fun getQueryProfileData(@PathVariable("id") queryId: String): Mono<QueryProfileData> {
+   override fun getQueryProfileData(@PathVariable("id") queryId: String): Mono<QueryProfileData> {
       logger.info { "getting query profile data for id $queryId" }
       try {
          return getQueryProfileData(queryHistoryRecordRepository.findByQueryId(queryId))
@@ -352,7 +350,7 @@ class QueryHistoryService(
 
    @GetMapping("/api/query/history/dataSource/{id}")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
-   fun getLineageRecord(@PathVariable("id") dataSourceId: String): Mono<LineageRecord> {
+   override fun getLineageRecord(@PathVariable("id") dataSourceId: String): Mono<LineageRecord> {
       logger.info { "getting lineage record for data source $dataSourceId" }
       // Technically, data sources can belong to multiple queries, which is why this is a find-all.
       // However, they're generally the same.  So just take the first for now.
@@ -363,19 +361,19 @@ class QueryHistoryService(
 
    @GetMapping("/api/query/history/{id}/sankey")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
-   fun getQuerySankeyView(@PathVariable("id") queryId: String): List<QuerySankeyChartRow> {
+   override fun getQuerySankeyView(@PathVariable("id") queryId: String): List<QuerySankeyChartRow> {
       return sankeyChartRowRepository.findAllByQueryId(queryId)
    }
 
    @GetMapping("/api/query/history/clientId/{id}/sankey")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
-   fun getQuerySankeyViewFromClientQueryId(@PathVariable("id") queryClientId: String): List<QuerySankeyChartRow> {
+   override fun getQuerySankeyViewFromClientQueryId(@PathVariable("id") queryClientId: String): List<QuerySankeyChartRow> {
       val querySummary = queryHistoryRecordRepository.findByClientQueryId(queryClientId)
       return querySummary?.let { sankeyChartRowRepository.findAllByQueryId(it.queryId) } ?: listOf()
    }
 
 
-   private fun getQueryProfileData(querySummary: QuerySummary): Mono<QueryProfileData> {
+    fun getQueryProfileData(querySummary: QuerySummary): Mono<QueryProfileData> {
       val remoteCalls = remoteCallResponseRepository.findByQueryId(querySummary.queryId)
          .map { it.toDto() }
       val stats = remoteCallAnalyzer.generateStats(remoteCalls)
@@ -394,7 +392,7 @@ class QueryHistoryService(
 
    @PostMapping("/api/query/history/clientId/{id}/regressionPack")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
-   fun getRegressionPackFromClientId(
+   override fun getRegressionPackFromClientId(
       @PathVariable("id") clientQueryId: String,
       @RequestBody request: RegressionPackRequest
    ): Mono<ByteBuffer> {
@@ -406,7 +404,7 @@ class QueryHistoryService(
 
    @PostMapping("/api/query/history/{id}/regressionPack")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
-   fun getRegressionPack(
+   override fun getRegressionPack(
       @PathVariable("id") queryId: String,
       @RequestBody request: RegressionPackRequest
    ): Mono<ByteBuffer> {
@@ -440,7 +438,7 @@ class QueryHistoryService(
    }
 
    @GetMapping("/api/query/history/filter/{responseType}")
-   fun fetchAllQueriesReturnType(@PathVariable("responseType") fullyQualifiedTypeName: String): Mono<QueryList> {
+   override fun fetchAllQueriesReturnType(@PathVariable("responseType") fullyQualifiedTypeName: String): Mono<QueryList> {
       val queries = queryHistoryRecordRepository
          .findAllByResponseType(fullyQualifiedTypeName)
          .mapNotNull { it.taxiQl ?: it.queryJson }

@@ -6,12 +6,12 @@ import com.orbitalhq.query.QueryEvent
 import com.orbitalhq.query.QueryEventConsumer
 import com.orbitalhq.schemas.Schema
 import mu.KotlinLogging
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
 
-@ConditionalOnProperty(prefix = "vyne.analytics", name = ["mode"], havingValue = "None", matchIfMissing = false)
+@ConditionalOnExpression("\${vyne.db.enabled:true} == false or '\${vyne.analytics.mode:Inprocess}' == 'None'")
 @Configuration
 class NoopQueryEventConsumerConfiguration {
 

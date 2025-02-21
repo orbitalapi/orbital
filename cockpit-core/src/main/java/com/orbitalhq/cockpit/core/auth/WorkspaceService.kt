@@ -6,6 +6,7 @@ import com.orbitalhq.cockpit.core.security.VyneUserJpaRepository
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.security.VynePrivileges
+import com.orbitalhq.spring.config.RequiresOrbitalDbEnabled
 import com.orbitalhq.spring.http.NotFoundException
 import jakarta.validation.constraints.NotEmpty
 import kotlinx.coroutines.Dispatchers
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
 import javax.validation.Valid
 
+@RequiresOrbitalDbEnabled
 @RestController
 class WorkspaceService(
    private val userRepository: VyneUserJpaRepository,

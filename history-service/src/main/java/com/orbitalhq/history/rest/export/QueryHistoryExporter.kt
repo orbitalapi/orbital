@@ -14,6 +14,7 @@ import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.query.PersistedAnonymousType
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Schema
+import com.orbitalhq.spring.config.RequiresOrbitalDbEnabled
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flatMapConcat
@@ -35,6 +36,7 @@ import reactor.kotlin.core.publisher.toFlux
  *
  */
 @FlowPreview
+@RequiresOrbitalDbEnabled
 @Component
 class QueryHistoryExporter(
    injectedMapper: ObjectMapper,

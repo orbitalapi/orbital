@@ -13,6 +13,7 @@ import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import java.time.Instant
 
+private val logger = KotlinLogging.logger {  }
 /**
  * Captures operation invocation requests, and periodically writes counts
  * to the database.
@@ -22,12 +23,8 @@ import java.time.Instant
 @Component
 class OperationInvocationCountWriter(
    private val queueingOperationInvocationEventConsumer: QueueingOperationInvocationEventConsumer,
-   private val repository: OperationInvocationCountRepository
+   private val repository: OperationInvocationCountRepository?
 ) {
-   companion object {
-      private val logger = KotlinLogging.logger {}
-   }
-
    @Scheduled(fixedRateString = "\${vyne.operation-count.write-frequency:PT5M}")
    fun writeNow() {
       val eventsByOperation = try {
@@ -55,7 +52,10 @@ class OperationInvocationCountWriter(
          return
       }
       try {
-         repository.saveAll(eventsByOperation)
+         repository?.let {
+            repository.saveAll(eventsByOperation)
+         } ?: logger.info { "eventsByOperation Statistics => $eventsByOperation" }
+
       } catch (e: Exception) {
          logger.warn(e) { "Failed to capture operation counts: ${e.message}" }
       }

@@ -18,6 +18,7 @@ import com.orbitalhq.pipelines.jet.streams.StreamStatusRepository
 import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
 import com.orbitalhq.schema.consumer.SchemaConfigSourceLoader
 import com.orbitalhq.spring.config.EnvVariablesConfig
+import com.orbitalhq.spring.config.RequiresOrbitalDbEnabled
 import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.domain.EntityScan
@@ -27,6 +28,12 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 
+@RequiresOrbitalDbEnabled
+@Configuration
+@EnableJpaRepositories(basePackageClasses = [StreamStatusRepository::class])
+@EntityScan(basePackageClasses = [StreamStatus::class])
+class StreamEngineJpaConfig
+
 /**
  * This class contains the config required to get the stream engine running within a server
  * (either the old stream server, or Orbital station)
@@ -34,8 +41,6 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 @Configuration
 @ComponentScan(basePackageClasses = [StreamEngineConfigMarker::class])
 @Import(EmbeddedVyneClientWithSchema::class)
-@EnableJpaRepositories(basePackageClasses = [StreamStatusRepository::class])
-@EntityScan(basePackageClasses = [StreamStatus::class])
 class StreamEngineConfig {
     companion object {
         private val logger = KotlinLogging.logger {}
@@ -78,7 +83,7 @@ class StreamEngineConfig {
 
     @Bean
     fun instance(
-        mapStore: StreamStatusMapStore,
+        mapStore: StreamStatusMapStore?,
         springManagedContext: SpringManagedContext,
         @Value("\${vyne.hazelcast.port:25701}") hazelcastPort: Int = 25701,
         @Value("\${vyne.hazelcast.cluster-name:orbital}") clusterName: String = "orbital",
