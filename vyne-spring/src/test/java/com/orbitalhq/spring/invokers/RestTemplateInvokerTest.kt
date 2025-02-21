@@ -35,6 +35,7 @@ import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import mu.KotlinLogging
@@ -509,9 +510,68 @@ namespace vyne {
          headers.requestHeaders.shouldHaveSize(2)
          headers.responseHeaders.shouldHaveSize(2)
       }
-
-
    }
+
+   @Test
+   fun `When @OmitNulls annotation is set on parameter object null values are filtered for object members`() {
+      val testSchema = """  
+             @com.orbitalhq.models.OmitNulls
+             parameter model OrderUpdateData {
+                requestId: RequestId inherits String
+                 details: {
+                   name: OrderName? inherits String
+                   id: OrderId? inherits String
+               }
+             }
+        
+             service OrderService {
+                 @HttpOperation(method = "POST",url = "http://localhost:{{PORT}}/order/update")
+                 operation updateOrder(@RequestBody OrderUpdateData ) : String
+             }
+        
+        """
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""hello""")
+      }
+
+      val schema = TaxiSchema.from(testSchema.replace("{{PORT}}", "${server.port}")).withBuiltIns()
+      runTest {
+          callOperation(schema,
+              "OrderService",
+             "updateOrder",
+              listOf(
+                  paramAndType("OrderUpdateData",
+                      mapOf("details" to mapOf<String, Any?>("name" to null, "id" to null), "requestId" to "req-1"),
+                      schema)
+              ))
+         expectRequest { request ->
+            val body = String(request.body.readByteArray())
+            assertEquals("""{"requestId":"req-1"}""", body )
+            assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
+         }
+      }
+   }
+
+    @Test
+    fun `partials with nested object works with OmitNull`()  {
+        val testSchema = """  
+         closed parameter model Film {
+            info : {
+             title: Title inherits String
+             director: Director inherits String
+            }
+            revenue : Revenue inherits Int
+         }
+        @com.orbitalhq.models.OmitNulls
+         partial model FilmUpdate from Film
+         service FilmsApi {
+            operation getFilm():Film
+            write operation patchFilmWithPartial(FilmUpdate):FilmUpdate
+         }
+        """
+    }
 
    private fun paramAndType(
       typeName: String,
@@ -522,6 +582,27 @@ namespace vyne {
       val type = schema.type(typeName)
       return Parameter(type, paramName, nullable = false) to TypedInstance.from(type, value, schema, source = Provided)
    }
+
+    private suspend fun callOperation(
+        schema: TaxiSchema,
+        serviceName: String,
+        operationName: String,
+        parameters: List<Pair<Parameter, TypedInstance>>): List<TypedInstance> {
+        val service = schema.service(serviceName);
+        val operation = service.operation(operationName)
+        val (context, _) = eventCapturingQueryContext()
+
+        return RestTemplateInvoker(
+            webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
+            schemaProvider = SimpleSchemaProvider(schema)
+        ).invoke(service,
+                 operation,
+                 parameters,
+                 context,
+            "testQuery",
+            QueryOptions()
+        ).toList()
+    }
 
    @Test
    @OptIn(ExperimentalTime::class)

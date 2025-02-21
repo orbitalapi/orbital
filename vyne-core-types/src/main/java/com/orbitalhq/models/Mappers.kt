@@ -251,10 +251,19 @@ class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
       }.toMap()
 
       return if (config.ignoreNulls) {
-         unwrapped.filter { entry -> entry.value != null }
+         filterNullValues(unwrapped)
       } else {
          unwrapped
       }
+   }
+
+   private fun filterNullValues(data: Map<String, Any?>): Map<String, Any?> {
+    return data.filter { entry ->
+        when(entry.value) {
+           is Map<*, *> -> filterNullValues(entry.value as Map<String, Any?>).isNotEmpty()
+           else -> entry.value != null
+        }
+     }
    }
 
    private fun unwrapCollection(
