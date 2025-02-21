@@ -2,16 +2,13 @@ package com.orbitalhq
 
 import app.cash.turbine.testIn
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.winterbe.expekt.expect
-import com.winterbe.expekt.should
-import io.kotest.matchers.nulls.shouldBeNull
 import com.orbitalhq.models.*
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.models.json.*
 import com.orbitalhq.query.*
 import com.orbitalhq.query.caching.StateStoreProvider
-import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
+import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCachingInvokerProvider
 import com.orbitalhq.query.projection.LocalProjectionProvider
 import com.orbitalhq.query.projection.ProjectionProvider
@@ -19,6 +16,9 @@ import com.orbitalhq.schemas.Operation
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.stubbing.StubService
+import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
+import io.kotest.matchers.nulls.shouldBeNull
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -186,6 +186,7 @@ fun testVyne(
  */
 fun TaxiSchema.withBuiltIns(): TaxiSchema {
    val sources = listOf(VersionedSource.sourceOnly(HttpService.asTaxi())) +
+           listOf(VersionedSource.sourceOnly(OmitNullsType.schema)) +
       this.sources
    return TaxiSchema.from(sources)
 }
