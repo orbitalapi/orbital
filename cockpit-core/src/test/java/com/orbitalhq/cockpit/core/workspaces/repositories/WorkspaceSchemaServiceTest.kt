@@ -62,7 +62,7 @@ class WorkspaceSchemaServiceTest : DatabaseTest() {
                 PackageIdentifier.fromId("com.test/foo/0.1.0")
             )
         )
-        workspaceSchemaSpecRepository.findByIdOrNull(added.id).shouldNotBeNull()
+        workspaceSchemaSpecRepository.findByIdOrNull(added?.id).shouldNotBeNull()
         verify(eventDispatcher).fileRepositorySpecAdded(any())
     }
 
@@ -75,7 +75,7 @@ class WorkspaceSchemaServiceTest : DatabaseTest() {
                 "main"
             )
         )
-        workspaceSchemaSpecRepository.findByIdOrNull(added.id).shouldNotBeNull()
+        workspaceSchemaSpecRepository.findByIdOrNull(added?.id).shouldNotBeNull()
         verify(eventDispatcher).gitRepositorySpecAdded(any())
     }
 }

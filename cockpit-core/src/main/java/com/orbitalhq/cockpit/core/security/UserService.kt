@@ -24,7 +24,7 @@ private val logger = KotlinLogging.logger {}
 
 @RestController
 class UserService(
-   private val vyneUserRepository: VyneUserJpaRepository,
+   private val vyneUserRepository: VyneUserJpaRepository?,
    private val vyneUserRoleDefinitionRepository: VyneUserRoleDefinitionRepository,
    private val openIdpConfiguration: VyneOpenIdpConnectConfig,
    private val vyneSamlConfig: VyneSamlConfig
@@ -79,10 +79,6 @@ class UserService(
          .findAll().flatMap { role -> role.value.grantedAuthorities }
          .toSet()
    }
-
-
-   @GetMapping("/api/users")
-   fun vyneUsers() = vyneUserRepository.findAll()
 
    /**
     * When calling the /api/user endpoint, we also set a cookie with the JWT token.

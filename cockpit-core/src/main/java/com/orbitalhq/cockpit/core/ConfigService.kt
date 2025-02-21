@@ -4,7 +4,6 @@ import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.http.ServicesConfig
 import com.orbitalhq.licensing.License
-import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.plugins.LoadedPlugin
 import com.orbitalhq.plugins.PluginLoader
 import com.orbitalhq.security.VynePrivileges
@@ -26,7 +25,7 @@ import java.time.Instant
 @RestController
 class ConfigService(
    analyticsConfig: QueryAnalyticsConfig,
-   licenseManager: LicenseManager,
+   @Value("\${vyne.db.enabled:true}") orbitalDatabaseEnabled: Boolean,
    @Value("\${management.endpoints.web.base-path:/actuator}") actuatorPath: String,
    featureToggles: FeatureTogglesConfig,
    customSettings: CustomSettings,
@@ -50,7 +49,8 @@ class ConfigService(
             featureToggles,
             customSettings.custom,
             pluginLoader.loadedPlugins,
-            licenseServer
+            licenseServer,
+            orbitalDatabaseEnabled
          )
    }
 
@@ -79,7 +79,8 @@ data class ConfigSummary(
    val featureToggles: FeatureTogglesConfig,
    val custom: Map<String, Any>,
    val loadedPlugins: List<LoadedPlugin>,
-   val licenseServerEndpoint: String
+   val licenseServerEndpoint: String,
+   val orbitalDbEnabled: Boolean
 )
 
 /**

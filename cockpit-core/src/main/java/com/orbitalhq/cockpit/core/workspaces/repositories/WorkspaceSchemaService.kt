@@ -31,7 +31,7 @@ import reactor.core.publisher.Mono
  */
 @RestController
 class WorkspaceSchemaService(
-   private val workspaceSchemaSpecRepository: WorkspaceSchemaSpecRepository,
+   private val workspaceSchemaSpecRepository: WorkspaceSchemaSpecRepository?,
    private val eventDispatcher: ProjectSpecLifecycleEventDispatcher,
 
    /**
@@ -57,11 +57,14 @@ class WorkspaceSchemaService(
       @PathVariable("workspaceId") workspaceId: Long,
       @AuthenticationPrincipal auth: Mono<Authentication>,
       @RequestBody request: AddFileProjectRequest
-   ): WorkspaceSchemaSpec = withContext(Dispatchers.IO) {
+   ): WorkspaceSchemaSpec? = withContext(Dispatchers.IO) {
       val authentication = auth.requireIsAuthenticated()
 
       val spec = doAddFileRepoToWorkspace(organisationId, workspaceId, authentication, request)
-      logger.info { "WorkspaceSchemaSpec ${spec.id} created by user ${authentication.name}" }
+      spec?.let {
+         logger.info { "WorkspaceSchemaSpec ${spec.id} created by user ${authentication.name}" }
+      }
+
       spec
    }
 
@@ -70,7 +73,7 @@ class WorkspaceSchemaService(
       workspaceId: Long,
       auth: Authentication,
       request: AddFileProjectRequest
-   ): WorkspaceSchemaSpec {
+   ): WorkspaceSchemaSpec? {
       val filePackageSpec = request.toRepositorySpec()
       val description = filePackageSpec.packageIdentifier!!.id
       logger.info { "User ${auth.name} is adding a new file repository $description to org/workspace ${organisationId}/${workspaceId} " }
@@ -96,17 +99,20 @@ class WorkspaceSchemaService(
       workspaceId: Long,
       specKind: WorkspaceSchemaSpec.SchemaSpecKind,
       description: String
-   ): Pair<WorkspaceConfig, WorkspaceSchemaSpec> {
+   ): Pair<WorkspaceConfig, WorkspaceSchemaSpec?> {
       val schemaConfig = schemaConfigLoader.load()
 
-      val saved = workspaceSchemaSpecRepository.save(
+      val saved = workspaceSchemaSpecRepository?.save(
          WorkspaceSchemaSpec(
             id = 0,
             WorkspaceSchemaSpec.SchemaSpecKind.File,
             configAsHoconString
          )
       )
-      logger.info { "Workspace schema spec ${saved.id} created for $specKind repository $description in org/workspace ${organisationId}/${workspaceId} " }
+      saved?.let {
+         logger.info { "Workspace schema spec ${saved.id} created for $specKind repository $description in org/workspace ${organisationId}/${workspaceId} " }
+      }
+
       return Pair(schemaConfig, saved)
    }
 
@@ -117,11 +123,14 @@ class WorkspaceSchemaService(
       @PathVariable("workspaceId") workspaceId: Long,
       @AuthenticationPrincipal auth: Mono<Authentication>,
       @RequestBody request: GitProjectStoreChangeRequest
-   ): WorkspaceSchemaSpec = withContext(Dispatchers.IO) {
+   ): WorkspaceSchemaSpec? = withContext(Dispatchers.IO) {
       val authentication = auth.requireIsAuthenticated()
 
       val spec = doAddGitRepoToWorkspace(organisationId, workspaceId, authentication, request)
-      logger.info { "WorkspaceSchemaSpec ${spec.id} created by user ${authentication.name}" }
+      spec?.let {
+         logger.info { "WorkspaceSchemaSpec ${spec.id} created by user ${authentication.name}" }
+      }
+
       spec
    }
 
@@ -130,7 +139,7 @@ class WorkspaceSchemaService(
       workspaceId: Long,
       auth: Authentication,
       request: GitProjectStoreChangeRequest
-   ): WorkspaceSchemaSpec {
+   ): WorkspaceSchemaSpec? {
       val gitRepoConfig = request.toRepositorySpec()
       logger.info { "User ${auth.name} is adding a new git repository ${gitRepoConfig.redactedUri} to org/workspace ${organisationId}/${workspaceId} " }
 

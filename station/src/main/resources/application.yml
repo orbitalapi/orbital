@@ -31,7 +31,7 @@ spring:
    application:
       name: orbital-station
    flyway:
-      enabled: true
+      enabled: ${vyne.db.enabled}
       locations: classpath:db/migration
    web:
       resources:
@@ -51,6 +51,8 @@ management:
             include: prometheus,metrics,info,health,logfile,loggers
          base-path: /api/actuator
 vyne:
+   db:
+      enabled: true
    schema:
       consumer:
          method: local

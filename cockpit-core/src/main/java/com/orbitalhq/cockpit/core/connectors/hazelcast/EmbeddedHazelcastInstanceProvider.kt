@@ -26,7 +26,7 @@ private val logger = KotlinLogging.logger {  }
  * to run streaming queries as Hazelcast Jet jobs.
  */
 class EmbeddedHazelcastInstanceProvider {
-    private fun decorateHazelcastConfig(mapStore: StreamStatusMapStore,
+    private fun decorateHazelcastConfig(mapStore: StreamStatusMapStore?,
                                         springManagedContext: SpringManagedContext,
                                         config: Config,
                                         licenseKeyFn: () -> String?): Config {
@@ -35,7 +35,10 @@ class EmbeddedHazelcastInstanceProvider {
         /**
          * We need to set our custom map / topic configurations here before instantiating the HazelcastInstance.
          */
-        config.addMapConfig(getMapStoreConfig(mapStore))
+        mapStore?.let {
+            config.addMapConfig(getMapStoreConfig(it))
+        }
+
         config.addReliableTopicConfig(getReliableTopicConfigForJetJobs(config))
         config.addRingBufferConfig(getRingBufferConfigForJetJobs(config))
         config.jetConfig.isEnabled = true
@@ -80,7 +83,7 @@ class EmbeddedHazelcastInstanceProvider {
         return streamStatusMapConfig
     }
     fun instance(
-        mapStore: StreamStatusMapStore,
+        mapStore: StreamStatusMapStore?,
         springManagedContext: SpringManagedContext,
         hazelcastPort: Int = 25701,
         clusterName: String = "orbital",
