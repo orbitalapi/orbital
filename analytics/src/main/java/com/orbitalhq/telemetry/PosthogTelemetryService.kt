@@ -1,9 +1,12 @@
 package com.orbitalhq.telemetry
 
 import com.posthog.java.PostHog
+import mu.KotlinLogging
 import org.springframework.beans.factory.DisposableBean
+import java.net.InetAddress
+import java.net.URI
 
-
+private val logger = KotlinLogging.logger {}
 // Groups isn't officially supported by the PostHog Java SDK
 // However, see here for how to send it anyway:
 // https://github.com/PostHog/posthog-java/issues/26
@@ -15,6 +18,22 @@ class PosthogTelemetryService(
 
    ) : DisposableBean, TelemetryService {
 
+
+   private var posthogIsReachable: Boolean? = null
+
+   init {
+       testPosthogReachability()
+   }
+
+   private fun testPosthogReachability() {
+      try {
+         val address = InetAddress.getByName(URI.create(POSTHOG_ENDPOINT).host)
+         posthogIsReachable = address.isReachable(5000)
+      } catch (e: Exception) {
+         logger.info { "Telemetry disabled" }
+         posthogIsReachable = false
+      }
+   }
 
    override val defaultSessionId: String = organisationName.replace(" ", "-").lowercase()
    private val eventMeta = mapOf(
@@ -37,7 +56,12 @@ class PosthogTelemetryService(
       private const val POSTHOG_ENDPOINT = "https://app.posthog.com"
    }
 
+
    override fun record(eventId: String, data: Map<String, Any>, sessionId: String) {
+      if (posthogIsReachable != true) {
+         logger.debug { "Posthog is disabled" }
+         return
+      }
       val eventData = buildEventData(data)
       posthog.capture(sessionId, eventId, eventData)
    }
