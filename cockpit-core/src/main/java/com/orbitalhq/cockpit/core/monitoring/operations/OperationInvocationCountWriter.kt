@@ -16,6 +16,7 @@ import java.time.Instant
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger
 
+private val logger = KotlinLogging.logger {  }
 /**
  * Captures operation invocation requests, and periodically writes counts
  * to the database.
@@ -25,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger
 @Component
 class OperationInvocationCountWriter(
    private val queueingOperationInvocationEventConsumer: ReactiveOperationInvocationEventConsumer,
-   private val repository: OperationInvocationCountRepository,
+   private val repository: OperationInvocationCountRepository?,
    /**
     * Only set to true in tests. Otherwise, you could end up with an integer overflow exception
     */
@@ -75,7 +76,10 @@ class OperationInvocationCountWriter(
          return
       }
       try {
-         repository.saveAll(eventsByOperation)
+         repository?.let {
+            repository.saveAll(eventsByOperation)
+         } ?: logger.info { "eventsByOperation Statistics => $eventsByOperation" }
+
       } catch (e: Exception) {
          logger.warn(e) { "Failed to capture operation counts: ${e.message}" }
       }

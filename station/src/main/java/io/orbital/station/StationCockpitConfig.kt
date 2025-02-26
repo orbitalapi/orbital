@@ -3,7 +3,7 @@ package io.orbital.station
 import com.orbitalhq.cockpit.core.CockpitCoreConfig
 import com.orbitalhq.history.db.InProcessHistoryConfiguration
 import com.orbitalhq.history.rest.QueryHistoryRestConfig
-import com.orbitalhq.pipelines.jet.api.PipelineApi
+
 import com.orbitalhq.pipelines.jet.api.transport.PipelineJacksonModule
 import com.orbitalhq.query.runtime.core.EnableVyneQueryNode
 import com.orbitalhq.search.embedded.EnableVyneEmbeddedSearch

@@ -4,7 +4,6 @@ import com.orbitalhq.cockpit.core.monitoring.MetricsWindow
 import com.orbitalhq.schemas.OperationKind
 import com.orbitalhq.schemas.OperationName
 import io.kotest.matchers.shouldBe
-import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -27,18 +26,13 @@ class OperationCountServiceTest{
    lateinit var repository: OperationInvocationCountRepository
 
    lateinit var service: OperationCountService
-   lateinit var writer: OperationInvocationCountWriter
    lateinit var eventConsumer: ReactiveOperationInvocationEventConsumer
 
    @BeforeEach
    fun setup() {
       eventConsumer = ReactiveOperationInvocationEventConsumer()
-      writer = OperationInvocationCountWriter(
-         eventConsumer, repository
-      )
-      service = OperationCountService(
-         writer, repository
-      )
+
+      service = OperationCountService(repository)
    }
 
    companion object {

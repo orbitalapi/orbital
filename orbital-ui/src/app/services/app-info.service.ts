@@ -46,6 +46,7 @@ export interface AppConfig {
   pipelineConfig: PipelineConfig;
   featureToggles: FeatureToggles;
   custom: {[index:string]:any};
+  orbitalDbEnabled: boolean;
 }
 
 export interface FeatureToggles {

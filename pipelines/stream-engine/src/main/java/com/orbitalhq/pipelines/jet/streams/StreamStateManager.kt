@@ -46,24 +46,20 @@ class StreamStateManagerHazelcastConfig {
 
    @Bean(STREAM_STATUS_CACHE_BEAN_NAME)
    fun streamStateCache(
-      hazelcastInstance: HazelcastInstance,
-      mapStore: StreamStatusMapStore
+      hazelcastInstance: HazelcastInstance
    ): IMap<StreamName, StreamStatus> {
-      val streamStateCache = hazelcastInstance
-         .getMap<StreamName, StreamStatus>(STREAM_STATUS_CACHE_NAME)
 
-      return streamStateCache
+      return hazelcastInstance
+         .getMap(STREAM_STATUS_CACHE_NAME)
    }
 
    @Bean(STREAM_JOB_STATUS_CACHE_BEAN_NAME)
    fun streamJobStateCache(
-      hazelcastInstance: HazelcastInstance,
-      mapStore: StreamStatusMapStore
+      hazelcastInstance: HazelcastInstance
    ): IMap<String, MutableList<StreamJobStateEvent>> {
-      val streamStateCache = hazelcastInstance
-         .getMap<String, MutableList<StreamJobStateEvent>>(STREAM_JOB_STATUS_CACHE_NAME)
 
-      return streamStateCache
+      return hazelcastInstance
+         .getMap(STREAM_JOB_STATUS_CACHE_NAME)
    }
 }
 
@@ -293,7 +289,7 @@ class StreamStateMapListener(
 interface StreamStatusRepository : JpaRepository<StreamStatus, String>
 
 
-@Component
+
 class StreamStatusMapStore(
    private val repository: StreamStatusRepository,
 

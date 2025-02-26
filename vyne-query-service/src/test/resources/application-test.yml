@@ -1,4 +1,7 @@
 vyne.telemetry.enabled: false
+vyne:
+   db:
+      enabled: true
 spring:
    flyway:
       enabled: true

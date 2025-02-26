@@ -1,11 +1,11 @@
 package com.orbitalhq.history.db
 
-import io.micrometer.core.instrument.MeterRegistry
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.query.HistoryEventConsumerProvider
+import io.micrometer.core.instrument.MeterRegistry
 import mu.KotlinLogging
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Import
@@ -13,7 +13,7 @@ import org.springframework.context.annotation.Import
 /**
  * Activates when Query history is handled in process.
  */
-@ConditionalOnProperty(prefix = "vyne.analytics", name = ["mode"], havingValue = "Inprocess", matchIfMissing = true)
+@ConditionalOnExpression("\${vyne.db.enabled:true} == true and '\${vyne.analytics.mode:Inprocess}' == 'Inprocess'")
 @Import(
    *[
       HistoryPersistenceJpaConfig::class,

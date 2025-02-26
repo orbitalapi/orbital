@@ -6,7 +6,6 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import org.junit.jupiter.api.Test
 
 class PartialModelsSpec : DescribeSpec({
 
@@ -53,6 +52,95 @@ class PartialModelsSpec : DescribeSpec({
             .toRawObject()
             .shouldBe(mapOf("revenue" to 200))
       }
+
+       it("can call a mutation with a partial type having  object property") {
+           val (vyne, stub) = testVyne(
+               """
+         closed parameter model Film {
+             info : {
+             title: Title inherits String
+             director: Director inherits String
+            }
+            revenue : Revenue inherits Int
+         }
+        @com.orbitalhq.models.OmitNulls
+         partial model FilmUpdate from Film
+         service FilmsApi {
+            operation getFilm():Film
+            write operation patchFilmWithPartial(FilmUpdate):FilmUpdate
+         }
+      """.trimIndent()
+           )
+
+           stub.addResponseReturningInputs("patchFilmWithPartial")
+           stub.addResponse("getFilm", """
+               {
+                  "revenue": 200,
+                  "info": {
+                  
+                  }
+               }
+           """.trimIndent())
+           vyne.query(
+               """
+         find { Film }
+         call FilmsApi::patchFilmWithPartial
+      """.trimIndent()
+           )
+               .firstRawObject()
+
+           val callInput = stub.calls["patchFilmWithPartial"].single().single()
+           callInput.shouldBeInstanceOf<TypedObject>()
+               .toRawObject()
+               .shouldBe(mapOf("revenue" to 200))
+       }
+
+       it("can call a mutation with a partial type having a nested object property") {
+           val (vyne, stub) = testVyne(
+               """
+         closed parameter model Film {
+             info : {
+                 title: Title inherits String
+                 director: {
+                   name: DirectorName inherits String
+                   country: Country inherits String
+                 } 
+            }
+            revenue : Revenue inherits Int
+         }
+        @com.orbitalhq.models.OmitNulls
+         partial model FilmUpdate from Film
+         service FilmsApi {
+            operation getFilm():Film
+            write operation patchFilmWithPartial(FilmUpdate):FilmUpdate
+         }
+      """.trimIndent()
+           )
+
+           stub.addResponseReturningInputs("patchFilmWithPartial")
+           stub.addResponse("getFilm", """
+               {
+                  "revenue": 200,
+                  "info": {
+                     "title": "The Wild Bunch",
+                     "director": {}
+                  
+                  }
+               }
+           """.trimIndent())
+           vyne.query(
+               """
+         find { Film }
+         call FilmsApi::patchFilmWithPartial
+      """.trimIndent()
+           )
+               .firstRawObject()
+
+           val callInput = stub.calls["patchFilmWithPartial"].single().single()
+           callInput.shouldBeInstanceOf<TypedObject>()
+               .toRawObject()
+               .shouldBe(mapOf("revenue" to 200, "info" to mapOf("title" to "The Wild Bunch")))
+       }
    }
 
    it("can populate nested attributes of partials where original type was closed") {
