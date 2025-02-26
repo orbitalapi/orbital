@@ -4,7 +4,7 @@ import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.query.connectors.NoOperationInvocationEventConsumer
 import com.orbitalhq.query.connectors.OperationCacheProviderBuilder
-import com.orbitalhq.query.connectors.OperationInvocationEventConsumer
+import com.orbitalhq.query.connectors.OperationInvocationCountingEventConsumer
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.graph.operationInvocation.cache.OperationCacheFactory
 import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCacheProviderBuilder
@@ -38,7 +38,7 @@ class EnableVyneConfiguration {
       operationCacheFactory: OperationCacheFactory,
       stateStoreProvider: StateStoreProvider?,
       meterRegistry: MeterRegistry,
-      operationInvocationEventConsumer: OperationInvocationEventConsumer = NoOperationInvocationEventConsumer
+      operationInvocationEventConsumer: OperationInvocationCountingEventConsumer = NoOperationInvocationEventConsumer
    ): VyneFactory {
       return VyneFactory(
          schemaProvider,

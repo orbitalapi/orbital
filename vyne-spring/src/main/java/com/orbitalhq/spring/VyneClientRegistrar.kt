@@ -3,7 +3,7 @@ package com.orbitalhq.spring
 import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.VyneClient
 import com.orbitalhq.embedded.EmbeddedVyneClient
-import com.orbitalhq.query.connectors.OperationInvocationEventConsumer
+import com.orbitalhq.query.connectors.OperationInvocationCountingEventConsumer
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Schema
@@ -31,7 +31,7 @@ class EnableEmbeddedVyneClientConfiguration {
       vyneSpringProjectionConfiguration: VyneSpringProjectionConfiguration,
       formatSpecRegistry: FormatSpecRegistry,
       meterRegistry: MeterRegistry,
-      operationInvocationEventConsumer: OperationInvocationEventConsumer
+      operationInvocationEventConsumer: OperationInvocationCountingEventConsumer
    ): VyneClient {
       return EmbeddedVyneClient(
          VyneFactory(

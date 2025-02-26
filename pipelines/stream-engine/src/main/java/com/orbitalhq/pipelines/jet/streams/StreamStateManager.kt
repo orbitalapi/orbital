@@ -192,6 +192,7 @@ interface StreamStateUpdatesPublisher {
 @Component
 class StreamStateMapListener(
    private val pipelineManager: PipelineManager,
+   @Qualifier(StreamStateManagerHazelcastConfig.STREAM_STATUS_CACHE_BEAN_NAME)
    private val streamStateCache: IMap<String, StreamStatus>,
    @Qualifier(StreamStateManagerHazelcastConfig.STREAM_JOB_STATUS_CACHE_BEAN_NAME)
    val streamJobStateCache: IMap<StreamName, MutableList<StreamJobStateEvent>>,
@@ -278,6 +279,8 @@ class StreamStateMapListener(
                pipelineManager.startPipelineByName(streamName)
             }
          }
+      } else {
+         logger.info { "Stream $streamName updating ${event.oldValue.state} -> ${event.value.state} - update is handled by another node" }
       }
       emitCurrentState()
    }

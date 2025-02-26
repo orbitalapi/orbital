@@ -11,7 +11,7 @@ import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
 import com.orbitalhq.query.connectors.CountingOperationInvokerDecorator
 import com.orbitalhq.query.connectors.NoOperationInvocationEventConsumer
-import com.orbitalhq.query.connectors.OperationInvocationEventConsumer
+import com.orbitalhq.query.connectors.OperationInvocationCountingEventConsumer
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.graph.operationInvocation.cache.OperationCacheFactory
 import com.orbitalhq.query.planner.QueryPlanner
@@ -59,7 +59,7 @@ class VyneFactory(
    private val stateStoreProvider: StateStoreProvider? = null,
    private val metricsReporter: QueryMetricsReporter = NoOpMetricsReporter,
    private val queryPlanner: QueryPlanner = QueryPlanner(),
-   private val operationInvocationEventConsumer: OperationInvocationEventConsumer = NoOperationInvocationEventConsumer
+   private val operationInvocationEventConsumer: OperationInvocationCountingEventConsumer = NoOperationInvocationEventConsumer
 ) : FactoryBean<Vyne>, VyneProvider {
 
    override fun isSingleton() = true

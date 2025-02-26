@@ -1,5 +1,6 @@
 package com.orbitalhq.pipelines.jet.api.streams
 
+import com.orbitalhq.pipelines.jet.api.streams.StreamJobStateEvent.JobStatus
 import jakarta.persistence.Entity
 import jakarta.persistence.EnumType
 import jakarta.persistence.Enumerated
@@ -27,9 +28,9 @@ data class StreamStatus(
    val timestamp: OffsetDateTime = OffsetDateTime.now(),
    val username: String? = null
 ) {
-   enum class State {
-      RUNNING,
-      PAUSED
+   enum class State(val description: String) {
+      RUNNING("Enabled"),
+      PAUSED("Paused"),
    }
 }
 
@@ -47,6 +48,25 @@ data class StreamStateWithJobStates(
 ) {
    val jobState = jobStates.maxByOrNull { it.lastEvent.timestamp }
       ?.lastEvent
+
+   val statusString = asStreamJobState(streamStatus.state, jobState?.status)
+
+   companion object {
+      fun asStreamJobState(streamState: StreamStatus.State, jobState: JobStatus?): String {
+         // Use description, rather than name, so we end up with
+         // Enabled-Running, rather than Running-Running
+         return listOfNotNull(streamState.description, jobState).joinToString("-")
+      }
+
+      /**
+       * All the possible combinations of StreamStatus.State + JobStatus?
+       */
+      val allStates = StreamStatus.State.entries.flatMap { streamState ->
+         (JobStatus.entries + null).map { jobState ->
+            asStreamJobState(streamState, jobState)
+         }
+      }
+   }
 }
 
 /**

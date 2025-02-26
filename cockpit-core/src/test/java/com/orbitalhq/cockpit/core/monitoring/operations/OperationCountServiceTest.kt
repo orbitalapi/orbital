@@ -26,11 +26,11 @@ class OperationCountServiceTest{
    lateinit var repository: OperationInvocationCountRepository
 
    lateinit var service: OperationCountService
-   lateinit var eventConsumer: QueueingOperationInvocationEventConsumer
+   lateinit var eventConsumer: ReactiveOperationInvocationEventConsumer
 
    @BeforeEach
    fun setup() {
-      eventConsumer = QueueingOperationInvocationEventConsumer()
+      eventConsumer = ReactiveOperationInvocationEventConsumer()
 
       service = OperationCountService(repository)
    }

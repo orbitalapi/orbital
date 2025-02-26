@@ -29,10 +29,10 @@ open class EmbeddedVyneClient(
    private val vyneProvider: VyneProvider
 ) : VyneClient {
    override fun <T : Any> queryWithType(
-      query: String,
-      type: Class<T>,
-      metricsTags: MetricTags,
-      principal: Principal?
+       query: String,
+       type: Class<T>,
+       metricsTags: MetricTags,
+       principal: Principal?
    ): Flux<T> {
       return runBlocking {
          val vyne = vyneProvider.createVyne()
@@ -59,9 +59,9 @@ open class EmbeddedVyneClient(
 
 
    override fun queryAsTypedInstance(
-      query: TaxiQLQueryString,
-      metricsTags: MetricTags,
-      principal: Principal?
+       query: TaxiQLQueryString,
+       metricsTags: MetricTags,
+       principal: Principal?
    ): Flux<TypedInstance> {
       // This is obviously not correct.
       // We're run blocking, and then wrapping a list to a flux, it's all sorts of level of messed up

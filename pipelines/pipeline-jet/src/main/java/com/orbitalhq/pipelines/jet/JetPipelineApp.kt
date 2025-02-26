@@ -22,7 +22,7 @@ import com.orbitalhq.pipelines.jet.source.PipelineSourceProvider
 import com.orbitalhq.pipelines.jet.streams.StreamStateManagerHazelcastConfig
 import com.orbitalhq.pipelines.jet.streams.StreamStatusMapStore
 import com.orbitalhq.query.connectors.NoOperationInvocationEventConsumer
-import com.orbitalhq.query.connectors.OperationInvocationEventConsumer
+import com.orbitalhq.query.connectors.OperationInvocationCountingEventConsumer
 import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
 import com.orbitalhq.schema.consumer.SchemaConfigSourceLoader
 import com.orbitalhq.schemas.readers.SourceConverterRegistry
@@ -104,7 +104,7 @@ class JetPipelineApp {
    }
 
    @Bean
-   fun noOpEventConsumer():OperationInvocationEventConsumer = NoOperationInvocationEventConsumer
+   fun noOpEventConsumer():OperationInvocationCountingEventConsumer = NoOperationInvocationEventConsumer
 
 
    @Bean
