@@ -8,6 +8,7 @@ import com.orbitalhq.asVersionedSource
 import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
 import com.orbitalhq.schema.publisher.loaders.SchemaSourcesAdaptor
 import com.orbitalhq.schemaServer.packages.AvroPackageLoaderSpec
+import lang.taxi.generators.SourceMap
 import lang.taxi.generators.avro.AvroSchemaFormats
 import lang.taxi.generators.avro.TaxiGenerator
 import lang.taxi.sources.SourceCodeLanguages
@@ -55,8 +56,10 @@ class AvroSchemaSourcesAdaptor(private val spec: AvroPackageLoaderSpec) : Schema
                generatedTaxiCode.sourceMap to generatedTaxiCode.asVersionedSource(packageMetadata.identifier, "GeneratedFrom_${avroSourceFile.name}")
             }
             val allTaxiSources = taxiSource.flatMap { it.second }
+
             val sourceMap = taxiSource.map { it.first }
-               .reduce { acc, sourceMap -> acc.combine(sourceMap) }
+               .reduceOrNull { acc, sourceMap -> acc.combine(sourceMap) }
+               ?: SourceMap.EMPTY
             SourcePackage.asTranspiledPackage(
                packageMetadata,
                avroSourceFiles,
