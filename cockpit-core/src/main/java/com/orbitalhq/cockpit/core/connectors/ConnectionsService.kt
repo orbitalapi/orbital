@@ -59,7 +59,9 @@ class ConnectionsService(
          .filter { !it.hasError }
          .flatMap { configSource ->
             configSource.typedConfig!!.listAll().map { connectorConfiguration ->
-               val status = configStatuses.getOrDefault(connectorConfiguration, ConnectionStatus.unknown())
+               val status = configStatuses.filterKeys { it.connectionName == connectorConfiguration.connectionName }
+                  .values
+                  .firstOrNull() ?: ConnectionStatus.unknown()
                if (withUsages) {
                   val usages = ConnectionUsageMetadataRegistry.findConnectionUsages(schemaProvider.schema, connectorConfiguration.connectionName)
                   ConnectorConfigurationSummary(configSource.packageIdentifier, connectorConfiguration, status, null, usages)
