@@ -1,5 +1,7 @@
 package com.orbitalhq.connectors.hazelcast
 
+import com.hazelcast.client.HazelcastClient
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy
 import com.hazelcast.config.MapConfig
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.map.IMap
@@ -15,6 +17,7 @@ import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.schemas.Schema
 import lang.taxi.types.ParameterizedName
 import lang.taxi.types.SumType
+import mu.KotlinLogging
 import reactor.core.publisher.Mono
 import java.util.concurrent.ConcurrentHashMap
 
@@ -27,6 +30,7 @@ class HazelcastStateStoreProvider(
 ) : StateStoreProvider {
    private val hazelcastStores = ConcurrentHashMap<String, HazelcastStateStore>()
    companion object {
+      private val logger = KotlinLogging.logger {}
       fun setMapConfig(hazelcastInstance: HazelcastInstance, stateStoreConfig: StateStoreConfig, cacheStoreKey: String) {
          val mapConfig = MapConfig(
             cacheStoreKey,
@@ -44,17 +48,28 @@ class HazelcastStateStoreProvider(
    ): StateStore? {
       val (hazelcastInstance, connectionsConfig) = hazelcastConnectionsManager.hazelcastConnection(stateStoreConfig.connection)
       val cacheStoreKey = stateStoreConfig.name ?: getStateStoreKey(prefix = "StateStore_${stateStoreConfig.connection.orEmpty()}", sumType, emitMode)
+      var hazelcastMapWasCreated = false
       val cacheStore = hazelcastStores.getOrPut(cacheStoreKey) {
+         hazelcastMapWasCreated = true
          setMapConfig(hazelcastInstance, stateStoreConfig, cacheStoreKey)
          val map = hazelcastInstance.getMap<String, Map<ParameterizedName, ByteArray>>(cacheStoreKey)
          HazelcastStateStore(map, schema, sumType, emitMode)
       }
-      val mapConfig = hazelcastInstance.config.getMapConfig(cacheStoreKey)
-      if (mapConfig != null && mapConfig.maxIdleSeconds != stateStoreConfig.maxIdleSeconds) {
-         // We can't reconfigure a map once it's been created.
-         // Send a meaningful error
-         val name = stateStoreConfig.name?.let { "named $it" } ?: "with the default name"
-         error("A state store $name already exists, but with a different maxIdleSeconds (${mapConfig.maxIdleSeconds}). The connected StateStore (Hazelcast) does not permit changing maxIdleSeconds once configured. Please either set a new name for the state store by adding 'name=\"MyNewName\" to your @StateStore annotation, or change the maxIdleSeconds back to ${mapConfig.maxIdleSeconds}")
+      if (!hazelcastMapWasCreated) {
+         // The hazelcast map already existed.
+         // We'd like to verify that the TTL on the map matches what's configured for the
+         // state store config, if possible.
+         if (hazelcastInstance is HazelcastClientProxy) {
+            logger.warn { "State store $cacheStore is managed on an external hazelcast cluster, which doesn't support verifying map config. Cannot verify if the map's TTL matches the configured TTL for this state store (${stateStoreConfig.maxIdleSeconds})" }
+         } else {
+            val mapConfig = hazelcastInstance.config.getMapConfig(cacheStoreKey)
+            if (mapConfig != null && mapConfig.maxIdleSeconds != stateStoreConfig.maxIdleSeconds) {
+               // We can't reconfigure a map once it's been created.
+               // Send a meaningful error
+               val name = stateStoreConfig.name?.let { "named $it" } ?: "with the default name"
+               error("A state store $name already exists, but with a different maxIdleSeconds (${mapConfig.maxIdleSeconds}). The connected StateStore (Hazelcast) does not permit changing maxIdleSeconds once configured. Please either set a new name for the state store by adding 'name=\"MyNewName\" to your @StateStore annotation, or change the maxIdleSeconds back to ${mapConfig.maxIdleSeconds}")
+            }
+         }
       }
       return cacheStore
    }
