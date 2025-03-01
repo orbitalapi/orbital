@@ -3,7 +3,6 @@ package com.orbitalhq.pipelines.jet.streams
 import com.orbitalhq.pipelines.jet.api.streams.StreamJobStateEvent
 import com.orbitalhq.pipelines.jet.api.streams.StreamStateWithJobStates
 import com.orbitalhq.pipelines.jet.api.streams.StreamStatus
-import com.orbitalhq.query.RemoteCallOperationResultHandler
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.stereotype.Component
 
@@ -14,7 +13,7 @@ import org.springframework.stereotype.Component
 @Component
 class StreamStateHealthGauge(
    private val meterRegistry: MeterRegistry,
-   private val streamStateListener: StreamStateMapListener
+   private val streamStateListener: StreamStateChangeEventListener
 ) {
    init {
       val allStates = StreamStateWithJobStates.allStates.associateWith { 0 }.toMutableMap()

@@ -11,6 +11,7 @@ import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
+import com.orbitalhq.pipelines.jet.TestTopic
 import com.orbitalhq.pipelines.jet.api.JobStatus
 import com.orbitalhq.pipelines.jet.api.PipelineStatus
 import com.orbitalhq.pipelines.jet.api.RunningPipelineSummary
@@ -29,7 +30,7 @@ import reactor.core.publisher.Flux
 import java.time.Instant
 
 class PersistentStreamManagerTest : DescribeSpec({
-   describe("Pesistent Stream Manager") {
+   describe("Persistent Stream Manager") {
       it("by default streams are created but not started") {
          val (store, streamManager, pipelineManager) = storeAndManager()
          val streamState = streamManager.streamStateManager.streamStateCache
@@ -203,7 +204,7 @@ private fun storeAndManager(): Triple<SimpleSchemaStore, PersistentStreamManager
       on {canStartPipelines()} doReturn true
       on { jobStatusEvents } doReturn Flux.empty()
    }
-   val stateManager = StreamStateManager(StreamStatus.State.PAUSED, pipelineManager, mutableMapOf(), mutableMapOf())
+   val stateManager = StreamStateManager(StreamStatus.State.PAUSED, pipelineManager, mutableMapOf(), mutableMapOf(), TestTopic())
    val manager = PersistentStreamManager(store, pipelineManager, stateManager)
    return Triple(store, manager, pipelineManager)
 }
