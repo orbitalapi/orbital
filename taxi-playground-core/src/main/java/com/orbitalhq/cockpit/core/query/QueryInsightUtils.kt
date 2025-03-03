@@ -18,11 +18,9 @@ import reactor.core.scheduler.Schedulers
  * which is part of the actual query building process
  */
 class QueryInsightUtils(
-   private val visualizerService: QueryVisualizer = QueryVisualizer()
-
+   private val visualizerService: QueryVisualizer = QueryVisualizer(),
+   private val visualizationEnabled: Boolean = true
 ) {
-
-
    fun parseQuery(
       query: TaxiQLQueryString,
       schema: Schema,
@@ -38,29 +36,7 @@ class QueryInsightUtils(
                errors = e.errors,
             )
          }
-         val queryPlan = try {
-            visualizerService.visualizeQuery(query, querySchema)
-               .map { queryPlanSteps ->
-                  QueryPlan(queryPlanSteps, emptyList())
-               }
-               .getOrElse { e ->
-                  QueryPlan(
-                     emptyList(), listOf(
-                        Message(
-                           Severity.ERROR, e.message ?: e::class.simpleName!!
-                        )
-                     )
-                  )
-               }
-         } catch (e: SearchFailedException) {
-            QueryPlan(
-               emptyList(), listOf(
-                  Message(
-                     Severity.ERROR, e.message ?: e::class.simpleName!!
-                  )
-               )
-            )
-         }
+         val queryPlan = buildQueryPlan(query, querySchema)
          QueryParseMetadata.fromQuery(
             compiledQuery,
             compilationMessages = emptyList(),
@@ -68,6 +44,39 @@ class QueryInsightUtils(
             schema = querySchema
          )
       }.subscribeOn(Schedulers.boundedElastic())
+   }
+
+   private fun buildQueryPlan(
+      query: TaxiQLQueryString,
+      querySchema: Schema
+   ): QueryPlan {
+      if (!this.visualizationEnabled) {
+         return QueryPlan.empty()
+      }
+      val queryPlan = try {
+         visualizerService.visualizeQuery(query, querySchema)
+            .map { queryPlanSteps ->
+               QueryPlan(queryPlanSteps, emptyList())
+            }
+            .getOrElse { e ->
+               QueryPlan(
+                  emptyList(), listOf(
+                     Message(
+                        Severity.ERROR, e.message ?: e::class.simpleName!!
+                     )
+                  )
+               )
+            }
+      } catch (e: SearchFailedException) {
+         QueryPlan(
+            emptyList(), listOf(
+               Message(
+                  Severity.ERROR, e.message ?: e::class.simpleName!!
+               )
+            )
+         )
+      }
+      return queryPlan
    }
 }
 
