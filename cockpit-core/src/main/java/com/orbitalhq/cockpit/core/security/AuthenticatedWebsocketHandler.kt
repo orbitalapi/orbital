@@ -31,6 +31,7 @@ class AuthenticationWebSocketHandler(
 
    private fun extractTokenFromSession(session: WebSocketSession): String? {
       return tokenConverter.getTokenFromHeaders(session.handshakeInfo.headers)
+         ?.second
    }
 
    private fun authenticate(token: String): Mono<Authentication> {

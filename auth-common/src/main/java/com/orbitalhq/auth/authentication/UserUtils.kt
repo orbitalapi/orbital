@@ -148,6 +148,8 @@ object PropelAuthJwtTokenClaims {
    const val LastName = "last_name"
    const val PictureUrl = "properties.picture_url"
    const val OrgIdToMemberInfo = "org_id_to_org_member_info"
+   // This key is provided when using propel auth API Key authentication
+   const val OrgIdToOrgInfo = "org_id_to_org_info"
 }
 
 object AzureTokenClaims {

@@ -2,6 +2,7 @@ package com.orbitalhq.cockpit.core.security.authorisation.propelauth
 
 import com.orbitalhq.auth.authentication.PropelAuthJwtTokenClaims
 import com.orbitalhq.cockpit.core.NotAuthorizedException
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.oauth2.jwt.Jwt
 
 /**
@@ -27,7 +28,14 @@ object PropelAuthOrgExtractor {
    }
 
    fun getSingleOrgClaims(jwt: Jwt): Map<String,Any> {
-      val orgInfoMap = jwt.claims[PropelAuthJwtTokenClaims.OrgIdToMemberInfo] as Map<String,Map<String,Any>>
+      val orgInfoMap = when {
+         // Normal OIDC login flow
+         jwt.claims.containsKey(PropelAuthJwtTokenClaims.OrgIdToMemberInfo) -> jwt.claims[PropelAuthJwtTokenClaims.OrgIdToMemberInfo] as Map<String,Map<String,Any>>
+         // Propel auth API key flow, which annoyingly uses a different key here,
+         jwt.claims.containsKey(PropelAuthJwtTokenClaims.OrgIdToOrgInfo) -> jwt.claims[PropelAuthJwtTokenClaims.OrgIdToOrgInfo] as Map<String,Map<String,Any>>
+         else -> throw BadCredentialsException("The API token from the PropelAuth was malformed - neither ${PropelAuthJwtTokenClaims.OrgIdToOrgInfo} nor ${PropelAuthJwtTokenClaims.OrgIdToMemberInfo} were present")
+
+      }
 
       if (orgInfoMap.keys.isEmpty()) {
          throw NotAuthorizedException("You are not a member of any organisations")

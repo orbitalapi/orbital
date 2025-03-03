@@ -1,6 +1,7 @@
 package com.orbitalhq.cockpit.core.security.authentication.oidc
 
 import com.orbitalhq.auth.CookieOrHeaderTokenConverter
+import com.orbitalhq.auth.authentication.UnverifiedApiKeyToken
 import com.orbitalhq.auth.authorisation.VyneUserRoleDefinitionRepository
 import com.orbitalhq.cockpit.core.lsp.LanguageServerConfig
 import com.orbitalhq.cockpit.core.security.FrontEndSecurityConfig
@@ -95,10 +96,18 @@ class OidcAuthorizationPkceConfig {
    @Bean
    fun reactiveAuthenticationManager(
       jwtDecoder: ReactiveJwtDecoder,
-      grantedAuthoritiesExtractor: GrantedAuthoritiesExtractor
+      grantedAuthoritiesExtractor: GrantedAuthoritiesExtractor,
+      apiKeyValidator: ApiKeyValidator? = null
    ): ReactiveAuthenticationManager {
       return ReactiveAuthenticationManager { authentication ->
          when (authentication) {
+            is UnverifiedApiKeyToken -> {
+               if (apiKeyValidator != null) {
+                  apiKeyValidator.authenticate(authentication)
+               } else {
+                  Mono.error(AuthenticationServiceException("API Key authentication is not enabled"))
+               }
+            }
             is BearerTokenAuthenticationToken -> {
                jwtDecoder.decode(authentication.token)
                   .map { jwt ->
@@ -121,7 +130,8 @@ class OidcAuthorizationPkceConfig {
       @Value("\${management.endpoints.web.base-path:/actuator}") actuatorPath: String,
       grantedAuthoritiesExtractor: GrantedAuthoritiesExtractor,
       oidcConfig: FrontEndSecurityConfig,
-      jwtDecoder: ReactiveJwtDecoder
+      jwtDecoder: ReactiveJwtDecoder,
+      authenticationManager: ReactiveAuthenticationManager,
    ): SecurityWebFilterChain {
       logger.info { "Using OIDC Authentication => $oidcConfig" }
       http
@@ -168,10 +178,11 @@ class OidcAuthorizationPkceConfig {
          .oauth2ResourceServer { spec ->
             spec.jwt { jwtSpec ->
                jwtSpec.jwtDecoder(jwtDecoder)
+                  .authenticationManager(authenticationManager)
             }
          }
          .oauth2ResourceServer()
-         .bearerTokenConverter(CookieOrHeaderTokenConverter())
+         .bearerTokenConverter(CookieOrHeaderTokenConverter(supportApiKeys = true))
          .jwt()
          // Below we populate set of GrantedAuthorities for the user.
          .jwtAuthenticationConverter { jwt ->
