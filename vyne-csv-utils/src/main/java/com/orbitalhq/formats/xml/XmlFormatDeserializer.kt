@@ -6,6 +6,7 @@ import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
 import com.google.common.cache.LoadingCache
 import com.orbitalhq.models.DataSource
+import com.orbitalhq.models.ParsingOptions
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.UndefinedSource
 import com.orbitalhq.models.format.ModelFormatDeserializer
@@ -37,6 +38,8 @@ private class XmlDeserializer {
    private val builder = factory.newDocumentBuilder()
    private val xpathFactory = XPathFactory.newInstance()
 
+   private val parsingOptions = ParsingOptions.DEFAULT
+      .copy(convertSingleObjectToArray = true)
    private val xmlMapper = XmlMapper()
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -67,17 +70,19 @@ private class XmlDeserializer {
       val typedInstance = when {
          type.isCollection && raw is Collection<*> -> {
             val xmlParsedStructure = XmlParsedList(raw as List<Map<String,Any>>, xmlDocument)
-            TypedInstance.from(type, xmlParsedStructure, schema, source = source)
+            TypedInstance.from(type, xmlParsedStructure, schema, source = source, parsingOptions = parsingOptions)
          }
          type.isCollection && isXmlCollectionWrapper(raw) -> {
             val collectionWrapper = raw as Map<*, *>
             val collection = collectionWrapper[collectionWrapper.keys.single()] as List<*>
             val xmlParsedStructure = XmlParsedList(collection as List<Map<String,Any>>, xmlDocument)
-            TypedInstance.from(type, xmlParsedStructure, schema, source = source)
+            TypedInstance.from(type, xmlParsedStructure, schema, source = source, parsingOptions = parsingOptions)
          }
          else -> {
             val xmlParsedStructure = XmlParsedMap(raw as Map<String,Any>, xmlDocument)
-            TypedInstance.from(type, xmlParsedStructure, schema, source = source)
+            TypedInstance.from(type, xmlParsedStructure, schema, source = source,
+               parsingOptions = parsingOptions
+               )
          }
       }
       return typedInstance

@@ -9,14 +9,11 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.Ids
-import com.orbitalhq.utils.mergeToUnifiedMap
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.AttributePath
 import mu.KotlinLogging
-import org.eclipse.collections.impl.map.immutable.ImmutableUnifiedMap
-import org.eclipse.collections.impl.map.mutable.UnifiedMap
 
 
 data class TypedObject(
@@ -92,7 +89,8 @@ data class TypedObject(
          parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
          functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf(),
          metadata: Map<String, Any> = emptyMap(),
-         valueSuppliers: List<ValueSupplier> = emptyList()
+         valueSuppliers: List<ValueSupplier> = emptyList(),
+         parsingOptions: ParsingOptions = ParsingOptions.DEFAULT
       ): TypedInstance {
          return TypedObjectFactory(
             type,
@@ -107,7 +105,8 @@ data class TypedObject(
             parsingErrorBehaviour = parsingErrorBehaviour,
             functionResultCache = functionResultCache,
             metadata = metadata,
-            valueSuppliers = valueSuppliers
+            valueSuppliers = valueSuppliers,
+            parsingOptions = parsingOptions
          ).build()
       }
    }

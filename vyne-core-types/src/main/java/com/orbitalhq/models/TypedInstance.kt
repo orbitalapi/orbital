@@ -224,7 +224,8 @@ interface TypedInstance {
          parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
          format: FormatsAndZoneOffset? = type.formatAndZoneOffset,
          metadata: Map<String, Any> = emptyMap(),
-         valueSuppliers: List<ValueSupplier> = emptyList()
+         valueSuppliers: List<ValueSupplier> = emptyList(),
+         parsingOptions: ParsingOptions = ParsingOptions.DEFAULT
       ): TypedInstance {
 
          // Just here to DRY out the passing of params
@@ -241,7 +242,8 @@ interface TypedInstance {
                formatSpecs = formatSpecs,
                parsingErrorBehaviour = parsingErrorBehaviour,
                metadata = metadata,
-               valueSuppliers = valueSuppliers
+               valueSuppliers = valueSuppliers,
+               parsingOptions = parsingOptions
             )
          }
          return when {
@@ -264,7 +266,8 @@ interface TypedInstance {
                   parsingErrorBehaviour,
                   format,
                   metadata,
-                  valueSuppliers
+                  valueSuppliers,
+                  parsingOptions
                )
             }
 
@@ -284,7 +287,8 @@ interface TypedInstance {
                   parsingErrorBehaviour,
                   format,
                   metadata,
-                  valueSuppliers
+                  valueSuppliers,
+                  parsingOptions
                )
             }
 
@@ -312,7 +316,8 @@ interface TypedInstance {
                         parsingErrorBehaviour = parsingErrorBehaviour,
                         format = format,
                         metadata = metadata,
-                        valueSuppliers = valueSuppliers
+                        valueSuppliers = valueSuppliers,
+                        parsingOptions = parsingOptions
                      )
                   },
                   source
@@ -399,3 +404,19 @@ fun TypedInstance.containsMetadata(name: String): Boolean {
 }
 
 
+data class ParsingOptions(
+   /**
+    * If a provided value was parsed as a single object but the
+    * type defined an array, should the value be converted to an array.
+    * In formats that define schemas, or where arrays are unambiguous, this should
+    * be false - as it's invalid to parse an Object as an Array.
+    *
+    * However, set to true for formats where the encoding is ambiguous.
+    *
+    */
+   val convertSingleObjectToArray:Boolean = false
+) {
+   companion object {
+      val DEFAULT = ParsingOptions()
+   }
+}
