@@ -165,22 +165,22 @@ class XmlFormatDeserializerTest : DescribeSpec({
          ) as TypedObject
          fooWithIsin["identifierValue"].value.should.equal("ISIN-138443")
       }
-       /**
-        * <row id='36471808' xml:space='preserve'>
-        * <c1>12707077</c1>
-        * <c2>3115</c2>
-        * <c3>AT1-36471808</c3>
-        * <c5>SH-36471808</c5>
-        * <c7>TR</c7>
-        * <c8>GBP</c8>
-        * <c9>1</c9>
-        * <c10>4315.02</c10>
-        * <c11>827</c11>
-        * <c20 m='31'>GB34MYMB23058036471808</c20>
-        * <c20 m='161'>NA</c20>
-        * <c20 m='174'>
-        * </row>
-        */
+      /**
+       * <row id='36471808' xml:space='preserve'>
+       * <c1>12707077</c1>
+       * <c2>3115</c2>
+       * <c3>AT1-36471808</c3>
+       * <c5>SH-36471808</c5>
+       * <c7>TR</c7>
+       * <c8>GBP</c8>
+       * <c9>1</c9>
+       * <c10>4315.02</c10>
+       * <c11>827</c11>
+       * <c20 m='31'>GB34MYMB23058036471808</c20>
+       * <c20 m='161'>NA</c20>
+       * <c20 m='174'>
+       * </row>
+       */
       it("is possible to embed xml within json") {
          val schema = TaxiSchema.from(
             """
@@ -224,14 +224,14 @@ model Account {
             schema.type("AccountMessage"), src, schema,
             source = Provided,
             formatSpecs = listOf(XmlFormatSpec)
-            )
+         )
          typedInstance.toRawObject().shouldBe(
             mapOf(
                "table" to "123",
                "XMLRecord" to mapOf("id" to "12707077", "c0" to "123456")
             ),
 
-         )
+            )
       }
 
       it("is possible to use complex expressions on xml embedded in json") {
@@ -253,7 +253,8 @@ model Account {
          """.trimIndent()
          )
 
-         fun xml(assetClass: String) = """<Foo><assetClass>$assetClass</assetClass><symbol>GBPUSD-100293</symbol><isin>ISIN-138443</isin></Foo>"""
+         fun xml(assetClass: String) =
+            """<Foo><assetClass>$assetClass</assetClass><symbol>GBPUSD-100293</symbol><isin>ISIN-138443</isin></Foo>"""
 
          val json = """
             { "messageId" : "123" , "xmlRecord" : "${xml("FXD")}" }
@@ -268,6 +269,76 @@ model Account {
                "messageId" to "123",
                "xmlRecord" to mapOf("assetClass" to "FXD", "identifierValue" to "GBPUSD")
             ),
+         )
+      }
+
+      // GH-16
+      it("deserializes single-element collections correctly") {
+         val schema = TaxiSchema.from(
+            """
+                @com.orbitalhq.formats.Xml
+               model ExampleModel {
+                   container: {
+                       rows: {
+                           row: {
+                               attribute1: String,
+                               attribute2: String
+                           }[]
+                       }
+                   }
+               }
+            """.trimIndent()
+         )
+         val srcWithTwoRows = """<root>
+   <container>
+      <rows>
+         <row attribute1="value1" attribute2="value2" />
+         <row attribute1="value3" attribute2="value4" />
+      </rows>
+   </container>
+</root>"""
+         val typedInstance = TypedInstance.from(
+            schema.type("ExampleModel"), srcWithTwoRows, schema,
+            source = Provided,
+            formatSpecs = listOf(XmlFormatSpec)
+         )
+         typedInstance.toRawObject()
+            .shouldBe(
+               mapOf(
+                  "container" to mapOf(
+                     "rows" to mapOf(
+                        "row" to listOf(
+                           mapOf("attribute1" to "value1", "attribute2" to "value2"),
+                           mapOf("attribute1" to "value3", "attribute2" to "value4")
+                        )
+                     )
+                  )
+               )
+            )
+         val srcWithOneRow = """<root>
+   <container>
+      <rows>
+         <row attribute1="value1" attribute2="value2" />
+      </rows>
+   </container>
+</root>"""
+         val typedInstanceWithSingleRow = TypedInstance.from(
+            schema.type("ExampleModel"), srcWithOneRow, schema,
+            source = Provided,
+            formatSpecs = listOf(XmlFormatSpec)
+         )
+         typedInstanceWithSingleRow
+            .toRawObject()
+            .shouldBe(
+               mapOf(
+                  "container" to mapOf(
+                     "rows" to mapOf(
+                        "row" to listOf(
+                           mapOf("attribute1" to "value1", "attribute2" to "value2"),
+                        )
+                     )
+                  )
+               )
             )
       }
    }

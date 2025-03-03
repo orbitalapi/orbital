@@ -78,12 +78,14 @@ class TypedObjectFactory(
     */
    private val factBagSearchStrategy: FactDiscoveryStrategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT,
 
-   ) : EvaluationValueSupplier, ValueProjector {
+   private val parsingOptions: ParsingOptions = ParsingOptions.DEFAULT
+
+
+) : EvaluationValueSupplier, ValueProjector {
 
    companion object {
       private val logger = KotlinLogging.logger {}
    }
-
 
    private val buildSpecProvider = TypedInstancePredicateFactory()
 
@@ -262,7 +264,8 @@ class TypedObjectFactory(
          parsingErrorBehaviour,
          functionResultCache,
          scope,
-         factBagSearchStrategy = factBagSearchStrategy
+         factBagSearchStrategy = factBagSearchStrategy,
+         parsingOptions = parsingOptions
       )
    }
 
@@ -344,7 +347,8 @@ class TypedObjectFactory(
          parsingErrorBehaviour,
          functionResultCache,
          scope,
-         factBagSearchStrategy = factBagSearchStrategy
+         factBagSearchStrategy = factBagSearchStrategy,
+         parsingOptions = parsingOptions
       )
    }
 
@@ -729,7 +733,15 @@ class TypedObjectFactory(
       //      personName : PersonName
       //   }[]
       //}
-      return accessorReader.read(value, type, accessor, schema, source = source, format = format, allowContextQuerying = true)
+      return accessorReader.read(
+         value,
+         type,
+         accessor,
+         schema,
+         source = source,
+         format = format,
+         allowContextQuerying = true
+      )
    }
 
    override fun readAccessor(
@@ -1063,15 +1075,14 @@ class TypedObjectFactory(
          }
 
          else -> queryForFieldValue(field, fieldType, attributeName, constraints)
-      }.let { value ->
-         if (!constraints.isNullOrEmpty()) {
-            verifyValueSatisfiesConstraints(value, field, type, attributeName, constraints)
-         } else {
-            value
-         }
       }
-
-
+         .let { value ->
+            if (!constraints.isNullOrEmpty()) {
+               verifyValueSatisfiesConstraints(value, field, type, attributeName, constraints)
+            } else {
+               value
+            }
+         }
          .let { value ->
             // If there was a format provided (ie., a date format), and it doesn't match,
             // apply it now
@@ -1362,7 +1373,13 @@ class TypedObjectFactory(
       type: Type,
       format: FormatsAndZoneOffset?
    ): TypedInstance {
-      val attributeValue = valueReader.read(value, attributeName)
+      val attributeValue = valueReader.read(value, attributeName).let { attributeValue ->
+         if (type.isCollection && attributeValue is Map<*,*> && parsingOptions.convertSingleObjectToArray) {
+            listOf(attributeValue)
+         } else {
+            attributeValue
+         }
+      }
       val modelFormatSpecPair = formatDetector.getFormatType(type)
       return when {
          attributeValue == null -> TypedNull.create(type, source)
@@ -1382,7 +1399,8 @@ class TypedObjectFactory(
             source = source,
             parsingErrorBehaviour = parsingErrorBehaviour,
             format = format,
-            valueSuppliers = valueSuppliers
+            valueSuppliers = valueSuppliers,
+            parsingOptions = parsingOptions
          )
       }
    }
