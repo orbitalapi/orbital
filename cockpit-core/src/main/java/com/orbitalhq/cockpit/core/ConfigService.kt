@@ -96,6 +96,19 @@ data class FeatureTogglesConfig(
    val copilotEnabled: Boolean = false,
    val workspacesEnabled: Boolean = false,
    val policiesEnabled: Boolean = false,
+   /**
+    * Note: when this is enabled, it can cause
+    * noise in the logs.
+    * Query visualzations run a stubbed out version of the query.
+    * However, we use fake values, which can cause things like
+    * concat of date strings to fail, causing noise in the logs.
+    * It's not possible to differentiate a failure in the logs from
+    * a query parse, vs an actual execution, so this creates unacceptable
+    * noise.
+    *
+    * As a result, this toggle should probably remain as a toggle,
+    * and not be promoted.
+    */
    val queryPlanModeEnabled: Boolean = false,
    val serviceLineageDiagramsEnabled: Boolean = false,
    val copyAsCodeEnabled: Boolean = false,

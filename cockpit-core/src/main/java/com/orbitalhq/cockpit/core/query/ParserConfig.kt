@@ -1,5 +1,6 @@
 package com.orbitalhq.cockpit.core.query
 
+import com.orbitalhq.cockpit.core.FeatureTogglesConfig
 import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.query.connectors.OperationInvoker
 import org.springframework.context.annotation.Bean
@@ -14,7 +15,13 @@ class ParserConfig {
    }
 
    @Bean
-   fun queryInsightUtils(visualizerService: QueryVisualizer): QueryInsightUtils {
-      return QueryInsightUtils(visualizerService)
+   fun queryInsightUtils(
+      visualizerService: QueryVisualizer,
+      featureToggles: FeatureTogglesConfig
+   ): QueryInsightUtils {
+      return QueryInsightUtils(
+         visualizerService,
+         visualizationEnabled = featureToggles.queryPlanModeEnabled
+      )
    }
 }

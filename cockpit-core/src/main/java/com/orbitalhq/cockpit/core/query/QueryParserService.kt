@@ -1,7 +1,7 @@
 package com.orbitalhq.cockpit.core.query
 
-import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.query.QueryParseMetadata
+import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.spring.http.BadRequestException
 import lang.taxi.query.TaxiQLQueryString
 import org.springframework.http.MediaType
