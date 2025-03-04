@@ -67,8 +67,10 @@ class DefaultRequestFactory(private val formatSpecs: List<ModelFormatSpec>) : Ht
          val queryParamMultiMap =  LinkedMultiValueMap<String, String>()
          queryParamsAndValues
             .filter { it.second.value != null }
-            .forEach { queryParamsAndValue ->
-               queryParamMultiMap.add(queryParamsAndValue.first.name!!, queryParamsAndValue.second.value!!.toString())
+            .forEach { (parameter, instance) ->
+               val queryParamName = parameter.firstMetadataOrNull(HttpQueryVariable.NAME) ?: error("Expected to find an ${HttpQueryVariable.NAME} annotated variable, but didn't")
+               val variableName = queryParamName.params["value"]!! as String
+               queryParamMultiMap.add(variableName, instance.value!!.toString())
             }
          queryParamMultiMap
       }

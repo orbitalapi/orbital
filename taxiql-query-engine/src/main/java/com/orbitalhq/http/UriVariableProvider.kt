@@ -2,6 +2,7 @@ package com.orbitalhq.http
 
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.schemas.Parameter
+import lang.taxi.annotations.HttpPathVariable
 
 class UriVariableProvider {
    private val NAMES_REGEX = "\\{([^/]+?)}".toRegex()
@@ -12,11 +13,13 @@ class UriVariableProvider {
 
    fun getUriVariables(parameters: List<ParameterValuePair>, url: String): Map<String, Any> {
       return findVariableNames(url).map { name ->
-         val parameterValuePair = parameters.findByTypeName(name)
-            ?: parameters.findByParameterName(name)
-            ?: error("No argument provided for url variable $name")
-         name to (parameterValuePair.second.value ?:
-         error("Error constructing url $url, found null for parameter $name"))
+         val parameterValuePair =
+            parameters.findByPathVariableWithName(name)
+               ?: parameters.findByTypeName(name)
+               ?: parameters.findByParameterName(name)
+               ?: error("No argument provided for url variable $name")
+         name to (parameterValuePair.second.value
+            ?: error("Error constructing url $url, found null for parameter $name"))
       }.toMap()
    }
 
@@ -27,5 +30,12 @@ class UriVariableProvider {
    private fun List<ParameterValuePair>.findByParameterName(parameterName: String): ParameterValuePair? {
       return this.firstOrNull { it.first.isNamed(parameterName) }
    }
+
+   private fun List<ParameterValuePair>.findByPathVariableWithName(pathVariableName: String): ParameterValuePair? {
+      return this.firstOrNull { (parameter, typedInstance) ->
+         parameter.allMetadata(HttpPathVariable.NAME).any { it.params["value"] == pathVariableName}
+      }
+   }
+
 }
 typealias ParameterValuePair = Pair<Parameter, TypedInstance>
