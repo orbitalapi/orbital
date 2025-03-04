@@ -1,14 +1,13 @@
 package com.orbitalhq.pipelines.jet.streams
 
 import com.google.common.annotations.VisibleForTesting
-import com.hazelcast.core.EntryEvent
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.jet.Job
 import com.hazelcast.map.IMap
 import com.hazelcast.map.MapStore
 import com.hazelcast.map.listener.EntryAddedListener
-import com.hazelcast.map.listener.EntryRemovedListener
 import com.hazelcast.map.listener.EntryUpdatedListener
+import com.hazelcast.topic.ITopic
 import com.orbitalhq.pipelines.jet.api.streams.StreamJobState
 import com.orbitalhq.pipelines.jet.api.streams.StreamJobStateEvent
 import com.orbitalhq.pipelines.jet.api.streams.StreamName
@@ -18,8 +17,13 @@ import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec
 import com.orbitalhq.pipelines.jet.api.transport.query.StreamingQueryInputSpec
 import com.orbitalhq.pipelines.jet.pipelines.PipelineManager
+import com.orbitalhq.pipelines.jet.streams.StreamStateManagerHazelcastConfig.Companion.STREAM_JOB_STATUS_CACHE_NAME
+import com.orbitalhq.pipelines.jet.streams.StreamStateManagerHazelcastConfig.Companion.STREAM_STATUS_CACHE_NAME
+import com.orbitalhq.pipelines.jet.streams.StreamStateManagerHazelcastConfig.Companion.STREAM_STATUS_TOPIC_BEAN_NAME
+import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.fqn
 import mu.KotlinLogging
+import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -42,6 +46,13 @@ class StreamStateManagerHazelcastConfig {
       const val STREAM_JOB_STATUS_CACHE_BEAN_NAME = "streamJobStateCache"
       const val STREAM_JOB_STATUS_CACHE_NAME = "streamJobStatus"
 
+      const val STREAM_STATUS_TOPIC_BEAN_NAME = "streamStatusTopic"
+   }
+
+   @Bean(STREAM_STATUS_TOPIC_BEAN_NAME)
+   fun streamStatusChangedTopic(hazelcastInstance: HazelcastInstance): ITopic<StreamStateChangeEvent> {
+      // MUST BE A RELIABLE TOPIC.
+      return hazelcastInstance.getReliableTopic(StreamStateChangeEvent.topicName)
    }
 
    @Bean(STREAM_STATUS_CACHE_BEAN_NAME)
@@ -75,7 +86,7 @@ class StreamStateManagerHazelcastConfig {
  *
  */
 @Component
-class StreamStateManager(
+class StreamStateManager @Autowired constructor(
    @Value("\${vyne.streams.initialState:PAUSED}")
    private val initialState: StreamStatus.State = StreamStatus.State.PAUSED,
    private val pipelineManager: PipelineManager,
@@ -85,7 +96,20 @@ class StreamStateManager(
 
    @Qualifier(StreamStateManagerHazelcastConfig.STREAM_JOB_STATUS_CACHE_BEAN_NAME)
    val streamJobStateCache: MutableMap<StreamName, MutableList<StreamJobStateEvent>>,
+
+   @Qualifier(StreamStateManagerHazelcastConfig.STREAM_STATUS_TOPIC_BEAN_NAME)
+   val streamChangeEventTopic: ITopic<StreamStateChangeEvent>
 ) {
+   constructor(
+      initialState: StreamStatus.State = StreamStatus.State.PAUSED,
+      pipelineManager: PipelineManager,
+      hazelcastInstance: HazelcastInstance
+   ) : this(
+      initialState, pipelineManager,
+      hazelcastInstance.getMap(STREAM_STATUS_CACHE_NAME),
+      hazelcastInstance.getMap(STREAM_JOB_STATUS_CACHE_NAME),
+      hazelcastInstance.getReliableTopic(StreamStateChangeEvent.topicName)
+   )
 
 
    companion object {
@@ -112,7 +136,7 @@ class StreamStateManager(
 
       return if (status == null) {
          val initialStatus = StreamStatus(name, initialState)
-         streamStateCache[name] = initialStatus
+         setStreamState(initialStatus)
          initialStatus
       } else {
          status
@@ -142,9 +166,8 @@ class StreamStateManager(
 
    private fun handleJobStatusEvent(job: Job, event: StreamJobStateEvent) {
       val jobName = job.name
-      val (newState, description) = event
       if (jobName == null) {
-         logger.error { "Jet engine reported job with id ${job.id} changed to state $newState but not sure which job this relates to, as the originating job didn't have a name" }
+         logger.error { "Jet engine reported job with id ${job.id} changed to state $${event.status} but not sure which job this relates to, as the originating job didn't have a name" }
          return
       }
       streamJobStateCache.compute(jobName) { _, status ->
@@ -152,7 +175,7 @@ class StreamStateManager(
          statusList.add(event)
          statusList
       }
-      logger.info { "Updated stream state for ${job.name} to $newState" }
+      logger.info { "Updated stream state for ${event.streamName}: $event" }
    }
 
    /**
@@ -161,11 +184,16 @@ class StreamStateManager(
     */
    fun setStreamState(name: StreamName, state: StreamStatus.State): StreamStatus {
       val streamStatus = StreamStatus(name, state)
+     return setStreamState(streamStatus)
+   }
+   fun setStreamState(streamStatus: StreamStatus): StreamStatus {
+      val name = streamStatus.streamName
       // Set the state in the cache.
       // This will trigger the event listener on the appropriate node on the cluster
       // to start / stop the pipeline with the pipeline manager
-      streamStateCache.set(name, streamStatus)
-      logger.info { "Stream $name state updated to $streamStatus" }
+      val oldValue = streamStateCache.put(name, streamStatus)
+      logger.info { "Stream $name state updated to $streamStatus. Is change: ${oldValue != streamStatus}.  OldValue: ${oldValue}" }
+      streamChangeEventTopic.publish(StreamStateChangeEvent(name, streamStatus, oldValue))
       return streamStatus
    }
 
@@ -176,31 +204,61 @@ class StreamStateManager(
    fun getAllStreamStates(): List<StreamStatus> {
       return streamStateCache.values.toList()
    }
+
    fun getStreamAndJobStates(): Map<StreamName, StreamStateWithJobStates> {
-      return StreamStateMapListener.buildStreamAndJobStates(
+      return StreamStateChangeEventListener.buildStreamAndJobStates(
          streamStateCache,
          streamJobStateCache
       )
    }
 }
 
+data class StreamStateChangeEvent(
+   val name: StreamName,
+   val newState: StreamStatus,
+   val oldState: StreamStatus?
+) {
+   companion object {
+      const val topicName = "StreamStateChangeEvents"
+   }
+
+}
 
 interface StreamStateUpdatesPublisher {
    val stateUpdates: Flux<Map<String, StreamStateWithJobStates>>
 }
 
+/**
+ * Listens to events that a stream has changed it's desired state, and updates the
+ * Pipeline manager accordingly.
+ *
+ * This class is responsible for telling the PipelineManager to start and stop streams.
+ *
+ * The class gets notified of state changes via a ReliableTopic (see below for discussion around
+ * this choice).
+ * It will only act on events where the map entry for the stream is owned by the current node.
+ * This allows us to distribute event updates across the cluster, and only process on a single node.
+ *
+ * Re: EntryListener vs ReliableTopic:
+ * Originally we used an EntryListener on the StreamStatusCache. However
+ * we found that this would work fine for the first few-ish events, then would stop
+ * responding. Via debugging we confirmed that EntryUpdated events were being dispatched
+ * into Hazelcast's event system, but not enacted upon, and instead the event worker just queued events.
+ * (To verify, debug into StripedExecutor / StripedExecutor.Worker, and see events start to queue up).
+ *
+ * The same behaviour was found when we switched to Topic.
+ * However, ReliableTopic seems more ... reliable.
+ */
 @Component
-class StreamStateMapListener(
+class StreamStateChangeEventListener(
    private val pipelineManager: PipelineManager,
    @Qualifier(StreamStateManagerHazelcastConfig.STREAM_STATUS_CACHE_BEAN_NAME)
    private val streamStateCache: IMap<String, StreamStatus>,
    @Qualifier(StreamStateManagerHazelcastConfig.STREAM_JOB_STATUS_CACHE_BEAN_NAME)
    val streamJobStateCache: IMap<StreamName, MutableList<StreamJobStateEvent>>,
-) :
-   EntryAddedListener<String, StreamStatus>,
-   EntryRemovedListener<String, StreamStatus>,
-   EntryUpdatedListener<String, StreamStatus>,
-   StreamStateUpdatesPublisher {
+   @Qualifier(StreamStateManagerHazelcastConfig.STREAM_STATUS_TOPIC_BEAN_NAME)
+   val streamChangeEventTopic: ITopic<StreamStateChangeEvent>
+) : StreamStateUpdatesPublisher {
 
    private val stateUpdatesSink = Sinks.many().replay().latest<Map<String, StreamStateWithJobStates>>()
    override val stateUpdates: Flux<Map<String, StreamStateWithJobStates>> = stateUpdatesSink.asFlux()
@@ -228,8 +286,20 @@ class StreamStateMapListener(
    }
 
    init {
+      // Design choice: Using reliable topics for distributing steam state changes, rather than map listeners.
+      // We originally used EntryListener here, but found it unreliable, and change messages got dropped
+      streamChangeEventTopic
+         .addMessageListener { message ->
+            val messagePayload = message.messageObject
+            if (streamStateCache.localKeySet().contains(messagePayload.name)) {
+               logger.info { "Stream state has changed - acting. $messagePayload" }
+               this.submitUpdatedStateToPipelineManager(messagePayload.newState, messagePayload.name.fqn())
+            } else {
+               logger.info { "Ignoring stream state change event, as the stream is managed by another node. $messagePayload" }
+            }
+
+         }
       emitCurrentState()
-      streamStateCache.addEntryListener(this, true)
       val addedListener = EntryAddedListener<String, StreamStatus> { emitCurrentState() }
       val changeListener = EntryUpdatedListener<String, StreamStatus> { emitCurrentState() }
       streamJobStateCache.addEntryListener(addedListener, false)
@@ -245,49 +315,27 @@ class StreamStateMapListener(
       stateUpdatesSink.tryEmitNext(streamStateWithJobStates)
    }
 
-   override fun entryAdded(event: EntryEvent<String, StreamStatus>) {
-      if (event.value.state == StreamStatus.State.RUNNING && event.oldValue.state != StreamStatus.State.RUNNING && event.member.localMember()) {
-         val streamName = event.value.streamName
-         logger.info { "Stream $streamName entered state ${event.value.state}, so submitting to pipeline manager" }
-         pipelineManager.startPipelineByName(streamName.fqn())
 
-      }
-      // Report the status of the new stream, otherwise its state is reported as UNKNOWN in the UI.
-      emitCurrentState()
-   }
-
-   override fun entryRemoved(event: EntryEvent<String, StreamStatus>) {
-      // I think it's already been removed from the pipeline manager at this point
-      logger.info { "${event.key} removed from Stream Status cache" }
-   }
-
-   override fun entryUpdated(event: EntryEvent<String, StreamStatus>) {
-      val value = event.value
-      if (value.state == event.oldValue.state) {
-         return
-      }
-      val streamName = value.streamName.fqn()
-      if (event.member.localMember()) {
-         when (value.state) {
-            StreamStatus.State.PAUSED -> {
-               logger.info { "Stream $streamName entered state ${event.value.state}, so pausing on pipeline manager" }
-               pipelineManager.suspendPipelineByName(streamName)
-            }
-
-            StreamStatus.State.RUNNING -> {
-               logger.info { "Stream $streamName entered state ${event.value.state}, so submitting to pipeline manager" }
-               pipelineManager.startPipelineByName(streamName)
-            }
+   private fun submitUpdatedStateToPipelineManager(
+      value: StreamStatus,
+      streamName: QualifiedName,
+   ) {
+      when (value.state) {
+         StreamStatus.State.PAUSED -> {
+            logger.info { "Stream $streamName entered state ${value.state}, so pausing on pipeline manager" }
+            pipelineManager.suspendPipelineByName(streamName)
          }
-      } else {
-         logger.info { "Stream $streamName updating ${event.oldValue.state} -> ${event.value.state} - update is handled by another node" }
+
+         StreamStatus.State.RUNNING -> {
+            logger.info { "Stream $streamName entered state ${value.state}, so submitting to pipeline manager" }
+            pipelineManager.startPipelineByName(streamName)
+         }
       }
       emitCurrentState()
    }
 }
 
 interface StreamStatusRepository : JpaRepository<StreamStatus, String>
-
 
 
 class StreamStatusMapStore(

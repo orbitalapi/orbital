@@ -77,7 +77,8 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
       return StreamStateManager(
          pipelineManager = pipelineManager,
          streamStateCache = hazelcastInstance.getMap(StreamStateManagerHazelcastConfig.STREAM_STATUS_CACHE_NAME),
-         streamJobStateCache = hazelcastInstance.getMap(StreamStateManagerHazelcastConfig.STREAM_JOB_STATUS_CACHE_NAME)
+         streamJobStateCache = hazelcastInstance.getMap(StreamStateManagerHazelcastConfig.STREAM_JOB_STATUS_CACHE_NAME),
+         streamChangeEventTopic = hazelcastInstance.getReliableTopic(StreamStateManagerHazelcastConfig.STREAM_STATUS_TOPIC_BEAN_NAME)
       )
    }
 
