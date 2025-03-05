@@ -73,7 +73,8 @@ class MongoBulkMutatingQueryInvoker(
             .elapsed()
             .map { durationAndData ->
                val duration = durationAndData.t1
-               logger.info { "Mongo Upsert call completed in ${duration}ms " }
+               val upsertResult = durationAndData.t2
+               logger.info { "Mongo Upsert call completed in ${duration}ms. Total batch size was ${items.size}, result was ${upsertResult.insertedCount} inserted, ${upsertResult.modifiedCount} modified, ${upsertResult.deletedCount} deleted" }
 
                /**
                 * Note that we're passing an empty list to parameters argument of buildOperationResult.

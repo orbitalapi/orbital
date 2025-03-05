@@ -700,7 +700,7 @@ class TypedObjectFactory(
          }
 
          queryIfNotFound && inPlaceQueryEngine == null -> {
-            logger.warn { "Requested to use queryEngine to lookup value ${requestedType.qualifiedName.parameterizedName} but no query engine was provided.  Returning null" }
+            logger.debug { "Requested to use queryEngine to lookup value ${requestedType.qualifiedName.parameterizedName} but no query engine was provided.  Returning null" }
             createTypedNull()
          }
 
