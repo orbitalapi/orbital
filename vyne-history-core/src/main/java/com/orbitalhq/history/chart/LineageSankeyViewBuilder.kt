@@ -52,7 +52,7 @@ class LineageSankeyViewBuilder(private val schema: Schema) {
       when (instance) {
          is TypedObject -> buildForObject(instance)
          is TypedValue -> buildForForTypedValue(instance)
-         else -> logger.warn { "No Sankey build strategy for TypedInstance of type ${instance::class.simpleName}" }
+         else -> logger.debug { "No Sankey build strategy for TypedInstance of type ${instance::class.simpleName}" }
       }
    }
 
