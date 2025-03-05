@@ -13,6 +13,7 @@ import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.springframework.cloud.client.discovery.DiscoveryClient
 import org.springframework.stereotype.Component
+import reactor.core.Disposable
 import reactor.core.publisher.Flux
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -35,11 +36,16 @@ class NebulaWebsocketClient(
       1500.milliseconds,
       "/stream/stacks"
    )
+   private var currentStackLongLivedSubscription: Disposable? = null
 
    init {
+      // Autoconnect to this, so to avoid the race-condition that if Nebula starts after this,
+      // (and therefore we never connect to the websocket), we miss the initial state.
       val currentStack = Flux.just(schemaWatcher.currentState).concatWith(schemaWatcher.stacksUpdated.map { it.currentState })
          .replay(1)
-         .autoConnect()
+         .autoConnect(0)
+
+      currentStackLongLivedSubscription = currentStack.subscribe()
 
       logger.info { "Nebula client started - connecting" }
       CoroutineScope(Dispatchers.IO).launch {
