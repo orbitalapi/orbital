@@ -5,7 +5,16 @@ import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.schema.publisher.PublisherType
-import com.orbitalhq.schema.publisher.loaders.*
+import com.orbitalhq.schema.publisher.loaders.AddChangesToChangesetResponse
+import com.orbitalhq.schema.publisher.loaders.AvailableChangesetsResponse
+import com.orbitalhq.schema.publisher.loaders.CreateChangesetResponse
+import com.orbitalhq.schema.publisher.loaders.FinalizeChangesetResponse
+import com.orbitalhq.schema.publisher.loaders.LoaderExposingTaxiProject
+import com.orbitalhq.schema.publisher.loaders.LoaderStatus
+import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
+import com.orbitalhq.schema.publisher.loaders.SchemaSourcesAdaptor
+import com.orbitalhq.schema.publisher.loaders.SetActiveChangesetResponse
+import com.orbitalhq.schema.publisher.loaders.UpdateChangesetResponse
 import com.orbitalhq.schemaServer.core.adaptors.taxi.TaxiSchemaSourcesAdaptor
 import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.utils.files.FileSystemChangeEvent
@@ -22,7 +31,6 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.readBytes
 
@@ -60,10 +68,15 @@ class FileSystemPackageLoader(
 
    init {
       this.stateSink.emitNext(LoaderStatus.STARTING, Sinks.EmitFailureHandler.FAIL_FAST)
-      this.fileEvents
-//         .bufferTimeout(eventThrottleSize, eventThrottleDuration)
-         .subscribe { _ ->
-            logger.info { "Received change event from file system, triggering reload of package" }
+      this
+         .fileEvents
+         .filter { fileChanges ->
+            fileChanges.any { fileSystemChangeEvent ->
+               fileSystemChangeEvent.path.toAbsolutePath().startsWith(config.path.toAbsolutePath())
+            }
+         }
+         .subscribe { fileChanges ->
+            logger.info { "Received change event from file system ${fileChanges}, triggering reload of package at path ${config.path}" }
             // Invalidate the cached version
             cachedPackage.set(Mono.empty())
             triggerLoad()

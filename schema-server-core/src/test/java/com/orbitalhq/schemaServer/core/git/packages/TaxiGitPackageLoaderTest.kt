@@ -1,6 +1,5 @@
 package com.orbitalhq.schemaServer.core.git.packages
 
-import com.winterbe.expekt.should
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
@@ -9,6 +8,7 @@ import com.orbitalhq.schemaServer.core.git.GitProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
+import com.winterbe.expekt.should
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import org.eclipse.jgit.api.Git
@@ -167,18 +167,25 @@ class TaxiGitPackageLoaderTest {
       loader.loaderStatus
          .test()
          .expectSubscription()
-         .expectNextMatches { it == LoaderStatus.STARTING }
+         .expectNextMatches {
+            it == LoaderStatus.STARTING
+         }
          .then {
             loader.syncNow()
-            fileMonitor.pollNow()
+            loader
+               .filePackageLoader
+               .start()
+               .test()
+               .expectSubscription()
+               .expectNextMatches {
+                  it.packageMetadata.identifier.id == "taxi/sample/0.3.0"
+               }.thenCancel().verify()
          }
          .expectNextMatches {
             it.shouldBe(LoaderStatus.OK) // git status is OK
 
             true
          }
-         // The internal file status should emit OK, which is filtered
-         // as our loaded status is already OK, and we don't emit duplicates
          .expectNoEvent(Duration.ofSeconds(2))
          .thenCancel()
          .verify()
@@ -253,7 +260,12 @@ class TaxiGitPackageLoaderTest {
          .expectNextMatches { it == LoaderStatus.STARTING }
          .then {
             loader.syncNow()
-            fileMonitor.pollNow()
+            loader
+               .filePackageLoader
+               .start()
+               .test()
+               .expectSubscription()
+               .expectNoEvent(Duration.ofSeconds(5)).thenCancel().verify()
          }
          .expectNextMatches {
             it.state.shouldBe(LoaderStatus.LoaderState.ERROR)

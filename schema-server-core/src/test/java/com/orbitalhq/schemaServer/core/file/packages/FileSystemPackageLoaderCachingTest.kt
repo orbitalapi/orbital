@@ -2,7 +2,6 @@ package com.orbitalhq.schemaServer.core.file.packages
 
 import com.nhaarman.mockitokotlin2.any
 import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.reset
 import com.nhaarman.mockitokotlin2.times
 import com.nhaarman.mockitokotlin2.verify
 import com.nhaarman.mockitokotlin2.whenever
@@ -16,8 +15,7 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
-import reactor.core.scheduler.Schedulers
-import reactor.kotlin.test.test
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
 
@@ -49,7 +47,7 @@ class FileSystemPackageLoaderCachingTest {
       verify(adaptor, times(1)).convert(any(), any())
 
       // Now, trigger a file system change
-      fileSystemEventSink.tryEmitNext(emptyList())
+      fileSystemEventSink.tryEmitNext(listOf(FileSystemChangeEvent(Path.of(".", "foo"), FileSystemChangeEvent.FileSystemChangeEventType.FileChanged)))
 
       // and try to reload
       loader.loadNow().block(Duration.ofMillis(250))!!
