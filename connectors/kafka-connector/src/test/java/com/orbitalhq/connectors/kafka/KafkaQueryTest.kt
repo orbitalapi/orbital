@@ -7,6 +7,8 @@ import com.orbitalhq.models.TypedObject
 import com.orbitalhq.protobuf.wire.RepoBuilder
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.winterbe.expekt.should
+import io.kotest.assertions.timing.eventually
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -35,6 +37,7 @@ import java.math.BigInteger
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.seconds
 
 
 @SpringBootTest(classes = [KafkaQueryTestConfig::class])
@@ -141,7 +144,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
                     .trimIndent()
             ) .results.take(1).toList() as List<TypedObject>
         } catch (e: Exception ) {
-            e.message.should.equal("Error in Kafka connection: invalidConnection, details: Failed to construct kafka consumer")
+            e.message.should.equal("Failed to construct admin client for connection invalidConnection: Failed to create new KafkaAdminClient - JAAS config entry not terminated by semi-colon")
         }
     }
 
@@ -502,10 +505,14 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
             .results
             .map { "query2" to it }
 
-         val mergedResults = merge(result, result2).take(10).toList()
-
-         val groupByQuery = mergedResults.groupBy { it.first }
-         groupByQuery.keys.size.should.equal(2)
+         val recievedResults = mutableListOf<Pair<String,TypedInstance>>()
+         val mergedResults = merge(result, result2).take(20)
+            .toList(recievedResults)
+         eventually(10.seconds) {
+            val receivedPerQuery = recievedResults.groupBy { it.first }
+            // 10 results should be received on both query1 and query2
+            receivedPerQuery.keys.size == 2 && receivedPerQuery.all { it.value.size == 10 }
+         }.shouldBeTrue()
       }
 
    @Test

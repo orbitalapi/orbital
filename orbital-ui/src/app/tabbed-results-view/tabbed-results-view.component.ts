@@ -101,7 +101,7 @@ enum ViewMode {
           </ng-container>
           <button *tuiItem tuiTab>
             <img src="assets/img/tabler/exclamation-circle.svg" class="tab-icon">
-            Problems
+            Problems & info
             <tui-badge class="error-count-badge" *ngIf="errorCount > 0" size="s">{{ errorCount }}</tui-badge>
           </button>
         </tui-tabs-with-more>

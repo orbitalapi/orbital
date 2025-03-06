@@ -169,7 +169,9 @@ abstract class BaseKafkaContainerTest {
          connectionRegistry,
          SimpleSchemaProvider(schema),
          formatRegistry = formatRegistry,
-         meterRegistry = SimpleMeterRegistry()
+         meterRegistry = SimpleMeterRegistry(),
+         emitConsumerInfoMessages = false,
+         kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(SimpleMeterRegistry())
       )
       val streamErrorPublisher = StreamErrorPublisher()
       val invokers = listOf(
