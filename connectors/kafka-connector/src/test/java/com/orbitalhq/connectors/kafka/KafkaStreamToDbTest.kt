@@ -120,7 +120,9 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
                connectionRegistry,
                SimpleSchemaProvider(schema),
                formatRegistry = formatRegistry,
-               meterRegistry = SimpleMeterRegistry()
+               meterRegistry = SimpleMeterRegistry(),
+               emitConsumerInfoMessages = false,
+               kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(SimpleMeterRegistry())
             )
          listOf(
             JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),
@@ -214,7 +216,9 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
                connectionRegistry,
                SimpleSchemaProvider(schema),
                formatRegistry = formatRegistry,
-               meterRegistry = SimpleMeterRegistry()
+               meterRegistry = SimpleMeterRegistry(),
+               emitConsumerInfoMessages = false,
+               kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(SimpleMeterRegistry())
             )
          listOf(
             JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),

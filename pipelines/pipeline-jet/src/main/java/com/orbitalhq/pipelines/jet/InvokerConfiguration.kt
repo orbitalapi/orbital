@@ -12,6 +12,7 @@ import com.orbitalhq.connectors.azure.blob.StoreInvoker
 import com.orbitalhq.connectors.azure.blob.registry.AzureStoreConnectionFileRegistry
 import com.orbitalhq.connectors.jdbc.JdbcConnectionFactory
 import com.orbitalhq.connectors.jdbc.JdbcInvoker
+import com.orbitalhq.connectors.kafka.KafkaConsumerStatsFlowBuilder
 import com.orbitalhq.connectors.kafka.KafkaInvoker
 import com.orbitalhq.connectors.kafka.KafkaStreamManager
 import com.orbitalhq.connectors.kafka.KafkaStreamPublisher
@@ -77,7 +78,9 @@ class InvokerConfiguration {
       connectionRegistry,
       schemaProvider,
       formatRegistry = formatRegistry,
-      meterRegistry = meterRegistry
+      meterRegistry = meterRegistry,
+      kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(meterRegistry),
+      emitConsumerInfoMessages = false
    )
 
    @Bean
