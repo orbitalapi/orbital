@@ -65,6 +65,8 @@ class GitSchemaPackageLoader(
    override val loaderStatus: Flux<LoaderStatus>
 
    init {
+      // This is invoked on `SingleThreadedSinkEmitter` not on the main Thread.
+      GitRepoSync.syncNow(workingDir, config)
       val safePath = if (config.path.startsWith(FileSystems.getDefault().separator)) {
          Paths.get(".${FileSystems.getDefault().separator}" + config.path)
       } else {

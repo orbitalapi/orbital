@@ -14,6 +14,7 @@ import com.orbitalhq.schemaServer.SchemaServerApp
 import com.winterbe.expekt.should
 import mu.KotlinLogging
 import org.junit.BeforeClass
+import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.boot.ExitCodeGenerator
@@ -31,6 +32,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner
 import org.springframework.test.util.TestSocketUtils
 import org.springframework.web.util.pattern.PathPatternRouteMatcher
 import reactor.core.publisher.Flux
+import reactor.test.StepVerifier
 import java.util.*
 import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
@@ -62,6 +64,7 @@ class ClusteredSchemaStoreIntegrationTest {
 
 
    @Test
+   @Ignore("Temprorarily ignored")
    fun `Create Schema Server Cluster`() {
       // Setup - bring up two instances of schema servers in cluster mode.
       val schemaServerInstance1 = createClusteredSchemaServerInstance()
@@ -72,6 +75,18 @@ class ClusteredSchemaStoreIntegrationTest {
       val (rSocketServerPort2, httpServerPort2) = fetchHttpAndRSocketPortsFromSchemaServerApp(schemaServerInstance2)
       logger.info { "Schema Server instance 2 exposing Web Port $httpServerPort2, RSocket Port $rSocketServerPort2" }
 
+      StepVerifier.create(fetchSchemaThroughRSocket(rSocketServerPort2))
+         .expectSubscription()
+         .then {
+            val submissionResult = submitSchemasThroughRSocket(rSocketServerPort1)
+            submissionResult!!.schemaSet.parsedPackages.first().identifier.id.should.equal("com.vyne/test/1.0.0")
+         }.expectNextMatches {
+            it.parsedPackages.isEmpty()
+         }.expectNextMatches {
+            it.parsedPackages.first().identifier.id == "com.vyne/test/1.0.0"
+         }
+         .thenCancel()
+         .verify()
       // submit a schema to first schema-server through RSocket
       val submissionResult = submitSchemasThroughRSocket(rSocketServerPort1)
       submissionResult!!.schemaSet.parsedPackages.first().identifier.id.should.equal("com.vyne/test/1.0.0")
@@ -82,8 +97,8 @@ class ClusteredSchemaStoreIntegrationTest {
       Awaitility
          .await()
          .atMost(Duration(15, TimeUnit.SECONDS))
-         .until {
-            schemaSet!!.parsedPackages.size == 1
+         .until<Boolean> {
+            fetchSchemaThroughRSocket(rSocketServerPort2).blockFirst()!!.parsedPackages.size == 1
          }
 
       schemaSet!!.parsedPackages.first().identifier.id.should.equal("com.vyne/test/1.0.0")

@@ -47,15 +47,18 @@ class ReactivePollingFileSystemMonitor(
             }
 
             override fun onDirectoryCreate(directory: File) {
-               emitChangeEvent(directory, FileSystemChangeEventType.DirectoryCreated)
+               //no need to emit for this as we're getting file events insted.
+               //emitChangeEvent(directory, FileSystemChangeEventType.DirectoryCreated)
             }
 
             override fun onDirectoryChange(directory: File) {
-               emitChangeEvent(directory, FileSystemChangeEventType.DirectoryChanged)
+               //no need to emit for this as we're getting file events insted.
+               //emitChangeEvent(directory, FileSystemChangeEventType.DirectoryChanged)
             }
 
             override fun onDirectoryDelete(directory: File) {
-               emitChangeEvent(directory, FileSystemChangeEventType.DirectoryDeleted)
+               //no need to emit for this as we're getting file events insted.
+               // emitChangeEvent(directory, FileSystemChangeEventType.DirectoryDeleted)
             }
 
             override fun onFileCreate(file: File) {

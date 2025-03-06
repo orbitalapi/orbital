@@ -156,6 +156,7 @@ data class SchemaSet private constructor(
 
          this._rawSchemaStrings = this.validSources.map { it.content }
          this._compositeSchema = CompositeSchema(this._taxiSchemas!!)
+         log().info("Initialised schema set with generation $generation")
       }
    }
 

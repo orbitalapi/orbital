@@ -1,11 +1,15 @@
 package com.orbitalhq.schemaServer.core.schemaStoreConfig.clustered
 
 import com.hazelcast.core.HazelcastInstance
+import com.hazelcast.map.IMap
+import com.orbitalhq.ParsedPackage
 import com.orbitalhq.schema.publisher.ExpiringSourcesStore
 import com.orbitalhq.schema.publisher.KeepAliveStrategyMonitor
 import com.orbitalhq.schema.publisher.http.HttpPollKeepAliveStrategyMonitor
 import com.orbitalhq.schemaServer.core.config.SchemaUpdateNotifier
+import com.orbitalhq.schemaServer.core.schemaStoreConfig.clustered.DistributedSchemaStoreClient.Companion.SCHEMA_SOURCES_MAP
 import com.orbitalhq.schemaStore.ValidatingSchemaStoreClient
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
@@ -17,10 +21,24 @@ import java.time.Duration
 @ConditionalOnProperty("vyne.schema.server.clustered", havingValue = "true", matchIfMissing = false)
 @Configuration
 class ClusteredSchemaServerSourceProviderConfiguration {
+   /**
+    * Can't use UnversionedPackageIdentifier here as String alias due to
+    * https://youtrack.jetbrains.com/issue/KT-24700
+    */
+   @Bean(SCHEMA_SOURCES_MAP)
+   @ConditionalOnExpression("\${vyne.schema.server.clustered:false}")
+   fun streamStateCache(hazelcastInstance: HazelcastInstance
+   ): IMap<String, ParsedPackage> {
+
+      return hazelcastInstance
+         .getMap(SCHEMA_SOURCES_MAP)
+   }
    @Bean
    @ConditionalOnExpression("\${vyne.schema.server.clustered:false}")
-   fun localValidatingSchemaStoreClient(hazelcastInstance: HazelcastInstance): ValidatingSchemaStoreClient {
-      return DistributedSchemaStoreClient(hazelcastInstance)
+   fun localValidatingSchemaStoreClient(hazelcastInstance: HazelcastInstance,
+                                        @Qualifier(SCHEMA_SOURCES_MAP) packagesByIdMap: IMap<String, ParsedPackage>)
+   : ValidatingSchemaStoreClient {
+      return DistributedSchemaStoreClient(hazelcastInstance, packagesByIdMap)
    }
 
    @Bean

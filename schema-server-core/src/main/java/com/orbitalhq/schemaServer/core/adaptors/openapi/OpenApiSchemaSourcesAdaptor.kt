@@ -1,7 +1,6 @@
 package com.orbitalhq.schemaServer.core.adaptors.openapi
 
 import com.orbitalhq.DefaultPackageMetadata
-import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
@@ -17,7 +16,6 @@ import mu.KotlinLogging
 import reactor.core.publisher.Mono
 import java.io.File
 import java.net.URI
-import java.time.Instant
 
 class OpenApiSchemaSourcesAdaptor(private val spec: OpenApiPackageLoaderSpec) : SchemaSourcesAdaptor {
    private val logger = KotlinLogging.logger {}
@@ -44,7 +42,10 @@ class OpenApiSchemaSourcesAdaptor(private val spec: OpenApiPackageLoaderSpec) : 
 
    override fun convert(packageMetadata: PackageMetadata, transport: SchemaPackageTransport): Mono<SourcePackage> {
       return getOpenApiSpecUri(transport)
-         .flatMap { uri -> transport.readUri(uri).map { uri to it } }
+         .flatMap {uri ->
+            logger.debug { "Reading openAPI spec from $uri" }
+            transport.readUri(uri).map { uri to it }
+         }
          .map { (uri, openApiSpecBytes) ->
             val openApiSpec = String(openApiSpecBytes)
             val generatedTaxiCode = TaxiGenerator().generateAsStrings(
