@@ -6,7 +6,6 @@ import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.toAdminProps
 import com.orbitalhq.connectors.kafka.registry.toConsumerProps
 import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.config.validate.DurationValidator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.reactive.asFlow
@@ -20,6 +19,8 @@ import reactor.core.publisher.Sinks
 import reactor.kafka.receiver.ReceiverOptions
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Builds a flow emitting stats on consumer group usage.
@@ -39,8 +40,21 @@ class KafkaConsumerStatsFlowBuilder(
    // We need to retain admin clients and consumers.
    // Otherwise, each time we publish stats, it creates a new connection, which spams the logs.
    private val adminClients = ConcurrentHashMap<KafkaConnectionConfiguration, AdminClient>()
-   private val consumers = ConcurrentHashMap<KafkaConnectionConfiguration, KafkaConsumer<Any,Any>>()
+   private val consumers = ConcurrentHashMap<KafkaConnectionConfiguration, KafkaConsumer<Any, Any>>()
 
+   private val intGauges = mutableMapOf<String, AtomicInteger>()
+   private val longGauges = mutableMapOf<String, AtomicLong>()
+   private fun intGauge(name: String): AtomicInteger {
+      return intGauges.getOrPut(name) {
+         meterRegistry.gauge(name, AtomicInteger(0))!!
+      }
+   }
+
+   private fun longGauge(name: String): AtomicLong {
+      return longGauges.getOrPut(name) {
+         meterRegistry.gauge(name, AtomicLong(0))!!
+      }
+   }
 
    /**
     * Builds a flow that emits consumer group statistics without blocking.
@@ -90,12 +104,10 @@ class KafkaConsumerStatsFlowBuilder(
                   if (throwable == null) {
                      val groupInfo = groupDescriptions[groupId]
                      val members = groupInfo?.members() ?: emptyList()
-                     meterRegistry.gauge(
+                     intGauge(
                         "orbital.connections.kafka.${connectionConfiguration.connectionName}.topic.${request.topicName}.consumerGroup.${groupId}.members",
-                        members.size
-                     )
+                     ).set(members.size)
                      messages.add(
-
                         KafkaConsumerGroupInfoMessage(
                            "Consumer Group: $groupId has ${members.size} member(s): ${members.joinToString { it.consumerId() }}"
                         )
@@ -115,18 +127,15 @@ class KafkaConsumerStatsFlowBuilder(
                            val currentOffset = currentOffsets[partition]?.offset() ?: 0L
                            val endOffset = endOffsets[partition] ?: 0L
                            val lag = endOffset - currentOffset
-                           meterRegistry.gauge(
+                           longGauge(
                               "orbital.connections.kafka.${connectionConfiguration.connectionName}.topic.${request.topicName}.partition.${partition.partition()}.lag",
-                              lag
-                           )
-                           meterRegistry.gauge(
+                           ).set(lag)
+                           longGauge(
                               "orbital.connections.kafka.${connectionConfiguration.connectionName}.topic.${request.topicName}.partition.${partition.partition()}.end",
-                              endOffset
-                           )
-                           meterRegistry.gauge(
+                           ).set(endOffset)
+                           longGauge(
                               "orbital.connections.kafka.${connectionConfiguration.connectionName}.topic.${request.topicName}.partition.${partition.partition()}.offset",
-                              currentOffset
-                           )
+                           ).set(currentOffset)
                            messages.add(KafkaConsumerGroupInfoMessage("Partition ${partition.partition()} current offset: $currentOffset, end: $endOffset, lag: $lag"))
                         }
                      }
@@ -145,9 +154,11 @@ class KafkaConsumerStatsFlowBuilder(
     *
     * As a workaround, modify our messages to look like errors.
     */
-   fun buildAndWrapAsErrorMessages(   request: KafkaConsumerRequest,
-                                      connectionConfiguration: KafkaConnectionConfiguration,
-                                      receiverOptions: ReceiverOptions<Any, ByteArray>,): Flow<StreamErrorMessage> {
+   fun buildAndWrapAsErrorMessages(
+      request: KafkaConsumerRequest,
+      connectionConfiguration: KafkaConnectionConfiguration,
+      receiverOptions: ReceiverOptions<Any, ByteArray>,
+   ): Flow<StreamErrorMessage> {
       return buildConsumerStatsFlow(request, connectionConfiguration, receiverOptions)
          .map {
             StreamErrorMessage(
