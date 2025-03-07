@@ -120,6 +120,10 @@ class KafkaConsumerStatsFlowBuilder(
                               lag
                            )
                            meterRegistry.gauge(
+                              "orbital.connections.kafka.${connectionConfiguration.connectionName}.topic.${request.topicName}.partition.${partition.partition()}.end",
+                              endOffset
+                           )
+                           meterRegistry.gauge(
                               "orbital.connections.kafka.${connectionConfiguration.connectionName}.topic.${request.topicName}.partition.${partition.partition()}.offset",
                               currentOffset
                            )
