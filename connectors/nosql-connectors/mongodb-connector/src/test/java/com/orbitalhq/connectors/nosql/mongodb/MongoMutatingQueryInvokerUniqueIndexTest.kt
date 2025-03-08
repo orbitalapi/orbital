@@ -8,6 +8,7 @@ import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
 import com.winterbe.expekt.should
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -22,7 +23,7 @@ class MongoMutatingQueryInvokerUniqueIndexTest: MongoDbTestcontainer() {
         val connectionParams = mapOf(MongoConnection.Parameters.CONNECTION_STRING.templateParamName to connectionString)
         val mongo1ConnectionConfig = MongoConnectionConfiguration("accountsMongo", connectionParams)
         connectionRegistry = InMemoryMongoConnectionRegistry(listOf(mongo1ConnectionConfig))
-        connectionFactory =  MongoConnectionFactory(connectionRegistry)
+        connectionFactory =  MongoConnectionFactory(connectionRegistry, SimpleMeterRegistry())
     }
 
     private val accountsSchema = listOf(
@@ -31,7 +32,7 @@ class MongoMutatingQueryInvokerUniqueIndexTest: MongoDbTestcontainer() {
         """
          ${MongoConnector.Annotations.imports}
          import ${VyneQlGrammar.QUERY_TYPE_NAME}
-         
+
          @Collection(connection = "accountsMongo", collection = "accounts")
          model Account {
             @UniqueIndex
@@ -54,7 +55,7 @@ class MongoMutatingQueryInvokerUniqueIndexTest: MongoDbTestcontainer() {
     @Test
     fun `can upsert against a unique index`(): Unit = runBlocking {
         //val taxiSchema =
-        val vyne = testVyne(accountsSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+        val vyne = testVyne(accountsSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
         // Insert a Brand Account with id = 1
         val insertResult = vyne.query("""
                given { account : Account = { accountId : "1" , currency: "TL"  } }

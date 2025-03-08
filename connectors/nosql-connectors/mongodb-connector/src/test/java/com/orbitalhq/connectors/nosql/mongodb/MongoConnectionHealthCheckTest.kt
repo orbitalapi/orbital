@@ -4,6 +4,7 @@ import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.config.mongodb.MongoConnection
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.nosql.mongodb.registry.InMemoryMongoConnectionRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.junit.jupiter.api.Test
 import reactor.test.StepVerifier
 
@@ -12,7 +13,7 @@ class MongoConnectionHealthCheckTest: MongoDbTestcontainer() {
    fun `can check mongodb connection status successfully`() {
       val connectionParams = mapOf(MongoConnection.Parameters.CONNECTION_STRING.templateParamName to connectionString)
       val mongo1ConnectionConfig = MongoConnectionConfiguration("mongo1", connectionParams)
-      val mongoConnectionFactory =  MongoConnectionFactory(InMemoryMongoConnectionRegistry(listOf(mongo1ConnectionConfig)))
+      val mongoConnectionFactory =  MongoConnectionFactory(InMemoryMongoConnectionRegistry(listOf(mongo1ConnectionConfig)), SimpleMeterRegistry())
 
       StepVerifier
          .create(mongoConnectionFactory.ping(mongo1ConnectionConfig))
@@ -25,7 +26,7 @@ class MongoConnectionHealthCheckTest: MongoDbTestcontainer() {
    fun `can detect mongodb connection errors when mongo password is wrong`() {
       val connectionParams = mapOf(MongoConnection.Parameters.CONNECTION_STRING.templateParamName to connectionStringWithInvalidPassword)
       val mongo1ConnectionConfig = MongoConnectionConfiguration("mongo1", connectionParams)
-      val mongoConnectionFactory =  MongoConnectionFactory(InMemoryMongoConnectionRegistry(listOf(mongo1ConnectionConfig)))
+      val mongoConnectionFactory =  MongoConnectionFactory(InMemoryMongoConnectionRegistry(listOf(mongo1ConnectionConfig)), SimpleMeterRegistry())
 
       StepVerifier
          .create(mongoConnectionFactory.ping(mongo1ConnectionConfig))

@@ -8,11 +8,13 @@ import com.orbitalhq.config.UpdatableConfigRepository
 import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.nosql.mongodb.registry.MongoConnectionRegistry
+import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.binder.mongodb.MongoMetricsCommandListener
 import mu.KotlinLogging
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
 import reactor.core.publisher.Mono
 
-class MongoConnectionFactory(private val connectionRegistry: MongoConnectionRegistry) {
+class MongoConnectionFactory(private val connectionRegistry: MongoConnectionRegistry, private val metricRegistry: MeterRegistry) {
    private val mongoClientCache = CacheBuilder.newBuilder()
       .build<String, MongoClient>()
 
@@ -40,6 +42,7 @@ class MongoConnectionFactory(private val connectionRegistry: MongoConnectionRegi
       val mongoClient = mongoClientCache.get(connection.connectionName) {
          val mongoClientSettings = MongoClientSettings.builder()
             .applyConnectionString(mongoDbConnectionString)
+            .addCommandListener(MongoMetricsCommandListener(metricRegistry))
             .build()
 
          MongoClients.create(mongoClientSettings)

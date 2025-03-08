@@ -5,12 +5,12 @@ import arrow.core.left
 import arrow.core.right
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
-import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.connectors.StreamErrorMessage
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.brokers
 import com.orbitalhq.connectors.kafka.registry.toReceiverOptions
+import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.OperationResultDataSourceWrapper
@@ -23,20 +23,18 @@ import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
+import com.orbitalhq.metrics.MetricTags
 import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.onSubscription
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
@@ -47,7 +45,7 @@ import reactor.kafka.receiver.ReceiverOptions
 import reactor.util.retry.Retry
 import java.time.Duration
 import java.time.Instant
-import java.util.Locale
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -72,7 +70,7 @@ class KafkaStreamManager(
    private val formatRegistry: FormatRegistry,
    private val meterRegistry: MeterRegistry,
    private val emitConsumerInfoMessages: Boolean,
-   private val kafkaConsumerStatsFlowBuilder:KafkaConsumerStatsFlowBuilder
+   private val kafkaConsumerStatsFlowBuilder: KafkaConsumerStatsFlowBuilder
 ) {
 
    private val elasticScheduler: Scheduler = Schedulers.newBoundedElastic(20, Integer.MAX_VALUE, "orbital-kafka-stream")
@@ -168,7 +166,13 @@ class KafkaStreamManager(
             evictConnection(request)
          }
          .doOnEach { _ ->
-            meterRegistry.counter("orbital.connections.kafka.${request.connectionName}.topic.${request.topicName}.messagesReceived")
+            meterRegistry.counter(
+               "orbital.connections.kafka.messagesReceived",
+               listOf(
+                  MetricTags.Topic.of(request.topicName),
+                  MetricTags.ConnectionName.of(request.connectionName)
+               )
+            )
                .increment()
          }
          .map { record ->
@@ -201,6 +205,14 @@ class KafkaStreamManager(
                   payload = messageValue
                )
 
+               meterRegistry.counter(
+                  "orbital.connections.kafka.messageErrors",
+                  listOf(
+                     MetricTags.ConnectionName.of( request.connectionName),
+                     MetricTags.Topic.of(request.topicName)
+                  )
+               )
+                  .increment()
                logger.info { "Failed to parse TypedInstance from kafka data for type => ${messageType.longDisplayName}  - error: ${errorMessage.message}" }
                Either.Left(errorMessage)
             } finally {

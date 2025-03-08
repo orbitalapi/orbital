@@ -24,6 +24,11 @@
          <scope>test</scope>
       </dependency>
       <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>metrics-utils</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.testcontainers</groupId>
          <artifactId>testcontainers</artifactId>
          <scope>test</scope>

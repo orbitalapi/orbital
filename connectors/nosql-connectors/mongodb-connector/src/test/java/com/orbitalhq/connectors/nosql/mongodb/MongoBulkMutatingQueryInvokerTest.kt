@@ -15,6 +15,7 @@ import io.kotest.assertions.timing.eventually
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collect
@@ -96,7 +97,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
       val connectionParams = mapOf(MongoConnection.Parameters.CONNECTION_STRING.templateParamName to connectionString)
       val mongo1ConnectionConfig = MongoConnectionConfiguration("testMongo", connectionParams)
       connectionRegistry = InMemoryMongoConnectionRegistry(listOf(mongo1ConnectionConfig))
-      connectionFactory = MongoConnectionFactory(connectionRegistry)
+      connectionFactory = MongoConnectionFactory(connectionRegistry, SimpleMeterRegistry())
    }
 
    @Test
@@ -126,7 +127,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
          listOf(
             MongoDbInvoker(
                connectionFactory,
-               SimpleSchemaProvider(schema)
+               SimpleSchemaProvider(schema), SimpleMeterRegistry()
             )
          )
       }
@@ -197,7 +198,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
          listOf(
             MongoDbInvoker(
                connectionFactory,
-               SimpleSchemaProvider(schema)
+               SimpleSchemaProvider(schema), SimpleMeterRegistry()
             )
          )
       }
@@ -240,7 +241,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
       // Make sure this is less than the batch write timeout, to assert that
       // writes are triggered by batch size, not timeout
       eventually(60.seconds) {
-         collectedResults.get() shouldBe  recordsToEmit
+         collectedResults.get() shouldBe recordsToEmit
       }
       thread.cancelAndJoin()
       val mongo = connectionFactory.reactiveMongoTemplate(connectionFactory.config("testMongo"))
@@ -266,7 +267,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
          listOf(
             MongoDbInvoker(
                connectionFactory,
-               SimpleSchemaProvider(schema)
+               SimpleSchemaProvider(schema), SimpleMeterRegistry()
             )
          )
       }

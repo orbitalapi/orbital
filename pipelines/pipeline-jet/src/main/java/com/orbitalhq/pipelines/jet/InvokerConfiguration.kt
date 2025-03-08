@@ -19,6 +19,7 @@ import com.orbitalhq.connectors.kafka.KafkaStreamPublisher
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnectionFactory
 import com.orbitalhq.connectors.nosql.mongodb.MongoDbInvoker
+import com.orbitalhq.metrics.GaugeRegistry
 import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.schema.api.SchemaProvider
 import io.micrometer.core.instrument.MeterRegistry
@@ -73,13 +74,14 @@ class InvokerConfiguration {
       connectionRegistry: KafkaConnectionRegistry,
       schemaProvider: SchemaProvider,
       formatRegistry: FormatRegistry,
-      meterRegistry: MeterRegistry
+      meterRegistry: MeterRegistry,
+      gaugeRegistry: GaugeRegistry
    ) = KafkaStreamManager(
       connectionRegistry,
       schemaProvider,
       formatRegistry = formatRegistry,
       meterRegistry = meterRegistry,
-      kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(meterRegistry),
+      kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(gaugeRegistry),
       emitConsumerInfoMessages = false
    )
 
@@ -119,5 +121,5 @@ class InvokerConfiguration {
    }
 
    @Bean
-   fun mongoDbInvoker(mongoConnectionFactory: MongoConnectionFactory, schemaProvider: SchemaProvider) = MongoDbInvoker(mongoConnectionFactory, schemaProvider)
+   fun mongoDbInvoker(mongoConnectionFactory: MongoConnectionFactory, schemaProvider: SchemaProvider, meterRegistry: MeterRegistry) = MongoDbInvoker(mongoConnectionFactory, schemaProvider, meterRegistry)
 }

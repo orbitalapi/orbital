@@ -5,6 +5,7 @@ import com.mongodb.client.model.InsertOneModel
 import com.mongodb.client.model.UpdateOneModel
 import com.mongodb.client.model.UpdateOptions
 import com.orbitalhq.connectors.BatchWriteCacheProvider
+import com.orbitalhq.metrics.MetricTags
 import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.TypedInstance
@@ -14,6 +15,7 @@ import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.fqn
+import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.Flow
@@ -31,7 +33,8 @@ private val logger = KotlinLogging.logger { }
 class MongoBulkMutatingQueryInvoker(
    connectionFactory: MongoConnectionFactory,
    schemaProvider: SchemaProvider,
-   private val batchWriteCacheProvider: BatchWriteCacheProvider<TypedInstance, OperationResultReference>
+   private val batchWriteCacheProvider: BatchWriteCacheProvider<TypedInstance, OperationResultReference>,
+   private val metricRegistry: MeterRegistry
 ) : MongoBaseInvoker(connectionFactory, schemaProvider) {
 
    private val counter = AtomicInteger(0)
@@ -74,6 +77,13 @@ class MongoBulkMutatingQueryInvoker(
             .map { durationAndData ->
                val duration = durationAndData.t1
                val upsertResult = durationAndData.t2
+               val tags = listOf(
+                  MetricTags.ConnectionName.of(connectionConfig.connectionName),
+                  MetricTags.TableName.of(collectionName)
+               )
+               metricRegistry.counter("orbital.connections.mongo.inserts", tags).increment(upsertResult.insertedCount.toDouble())
+               metricRegistry.counter("orbital.connections.mongo.updates", tags).increment(upsertResult.modifiedCount.toDouble())
+               metricRegistry.counter("orbital.connections.mongo.deletes", tags).increment(upsertResult.deletedCount.toDouble())
                logger.info { "Mongo Upsert call completed in ${duration}ms. Total batch size was ${items.size}, result was ${upsertResult.insertedCount} inserted, ${upsertResult.modifiedCount} modified, ${upsertResult.deletedCount} deleted" }
 
                /**

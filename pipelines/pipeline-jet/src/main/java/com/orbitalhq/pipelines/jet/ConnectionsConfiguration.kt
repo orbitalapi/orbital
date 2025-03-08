@@ -92,8 +92,8 @@ class ConnectionsConfiguration {
    }
 
    @Bean
-   fun mongoConnectionFactory(mongoConnectionRegistry: MongoConnectionRegistry): MongoConnectionFactory {
-      return MongoConnectionFactory(mongoConnectionRegistry)
+   fun mongoConnectionFactory(mongoConnectionRegistry: MongoConnectionRegistry, meterRegistry: MeterRegistry): MongoConnectionFactory {
+      return MongoConnectionFactory(mongoConnectionRegistry, meterRegistry)
    }
 
 }

@@ -2,9 +2,11 @@ package com.orbitalhq.cockpit.core
 
 import com.orbitalhq.connectors.registry.RawConnectionsConnectorConfig
 import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
+import com.orbitalhq.metrics.GaugeRegistry
 import com.orbitalhq.nebula.NebulaSpringModule
 import com.orbitalhq.schemas.readers.SourceConverterRegistry
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.ComponentScan
 import org.springframework.context.annotation.Configuration
@@ -23,6 +25,9 @@ class CockpitCoreConfig {
       ),
       registerWithStaticRegistry = true
    )
+
+   @Bean
+   fun gaugeRegistry(metricsRegistry: MeterRegistry):GaugeRegistry = GaugeRegistry(metricsRegistry)
 }
 
 

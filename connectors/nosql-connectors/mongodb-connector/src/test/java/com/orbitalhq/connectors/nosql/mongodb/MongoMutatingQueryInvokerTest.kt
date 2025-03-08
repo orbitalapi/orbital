@@ -15,6 +15,7 @@ import com.sun.source.tree.UnionTypeTree
 import com.winterbe.expekt.should
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.types.shouldBeInstanceOf
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -88,7 +89,7 @@ class MongoMutatingQueryInvokerTest : MongoDbTestcontainer() {
       val connectionParams = mapOf(MongoConnection.Parameters.CONNECTION_STRING.templateParamName to connectionString)
       val mongo1ConnectionConfig = MongoConnectionConfiguration("flightsMongo", connectionParams)
       connectionRegistry = InMemoryMongoConnectionRegistry(listOf(mongo1ConnectionConfig))
-      connectionFactory = MongoConnectionFactory(connectionRegistry)
+      connectionFactory = MongoConnectionFactory(connectionRegistry, SimpleMeterRegistry())
    }
 
    @Test
@@ -97,7 +98,7 @@ class MongoMutatingQueryInvokerTest : MongoDbTestcontainer() {
          listOf(
             MongoDbInvoker(
                connectionFactory,
-               SimpleSchemaProvider(schema)
+               SimpleSchemaProvider(schema), SimpleMeterRegistry()
             )
          )
       }
@@ -182,7 +183,7 @@ class MongoMutatingQueryInvokerTest : MongoDbTestcontainer() {
          }
       """
       val vyne = testVyne(listOf(schema, MongoConnector.schema, VyneQlGrammar.QUERY_TYPE_TAXI)) { schema ->
-         listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema)))
+         listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()))
       }
       val result = vyne.query(
          """
@@ -219,7 +220,7 @@ class MongoMutatingQueryInvokerTest : MongoDbTestcontainer() {
          }
       """
       val vyne = testVyne(listOf(schema, MongoConnector.schema, VyneQlGrammar.QUERY_TYPE_TAXI)) { schema ->
-         listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema)))
+         listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()))
       }
       val result = vyne.query(
          """
