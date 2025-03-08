@@ -12,6 +12,7 @@ import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
+import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.flow.Flow
 import lang.taxi.services.OperationScope
 import mu.KotlinLogging
@@ -20,7 +21,8 @@ private val logger = KotlinLogging.logger {}
 
 class MongoDbInvoker(
    connectionFactory: MongoConnectionFactory,
-   schemaProvider: SchemaProvider
+   schemaProvider: SchemaProvider,
+   meterRegistry: MeterRegistry
 ) : OperationInvoker {
 
    companion object {
@@ -31,9 +33,9 @@ class MongoDbInvoker(
 
    private val batchWriteCacheProvider = BatchWriteCacheProvider<TypedInstance, OperationResultReference>()
    private val readOnlyInvoker = MongoReadOnlyQueryInvoker(connectionFactory, schemaProvider)
-   private val upsertInvoker = MongoMutatingQueryInvoker(connectionFactory, schemaProvider)
+   private val upsertInvoker = MongoMutatingQueryInvoker(connectionFactory, schemaProvider, meterRegistry)
    private val bulkUpsertInvoker =
-      MongoBulkMutatingQueryInvoker(connectionFactory, schemaProvider, batchWriteCacheProvider)
+      MongoBulkMutatingQueryInvoker(connectionFactory, schemaProvider, batchWriteCacheProvider, meterRegistry)
 
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(MongoConnector.Annotations.MongoOperation.NAME)

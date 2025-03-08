@@ -9,6 +9,7 @@ import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
 import com.winterbe.expekt.should
 import io.kotest.matchers.maps.shouldContainKey
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -56,43 +57,43 @@ class MongoReadOnlyQueryInvokerTest: MongoDbTestcontainer() {
             table user : User[]
             table mongoUsers: UserWithObjectId[]
          }
-         
+
          @Collection(connection = "usersMongo", collection = "films")
          model FilmsWithIntObjectId {
             @Id
             id: FilmId inherits Int
             name: FilmName inherits String
          }
-         
+
          @MongoService( connection = "usersMongo" )
          service FilmsDb {
             table films : FilmsWithIntObjectId[]
          }
-         
+
          @Collection(connection = "usersMongo", collection = "compositeIds")
          model ModelWithMongoCompositeId {
             @Id
             id: MongoKey
             name: CompositeModelName inherits String
          }
-         
+
          model MongoKey {
             key1: FirstKey inherits Int
             key2: SecondKey inherits String
          }
-         
+
          @MongoService( connection = "usersMongo" )
          service CompositeDb {
             table composites : ModelWithMongoCompositeId[]
          }
-         
+
          @Collection(connection = "usersMongo", collection = "ratings")
          model RatingsWithStringMongoId {
             @Id
             id: RatingId inherits String
             name: RatingName inherits String
          }
-         
+
          @MongoService( connection = "usersMongo" )
          service RatingsDocument {
             table ratings : RatingsWithStringMongoId[]
@@ -113,12 +114,12 @@ class MongoReadOnlyQueryInvokerTest: MongoDbTestcontainer() {
       val connectionParams = mapOf(MongoConnection.Parameters.CONNECTION_STRING.templateParamName to connectionString)
       val mongo1ConnectionConfig = MongoConnectionConfiguration("usersMongo", connectionParams)
       connectionRegistry = InMemoryMongoConnectionRegistry(listOf(mongo1ConnectionConfig))
-      connectionFactory =  MongoConnectionFactory(connectionRegistry)
+      connectionFactory =  MongoConnectionFactory(connectionRegistry, SimpleMeterRegistry())
    }
 
    @Test
    fun `can fetch data from mongodb with equals criteria`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
       val result = vyne.query("""find { User[]( FirstName == "Harry" ) } """)
          .typedObjects()
       result.should.have.size(1)
@@ -133,7 +134,7 @@ class MongoReadOnlyQueryInvokerTest: MongoDbTestcontainer() {
 
    @Test
    fun `can fetch data from mongodb with less than criteria`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
       val result = vyne.query("""find { User[]( Age < 14 ) } """)
          .typedObjects()
       result.should.have.size(1)
@@ -148,7 +149,7 @@ class MongoReadOnlyQueryInvokerTest: MongoDbTestcontainer() {
 
    @Test
    fun `can fetch data from mongodb with larger than criteria`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
       val result = vyne.query("""find { User[]( Age > 65 ) } """)
          .typedObjects()
       result.should.have.size(1)
@@ -163,7 +164,7 @@ class MongoReadOnlyQueryInvokerTest: MongoDbTestcontainer() {
 
    @Test
    fun `can fetch data from mongodb with logical and criteria`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
 
       val query = "find { User[]( Age >= 60 && Age < 70 ) }"
       val result = vyne.query(query)
@@ -180,7 +181,7 @@ class MongoReadOnlyQueryInvokerTest: MongoDbTestcontainer() {
 
    @Test
    fun `can fetch data from mongodb with logical or criteria`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
 
       val query = "find { User[]( Age == 14 || Age == 15 ) }"
       val result = vyne.query(query)
@@ -197,7 +198,7 @@ class MongoReadOnlyQueryInvokerTest: MongoDbTestcontainer() {
 
    @Test
    fun `can fetch data from mongodb with ObjectId with equals criteria`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
       val result = vyne.query("""find { UserWithObjectId[]( FirstName == "Harry" ) } """)
          .typedObjects()
       result.should.have.size(1)
@@ -215,7 +216,7 @@ class MongoReadOnlyQueryInvokerTest: MongoDbTestcontainer() {
 
    @Test
    fun `can fetch data from mongodb with Integer _id fields`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
       val result = vyne.query("""find { FilmsWithIntObjectId[]( FilmId == 1 ) } """)
          .typedObjects()
       result.should.have.size(1)
@@ -227,7 +228,7 @@ class MongoReadOnlyQueryInvokerTest: MongoDbTestcontainer() {
 
    @Test
    fun `can fetch data from mongodb with String _id field`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
       val result = vyne.query("""find { RatingsWithStringMongoId[]( RatingId == "goodRating" ) }""")
          .typedObjects()
       result.should.have.size(1)

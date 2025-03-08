@@ -5,6 +5,7 @@ import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnectionFactory
 import com.orbitalhq.connectors.nosql.mongodb.registry.MongoConnectionRegistry
 import com.orbitalhq.connectors.nosql.mongodb.registry.SourceLoaderMongoConnectionRegistry
+import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -18,7 +19,7 @@ class MongoConnectionConfig {
    }
 
    @Bean
-   fun mongoConnectionFactory(mongoConnectionRegistry: MongoConnectionRegistry): MongoConnectionFactory {
-      return MongoConnectionFactory(mongoConnectionRegistry)
+   fun mongoConnectionFactory(mongoConnectionRegistry: MongoConnectionRegistry, meterRegistry: MeterRegistry): MongoConnectionFactory {
+      return MongoConnectionFactory(mongoConnectionRegistry, meterRegistry)
    }
 }

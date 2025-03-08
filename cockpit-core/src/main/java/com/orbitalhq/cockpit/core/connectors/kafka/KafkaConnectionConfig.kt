@@ -9,6 +9,7 @@ import com.orbitalhq.connectors.kafka.KafkaStreamManager
 import com.orbitalhq.connectors.kafka.KafkaStreamPublisher
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.SourceLoaderKafkaConnectionRegistry
+import com.orbitalhq.metrics.GaugeRegistry
 import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.schema.api.SchemaProvider
 import io.micrometer.core.instrument.MeterRegistry
@@ -32,10 +33,11 @@ class KafkaConnectionConfig {
       schemaProvider: SchemaProvider,
       formatRegistry: FormatRegistry,
       meterRegistry: MeterRegistry,
+      gaugeRegistry: GaugeRegistry,
       @Value("\${vyne.streams.emitKafkaConsumerGroupInfo:true}") emitKafkaConsumerGroupInfo: Boolean
    ): KafkaStreamManager {
       val consumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(
-         meterRegistry
+         gaugeRegistry = gaugeRegistry
       )
       return KafkaStreamManager(
          connectionRegistry,

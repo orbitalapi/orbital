@@ -5,6 +5,7 @@ import com.google.common.cache.CacheBuilder
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.toSenderOptions
+import com.orbitalhq.metrics.MetricTags
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.models.json.Jackson
@@ -71,7 +72,12 @@ class KafkaStreamPublisher(
          val disposable =  kafkaSender
             .send(sink.asFlux())
             .subscribeOn(Schedulers.boundedElastic())
-            .doOnEach { _ -> meterRegistry.counter("orbital.connections.kafka.${connectionName}.topic.${topic}.messagesPublished").increment() }
+            .doOnEach { _ -> meterRegistry.counter("orbital.connections.kafka.messagesPublished",
+               listOf(
+                  MetricTags.ConnectionName.of(connectionName),
+                  MetricTags.Topic.of(topic),
+                  )
+               ).increment() }
             .subscribe()
 
          disposable to sink

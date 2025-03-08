@@ -1,5 +1,7 @@
 package com.orbitalhq.pipelines.jet.streams
 
+import com.orbitalhq.metrics.GaugeRegistry
+import com.orbitalhq.metrics.MetricTags
 import com.orbitalhq.pipelines.jet.api.streams.StreamJobStateEvent
 import com.orbitalhq.pipelines.jet.api.streams.StreamStateWithJobStates
 import com.orbitalhq.pipelines.jet.api.streams.StreamStatus
@@ -13,11 +15,9 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 @Component
 class StreamStateHealthGauge(
-   private val meterRegistry: MeterRegistry,
+   private val gaugeRegistry: GaugeRegistry,
    private val streamStateListener: StreamStateChangeEventListener
 ) {
-   private val gauges = mutableMapOf<String, AtomicInteger>()
-
    init {
       streamStateListener.stateUpdates.subscribe { value ->
          val allStates = StreamStateWithJobStates.allStates.associateWith { 0 }.toMutableMap()
@@ -27,20 +27,8 @@ class StreamStateHealthGauge(
                allStates[status] = jobsInState.size
             }
          allStates.forEach { (jobState, count) ->
-            gauge("orbital.streams.state.$jobState").set(count)
+            gaugeRegistry.int("orbital.streams.state.count", listOf(MetricTags.StreamingJobState.of(jobState))).set(count)
          }
-         value.forEach { (name, jobStates) ->
-            val isHealthy = jobStates.streamStatus.state == StreamStatus.State.RUNNING
-               && jobStates.jobState?.status == StreamJobStateEvent.JobStatus.RUNNING
-            val isHealthyGaugeValue = if (isHealthy) 1 else 0
-            gauge("orbital.streams.health.$name.healthy").set(isHealthyGaugeValue)
-         }
-      }
-   }
-
-   private fun gauge(name: String): AtomicInteger {
-      return gauges.getOrPut(name) {
-         meterRegistry.gauge(name, AtomicInteger(0))!!
       }
    }
 }

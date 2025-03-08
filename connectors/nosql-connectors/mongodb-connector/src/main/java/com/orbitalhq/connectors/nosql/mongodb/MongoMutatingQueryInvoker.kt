@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
+import com.orbitalhq.metrics.MetricTags
 import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
@@ -9,15 +10,19 @@ import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.fqn
+import io.micrometer.core.instrument.Counter
+import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
 
 private val logger = KotlinLogging.logger { }
+
 class MongoMutatingQueryInvoker(
    connectionFactory: MongoConnectionFactory,
-   schemaProvider: SchemaProvider
-): MongoBaseInvoker(connectionFactory, schemaProvider) {
+   schemaProvider: SchemaProvider,
+   private val meterRegistry: MeterRegistry,
+) : MongoBaseInvoker(connectionFactory, schemaProvider) {
 
    suspend fun invoke(
       service: Service,
@@ -41,30 +46,43 @@ class MongoMutatingQueryInvoker(
       val (connectionConfig, reactiveMongoTemplate) = getConnectionConfigAndTemplate(service)
       val recordToWrite = parameters[0].second
       val documentMap = typedInstanceToMap(recordToWrite)
-      val upsertDefinition =  MongoCriteriaGenerator.upsertFor(recordToWrite, documentMap)
-
-     val upsertMono = if (upsertDefinition == null) {
-         reactiveMongoTemplate.save(documentMap, collectionName)
+      val upsertDefinition = MongoCriteriaGenerator.upsertFor(recordToWrite, documentMap)
+      val tags = listOf(
+         MetricTags.ConnectionName.of(connectionConfig.connectionName),
+         MetricTags.TableName.of(collectionName)
+      )
+      var updateCounter: Counter? = null
+      val upsertMono = if (upsertDefinition == null) {
+         val result = reactiveMongoTemplate.save(documentMap, collectionName)
+            .map { 1L /* update count */ to it }
+         updateCounter = meterRegistry.counter("orbital.connections.mongo.updates", tags)
+         result
       } else {
-         reactiveMongoTemplate.upsert(upsertDefinition.first, upsertDefinition.second, collectionName).map { documentMap}
+         updateCounter = meterRegistry.counter("orbital.connections.mongo.updates", tags)
+         reactiveMongoTemplate.upsert(upsertDefinition.first, upsertDefinition.second, collectionName)
+            .map { upsertResult ->
+               upsertResult.modifiedCount to documentMap
+            }
       }
       return upsertMono
          .elapsed()
          .map { durationAndData ->
             val duration = durationAndData.t1
-            logger.info { "Mongo Upsert call completed in ${duration}ms "}
-            val data = durationAndData.t2
+            logger.info { "Mongo Upsert call completed in ${duration}ms " }
+            val (updateCount, data) = durationAndData.t2
+            updateCounter?.increment(updateCount.toDouble())
             val operationResult = buildOperationResult(
                service,
                operation,
-               listOf( input),
+               listOf(input),
                "upsert",
                connectionConfig.connectionString.hosts.joinToString(),
                java.time.Duration.ofMillis(duration),
                recordCount = 1
             )
             eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
-            val resultTypedInstance =  mapToTypedInstance(data,inputType, schema,  operationResult.asOperationReferenceDataSource())
+            val resultTypedInstance =
+               mapToTypedInstance(data, inputType, schema, operationResult.asOperationReferenceDataSource())
             DataSourceUpdater.update(resultTypedInstance, operationResult.asOperationReferenceDataSource())
          }.asFlow()
 

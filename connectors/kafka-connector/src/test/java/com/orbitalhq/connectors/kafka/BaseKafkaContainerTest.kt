@@ -10,6 +10,7 @@ import com.orbitalhq.avro.AvroFormatSpec
 import com.orbitalhq.connectors.StreamErrorPublisher
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
+import com.orbitalhq.metrics.GaugeRegistry
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.format.DefaultFormatRegistry
 import com.orbitalhq.protobuf.ProtobufFormatSpec
@@ -171,7 +172,7 @@ abstract class BaseKafkaContainerTest {
          formatRegistry = formatRegistry,
          meterRegistry = SimpleMeterRegistry(),
          emitConsumerInfoMessages = false,
-         kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(SimpleMeterRegistry())
+         kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(GaugeRegistry.simple())
       )
       val streamErrorPublisher = StreamErrorPublisher()
       val invokers = listOf(

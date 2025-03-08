@@ -18,7 +18,11 @@
             <artifactId>connectors-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-
+       <dependency>
+          <groupId>com.orbitalhq</groupId>
+          <artifactId>metrics-utils</artifactId>
+          <version>${project.version}</version>
+       </dependency>
         <dependency>
             <groupId>com.orbitalhq</groupId>
             <artifactId>schema-api</artifactId>

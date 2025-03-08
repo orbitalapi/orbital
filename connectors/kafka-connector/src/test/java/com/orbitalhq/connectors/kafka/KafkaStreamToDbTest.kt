@@ -10,6 +10,7 @@ import com.orbitalhq.connectors.jdbc.JdbcConnectionFactory
 import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi
 import com.orbitalhq.connectors.jdbc.JdbcInvoker
 import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
+import com.orbitalhq.metrics.GaugeRegistry
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.testVyne
@@ -122,7 +123,7 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
                formatRegistry = formatRegistry,
                meterRegistry = SimpleMeterRegistry(),
                emitConsumerInfoMessages = false,
-               kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(SimpleMeterRegistry())
+               kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(GaugeRegistry.simple())
             )
          listOf(
             JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),
@@ -218,7 +219,7 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
                formatRegistry = formatRegistry,
                meterRegistry = SimpleMeterRegistry(),
                emitConsumerInfoMessages = false,
-               kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(SimpleMeterRegistry())
+               kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(GaugeRegistry.simple())
             )
          listOf(
             JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),
