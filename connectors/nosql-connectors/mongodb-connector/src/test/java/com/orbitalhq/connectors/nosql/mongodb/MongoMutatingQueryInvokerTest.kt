@@ -106,7 +106,7 @@ class MongoMutatingQueryInvokerTest : MongoDbTestcontainer() {
       // Insert a Brand New Flight Into flightInfo, note we pass 'null' objectId so that Mongo will perform 'insert'
       val insertResult = vyne.query(
          """
-                given { movie : FlightInfoWithObjectId = { objectId : "1" , code : "TK 1989", departure: "IST", arrival: "LHR", airline: { code: "TK", name: "Turkish Airlines", starAlliance: true} } }
+                given { movie : FlightInfoWithObjectId = { objectId : null , code : "TK 1989", departure: "IST", arrival: "LHR", airline: { code: "TK", name: "Turkish Airlines", starAlliance: true} } }
                call FlightsDb::upsertFlightWithObjectId
                """.trimIndent()
       )
@@ -135,14 +135,14 @@ class MongoMutatingQueryInvokerTest : MongoDbTestcontainer() {
       updateResult.first()["code"].value.should.equal("TK 1990")
 
       //re query
-      val result = vyne.query("""find { FlightInfoWithObjectId[]( MongoObjectId == "1" ) } """)
+      val result = vyne.query("""find { FlightInfoWithObjectId[]( MongoObjectId == "$objectId" ) } """)
          .typedObjects()
 
       result.should.have.size(1)
       result.first().toRawObject()
          .should.equal(
             mapOf(
-               "objectId" to "1",
+               "objectId" to objectId,
                "code" to "TK 1990",
                "departure" to "IST",
                "arrival" to "LHR",

@@ -52,12 +52,15 @@ class MongoMutatingQueryInvoker(
          MetricTags.TableName.of(collectionName)
       )
       var updateCounter: Counter? = null
+      var verb: String? = null
       val upsertMono = if (upsertDefinition == null) {
+         verb = "save"
          val result = reactiveMongoTemplate.save(documentMap, collectionName)
             .map { 1L /* update count */ to it }
          updateCounter = meterRegistry.counter("orbital.connections.mongo.updates", tags)
          result
       } else {
+         verb = "upsert"
          updateCounter = meterRegistry.counter("orbital.connections.mongo.updates", tags)
          reactiveMongoTemplate.upsert(upsertDefinition.first, upsertDefinition.second, collectionName)
             .map { upsertResult ->
@@ -68,8 +71,8 @@ class MongoMutatingQueryInvoker(
          .elapsed()
          .map { durationAndData ->
             val duration = durationAndData.t1
-            logger.info { "Mongo Upsert call completed in ${duration}ms " }
             val (updateCount, data) = durationAndData.t2
+            logger.info { "Mongo $verb call completed in ${duration}ms affecting $updateCount records" }
             updateCounter?.increment(updateCount.toDouble())
             val operationResult = buildOperationResult(
                service,
