@@ -21,6 +21,13 @@ import reactor.kafka.receiver.ReceiverOptions
 import java.time.Duration
 import java.time.Instant
 
+
+private data class MonitoredKafkaConsumerTopic(
+   val request: KafkaConsumerRequest,
+   val connectionConfiguration: KafkaConnectionConfiguration,
+   val receiverOptions: ReceiverOptions<Any, ByteArray>,
+)
+
 /**
  * Builds a flow emitting stats on consumer group usage.
  * Built to help users who are struggling to detect why messages aren't being received
@@ -38,8 +45,117 @@ class KafkaConsumerStatsFlowBuilder(
 
    // We need to retain admin clients and consumers.
    // Otherwise, each time we publish stats, it creates a new connection, which spams the logs.
-   private val adminClients = ConcurrentHashMap<KafkaConnectionConfiguration, AdminClient>()
-   private val consumers = ConcurrentHashMap<KafkaConnectionConfiguration, KafkaConsumer<Any, Any>>()
+   private val adminClient = ConcurrentHashMap<KafkaConnectionConfiguration, AdminClient>()
+   private val consumer = ConcurrentHashMap<KafkaConnectionConfiguration, KafkaConsumer<Any, Any>>()
+
+   private val monitoredTopics = mutableSetOf<MonitoredKafkaConsumerTopic>()
+
+   private val monitoringStatusMessageSink = Sinks.many().multicast().directBestEffort<KafkaConsumerGroupInfoMessage>()
+   private val monitoringStatusMessageFlux = monitoringStatusMessageSink.asFlux()
+
+
+   init {
+      Flux.interval(pollFrequency)
+         .subscribe { emitConsumerStats() }
+   }
+
+   // Note: Refactored this to put the interactions with AdminClient / KafkaConsumer
+   // on a single thread.
+   // We want a long-lived adminClient and consumer, but KafkaConsumer is not safe for multi-threaded
+   // access (it throws an exception saying as much),
+   // so we work by storing a list of monitoed topics, and emitting stats from a single thread.
+   private fun emitConsumerStats() {
+      monitoredTopics.forEach { monitoringConfig ->
+         val messages = mutableListOf<KafkaConsumerGroupInfoMessage>()
+         val connectionConfiguration = monitoringConfig.connectionConfiguration
+         val receiverOptions = monitoringConfig.receiverOptions
+         val request = monitoringConfig.request
+
+         val adminProps = connectionConfiguration.toAdminProps()
+         val consumerProps = connectionConfiguration.toConsumerProps(offset = "latest")
+         val groupId = receiverOptions.consumerProperties()["group.id"] as String
+         val topics = receiverOptions.subscriptionTopics() ?: emptyList()
+         val adminClient = try {
+            adminClient.getOrPut(connectionConfiguration) { AdminClient.create(adminProps) }
+         } catch (e: Exception) {
+            val rootCauseMessage = Throwables.getRootCause(e).message
+            throw IllegalArgumentException("Failed to construct admin client for connection ${request.connectionName}: ${e.message} - $rootCauseMessage")
+         }
+         val consumer = consumer.getOrPut(connectionConfiguration) { KafkaConsumer(consumerProps) }
+         // Get the topic-partitions to check offsets
+         val partitionsInfo = mutableListOf<TopicPartition>()
+         for (topic in topics) {
+            val partitions = consumer.partitionsFor(topic)
+            for (partitionInfo in partitions) {
+               partitionsInfo.add(TopicPartition(partitionInfo.topic(), partitionInfo.partition()))
+            }
+         }
+
+         // Get end offsets for all topic-partitions (this is synchronous but fast)
+         val endOffsets = consumer.endOffsets(partitionsInfo)
+
+         // Get consumer groups
+         adminClient.describeConsumerGroups(listOf(groupId))
+            .all()
+            .whenComplete { groupDescriptions, throwable ->
+               if (throwable == null) {
+                  val groupInfo = groupDescriptions[groupId]
+                  val members = groupInfo?.members() ?: emptyList()
+                  gaugeRegistry.int(
+                     "orbital.connections.kafka.members",
+                     listOf(
+                        MetricTags.ConnectionName.of(connectionConfiguration.connectionName),
+                        MetricTags.Topic.of(request.topicName),
+                        MetricTags.KafkaGroupId.of(groupId)
+                     )
+                  ).set(members.size)
+                  messages.add(
+                     KafkaConsumerGroupInfoMessage(
+                        "Consumer Group: $groupId has ${members.size} member(s): ${members.joinToString { it.consumerId() }}",
+                        request
+                     )
+                  )
+               }
+            }
+            .get()
+
+
+         // Get current consumer group offsets asynchronously
+         try {
+            adminClient.listConsumerGroupOffsets(groupId)
+               .partitionsToOffsetAndMetadata()
+               .whenComplete { currentOffsets, throwable ->
+                  if (throwable == null) {
+                     partitionsInfo.map { partition ->
+                        val currentOffset = currentOffsets[partition]?.offset() ?: 0L
+                        val endOffset = endOffsets[partition] ?: 0L
+                        val lag = endOffset - currentOffset
+                        val tags = listOf(
+                           MetricTags.ConnectionName.of(connectionConfiguration.connectionName),
+                           MetricTags.Topic.of(request.topicName),
+                           MetricTags.KafkaPartition.of(partition.partition())
+                        )
+                        gaugeRegistry.long(
+                           "orbital.connections.kafka.lag",
+                           tags
+                        ).set(lag)
+                        gaugeRegistry.long(
+                           "orbital.connections.kafka.end",
+                           tags
+                        ).set(endOffset)
+                        gaugeRegistry.long(
+                           "orbital.connections.kafka.offset",
+                           tags
+                        ).set(currentOffset)
+                        messages.add(KafkaConsumerGroupInfoMessage("Partition ${partition.partition()} current offset: $currentOffset, end: $endOffset, lag: $lag", request))
+                     }
+                  }
+               }.get()
+         } catch (e: Exception) {
+            logger.warn { "Exception thrown trying to fetch offsets: ${e.message}" }
+         }
+      }
+   }
 
    /**
     * Builds a flow that emits consumer group statistics without blocking.
@@ -54,95 +170,10 @@ class KafkaConsumerStatsFlowBuilder(
       connectionConfiguration: KafkaConnectionConfiguration,
       receiverOptions: ReceiverOptions<Any, ByteArray>,
    ): Flow<KafkaConsumerGroupInfoMessage> {
-      val adminProps = connectionConfiguration.toAdminProps()
-      val consumerProps = connectionConfiguration.toConsumerProps(offset = "latest")
-      val groupId = receiverOptions.consumerProperties()["group.id"] as String
-      val topics = receiverOptions.subscriptionTopics() ?: emptyList()
-
-      return Flux.just(0L)
-         .concatWith(Flux.interval(pollFrequency))
-         .flatMapIterable {
-            val messages = mutableListOf<KafkaConsumerGroupInfoMessage>()
-            val adminClient = try {
-               adminClients.getOrPut(connectionConfiguration) { AdminClient.create(adminProps) }
-            } catch (e: Exception) {
-               val rootCauseMessage = Throwables.getRootCause(e).message
-               throw IllegalArgumentException("Failed to construct admin client for connection ${request.connectionName}: ${e.message} - $rootCauseMessage")
-            }
-            val consumer = consumers.getOrPut(connectionConfiguration) { KafkaConsumer(consumerProps) }
-            // Get the topic-partitions to check offsets
-            val partitionsInfo = mutableListOf<TopicPartition>()
-            for (topic in topics) {
-               val partitions = consumer.partitionsFor(topic)
-               for (partitionInfo in partitions) {
-                  partitionsInfo.add(TopicPartition(partitionInfo.topic(), partitionInfo.partition()))
-               }
-            }
-
-            // Get end offsets for all topic-partitions (this is synchronous but fast)
-            val endOffsets = consumer.endOffsets(partitionsInfo)
-
-            // Get consumer groups
-            adminClient.describeConsumerGroups(listOf(groupId))
-               .all()
-               .whenComplete { groupDescriptions, throwable ->
-                  if (throwable == null) {
-                     val groupInfo = groupDescriptions[groupId]
-                     val members = groupInfo?.members() ?: emptyList()
-                     gaugeRegistry.int(
-                        "orbital.connections.kafka.members",
-                        listOf(
-                           MetricTags.ConnectionName.of(connectionConfiguration.connectionName),
-                           MetricTags.Topic.of(request.topicName),
-                           MetricTags.KafkaGroupId.of(groupId)
-                        )
-                     ).set(members.size)
-                     messages.add(
-                        KafkaConsumerGroupInfoMessage(
-                           "Consumer Group: $groupId has ${members.size} member(s): ${members.joinToString { it.consumerId() }}"
-                        )
-                     )
-                  }
-               }
-               .get()
-
-
-            // Get current consumer group offsets asynchronously
-            try {
-               adminClient.listConsumerGroupOffsets(groupId)
-                  .partitionsToOffsetAndMetadata()
-                  .whenComplete { currentOffsets, throwable ->
-                     if (throwable == null) {
-                        partitionsInfo.map { partition ->
-                           val currentOffset = currentOffsets[partition]?.offset() ?: 0L
-                           val endOffset = endOffsets[partition] ?: 0L
-                           val lag = endOffset - currentOffset
-                           val tags = listOf(
-                              MetricTags.ConnectionName.of(connectionConfiguration.connectionName),
-                              MetricTags.Topic.of(request.topicName),
-                              MetricTags.KafkaPartition.of(partition.partition())
-                           )
-                           gaugeRegistry.long(
-                              "orbital.connections.kafka.lag",
-                              tags
-                           ).set(lag)
-                           gaugeRegistry.long(
-                              "orbital.connections.kafka.end",
-                              tags
-                           ).set(endOffset)
-                           gaugeRegistry.long(
-                              "orbital.connections.kafka.offset",
-                              tags
-                           ).set(currentOffset)
-                           messages.add(KafkaConsumerGroupInfoMessage("Partition ${partition.partition()} current offset: $currentOffset, end: $endOffset, lag: $lag"))
-                        }
-                     }
-                  }.get()
-            } catch (e: Exception) {
-               logger.warn { "Exception thrown trying to fetch offsets: ${e.message}" }
-            }
-            messages
-         }.asFlow()
+      monitoredTopics.add(MonitoredKafkaConsumerTopic(request, connectionConfiguration, receiverOptions))
+      return monitoringStatusMessageFlux
+         .filter { message -> message.request == request }
+         .asFlow()
    }
 
    /**
@@ -177,6 +208,7 @@ class KafkaConsumerStatsFlowBuilder(
 }
 
 data class KafkaConsumerGroupInfoMessage(
-   val message: String
+   val message: String,
+   val request: KafkaConsumerRequest,
 )
 

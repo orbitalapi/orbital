@@ -14,5 +14,6 @@
   } ],
   "id" : "Pipeline-PollingQueryInputSpec-to-GenericPipelineTransportSpec",
   "kind" : "Pipeline",
+  "parallelism" : null,
   "description" : "From Execute the query find { Person( FirstName == 'Jim' ) } to 1 outputs"
 }

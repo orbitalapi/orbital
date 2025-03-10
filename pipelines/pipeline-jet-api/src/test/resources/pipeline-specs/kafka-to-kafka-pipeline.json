@@ -19,5 +19,6 @@
   } ],
   "id" : "Pipeline-KafkaTransportInputSpec-to-KafkaTransportOutputSpec",
   "kind" : "Pipeline",
+  "parallelism" : null,
   "description" : "From Kafka input from topic input-topic on connection my-kafka-connection to 1 outputs"
 }

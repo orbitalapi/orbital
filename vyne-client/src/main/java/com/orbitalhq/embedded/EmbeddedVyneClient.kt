@@ -106,5 +106,8 @@ open class EmbeddedVyneClient(
 class EmbeddedVyneClientWithSchema(vyneProvider: VyneProvider, private val schemaStore: SchemaStore) :
    VyneClientWithSchema, EmbeddedVyneClient(vyneProvider) {
    override val schema: Schema
-      get() = schemaStore.schemaSet.schema
+      get() {
+         return schemaStore.schemaSet.schema
+      }
+
 }

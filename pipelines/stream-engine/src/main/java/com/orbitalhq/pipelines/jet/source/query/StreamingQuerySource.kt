@@ -29,13 +29,18 @@ class StreamingQuerySourceBuilder() :
       pipelineSpec: PipelineSpec<StreamingQueryInputSpec, *>,
       inputType: Type?
    ): StreamSource<MessageContentProvider>? {
-      return SourceBuilder.stream("${pipelineSpec.name}_source") { context ->
+      val sourceBuilder = SourceBuilder.stream("${pipelineSpec.name}_source") { context ->
          QueryBufferingPipelineContext(context.logger(), pipelineSpec, context.jobId(), QueryBufferingPipelineContext.BufferMode.Stream)
       }.fillBufferFn { queryBuffer, sourceBuffer: SourceBuffer<MessageContentProvider> ->
          queryBuffer.drainTo(sourceBuffer)
       }.destroyFn {
          it.terminate()
       }
-         .build()
+      return if (pipelineSpec.parallelism != null) {
+         sourceBuilder.distributed(pipelineSpec.parallelism!!)
+            .build()
+      } else {
+         sourceBuilder.build()
+      }
    }
 }

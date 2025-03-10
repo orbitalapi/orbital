@@ -41,7 +41,8 @@ data class PipelineSpec<I : PipelineTransportSpec, O : PipelineTransportSpec>(
    @JsonDeserialize(using = PipelineListTransportSpecDeserializer::class)
    val outputs: List<O>,
    val id: String = Ids.id("pipeline-"),
-   val kind: PipelineKind = PipelineKind.Pipeline
+   val kind: PipelineKind = PipelineKind.Pipeline,
+   val parallelism: Int? = null
 ) : Serializable {
    @get:JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val description = "From ${input.description} to ${outputs.size} outputs"

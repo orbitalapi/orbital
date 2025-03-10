@@ -10,6 +10,7 @@ import com.orbitalhq.VyneTypes
 import com.orbitalhq.annotations.http.HttpIgnoreErrorsAnnotationSchema
 import com.orbitalhq.annotations.http.HttpRetryAnnotationSchema
 import com.orbitalhq.cockpit.core.catalog.DataOwnerAnnotations
+import com.orbitalhq.annotations.streaming.StreamingQueryAnnotations
 import com.orbitalhq.connectors.aws.dynamodb.DynamoConnectorTaxi
 import com.orbitalhq.connectors.aws.lambda.LambdaConnectorTaxi
 import com.orbitalhq.connectors.aws.s3.S3ConnectorTaxi
@@ -66,6 +67,11 @@ object BuiltInTypesProvider {
             "TaxiQL",
             version = "0.1.0",
             VyneQlGrammar.QUERY_TYPE_TAXI
+         ),
+         VersionedSource(
+            "StreamingQueryAnnotations",
+            "0.1.0",
+            StreamingQueryAnnotations.schema
          ),
          VersionedSource(
             "KafkaConnectors",

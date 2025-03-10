@@ -115,10 +115,16 @@ class ExpiringSourcesStore(
       val deltas = if (existingPackages.isEmpty()) {
          listOf(PackageAdded(submission.sourcePackage))
       } else {
-         existingPackages.map { (publisher, sourcePackage) ->
+         existingPackages.mapNotNull { (publisher, sourcePackage) ->
             logger.info { "Package ${sourcePackage.identifier} (published by $publisher) will be replaced by ${submission.sourcePackage.identifier} published by ${submission.publisherId}" }
-            val oldVesion = packages.remove(publisher)!!
-            PackageUpdated(oldVesion, submission.sourcePackage)
+            val oldVesion = packages.remove(publisher)
+            if (oldVesion == null) {
+               logger.warn { "Attempted to remove package ${sourcePackage.identifier} that is not present on this node" }
+               null
+            } else {
+               PackageUpdated(oldVesion, submission.sourcePackage)
+            }
+
          }
       }
 

@@ -48,25 +48,6 @@ class PipelineService(
       )
    }
 
-   @PostConstruct
-   fun loadAndSubmitExistingPipelines() {
-
-//      Flux.from(schemaStore.schemaChanged)
-//         .subscribe { schemaChangedEvent ->
-//            val schema = schemaChangedEvent.newSchemaSet.schema.asTaxiSchema()
-//            remainingPipelines = checkReceivedTypesForPipelinesAndStartAppropriateOnes(
-//               remainingPipelines,
-//               schema
-//            )
-//
-//             Load the pipelines from the schema
-//            val pipelineSourcePackages = schema.additionalSources["@orbital/pipelines"] ?: emptyList()
-//            val sources = pipelineSourcePackages.flatMap { it.sources }
-//            val pipelines = pipelineRepository.loadPipelines(sources)
-//            logger.info { "The schema contains ${sources.size} files containing pipeline definitions, which generated ${pipelines.size} pipelines" }
-//            checkReceivedTypesForPipelinesAndStartAppropriateOnes(pipelines, schema)
-//         }
-   }
 
    private fun checkReceivedTypesForPipelinesAndStartAppropriateOnes(
       pipelinesToBeSubmitted: List<PipelineSpec<*, *>>,

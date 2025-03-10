@@ -2,6 +2,7 @@ package com.orbitalhq.pipelines.jet.streams
 
 import com.google.common.annotations.VisibleForTesting
 import com.google.common.collect.Maps
+import com.orbitalhq.annotations.streaming.StreamingQueryAnnotations
 import com.orbitalhq.pipelines.jet.api.RunningPipelineSummary
 import com.orbitalhq.pipelines.jet.api.transport.query.StreamingQueryInputSpec
 import com.orbitalhq.pipelines.jet.pipelines.PipelineManager
@@ -13,6 +14,7 @@ import com.orbitalhq.schemas.toVyneQualifiedName
 import lang.taxi.query.QueryMode
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
+import lang.taxi.types.annotation
 import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import reactor.kotlin.core.publisher.toFlux
@@ -149,8 +151,18 @@ data class ManagedStream(
 
       // TODO. Placeholder.
       private fun detectStreamType(value: TaxiQlQuery): ManagedStream.StreamType = ManagedStream.StreamType.CONTINUOUS
-
    }
+
+   /**
+    * Returns the distributed count defined by the @Distributed() annotation - if present
+    */
+   val parallelism:Int?
+      get() {
+         val annotation = query.annotation(StreamingQueryAnnotations.ParallelAnnotationName)
+            ?: return null
+         val count = annotation.parameters["count"] as Int
+         return count
+      }
 
    // Capturing design thoughts, might not be fully implemented, will
    // start with contious streams first.

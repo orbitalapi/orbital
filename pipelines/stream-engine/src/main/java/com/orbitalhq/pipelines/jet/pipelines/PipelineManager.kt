@@ -13,7 +13,6 @@ import com.orbitalhq.pipelines.jet.api.PipelineStatus
 import com.orbitalhq.pipelines.jet.api.RunningPipelineSummary
 import com.orbitalhq.pipelines.jet.api.SubmittedPipeline
 import com.orbitalhq.pipelines.jet.api.streams.StreamJobStateEvent
-import com.orbitalhq.pipelines.jet.api.streams.StreamStatus
 import com.orbitalhq.pipelines.jet.api.streams.StreamUtils
 import com.orbitalhq.pipelines.jet.api.transport.PipelineKind
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
@@ -415,7 +414,8 @@ class PipelineManager(
          input = StreamingQueryInputSpec(managedStream.query.source),
          transformation = null,
          outputs = listOf(sinkSpec),
-         kind = PipelineKind.Stream
+         kind = PipelineKind.Stream,
+         parallelism = managedStream.parallelism
       )
       pendingPipelines.put(managedStream.name.parameterizedName, spec)
       return spec

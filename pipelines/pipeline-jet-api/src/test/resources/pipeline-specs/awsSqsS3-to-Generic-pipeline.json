@@ -17,5 +17,6 @@
   } ],
   "id" : "Pipeline-AwsSqsS3TransportInputSpec-to-GenericPipelineTransportSpec",
   "kind" : "Pipeline",
+  "parallelism" : null,
   "description" : "From AWS SQS S3 to 1 outputs"
 }

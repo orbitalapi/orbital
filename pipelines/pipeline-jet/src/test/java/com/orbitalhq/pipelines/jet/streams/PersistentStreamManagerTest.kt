@@ -11,6 +11,7 @@ import com.nhaarman.mockito_kotlin.reset
 import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
+import com.orbitalhq.annotations.streaming.StreamingQueryAnnotations
 import com.orbitalhq.pipelines.jet.TestTopic
 import com.orbitalhq.pipelines.jet.api.JobStatus
 import com.orbitalhq.pipelines.jet.api.PipelineStatus
@@ -25,12 +26,40 @@ import com.orbitalhq.schema.consumer.SimpleSchemaStore
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.shouldBe
+import lang.taxi.query.TaxiQlQuery
 import org.glassfish.jaxb.core.v2.TODO
 import reactor.core.publisher.Flux
 import java.time.Instant
 
 class PersistentStreamManagerTest : DescribeSpec({
    describe("Persistent Stream Manager") {
+      it("detects parallel streams") {
+         val (store, streamManager, pipelineManager) = storeAndManager()
+         val streamState = streamManager.streamStateManager.streamStateCache
+         streamState["MyStream"] = StreamStatus("MyStream", StreamStatus.State.PAUSED)
+         whenever(pipelineManager.submitStream(any(), any())).thenReturn(mock())
+
+         store.setSchema(
+            TaxiSchema.fromStrings(
+               StreamingQueryAnnotations.schema,
+               """
+            import com.orbitalhq.streams.Parallel
+            model Foo
+
+            @Parallel(count = 4)
+            query MyStream {
+               stream { Foo }
+            }
+         """
+            )
+         )
+         val captor = argumentCaptor<ManagedStream>()
+         verify(pipelineManager, times(1)).submitStream(captor.capture(), any())
+
+         captor.lastValue.parallelism.shouldBe(4)
+      }
+
       it("by default streams are created but not started") {
          val (store, streamManager, pipelineManager) = storeAndManager()
          val streamState = streamManager.streamStateManager.streamStateCache

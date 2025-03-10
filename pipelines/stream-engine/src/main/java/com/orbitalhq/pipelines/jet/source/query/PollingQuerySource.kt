@@ -29,6 +29,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.reactor.awaitSingle
@@ -41,6 +42,7 @@ import reactor.core.publisher.Mono
 import java.util.Optional
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
+import kotlin.time.Duration.Companion.seconds
 
 private const val CAPACITY = 1024
 
@@ -108,10 +110,32 @@ class QueryBufferingPipelineContext(
     */
    private var executionException: Throwable? = null
 
+   private fun queryIsValid():Boolean {
+      return try {
+         vyneClient.compile(pipelineSpec.input.query)
+         true
+      } catch (e:Exception) {
+         logger.warning("The provided pipeline query fails to compile: ${e.message}")
+         false
+      }
+
+   }
    @PostConstruct
    fun runQuery() {
       val scope = CoroutineScope(Dispatchers.Default)
+
       queryJob = scope.launch {
+
+         // When running a distributed query, we can receive the query via Jet before we receive
+         // the schema required to compile it. (ie., the job was compiled and started on another node).
+         // We need to protect against that, as if a compilation error is thrown when we're launching
+         // the query, the job fails.
+         // ORB-927 has been raised to refactor this to use QueryMessage, which is self-contained
+         // and eliminates the race condition
+         while (!queryIsValid()) {
+            logger.info("Waiting 5 seconds and will try again")
+            delay(5.seconds)
+         }
          val principalOrEmpty = if (executionPrincipalAuthenticationService.isPresent) {
             executionPrincipalAuthenticationService.get().loadPrincipal()
          } else {
