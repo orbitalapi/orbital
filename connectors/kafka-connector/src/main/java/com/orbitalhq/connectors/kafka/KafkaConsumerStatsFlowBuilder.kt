@@ -133,7 +133,8 @@ class KafkaConsumerStatsFlowBuilder(
                         val tags = listOf(
                            MetricTags.ConnectionName.of(connectionConfiguration.connectionName),
                            MetricTags.Topic.of(request.topicName),
-                           MetricTags.KafkaPartition.of(partition.partition())
+                           MetricTags.KafkaPartition.of(partition.partition()),
+                           MetricTags.KafkaGroupId.of(groupId)
                         )
                         gaugeRegistry.long(
                            "orbital.connections.kafka.lag",
