@@ -134,6 +134,8 @@ class KafkaStreamManager(
    private fun buildSharedFlow(request: KafkaConsumerRequest): SharedFlow<Either<StreamErrorMessage, TypedInstance>> {
       logger.info { "Creating new kafka subscription for request $request" }
       val (connectionConfiguration, receiverOptions) = buildReceiverOptions(request)
+      // The groupId gets updated by the consumer after we connect, so capture now.
+      val originalGroupId = receiverOptions.groupId() ?: "Unknown"
 
       val messageType = schemaProvider.schema.type(request.messageType).let { type ->
          require(type.name.name == "Stream") { "Expected to receive a Stream type for consuming from Kafka. Instead found ${type.name.parameterizedName}" }
@@ -169,6 +171,7 @@ class KafkaStreamManager(
             meterRegistry.counter(
                "orbital.connections.kafka.messagesReceived",
                listOf(
+                  MetricTags.KafkaGroupId.of(originalGroupId),
                   MetricTags.Topic.of(request.topicName),
                   MetricTags.ConnectionName.of(request.connectionName)
                )
@@ -208,6 +211,7 @@ class KafkaStreamManager(
                meterRegistry.counter(
                   "orbital.connections.kafka.messageErrors",
                   listOf(
+                     MetricTags.KafkaGroupId.of(originalGroupId),
                      MetricTags.ConnectionName.of( request.connectionName),
                      MetricTags.Topic.of(request.topicName)
                   )
