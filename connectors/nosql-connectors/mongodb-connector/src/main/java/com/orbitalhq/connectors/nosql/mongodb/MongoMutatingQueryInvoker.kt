@@ -64,7 +64,19 @@ class MongoMutatingQueryInvoker(
          updateCounter = meterRegistry.counter("orbital.connections.mongo.updates", tags)
          reactiveMongoTemplate.upsert(upsertDefinition.first, upsertDefinition.second, collectionName)
             .map { upsertResult ->
-               upsertResult.modifiedCount to documentMap
+               // Looks like we get a 0 for modified count if this was an insert.
+               // To verify, we report 1 if the upsertedId != null && modifiedCount == 0,
+               // as there must've been an insert if an id was assigned.
+               val modifiedCount = if (upsertResult.modifiedCount == 0L && upsertResult.upsertedId != null && upsertResult.wasAcknowledged()) {
+                  1L
+               } else {
+                  upsertResult.modifiedCount
+               }
+               if (modifiedCount == 0L) {
+                  upsertDefinition
+                  logger.warn { "Upsert to Mongo collection ${connectionConfig.connectionName} / $collectionName reported 0 records updated" }
+               }
+               modifiedCount to documentMap
             }
       }
       return upsertMono
@@ -72,7 +84,7 @@ class MongoMutatingQueryInvoker(
          .map { durationAndData ->
             val duration = durationAndData.t1
             val (updateCount, data) = durationAndData.t2
-            logger.info { "Mongo $verb call completed in ${duration}ms affecting $updateCount records" }
+            logger.info { "Mongo $verb call against mongo collectin ${connectionConfig.connectionName} / $collectionName completed  in ${duration}ms affecting $updateCount records" }
             updateCounter?.increment(updateCount.toDouble())
             val operationResult = buildOperationResult(
                service,
