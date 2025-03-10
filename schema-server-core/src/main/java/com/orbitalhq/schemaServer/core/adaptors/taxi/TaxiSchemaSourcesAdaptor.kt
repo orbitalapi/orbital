@@ -5,6 +5,11 @@ import com.orbitalhq.SourcePackage
 import com.orbitalhq.schema.publisher.loaders.FileSchemaSourceProvider
 import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
 import com.orbitalhq.schema.publisher.loaders.SchemaSourcesAdaptor
+import com.orbitalhq.schema.publisher.loaders.SourceGenerator
+import com.orbitalhq.schemaServer.core.adaptors.avro.AvroTaxiSourceGenerator
+import com.orbitalhq.schemaServer.core.adaptors.openapi.FileLoadingOpenApiSpecProvider
+import com.orbitalhq.schemaServer.core.adaptors.openapi.OpenApiSourceGenerator
+import com.orbitalhq.schemas.taxi.mergeLists
 import com.orbitalhq.toVynePackageIdentifier
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiProjectLoader
@@ -17,9 +22,17 @@ import kotlin.io.path.exists
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.toPath
 
-class TaxiSchemaSourcesAdaptor : SchemaSourcesAdaptor {
+class TaxiSchemaSourcesAdaptor(
+   private val sourceGenerators:List<SourceGenerator> = DEFAULT_SOURCE_GENERATORS
+) : SchemaSourcesAdaptor {
    private val logger = KotlinLogging.logger {}
 
+   companion object {
+      val DEFAULT_SOURCE_GENERATORS = listOf(
+         AvroTaxiSourceGenerator(),
+         OpenApiSourceGenerator(FileLoadingOpenApiSpecProvider())
+      )
+   }
    fun loadTaxiProject(transport: SchemaPackageTransport): Mono<Pair<Path, TaxiPackageProject>> {
 
       return Mono.create { sink ->
@@ -63,11 +76,44 @@ class TaxiSchemaSourcesAdaptor : SchemaSourcesAdaptor {
       return Mono.create { sink ->
          try {
             val sourcePackage = FileSchemaSourceProvider(packageMetadata.rootPath).packages.single()
-            sink.success(sourcePackage)
+
+            // If the taxi project declares transpiling sources
+            // (eg., an OpenAPI spec, Avro Spec, etc),
+            // we need to convert them to Taxi here.
+            val transpiledSourcePackages = transpileAdditionalSources(packageMetadata, sourcePackage)
+            val combinedSources = combineSourcePackages(sourcePackage, transpiledSourcePackages)
+            sink.success(combinedSources)
          } catch (e: Exception) {
             logger.error(e) { "Exception when trying to build taxi project from source at ${packageMetadata.rootPath}" }
             sink.error(e)
          }
       }
+   }
+
+   private fun combineSourcePackages(primarySourcePackage: SourcePackage, otherSourcePackages: List<SourcePackage>):SourcePackage {
+      if (otherSourcePackages.isEmpty()) {
+         return primarySourcePackage
+      }
+      return otherSourcePackages.fold(primarySourcePackage) { a,b ->
+         val mergedSources = a.sources + b.sources
+         val mergedAdditionalSources = a.additionalSources.mergeLists(b.additionalSources)
+         a.copy(
+            sources = mergedSources,
+            additionalSources = mergedAdditionalSources
+         )
+      }
+   }
+
+   private fun transpileAdditionalSources(
+      packageMetadata: FileBasedPackageMetadata,
+      sourcePackage: SourcePackage
+   ): List<SourcePackage> {
+      return sourcePackage.additionalSources
+         .mapNotNull { (sourceType, sources) ->
+            val generator = sourceGenerators.firstOrNull {
+               it.supportsSources(sourceType)
+            } ?: return@mapNotNull null
+            generator.generateSourcePackage(sources, packageMetadata)
+         }
    }
 }

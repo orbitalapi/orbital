@@ -1,0 +1,5 @@
+namespace foo
+
+type PersonId inherits Int
+type PersonName inherits String
+type EmailAddress inherits String

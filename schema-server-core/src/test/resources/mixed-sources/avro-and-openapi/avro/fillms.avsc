@@ -1,0 +1,28 @@
+{
+   "type": "record",
+   "name": "Film",
+   "taxi.dataType": "movies.Film",
+   "namespace": "com.example",
+   "fields": [
+      {
+         "name": "title",
+         "type": "string",
+         "taxi.dataType": "movies.FilmTitle"
+      },
+      {
+         "name": "year",
+         "type": "int",
+         "taxi.dataType": "movies.ReleaseYear"
+      },
+      {
+         "name": "genre",
+         "type": "string",
+         "taxi.dataType": "movies.Genre"
+      },
+      {
+         "name": "rating",
+         "type": "float",
+         "taxi.dataType": "movies.Rating"
+      }
+   ]
+}

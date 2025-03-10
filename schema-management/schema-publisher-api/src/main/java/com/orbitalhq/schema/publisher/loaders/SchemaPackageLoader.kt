@@ -6,6 +6,7 @@ import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.config.ConfigSourceWriter
 import com.orbitalhq.schema.publisher.PublisherType
+import lang.taxi.packages.SourcesType
 import lang.taxi.packages.TaxiPackageProject
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -158,6 +159,20 @@ interface SchemaPackageTransport {
 interface SchemaSourcesAdaptor {
    fun buildMetadata(transport: SchemaPackageTransport): Mono<PackageMetadata>
    fun convert(packageMetadata: PackageMetadata, transport: SchemaPackageTransport): Mono<SourcePackage>
+}
+
+/**
+ * A lower-level interface for SchemaSourcesAdaptor.
+ * Implementations are focussed purely on generating sources (generally Taxi sources)
+ * from provided source files.
+ *
+ * They do not have to handle transport or metadata generation.
+ *
+ * It's common for a SchemaSourcesAdaptor to also implement this interface
+ */
+interface SourceGenerator {
+   fun supportsSources(sourcesType: SourcesType): Boolean
+   fun generateSourcePackage(sourceFiles: List<VersionedSource>, packageMetadata: PackageMetadata): SourcePackage
 }
 
 /**
