@@ -126,7 +126,7 @@ class StubQueryService(
          }
 
       val (taxiQlQuery, queryOptions, querySchema) = vyne.parseQuery(query.query)
-      val queryResultType = taxiQlQuery.discoveryType?.type ?: taxiQlQuery.returnType
+      val queryResultType = taxiQlQuery.returnType
       val formatSerializer =
          FormatDetector(formatSpecs).getFormatType(querySchema.type(taxiQlQuery.returnType))?.let { (metadata, spec) ->
             ModelFormatSpecSerializer(spec, metadata)
