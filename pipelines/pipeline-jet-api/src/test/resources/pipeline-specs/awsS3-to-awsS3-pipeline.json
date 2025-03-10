@@ -21,5 +21,6 @@
   } ],
   "id" : "Pipeline-AwsS3TransportInputSpec-to-AwsS3TransportOutputSpec",
   "kind" : "Pipeline",
+  "parallelism" : null,
   "description" : "From S3 Input for connection my-aws-connection and bucket bucket to 1 outputs"
 }

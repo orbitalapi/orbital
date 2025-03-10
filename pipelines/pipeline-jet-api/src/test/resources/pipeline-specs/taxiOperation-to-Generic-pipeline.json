@@ -16,5 +16,6 @@
   } ],
   "id" : "Pipeline-PollingTaxiOperationInputSpec-to-GenericPipelineTransportSpec",
   "kind" : "Pipeline",
+  "parallelism" : null,
   "description" : "From Fetch data from operation com.foo.bar.MyService / listAllUsers to 1 outputs"
 }

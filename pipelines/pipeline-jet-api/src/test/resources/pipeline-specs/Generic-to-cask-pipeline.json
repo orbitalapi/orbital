@@ -12,5 +12,6 @@
   } ],
   "id" : "Pipeline-GenericPipelineTransportSpec-to-CaskTransportOutputSpec",
   "kind" : "Pipeline",
+  "parallelism" : null,
   "description" : "From Pipeline INPUT Generic to 1 outputs"
 }

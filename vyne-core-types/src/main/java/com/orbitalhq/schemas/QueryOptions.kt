@@ -1,6 +1,7 @@
 package com.orbitalhq.schemas
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.orbitalhq.annotations.streaming.StreamingQueryAnnotations
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.query.caching.CacheAnnotation
 import com.orbitalhq.query.caching.StateStore
@@ -43,8 +44,6 @@ data class NamedCache(val name: String) : CachingStrategy()
 data class RemoteCache(val connectionName: String?) : CachingStrategy()
 
 object QueryOptionParameterKeys {
-   const val StreamConsumer = "StreamConsumer"
-
    fun cacheStrategy(query: TaxiQlQuery): CachingStrategy {
       val cacheAnnotation = query.annotation(CacheAnnotation.CacheTypeName.parameterizedName)
       return when {
@@ -68,7 +67,7 @@ object QueryOptionParameterKeys {
    }
 
    fun streamConsumerId(query: TaxiQlQuery): String? {
-      val streamConsumer = query.annotation(StreamConsumer)
+      val streamConsumer = query.annotation(StreamingQueryAnnotations.StreamConsumerAnnotationName)
       return streamConsumer?.let { annotation ->
          when {
             annotation.parameter("id") != null -> annotation.parameter("id")!! as String

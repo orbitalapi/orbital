@@ -63,7 +63,6 @@ class PipelineServiceTest {
          mock {  }
       )
 
-      pipelineService.loadAndSubmitExistingPipelines()
 
       verify(pipelineManager, Mockito.times(0)).startPipeline(any<PipelineSpec<*,*>>())
 

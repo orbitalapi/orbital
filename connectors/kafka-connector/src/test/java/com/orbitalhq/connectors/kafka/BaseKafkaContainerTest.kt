@@ -6,6 +6,7 @@ import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.Vyne
+import com.orbitalhq.annotations.streaming.StreamingQueryAnnotations
 import com.orbitalhq.avro.AvroFormatSpec
 import com.orbitalhq.connectors.StreamErrorPublisher
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
@@ -153,6 +154,7 @@ abstract class BaseKafkaContainerTest {
       val schema = TaxiSchema.fromStrings(
          listOf(
             KafkaConnectorTaxi.schema,
+            StreamingQueryAnnotations.schema,
             ErrorType.queryErrorVersionedSource.content,
             taxi
          )

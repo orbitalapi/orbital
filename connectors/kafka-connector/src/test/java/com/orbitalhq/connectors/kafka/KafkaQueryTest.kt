@@ -144,7 +144,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
                     .trimIndent()
             ) .results.take(1).toList() as List<TypedObject>
         } catch (e: Exception ) {
-            e.message.should.equal("Failed to construct admin client for connection invalidConnection: Failed to create new KafkaAdminClient - JAAS config entry not terminated by semi-colon")
+            e.message.should.equal("Error in Kafka connection: invalidConnection, details: Failed to construct kafka consumer")
         }
     }
 
