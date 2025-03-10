@@ -24,6 +24,7 @@ import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import com.orbitalhq.metrics.MetricTags
+import com.orbitalhq.utils.orElse
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.CoroutineScope
@@ -60,6 +61,10 @@ data class KafkaConsumerRequest(
    val streamSourceId: String? = null
 ) {
    val messageType = operation.returnType.name
+
+   override fun toString(): String {
+      return "KafkaConsumerRequest:  Operation: ${service.name} / ${operation.name} connection: $connectionName topic: $topicName offset: $offset consumerGroupId: ${streamSourceId.orElse("-")}"
+   }
 }
 
 class KafkaStreamManager(
