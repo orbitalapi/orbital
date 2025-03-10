@@ -1,0 +1,30 @@
+namespace foo {
+
+   type PersonId inherits Int
+   type PersonName inherits String
+
+   type EmailAddress inherits String
+}
+
+
+namespace petstore {
+   type PetId inherits Int
+   type Name inherits String
+   type Tag inherits String
+}
+
+
+namespace movies {
+   type ReleaseYear inherits Int
+   type FilmTitle inherits String
+   type Genre inherits String
+   type Rating inherits Decimal
+}
+
+
+namespace music {
+   type AlbumTitle inherits String
+   type ArtistName inherits String
+   type ReleaseYear inherits Int
+   type Genre inherits String
+}

@@ -7,10 +7,12 @@ import com.orbitalhq.VersionedSource
 import com.orbitalhq.asVersionedSource
 import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
 import com.orbitalhq.schema.publisher.loaders.SchemaSourcesAdaptor
+import com.orbitalhq.schema.publisher.loaders.SourceGenerator
 import com.orbitalhq.schemaServer.packages.AvroPackageLoaderSpec
 import lang.taxi.generators.SourceMap
 import lang.taxi.generators.avro.AvroSchemaFormats
 import lang.taxi.generators.avro.TaxiGenerator
+import lang.taxi.packages.SourcesType
 import lang.taxi.sources.SourceCodeLanguages
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -18,7 +20,7 @@ import java.net.URI
 import java.time.Instant
 
 
-class AvroSchemaSourcesAdaptor(private val spec: AvroPackageLoaderSpec) : SchemaSourcesAdaptor {
+class AvroSchemaSourcesAdaptor(private val spec: AvroPackageLoaderSpec) : AvroTaxiSourceGenerator(), SchemaSourcesAdaptor {
    override fun buildMetadata(transport: SchemaPackageTransport): Mono<PackageMetadata> {
       return Mono.just(
          DefaultPackageMetadata(
@@ -51,21 +53,44 @@ class AvroSchemaSourcesAdaptor(private val spec: AvroPackageLoaderSpec) : Schema
             )
          }.collectList()
          .map { avroSourceFiles ->
-            val taxiSource  = avroSourceFiles.map { avroSourceFile ->
-               val generatedTaxiCode = TaxiGenerator().generate(avroSourceFile.content, avroSourceFile.name)
-               generatedTaxiCode.sourceMap to generatedTaxiCode.asVersionedSource(packageMetadata.identifier, "GeneratedFrom_${avroSourceFile.name}")
-            }
-            val allTaxiSources = taxiSource.flatMap { it.second }
-
-            val sourceMap = taxiSource.map { it.first }
-               .reduceOrNull { acc, sourceMap -> acc.combine(sourceMap) }
-               ?: SourceMap.EMPTY
-            SourcePackage.asTranspiledPackage(
-               packageMetadata,
-               avroSourceFiles,
-               allTaxiSources,
-               sourceMap
-            )
+            generateSourcePackage(sourceFiles = avroSourceFiles, packageMetadata)
          }
    }
+}
+
+// Design choice: Have split this out to a separate class
+// as AvroSchemaSourcesAdaptor requires a spec in it's constructor,
+// and this class is focussed purely on converting one source type to another.
+open class AvroTaxiSourceGenerator : SourceGenerator {
+   companion object {
+      val AVRO_SOURCES_TYPE = "@orbital/avro"
+   }
+   override fun supportsSources(sourcesType: SourcesType): Boolean {
+      return sourcesType == AVRO_SOURCES_TYPE
+   }
+
+   override fun generateSourcePackage(
+      sourceFiles: List<VersionedSource>,
+      packageMetadata: PackageMetadata
+   ): SourcePackage {
+      val taxiSource = sourceFiles.map { avroSourceFile ->
+         val generatedTaxiCode = TaxiGenerator().generate(avroSourceFile.content, avroSourceFile.name)
+         generatedTaxiCode.sourceMap to generatedTaxiCode.asVersionedSource(
+            packageMetadata.identifier,
+            "GeneratedFrom_${avroSourceFile.name}"
+         )
+      }
+      val allTaxiSources = taxiSource.flatMap { it.second }
+
+      val sourceMap = taxiSource.map { it.first }
+         .reduceOrNull { acc, sourceMap -> acc.combine(sourceMap) }
+         ?: SourceMap.EMPTY
+      return SourcePackage.asTranspiledPackage(
+         packageMetadata,
+         sourceFiles,
+         allTaxiSources,
+         sourceMap
+      )
+   }
+
 }

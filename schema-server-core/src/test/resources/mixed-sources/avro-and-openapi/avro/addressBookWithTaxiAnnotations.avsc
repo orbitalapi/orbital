@@ -1,0 +1,71 @@
+{
+   "type": "record",
+   "name": "AddressBook",
+   "taxi.dataType": "foo.AddressBook",
+   "namespace": "simple",
+   "fields": [
+      {
+         "name": "people",
+         "type": {
+            "type": "array",
+            "items": {
+               "type": "record",
+               "name": "Person",
+               "fields": [
+                  {
+                     "name": "name",
+                     "type": "string",
+                     "taxi.dataType": "foo.PersonName"
+                  },
+                  {
+                     "name": "id",
+                     "type": "int",
+                     "taxi.dataType": "foo.PersonId"
+                  },
+                  {
+                     "name": "email",
+                     "type": "string",
+                     "taxi.dataType": "foo.EmailAddress"
+                  },
+                  {
+                     "name": "phones",
+                     "type": {
+                        "type": "array",
+                        "items": {
+                           "type": "record",
+                           "name": "PhoneNumber",
+                           "fields": [
+                              {
+                                 "name": "number",
+                                 "type": "string"
+                              },
+                              {
+                                 "name": "type",
+                                 "type": {
+                                    "type": "enum",
+                                    "name": "PhoneType",
+                                    "taxi.dataType": "foo.PhoneTypeEnum",
+                                    "symbols": [
+                                       "MOBILE",
+                                       "HOME",
+                                       "WORK"
+                                    ]
+                                 }
+                              }
+                           ]
+                        }
+                     }
+                  },
+                  {
+                     "name": "last_updated",
+                     "type": {
+                        "type": "long",
+                        "logicalType": "timestamp-micros"
+                     }
+                  }
+               ]
+            }
+         }
+      }
+   ]
+}

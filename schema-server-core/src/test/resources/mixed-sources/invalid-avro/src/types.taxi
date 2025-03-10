@@ -1,0 +1,7 @@
+namespace foo
+
+type PersonId inherits Int
+type PersonName inherits String
+
+// Remove EmailAddress, so the Avro fails to compile
+//type EmailAddress inherits String

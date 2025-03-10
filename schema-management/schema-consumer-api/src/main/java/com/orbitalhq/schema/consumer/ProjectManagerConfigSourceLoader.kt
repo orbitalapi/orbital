@@ -61,7 +61,7 @@ class ProjectManagerConfigSourceLoader(
    private fun loadNow(): Mono<List<SourcePackage>> {
       val loaders = projectManager.loaders
       if (loaders.isEmpty()) {
-         logger.warn { "No source loaders present (filePattern: $filePattern, sourcesType: $sourceType)" }
+         logger.debug { "No source loaders present (filePattern: $filePattern, sourcesType: $sourceType)" }
          return Mono.empty()
       }
       val listOfObservables: List<Mono<SourcePackage>> = projectManager.loaders

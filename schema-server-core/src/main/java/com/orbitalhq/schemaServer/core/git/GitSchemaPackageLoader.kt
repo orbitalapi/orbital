@@ -90,6 +90,10 @@ class GitSchemaPackageLoader(
          .doOnNext { status -> logger.info { "Git project loader at ${config.path} changed state: $status" } }
    }
 
+   override fun toString(): String {
+      return "${this::class.simpleName} for project ${config.description} at ${config.path}"
+   }
+
    override fun loadNow(): Mono<SourcePackage> {
       // syncNow()
       return filePackageLoader.loadNow()
