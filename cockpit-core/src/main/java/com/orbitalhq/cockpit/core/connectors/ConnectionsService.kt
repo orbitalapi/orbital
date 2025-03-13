@@ -23,6 +23,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import java.time.Duration
 import java.util.concurrent.ConcurrentHashMap
 
@@ -55,26 +56,29 @@ class ConnectionsService(
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
    @GetMapping("/api/connections")
    fun listConnections(@RequestParam("withUsages", required = false, defaultValue = "false") withUsages: Boolean = false): Mono<ConnectionsListResponse> {
-      val connections = this.connectorsRegistry.configSources
-         .filter { !it.hasError }
-         .flatMap { configSource ->
-            configSource.typedConfig!!.listAll().map { connectorConfiguration ->
-               val status = configStatuses.filterKeys { it.connectionName == connectorConfiguration.connectionName }
-                  .values
-                  .firstOrNull() ?: ConnectionStatus.unknown()
-               if (withUsages) {
-                  val usages = ConnectionUsageMetadataRegistry.findConnectionUsages(schemaProvider.schema, connectorConfiguration.connectionName)
-                  ConnectorConfigurationSummary(configSource.packageIdentifier, connectorConfiguration, status, null, usages)
-               } else {
-                  ConnectorConfigurationSummary(configSource.packageIdentifier, connectorConfiguration, status)
+      return Mono.defer {
+         val connections = this.connectorsRegistry.configSources
+            .filter { !it.hasError }
+            .flatMap { configSource ->
+               configSource.typedConfig!!.listAll().map { connectorConfiguration ->
+                  val status = configStatuses.filterKeys { it.connectionName == connectorConfiguration.connectionName }
+                     .values
+                     .firstOrNull() ?: ConnectionStatus.unknown()
+                  if (withUsages) {
+                     val usages = ConnectionUsageMetadataRegistry.findConnectionUsages(schemaProvider.schema, connectorConfiguration.connectionName)
+                     ConnectorConfigurationSummary(configSource.packageIdentifier, connectorConfiguration, status, null, usages)
+                  } else {
+                     ConnectorConfigurationSummary(configSource.packageIdentifier, connectorConfiguration, status)
+                  }
                }
             }
-         }
-      val errors = this.connectorsRegistry.configSources.filter { it.hasError }
-         .map { configSource ->
-            PackageWithError(configSource.packageIdentifier, configSource.error!!, configSource.configSourceName)
-         }
-      return Mono.just(ConnectionsListResponse(errors, connections))
+         val errors = this.connectorsRegistry.configSources.filter { it.hasError }
+            .map { configSource ->
+               PackageWithError(configSource.packageIdentifier, configSource.error!!, configSource.configSourceName)
+            }
+         Mono.just(ConnectionsListResponse(errors, connections))
+      }.subscribeOn(Schedulers.boundedElastic())
+
    }
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")
@@ -83,16 +87,20 @@ class ConnectionsService(
       @PathVariable("packageUri") packageUri: String,
       @PathVariable("connectionName") connectionName: String
    ): Mono<ConnectorConfigDetail> {
-      return listConnections().map { response ->
-         val config =
-            response.connections.singleOrNull { it.packageIdentifier.uriSafeId == packageUri && it.connectionName == connectionName }
-               ?: throw NotFoundException("No connection was found for package $packageUri and name $connectionName")
-         val usages = ConnectionUsageMetadataRegistry.findConnectionUsages(schemaProvider.schema, connectionName)
-         ConnectorConfigDetail(
-            config,
-            usages
-         )
-      }
+      return Mono.defer {
+
+         listConnections().map { response ->
+            val config =
+               response.connections.singleOrNull { it.packageIdentifier.uriSafeId == packageUri && it.connectionName == connectionName }
+                  ?: throw NotFoundException("No connection was found for package $packageUri and name $connectionName")
+            val usages = ConnectionUsageMetadataRegistry.findConnectionUsages(schemaProvider.schema, connectionName)
+            ConnectorConfigDetail(
+               config,
+               usages
+            )
+         }
+      }.subscribeOn(Schedulers.boundedElastic())
+
    }
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewConnections}')")

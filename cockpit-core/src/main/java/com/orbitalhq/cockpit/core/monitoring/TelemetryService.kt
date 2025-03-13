@@ -20,6 +20,7 @@ import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.bodyToMono
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import java.time.Instant
 import java.time.format.DateTimeFormatter
 
@@ -65,6 +66,7 @@ class TelemetryService(
       @RequestParam(name = "period", required = false, defaultValue = "Last4Hours") period: MetricsWindow
    ): Mono<StreamMetricsData> {
       return buildStreamMetrics(period, aggregateMetricSpecs)
+         .subscribeOn(Schedulers.boundedElastic())
    }
 
 
