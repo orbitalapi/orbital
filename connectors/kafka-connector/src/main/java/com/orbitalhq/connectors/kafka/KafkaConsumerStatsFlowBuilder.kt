@@ -65,7 +65,15 @@ class KafkaConsumerStatsFlowBuilder(
 
    init {
       Flux.interval(pollFrequency)
-         .subscribe { emitConsumerStats() }
+         .subscribe {
+            try {
+               logger.debug { "Starting to update Kafka monitoring stats" }
+               emitConsumerStats()
+               logger.debug { "Finished updating Kafka monitoring stats" }
+            } catch (e: Exception) {
+               logger.warn(e) { "Exception thrown while monitoring kafka stats" }
+            }
+         }
    }
 
    // Note: Refactored this to put the interactions with AdminClient / KafkaConsumer
@@ -75,6 +83,7 @@ class KafkaConsumerStatsFlowBuilder(
    // so we work by storing a list of monitoed topics, and emitting stats from a single thread.
    private fun emitConsumerStats() {
       monitoredTopics.forEach { monitoringConfig ->
+         logger.debug { "Capturing Kafka consumer stats for ${monitoringConfig}" }
          val messages = mutableListOf<KafkaConsumerGroupInfoMessage>()
          val connectionConfiguration = monitoringConfig.connectionConfiguration
          val receiverOptions = monitoringConfig.receiverOptions
