@@ -7,6 +7,7 @@ import com.orbitalhq.connectors.kafka.registry.toAdminProps
 import com.orbitalhq.connectors.kafka.registry.toConsumerProps
 import com.orbitalhq.metrics.GaugeRegistry
 import com.orbitalhq.metrics.MetricTags
+import com.orbitalhq.utils.orElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.reactive.asFlow
@@ -26,7 +27,15 @@ private data class MonitoredKafkaConsumerTopic(
    val request: KafkaConsumerRequest,
    val connectionConfiguration: KafkaConnectionConfiguration,
    val receiverOptions: ReceiverOptions<Any, ByteArray>,
-)
+) {
+   override fun toString(): String {
+      return "Connection: ${request.connectionName}, topic: ${request.topicName}, consumer: ${
+         request.streamSourceId?.orElse(
+            "Not set"
+         )
+      }"
+   }
+}
 
 /**
  * Builds a flow emitting stats on consumer group usage.
@@ -115,6 +124,9 @@ class KafkaConsumerStatsFlowBuilder(
                         request
                      )
                   )
+               } else {
+                  val rootCause = Throwables.getRootCause(throwable)
+                  logger.warn { "Failed to monitor consumer group info  for Kafka connection $monitoringConfig - ${rootCause.message ?: "A ${rootCause::class.simpleName} exception was thrown"}" }
                }
             }
             .get()
@@ -148,8 +160,16 @@ class KafkaConsumerStatsFlowBuilder(
                            "orbital.connections.kafka.offset",
                            tags
                         ).set(currentOffset)
-                        messages.add(KafkaConsumerGroupInfoMessage("Partition ${partition.partition()} current offset: $currentOffset, end: $endOffset, lag: $lag", request))
+                        messages.add(
+                           KafkaConsumerGroupInfoMessage(
+                              "Partition ${partition.partition()} current offset: $currentOffset, end: $endOffset, lag: $lag",
+                              request
+                           )
+                        )
                      }
+                  } else {
+                     val rootCause = Throwables.getRootCause(throwable)
+                     logger.warn { "Failed to monitor consumer offsets for Kafka connection $monitoringConfig - ${rootCause.message ?: "A ${rootCause::class.simpleName} exception was thrown"}" }
                   }
                }.get()
          } catch (e: Exception) {
