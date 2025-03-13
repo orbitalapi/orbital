@@ -186,7 +186,7 @@ class KafkaStreamManager(
          .map { record ->
             getCounter(request).incrementAndGet()
 
-            logger.info { "Received message on topic ${record.topic()} with offset ${record.offset()}" }
+            logger.debug { "Received message on topic ${record.topic()} with offset ${record.offset()}" }
             val messageValue = if (encoding == MessageEncodingType.BYTE_ARRAY) {
                record.value()!!
             } else {
