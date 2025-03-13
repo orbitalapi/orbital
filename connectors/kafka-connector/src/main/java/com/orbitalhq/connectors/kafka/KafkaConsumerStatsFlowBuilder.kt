@@ -18,6 +18,7 @@ import org.apache.kafka.common.TopicPartition
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import reactor.core.scheduler.Schedulers
 import reactor.kafka.receiver.ReceiverOptions
 import java.time.Duration
 import java.time.Instant
@@ -65,6 +66,7 @@ class KafkaConsumerStatsFlowBuilder(
 
    init {
       Flux.interval(pollFrequency)
+         .subscribeOn(Schedulers.boundedElastic())
          .subscribe {
             try {
                logger.debug { "Starting to update Kafka monitoring stats" }
