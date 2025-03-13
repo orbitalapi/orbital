@@ -82,8 +82,8 @@ class KafkaConsumerStatsFlowBuilder(
    // access (it throws an exception saying as much),
    // so we work by storing a list of monitoed topics, and emitting stats from a single thread.
    private fun emitConsumerStats() {
-      monitoredTopics.forEach { monitoringConfig ->
-         logger.debug { "Capturing Kafka consumer stats for ${monitoringConfig}" }
+      monitoredTopics.forEachIndexed { index, monitoringConfig ->
+         logger.debug { "Capturing Kafka consumer stats for $monitoringConfig (${index + 1} / ${monitoredTopics.size})" }
          val messages = mutableListOf<KafkaConsumerGroupInfoMessage>()
          val connectionConfiguration = monitoringConfig.connectionConfiguration
          val receiverOptions = monitoringConfig.receiverOptions
