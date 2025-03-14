@@ -6,6 +6,7 @@ import com.orbitalhq.models.DefinedInSchema
 import com.orbitalhq.models.FactBagValueSupplier
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObjectFactory
 import com.orbitalhq.models.facts.CopyOnWriteFactBag
 import com.orbitalhq.models.facts.ScopedFact
@@ -363,7 +364,11 @@ class Vyne(
             formatSpecs = formatSpecs
          )
 
-         else -> error("No value was provided for parameter ${parameter.name} ")
+         !parameter.value.hasValue && parameter.nullable -> TypedNull.create(schema.type(parameter.type))
+
+         else -> {
+            error("No value was provided for parameter ${parameter.name} ")
+         }
       }
       ScopedFact(ProjectionFunctionScope(parameter.name, parameter.type), argValue)
    }
