@@ -18,6 +18,9 @@ class UriVariableProvider {
                ?: parameters.findByTypeName(name)
                ?: parameters.findByParameterName(name)
                ?: error("No argument provided for url variable $name")
+         if (parameterValuePair.second.value == null) {
+            println()
+         }
          name to (parameterValuePair.second.value
             ?: error("Error constructing url $url, found null for parameter $name"))
       }.toMap()

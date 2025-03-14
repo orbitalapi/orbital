@@ -3,6 +3,8 @@ package com.orbitalhq.query.runtime.core.gateway
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.http.HttpStatusException
 import com.orbitalhq.withBuiltIns
+import io.kotest.matchers.maps.shouldBeEmpty
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
@@ -17,7 +19,7 @@ class RoutedQueryTest {
       model Film {
          filmId : FilmId inherits String
       }
-      
+
       type CorrelationId inherits String
    """.trimIndent()
 
@@ -147,6 +149,63 @@ class RoutedQueryTest {
       val exception = assertThrows<HttpStatusException> { routedQuery.block() }
       exception.status.shouldBe(HttpStatus.BAD_REQUEST)
       exception.message.shouldBe("""No path variable with name "filmId" available""")
+   }
+
+   @Test
+   fun `fails with bad request if header parameter is missing`() {
+      val (query, querySrc) = query(
+         src, """
+
+         @HttpOperation(method = "GET", url = "/films")
+         query findFilm( @taxi.http.HttpHeader(name = "x-film-id") filmId : FilmId ) {
+            find { Film }
+         }
+      """.trimIndent()
+      )
+      val request = MockServerRequest.builder()
+         .body(Mono.empty<String>())
+
+      val routedQuery = RoutedQuery.build(query, querySrc, request)
+      val exception = assertThrows<HttpStatusException> { routedQuery.block() }
+      exception.status.shouldBe(HttpStatus.BAD_REQUEST)
+      exception.message.shouldBe("""HTTP header "x-film-id" was not provided, and is required""")
+   }
+
+   @Test
+   fun `fails with bad request if mandatory queryVariable parameter is missing`() {
+      val (query, querySrc) = query(
+         src, """
+         @HttpOperation(method = "GET", url = "/calculate")
+         query calculate( @taxi.http.QueryVariable("x-version") version : Int ) {
+            find { 1 + 2 }
+         }
+      """.trimIndent()
+      )
+      val request = MockServerRequest.builder()
+         .body(Mono.empty<String>())
+
+      val routedQuery = RoutedQuery.build(query, querySrc, request)
+      val exception = assertThrows<HttpStatusException> { routedQuery.block() }
+      exception.status.shouldBe(HttpStatus.BAD_REQUEST)
+      exception.message.shouldBe("""query variable "x-version" was not provided, and is required""")
+   }
+
+   @Test
+   fun `returns ok if if optional queryVariable parameter is missing`() {
+      val (query, querySrc) = query(
+         src, """
+         @HttpOperation(method = "GET", url = "/calculate")
+         query calculate( @taxi.http.QueryVariable("x-otherValue") otherValue : Int? ) {
+            find { 1 + (Int) coalesce(otherValue, 2) }
+         }
+      """.trimIndent()
+      )
+      val request = MockServerRequest.builder()
+         .body(Mono.empty<String>())
+
+      val routedQuery = RoutedQuery.build(query, querySrc, request).block()
+      // Null is not provided as a value here, instead we treat the values as "not provided"
+      routedQuery.argumentValues.shouldBeEmpty()
    }
 
 }

@@ -1,5 +1,6 @@
 package com.orbitalhq.query.runtime.core.gateway
 
+import com.orbitalhq.models.TypedNull
 import com.orbitalhq.spring.http.HttpStatusException
 import lang.taxi.annotations.HttpHeader
 import lang.taxi.annotations.HttpPathVariable
@@ -17,6 +18,7 @@ import org.springframework.web.reactive.function.server.ServerRequest
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.switchIfEmpty
+import java.util.*
 import kotlin.jvm.optionals.getOrNull
 
 /**
@@ -49,10 +51,15 @@ data class RoutedQuery(
 
 
       private fun extractParameterValueFromRequest(parameter: Parameter, request: ServerRequest): Mono<FactValue> {
+         // This is a hack.
+         // See below...
+
          return when {
             pathVariableName(parameter) != null -> {
                try {
-                  Mono.just(request.pathVariable(pathVariableName(parameter)!!))
+                  val pathVariableName = pathVariableName(parameter)!!
+                  val v = request.pathVariable(pathVariableName)
+                  v.valueOrRejectIfMissingAndMandatory("Path variable", pathVariableName, parameter)
                } catch (e: IllegalArgumentException) {
                   Mono.error(HttpStatusException(HttpStatus.BAD_REQUEST, e.message!!))
                }
@@ -60,7 +67,9 @@ data class RoutedQuery(
 
             queryVariableName(parameter) != null -> {
                try {
-                  Mono.just(request.queryParam(queryVariableName(parameter)!!).getOrNull())
+                  val queryVariableName = queryVariableName(parameter)!!
+                  request.queryParam(queryVariableName)
+                     .valueOrRejectIfMissingAndMandatory("query variable", queryVariableName, parameter)
                } catch (e: IllegalArgumentException) {
                   Mono.error(HttpStatusException(HttpStatus.BAD_REQUEST, e.message!!))
                }
@@ -68,8 +77,9 @@ data class RoutedQuery(
 
             headerVariableName(parameter) != null -> {
                try {
-                  val headerValue = request.headers().firstHeader(headerVariableName(parameter))
-                  Mono.just(headerValue)
+                  val headerVariableName = headerVariableName(parameter)!!
+                  val headerValue = request.headers().firstHeader(headerVariableName)
+                  headerValue.valueOrRejectIfMissingAndMandatory("HTTP header", headerVariableName, parameter)
                } catch (e: IllegalArgumentException) {
                   Mono.error(HttpStatusException(HttpStatus.BAD_REQUEST, e.message!!))
                }
@@ -92,7 +102,6 @@ data class RoutedQuery(
                Mono.justOrEmpty(responseHeaderAnnotation!!.value)
             }
 
-            // TODO : This should result in a BadRequest, somehow...
             else -> Mono.error(
                HttpStatusException(
                   HttpStatus.BAD_REQUEST,
@@ -100,7 +109,11 @@ data class RoutedQuery(
                )
             )
          }
-            .map { rawValue -> FactValue.Constant(TypedValue(parameter.type, rawValue)) }
+            .map { rawValue ->
+               FactValue.Constant(TypedValue(parameter.type, rawValue))
+            }
+
+            as Mono<FactValue>
       }
 
       private fun isRequestBody(parameter: Parameter): Boolean {
@@ -124,5 +137,36 @@ data class RoutedQuery(
             HttpResponseHeader.fromAnnotation(it)
          }
       }
+   }
+}
+
+private fun <T> Optional<T>.valueOrRejectIfMissingAndMandatory(
+   parameterKind: String,
+   parameterName: String,
+   parameter: Parameter
+): Mono<T> {
+   return when {
+      this.isPresent -> Mono.just(this.get())
+      else -> (null as T?).valueOrRejectIfMissingAndMandatory(parameterKind, parameterName, parameter)
+   }
+}
+
+private fun <T> T?.valueOrRejectIfMissingAndMandatory(
+   parameterKind: String,
+   parameterName: String,
+   parameter: Parameter
+): Mono<T> {
+   return when {
+      this != null -> Mono.just(this)
+      parameter.nullable -> {
+         Mono.empty()
+      }
+
+      else -> Mono.error(
+         HttpStatusException(
+            HttpStatus.BAD_REQUEST,
+            """$parameterKind "$parameterName" was not provided, and is required"""
+         )
+      )
    }
 }
