@@ -346,7 +346,8 @@ class StatefulQueryEngine(
             queryId = context.queryId,
             responseType = querySpecTypeNode.type,
             onCancelRequestHandler = { context.requestCancel() },
-            schema = schema
+            schema = schema,
+            errors =  context.eventBroker.queryErrorPublisher.errors
          )
       } else {
          QueryResult(
@@ -359,7 +360,8 @@ class StatefulQueryEngine(
             anonymousTypes = targetType.anonymousTypes,
             responseType = querySpecTypeNode.type,
             onCancelRequestHandler = { context.requestCancel() },
-            schema = schema
+            schema = schema,
+            errors =  context.eventBroker.queryErrorPublisher.errors
          )
       }
    }
@@ -395,7 +397,8 @@ class StatefulQueryEngine(
          responseType = spec.type,
          onCancelRequestHandler = { context.requestCancel() },
          schema = schema,
-         responseHeaders = searchContext.populateResponseHeaders()
+         responseHeaders = searchContext.populateResponseHeaders(),
+         errors = context.eventBroker.queryErrorPublisher.errors
       )
    }
 
@@ -640,7 +643,8 @@ class StatefulQueryEngine(
          responseType = queryResult.querySpec.type,
          onCancelRequestHandler = { context.requestCancel() },
          schema = schema,
-         responseHeaders = context.populateResponseHeaders()
+         responseHeaders = context.populateResponseHeaders(),
+         errors = context.eventBroker.queryErrorPublisher.errors
       )
 
    }
@@ -798,11 +802,17 @@ class StatefulQueryEngine(
 
       }.catch { exception ->
          MDC.setContextMap(contextMap)
-         if (exception !is CancellationException) {
-            metricsReporter.failed(Duration.between(queryStartTime, Instant.now()), metricsTags)
-            throw exception
-         } else if (context.cancelRequested) {
-            throw exception
+         when (exception) {
+            !is CancellationException -> {
+               metricsReporter.failed(Duration.between(queryStartTime, Instant.now()), metricsTags)
+               throw exception
+            }
+
+            else -> {
+               if (context.cancelRequested) {
+                  throw exception
+               }
+            }
          }
       }
 
@@ -877,7 +887,8 @@ class StatefulQueryEngine(
          anonymousTypes = anonymousTypes,
          responseType = querySpecTypeNode.type,
          onCancelRequestHandler = { context.requestCancel() },
-         schema = schema
+         schema = schema,
+         errors = context.eventBroker.queryErrorPublisher.errors
       )
 
    }

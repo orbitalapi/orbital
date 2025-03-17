@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.azure.servicebus
 
+import arrow.core.Either
 import com.azure.core.util.BinaryData
 import com.azure.messaging.servicebus.ServiceBusMessage
 import com.azure.messaging.servicebus.ServiceBusSenderAsyncClient
@@ -15,6 +16,7 @@ import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.SqlExchange
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
@@ -43,12 +45,13 @@ class ServiceBusPublisher(
 ) {
    private val batchWriteCacheProvider = BatchWriteCacheProvider<TypedInstance, OperationResultReference>()
 
+
    fun publishToTopic(
       connectionName: String,
       serviceBusTopicOperation: ServiceBusTaxi.Annotations.ServiceBusTopicPublicationOperation,
       payload: TypedInstance,
       schema: Schema
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val message = buildServiceBusMessage(payload, schema)
       return serviceBusConnectionFactory
          .topicSender(connectionName, serviceBusTopicOperation.topic)
@@ -62,7 +65,7 @@ class ServiceBusPublisher(
                   MetricTags.Topic.of(serviceBusTopicOperation.topic),
                )
             ).increment()
-         }.then(Mono.fromCallable { payload }).asFlow().flowOn(Dispatchers.IO)
+         }.then(Mono.fromCallable { Either.Right(payload) }).asFlow().flowOn(Dispatchers.IO)
    }
 
    fun publishToQueue(
@@ -70,7 +73,7 @@ class ServiceBusPublisher(
       serviceBusQueueOperation: ServiceBusTaxi.Annotations.ServiceBusQueueOperation,
       payload: TypedInstance,
       schema: Schema
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val message = buildServiceBusMessage(payload, schema)
       return serviceBusConnectionFactory
          .queueSender(connectionName, serviceBusQueueOperation.queue)
@@ -85,7 +88,7 @@ class ServiceBusPublisher(
                )
             )
                .increment()
-         }.then(Mono.fromCallable { payload }).asFlow()
+         }.then(Mono.fromCallable { Either.Right(payload) }).asFlow()
    }
 
    suspend fun batchPublishToTopic(
@@ -96,7 +99,7 @@ class ServiceBusPublisher(
       serviceBusTopicOperation: ServiceBusTaxi.Annotations.ServiceBusTopicPublicationOperation,
       payload: TypedInstance,
       schema: Schema
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
 
       val asyncSender = serviceBusConnectionFactory
          .topicSender(connectionName, serviceBusTopicOperation.topic)
@@ -122,7 +125,7 @@ class ServiceBusPublisher(
       serviceBusTopicOperation: ServiceBusTaxi.Annotations.ServiceBusQueueOperation,
       payload: TypedInstance,
       schema: Schema
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
 
       val asyncSender = serviceBusConnectionFactory
          .queueSender(connectionName, serviceBusTopicOperation.queue)
@@ -150,7 +153,7 @@ class ServiceBusPublisher(
       schema: Schema,
       asyncSender: ServiceBusSenderAsyncClient,
       metricsTags: List<Tag>,
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val batchWriteCache = batchWriteCacheProvider.forQueryId(
          queryId,
          serviceBusCacheSpec.batchSize,
@@ -190,7 +193,7 @@ class ServiceBusPublisher(
 
       return batchWriteCache.emit(payload)
          .map { operationResult ->
-            DataSourceUpdater.update(payload, operationResult)
+            Either.Right(DataSourceUpdater.update(payload, operationResult))
          }
          .asFlow()
          .flowOn(Dispatchers.IO)

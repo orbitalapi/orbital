@@ -1,9 +1,12 @@
 package com.orbitalhq
 
+import arrow.core.Either
+import com.orbitalhq.models.TypedCollection
+import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.right
+import com.orbitalhq.models.json.tryParseJson
 import com.winterbe.expekt.should
 import io.kotest.matchers.nulls.shouldNotBeNull
-import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.models.json.parseJson
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
@@ -232,11 +235,16 @@ class ProjectionNamedScopeTest {
       """.trimMargin()
          )
       )
-      stub.addResponse("findFilmReview") { request, params ->
-         vyne.parseJson(
+      stub.addResponse("findFilmReview") { _, params ->
+         val reviews = vyne.tryParseJson(
             "Review[]",
-            """[ { "id" : 1, "filmId": ${params.get(0).second.value} } ]"""
-         ) as List<TypedInstance>
+            """[ { "id" : 1, "filmId": ${params[0].second.value} } ]"""
+         )
+
+          when(reviews) {
+              is Either.Left -> listOf(Either.Left(reviews.value))
+              is Either.Right -> (reviews.value as TypedCollection).map { it.right() }
+          }
       }
       val response = vyne.query(
          """find { Film[] } as (src:Film) -> {
@@ -246,7 +254,6 @@ class ProjectionNamedScopeTest {
       """.trimMargin()
       ).rawObjects()
       response.shouldNotBeNull()
-      val invocations = stub.invocations["findFilmReview"]
    }
 
    @Test

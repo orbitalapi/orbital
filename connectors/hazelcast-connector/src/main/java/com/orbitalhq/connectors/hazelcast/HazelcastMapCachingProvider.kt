@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.hazelcast
 
+import arrow.core.Either
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.nio.ObjectDataInput
 import com.hazelcast.nio.ObjectDataOutput
@@ -18,6 +19,7 @@ import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.query.ConstructedQueryDataSource
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.CacheNames
 import com.orbitalhq.query.connectors.OperationCacheKey
 import com.orbitalhq.query.connectors.OperationInvocationParamMessage
@@ -119,7 +121,7 @@ class HazelcastMapCachingProvider(
    override fun load(
       key: OperationCacheKey,
       message: OperationInvocationParamMessage,
-      loader: () -> Flux<TypedInstance>
+      loader: () -> Flux<Either<StreamErrorMessage, TypedInstance>>
    ): Flux<TypedInstance> {
 
       val startTime = System.nanoTime()
@@ -127,7 +129,7 @@ class HazelcastMapCachingProvider(
 
       // Use Mono.create() to ensure the map reading below doesn't happen
       // on the main thread
-      return Mono.create { sink ->
+      return  Mono.create { sink ->
          // Design choice: use map.compute()...
          // We've tried multiple approaches here.
          // We need an async, atomic way to ensure the loader is only invoked once.
@@ -182,7 +184,7 @@ class HazelcastMapCachingProvider(
 
    private fun invokeLoader(
       key: String,
-      loader: () -> Flux<TypedInstance>,
+      loader: () -> Flux<Either<StreamErrorMessage, TypedInstance>>,
       /**
        * When loading from the actual loader, we populate the real values into
        * this list.
@@ -193,10 +195,11 @@ class HazelcastMapCachingProvider(
    ): CachedTypedInstanceList {
       val invocationReturnValue = loader.invoke()
       val values = invocationReturnValue
-         .doOnNext { typedInstance -> resultsFromCacheMiss.add(typedInstance) }
+         .filter { it is Either.Right }
+         .doOnNext { typedInstance -> resultsFromCacheMiss.add(typedInstance.getOrNull()!!) }
          .map { typedInstance ->
-            val expiration = typedInstance.metadata[TypedInstance.EXPIRY_METADATA] as? Instant
-            typedInstance to expiration
+            val expiration = typedInstance.getOrNull()!!.metadata[TypedInstance.EXPIRY_METADATA] as? Instant
+            typedInstance.getOrNull()!! to expiration
          }
          .collectList()
          .block(Duration.ofSeconds(60))!!

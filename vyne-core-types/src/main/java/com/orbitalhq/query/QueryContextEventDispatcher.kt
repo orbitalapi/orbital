@@ -30,6 +30,8 @@ interface QueryContextEventDispatcher {
 
    fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String)
 
+   val queryErrorPublisher: StreamErrorPublisher
+
 // TODO: This didn't get implemented, as passing tags around was too messy / too easy
    // to miss.
    // But, the desire is to be able to see for persistentStreams / endpoint queries the number
@@ -46,6 +48,7 @@ interface QueryContextEventDispatcher {
 //    *
 //    */
 //   val endToEndMetricTags:MetricTags
+
 }
 
 /**

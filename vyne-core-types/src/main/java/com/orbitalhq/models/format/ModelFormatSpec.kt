@@ -1,11 +1,13 @@
 package com.orbitalhq.models.format
 
+import arrow.core.Either
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.InPlaceQueryEngine
 import com.orbitalhq.models.ParsingFailureBehaviour
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.ValueSupplier
 import com.orbitalhq.models.functions.FunctionRegistry
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
@@ -101,5 +103,5 @@ interface StreamingModelFormatDeserializer {
       format: FormatsAndZoneOffset? = type.formatAndZoneOffset,
       metadata: Map<String, Any> = emptyMap(),
       valueSuppliers:List<ValueSupplier> = emptyList()
-   ): Flux<TypedInstance>
+   ): Flux<Either<StreamErrorMessage, TypedInstance>>
 }

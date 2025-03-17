@@ -1,6 +1,5 @@
 package com.orbitalhq.cockpit.core.connectors.kafka
 
-import com.orbitalhq.connectors.StreamErrorPublisher
 import com.orbitalhq.connectors.VyneConnectionsConfig
 import com.orbitalhq.connectors.config.SourceLoaderConnectorsRegistry
 import com.orbitalhq.connectors.kafka.KafkaConsumerStatsFlowBuilder
@@ -59,18 +58,13 @@ class KafkaConnectionConfig {
    }
 
    @Bean
-   fun streamErrorPublisher() = StreamErrorPublisher()
-
-   @Bean
    fun kafkaInvoker(
       streamManager: KafkaStreamManager,
-      streamPublisher: KafkaStreamPublisher,
-      streamErrorPublisher: StreamErrorPublisher
+      streamPublisher: KafkaStreamPublisher
    ): KafkaInvoker {
       return KafkaInvoker(
          streamManager,
-         streamPublisher,
-         streamErrorPublisher
+         streamPublisher
       )
    }
 }

@@ -1,44 +1,25 @@
 package com.orbitalhq.connectors.aws.s3
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.common.base.Stopwatch
+import arrow.core.Either
 import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
-import com.orbitalhq.connectors.calcite.VyneCalciteDataSource
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
-import com.orbitalhq.connectors.convertToTypedInstances
-import com.orbitalhq.connectors.jdbc.sql.dml.SelectStatementGenerator
-import com.orbitalhq.connectors.resultType
-import com.orbitalhq.models.OperationResult
-import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.formats.csv.CsvAnnotationSpec
 import com.orbitalhq.formats.csv.CsvFormatSpec
-import com.orbitalhq.formats.csv.CsvFormatSpecAnnotation
+import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.models.format.FormatRegistry
-import com.orbitalhq.models.json.Jackson
-import com.orbitalhq.query.ConstructedQueryDataSource
-import com.orbitalhq.query.EmptyExchangeData
 import com.orbitalhq.query.QueryContextEventDispatcher
-import com.orbitalhq.query.RemoteCall
-import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
-import com.orbitalhq.schemas.Type
-import com.orbitalhq.schemas.toVyneQualifiedName
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
-import lang.taxi.Compiler
 import lang.taxi.services.OperationScope
 import mu.KotlinLogging
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
-import java.time.Duration
-import java.time.Instant
-import java.util.stream.Stream
 
 class S3Invoker(
    private val connectionRegistry: AwsConnectionRegistry,
@@ -76,7 +57,7 @@ class S3Invoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
 
       val awsConnection = fetchConnection(service)
       val bucketName = fetchBucket(operation)

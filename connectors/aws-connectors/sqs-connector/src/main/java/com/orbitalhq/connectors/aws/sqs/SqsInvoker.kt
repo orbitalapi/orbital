@@ -1,8 +1,10 @@
 package com.orbitalhq.connectors.aws.sqs
 
+import arrow.core.Either
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.QueryContextSchemaProvider
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
@@ -79,7 +81,7 @@ class SqsInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val connectionName = service.firstMetadata(SqsConnectorTaxi.Annotations.SqsService.NAME)
          .params[SqsConnectorTaxi.Annotations.SqsService.ConnectionNameParam] as String
       val sqsOperation = operation.firstMetadata(SqsConnectorTaxi.Annotations.SqsOperation.NAME)
@@ -100,7 +102,7 @@ class SqsInvoker(
       sqsOperation: SqsConnectorTaxi.Annotations.SqsOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>>  {
       val publisher = connectionBuilder.buildPublisher(connectionName, sqsOperation.queue)
       require(parameters.size == 1) { "When publishing to SQS, exactly one parameter (the message to publish) is required" }
       val messageBody = parameters.single().second
@@ -116,7 +118,7 @@ class SqsInvoker(
       connectionName: String,
       sqsOperation: SqsConnectorTaxi.Annotations.SqsOperation,
       operation: RemoteOperation
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       return sqsStreamManager.getStream(
          SqsConsumerRequest(
             connectionName,

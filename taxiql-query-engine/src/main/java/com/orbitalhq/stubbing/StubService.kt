@@ -1,5 +1,7 @@
 package com.orbitalhq.stubbing
 
+import arrow.core.Either
+import arrow.core.flatMap
 import com.google.common.collect.MultimapBuilder
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneCacheConfiguration
@@ -17,10 +19,11 @@ import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
-import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.connectors.OperationInvocationPlanner
+import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.connectors.OperationResponseFlowProvider
 import com.orbitalhq.query.connectors.OperationResponseHandler
 import com.orbitalhq.query.graph.operationInvocation.DefaultOperationInvocationService
@@ -35,6 +38,7 @@ import com.orbitalhq.schemas.Service
 import com.orbitalhq.utils.orElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import mu.KotlinLogging
 import java.time.Instant
@@ -45,7 +49,7 @@ import java.time.Instant
  * ahead of actual execution
  */
 class StubService(
-   val responses: MutableMap<String, List<TypedInstance>> = mutableMapOf(),
+   val responses: MutableMap<String, Either<StreamErrorMessage, List<TypedInstance>>> = mutableMapOf(),
    val handlers: MutableMap<String, OperationResponseHandler> = mutableMapOf(),
    val flowHandlers: MutableMap<String, OperationResponseFlowProvider> = mutableMapOf(),
    // nullable for legacy purposes, you really really should pass a schema here.
@@ -101,13 +105,13 @@ class StubService(
 
    @Deprecated("Don't invoke directly, invoke by calling testVyne()")
    constructor(
-      responses: MutableMap<String, List<TypedInstance>> = mutableMapOf(),
+      responses: MutableMap<String, Either<StreamErrorMessage, List<TypedInstance>>> = mutableMapOf(),
       handlers: MutableMap<String, OperationResponseHandler> = mutableMapOf(),
       flowHandlers: MutableMap<String, OperationResponseFlowProvider> = mutableMapOf()
    ) : this(responses, handlers, flowHandlers, null)
 
    private fun justProvide(value: List<TypedInstance>): OperationResponseHandler {
-      return { _, _ -> value }
+      return { _, _ -> value.map { Either.Right(it) } }
    }
 
    /**
@@ -119,13 +123,15 @@ class StubService(
       remoteOperation: RemoteOperation,
       params: List<Pair<Parameter, TypedInstance>>,
       handler: OperationResponseHandler
-   ): List<TypedInstance> {
+   ): List<Either<StreamErrorMessage, TypedInstance>> {
       require(schema != null) { "Stub service was not created with a schema." }
       val result = handler.invoke(remoteOperation, params)
-      val dataSource = getRemoteCallDataSource(service, remoteOperation, result, params)
-      return result.map { typedInstance ->
-         val updated = TypedInstanceConverter(DataSourceMutatingMapper(dataSource)).convert(typedInstance)
-         TypedInstance.from(typedInstance.type, updated, schema, source = dataSource)
+      val dataSource = getRemoteCallDataSource(service, remoteOperation, result.map { it.getOrNull()!! }, params)
+      return result.map { errorTypedInstance ->
+         errorTypedInstance.flatMap { typedInstance ->
+            val updated = TypedInstanceConverter(DataSourceMutatingMapper(dataSource)).convert(typedInstance)
+            Either.Right(TypedInstance.from(typedInstance.type, updated, schema, source = dataSource))
+         }
       }
    }
 
@@ -146,7 +152,9 @@ class StubService(
       return dataSource
    }
 
-   constructor(vararg responses: Pair<String, List<TypedInstance>>) : this(responses.toMap().toMutableMap())
+   constructor(vararg responses: Pair<String, List<TypedInstance>>) : this(
+      responses.associate { it.first to Either.Right(it.second) }
+         .toMutableMap())
 
    fun toOperationInvocationService(): OperationInvocationService {
       return DefaultOperationInvocationService(
@@ -175,7 +183,7 @@ class StubService(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val paramDescription = parameters.joinToString { "${it.second.type.name.shortDisplayName} = ${it.second.value}" }
       logger.debug { "Invoking ${service.name} -> ${operation.name}($paramDescription)" }
       val stubResponseKey = if (operation.hasMetadata("StubResponse")) {
@@ -186,7 +194,7 @@ class StubService(
       }
 
       val paramValues = parameters.map { it.second }
-      invocations.put(stubResponseKey, paramValues)
+      invocations[stubResponseKey] = paramValues
       synchronized(calls) {
          calls.put(stubResponseKey, paramValues)
       }
@@ -206,46 +214,51 @@ class StubService(
             unwrapTypedCollections(handlers[stubResponseKey]!!.invoke(operation, parameters))
          }
 
+
          flowHandlers.containsKey(stubResponseKey) -> flowHandlers[stubResponseKey]!!.invoke(operation, parameters)
          wildcardHandler != null -> invokeWildcardHandler(operation, parameters)
          else -> error("No handler found for $stubResponseKey")
       }
-      return stubResponse.map { value ->
-         // Notify the event handler, so things like history and
-         // lineage work.
-         val operationResult = if (value.source is OperationResultDataSourceWrapper) {
-            (value.source as OperationResultDataSourceWrapper).operationResult
-         } else {
-            val remoteCall = RemoteCall(
-               service = service.name,
-               address = "http://fakeurl",
-               operation = operation.name,
-               responseTypeName = value.type.name,
-               durationMs = 1,
-               timestamp = Instant.now(),
-               responseMessageType = ResponseMessageType.FULL,
-               response = value,
-               exchange = HttpExchange(
-                  url = "http://fakeurl",
-                  verb = "GET",
-                  requestBody = """{ "stub" : "Not captured" }""",
-                  responseCode = 200,
-                  responseSize = 1000,
-                  headers = HttpHeaders.empty()
-               )
-            )
-            OperationResult.from(parameters, remoteCall)
-         }
+      return stubResponse.map { errorOrTypedInstance ->
+         when (errorOrTypedInstance) {
+            is Either.Left -> errorOrTypedInstance
+            is Either.Right -> {
+               val value = errorOrTypedInstance.value
+               val operationResult = if (value.source is OperationResultDataSourceWrapper) {
+                  (value.source as OperationResultDataSourceWrapper).operationResult
+               } else {
+                  val remoteCall = RemoteCall(
+                     service = service.name,
+                     address = "http://fakeurl",
+                     operation = operation.name,
+                     responseTypeName = value.type.name,
+                     durationMs = 1,
+                     timestamp = Instant.now(),
+                     responseMessageType = ResponseMessageType.FULL,
+                     response = value,
+                     exchange = HttpExchange(
+                        url = "http://fakeurl",
+                        verb = "GET",
+                        requestBody = """{ "stub" : "Not captured" }""",
+                        responseCode = 200,
+                        responseSize = 1000,
+                        headers = HttpHeaders.empty()
+                     )
+                  )
+                  OperationResult.from(parameters, remoteCall)
+               }
 
-         eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
-         DataSourceUpdater.update(value, operationResult.asOperationReferenceDataSource())
+               eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
+               Either.Right(DataSourceUpdater.update(value, operationResult.asOperationReferenceDataSource()))
+            }
+         }
       }
    }
 
    private fun invokeWildcardHandler(
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       return wildcardHandler!!.invoke(operation, parameters)
          .asFlow()
    }
@@ -257,15 +270,31 @@ class StubService(
     * This is to be consistent with how RestTemplateInvoker handles unwrapping the responses
     * of collectons from HttpServices
     */
-   private fun unwrapTypedCollections(typedInstances: List<TypedInstance>): Flow<TypedInstance> {
-      val unwrapped = typedInstances.flatMap { typedInstance ->
-         when (typedInstance) {
-            is TypedCollection -> typedInstance.value
-            else -> listOf(typedInstance)
-         }
-      }
-      return unwrapped.asFlow()
+   private fun unwrapTypedCollections(errorOrTypedInstances: Either<StreamErrorMessage, List<TypedInstance>>): Flow<Either<StreamErrorMessage, TypedInstance>> {
+    return when (errorOrTypedInstances) {
+        is Either.Left -> flowOf(Either.Left(errorOrTypedInstances.value))
+        is Either.Right ->  {
+           val typedInstances = errorOrTypedInstances.value
+           typedInstances.flatMap { typedInstance ->
+              when (typedInstance) {
+                 is TypedCollection -> typedInstance.value.map { Either.Right(it) }
+                 else -> listOf(Either.Right(typedInstance))
+              }
+           }.asFlow()
+        }
+     }
+   }
 
+   private fun unwrapTypedCollections(errorOrTypedInstances: List<Either<StreamErrorMessage, TypedInstance>>): Flow<Either<StreamErrorMessage, TypedInstance>> {
+     return  errorOrTypedInstances.flatMap { errorOrTypedInstance ->
+         when (errorOrTypedInstance) {
+            is Either.Left -> listOf(Either.Left(errorOrTypedInstance.value))
+            is Either.Right -> when(errorOrTypedInstance.value) {
+               is TypedCollection -> (errorOrTypedInstance.value as TypedCollection).value.map { Either.Right(it) }
+               else -> listOf(Either.Right(errorOrTypedInstance.value))
+            }
+         }
+      }.asFlow()
    }
 
    fun addResponse(
@@ -274,7 +303,7 @@ class StubService(
       handler: OperationResponseHandler
    ): StubService {
       if (modifyDataSource) {
-         this.handlers.put(stubOperationKey) { remoteOperation, params ->
+         this.handlers[stubOperationKey] = { remoteOperation, params ->
             val service = findServiceFromOperation(remoteOperation)
             // Curry the provided stub
             updateDataSourceOnResponse(
@@ -285,7 +314,7 @@ class StubService(
             )
          }
       } else {
-         this.handlers.put(stubOperationKey, handler)
+         this.handlers[stubOperationKey] = handler
       }
 
       return this
@@ -311,13 +340,15 @@ class StubService(
 
       ): StubService {
       if (modifyDataSource) {
-         this.flowHandlers.put(stubOperationKey) { remoteOperation, params ->
+         this.flowHandlers[stubOperationKey] = { remoteOperation, params ->
             handler.invoke(remoteOperation, params)
-               .map { typedInstance ->
-                  val service = findServiceFromOperation(remoteOperation)
-                  val dataSource = getRemoteCallDataSource(service,remoteOperation, listOf(typedInstance), params)
-                  val updated = TypedInstanceConverter(DataSourceMutatingMapper(dataSource)).convert(typedInstance)
-                  TypedInstance.from(typedInstance.type, updated, schema!!, source = dataSource)
+               .map { typedInstanceOrError ->
+                  typedInstanceOrError.flatMap { typedInstance ->
+                     val service = findServiceFromOperation(remoteOperation)
+                     val dataSource = getRemoteCallDataSource(service,remoteOperation, listOf(typedInstance), params)
+                     val updated = TypedInstanceConverter(DataSourceMutatingMapper(dataSource)).convert(typedInstance)
+                     Either.Right(TypedInstance.from(typedInstance.type, updated, schema!!, source = dataSource))
+                  }
                }
          }
       } else {
@@ -357,9 +388,8 @@ class StubService(
       if (modifyDataSource) {
          addResponse(stubOperationKey, handler = justProvide(response), modifyDataSource = true)
       } else {
-         this.responses.put(stubOperationKey, response)
+         this.responses[stubOperationKey] = Either.Right(response)
       }
-
       return this
    }
 
@@ -368,7 +398,7 @@ class StubService(
       if (modifyDataSource) {
          addResponse(stubOperationKey, handler = justProvide(listOf(response)), modifyDataSource = true)
       } else {
-         this.responses.put(stubOperationKey, listOf(response))
+         this.responses[stubOperationKey] = Either.Right(listOf(response))
       }
 
       return this
@@ -376,7 +406,7 @@ class StubService(
 
    fun addResponseReturningInputs(stubOperationKey: String): StubService {
       return addResponse(stubOperationKey) { op, parameters ->
-         listOf(parameters[0].second)
+         listOf (Either.Right(parameters[0].second))
       }
    }
 
@@ -388,7 +418,7 @@ class StubService(
       if (modifyDataSource) {
          addResponse(stubOperationKey, handler = justProvide(response.value), modifyDataSource = true)
       } else {
-         this.responses.put(stubOperationKey, response.value)
+         this.responses[stubOperationKey] = Either.Right(response.value)
       }
       return this
    }
@@ -409,7 +439,7 @@ class StubService(
       wildcardHandler = { remoteOperation: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
          val service = findServiceFromOperation(remoteOperation)
          updateDataSourceOnResponse(service, remoteOperation, params) { _, _ ->
-            listOf(MockTypedInstanceBuilder.build(remoteOperation.returnType, schema!!))
+            listOf(Either.Right(MockTypedInstanceBuilder.build(remoteOperation.returnType, schema!!)))
          }
 
       }

@@ -1,5 +1,6 @@
 package com.orbitalhq.models
 
+import arrow.core.Either
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonView
 import com.orbitalhq.models.format.FormatDetector
@@ -8,6 +9,7 @@ import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.models.format.StreamingModelFormatDeserializer
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.models.json.isJson
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.ImmutableEquality
@@ -163,7 +165,7 @@ interface TypedInstance {
          format: FormatsAndZoneOffset? = type.formatAndZoneOffset,
          metadata: Map<String, Any> = emptyMap(),
          valueSuppliers: List<ValueSupplier> = emptyList()
-      ): Flux<TypedInstance> {
+      ): Flux<Either<StreamErrorMessage, TypedInstance>> {
          val deserializer = formatRegistry.forType(type).let { (metadata,formatSpec) ->
             if (formatSpec?.deserializer is StreamingModelFormatDeserializer) {
                if ((formatSpec.deserializer as StreamingModelFormatDeserializer).supportsStreamingForSource(value)) {
@@ -179,12 +181,21 @@ interface TypedInstance {
          }
 
          return if (deserializer == null) {
-            val result = from(
-               type, value, schema, performTypeConversions, nullValues, source, evaluateAccessors, functionRegistry
-            )
+            val result = try {
+               Either.Right(
+                  from(
+                  type, value, schema, performTypeConversions, nullValues, source, evaluateAccessors, functionRegistry
+               ))
+            } catch (e: Exception) {
+               Either.Left(StreamErrorMessage.fromException(e, type.paramaterizedName))
+            }
+
             when (result) {
-               is TypedCollection -> Flux.fromIterable(result.value)
-               else -> Flux.just(result)
+               is Either.Left -> Flux.just(result)
+               is Either.Right -> when (result.value) {
+                  is TypedCollection -> Flux.fromIterable((result.value as TypedCollection).value.map { Either.Right(it) })
+                  else -> Flux.just(result)
+               }
             }
          } else {
             deserializer.stream(
@@ -203,6 +214,45 @@ interface TypedInstance {
          }
       }
 
+      fun tryFrom(
+         type: Type,
+         value: Any?,
+         schema: Schema,
+         performTypeConversions: Boolean = true,
+         nullValues: Set<String> = emptySet(),
+         source: DataSource = UndefinedSource,
+         evaluateAccessors: Boolean = true,
+         functionRegistry: FunctionRegistry = FunctionRegistry.default,
+         formatSpecs: List<ModelFormatSpec> = emptyList(),
+         inPlaceQueryEngine: InPlaceQueryEngine? = null,
+         parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
+         format: FormatsAndZoneOffset? = type.formatAndZoneOffset,
+         metadata: Map<String, Any> = emptyMap(),
+         valueSuppliers: List<ValueSupplier> = emptyList(),
+         parsingOptions: ParsingOptions = ParsingOptions.DEFAULT
+      ): Either<StreamErrorMessage,  TypedInstance> {
+         return try {
+            Either.Right(from(
+               type,
+               value,
+               schema,
+               performTypeConversions,
+            nullValues,
+            source,
+            evaluateAccessors,
+            functionRegistry,
+            formatSpecs,
+            inPlaceQueryEngine,
+            parsingErrorBehaviour,
+            format,
+            metadata,
+            valueSuppliers,
+            parsingOptions
+            ))
+         } catch (e: Exception) {
+            Either.Left(StreamErrorMessage.fromException(e, type.paramaterizedName))
+         }
+      }
       /**
        * Parses a TypedInstance
        *

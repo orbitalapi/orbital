@@ -519,7 +519,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
    fun `subscription is not cancelled when there is a parsing exception`(): Unit = runBlocking {
 
       val topic = "arrivals"
-      val (vyne, kafkaStreamManager, stub, streamErrors) = vyneWithKafkaInvoker(
+      val (vyne, kafkaStreamManager, stub) = vyneWithKafkaInvoker(
          """
                ${KafkaConnectorTaxi.Annotations.imports}
                 [[ Flight Number]]
@@ -577,15 +577,17 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       // This is a valid message
       sendMessage(arrivalMessage("2024-03-04T16:57:06+00:00"), topic)
 
-      val result = vyne.query(
+      val queryResult = vyne.query(
          """
          stream { Arrival }"""
             .trimIndent()
       )
 
-         .results.take(1).toList() as List<TypedObject>
+      val result = queryResult.results.take(1).toList() as List<TypedObject>
 
-      StepVerifier.create(streamErrors.errors.take(1))
+
+
+      StepVerifier.create(queryResult.errors.take(1))
          .expectNextMatches { streamError ->
             streamError.error.message == "Failed to parse value 2024-03-04T16:57:06.555+00:00 to type EventTime with formats yyyy-MM-dd'T'HH:mm:ssXXX - Text '2024-03-04T16:57:06.555+00:00' could not be parsed, unparsed text found at index 23"
          }

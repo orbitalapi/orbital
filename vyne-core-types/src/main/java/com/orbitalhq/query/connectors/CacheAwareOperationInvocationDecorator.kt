@@ -1,8 +1,10 @@
 package com.orbitalhq.query.connectors
 
+import arrow.core.Either
 import com.orbitalhq.logging.MDCContextKeys.QueryId
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.caching.CacheAnnotation
 import com.orbitalhq.schemas.MetadataTarget
 import com.orbitalhq.schemas.Parameter
@@ -71,7 +73,7 @@ class CacheAwareOperationInvocationDecorator(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       MDC.put(QueryId, queryId)
       /**
        * You can turn off caching for all operations, by directly returning here as:
@@ -211,8 +213,8 @@ interface ReadCacheOrCallInvokerHandler {
       operationCacheKey: OperationCacheKey,
       operationInvocationParamMessage: OperationInvocationParamMessage,
       cacheTTL: Duration,
-      invoker: () -> Flux<TypedInstance>
-   ): Flux<TypedInstance>
+      invoker: () -> Flux<Either<StreamErrorMessage, TypedInstance>>
+   ): Flux<Either<StreamErrorMessage, TypedInstance>>
 }
 
 /**
@@ -227,7 +229,7 @@ class DefaultCachingOperatorInvoker(
    private val ttl: Duration,
    override val readCacheOrCallInvokerHandler: ReadCacheOrCallInvokerHandler
 ) : CachingOperatorInvoker, CacheInvokerWithHandler {
-   override fun invoke(message: OperationInvocationParamMessage): Flux<TypedInstance> {
+   override fun invoke(message: OperationInvocationParamMessage): Flux<Either<StreamErrorMessage, TypedInstance>> {
       return readCacheOrCallInvokerHandler.getCachedOrCallLoader(cacheKey, message, ttl) {
          logger.debug { "${cacheKey.abbreviate()} cache miss, loading from Operation Invoker" }
          invokeUnderlyingService(message)
@@ -243,7 +245,7 @@ class DefaultCachingOperatorInvoker(
    /**
     * Build a flux from the underlying OperationInvoker.
     */
-   private fun invokeUnderlyingService(message: OperationInvocationParamMessage): Flux<TypedInstance> {
+   private fun invokeUnderlyingService(message: OperationInvocationParamMessage): Flux<Either<StreamErrorMessage, TypedInstance>> {
       val (service: Service,
          operation: RemoteOperation,
          parameters: List<Pair<Parameter, TypedInstance>>,
@@ -257,8 +259,9 @@ class DefaultCachingOperatorInvoker(
       // So we have to do our deferred flux work on the current coroutine context.
 //      val context = currentCoroutineContext()
 
-      return Flux.create<TypedInstance> { sink ->
-         MDC.put(QueryId, queryId)
+      val mdcContext = MDC.getCopyOfContextMap()
+      return Flux.create<Either<StreamErrorMessage, TypedInstance>> { sink ->
+         MDC.setContextMap(mdcContext)
          // This isn't really blocking anything. We just didn't understand how suspend / flux functions
          // worked when we wrote the underlying interface.
          operationScope.launch(MDCContext()) {
@@ -296,7 +299,7 @@ interface CacheInvokerWithHandler : CachingOperatorInvoker {
 }
 
 interface CachingOperatorInvoker {
-   fun invoke(message: OperationInvocationParamMessage): Flux<TypedInstance>
+   fun invoke(message: OperationInvocationParamMessage): Flux<Either<StreamErrorMessage, TypedInstance>>
 }
 
 data class OperationInvocationParamMessage(

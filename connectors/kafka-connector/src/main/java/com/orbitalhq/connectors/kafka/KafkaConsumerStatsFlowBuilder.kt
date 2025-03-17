@@ -1,12 +1,12 @@
 package com.orbitalhq.connectors.kafka
 
 import com.google.common.base.Throwables
-import com.orbitalhq.connectors.StreamErrorMessage
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.toAdminProps
 import com.orbitalhq.connectors.kafka.registry.toConsumerProps
 import com.orbitalhq.metrics.GaugeRegistry
 import com.orbitalhq.metrics.MetricTags
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.utils.orElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -45,7 +45,7 @@ private data class MonitoredKafkaConsumerTopic(
  */
 class KafkaConsumerStatsFlowBuilder(
    private val gaugeRegistry: GaugeRegistry,
-   private val pollFrequency: Duration = Duration.ofSeconds(15)
+   pollFrequency: Duration = Duration.ofSeconds(15)
 ) {
 
 
@@ -58,7 +58,7 @@ class KafkaConsumerStatsFlowBuilder(
    private val adminClient = ConcurrentHashMap<KafkaConnectionConfiguration, AdminClient>()
    private val consumer = ConcurrentHashMap<KafkaConnectionConfiguration, KafkaConsumer<Any, Any>>()
 
-   private val monitoredTopics = mutableSetOf<MonitoredKafkaConsumerTopic>()
+   private val monitoredTopics = ConcurrentHashMap<KafkaConsumerRequest, MonitoredKafkaConsumerTopic>()
 
    private val monitoringStatusMessageSink = Sinks.many().multicast().directBestEffort<KafkaConsumerGroupInfoMessage>()
    private val monitoringStatusMessageFlux = monitoringStatusMessageSink.asFlux()
@@ -67,6 +67,7 @@ class KafkaConsumerStatsFlowBuilder(
    init {
       Flux.interval(pollFrequency)
          .subscribeOn(Schedulers.boundedElastic())
+           .onBackpressureBuffer() // If emitConsumerStat takes longer than pollFrequency, don't schedule new one when emitConsumerStats is in progress.
          .subscribe {
             try {
                logger.debug { "Starting to update Kafka monitoring stats" }
@@ -80,14 +81,15 @@ class KafkaConsumerStatsFlowBuilder(
 
    // Note: Refactored this to put the interactions with AdminClient / KafkaConsumer
    // on a single thread.
-   // We want a long-lived adminClient and consumer, but KafkaConsumer is not safe for multi-threaded
+   // We want a long-lived adminClient and consumer, but KafkaConsumer is not safe for multithreaded
    // access (it throws an exception saying as much),
-   // so we work by storing a list of monitoed topics, and emitting stats from a single thread.
+   // so we work by storing a list of monitored topics, and emitting stats from a single thread.
    private fun emitConsumerStats() {
       monitoredTopics.forEachIndexed { index, monitoringConfig ->
 
          logger.debug { "Capturing Kafka consumer stats for $monitoringConfig (${index + 1} / ${monitoredTopics.size})" }
          val messages = mutableListOf<KafkaConsumerGroupInfoMessage>()
+
          val connectionConfiguration = monitoringConfig.connectionConfiguration
          val receiverOptions = monitoringConfig.receiverOptions
          val request = monitoringConfig.request
@@ -137,6 +139,14 @@ class KafkaConsumerStatsFlowBuilder(
                            request
                         )
                      )
+
+                  monitoringStatusMessageSink.tryEmitNext(
+                     KafkaConsumerGroupInfoMessage(
+                        "Consumer Group: $groupId has ${members.size} member(s): ${members.joinToString { it.consumerId() }}",
+                        request
+                     )
+                  ).logIfFailed()
+
                   } else {
                      val rootCause = Throwables.getRootCause(throwable)
                      logger.warn { "Failed to monitor consumer group info  for Kafka connection $monitoringConfig - ${rootCause.message ?: "A ${rootCause::class.simpleName} exception was thrown"}" }
@@ -159,6 +169,7 @@ class KafkaConsumerStatsFlowBuilder(
                      partitionsInfo.map { partition ->
                         val currentOffset = currentOffsets[partition]?.offset() ?: 0L
                         val endOffset = endOffsets[partition] ?: 0L
+                        val topic = partition.topic()
                         val lag = endOffset - currentOffset
                         val tags = listOf(
                            MetricTags.ConnectionName.of(connectionConfiguration.connectionName),
@@ -178,12 +189,10 @@ class KafkaConsumerStatsFlowBuilder(
                            "orbital.connections.kafka.offset",
                            tags
                         ).set(currentOffset)
-                        messages.add(
-                           KafkaConsumerGroupInfoMessage(
-                              "Partition ${partition.partition()} current offset: $currentOffset, end: $endOffset, lag: $lag",
-                              request
-                           )
-                        )
+                        monitoringStatusMessageSink.tryEmitNext(
+                           KafkaConsumerGroupInfoMessage("Partition ${partition.partition()} topic: ${topic}, current offset: $currentOffset, end: $endOffset, lag: $lag", request)
+                        ).logIfFailed()
+
                      }
                   } else {
                      val rootCause = Throwables.getRootCause(throwable)
@@ -194,6 +203,7 @@ class KafkaConsumerStatsFlowBuilder(
             val rootCause = Throwables.getRootCause(throwable)
             logger.warn { "Failed to monitor consumer offsets for Kafka connection $monitoringConfig - ${rootCause.message ?: "A ${rootCause::class.simpleName} exception was thrown"}" }
          }
+
       }
    }
 
@@ -205,21 +215,27 @@ class KafkaConsumerStatsFlowBuilder(
     * - Current offset of our consumer group
     * - Head offset of the topic (for lag calculation)
     */
-   fun buildConsumerStatsFlow(
+   private fun buildConsumerStatsFlow(
       request: KafkaConsumerRequest,
       connectionConfiguration: KafkaConnectionConfiguration,
       receiverOptions: ReceiverOptions<Any, ByteArray>,
    ): Flow<KafkaConsumerGroupInfoMessage> {
-      monitoredTopics.add(MonitoredKafkaConsumerTopic(request, connectionConfiguration, receiverOptions))
+      // We are adding into monitoredTopics directly here, as KafkaStreamManager handles the caching on KafkaConsumerRequest.
+      monitoredTopics[request] = MonitoredKafkaConsumerTopic(request, connectionConfiguration, receiverOptions)
       return monitoringStatusMessageFlux
          .filter { message -> message.request == request }
          .asFlow()
    }
 
+   fun stopMonitoring(consumerRequest: KafkaConsumerRequest) {
+      logger.info { "stopping monitoring of ${consumerRequest.connectionName} / ${consumerRequest.topicName}" }
+      monitoredTopics.remove(consumerRequest)
+   }
+
    /**
     * Currently all streams emit either a TypedInstance or an error.
-    * We need to chhange that to allow non-error messages (such as these).
-    * However, theres' other refactoring happening in that area right now.
+    * We need to change that to allow non-error messages (such as these).
+    * However, there's other refactoring happening in that area right now.
     *
     * As a workaround, modify our messages to look like errors.
     */
@@ -240,7 +256,7 @@ class KafkaConsumerStatsFlowBuilder(
          }
    }
 
-   fun Sinks.EmitResult.logIfFailed() {
+   private fun Sinks.EmitResult.logIfFailed() {
       if (this.isFailure) {
          logger.info { "Failed to emit event: $this" }
       }

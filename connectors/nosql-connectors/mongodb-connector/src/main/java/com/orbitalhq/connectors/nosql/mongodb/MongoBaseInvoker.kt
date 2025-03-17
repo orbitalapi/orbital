@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
+import arrow.core.Either
 import com.orbitalhq.connectors.collectionTypeOrType
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.resultType
@@ -11,6 +12,7 @@ import com.orbitalhq.models.TypedObject
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.SqlExchange
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.AttributeName
 import com.orbitalhq.schemas.OperationInvocationException
@@ -140,7 +142,7 @@ abstract class MongoBaseInvoker(
       query: TaxiQlQuery,
       schema: Schema,
       datasource: DataSource
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>>  {
       val resultTypeName = query.resultType()
       val resultTaxiType = collectionTypeOrType(schema.taxi.type(resultTypeName))
       val vyneType = schema.type(resultTaxiType)
@@ -157,15 +159,19 @@ abstract class MongoBaseInvoker(
       mapValue: Map<*, *>, vyneType: Type,
       schema: Schema,
       datasource: DataSource,
-      mapTransform: MongoIdTransformFunc? = null): TypedInstance {
+      mapTransform: MongoIdTransformFunc? = null): Either<StreamErrorMessage, TypedInstance> {
       val idFieldTransform = mapTransform ?: objectIdFieldTransform(vyneType)
-      return TypedInstance.from(
-         vyneType,
-         idFieldTransform(mapValue),
-         schema,
-         source = datasource,
-         evaluateAccessors = false
-      )
+      return try {
+          Either.Right(TypedInstance.from(
+             vyneType,
+             idFieldTransform(mapValue),
+             schema,
+             source = datasource,
+             evaluateAccessors = false
+          ))
+        } catch (e: Exception) {
+           Either.Left(StreamErrorMessage.fromException(e, vyneType.paramaterizedName))
+        }
    }
 
    private fun objectIdFieldTransform(vyneType: Type): MongoIdTransformFunc {

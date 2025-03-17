@@ -1,20 +1,22 @@
 package com.orbitalhq.query.graph.operationInvocation.cache.local
 
+import arrow.core.Either
 import com.google.common.base.Ticker
 import com.google.common.cache.Cache
 import com.google.common.cache.CacheBuilder
 import com.orbitalhq.LocalOperationCacheConfiguration
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.CacheFactory
-import com.orbitalhq.query.connectors.ReadCacheOrCallInvokerHandler
+import com.orbitalhq.query.connectors.CachingInvokerProvider
 import com.orbitalhq.query.connectors.CachingOperatorInvoker
 import com.orbitalhq.query.connectors.DefaultCachingOperatorInvoker
 import com.orbitalhq.query.connectors.OperationCacheKey
 import com.orbitalhq.query.connectors.OperationCacheName
-import com.orbitalhq.query.connectors.CachingInvokerProvider
 import com.orbitalhq.query.connectors.OperationCacheProviderBuilder
 import com.orbitalhq.query.connectors.OperationInvocationParamMessage
 import com.orbitalhq.query.connectors.OperationInvoker
+import com.orbitalhq.query.connectors.ReadCacheOrCallInvokerHandler
 import com.orbitalhq.schemas.CachingStrategy
 import com.orbitalhq.schemas.GlobalSharedCache
 import com.orbitalhq.schemas.NamedCache
@@ -103,13 +105,13 @@ object LocalCache {
 }
 
 class LocalCacheFetcher : ReadCacheOrCallInvokerHandler {
-   private val cachedFlux = ConcurrentHashMap<String, Flux<TypedInstance>>()
+   private val cachedFlux = ConcurrentHashMap<String, Flux<Either<StreamErrorMessage, TypedInstance>>>()
    override fun getCachedOrCallLoader(
       operationCacheKey: OperationCacheKey,
       operationInvocationParamMessage: OperationInvocationParamMessage,
       cacheTTL: Duration,
-      invoker: () -> Flux<TypedInstance>
-   ): Flux<TypedInstance> {
+      invoker: () -> Flux<Either<StreamErrorMessage, TypedInstance>>
+   ): Flux<Either<StreamErrorMessage, TypedInstance>> {
       return cachedFlux.getOrPut(operationCacheKey) {
          invoker().cache()
       }

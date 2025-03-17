@@ -1,5 +1,7 @@
 package com.orbitalhq.models
 
+import arrow.core.Either
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.Ids
@@ -83,6 +85,28 @@ data class TypedCollection(
          }
          val commonType = types.first().commonTypeAncestor(types)
          return arrayOf(commonType, populatedList, source)
+      }
+
+      /**
+       * Constructs a TypedCollection by interrogating the contents of the
+       * provided list.
+       * If the list is empty, then an A StreamErrorMessage is returned
+       */
+      fun tryFrom(
+         populatedList: List<TypedInstance>,
+         source: DataSource = MixedSources.singleSourceOrMixedSources(populatedList)
+      ): Either<StreamErrorMessage, TypedCollection> {
+         // TODO : Find the most compatiable abstract type.
+         val types = populatedList.map { it.type.resolveAliases() }.distinct()
+         if (types.isEmpty()) {
+            Either.Left(
+               StreamErrorMessage.fromException(
+               IllegalStateException("An empty list was passed, where a populated list was expected.  Cannot infer type."),
+                  "unknown"))
+
+         }
+         val commonType = types.first().commonTypeAncestor(types)
+         return Either.Right(arrayOf(commonType, populatedList, source))
       }
       /**
        * If all the elements are TypedCollections, then the result is a single TypedCollection

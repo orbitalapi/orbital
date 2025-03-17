@@ -1,10 +1,12 @@
 package com.orbitalhq.query.connectors
 
+import arrow.core.Either
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.EmptyExchangeData
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
@@ -56,8 +58,6 @@ interface OperationInvoker: OperationInvocationPlanner {
       return OperationCachingBehaviour.CACHING_PERMITTED
    }
 
-
-
    suspend fun invoke(
       service: Service,
       operation: RemoteOperation,
@@ -65,5 +65,5 @@ interface OperationInvoker: OperationInvocationPlanner {
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance>
+   ): Flow<Either<StreamErrorMessage, TypedInstance>>
 }

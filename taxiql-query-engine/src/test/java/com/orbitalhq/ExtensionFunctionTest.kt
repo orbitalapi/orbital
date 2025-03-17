@@ -1,9 +1,12 @@
 package com.orbitalhq
 
 import app.cash.turbine.test
+import arrow.core.Either
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.tryParseJson
+import com.orbitalhq.query.StreamErrorMessage
 import io.kotest.common.runBlocking
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -81,10 +84,10 @@ class ExtensionFunctionTest {
             }
          """.trimIndent()
       )
-      val moviesFlow = MutableSharedFlow<TypedInstance>(2)
-      val starWars = vyne.parseJson("Movie", """{ "title" : "Star Wars"}""")
+      val moviesFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>(2)
+      val starWars = vyne.tryParseJson("Movie", """{ "title" : "Star Wars"}""")
       moviesFlow.emit(starWars)
-      moviesFlow.emit(vyne.parseJson("Movie", """{ "title" : "Jaws"}"""))
+      moviesFlow.emit(vyne.tryParseJson("Movie", """{ "title" : "Jaws"}"""))
       stub.addResponseFlow("streamMovies") { _, _ -> moviesFlow }
 
       val results = vyne.query(

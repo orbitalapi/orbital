@@ -1,11 +1,12 @@
 package com.orbitalhq.connectors.hazelcast
 
+import arrow.core.Either
 import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
 import com.orbitalhq.query.connectors.OperationCacheKey
 import com.orbitalhq.query.connectors.OperationInvocationParamMessage
-import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCachingInvokerProvider
 import com.orbitalhq.schema.consumer.SchemaStore
 import reactor.core.publisher.Flux
 import java.time.Clock
@@ -15,7 +16,7 @@ abstract class HazelcastCachingProvider(protected val hazelcast: HazelcastInstan
    abstract fun load(
       key: OperationCacheKey,
       message: OperationInvocationParamMessage,
-      loader: () -> Flux<TypedInstance>
+      loader: () -> Flux<Either<StreamErrorMessage, TypedInstance>>
    ): Flux<TypedInstance>
 
    abstract fun evict(operationKey: OperationCacheKey)

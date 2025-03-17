@@ -1,5 +1,6 @@
 package com.orbitalhq.query.runtime.core
 
+import arrow.core.Either
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.Fact
@@ -14,6 +15,7 @@ import com.orbitalhq.spring.http.NotFoundException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
+import lang.taxi.utils.leftOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
@@ -54,7 +56,13 @@ class OperationService(
             invocationId,
             QueryOptions()
          )
-            .map { value: TypedInstance -> serialiser.serialize(value, schemaProvider.schema) }
+            .map { value ->
+               when (value) {
+                  is Either.Left -> throw ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, value.value.message)
+                  is Either.Right -> value.value
+               }
+
+            }
             .filterNotNull()
          return ResponseEntity.ok(operationResult)
       } catch (e: OperationInvocationException) {

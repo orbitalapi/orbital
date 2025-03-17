@@ -1,10 +1,12 @@
 package com.orbitalhq.regression
 
+import arrow.core.Either
 import com.orbitalhq.http.UriVariableProvider
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
@@ -34,7 +36,7 @@ class ReplayingOperationInvoker(private val remoteCalls: List<RemoteCall>, priva
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val (_, url, _) = operation.httpOperationMetadata()
       val uriVariables = uriVariableProvider.getUriVariables(parameters, url)
       val path = UriComponentsBuilder.newInstance()
@@ -46,13 +48,18 @@ class ReplayingOperationInvoker(private val remoteCalls: List<RemoteCall>, priva
       val recordedCall = findRecordedCall(operation, path, requestBody) ?: error("Expected a matching recorded call")
       val responseType = schema.type(recordedCall.responseTypeName)
       return flow {
-         TypedInstance.from(
-            responseType,
-            recordedCall.response,
-            schema,
-            source = Provided,
-            evaluateAccessors = false
-         )
+         try {
+            Either.Right(
+            TypedInstance.from(
+               responseType,
+               recordedCall.response,
+               schema,
+               source = Provided,
+               evaluateAccessors = false
+            ))
+         } catch (e: Exception) {
+            Either.Left(StreamErrorMessage.fromException(e, responseType.paramaterizedName))
+         }
       }
    }
 

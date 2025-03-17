@@ -1,9 +1,9 @@
 package com.orbitalhq.connectors.aws.sqs
 
-import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.Vyne
 import com.orbitalhq.connectors.aws.core.registry.AwsInMemoryConnectionRegistry
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.firstRawObject
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.format.DefaultFormatRegistry
@@ -15,6 +15,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
 import mu.KotlinLogging
 import org.junit.Before
 import org.junit.Rule
@@ -143,7 +144,7 @@ class SqsInvokerTest {
    }
 
    @Test
-   fun `sqs listener tries 3 times and then exists when the sqs name is invalid`(): Unit = runBlocking {
+   fun `sqs listener tries 3 times and then exists when the sqs name is invalid`(): Unit = runTest {
       val (vyne, _) = vyneWithSqsInvoker()
       try {
          vyne.query("""stream { Actor }""").results.take(1).toList()

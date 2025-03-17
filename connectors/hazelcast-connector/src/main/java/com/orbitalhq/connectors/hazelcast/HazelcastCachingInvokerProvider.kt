@@ -1,12 +1,15 @@
 package com.orbitalhq.connectors.hazelcast
 
+import arrow.core.Either
 import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.json.right
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.CacheFactory
+import com.orbitalhq.query.connectors.CachingInvokerProvider
 import com.orbitalhq.query.connectors.CachingOperatorInvoker
 import com.orbitalhq.query.connectors.DefaultCachingOperatorInvoker
 import com.orbitalhq.query.connectors.OperationCacheKey
-import com.orbitalhq.query.connectors.CachingInvokerProvider
 import com.orbitalhq.query.connectors.OperationCacheProviderBuilder
 import com.orbitalhq.query.connectors.OperationInvocationParamMessage
 import com.orbitalhq.query.connectors.OperationInvoker
@@ -76,11 +79,12 @@ class HazelcastCachingInvokerProvider(
       operationCacheKey: OperationCacheKey,
       operationInvocationParamMessage: OperationInvocationParamMessage,
       cacheTTL: Duration,
-      invoker: () -> Flux<TypedInstance>
-   ): Flux<TypedInstance> {
+      invoker: () -> Flux<Either<StreamErrorMessage, TypedInstance>>
+   ): Flux<Either<StreamErrorMessage, TypedInstance>> {
       return HazelcastCacheProviderFactory
          .instance(hazelcast, schemaStore, connectionName, connectionAddress, clock, cacheTTL)
          .load(operationCacheKey, operationInvocationParamMessage, invoker)
+         .map { it.right() }
    }
 
    override fun evict(operationKey: OperationCacheKey) {

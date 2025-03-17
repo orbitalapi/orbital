@@ -1,55 +1,27 @@
 package com.orbitalhq.query.runtime.core
 
 import app.cash.turbine.test
-import app.cash.turbine.testIn
-import app.cash.turbine.withTurbineTimeout
 import com.orbitalhq.expectTypedObject
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.models.json.parseJsonModel
+import com.orbitalhq.models.json.right
 import com.orbitalhq.query.QueryEvent
 import com.orbitalhq.query.QueryEventConsumer
 import com.orbitalhq.query.QueryResult
-import com.orbitalhq.query.QuerySpecTypeNode
-import com.orbitalhq.query.QueryStartEvent
 import com.orbitalhq.query.StreamingQueryCancelledEvent
 import com.orbitalhq.query.TaxiQlQueryResultEvent
 import com.orbitalhq.testVyne
-import com.winterbe.expekt.should
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.asCoroutineDispatcher
-import kotlinx.coroutines.awaitCancellation
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.cancellable
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.launchIn
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.single
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.withIndex
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mu.KotlinLogging
 import org.junit.jupiter.api.Test
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
-import reactor.kotlin.test.test
-import reactor.kotlin.test.verifyError
 import reactor.test.StepVerifier
-import java.util.concurrent.Executors
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 
 private val logger = KotlinLogging.logger {  }
 class QueryLifecycleEventObserverTest {
@@ -91,7 +63,7 @@ class QueryLifecycleEventObserverTest {
 
       val flow = flow {
          while(true) {
-            emit(typedInstance)
+            emit(typedInstance.right())
             delay(1000L)
          }
       }.flowOn(Dispatchers.IO)

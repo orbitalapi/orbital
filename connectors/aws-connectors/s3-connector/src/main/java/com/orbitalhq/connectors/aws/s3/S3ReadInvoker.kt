@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.aws.s3
 
+import arrow.core.Either
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.TypedInstance
@@ -8,6 +9,7 @@ import com.orbitalhq.query.ObjectStoreExchange
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
@@ -20,7 +22,6 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
 import org.apache.commons.io.FileUtils
-import org.apache.commons.io.FilenameUtils
 import software.amazon.awssdk.services.s3.model.S3Object
 import java.time.Duration
 import java.time.Instant
@@ -45,7 +46,7 @@ class S3ReadInvoker : BaseS3Invoker() {
       bucketName: String,
       formatRegistry: FormatRegistry,
       schema: Schema
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val filePattern = getFilenamePattern(parameters)
       val startTime = Instant.now()
 

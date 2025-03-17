@@ -1,8 +1,8 @@
 package com.orbitalhq
 
+import com.orbitalhq.models.json.right
+import com.orbitalhq.models.json.tryParseJson
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
-import io.kotest.matchers.shouldBe
-import com.orbitalhq.models.json.parseJson
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
@@ -31,7 +31,7 @@ class CollectionMapTest {
       )
       stub.addResponse("getReview") { _, inputs ->
          val filmId = inputs[0].second.value!!
-         listOf(vyne.parseJson("Review", """{ "id" : $filmId, "reviewText" : "Not bad, really" }"""))
+         listOf(vyne.tryParseJson("Review", """{ "id" : $filmId, "reviewText" : "Not bad, really" }"""))
       }
       val queryResult = vyne.query(
          """
@@ -85,9 +85,9 @@ class CollectionMapTest {
       )
       stub.addResponse("getReview") { _, inputs ->
          val filmId = inputs[0].second.value!!
-         listOf(vyne.parseJson("Review", """{ "id" : $filmId, "reviewText" : "Not bad, really" }"""))
+         listOf(vyne.tryParseJson("Review", """{ "id" : $filmId, "reviewText" : "Not bad, really" }"""))
       }
-      stub.addResponse("saveOne") { _, inputs -> listOf(inputs.single().second) }
+      stub.addResponse("saveOne") { _, inputs -> listOf(inputs.single().second.right()) }
       val queryResult = vyne.query(
          """
          given { input: Film[] = [ { id : 1, title: "Back to the Future" }, { id : 2, title: "Star Wars" } ] }

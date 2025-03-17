@@ -1,10 +1,12 @@
 package com.orbitalhq.connectors.aws.dynamodb
 
+import arrow.core.Either
 import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
 import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
@@ -36,8 +38,7 @@ class DynamoDbUpsertInvoker(
         parameters: List<Pair<Parameter, TypedInstance>>,
         eventDispatcher: QueryContextEventDispatcher,
         queryId: String
-    ): Flow<TypedInstance> {
-        val schema = schemaProvider.schema
+    ): Flow<Either<StreamErrorMessage, TypedInstance>>  {
         val recordToWrite = parameters[0].second
         val request = queryBuilder.buildPut(schemaProvider.schema, recordToWrite)
 
@@ -45,7 +46,7 @@ class DynamoDbUpsertInvoker(
         return Mono.fromFuture(executeRequest(request, client))
             .publishOn(Schedulers.boundedElastic())
             .elapsed()
-            .flatMapMany<TypedInstance> { responsePair ->
+            .flatMapMany<Either<StreamErrorMessage, TypedInstance>> { responsePair ->
                 val duration = responsePair.t1
                logger.info { "DynamoDb call completed in ${duration}ms for request $request" }
                 val response = responsePair.t2
@@ -53,8 +54,7 @@ class DynamoDbUpsertInvoker(
                 val remoteCall = buildRemoteCall(service, awsConfig, operation, request, duration, count)
                 val operationResult = OperationResult.fromTypedInstances(parameters.map { it.second }, remoteCall)
                 eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
-                val writeResultValue =
-                    DataSourceUpdater.update(recordToWrite, operationResult.asOperationReferenceDataSource())
+                val writeResultValue: Either<StreamErrorMessage, TypedInstance> = Either.Right(DataSourceUpdater.update(recordToWrite, operationResult.asOperationReferenceDataSource()))
                 Flux.fromIterable(listOf(writeResultValue))
             }.asFlow().flowOn(dispatcher)
     }

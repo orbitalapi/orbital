@@ -1,5 +1,6 @@
 package com.orbitalhq.formats.csv
 
+import arrow.core.Either
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.InPlaceQueryEngine
 import com.orbitalhq.models.ParsingFailureBehaviour
@@ -9,10 +10,10 @@ import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.models.format.ModelFormatDeserializer
 import com.orbitalhq.models.format.StreamingModelFormatDeserializer
 import com.orbitalhq.models.functions.FunctionRegistry
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
-import com.orbitalhq.utils.log
 import lang.taxi.accessors.ColumnAccessor
 import lang.taxi.types.FormatsAndZoneOffset
 import org.apache.commons.csv.CSVParser
@@ -63,7 +64,7 @@ object CsvFormatDeserializer : ModelFormatDeserializer, StreamingModelFormatDese
       format: FormatsAndZoneOffset?,
       metadata: Map<String, Any>,
       valueSuppliers: List<ValueSupplier>
-   ): Flux<TypedInstance> {
+   ): Flux<Either<StreamErrorMessage, TypedInstance>> {
       val memberType = type.collectionType ?: type
       val csvSpecMetadata = memberType.getMetadata(CsvAnnotationSpec.NAME)
       val csvAnnotation = CsvFormatSpecAnnotation.from(csvSpecMetadata)
@@ -71,19 +72,23 @@ object CsvFormatDeserializer : ModelFormatDeserializer, StreamingModelFormatDese
       require(value is InputStream) { "Parsing CSV to a stream is not supported for input value of ${value::class.simpleName}" }
       val parsed = csvFormat.parse(value.bufferedReader())
       val typedInstanceStream = StreamSupport.stream(parsed.spliterator(), false).map { csvRecord ->
-         TypedInstance.from(
-            type = memberType,
-            value = csvRecord,
-            schema = schema,
-            source = source,
-            functionRegistry = functionRegistry,
-            formatSpecs = formatRegistry.formats,
-            inPlaceQueryEngine = inPlaceQueryEngine,
-            parsingErrorBehaviour = parsingErrorBehaviour,
-            format = format,
-            metadata = metadata,
-            valueSuppliers = valueSuppliers
-         )
+         try {
+           Either.Right(TypedInstance.from(
+               type = memberType,
+               value = csvRecord,
+               schema = schema,
+               source = source,
+               functionRegistry = functionRegistry,
+               formatSpecs = formatRegistry.formats,
+               inPlaceQueryEngine = inPlaceQueryEngine,
+               parsingErrorBehaviour = parsingErrorBehaviour,
+               format = format,
+               metadata = metadata,
+               valueSuppliers = valueSuppliers
+            ))
+         } catch (e: Exception) {
+            Either.Left(StreamErrorMessage.fromException(e, memberType.paramaterizedName))
+         }
       }
       return Flux.fromStream(typedInstanceStream)
    }

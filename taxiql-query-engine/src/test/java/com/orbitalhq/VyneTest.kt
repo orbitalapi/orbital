@@ -1,6 +1,7 @@
 package com.orbitalhq
 
 import app.cash.turbine.testIn
+import arrow.core.Either
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.orbitalhq.models.*
 import com.orbitalhq.models.functions.FunctionRegistry
@@ -300,7 +301,7 @@ class VyneTest {
                |"cfiCode" : "$cfiCode"
                |}
             """.trimMargin()
-               listOf(TypedInstance.from(vyne.type("Product"), response, vyne.schema, source = Provided))
+               listOf(TypedInstance.tryFrom(vyne.type("Product"), response, vyne.schema, source = Provided))
             } else {
                throw IllegalArgumentException()
             }
@@ -389,7 +390,7 @@ class VyneTest {
                |"cfiCode" : "Cfi-123"
                |}
             """.trimMargin()
-            listOf(TypedInstance.from(vyne.type("Product"), response, vyne.schema, source = Provided))
+            listOf(TypedInstance.tryFrom(vyne.type("Product"), response, vyne.schema, source = Provided))
          } else {
             fail("findByCfiCode called using the wrong parameter -- should've resolve against Isin first")
          }
@@ -504,7 +505,7 @@ class VyneTest {
       """.trimIndent()
       )
       val (vyne, stubService) = testVyne(enumSchema)
-      val product = vyne.parseJsonModel(
+      val product = vyne.tryParseJson(
          "companyX.Product", """
          {
             "name": "USD/GBP"
@@ -569,7 +570,7 @@ class VyneTest {
       )
 
       val (vyne, stubService) = testVyne(enumSchema)
-      val product = vyne.parseJson(
+      val product = vyne.tryParseJson(
          "companyY.Product", """
          {
             "name": "USD/GBP"
@@ -1267,9 +1268,9 @@ service Broker2Service {
       stubInvocationService.addResponse("mockCountry") { _, parameters ->
          val countryCode = parameters.first().second.value!!.toString()
          if (countryCode == "UK") {
-            listOf(vyne.typedValue("Country", "United Kingdom"))
+            listOf(vyne.tryTypedValue("Country", "United Kingdom"))
          } else {
-            listOf(vyne.typedValue("Country", "Turkey"))
+            listOf(vyne.tryTypedValue("Country", "Turkey"))
          }
       }
 //      val result =  vyne.query("""
@@ -1630,7 +1631,7 @@ service ClientService {
          val (_, userId) = parameters.first()
          val userIdValue = userId.value as Int
          if (userIdValue % 2 == 0) {
-            listOf(vyne.parseJsonModel("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Even" }"""))
+            listOf(vyne.tryParseJson("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Even" }"""))
          } else {
             error("Not found") // SImulate a 404
 //            TypedNull(vyne.type("User"))
@@ -1640,7 +1641,7 @@ service ClientService {
          val (_, userId) = parameters.first()
          val userIdValue = userId.value as Int
          if (userIdValue % 2 != 0) {
-            listOf(vyne.parseJsonModel("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Odd" }"""))
+            listOf(vyne.tryParseJson("User", """{ "userId" : $userIdValue, "userName" : "Jimmy Odd" }"""))
          } else {
             error("not found")  // SImulate a 404
 //            TypedNull(vyne.type("User"))
@@ -1797,7 +1798,7 @@ service ClientService {
          parameters.should.have.size(2)
          parameters[0].second.value.should.be.equal(Instant.parse("2011-12-03T10:15:30Z"))
          parameters[1].second.value.should.be.equal(Instant.parse("2021-12-03T10:15:30Z"))
-         vyne.parseJsonCollection(
+         vyne.fromTypedCollection(
             "OrderWindowSummary[]",
             """
                   [
@@ -1900,7 +1901,7 @@ service ClientService {
          |"puid": "${isinArgValue["isin"]?.value.toString()}"
          |}
           """.trimMargin()
-         listOf(TypedInstance.from(vyne.type("PuidResponse"), response, vyne.schema, source = Provided))
+         listOf(TypedInstance.tryFrom(vyne.type("PuidResponse"), response, vyne.schema, source = Provided))
       }
 
       runBlocking {
@@ -2112,7 +2113,10 @@ service ClientService {
 
 fun Vyne.typedValue(typeName: String, value: Any, source: DataSource = Provided): TypedInstance {
    return TypedInstance.from(this.getType(typeName), value, this.schema, source = source)
-//   return TypedValue.from(this.getType(typeName), value)
+}
+
+fun Vyne.tryTypedValue(typeName: String, value: Any, source: DataSource = Provided): Either<StreamErrorMessage, TypedInstance> {
+    return TypedInstance.tryFrom(this.getType(typeName), value, this.schema, source = source)
 }
 
 

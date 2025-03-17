@@ -1,12 +1,13 @@
 package com.orbitalhq
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.winterbe.expekt.should
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseKeyValuePair
+import com.orbitalhq.models.json.right
+import com.winterbe.expekt.should
 import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
 import org.junit.Test
@@ -129,7 +130,7 @@ class VyneCollectionDiscoveryTest {
 
          stub.addResponse("findActor") { remoteOperation, parameters ->
             val actorId = parameters[0].second.value as Int
-            listOf(actors[actorId]!!)
+            listOf(actors[actorId]!!.right())
          }
 
          val results = vyne.query("""find { Movie[] } as OutputMovie[]""").typedObjects()
@@ -192,7 +193,7 @@ class VyneCollectionDiscoveryTest {
 
          stub.addResponse("findActor") { remoteOperation, parameters ->
             val actorId = parameters[0].second.value as Int
-            listOf(actors[actorId]!!)
+            listOf(actors[actorId]!!.right())
          }
 
          val results = vyne.query(
@@ -264,7 +265,7 @@ class VyneCollectionDiscoveryTest {
 
          stub.addResponse("findActor") { remoteOperation, parameters ->
             val actorId = parameters[0].second.value as Int
-            listOf(actors[actorId]!!)
+            listOf(actors[actorId]!!.right())
          }
 
          val results = vyne.query(
@@ -339,7 +340,7 @@ class VyneCollectionDiscoveryTest {
 
          stub.addResponse("findActor") { remoteOperation, parameters ->
             val actorId = parameters[0].second.value as Int
-            listOf(actors[actorId]!!)
+            listOf(actors[actorId]!!.right())
          }
 
          val results = vyne.query("""find { Movie[] } as OutputMovie[]""").typedObjects()
@@ -400,7 +401,7 @@ class VyneCollectionDiscoveryTest {
                "baseSku" to parts[0],
                "size" to parts[1]
             ), vyne.schema
-            )
+            ).right()
          )
       }
       val queryResult = vyne.query(

@@ -38,7 +38,7 @@ class ServiceBusInvokerTests: ServiceBusTestBase() {
              write operation publishMessage(Person):Person
           }
       """
-        val (vyne, stub, _) = vyneWithServiceBusInvoker(personSchema)
+        val (vyne, stub) = vyneWithServiceBusInvoker(personSchema)
         stub.addResponse("getPerson", vyne.parseJson("Person","""{ "name" : "Jimmy" }"""))
 
         val result = vyne.query("""
@@ -84,7 +84,7 @@ class ServiceBusInvokerTests: ServiceBusTestBase() {
              write operation publishMessage(Person):Person
           }
       """
-        val (vyne, stub, _) = vyneWithServiceBusInvoker(personSchema)
+        val (vyne, stub) = vyneWithServiceBusInvoker(personSchema)
         stub.addResponse("getPerson", vyne.parseJson("Person","""{ "name" : "Jimmy" }"""))
 
         val result = vyne.query("""

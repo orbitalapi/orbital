@@ -2,13 +2,11 @@ package com.orbitalhq.connectors.kafka
 
 import arrow.core.Either
 import com.orbitalhq.VyneTypes
-import com.orbitalhq.connectors.StreamErrorPublisher
-import com.orbitalhq.models.DataSourceUpdater
-import com.orbitalhq.models.OperationResultDataSourceWrapper
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.QueryContextSchemaProvider
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationCachingBehaviour
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schemas.Parameter
@@ -16,16 +14,16 @@ import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.mapNotNull
 import lang.taxi.services.OperationScope
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 
 
+private val logger = KotlinLogging.logger {  }
+
 class KafkaInvoker(
    private val streamManager: KafkaStreamManager,
-   private val streamWriter: KafkaStreamPublisher,
-   private val streamErrorPublisher: StreamErrorPublisher
+   private val streamWriter: KafkaStreamPublisher
 ) : OperationInvoker {
    companion object {
       init {
@@ -33,7 +31,6 @@ class KafkaInvoker(
       }
    }
 
-   private val logger = KotlinLogging.logger {}
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(KafkaConnectorTaxi.Annotations.KafkaService.NAME) && operation.hasMetadata(
          KafkaConnectorTaxi.Annotations.KafkaOperation.NAME
@@ -51,7 +48,7 @@ class KafkaInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
 
       val connectionName = service.firstMetadata("${VyneTypes.NAMESPACE}.kafka.KafkaService").params["connectionName"] as String
       val kafkaOperation = operation.firstMetadata(KafkaConnectorTaxi.Annotations.KafkaOperation.NAME)
@@ -73,7 +70,7 @@ class KafkaInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       parameters: List<Pair<Parameter, TypedInstance>>
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       require(parameters.size == 1) { "Expected a single parameter (the message to publish), but found ${parameters.size}" }
 
       require(eventDispatcher is QueryContextSchemaProvider) { "EventDispatcher is not a QueryContext, Need a way to access the schema " }
@@ -95,7 +92,7 @@ class KafkaInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val stream = streamManager.getStream(
          KafkaConsumerRequest(
             connectionName,
@@ -105,25 +102,7 @@ class KafkaInvoker(
             operation,
             streamSourceId = queryOptions.streamConsumerId
          )
-      ).mapNotNull { errorOrInstance ->
-         when (errorOrInstance) {
-            is Either.Right -> {
-               val instance = errorOrInstance.value
-               val dataSource = instance.source
-               require(dataSource is OperationResultDataSourceWrapper) { "Expected OperationResultDataSourceWrapper as the datasource, found ${dataSource::class.simpleName}" }
-               eventDispatcher.reportRemoteOperationInvoked(dataSource.operationResult, queryId)
-
-               DataSourceUpdater.update(instance, dataSource.operationResultReferenceSource)
-            }
-
-            is Either.Left -> {
-               streamErrorPublisher.onError(queryId, errorOrInstance.value)
-               null
-            }
-         }
-      }
+      )
       return stream
    }
-
-
 }

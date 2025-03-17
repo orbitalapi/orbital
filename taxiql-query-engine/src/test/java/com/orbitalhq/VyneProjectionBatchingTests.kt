@@ -1,9 +1,11 @@
 package com.orbitalhq
 
-import com.winterbe.expekt.should
+import arrow.core.Either
 import com.orbitalhq.models.*
+import com.orbitalhq.models.json.right
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.winterbe.expekt.should
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
@@ -57,12 +59,12 @@ class VyneProjectionBatchingTests {
 
       stub.addResponse("findSingleClient") { _, parameters: List<Pair<Parameter, TypedInstance>> ->
          val clientId = parameters[0].second.value as Int
-         listOf(buildClient(clientId))
+         listOf(buildClient(clientId).right())
       }
       stub.addResponse("findClients") { _, params ->
          val clientIds = params[0].second.value as List<TypedValue>
          val clients = clientIds.map { buildClient(it.value as Int) }
-         TypedCollection.from(clients)
+         TypedCollection.from(clients).map { Either.Right(it) }
       }
       val results = runBlocking {vyne.from(orders).build("OutputModel[]").results.toList()}
 
@@ -84,14 +86,14 @@ class VyneProjectionBatchingTests {
 
       stub.addResponse("findSingleClient") { _, parameters: List<Pair<Parameter, TypedInstance>> ->
          val clientId = parameters[0].second.value as Int
-         listOf(buildClient(clientId))
+         listOf(buildClient(clientId).right())
       }
       stub.addResponse("findClients") { _, params ->
          val clientIds = params[0].second.value as List<TypedValue>
          val clients = clientIds
             .filter { it.value as Int != 2 } // Don't provide value 2
             .map { buildClient(it.value as Int) }
-         TypedCollection.from(clients)
+         TypedCollection.from(clients).map { Either.Right(it) }
       }
       val results = runBlocking {vyne.from(orders).build("OutputModel[]").results.toList()}
       val output = results.get(0) as TypedCollection
@@ -111,7 +113,7 @@ class VyneProjectionBatchingTests {
 
       stub.addResponse("findSingleClient") { _, parameters: List<Pair<Parameter, TypedInstance>> ->
          val clientId = parameters[0].second.value as Int
-         listOf(buildClient(clientId))
+         listOf(buildClient(clientId).right())
       }
       stub.addResponse("findClients") { _, params ->
          val clientIds = params[0].second.value as List<TypedValue>
@@ -124,7 +126,7 @@ class VyneProjectionBatchingTests {
                   buildClient(clientId)
                }
             }
-         TypedCollection.from(clients)
+         TypedCollection.from(clients).map { Either.Right(it) }
       }
       val results = runBlocking {vyne.from(orders).build("OutputModel[]").results.toList()}
       val output = results.get(0) as TypedCollection

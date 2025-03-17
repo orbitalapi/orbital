@@ -1,7 +1,6 @@
 package com.orbitalhq.connectors.azure.servicebus
 
 import com.orbitalhq.Vyne
-import com.orbitalhq.connectors.StreamErrorPublisher
 import com.orbitalhq.connectors.azure.servicebus.registry.InMemoryServiceBusConnectionRegistry
 import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.models.format.DefaultFormatRegistry
@@ -50,18 +49,16 @@ abstract  class ServiceBusTestBase {
         val meterRegistry  = SimpleMeterRegistry()
         val serviceBusPublisher = ServiceBusPublisher(serviceBusConnectionFactory, formatRegistry, meterRegistry)
         val serviceBusReceiver= ServiceBusReceiver(serviceBusConnectionFactory, formatRegistry, meterRegistry)
-        val streamErrorPublisher = StreamErrorPublisher()
         val invokers = listOf(
-            ServiceBusInvoker(schemaProvider, serviceBusPublisher, serviceBusReceiver, streamErrorPublisher)
+            ServiceBusInvoker(schemaProvider, serviceBusPublisher, serviceBusReceiver)
         )
         val (vyne, stub) = testVyneWithStub(schema, invokers)
-        return ServiceBusTestSetup(vyne, stub, streamErrorPublisher)
+        return ServiceBusTestSetup(vyne, stub)
     }
 
 }
 
 data class ServiceBusTestSetup(
     val vyne: Vyne,
-    val stubService: StubService,
-    val streamErrorPublisher: StreamErrorPublisher
+    val stubService: StubService
 )

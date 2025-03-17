@@ -1,6 +1,5 @@
 package com.orbitalhq.cockpit.core.connectors.azure.servicebus
 
-import com.orbitalhq.connectors.StreamErrorPublisher
 import com.orbitalhq.connectors.VyneConnectionsConfig
 import com.orbitalhq.connectors.azure.servicebus.ServiceBusConnectionFactory
 import com.orbitalhq.connectors.azure.servicebus.ServiceBusInvoker
@@ -30,11 +29,11 @@ class ServiceBusInvokerConfig {
     }
 
     @Bean
-    fun serviceBusInvoker(streamErrorPublisher: StreamErrorPublisher,
+    fun serviceBusInvoker(
                           schemaProvider: SchemaProvider,
                           serviceBusPublisher: ServiceBusPublisher,
                           serviceBusReceiver: ServiceBusReceiver): ServiceBusInvoker {
-        return ServiceBusInvoker(schemaProvider, serviceBusPublisher, serviceBusReceiver, streamErrorPublisher)
+        return ServiceBusInvoker(schemaProvider, serviceBusPublisher, serviceBusReceiver)
     }
 
     @Bean

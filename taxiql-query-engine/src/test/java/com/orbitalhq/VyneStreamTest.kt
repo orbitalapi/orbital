@@ -2,14 +2,14 @@ package com.orbitalhq
 
 import app.cash.turbine.test
 import app.cash.turbine.testIn
-import com.winterbe.expekt.should
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.right
+import com.orbitalhq.models.json.tryParseJson
+import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldHaveSize
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.shareIn
@@ -17,9 +17,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Test
-import kotlin.time.Duration
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class VyneStreamTest {
    @Test
    fun `will enrich a stream against a rest api`() = runBlocking {
@@ -42,7 +40,7 @@ class VyneStreamTest {
       )
       stub.addResponse("lookupFilm", vyne.parseJson("Film", """{ "filmId" : 1, "title" : "A new hope" }"""))
       stub.addResponseFlow("streamAnnouncements") { _, _ ->
-         val typedInstance = TypedInstance.from(
+         val typedInstance = TypedInstance.tryFrom(
             vyne.type("NewReleaseAnnouncement"),
             mapOf("filmId" to 1),
             vyne.schema
@@ -84,7 +82,7 @@ class VyneStreamTest {
          }
       """.trimIndent()
          )
-         stub.addResponseFlow("streamPeople") { remoteOperation, parameters ->
+         stub.addResponseFlow("streamPeople") { _, _ ->
             val people = listOf(
                mapOf(
                   "firstName" to "Jimmy",
@@ -94,7 +92,7 @@ class VyneStreamTest {
                   "firstName" to "Jack",
                   "lastName" to "Spratt"
                )
-            ).map { TypedInstance.from(vyne.type("Person"), it, vyne.schema, source = Provided) }
+            ).map { TypedInstance.tryFrom(vyne.type("Person"), it, vyne.schema, source = Provided) }
             people.asFlow().shareIn(GlobalScope, SharingStarted.Lazily)
          }
 
@@ -149,11 +147,11 @@ class VyneStreamTest {
                   "lastName" to "McCullum"
                )
             )
-               .map { TypedInstance.from(vyne.type("Person"), it, vyne.schema, source = Provided) }
+               .map { TypedInstance.tryFrom(vyne.type("Person"), it, vyne.schema, source = Provided) }
             people.asFlow().shareIn(this, SharingStarted.Lazily)
          }
 
-         stub.addResponseFlow("streamAussies") { _, parameters ->
+         stub.addResponseFlow("streamAussies") { _, _ ->
             val people = listOf(
                mapOf(
                   "firstName" to "Steve",
@@ -164,7 +162,7 @@ class VyneStreamTest {
                   "lastName" to "Warner"
                )
             )
-               .map { TypedInstance.from(vyne.type("Person"), it, vyne.schema, source = Provided) }
+               .map { TypedInstance.tryFrom(vyne.type("Person"), it, vyne.schema, source = Provided) }
             people.asFlow().shareIn(this, SharingStarted.Lazily)
          }
 
@@ -215,7 +213,7 @@ class VyneStreamTest {
          listOf(
             """{ "userId" : "aaa", "message" : "Fighting a dragon" }""",
             """{ "userId" : "bbb", "message" : "Stretching" }"""
-         ).map { vyne.parseJson("UserUpdateMessage", it) }
+         ).map { vyne.tryParseJson("UserUpdateMessage", it) }
             .asFlow()
       }
       stub.addResponse("getUser") { _, params ->
@@ -225,11 +223,11 @@ class VyneStreamTest {
             "bbb" -> "Mike"
             else -> error("Unexpected user id")
          }
-         val user = vyne.parseJson("User", """{ "id" : "$userId", "name" : "$username" } """)
+         val user = vyne.tryParseJson("User", """{ "id" : "$userId", "name" : "$username" } """)
          listOf(user)
       }
       stub.addResponse("storeUpdate") { _, params ->
-         params.map { it.second }
+         params.map { it.second.right() }
       }
 
 

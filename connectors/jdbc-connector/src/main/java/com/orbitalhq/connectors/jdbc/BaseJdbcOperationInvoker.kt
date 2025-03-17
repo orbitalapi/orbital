@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.jdbc
 
+import arrow.core.Either
 import com.orbitalhq.connectors.collectionTypeOrType
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
 import com.orbitalhq.connectors.resultType
@@ -10,6 +11,7 @@ import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.SqlExchange
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
@@ -45,27 +47,32 @@ abstract class BaseJdbcOperationInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       verb: UpsertVerb?
-   ): Flow<TypedInstance>
+   ): Flow<Either<StreamErrorMessage, TypedInstance>>
 
    protected fun convertToTypedInstances(
       resultList: List<MutableMap<String, Any>>,
       query: TaxiQlQuery,
       schema: Schema,
       datasource: DataSource
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val resultTypeName = query.resultType()
 
       val resultTaxiType = collectionTypeOrType(schema.taxi.type(resultTypeName))
 
       val typedInstances = resultList
          .map { columnMap ->
-            TypedInstance.from(
-               schema.type(resultTaxiType),
-               convertColumnMapToGeneralPurposeTypes(columnMap),
-               schema,
-               source = datasource,
-               evaluateAccessors = false
-            )
+            try {
+              Either.Right(TypedInstance.from(
+                  schema.type(resultTaxiType),
+                  convertColumnMapToGeneralPurposeTypes(columnMap),
+                  schema,
+                  source = datasource,
+                  evaluateAccessors = false
+               )
+              )
+            } catch (e: Exception) {
+               Either.Left(StreamErrorMessage.fromException(e, resultTypeName.fullyQualifiedName))
+            }
          }
       return typedInstances.asFlow()
    }

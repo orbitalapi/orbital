@@ -1,8 +1,10 @@
 package com.orbitalhq.query.connectors
 
+import arrow.core.Either
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.MetricTags
 import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
@@ -106,7 +108,7 @@ class CountingOperationInvokerDecorator(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val event = OperationInvocationCountingEvent(operation, queryId, MetricTags.NONE)
       operationInvocationEventConsumer.operationInvoked(event)
       return invoker.invoke(service, operation, parameters, eventDispatcher, queryId, queryOptions)

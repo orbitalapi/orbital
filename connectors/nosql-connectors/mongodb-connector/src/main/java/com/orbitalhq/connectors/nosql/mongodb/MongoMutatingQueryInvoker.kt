@@ -1,9 +1,12 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
+import arrow.core.Either
+import arrow.core.right
 import com.orbitalhq.metrics.MetricTags
 import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
@@ -31,7 +34,7 @@ class MongoMutatingQueryInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>>   {
       val schema = schemaProvider.schema
 
       require(operation.parameters.size == 1) { "Operations annotated with ${MongoConnector.Annotations.UpsertOperationAnnotationName} should accept exactly one type" }
@@ -96,9 +99,11 @@ class MongoMutatingQueryInvoker(
                recordCount = 1
             )
             eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
-            val resultTypedInstance =
-               mapToTypedInstance(data, inputType, schema, operationResult.asOperationReferenceDataSource())
-            DataSourceUpdater.update(resultTypedInstance, operationResult.asOperationReferenceDataSource())
+            val resultTypedInstance =  mapToTypedInstance(data,inputType, schema,  operationResult.asOperationReferenceDataSource())
+            resultTypedInstance.map { typedInstance ->
+               DataSourceUpdater.update(typedInstance, operationResult.asOperationReferenceDataSource())
+            }
+
          }.asFlow()
 
    }

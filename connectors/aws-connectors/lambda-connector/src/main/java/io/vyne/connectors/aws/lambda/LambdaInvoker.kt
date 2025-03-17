@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.aws.lambda
 
+import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
 import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
@@ -12,6 +13,7 @@ import com.orbitalhq.query.EmptyExchangeData
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.OperationInvocationException
@@ -33,7 +35,7 @@ import software.amazon.awssdk.services.lambda.LambdaAsyncClient
 import software.amazon.awssdk.services.lambda.model.InvokeRequest
 import java.net.URI
 import java.time.Instant
-import java.util.*
+import java.util.UUID
 
 
 private val logger = KotlinLogging.logger { }
@@ -62,7 +64,7 @@ class LambdaInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val awsConnection = fetchConnection(service)
       return invokeAwsLambda(awsConnection, parameters, service, operation, eventDispatcher, queryId)
    }
@@ -88,7 +90,7 @@ class LambdaInvoker(
       operation: RemoteOperation,
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val functionName = fetchFunctionName(operation)
       val argument = if (parameters.size == 1) {
          parameters.first().second.toRawObject()
@@ -173,23 +175,35 @@ class LambdaInvoker(
       result: String,
       operation: RemoteOperation,
       operationResult: OperationResult
-   ): Flux<TypedInstance> {
+   ): Flux<Either<StreamErrorMessage, TypedInstance>> {
       logger.debug { "Result of ${operation.name} was $result" }
 
 
       val type = operation.returnType.collectionType ?: operation.returnType
 
-      val typedInstance = TypedInstance.from(
-         type,
-         result,
-         schemaProvider.schema,
-         source = operationResult.asOperationReferenceDataSource(),
-         evaluateAccessors = true
-      )
-      return if (typedInstance is TypedCollection) {
-         Flux.fromIterable(typedInstance.value)
-      } else {
-         Flux.fromIterable(listOf(typedInstance))
+
+      val typedInstanceOrError =
+         try {
+            Either.Right(TypedInstance.from(
+               type,
+               result,
+               schemaProvider.schema,
+               source = operationResult.asOperationReferenceDataSource(),
+               evaluateAccessors = true
+            ))
+         }
+         catch (e: Exception) {
+            Either.Left(StreamErrorMessage.fromException(e, type.paramaterizedName))
+         }
+
+      return when (typedInstanceOrError) {
+         is Either.Left -> Flux.fromIterable(listOf(Either.Left(typedInstanceOrError.value)))
+         is Either.Right -> if (typedInstanceOrError.value is TypedCollection) {
+            Flux.fromIterable((typedInstanceOrError.value as TypedCollection).value).map { typedInstance -> Either.Right(typedInstance) }
+         } else {
+            Flux.fromIterable(listOf(Either.Right(typedInstanceOrError.value)))
+         }
       }
+
    }
 }

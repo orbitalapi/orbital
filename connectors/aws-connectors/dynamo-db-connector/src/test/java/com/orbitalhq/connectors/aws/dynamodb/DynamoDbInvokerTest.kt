@@ -1,12 +1,12 @@
 package com.orbitalhq.connectors.aws.dynamodb
 
-import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.testVyne
 import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldContainAll
@@ -46,8 +46,8 @@ class DynamoDbInvokerTest : BaseDynamoTest() {
          stubService.addResponse("findMovie") { _, inputs ->
             val movieId = inputs.first().second.value.toString().toInt()
             when (movieId) {
-               1 -> listOf(TypedInstance.from(schema.type("Movie"), starWars, schema, source = Provided))
-               2 -> listOf(TypedInstance.from(schema.type("Movie"), solarisMovieJson, schema, source = Provided))
+               1 -> listOf(TypedInstance.tryFrom(schema.type("Movie"), starWars, schema, source = Provided))
+               2 -> listOf(TypedInstance.tryFrom(schema.type("Movie"), solarisMovieJson, schema, source = Provided))
                else -> error("Invalid movie id")
             }
          }

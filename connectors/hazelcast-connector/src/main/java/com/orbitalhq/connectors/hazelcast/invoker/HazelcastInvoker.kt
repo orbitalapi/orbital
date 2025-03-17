@@ -1,11 +1,13 @@
 package com.orbitalhq.connectors.hazelcast.invoker
 
+import arrow.core.Either
 import com.orbitalhq.connectors.hazelcast.HazelcastInstanceProvider
 import com.orbitalhq.connectors.hazelcast.HazelcastTaxi
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.QueryContextSchemaProvider
 import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schemas.AttributeName
 import com.orbitalhq.schemas.Field
@@ -86,7 +88,7 @@ class HazelcastInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val connectionName = getHazelcastConnectionName(service)
       val (hazelcastInstance, config) = getHazelcastConnection(connectionName)
       val schema = (eventDispatcher as QueryContextSchemaProvider).schema

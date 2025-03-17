@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.soap
 
+import arrow.core.Either
 import com.fasterxml.jackson.module.kotlin.convertValue
 import com.google.common.cache.CacheBuilder
 import com.orbitalhq.models.OperationResult
@@ -11,10 +12,17 @@ import com.orbitalhq.query.HttpHeaders
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
-import com.orbitalhq.schemas.*
+import com.orbitalhq.schemas.OperationInvocationException
+import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.QualifiedName
+import com.orbitalhq.schemas.QueryOptions
+import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import lang.taxi.generators.soap.SoapAnnotations
@@ -23,25 +31,20 @@ import mu.KotlinLogging
 import org.apache.cxf.endpoint.Client
 import org.apache.cxf.endpoint.dynamic.DynamicClientFactory
 import org.apache.cxf.interceptor.Fault
-import org.apache.cxf.service.model.BindingOperationInfo
 import reactor.core.publisher.Flux
 import java.nio.file.Files
 import java.time.Instant
 import kotlin.io.path.writeText
 import kotlin.time.Duration
-import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
 
+private val logger = KotlinLogging.logger {}
 class SoapClientCache(
    private val inboundInterceptor: InboundPayloadCapturingInterceptor = InboundPayloadCapturingInterceptor(),
    private val outboundInterceptor: OutboundPayloadCapturingInterceptor = OutboundPayloadCapturingInterceptor(),
    private val clientFactory: DynamicClientFactory = DynamicClientFactory.newInstance(),
    schemaChangedEventProvider: SchemaChangedEventProvider? = null
 ) {
-   companion object {
-      private val logger = KotlinLogging.logger {}
-   }
-
    private val cache = CacheBuilder.newBuilder()
       .build<QualifiedName, Client>()
 
@@ -81,10 +84,9 @@ class SoapClientCache(
 }
 
 
-@OptIn(ExperimentalTime::class)
 class SoapInvoker(
    val schemaProvider: SchemaProvider,
-   val clientCache: SoapClientCache = SoapClientCache(),
+   private val clientCache: SoapClientCache = SoapClientCache(),
 ) : OperationInvoker {
 
 
@@ -99,12 +101,12 @@ class SoapInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
 
 
       val soapClient = clientCache.get(service)
       require(parameters.size <= 1) { "SOAP services expect 0 or 1 parameters, but got ${parameters.size}" }
-      val parameterValues = paramToOrderedArray(operation, soapClient, parameters.singleOrNull())
+      val parameterValues = paramToOrderedArray(parameters.singleOrNull())
       try {
 
          OutboundPayloadCapturingInterceptor.resetCapturedPayload()
@@ -128,8 +130,13 @@ class SoapInvoker(
             service, operation, outboundMessage, inboundMessage, duration, timestamp
          )
          val operationResult = OperationResult.from(parameters, remoteCall)
-         val resultTypedInstance = createTypedInstance(schema, result, operation, operationResult)
+
          eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
+         val resultTypedInstance = try {
+            Either.Right(createTypedInstance(schema, result, operation, operationResult))
+         } catch (e: Exception) {
+            Either.Left(StreamErrorMessage.fromException(e, operation.returnType.paramaterizedName))
+         }
 
          return flowOf(resultTypedInstance)
       } catch (e: Exception) {
@@ -214,11 +221,6 @@ class SoapInvoker(
       )
    }
 
-   private fun findOperation(client: Client, operationName: String): BindingOperationInfo? {
-      return client.endpoint.binding.bindingInfo.operations.first { it.name.localPart == operationName }
-
-   }
-
    /**
     * It seems that SOAP doesn't take named arguments,
     * instead expects them delivered in the same order as defined in the WSDL.
@@ -228,14 +230,12 @@ class SoapInvoker(
     * Therefore, this converts the params to a list in the correct order
     */
    private fun paramToOrderedArray(
-      operation: RemoteOperation,
-      soapClient: Client,
       paramAndValue: Pair<Parameter, TypedInstance>?
    ): Array<Any> {
       if (paramAndValue == null) {
          return arrayOf()
       }
-      val (param, value) = paramAndValue
+      val (_, value) = paramAndValue
       require(value is TypedObject) { "Expected a TypedObject, but got ${value::class.java.simpleName}" }
       val rawValue = value.toRawObject()!! as Map<String, Any>
       if (rawValue.keys.size > 1) {

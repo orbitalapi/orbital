@@ -1,6 +1,5 @@
 package com.orbitalhq.connectors.kafka
 
-import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
@@ -8,9 +7,9 @@ import com.orbitalhq.VersionedSource
 import com.orbitalhq.Vyne
 import com.orbitalhq.annotations.streaming.StreamingQueryAnnotations
 import com.orbitalhq.avro.AvroFormatSpec
-import com.orbitalhq.connectors.StreamErrorPublisher
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.InMemoryKafkaConnectorRegistry
+import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.metrics.GaugeRegistry
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.format.DefaultFormatRegistry
@@ -176,12 +175,11 @@ abstract class BaseKafkaContainerTest {
          emitConsumerInfoMessages = false,
          kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(GaugeRegistry.simple())
       )
-      val streamErrorPublisher = StreamErrorPublisher()
       val invokers = listOf(
-         KafkaInvoker(kafkaStreamManager, kafkaStreamPublisher, streamErrorPublisher),
+         KafkaInvoker(kafkaStreamManager, kafkaStreamPublisher),
       )
       val (vyne, stub) = testVyneWithStub(schema, invokers)
-      return KafkaTestSetUp(vyne, kafkaStreamManager, stub, streamErrorPublisher)
+      return KafkaTestSetUp(vyne, kafkaStreamManager, stub)
    }
 
    fun collectQueryResults(query: QueryResult, resultsFromQuery1: MutableList<TypedInstance>) {
@@ -200,6 +198,5 @@ abstract class BaseKafkaContainerTest {
 data class KafkaTestSetUp(
    val vyne: Vyne,
    val kafkaStreamManager: KafkaStreamManager,
-   val stubService: StubService,
-   val streamErrorPublisher: StreamErrorPublisher
+   val stubService: StubService
 )

@@ -2,16 +2,16 @@ package com.orbitalhq
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.orbitalhq.models.TypedCollection
-import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
 import com.orbitalhq.query.QueryResult
 import com.orbitalhq.query.QuerySpecTypeNode
-import io.kotest.matchers.collections.shouldHaveSize
+import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.StreamQueryErrorEvent
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.runBlocking
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
-import java.util.*
+import reactor.core.publisher.Flux
+import java.util.UUID
 
 
 class QueryResultSerializationTest {
@@ -44,7 +44,8 @@ class QueryResultSerializationTest {
          querySpec = QuerySpecTypeNode(clientType),
          isFullyResolved = true,
          schema = vyne.schema,
-         responseType = clientInstnace.type
+         responseType = clientInstnace.type,
+         errors = Flux.just(StreamQueryErrorEvent(queryId, StreamErrorMessage.fromException(IllegalArgumentException("error"), "Client")))
       )
 
       val expectedJson = """
@@ -93,7 +94,8 @@ class QueryResultSerializationTest {
          querySpec = QuerySpecTypeNode(clientType),
          isFullyResolved = true,
          schema = vyne.schema,
-         responseType = clientInstnace.type
+         responseType = clientInstnace.type,
+          errors = Flux.empty()
       )
 
       val expected = """

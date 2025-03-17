@@ -1,10 +1,12 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
+import arrow.core.Either
 import com.google.common.base.Stopwatch
 import com.orbitalhq.connectors.getTypesToFind
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.ConstructedQueryDataSource
 import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
@@ -28,7 +30,7 @@ class MongoReadOnlyQueryInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>>  {
       val (mongoConnectionConfig, reactiveMongoTemplate) = getConnectionConfigAndTemplate(service)
       val schema = schemaProvider.schema
       val taxiSchema = schema.taxi

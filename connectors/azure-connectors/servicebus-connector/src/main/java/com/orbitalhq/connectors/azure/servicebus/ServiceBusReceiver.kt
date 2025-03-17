@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.right
 import com.azure.messaging.servicebus.ServiceBusReceivedMessage
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.orbitalhq.connectors.StreamErrorMessage
 import com.orbitalhq.connectors.streamTypeOrType
 import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.models.DataSource
@@ -16,6 +15,7 @@ import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.query.MessageStreamExchange
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema

@@ -16,6 +16,7 @@ import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.models.functions.functionOf
 import com.orbitalhq.models.functions.stdlib.withoutWhitespace
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.tryParseJson
 import com.orbitalhq.rawObjects
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
@@ -203,7 +204,7 @@ class ExpressionTest {
                "AUDNZD" to 1.1.toBigDecimal()
             )
             val price = prices[symbol]!!
-            val symbolPrice = vyne.parseJson("SymbolPrice", """{ "symbol" : "$symbol" , "price" : $price }""")
+            val symbolPrice = vyne.tryParseJson("SymbolPrice", """{ "symbol" : "$symbol" , "price" : $price }""")
             listOf(symbolPrice)
          }
 
@@ -679,12 +680,12 @@ class ExpressionTest {
          val dateOfBirth = params.first().second.value as LocalDate
          val today = LocalDate.parse("2022-02-22")
          val isLegalAge = Period.between(dateOfBirth, today).years >= 18
-         listOf(TypedInstance.from(returnType, isLegalAge, vyne.schema))
+         listOf(TypedInstance.tryFrom(returnType, isLegalAge, vyne.schema))
       }
 
       stub.addResponse("getBirth") { remoteOperation, _ ->
          val returnType = remoteOperation.returnType
-         listOf(TypedInstance.from(returnType, LocalDate.parse("1979-05-10"), vyne.schema))
+         listOf(TypedInstance.tryFrom(returnType, LocalDate.parse("1979-05-10"), vyne.schema))
       }
 
 

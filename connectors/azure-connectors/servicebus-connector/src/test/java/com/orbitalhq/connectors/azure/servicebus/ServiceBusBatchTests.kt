@@ -32,7 +32,7 @@ class ServiceBusBatchTests: ServiceBusTestBase() {
              write operation publishMessage(Person):Person
           }
       """
-        val (vyne, stub, _) = vyneWithServiceBusInvoker(personSchema)
+        val (vyne, stub) = vyneWithServiceBusInvoker(personSchema)
         stub.addResponse("getPerson", vyne.parseJson("Person[]",
             """[{ "name" : "Jimmy" }, { "name" : "Tony" }, { "name" : "Axl" }, { "name" : "Lars" }, { "name" : "Boris" }]"""))
 
