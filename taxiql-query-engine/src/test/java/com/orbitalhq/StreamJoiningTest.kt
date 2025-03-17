@@ -1,8 +1,11 @@
 package com.orbitalhq
 
 import app.cash.turbine.test
+import arrow.core.Either
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.tryParseJson
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.caching.MapBackedStateStoreProvider
 import com.orbitalhq.query.caching.StateStoreAnnotation
 import com.orbitalhq.schemas.taxi.TaxiSchema
@@ -56,8 +59,8 @@ class StreamJoiningTest : DescribeSpec({
       retry(5, 60.seconds) {
          it("a query that joins multiple streams without a state store should emit whenever either stream emits") {
             logger.info { "starting should run a query that joins multiple streams" }
-            val tweetFlow = MutableSharedFlow<TypedInstance>()
-            val analyticsFlow = MutableSharedFlow<TypedInstance>()
+            val tweetFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
+            val analyticsFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
             val (vyne, stub) = testVyne(defaultSchema)
             stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
             stub.addResponseFlow("analytics") { _, _ -> analyticsFlow }
@@ -74,7 +77,7 @@ class StreamJoiningTest : DescribeSpec({
                .results
 
             results.test(timeout = Duration.parse("5s")) {
-               tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
+               tweetFlow.emit(vyne.tryParseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
                val first = expectTypedObject()
                first.toRawObject().shouldBe(
                   mapOf(
@@ -84,7 +87,7 @@ class StreamJoiningTest : DescribeSpec({
                   )
                )
 
-               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
+               analyticsFlow.emit(vyne.tryParseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
                val second = expectTypedObject()
                // Because we don't have anything to join the state, we should be getting nulls on values
                // that arrived on previous messages
@@ -102,8 +105,8 @@ class StreamJoiningTest : DescribeSpec({
 
          it("a query that joins multiple streams using intersection should emit after both streams have emitted") {
             logger.info { "starting should run a query that joins multiple streams" }
-            val tweetFlow = MutableSharedFlow<TypedInstance>()
-            val analyticsFlow = MutableSharedFlow<TypedInstance>()
+            val tweetFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
+            val analyticsFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
             val (vyne, stub) = testVyne(defaultSchema, stateStoreProvider = MapBackedStateStoreProvider())
             stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
             stub.addResponseFlow("analytics") { _, _ -> analyticsFlow }
@@ -122,9 +125,9 @@ class StreamJoiningTest : DescribeSpec({
                .results
 
             results.test(timeout = Duration.parse("5s")) {
-               tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
+               tweetFlow.emit(vyne.tryParseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
 //               expectNoEvents()
-               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
+               analyticsFlow.emit(vyne.tryParseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
                val first = expectTypedObject()
                first.toRawObject().shouldBe(
                   mapOf(
@@ -133,7 +136,7 @@ class StreamJoiningTest : DescribeSpec({
                      "views" to 100,
                   )
                )
-               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 150 }"""))
+               analyticsFlow.emit(vyne.tryParseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 150 }"""))
                val second = expectTypedObject()
                second.toRawObject().shouldBe(
                   mapOf(
@@ -149,8 +152,8 @@ class StreamJoiningTest : DescribeSpec({
 
          it("a query that joins multiple streams using intersection can be enriched in projection") {
             logger.info { "starting should run a query that joins multiple streams" }
-            val tweetFlow = MutableSharedFlow<TypedInstance>()
-            val analyticsFlow = MutableSharedFlow<TypedInstance>()
+            val tweetFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
+            val analyticsFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
             val (vyne, stub) = testVyne(defaultSchema, stateStoreProvider = MapBackedStateStoreProvider())
             stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
             stub.addResponseFlow("analytics") { _, _ -> analyticsFlow }
@@ -171,9 +174,9 @@ class StreamJoiningTest : DescribeSpec({
                .results
 
             results.test(timeout = Duration.parse("5s")) {
-               tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
+               tweetFlow.emit(vyne.tryParseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
 //               expectNoEvents()
-               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
+               analyticsFlow.emit(vyne.tryParseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
                val first = expectTypedObject()
                first.toRawObject().shouldBe(
                   mapOf(
@@ -183,7 +186,7 @@ class StreamJoiningTest : DescribeSpec({
                      "userName" to "Jimmy",
                   )
                )
-               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 150 }"""))
+               analyticsFlow.emit(vyne.tryParseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 150 }"""))
                val second = expectTypedObject()
                second.toRawObject().shouldBe(
                   mapOf(
@@ -198,8 +201,8 @@ class StreamJoiningTest : DescribeSpec({
 
          it("can use field shorthand in a projection of an intersection type") {
             logger.info { "starting should run a query that joins multiple streams" }
-            val tweetFlow = MutableSharedFlow<TypedInstance>()
-            val analyticsFlow = MutableSharedFlow<TypedInstance>()
+            val tweetFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
+            val analyticsFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
             val (vyne, stub) = testVyne(defaultSchema, stateStoreProvider = MapBackedStateStoreProvider())
             stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
             stub.addResponseFlow("analytics") { _, _ -> analyticsFlow }
@@ -220,9 +223,9 @@ class StreamJoiningTest : DescribeSpec({
                .results
 
             results.test(timeout = Duration.parse("5s")) {
-               tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
+               tweetFlow.emit(vyne.tryParseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
 //               expectNoEvents()
-               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
+               analyticsFlow.emit(vyne.tryParseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
                val first = expectTypedObject()
                first.toRawObject().shouldBe(
                   mapOf(
@@ -232,7 +235,7 @@ class StreamJoiningTest : DescribeSpec({
                      "userName" to "Jimmy",
                   )
                )
-               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 150 }"""))
+               analyticsFlow.emit(vyne.tryParseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 150 }"""))
                val second = expectTypedObject()
                second.toRawObject().shouldBe(
                   mapOf(
@@ -247,8 +250,8 @@ class StreamJoiningTest : DescribeSpec({
 
          // Not yet implemented - ORB-830
          xit("can filter one side of a stream") {
-            val tweetFlow = MutableSharedFlow<TypedInstance>()
-            val analyticsFlow = MutableSharedFlow<TypedInstance>()
+            val tweetFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
+            val analyticsFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
             val (vyne, stub) = testVyne(defaultSchema, stateStoreProvider = MapBackedStateStoreProvider())
             stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
             stub.addResponseFlow("analytics") { _, _ -> analyticsFlow }
@@ -267,9 +270,9 @@ class StreamJoiningTest : DescribeSpec({
                .results
 
             results.test(timeout = Duration.parse("5s")) {
-               tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
+               tweetFlow.emit(vyne.tryParseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
 //               expectNoEvents()
-               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
+               analyticsFlow.emit(vyne.tryParseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
                val first = expectTypedObject()
                first.toRawObject().shouldBe(
                   mapOf(
@@ -278,7 +281,7 @@ class StreamJoiningTest : DescribeSpec({
                      "views" to 100,
                   )
                )
-               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 150 }"""))
+               analyticsFlow.emit(vyne.tryParseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 150 }"""))
                val second = expectTypedObject()
                second.toRawObject().shouldBe(
                   mapOf(
@@ -293,8 +296,8 @@ class StreamJoiningTest : DescribeSpec({
 
          it("a query that joins multiple streams using a state store should emit merged messages whenever either stream emits") {
             logger.info { "starting should run a query that joins multiple streams" }
-            val tweetFlow = MutableSharedFlow<TypedInstance>()
-            val analyticsFlow = MutableSharedFlow<TypedInstance>()
+            val tweetFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
+            val analyticsFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
             val (vyne, stub) = testVyne(defaultSchema, stateStoreProvider = MapBackedStateStoreProvider())
             stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
             stub.addResponseFlow("analytics") { _, _ -> analyticsFlow }
@@ -313,7 +316,7 @@ class StreamJoiningTest : DescribeSpec({
                .results
 
             results.test(timeout = Duration.parse("5s")) {
-               tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
+               tweetFlow.emit(vyne.tryParseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
                val first = expectTypedObject()
                first.toRawObject().shouldBe(
                   mapOf(
@@ -323,7 +326,7 @@ class StreamJoiningTest : DescribeSpec({
                   )
                )
 
-               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
+               analyticsFlow.emit(vyne.tryParseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
                val second = expectTypedObject()
                second.toRawObject().shouldBe(
                   mapOf(
@@ -384,8 +387,8 @@ class StreamJoiningTest : DescribeSpec({
                )
             ), stateStoreProvider = MapBackedStateStoreProvider()
          )
-         val ordersFlow = MutableSharedFlow<TypedInstance>()
-         val shipmentEventsFlow = MutableSharedFlow<TypedInstance>()
+         val ordersFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
+         val shipmentEventsFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
          stub.addResponseFlow("orders") { _, _ -> ordersFlow }
          stub.addResponseFlow("shipments") { _, _ -> shipmentEventsFlow }
 
@@ -403,7 +406,7 @@ stream {  OrderEvent | ShipmentEvent   } as {
          ).results
          resultsStream.test(timeout = Duration.parse("5s")) {
             ordersFlow.emit(
-               vyne.parseJson(
+               vyne.tryParseJson(
                   "OrderEvent",
                   """{ "id": 503, "timestamp": "2024-11-15T15:31:10Z",  "customer_id": 8  }"""
                )
@@ -422,7 +425,7 @@ stream {  OrderEvent | ShipmentEvent   } as {
             )
 
             shipmentEventsFlow.emit(
-               vyne.parseJson(
+               vyne.tryParseJson(
                   "ShipmentEvent",
                   """{  "id": 1000497, "order_id": 503, "timestamp": "2024-11-15T15:31:35Z", "customer_id": 2, "warehouse": "Warehouse B" }"""
                )
@@ -447,8 +450,8 @@ stream {  OrderEvent | ShipmentEvent   } as {
       retry(5, 60.seconds) {
          xit("should run a query that joins multiple streams without explicit streams") {
             logger.info { "starting should run a query that joins multiple streams without explicit streams" }
-            val tweetFlow = MutableSharedFlow<TypedInstance>()
-            val analyticsFlow = MutableSharedFlow<TypedInstance>()
+            val tweetFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
+            val analyticsFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
             val (vyne, stub) = testVyne(defaultSchema)
             stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
             stub.addResponseFlow("analytics") { _, _ -> analyticsFlow }
@@ -466,7 +469,7 @@ stream {  OrderEvent | ShipmentEvent   } as {
                .results
 
             results.test(10.seconds) {
-               tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1 }"""))
+               tweetFlow.emit(vyne.tryParseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1 }"""))
                val first = expectTypedObject()
                first.toRawObject().shouldBe(
                   mapOf(
@@ -476,7 +479,7 @@ stream {  OrderEvent | ShipmentEvent   } as {
                   )
                )
 
-               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
+               analyticsFlow.emit(vyne.tryParseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
                val second = expectTypedObject()
                // Because we don't have anything to join the state, we should be getting nulls on values
                // that arrived on previous messages
@@ -498,8 +501,8 @@ stream {  OrderEvent | ShipmentEvent   } as {
       retry(5, 3.minutes) {
          xit("should run a query that joins multiple streams without explicit streams and can enrich from other sources") {
             logger.info { "starting should run a query that joins multiple streams without explicit streams and can enrich from other sources" }
-            val tweetFlow = MutableSharedFlow<TypedInstance>()
-            val analyticsFlow = MutableSharedFlow<TypedInstance>()
+            val tweetFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
+            val analyticsFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>()
             val (vyne, stub) = testVyne(defaultSchema)
             stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
             stub.addResponseFlow("analytics") { _, _ -> analyticsFlow }
@@ -518,7 +521,7 @@ stream {  OrderEvent | ShipmentEvent   } as {
                .results
 
             results.test(timeout = Duration.parse("30s")) {
-               tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
+               tweetFlow.emit(vyne.tryParseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" , "userId" : 1}"""))
                val first = expectTypedObject()
                first.toRawObject().shouldBe(
                   mapOf(
@@ -529,7 +532,7 @@ stream {  OrderEvent | ShipmentEvent   } as {
                   )
                )
 
-               analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
+               analyticsFlow.emit(vyne.tryParseJson("TweetAnalytics", """{ "messageId" : "a" , "views" : 100 }"""))
                val second = expectTypedObject()
                // Because we don't have anything to join the state, we should be getting nulls on values
                // that arrived on previous messages

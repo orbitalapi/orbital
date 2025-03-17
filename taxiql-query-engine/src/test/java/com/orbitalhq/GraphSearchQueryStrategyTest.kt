@@ -9,6 +9,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
+import com.orbitalhq.models.json.tryParseJson
 import com.orbitalhq.query.connectors.OperationResponseHandler
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
@@ -280,7 +281,7 @@ class GraphSearchQueryStrategyTest {
       val getReferenceDataHandler: OperationResponseHandler =
          { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
             listOf(
-               vyne.parseJson(
+               vyne.tryParseJson(
                   "ReferenceData",
                   """
            {"notionalValueKey": 1}
@@ -304,7 +305,7 @@ class GraphSearchQueryStrategyTest {
                throw IllegalArgumentException("null key value")
             }
             listOf(
-               vyne.parseJsonModel(
+               vyne.tryParseJson(
                   "NotionalKeyAndValue",
                   """
            {"key": 1, "value": 100}
@@ -472,7 +473,7 @@ class GraphSearchQueryStrategyTest {
          val getReferenceDataHandler: OperationResponseHandler =
             { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
                listOf(
-                  vyne.parseJson(
+                  vyne.tryParseJson(
                      "ReferenceData",
                      """
            {"notionalValueKey": 1}
@@ -496,7 +497,7 @@ class GraphSearchQueryStrategyTest {
                   throw IllegalArgumentException("null key value")
                }
                listOf(
-                  vyne.parseJsonModel(
+                  vyne.tryParseJson(
                      "NotionalKeyAndValue",
                      """
            {"key": 1, "value": 100}

@@ -1,13 +1,13 @@
 package com.orbitalhq.pipelines.jet.source.query
 
-import com.winterbe.expekt.should
-import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.tryParseJson
 import com.orbitalhq.pipelines.jet.BaseJetIntegrationTest
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.TypedInstanceContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.http.CronExpressions
 import com.orbitalhq.pipelines.jet.api.transport.query.PollingQueryInputSpec
 import com.orbitalhq.pipelines.jet.pipelines.PipelineManager
+import com.winterbe.expekt.should
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
@@ -33,9 +33,9 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
 
       testSetup.stubService.addResponseFlow("getAll") { _, _ ->
          flowOf(
-            parseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Fallon" }"""),
-            parseJson(testSetup.schema, "Person", """{ "firstName": "Conan", "lastName": "O'Brien" }"""),
-            parseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Kimmel" }"""),
+             tryParseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Fallon" }"""),
+             tryParseJson(testSetup.schema, "Person", """{ "firstName": "Conan", "lastName": "O'Brien" }"""),
+             tryParseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Kimmel" }"""),
          )
       }
 
@@ -84,9 +84,9 @@ class PollingQuerySourceBuilderTest : BaseJetIntegrationTest() {
       testSetup.stubService.addResponseFlow("getAll") { _, _ ->
          flow {
             delay(10000L)
-            emit(parseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Fallon" }"""))
-            emit(parseJson(testSetup.schema, "Person", """{ "firstName": "Conan", "lastName": "O'Brien" }"""))
-            emit(parseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Kimmel" }"""))
+            emit(tryParseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Fallon" }"""))
+            emit(tryParseJson(testSetup.schema, "Person", """{ "firstName": "Conan", "lastName": "O'Brien" }"""))
+            emit(tryParseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Kimmel" }"""))
          }
       }
 

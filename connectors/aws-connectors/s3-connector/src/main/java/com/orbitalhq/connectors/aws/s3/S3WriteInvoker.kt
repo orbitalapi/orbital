@@ -1,10 +1,11 @@
 package com.orbitalhq.connectors.aws.s3
 
-import com.orbitalhq.connectors.aws.s3.S3ConnectorTaxi.FilenamePatternFqn
+import arrow.core.Either
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
@@ -28,7 +29,7 @@ class S3WriteInvoker : BaseS3Invoker() {
       bucketName: String,
       formatRegistry: FormatRegistry,
       schema: Schema
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>>  {
       val filename = getFilenamePattern(parameters)
       val (_, body) = parameters.singleOrNull {
          it.first.hasMetadata(S3ConnectorTaxi.RequestBodyFqn.fullyQualifiedName)
@@ -47,7 +48,7 @@ class S3WriteInvoker : BaseS3Invoker() {
       return S3Connection(awsConnection, bucketName)
          .write(filename, payload)
          .map {
-            body
+           Either.Right(body)
          }.asFlow()
    }
 

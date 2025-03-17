@@ -4,6 +4,7 @@ import app.cash.turbine.test
 import com.orbitalhq.models.*
 import com.winterbe.expekt.should
 import com.orbitalhq.models.json.parseJsonModel
+import com.orbitalhq.models.json.right
 import com.orbitalhq.query.connectors.OperationResponseHandler
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
@@ -230,9 +231,9 @@ class FirstNotEmptyTest {
             { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
                if (counter == 0) {
                   counter++
-                  listOf(TypedNull.create(schema.type("Product")))
+                  listOf(TypedNull.create(schema.type("Product")).right())
                } else {
-                  listOf(product)
+                  listOf(product.right())
                }
             }
          stubs.addResponse("lookupProductA", firstResponderReturnsNullHandler)
@@ -324,8 +325,8 @@ class FirstNotEmptyTest {
          stub.addResponse("findPerson") { remoteOperation, params ->
             val (_, personId) = params[0]
             when (personId.value) {
-               1 -> listOf(personWithBaseTypeName)
-               2 -> listOf(personWithFirstName)
+               1 -> listOf(personWithBaseTypeName.right())
+               2 -> listOf(personWithFirstName.right())
                else -> error("Expected Id of 1 or 2")
             }
          }
@@ -375,10 +376,10 @@ class FirstNotEmptyTest {
                if (counter == 0) {
                   counter++
                   // First time, return null in the name attribute
-                  listOf(TypedInstance.from(schema.type("Product"), """{ "name": null } """, schema, source = Provided))
+                  listOf(TypedInstance.tryFrom(schema.type("Product"), """{ "name": null } """, schema, source = Provided))
                } else {
                   listOf(
-                     TypedInstance.from(
+                     TypedInstance.tryFrom(
                         schema.type("Product"),
                         """{ "name": "ice cream" } """,
                         schema,
@@ -436,10 +437,10 @@ class FirstNotEmptyTest {
                val inputParam = inputs[0].second.value as String
                if (inputParam == "productA") {
                   // First time, return null in the name attribute
-                  listOf(TypedInstance.from(schema.type("Product"), """{ "name": null } """, schema, source = Provided))
+                  listOf(TypedInstance.tryFrom(schema.type("Product"), """{ "name": null } """, schema, source = Provided))
                } else {
                   listOf(
-                     TypedInstance.from(
+                     TypedInstance.tryFrom(
                         schema.type("Product"),
                         """{ "name": "ice cream" } """,
                         schema,
@@ -507,13 +508,13 @@ class FirstNotEmptyTest {
          )
          val (vyne, stubs) = testVyne(schema)
          val product =
-            TypedInstance.from(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
+            TypedInstance.tryFrom(schema.type("Product"), """{ "name": "ice cream" } """, schema, source = Provided)
          var counter: Int = 0
          val firstResponderReturnsNullHandler: OperationResponseHandler =
             { _: RemoteOperation, _: List<Pair<Parameter, TypedInstance>> ->
                if (counter == 0) {
                   counter++
-                  listOf(TypedNull.create(schema.type("Product")))
+                  listOf(TypedNull.create(schema.type("Product")).right())
                } else {
                   listOf(product)
                }

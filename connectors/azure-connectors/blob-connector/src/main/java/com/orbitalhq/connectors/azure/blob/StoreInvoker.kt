@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.azure.blob
 
+import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Stopwatch
 import com.orbitalhq.connectors.azure.blob.registry.AzureStorageConnectorConfiguration
@@ -16,6 +17,7 @@ import com.orbitalhq.query.EmptyExchangeData
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
@@ -53,7 +55,7 @@ class StoreInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val schema = schemaProvider.schema
       val taxiSchema = schema.taxi
       val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }

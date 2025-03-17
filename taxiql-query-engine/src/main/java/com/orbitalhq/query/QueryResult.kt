@@ -12,6 +12,7 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+import reactor.core.publisher.Flux
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 data class QueryResult(
@@ -42,7 +43,10 @@ data class QueryResult(
    val schema: Schema,
 
    @field:JsonIgnore
-   override val responseHeaders: Map<String, List<String>>? = null
+   override val responseHeaders: Map<String, List<String>>? = null,
+
+   @field:JsonIgnore
+   val errors: Flux<StreamQueryErrorEvent>
 ) : QueryResponse {
    override val queryResponseId: String = queryId
    val duration = profilerOperation?.duration

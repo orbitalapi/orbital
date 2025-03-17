@@ -1,6 +1,7 @@
 package com.orbitalhq
 
 import app.cash.turbine.test
+import arrow.core.Either
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
@@ -11,6 +12,8 @@ import com.orbitalhq.models.functions.functionOf
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
 import com.orbitalhq.models.json.parseKeyValuePair
+import com.orbitalhq.models.json.tryParseJson
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.query.connectors.OperationResponseHandler
 import com.orbitalhq.query.connectors.responsesById
@@ -701,10 +704,10 @@ class VyneQueryTest {
 
       val handler = object : OperationResponseHandler {
          var invocationCount: Int = 0
-         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): List<TypedInstance> {
+         override fun invoke(p1: RemoteOperation, p2: List<Pair<Parameter, TypedInstance>>): List<Either<StreamErrorMessage, TypedInstance>> {
             invocationCount += 1
             return listOf(
-               vyne.parseJsonModel(
+               vyne.tryParseJson(
                   "EnhancedData",
                   """
               {"enhanced": true, "year": 2022}

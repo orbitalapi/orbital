@@ -11,11 +11,10 @@ import com.orbitalhq.cockpit.core.WebSocketConfig
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.cockpit.core.pipelines.StreamResultsWebsocketPublisher
 import com.orbitalhq.copilot.OpenAiChatService
-import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
-import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.tryParseJson
 import com.orbitalhq.query.runtime.core.WebsocketQuery
 import com.orbitalhq.query.runtime.core.dispatcher.local.RSocketStreamResultSubscriptionManager
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
@@ -32,16 +31,13 @@ import com.orbitalhq.spring.SimpleVyneProvider
 import com.orbitalhq.spring.config.TestDiscoveryClientConfig
 import com.orbitalhq.testVyne
 import com.orbitalhq.utils.Ids
-import io.kotest.assertions.timing.eventually
 import io.kotest.common.runBlocking
-import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.client.request.*
 import io.ktor.websocket.*
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
@@ -59,7 +55,6 @@ import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import reactor.core.publisher.Sinks
 import reactor.kotlin.test.test
-import kotlin.time.Duration
 
 @RunWith(SpringRunner::class)
 @SpringBootTest(
@@ -164,7 +159,7 @@ class QueryWebsocketIntegrationTest : DatabaseTest() {
          val (vyne, stub) = testVyne(TestSchema.source)
          stub.addResponseFlow("getNewReleases") { _, _ ->
             responseFlow.asFlux()
-               .map { vyne.parseJson("NewReleaseAnnouncement", it) }
+               .map { vyne.tryParseJson("NewReleaseAnnouncement", it) }
                .asFlow()
          }
          return SimpleVyneProvider(vyne)

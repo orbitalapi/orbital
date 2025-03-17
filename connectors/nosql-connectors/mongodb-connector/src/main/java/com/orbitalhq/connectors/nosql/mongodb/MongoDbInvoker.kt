@@ -1,11 +1,13 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
+import arrow.core.Either
 import com.orbitalhq.connectors.BatchWriteCacheProvider
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnector.Annotations.BatchSizeAttributeName
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnector.Annotations.batchDurationAttributeName
 import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
@@ -48,7 +50,7 @@ class MongoDbInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>>  {
       return when {
          operation.operationType == OperationScope.READ_ONLY -> readOnlyInvoker.invoke(
             service,

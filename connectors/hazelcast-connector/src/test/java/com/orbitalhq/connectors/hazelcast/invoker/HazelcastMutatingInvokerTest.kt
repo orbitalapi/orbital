@@ -51,7 +51,7 @@ class HazelcastMutatingInvokerTest : BaseHazelcastInvokerTest() {
       film.shouldBeInstanceOf<DeserializedGenericRecord>()
 
       val typedInstance = GenericRecordReader.toTypedInstance(film, vyne.type("Film").taxiType as ObjectType, vyne.schema, UndefinedSource)
-      val rawValue = typedInstance.toRawObject()
+      val rawValue = typedInstance.getOrNull()!!.toRawObject()
       rawValue.shouldBe(mapOf(
          "filmId" to 100,
          "title" to "Star Wars",

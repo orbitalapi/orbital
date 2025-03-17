@@ -2,10 +2,8 @@ package com.orbitalhq.pipelines.jet.pipelines
 
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.jet.core.JobStatus
-import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.tryParseJson
 import com.orbitalhq.pipelines.jet.BaseJetIntegrationTest
-import com.orbitalhq.pipelines.jet.api.streams.StreamJobStateEvent
-import com.orbitalhq.pipelines.jet.api.streams.StreamStatus
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.TypedInstanceContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.http.CronExpressions
@@ -20,11 +18,9 @@ import com.orbitalhq.pipelines.jet.streams.StreamStateManager
 import com.orbitalhq.pipelines.jet.streams.StreamStateManagerHazelcastConfig
 import com.orbitalhq.schemas.fqn
 import com.winterbe.expekt.should
-import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOf
 import org.awaitility.Awaitility.await
-import org.glassfish.jaxb.core.v2.TODO
 import org.junit.Ignore
 import org.junit.Test
 import java.time.Instant
@@ -52,7 +48,7 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
          """
       )
 
-      val tweets = (1 until 3).map { parseJson(testSetup.schema, "Tweet", """{ "text" : "Hello $it" }""") }
+      val tweets = (1 until 3).map { tryParseJson(testSetup.schema, "Tweet", """{ "text" : "Hello $it" }""") }
          .asFlow()
       testSetup.stubService.addResponseFlow("getTweets") { remoteOperation, pairs -> tweets }
       val manager = pipelineManager(
@@ -172,9 +168,9 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
 
       testSetup.stubService.addResponseFlow("getAll") { _, _ ->
          flowOf(
-            parseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Fallon" }"""),
-            parseJson(testSetup.schema, "Person", """{ "firstName": "Conan", "lastName": "O'Brien" }"""),
-            parseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Kimmel" }"""),
+             tryParseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Fallon" }"""),
+             tryParseJson(testSetup.schema, "Person", """{ "firstName": "Conan", "lastName": "O'Brien" }"""),
+             tryParseJson(testSetup.schema, "Person", """{ "firstName": "Jimmy", "lastName": "Kimmel" }"""),
          )
       }
 

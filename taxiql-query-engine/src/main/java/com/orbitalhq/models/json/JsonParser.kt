@@ -1,5 +1,6 @@
 package com.orbitalhq.models.json
 
+import arrow.core.Either
 import com.fasterxml.jackson.core.JsonParser
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -10,6 +11,7 @@ import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.models.functions.FunctionRegistry
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.fqn
 
@@ -73,6 +75,36 @@ fun ModelContainer.parseJson(
    return parseJson(this.schema, typeName, json, source, functionRegistry, metadata, formatSpecs = formatSpecs)
 }
 
+fun tryParseJson(
+   schema: Schema,
+   typeName: String,
+   json: String,
+   source: DataSource = Provided,
+   functionRegistry: FunctionRegistry = FunctionRegistry.default,
+   metadata: Map<String, Any> = emptyMap(),
+   formatSpecs: List<ModelFormatSpec> = emptyList(),
+): Either<StreamErrorMessage, TypedInstance> {
+   val type = schema.type(typeName.fqn().parameterizedName)
+   return TypedInstance.tryFrom(type, json, schema, source = source, functionRegistry = functionRegistry, metadata = metadata, formatSpecs = formatSpecs)
+}
+fun ModelContainer.tryParseJson(
+   typeName: String,
+   json: String,
+   source: DataSource = Provided,
+   functionRegistry: FunctionRegistry = FunctionRegistry.default,
+   metadata: Map<String, Any> = emptyMap(),
+   formatSpecs: List<ModelFormatSpec> = emptyList(),
+): Either<StreamErrorMessage, TypedInstance> {
+   return try {
+      Either.Right(
+      parseJson(this.schema, typeName, json, source, functionRegistry, metadata, formatSpecs = formatSpecs))
+   } catch (e: Exception) {
+      Either.Left(StreamErrorMessage.fromException(e, typeName))
+   }
+}
+
+fun TypedInstance.right() = Either.Right(this)
+
 @Deprecated("Call TypedInstance.from() instead.  This method has bugs with nested objects, and does not handle accessors or advanced features.")
 fun ModelContainer.parseJsonCollection(
    typeName: String,
@@ -82,6 +114,17 @@ fun ModelContainer.parseJsonCollection(
    val typedCollection =
       jsonParser().parse(this.getType(typeName.fqn().parameterizedName), json, source = source, format = null) as TypedCollection
    return typedCollection.value
+}
+
+fun ModelContainer.fromTypedCollection(typeName: String,
+                                     json: String,
+                                     source: DataSource = Provided): List<Either.Right<TypedInstance>> {
+  return (TypedInstance.from(
+      type = this.getType(typeName.fqn().parameterizedName),
+      value = json,
+      schema = this.schema,
+      source = source
+   ) as TypedCollection).value.map { Either.Right(it) }
 }
 
 fun ModelContainer.jsonParser(mapper: ObjectMapper = RelaxedJsonMapper.jackson): JsonModelParser {

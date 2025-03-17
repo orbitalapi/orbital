@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.aws.dynamodb
 
+import arrow.core.Either
 import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.OperationResult
@@ -7,8 +8,13 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.query.ConstructedQueryDataSource
 import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schema.api.SchemaProvider
-import com.orbitalhq.schemas.*
+import com.orbitalhq.schemas.Parameter
+import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.Service
+import com.orbitalhq.schemas.Type
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -18,7 +24,13 @@ import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
-import software.amazon.awssdk.services.dynamodb.model.*
+import reactor.util.function.Tuple2
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue
+import software.amazon.awssdk.services.dynamodb.model.DynamoDbException
+import software.amazon.awssdk.services.dynamodb.model.DynamoDbResponse
+import software.amazon.awssdk.services.dynamodb.model.GetItemResponse
+import software.amazon.awssdk.services.dynamodb.model.QueryResponse
+import software.amazon.awssdk.services.dynamodb.model.ScanResponse
 import java.math.BigDecimal
 
 class DynamoDbQueryInvoker(
@@ -38,7 +50,7 @@ class DynamoDbQueryInvoker(
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val schema = schemaProvider.schema
       val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
       val query = queryBuilder.buildQuery(schema, taxiQuery)
@@ -77,35 +89,51 @@ class DynamoDbQueryInvoker(
             val remoteCall = buildRemoteCall(service, awsConfig, operation, query, duration, count)
             val operationResult = OperationResult.fromTypedInstances(constructedQueryDataSource.inputs, remoteCall)
             eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
-            val items = when (response) {
-               is GetItemResponse -> listOf(
-                  readItem(
-                     response,
-                     operation.returnType,
-                     schema,
-                     operationResult.asOperationReferenceDataSource()
-                  )
-               )
-
-               is QueryResponse -> readItems(
-                  response.items(),
-                  operation.returnType,
-                  schema,
-                  operationResult.asOperationReferenceDataSource()
-               )
-
-               is ScanResponse -> readItems(
-                  response.items(),
-                  operation.returnType,
-                  schema,
-                  operationResult.asOperationReferenceDataSource()
-               )
-
-               else -> error("Not implemented - Response type of ${response::class.simpleName}")
-            }
+            val items = safeParse(responsePair, operation, eventDispatcher, queryId, schema, operationResult)
             Flux.fromIterable(items)
          }.asFlow().flowOn(dispatcher)
 
+
+   }
+
+   fun safeParse(
+      responsePair: Tuple2<Long, DynamoDbResponse>,
+      operation: RemoteOperation,
+      eventDispatcher: QueryContextEventDispatcher,
+      queryId: String,
+      schema: Schema,
+      operationResult: OperationResult
+   ): List<Either<StreamErrorMessage, TypedInstance>> {
+      val duration = responsePair.t1
+     // logger.info { "DynamoDb call completed in ${duration}ms for request $query" }
+      val response = responsePair.t2
+      eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
+      return when (response) {
+         is GetItemResponse -> listOf(
+            readItem(
+               response,
+               operation.returnType,
+               schema,
+               operationResult.asOperationReferenceDataSource()
+            )
+         )
+
+         is QueryResponse -> readItems(
+            response.items(),
+            operation.returnType,
+            schema,
+            operationResult.asOperationReferenceDataSource()
+         )
+
+         is ScanResponse -> readItems(
+            response.items(),
+            operation.returnType,
+            schema,
+            operationResult.asOperationReferenceDataSource()
+         )
+
+         else -> error("Not implemented - Response type of ${response::class.simpleName}")
+      }
 
    }
 
@@ -114,9 +142,13 @@ class DynamoDbQueryInvoker(
       returnType: Type,
       schema: Schema,
       dataSource: DataSource
-   ): List<TypedInstance> {
+   ): List<Either<StreamErrorMessage,  TypedInstance>> {
       return items.map {
-         convertToTypedInstance(it, returnType, schema, dataSource)
+         try {
+          Either.Right(convertToTypedInstance(it, returnType, schema, dataSource))
+         } catch (e: Exception) {
+            Either.Left(StreamErrorMessage.fromException(e, returnType.paramaterizedName))
+         }
       }
    }
 
@@ -135,14 +167,19 @@ class DynamoDbQueryInvoker(
       returnType: Type,
       schema: Schema,
       dataSource: DataSource
-   ): TypedInstance {
+   ): Either<StreamErrorMessage, TypedInstance> {
       if (!response.hasItem()) {
-         return TypedNull.create(returnType, dataSource)
+         return Either.Right(TypedNull.create(returnType, dataSource))
       }
-      return convertToTypedInstance(response.item(), returnType, schema, dataSource)
+      return try {
+         Either.Right(convertToTypedInstance(response.item(), returnType, schema, dataSource))
+      } catch (e: Exception) {
+         Either.Left(StreamErrorMessage.fromException(e, returnType.paramaterizedName))
+      }
    }
 
-   private fun convertToTypedInstance(
+   private fun
+           convertToTypedInstance(
       item: Map<String, AttributeValue>,
       returnType: Type,
       schema: Schema,

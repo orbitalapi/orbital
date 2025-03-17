@@ -1,17 +1,18 @@
 package com.orbitalhq
 
 import app.cash.turbine.test
-import com.winterbe.expekt.expect
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.TypedValue
 import com.orbitalhq.models.json.addKeyValuePair
 import com.orbitalhq.models.json.parseJsonModel
+import com.orbitalhq.models.json.tryParseJson
 import com.orbitalhq.query.connectors.OperationResponseHandler
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.winterbe.expekt.expect
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.Ignore
@@ -234,8 +235,8 @@ namespace test {
       val clientHandler: OperationResponseHandler = { operation: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
          val (_, clientId) = params.first()
          when (clientId.value) {
-               "desk1Client" -> listOf(vyne.parseJsonModel("test.Client", desk1Client))
-               "desk2Client" -> listOf(vyne.parseJsonModel("test.Client", desk2Client))
+               "desk1Client" -> listOf(vyne.tryParseJson("test.Client", desk1Client))
+               "desk2Client" -> listOf(vyne.tryTypedValue("test.Client", desk2Client))
                else -> TODO("Unhandled client")
          }
       }

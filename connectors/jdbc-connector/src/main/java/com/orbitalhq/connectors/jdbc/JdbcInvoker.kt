@@ -1,10 +1,12 @@
 package com.orbitalhq.connectors.jdbc
 
+import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
@@ -48,7 +50,7 @@ class JdbcInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       return try {
          val updateVerb = UpsertVerb.forAnnotations(operation.metadata)
          when {

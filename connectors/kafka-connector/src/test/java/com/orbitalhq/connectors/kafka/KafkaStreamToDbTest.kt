@@ -2,7 +2,6 @@ package com.orbitalhq.connectors.kafka
 
 import com.jayway.awaitility.Awaitility
 import com.nhaarman.mockito_kotlin.mock
-import com.orbitalhq.connectors.StreamErrorPublisher
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlAndCredentials
 import com.orbitalhq.connectors.config.jdbc.JdbcUrlCredentialsConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.HikariJdbcConnectionFactory
@@ -29,17 +28,17 @@ import java.util.concurrent.TimeUnit
 
 class KafkaStreamToDbTest : BaseKafkaContainerTest() {
 
-   lateinit var jdbcUrl: String
-   lateinit var username: String
-   lateinit var password: String
+   private lateinit var jdbcUrl: String
+   private lateinit var username: String
+   private lateinit var password: String
 
 
-   lateinit var jdbcConnectionRegistry: InMemoryJdbcConnectionRegistry
-   lateinit var jdbcConnectionFactory: JdbcConnectionFactory
+   private lateinit var jdbcConnectionRegistry: InMemoryJdbcConnectionRegistry
+   private lateinit var jdbcConnectionFactory: JdbcConnectionFactory
 
    @Rule
    @JvmField
-   final val postgreSQLContainer = PostgreSQLContainer<Nothing>("postgres:11.1") as PostgreSQLContainer<*>
+   val postgreSQLContainer = PostgreSQLContainer<Nothing>("postgres:11.1") as PostgreSQLContainer<*>
 
    @Before
    override fun before() {
@@ -115,19 +114,19 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
             KafkaConnectorTaxi.schema,
             schema
          )
-      ) { schema ->
+      ) { testSchema ->
          val kafkaStreamManager =
             KafkaStreamManager(
                connectionRegistry,
-               SimpleSchemaProvider(schema),
+               SimpleSchemaProvider(testSchema),
                formatRegistry = formatRegistry,
                meterRegistry = SimpleMeterRegistry(),
                emitConsumerInfoMessages = false,
                kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(GaugeRegistry.simple())
             )
          listOf(
-            JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),
-            KafkaInvoker(kafkaStreamManager, mock { }, StreamErrorPublisher())
+            JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(testSchema)),
+            KafkaInvoker(kafkaStreamManager, mock { })
          )
       }
 
@@ -211,19 +210,19 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
             KafkaConnectorTaxi.schema,
             schema
          )
-      ) { schema ->
+      ) { testSchema ->
          val kafkaStreamManager =
             KafkaStreamManager(
                connectionRegistry,
-               SimpleSchemaProvider(schema),
+               SimpleSchemaProvider(testSchema),
                formatRegistry = formatRegistry,
                meterRegistry = SimpleMeterRegistry(),
                emitConsumerInfoMessages = false,
                kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(GaugeRegistry.simple())
             )
          listOf(
-            JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(schema)),
-            KafkaInvoker(kafkaStreamManager, mock {}, StreamErrorPublisher())
+            JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(testSchema)),
+            KafkaInvoker(kafkaStreamManager, mock {})
          )
       }
 

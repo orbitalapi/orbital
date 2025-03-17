@@ -1,8 +1,10 @@
 package com.orbitalhq.connectors.hazelcast.invoker
 
+import arrow.core.Either
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.Schema
 import lang.taxi.types.Arrays
 import lang.taxi.types.Field
@@ -15,9 +17,9 @@ object GenericRecordReader {
       type: ObjectType,
       schema: Schema,
       dataSource: DataSource
-   ): TypedInstance {
+   ): Either<StreamErrorMessage, TypedInstance> {
       val map = readAsMap(genericRecord, type, schema)
-      val fromMap = TypedInstance.from(schema.type(type), map, schema, source = dataSource)
+      val fromMap = TypedInstance.tryFrom(schema.type(type), map, schema, source = dataSource)
       return fromMap
    }
 

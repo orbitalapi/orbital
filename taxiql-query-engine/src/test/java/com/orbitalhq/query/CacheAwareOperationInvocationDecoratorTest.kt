@@ -2,19 +2,18 @@ package com.orbitalhq.query
 
 import app.cash.turbine.test
 import app.cash.turbine.testIn
+import arrow.core.Either
 import com.jayway.awaitility.Awaitility.await
 import com.nhaarman.mockito_kotlin.any
 import com.nhaarman.mockito_kotlin.mock
 import com.nhaarman.mockito_kotlin.times
 import com.nhaarman.mockito_kotlin.verify
 import com.nhaarman.mockito_kotlin.whenever
-import com.winterbe.expekt.expect
-import com.winterbe.expekt.should
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedValue
-import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
+import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCachingInvokerProvider
 import com.orbitalhq.schemas.Operation
 import com.orbitalhq.schemas.Parameter
@@ -26,12 +25,15 @@ import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.utils.Ids
+import com.winterbe.expekt.expect
+import com.winterbe.expekt.should
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -82,7 +84,7 @@ class CacheAwareOperationInvocationDecoratorTest {
       runBlocking {
          whenever(mockOperationInvoker.invoke(any(), any(), any(), any(), any(), any())).thenReturn(flow {
             emit(
-               mockedTypeInstance
+               Either.Right(mockedTypeInstance)
             )
          })
          cacheAware.invoke(service, operation, params, mockQueryContext, "MOCK_QUERY_ID", queryOptions).toList()
@@ -132,7 +134,8 @@ class CacheAwareOperationInvocationDecoratorTest {
          queryOptions
       ).toList()
       result.should.have.size(1)
-      result.first().value.should.equal("Hello")
+
+      result.first().getOrNull()!!.value.should.equal("Hello")
 
       val cachedResult = cachingInvoker.invoke(
          service,
@@ -143,7 +146,7 @@ class CacheAwareOperationInvocationDecoratorTest {
          queryOptions
       ).toList()
       cachedResult.should.have.size(1)
-      cachedResult.first().value.should.equal("Hello")
+      cachedResult.first().getOrNull()!!.value.should.equal("Hello")
       // Should've only made it to the underlying invoker once
       invoker.invokedCalls.should.have.size(1)
    }
@@ -174,7 +177,7 @@ class CacheAwareOperationInvocationDecoratorTest {
             mock {}
          ).toList()
          result.should.have.size(5)
-         result.first().value.should.equal("Hello")
+         result.first().getOrNull()!!.value.should.equal("Hello")
          cacheProvider.cacheSize.should.equal(0)
 
          // Try again, shouldn't hit the cache
@@ -355,7 +358,12 @@ class CacheAwareOperationInvocationDecoratorTest {
       val results = invokeService(inputs, invoker)
       results.size.should.equal(25)
       listOf("A", "B", "C", "D", "E").map { input ->
-         results.count { it is TypedValue && it.value == "Hello $input" }.should.equal(5)
+         results.count { result ->
+            when (result) {
+                is Either<*, *> -> (result.getOrNull() is TypedValue) && ((result.getOrNull() as TypedValue)).value == "Hello $input"
+               else -> false
+            }
+            }.should.equal(5)
       }
       await().atMost(1, TimeUnit.SECONDS).until<Boolean> {
          invoker.invokedCalls.size == 5
@@ -416,7 +424,7 @@ private class ExceptionThrowingInvoker(val exception: Throwable = UnsupportedOpe
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       throw exception
    }
 
@@ -438,7 +446,7 @@ private class ConcurrentAccessProhibitedInvoker(private val handler: (List<Pair<
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val cacheKey = CacheAwareOperationInvocationDecorator.generateCacheKey(
          service,
          operation,
@@ -455,7 +463,7 @@ private class ConcurrentAccessProhibitedInvoker(private val handler: (List<Pair<
       delay(500)
       callsInProgress.remove(cacheKey)
       invokedCalls.add(cacheKey)
-      return handler.invoke(parameters)
+      return handler.invoke(parameters).map { Either.Right(it) }
    }
 
 }

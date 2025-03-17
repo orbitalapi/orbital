@@ -1,5 +1,6 @@
 package com.orbitalhq.spring.invokers
 
+import arrow.core.Either
 import com.orbitalhq.http.HttpHeaderNames.STREAM_ESTIMATED_RECORD_COUNT
 import com.orbitalhq.http.UriVariableProvider
 import com.orbitalhq.models.OperationResult
@@ -10,6 +11,7 @@ import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.OperationInvocationException
@@ -96,7 +98,7 @@ class RestTemplateInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       queryOptions: QueryOptions
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       logger.info { "Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}" }
 
       val (_, url, method) = operation.httpOperationMetadata()
@@ -364,7 +366,7 @@ class RestTemplateInvoker(
       headers: ClientResponse.Headers,
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String
-   ): Flux<TypedInstance> {
+   ): Flux<Either<StreamErrorMessage, TypedInstance>> {
       // Logging responses in our logs is a security issue.  Let's not do this.
 //      logger.debug { "Result of ${operation.name} was $result" }
 
@@ -384,19 +386,26 @@ class RestTemplateInvoker(
          mapOf(EXPIRY_METADATA to it)
       } ?: emptyMap()
 
-      val typedInstance = TypedInstance.from(
-         type,
-         result,
-         schemaProvider.schema,
-         source = operationResult.asOperationReferenceDataSource(),
-         evaluateAccessors = evaluateAccessors,
-         formatSpecs = formats.formats,
-         metadata = metadata
-      )
-      return if (typedInstance is TypedCollection) {
-         Flux.fromIterable(typedInstance.value)
-      } else {
-         Flux.fromIterable(listOf(typedInstance))
+      val typedInstanceOrError = try {
+         Either.Right(TypedInstance.from(
+            type,
+            result,
+            schemaProvider.schema,
+            source = operationResult.asOperationReferenceDataSource(),
+            evaluateAccessors = evaluateAccessors,
+            formatSpecs = formats.formats,
+            metadata = metadata
+         ))
+      } catch (e: Exception) {
+         Either.Left(StreamErrorMessage.fromException(e, type.paramaterizedName))
+      }
+
+      return when (typedInstanceOrError) {
+         is Either.Left -> Flux.just(typedInstanceOrError)
+         is Either.Right -> when (typedInstanceOrError.value) {
+            is TypedCollection -> Flux.fromIterable((typedInstanceOrError.value as TypedCollection).map { Either.Right(it) })
+            else -> Flux.fromIterable(listOf(Either.Right(typedInstanceOrError.value)))
+         }
       }
    }
 

@@ -1,6 +1,6 @@
 package com.orbitalhq
 
-import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.tryParseJson
 import io.kotest.matchers.collections.shouldContain
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
@@ -32,9 +32,9 @@ class QueryWithCompositeJoinsTest {
          "getProducts",
          """[{ "productId" : 1, "factor" : 10 }, { "productId" : 2, "factor" : 20 }]"""
       )
-      stub.addResponse("getEsgData", modifyDataSource = true) { remoteOperation, args ->
+      stub.addResponse("getEsgData", modifyDataSource = true) { _, args ->
          // echo back the input as the result, for asserting below
-         listOf(vyne.parseJson("EsgScore", """{ "environmental" : ${args.single().second.toRawObject()} }"""))
+         listOf(vyne.tryParseJson("EsgScore", """{ "environmental" : ${args.single().second.toRawObject()} }"""))
       }
       val result = runBlocking {
          vyne.query(
@@ -77,9 +77,9 @@ class QueryWithCompositeJoinsTest {
          "getProducts",
          """[{ "productId" : 1, "factor" : 10 }, { "productId" : 2, "factor" : 20 }]"""
       )
-      stub.addResponse("getEsgData", modifyDataSource = true) { remoteOperation, args ->
+      stub.addResponse("getEsgData", modifyDataSource = true) { _, args ->
          // echo back the input as the result, for asserting below
-         listOf(vyne.parseJson("EsgScore", """{ "rating" : "${args.single().second.toRawObject()}" }"""))
+         listOf(vyne.tryParseJson("EsgScore", """{ "rating" : "${args.single().second.toRawObject()}" }"""))
       }
       val result = runBlocking {
          vyne.query(
@@ -123,9 +123,9 @@ class QueryWithCompositeJoinsTest {
          "getProducts",
          """[{ "productId" : 1, "factor" : 10 }, { "productId" : 2, "factor" : 20 }]"""
       )
-      stub.addResponse("getEsgData", modifyDataSource = true) { remoteOperation, args ->
+      stub.addResponse("getEsgData", modifyDataSource = true) { _, args ->
          // echo back the input as the result, for asserting below
-         listOf(vyne.parseJson("EsgScore", """{ "rating" : "${args.single().second.toRawObject()}" }"""))
+         listOf(vyne.tryParseJson("EsgScore", """{ "rating" : "${args.single().second.toRawObject()}" }"""))
       }
       val result = runBlocking {
          vyne.query(

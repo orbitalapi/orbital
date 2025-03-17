@@ -1,6 +1,6 @@
 package com.orbitalhq
 
-import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.tryParseJson
 import com.orbitalhq.stubbing.StubService
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldContainExactly
@@ -124,7 +124,7 @@ class StreamFilteringTest {
          listOf(
             """{ "userId" : "aaa", "message" : "Fighting a dragon" }""",
             """{ "userId" : "bbb", "message" : "Stretching" }"""
-         ).map { vyne.parseJson("UserUpdateMessage", it) }
+         ).map { vyne.tryParseJson("UserUpdateMessage", it) }
             .asFlow()
       }
    }

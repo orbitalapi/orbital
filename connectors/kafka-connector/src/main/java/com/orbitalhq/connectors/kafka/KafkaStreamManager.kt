@@ -5,12 +5,12 @@ import arrow.core.left
 import arrow.core.right
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
-import com.orbitalhq.connectors.StreamErrorMessage
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
 import com.orbitalhq.connectors.kafka.registry.brokers
 import com.orbitalhq.connectors.kafka.registry.toReceiverOptions
 import com.orbitalhq.errors.ErrorType
+import com.orbitalhq.metrics.MetricTags
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.OperationResultDataSourceWrapper
@@ -20,13 +20,12 @@ import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.query.MessageStreamExchange
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
-import com.orbitalhq.metrics.MetricTags
 import com.orbitalhq.utils.orElse
 import io.micrometer.core.instrument.MeterRegistry
-import io.micrometer.core.instrument.Tag
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -46,7 +45,7 @@ import reactor.kafka.receiver.ReceiverOptions
 import reactor.util.retry.Retry
 import java.time.Duration
 import java.time.Instant
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -130,6 +129,7 @@ class KafkaStreamManager(
    }
 
    private fun evictConnection(consumerRequest: KafkaConsumerRequest) {
+      kafkaConsumerStatsFlowBuilder.stopMonitoring(consumerRequest)
       cache.invalidate(consumerRequest)
       messageCounter.remove(consumerRequest)
       cache.cleanUp()

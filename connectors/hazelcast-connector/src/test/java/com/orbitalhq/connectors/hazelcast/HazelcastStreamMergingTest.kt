@@ -1,12 +1,14 @@
 package com.orbitalhq.connectors.hazelcast
 
 import app.cash.turbine.test
+import arrow.core.Either
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.test.TestHazelcastInstanceFactory
 import com.orbitalhq.Vyne
 import com.orbitalhq.expectTypedObject
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.tryParseJson
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.caching.StateStore
 import com.orbitalhq.query.caching.StateStoreAnnotation
 import com.orbitalhq.query.caching.StateStoreConfig
@@ -77,8 +79,8 @@ class HazelcastStreamMergingTest : DescribeSpec({
       it("should run a query that joins multiple streams") {
 
          val (vyne, stub, hz) = buildVyneAndHazelcast()
-         val tweetFlow = MutableSharedFlow<TypedInstance>(replay = 1)
-         val analyticsFlow = MutableSharedFlow<TypedInstance>(replay = 1)
+         val tweetFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>(replay = 1)
+         val analyticsFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>(replay = 1)
          stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
          stub.addResponseFlow("analytics") { _, _ -> analyticsFlow }
          logger.info { "running a query with StateStore" }
@@ -96,7 +98,7 @@ class HazelcastStreamMergingTest : DescribeSpec({
 
          results.test(timeout = 30.seconds) {
             logger.info { "emitting a tweet" }
-            tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" }"""))
+            tweetFlow.emit(vyne.tryParseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" }"""))
             val first = expectTypedObject()
             first.toRawObject().shouldBe(
                mapOf(
@@ -106,7 +108,7 @@ class HazelcastStreamMergingTest : DescribeSpec({
                )
             )
 
-            analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "tweetId" : "a" , "views" : 100 }"""))
+            analyticsFlow.emit(vyne.tryParseJson("TweetAnalytics", """{ "tweetId" : "a" , "views" : 100 }"""))
             val second = expectTypedObject()
 
             // This is the real test.
@@ -127,8 +129,8 @@ class HazelcastStreamMergingTest : DescribeSpec({
 
       it("streams should not be joined when statestore is not specified") {
          val (vyne, stub, hz) = buildVyneAndHazelcast()
-         val tweetFlow = MutableSharedFlow<TypedInstance>(replay = 1)
-         val analyticsFlow = MutableSharedFlow<TypedInstance>(replay = 1)
+         val tweetFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>(replay = 1)
+         val analyticsFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>(replay = 1)
          stub.addResponseFlow("tweets") { _, _ -> tweetFlow }
          stub.addResponseFlow("analytics") { _, _ -> analyticsFlow }
 
@@ -146,7 +148,7 @@ class HazelcastStreamMergingTest : DescribeSpec({
             .results
 
          resultsWithoutStateStore.test(timeout = 30.seconds) {
-            tweetFlow.emit(vyne.parseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" }"""))
+            tweetFlow.emit(vyne.tryParseJson("Tweet", """{ "messageId" : "a" , "message" : "Hello" }"""))
             val first = expectTypedObject()
             first.toRawObject().shouldBe(
                mapOf(
@@ -156,7 +158,7 @@ class HazelcastStreamMergingTest : DescribeSpec({
                )
             )
 
-            analyticsFlow.emit(vyne.parseJson("TweetAnalytics", """{ "tweetId" : "a" , "views" : 100 }"""))
+            analyticsFlow.emit(vyne.tryParseJson("TweetAnalytics", """{ "tweetId" : "a" , "views" : 100 }"""))
             val second = expectTypedObject()
 
             // StateStore is not defined in the query, so merging should not happen.

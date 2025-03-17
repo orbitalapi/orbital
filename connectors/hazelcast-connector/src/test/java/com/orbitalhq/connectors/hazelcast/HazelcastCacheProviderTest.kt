@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.hazelcast
 
+import arrow.core.Either
 import com.hazelcast.config.Config
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.test.TestHazelcastInstanceFactory
@@ -7,6 +8,7 @@ import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationInvocationParamMessage
 import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCache
 import com.orbitalhq.schema.api.SchemaSet
@@ -71,7 +73,7 @@ class HazelcastCacheProviderTest : DescribeSpec({
          stub.clearAll()
       }
 
-      suspend fun invokeCache(cacheKey: String = "testKey"): Flux<TypedInstance> {
+      suspend fun invokeCache(cacheKey: String = "testKey"): Flux<Either<StreamErrorMessage, TypedInstance>> {
          val cache = cacheProvider.getHazelcastCachingInvoker(
             cacheKey, stub, Duration.ofSeconds(30)
          )
@@ -107,15 +109,19 @@ class HazelcastCacheProviderTest : DescribeSpec({
          // First call comes from the stub, not the cache
          stub.calls["findPerson"].shouldHaveSize(1)
          // Data source should show the data came from a remote call
-         result.single().source.shouldBeInstanceOf<OperationResultReference>()
-            .operationName.fullyQualifiedName.shouldBe("PersonService@@findPerson")
+         result.single().onRight { it.source.shouldBeInstanceOf<OperationResultReference>()
+            .operationName.fullyQualifiedName.shouldBe("PersonService@@findPerson")}
+
+         result.single().onLeft { error("expected a typeinstance") }
+
 
          val resultFromCache = invokeCache().collectList().block()!!
          resultFromCache.shouldHaveSize(1)
          // Shouldn't have called the stub again
          stub.calls["findPerson"].shouldHaveSize(1)
          // Data source should show the data came from a remote call
-         resultFromCache.single().source.shouldBeInstanceOf<CachedOperationResultReference>()
+         resultFromCache.single().onRight { it.source.shouldBeInstanceOf<CachedOperationResultReference>() }
+         resultFromCache.single().onLeft { error("expected a typedinstance") }
       }
       it("should cache if a second call comes when the first call is still inflight") {
          stub.addResponse("findPerson", vyne.parseJson("Person", """{ "id" : "1", "name" : "Jimmy" }"""))

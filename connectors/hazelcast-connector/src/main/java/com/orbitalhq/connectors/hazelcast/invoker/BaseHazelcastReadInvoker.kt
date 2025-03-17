@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.hazelcast.invoker
 
+import arrow.core.Either
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.core.HazelcastJsonValue
 import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericRecord
@@ -12,11 +13,13 @@ import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
+import com.orbitalhq.models.json.right
 import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.query.CacheExchange.CacheOperationVerb
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.Field
 import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.OperationKind
@@ -155,7 +158,7 @@ abstract class BaseHazelcastReadInvoker {
       queryId: String,
       queryOptions: QueryOptions,
       schema: Schema,
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val startTime = Instant.now()
       val executionConfig = getExecutionConfig(operation, hazelcastInstance, parameters, schema)
       return when {
@@ -226,7 +229,7 @@ abstract class BaseHazelcastReadInvoker {
       queryId: String,
       unwrappedReturnType: Type,
       schema: Schema,
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val predicate = ExpressionToPredicateConverter.convert(taxiQlQuery.discoveryType!!, filterCriteria)
       val (rawResults, resultSize) = buildFlowOfCriteriaSearch(
          taxiQlQueryString,
@@ -286,7 +289,7 @@ abstract class BaseHazelcastReadInvoker {
       queryId: String,
       unwrappedReturnType: Type,
       schema: Schema,
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       logger.debug { "Query of $taxiQlQueryString converted to Id lookup against map $mapName with key $idLookupValue" }
       val (rawResultFlow, recordCount) = buildFlowById(taxiQlQueryString, idLookupValue, map, operation)
 
@@ -338,7 +341,7 @@ abstract class BaseHazelcastReadInvoker {
       queryId: String,
       unwrappedReturnType: Type,
       schema: Schema,
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val (rawResultsFlow, resultSize) = buildFlowOfFullMap(map, operation, taxiQlQueryString)
 
       // Note - generally for a findAll(), there are no parameters, so an empty list
@@ -386,10 +389,10 @@ abstract class BaseHazelcastReadInvoker {
       memberType: ObjectType,
       schema: Schema,
       dataSource: DataSource
-   ): Flow<TypedInstance> {
-      fun readValue(value: Any?): List<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
+      fun readValue(value: Any?): List<Either<StreamErrorMessage, TypedInstance>> {
          return when (value) {
-            null -> listOf(TypedNull.create(schema.type(memberType), dataSource))
+            null -> listOf(TypedNull.create(schema.type(memberType), dataSource).right())
             is DeserializedGenericRecord -> listOf(
                GenericRecordReader.toTypedInstance(
                   value,

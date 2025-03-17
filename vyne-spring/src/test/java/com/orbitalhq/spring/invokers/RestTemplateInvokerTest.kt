@@ -1,11 +1,13 @@
 package com.orbitalhq.spring.invokers
 
 import app.cash.turbine.testIn
+import arrow.core.Either
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.doAnswer
 import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.expectTypedObject
+import com.orbitalhq.expectTypedObjectFromEither
 import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.http.respondWith
 import com.orbitalhq.http.response
@@ -17,6 +19,7 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedInstance.Companion.EXPIRY_METADATA
 import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.QueryContext
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.OperationInvocationException
@@ -173,7 +176,7 @@ namespace vyne {
                   paramAndType("vyne.ClientName", "notional", schema)
                ), queryContext, "MOCK_QUERY_ID", QueryOptions()
             ).testIn(this)
-         val instance = turbine.expectTypedObject()
+         val instance = turbine.expectTypedObjectFromEither()
          expect(instance.type.fullyQualifiedName).to.equal("vyne.Client")
          expect(instance["name"].value).to.equal("Notional")
          expect((instance["contacts"] as TypedCollection)).size.to.equal(2)
@@ -420,7 +423,7 @@ namespace vyne {
             ), context, "testQuery", QueryOptions()
          ).testIn(this)
 
-         val typedInstance = turbine.expectTypedObject()
+         val typedInstance = turbine.expectTypedObjectFromEither()
          expect(typedInstance.type.fullyQualifiedName).to.equal("vyne.CreditCostResponse")
          expect(typedInstance["stuff"].value).to.equal("Right back atcha, kid")
          turbine.awaitComplete()
@@ -487,7 +490,7 @@ namespace vyne {
             ), context, "testQuery", QueryOptions()
          ).testIn(this)
 
-         val typedInstance = turbine.expectTypedObject()
+         val typedInstance = turbine.expectTypedObjectFromEither()
          expect(typedInstance.type.fullyQualifiedName).to.equal("vyne.CreditScoreResponse")
          val score = typedInstance["score"].value
          expect(score).to.equal(BigDecimal("90.9"))
@@ -587,7 +590,7 @@ namespace vyne {
         schema: TaxiSchema,
         serviceName: String,
         operationName: String,
-        parameters: List<Pair<Parameter, TypedInstance>>): List<TypedInstance> {
+        parameters: List<Pair<Parameter, TypedInstance>>): List<Either<StreamErrorMessage, TypedInstance>> {
         val service = schema.service(serviceName);
         val operation = service.operation(operationName)
         val (context, _) = eventCapturingQueryContext()
@@ -632,7 +635,7 @@ namespace vyne {
             ), mock { }, "MOCK_QUERY_ID", QueryOptions()
          )
             .testIn(this)
-         val typedInstance = turbine.expectTypedObject()
+         val typedInstance = turbine.expectTypedObjectFromEither()
          typedInstance["id"].value.should.equal(100)
          turbine.awaitComplete()
 
@@ -709,7 +712,7 @@ namespace vyne {
             ), mock { }, "MOCK_QUERY_ID", QueryOptions()
          ).testIn(this)
 
-         turbine.expectTypedObject()
+         turbine.expectTypedObjectFromEither()
          turbine.awaitComplete()
 
          expectRequestCount(1)
@@ -764,7 +767,7 @@ namespace vyne {
          )
             .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID", QueryOptions())
             .testIn(this)
-         val instance = turbine.expectTypedObject()
+         val instance = turbine.expectTypedObjectFromEither()
          instance["id"].value.should.equal("100")
          instance["name"].value.should.equal("Fluffy")
          turbine.awaitComplete()
@@ -819,7 +822,7 @@ namespace vyne {
             .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID", QueryOptions())
             .testIn(this)
 
-         val instance = turbine.expectTypedObject()
+         val instance = turbine.expectTypedObjectFromEither()
          instance["id"].value.should.equal("100")
          instance["name"].value.should.equal("Fluffy")
          turbine.awaitComplete()

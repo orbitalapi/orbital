@@ -2,6 +2,8 @@ package com.orbitalhq
 
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.right
+import com.orbitalhq.models.json.tryParseJson
 import com.orbitalhq.query.UnresolvedTypeInQueryException
 import com.orbitalhq.query.graph.operationInvocation.SearchRuntimeException
 import io.kotest.assertions.throwables.shouldThrow
@@ -49,7 +51,7 @@ class MutationQueryTest {
       )
       stub.addResponseReturningInputs("saveMovies")
 
-      val results = vyne.query("find { FilmCatalog } as (films:Film[]) -> Movie[] call Films::saveMovies")
+      vyne.query("find { FilmCatalog } as (films:Film[]) -> Movie[] call Films::saveMovies")
          .rawObjects()
 
       val calls = stub.calls["saveMovies"]
@@ -89,7 +91,7 @@ class MutationQueryTest {
       )
       stub.addResponseReturningInputs("saveMovies")
 
-      val results = vyne.query("find { Film[] } call Films::saveMovies")
+      vyne.query("find { Film[] } call Films::saveMovies")
          .rawObjects()
 
       val calls = stub.calls["saveMovies"]
@@ -128,7 +130,7 @@ class MutationQueryTest {
       )
       stub.addResponseReturningInputs("saveMovies")
 
-      val results = vyne.query("find { Film[] } as Movie[] call Films::saveMovies")
+      vyne.query("find { Film[] } as Movie[] call Films::saveMovies")
          .rawObjects()
 
       val calls = stub.calls["saveMovies"]
@@ -193,8 +195,8 @@ class MutationQueryTest {
          }
       """
       )
-      stub.addResponse("updatePerson") { _, params ->
-         listOf(vyne.parseJson("Person", """{ "personId" : "updated-jimmy" } """))
+      stub.addResponse("updatePerson") { _, _ ->
+         listOf(vyne.tryParseJson("Person", """{ "personId" : "updated-jimmy" } """))
       }
       val result = vyne.query(
          """given { person:Person = { personId : "jimmy" } }
@@ -203,7 +205,7 @@ class MutationQueryTest {
       )
          .firstRawObject()
       result.shouldBe(mapOf("personId" to "updated-jimmy"))
-      val passedInput = stub.invocations["updatePerson"]!!.get(0)
+      val passedInput = stub.invocations["updatePerson"]!![0]
       passedInput.toRawObject().shouldBe(mapOf("personId" to "jimmy"))
    }
 
@@ -220,8 +222,8 @@ class MutationQueryTest {
          }
       """
       )
-      stub.addResponse("updatePerson") { _, params ->
-         listOf(vyne.parseJson("Person", """{ "personId" : "updated-jimmy" } """))
+      stub.addResponse("updatePerson") { _, _ ->
+         listOf(vyne.tryParseJson("Person", """{ "personId" : "updated-jimmy" } """))
       }
       assertThrows<UnresolvedTypeInQueryException> {
          vyne.query(
@@ -249,11 +251,11 @@ class MutationQueryTest {
          }
       """
          )
-         stub.addResponse("findPerson") { _, params ->
-            listOf(vyne.parseJson("Person", """{ "personId" : "jimmy", "anotherId" : "found-jimmy" } """))
+         stub.addResponse("findPerson") { _, _ ->
+            listOf(vyne.tryParseJson("Person", """{ "personId" : "jimmy", "anotherId" : "found-jimmy" } """))
          }
-         stub.addResponse("deletePerson") { _, params ->
-            listOf(vyne.parseJson("Person", """{ "personId" : "jimmy", "anotherId" : "deleted-jimmy" } """))
+         stub.addResponse("deletePerson") { _, _ ->
+            listOf(vyne.tryParseJson("Person", """{ "personId" : "jimmy", "anotherId" : "deleted-jimmy" } """))
          }
          val result = vyne.query(
             """given { person:PersonId =  "jimmy" }
@@ -289,9 +291,9 @@ class MutationQueryTest {
       """
       )
       val person = vyne.parseJson("Person", """{ "personId" : "jimmy", "anotherId" : "found-jimmy" } """)
-      stub.addResponse("findPerson") { _, _ -> listOf(person) }
-      stub.addResponse("deletePerson") { _, _ -> listOf(person) }
-      val result = vyne.query(
+      stub.addResponse("findPerson") { _, _ -> listOf(person.right()) }
+      stub.addResponse("deletePerson") { _, _ -> listOf(person.right()) }
+      vyne.query(
          """given { person:PersonId =  "jimmy", authKey:AuthKey = "foo" }
          find { Person }  // First find,
          call Peeps::deletePerson // then delete
@@ -361,9 +363,9 @@ class MutationQueryTest {
       """
       )
       val person = vyne.parseJson("Person", """{ "personId" : "jimmy", "anotherId" : "found-jimmy" } """)
-      stub.addResponse("findPerson") { _, _ -> listOf(person) }
-      stub.addResponse("deletePerson") { _, _ -> listOf(person) }
-      val result = vyne.query(
+      stub.addResponse("findPerson") { _, _ -> listOf(person.right()) }
+      stub.addResponse("deletePerson") { _, _ -> listOf(person.right()) }
+      vyne.query(
          """find { Person }  // First find,
          call Peeps::deletePerson // then delete
       """.trimMargin()
@@ -403,7 +405,7 @@ class MutationQueryTest {
       stub.addResponse("getRating", """{ "creditRating" : "AAA" }""")
       stub.addResponseFlow("quotes") { _,_, ->
          flowOf(
-            vyne.parseJson("StockQuote", """{ "ticker" : "AAPL", "price" : 234.56, "quantity" : 100000 }""")
+            vyne.tryParseJson("StockQuote", """{ "ticker" : "AAPL", "price" : 234.56, "quantity" : 100000 }""")
          )
       }
 

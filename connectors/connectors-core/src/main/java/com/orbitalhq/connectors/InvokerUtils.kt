@@ -1,7 +1,9 @@
 package com.orbitalhq.connectors
 
+import arrow.core.Either
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.Schema
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -31,17 +33,22 @@ fun List<MutableMap<String, Any>>.convertToTypedInstances(
    datasource: DataSource,
    resultTypeName: QualifiedName,
    dispatcher: CoroutineDispatcher = Dispatchers.IO
-): Flow<TypedInstance> {
+): Flow<Either<StreamErrorMessage, TypedInstance>> {
    val resultTaxiType = collectionTypeOrType(schema.taxi.type(resultTypeName))
    val typedInstances = this
       .map { columnMap ->
-         TypedInstance.from(
-            schema.type(resultTaxiType),
-            columnMap,
-            schema,
-            source = datasource,
-            evaluateAccessors = false
-         )
+         try {
+            Either.Right(
+               TypedInstance.from(
+                  schema.type(resultTaxiType),
+                  columnMap,
+                  schema,
+                  source = datasource,
+                  evaluateAccessors = false
+            ))
+         } catch (e: Exception) {
+            Either.Left(StreamErrorMessage.fromException(e, resultTypeName.fullyQualifiedName))
+         }
       }
    return typedInstances.asFlow().flowOn(dispatcher)
 }

@@ -1,11 +1,12 @@
 package com.orbitalhq.query
 
 import app.cash.turbine.test
+import arrow.core.Either
 import com.google.common.testing.FakeTicker
 import com.orbitalhq.Vyne
 import com.orbitalhq.expectTypedObject
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.tryParseJson
 import com.orbitalhq.query.caching.CacheAnnotation
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
 import com.orbitalhq.query.graph.operationInvocation.cache.OperationCacheFactory
@@ -181,7 +182,7 @@ class CachingIntegrationTest {
       """.trimIndent()
       )
       stub.addResponse("getAccount", """{ "balance" : 555.00 }""")
-      val transactionsFlow = MutableSharedFlow<TypedInstance>(replay = 1)
+      val transactionsFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>(replay = 1)
       stub.addResponseFlow("transactionEvents") { _, _ -> transactionsFlow }
       val results = vyne.query(
          """stream { TransactionEvent } as {
@@ -192,7 +193,7 @@ class CachingIntegrationTest {
       ).results
 
       results.test(10.seconds) {
-         transactionsFlow.emit(vyne.parseJson("TransactionEvent", """{ "accountId": 1 }"""))
+         transactionsFlow.emit(vyne.tryParseJson("TransactionEvent", """{ "accountId": 1 }"""))
          val message1 = expectTypedObject().toRawObject()
          message1.shouldBe(mapOf("id" to 1, "balance" to 555.00.toBigDecimal()))
          // Should have made a single call
@@ -201,8 +202,8 @@ class CachingIntegrationTest {
          // Move time forwards 10 seconds, TTL hasn't expired yet
          ticker.advance(Duration.ofSeconds(10))
 
-         transactionsFlow.emit(vyne.parseJson("TransactionEvent", """{ "accountId": 1 }"""))
-         val message2 = expectTypedObject()
+         transactionsFlow.emit(vyne.tryParseJson("TransactionEvent", """{ "accountId": 1 }"""))
+         expectTypedObject()
 
          // Results are still cached, so shouldn't have made any new calls
          stub.calls["getAccount"].shouldHaveSize(1)
@@ -210,8 +211,8 @@ class CachingIntegrationTest {
          // Move time forwards 40 seconds, (making 50 total) - TTL has now expired
          ticker.advance(Duration.ofSeconds(40))
 
-         transactionsFlow.emit(vyne.parseJson("TransactionEvent", """{ "accountId": 1 }"""))
-         val message3 = expectTypedObject()
+         transactionsFlow.emit(vyne.tryParseJson("TransactionEvent", """{ "accountId": 1 }"""))
+         expectTypedObject()
 
          // Results in cache have expired, so should have made a second call
          stub.calls["getAccount"].shouldHaveSize(2)
@@ -242,7 +243,7 @@ class CachingIntegrationTest {
       """.trimIndent()
       )
       stub.addResponse("getAccount", """{ "balance" : 555.00 }""")
-      val transactionsFlow = MutableSharedFlow<TypedInstance>(replay = 1)
+      val transactionsFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>(replay = 1)
       stub.addResponseFlow("transactionEvents") { _, _ -> transactionsFlow }
       val results = vyne.query(
          """stream { TransactionEvent } as {
@@ -253,7 +254,7 @@ class CachingIntegrationTest {
       ).results
 
       results.test(10.seconds) {
-         transactionsFlow.emit(vyne.parseJson("TransactionEvent", """{ "accountId": 1 }"""))
+         transactionsFlow.emit(vyne.tryParseJson("TransactionEvent", """{ "accountId": 1 }"""))
          val message1 = expectTypedObject().toRawObject()
          message1.shouldBe(mapOf("id" to 1, "balance" to 555.00.toBigDecimal()))
          // Should have made a single call
@@ -262,8 +263,8 @@ class CachingIntegrationTest {
          // Move time forwards 10 seconds, TTL hasn't expired yet
          ticker.advance(Duration.ofSeconds(10))
 
-         transactionsFlow.emit(vyne.parseJson("TransactionEvent", """{ "accountId": 1 }"""))
-         val message2 = expectTypedObject()
+         transactionsFlow.emit(vyne.tryParseJson("TransactionEvent", """{ "accountId": 1 }"""))
+         expectTypedObject()
 
          // Results are still cached, so shouldn't have made any new calls
          stub.calls["getAccount"].shouldHaveSize(1)
@@ -271,8 +272,8 @@ class CachingIntegrationTest {
          // Move time forwards 40 seconds, (making 50 total) - TTL has now expired
          ticker.advance(Duration.ofSeconds(40))
 
-         transactionsFlow.emit(vyne.parseJson("TransactionEvent", """{ "accountId": 1 }"""))
-         val message3 = expectTypedObject()
+         transactionsFlow.emit(vyne.tryParseJson("TransactionEvent", """{ "accountId": 1 }"""))
+         expectTypedObject()
 
          // Results in cache have expired, so should have made a second call
          stub.calls["getAccount"].shouldHaveSize(2)
@@ -303,7 +304,7 @@ class CachingIntegrationTest {
       """.trimIndent()
       )
       stub.addResponse("getAccount", """{ "balance" : 555.00 }""")
-      val transactionsFlow = MutableSharedFlow<TypedInstance>(replay = 1)
+      val transactionsFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>(replay = 1)
       stub.addResponseFlow("transactionEvents") { _, _ -> transactionsFlow }
       val results = vyne.query(
          """stream { TransactionEvent } as {
@@ -314,7 +315,7 @@ class CachingIntegrationTest {
       ).results
 
       results.test(10.seconds) {
-         transactionsFlow.emit(vyne.parseJson("TransactionEvent", """{ "accountId": 1 }"""))
+         transactionsFlow.emit(vyne.tryParseJson("TransactionEvent", """{ "accountId": 1 }"""))
          val message1 = expectTypedObject().toRawObject()
          message1.shouldBe(mapOf("id" to 1, "balance" to 555.00.toBigDecimal()))
          // Should have made a single call
@@ -323,8 +324,8 @@ class CachingIntegrationTest {
          // Move time forwards 10 seconds, TTL hasn't expired yet
          ticker.advance(Duration.ofSeconds(10))
 
-         transactionsFlow.emit(vyne.parseJson("TransactionEvent", """{ "accountId": 1 }"""))
-         val message2 = expectTypedObject()
+         transactionsFlow.emit(vyne.tryParseJson("TransactionEvent", """{ "accountId": 1 }"""))
+         expectTypedObject()
 
          // Results are still cached, so shouldn't have made any new calls
          stub.calls["getAccount"].shouldHaveSize(1)
@@ -332,8 +333,8 @@ class CachingIntegrationTest {
          // Move time forwards the max TTL, which will expire the item (as we're already 10 seconds in)
          ticker.advance(CacheAwareOperationInvocationDecorator.DEFAULT_CACHE_TTL)
 
-         transactionsFlow.emit(vyne.parseJson("TransactionEvent", """{ "accountId": 1 }"""))
-         val message3 = expectTypedObject()
+         transactionsFlow.emit(vyne.tryParseJson("TransactionEvent", """{ "accountId": 1 }"""))
+         expectTypedObject()
 
          // Results in cache have expired, so should have made a second call
          stub.calls["getAccount"].shouldHaveSize(2)

@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.jdbc
 
+import arrow.core.Either
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
 import com.orbitalhq.connectors.jdbc.drivers.databaseSupport
 import com.orbitalhq.connectors.jdbc.sql.ddl.TableGenerator
@@ -14,6 +15,7 @@ import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.SqlExchange
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.OperationInvocationException
@@ -75,7 +77,7 @@ class JdbcUpsertInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       verb: UpsertVerb?
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       require(verb != null)
       val schema = schemaProvider.schema
 
@@ -142,7 +144,7 @@ class JdbcUpsertInvoker(
                operationResult.asOperationReferenceDataSource()
             ).asFlow()
          } else {
-            inputAsList.map { DataSourceUpdater.update(it, operationResult.asOperationReferenceDataSource()) }
+            inputAsList.map { Either.Right(DataSourceUpdater.update(it, operationResult.asOperationReferenceDataSource())) }
                .asFlow()
          }
       } catch (e: Exception) {
@@ -172,13 +174,18 @@ class JdbcUpsertInvoker(
       type: Type,
       schema: Schema,
       dataSource: OperationResultReference
-   ): List<TypedInstance> {
+   ): List<Either<StreamErrorMessage, TypedInstance>> {
       require(source.size == persisted.size) { "Record count mismatch: Was passed ${source.size} records to write, but only ${persisted.size} were returned from the db write operation. Can't map results back to inputs." }
       return source.mapIndexed { index, typedInstance ->
 
          val sourceMap = (typedInstance as TypedObject).toRawObject() as Map<String, Any>
          val updated = persisted.get(index).intoMap()
-         TypedInstance.from(type, sourceMap + updated, schema, source = dataSource)
+         try {
+            Either.Right(TypedInstance.from(type, sourceMap + updated, schema, source = dataSource))
+         } catch (e: Exception) {
+            Either.Left(StreamErrorMessage.fromException(e, type.paramaterizedName))
+         }
+
       }
    }
 

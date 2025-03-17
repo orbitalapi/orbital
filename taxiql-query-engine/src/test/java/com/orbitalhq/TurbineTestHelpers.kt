@@ -1,10 +1,12 @@
 package com.orbitalhq
 
 import app.cash.turbine.ReceiveTurbine
-import com.winterbe.expekt.should
+import arrow.core.Either
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
+import com.orbitalhq.query.StreamErrorMessage
+import com.winterbe.expekt.should
 
 suspend inline fun <reified O> ReceiveTurbine<*>.expectAs(): O {
    return awaitItem() as O
@@ -12,6 +14,11 @@ suspend inline fun <reified O> ReceiveTurbine<*>.expectAs(): O {
 
 suspend inline fun ReceiveTurbine<*>.expectTypedObject(): TypedObject {
    return awaitItem() as TypedObject
+}
+
+suspend inline fun ReceiveTurbine<*>.expectTypedObjectFromEither(): TypedObject {
+   val either =  awaitItem() as Either<StreamErrorMessage, TypedInstance>
+   return either.getOrNull()!! as TypedObject
 }
 
 suspend inline fun ReceiveTurbine<*>.expectTypedInstance(): TypedInstance {
@@ -32,8 +39,9 @@ suspend inline fun ReceiveTurbine<*>.expectTypedObjects(count: Int): List<TypedO
 }
 
 suspend inline fun ReceiveTurbine<*>.expectRawMap(): Map<String, Any?> {
+   val item =  awaitItem()
    @Suppress("UNCHECKED_CAST")
-   return awaitItem() as Map<String, Any>
+   return item  as Map<String, Any>
 }
 
 suspend inline fun ReceiveTurbine<*>.expectListOfRawMap(): List<Map<String, Any?>> {

@@ -33,7 +33,8 @@ suspend fun QueryResult.typedInstances(): List<TypedInstance> {
 }
 
 suspend fun QueryResult.typedObjects(): List<TypedObject> {
-   return this.typedInstances() as List<TypedObject>
+   val typedInstances = this.typedInstances()
+   return typedInstances  as List<TypedObject>
 }
 
 suspend fun QueryResult.firstRawValue(): Any? {
@@ -41,7 +42,9 @@ suspend fun QueryResult.firstRawValue(): Any? {
 }
 
 suspend fun QueryResult.rawObjects(): List<Map<String, Any?>> {
-   return this.typedObjects().map { it.toRawObject() as Map<String, Any?> }
+   return this.typedObjects().map {
+      it.toRawObject() as Map<String, Any?>
+   }
 }
 
 suspend fun QueryResult.expectReturnsNull(): TypedNull {

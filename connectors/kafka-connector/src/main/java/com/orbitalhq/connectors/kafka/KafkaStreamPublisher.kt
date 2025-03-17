@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.kafka
 
+import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.cache.CacheBuilder
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
@@ -10,6 +11,7 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
@@ -55,7 +57,7 @@ class KafkaStreamPublisher(
       payload: TypedInstance,
       messageKey: TypedInstance?,
       schema: Schema
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val topic = kafkaOperation.topic
       val sender = cache.get(connectionName) {
          val (connectionConfiguration, senderOptions) = buildSenderOptions(connectionName)
@@ -84,7 +86,7 @@ class KafkaStreamPublisher(
       }
       val senderRecord = buildSenderRecord(payload, schema, topic, messageKey)
       sender.second.emitNext(senderRecord, RetryFailOnSerializeEmitHandler)
-      return flow { emit(payload) }
+      return flow { emit(Either.Right(payload)) }
    }
 
    private fun buildSenderRecord(

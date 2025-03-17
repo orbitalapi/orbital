@@ -260,7 +260,8 @@ data class QueryContext(
                emptySet(),
                clientQueryId, queryId,
                schema = schema,
-               responseType = responseType
+               responseType = responseType,
+               errors =  Flux.just(StreamQueryErrorEvent(queryId, StreamErrorMessage.fromException(e, expression.toString())))
             )
 
          }
@@ -278,7 +279,8 @@ data class QueryContext(
             emptySet(),
             clientQueryId, queryId,
             schema = schema,
-            responseType = responseType
+            responseType = responseType,
+            errors = Flux.empty()
          )
       } else {
          val firstResult = mappingResult.first()
@@ -569,7 +571,7 @@ fun <K, V> HashMultimap<K, V>.copy(): HashMultimap<K, V> {
  * I'm like...three wines deep, and three weeks late in shipping this f**ing release.
  * It'll do, ok?
  */
-class QueryContextEventBroker : QueryContextEventDispatcher {
+class QueryContextEventBroker(override val queryErrorPublisher: StreamErrorPublisher = StreamErrorPublisher()) : QueryContextEventDispatcher {
    private val handlers = CopyOnWriteArrayList<QueryContextEventHandler>()
 
    fun addHandler(handler: QueryContextEventHandler): QueryContextEventBroker {
@@ -612,6 +614,7 @@ interface CancelRequestHandler : QueryContextEventHandler {
 }
 
 object NoOpQueryContextEventDispatcher : QueryContextEventDispatcher {
+   private val errorPublisher = StreamErrorPublisher()
    override fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {
    }
 
@@ -620,6 +623,9 @@ object NoOpQueryContextEventDispatcher : QueryContextEventDispatcher {
 
    override fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String) {
    }
+
+   override val queryErrorPublisher: StreamErrorPublisher
+      get() = errorPublisher
 }
 
 interface RemoteCallOperationResultHandler : QueryContextEventHandler {

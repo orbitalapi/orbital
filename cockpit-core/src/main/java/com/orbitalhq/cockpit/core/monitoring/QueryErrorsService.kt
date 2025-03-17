@@ -1,7 +1,6 @@
 package com.orbitalhq.cockpit.core.monitoring
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.orbitalhq.connectors.StreamErrorPublisher
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.BadRequestException
@@ -20,7 +19,6 @@ import java.time.Duration
  */
 @RestController
 class QueryErrorsService(
-   val errorPublisher: StreamErrorPublisher,
    val activeQueryMonitor: ActiveQueryMonitor,
    val objectMapper: ObjectMapper,
    private val orbitalWebSocketConfiguration: OrbitalWebSocketConfiguration
@@ -46,13 +44,14 @@ class QueryErrorsService(
          .switchIfEmpty(Mono.error(BadRequestException("No query with clientQueryId of $clientQueryId found. Try again later")))
 
       return queryIdMono.flatMap { queryId ->
-         val outbound = errorPublisher.errors
-            .filter { event -> event.queryId == queryId }
-            .map { event ->
+         val outbound = activeQueryMonitor.queryErrorPublisherForQueryId(queryId!!)
+            ?.queryErrorPublisher
+            ?.errors
+            ?.map { event ->
                val json = objectMapper.writeValueAsString(event)
                session.textMessage(json)
-            }
-         orbitalWebSocketConfiguration.applyPingConfiguration(this, session, outbound)
+            } ?: Flux.empty()
+          orbitalWebSocketConfiguration.applyPingConfiguration(this, session, outbound)
       }
    }
 }

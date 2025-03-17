@@ -1,9 +1,11 @@
 package com.orbitalhq.connectors.aws.sqs
 
+import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.format.FormatRegistry
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.Schema
 import mu.KotlinLogging
 import reactor.core.publisher.Mono
@@ -23,7 +25,7 @@ class SqsPublisher(
       private val logger = KotlinLogging.logger {}
    }
 
-   fun sendMessage(instance: TypedInstance, schema: Schema): Mono<TypedInstance> {
+   fun sendMessage(instance: TypedInstance, schema: Schema): Mono<Either<StreamErrorMessage, TypedInstance>> {
 
       val (metadata, modelFormat) = formatRegistry.forType(instance.type)
       val message = if (modelFormat != null) {
@@ -32,7 +34,7 @@ class SqsPublisher(
             if (instance !is TypedNull) {
                logger.warn { "Model format ${modelFormat::class.simpleName} returned null when serializing instance, but instance was not null. Instance = ${writeAsJson(instance)}" }
             }
-            return Mono.just(TypedNull.create(instance.type))
+            return Mono.just(Either.Right(TypedNull.create(instance.type)))
          }
          require(serializedMessage is String) { "SQS only supports sending String messages, however format ${modelFormat::class.simpleName} produced a message of type ${serializedMessage::class.simpleName}"}
          serializedMessage
@@ -40,7 +42,7 @@ class SqsPublisher(
          writeAsJson(instance)
       }
       return sendMessage(message)
-         .map { instance }
+         .map { Either.Right(instance) }
 
    }
 

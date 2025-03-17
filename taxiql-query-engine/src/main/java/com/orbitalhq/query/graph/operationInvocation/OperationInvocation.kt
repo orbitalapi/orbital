@@ -1,5 +1,6 @@
 package com.orbitalhq.query.graph.operationInvocation
 
+import arrow.core.Either
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.FailedEvaluation
 import com.orbitalhq.models.FailedSearch
@@ -15,6 +16,7 @@ import com.orbitalhq.query.ProfilerOperation
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QuerySpecTypeNode
 import com.orbitalhq.query.SearchFailedException
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.graph.edges.EdgeEvaluator
 import com.orbitalhq.query.graph.edges.EvaluatableEdge
@@ -32,6 +34,8 @@ import com.orbitalhq.schemas.fqn
 import com.orbitalhq.utils.StrategyPerformanceProfiler
 import com.orbitalhq.utils.log
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import lang.taxi.types.AttributePath
 import mu.KotlinLogging
@@ -88,7 +92,16 @@ class DefaultOperationInvocationService(
          "OperationInvocationService.invoker.invoke",
          Duration.between(startTime, Instant.now())
       )
-      return result
+
+     return result.map { errorTypedInstance ->
+         when(errorTypedInstance) {
+            is Either.Left -> {
+               context.eventBroker.queryErrorPublisher.onError(context.queryId, errorTypedInstance.value)
+               null
+            }
+            is Either.Right -> errorTypedInstance.value
+         }
+      }.filterNotNull()
    }
 
    private suspend fun gatherParameters(
@@ -274,6 +287,7 @@ class OperationInvocationEvaluator(
          // Don't throw here, just report the failure
          val result = TypedNull.create(type = operation.returnType, source = dataSource)
          context.notifyOperationResult(edge, result, callArgs)
+         context.eventBroker.queryErrorPublisher.onError(context.queryId, StreamErrorMessage.fromException(exception, operation.returnType.paramaterizedName))
          logger.warn { "Operation ${operation.qualifiedName} (called with $callArgs) failed with exception ${exception.message}. " }
          return edge.failure(
             result,

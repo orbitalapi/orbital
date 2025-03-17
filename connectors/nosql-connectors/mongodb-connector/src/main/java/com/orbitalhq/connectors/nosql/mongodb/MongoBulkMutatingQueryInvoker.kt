@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
+import arrow.core.Either
 import com.mongodb.bulk.BulkWriteResult
 import com.mongodb.client.model.InsertOneModel
 import com.mongodb.client.model.UpdateOneModel
@@ -10,6 +11,7 @@ import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
@@ -49,7 +51,7 @@ class MongoBulkMutatingQueryInvoker(
       queryId: String,
       batchAttribute: MongoConnector.Annotations.BatchAttribute
 
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>>  {
       logger.debug { "Received item ${counter.incrementAndGet()} into bulk mutator" }
       require(operation.parameters.size == 1) { "Operations annotated with ${MongoConnector.Annotations.UpsertOperationAnnotationName} should accept exactly one type" }
       val inputType = operation.parameters.single().type.let { type -> type.collectionType ?: type }
@@ -112,7 +114,7 @@ class MongoBulkMutatingQueryInvoker(
 
       return batchWriteCache.emit(recordToWrite)
          .map { operationResult ->
-            DataSourceUpdater.update(recordToWrite, operationResult)
+            Either.Right(DataSourceUpdater.update(recordToWrite, operationResult))
          }
          .asFlow()
          .flowOn(Dispatchers.IO)

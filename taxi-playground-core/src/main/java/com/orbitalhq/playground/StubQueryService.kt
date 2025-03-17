@@ -19,6 +19,7 @@ import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.right
 import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.QueryEventConsumer
 import com.orbitalhq.query.QueryProfileData
@@ -274,9 +275,9 @@ class StubQueryService(
             formatSpecs = formatSpecs
          )
          if (parsedResponse is TypedCollection) {
-            parsedResponse
+            parsedResponse.map { it.right() }
          } else {
-            listOf(parsedResponse)
+            listOf(parsedResponse.right())
          }
       }
    }
@@ -296,7 +297,7 @@ class StubQueryService(
       stub.addResponseFlow(operationStub.operationName) { _, _ ->
          flow {
             result.forEach {
-               emit(it)
+               emit(it.right())
                if (addDelayToStreams) {
                   delay(streamDelay.toMillis())
                }

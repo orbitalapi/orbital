@@ -74,6 +74,8 @@ class ActiveQueryMonitor(private val hazelcast: HazelcastInstance):EntryUpdatedL
     fun queryIdFromClientId(clientQueryId: String): String? {
         return clientQueryIdToQueryIdMap[clientQueryId]
     }
+
+    fun queryErrorPublisherForQueryId(queryId: String) = queryBrokers[queryId]
    /**
     * Indicates if a query exists with the queryId anywhere in the cluster (not specifically on this node)
     */

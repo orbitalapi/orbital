@@ -1,9 +1,12 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
+import arrow.core.Either
+import arrow.core.right
 import com.orbitalhq.connectors.config.mongodb.MongoConnection
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.nosql.mongodb.registry.InMemoryMongoConnectionRegistry
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.testVyne
@@ -132,7 +135,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
          )
       }
 
-      val pricesFlow = MutableSharedFlow<TypedInstance>(replay = 10)
+      val pricesFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>(replay = 10)
       stub.addResponseFlow("prices") { _, _ -> pricesFlow }
 
       val resultFlow = vyne.query(
@@ -156,7 +159,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
          mapOf("symbol" to "HZC", "price" to 3.112.toBigDecimal()),
       ).forEach {
          val typedInstance = TypedInstance.from(vyne.schema.type("StockPrice"), it, vyne.schema)
-         pricesFlow.emit(typedInstance)
+         pricesFlow.emit(typedInstance.right())
          println("Emitted item")
       }
 
@@ -204,7 +207,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
       }
 
       val recordsToEmit = 50_000
-      val pricesFlow = MutableSharedFlow<TypedInstance>(replay = recordsToEmit)
+      val pricesFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>(replay = recordsToEmit)
       stub.addResponseFlow("prices") { _, _ -> pricesFlow }
 
       System.gc() // Request garbage collection
@@ -235,7 +238,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
       (0..recordsToEmit).mapIndexed { index, i ->
          val item = mapOf("symbol" to "AAPL", "price" to Random.nextDouble(1.000005, 5.500000).toBigDecimal())
          val typedInstance = TypedInstance.from(vyne.schema.type("StockPrice"), item, vyne.schema)
-         pricesFlow.emit(typedInstance)
+         pricesFlow.emit(typedInstance.right())
       }
 
       // Make sure this is less than the batch write timeout, to assert that

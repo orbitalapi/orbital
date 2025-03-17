@@ -1,5 +1,6 @@
 package com.orbitalhq.connectors.hazelcast.invoker
 
+import arrow.core.Either
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.map.IMap
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
@@ -10,10 +11,12 @@ import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
+import com.orbitalhq.models.json.right
 import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
@@ -62,7 +65,7 @@ class HazelcastMutatingInvoker {
       parameters: List<Pair<Parameter, TypedInstance>>,
       schema: Schema,
       reportResult: (String, String, Int, CacheExchange.CacheOperationVerb) -> DataSource
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val (_, valueToSave) = parameters[0]
       val mapName = getMapName(valueToSave.type)
       require(valueToSave is TypedObject) { "Only TypedObjects are supported - Need to add support for ${valueToSave::class.simpleName}" }
@@ -78,7 +81,7 @@ class HazelcastMutatingInvoker {
       map[key] = serializedValue
       val dataSource = reportResult("UPDATE * where key = $key", mapName, 1, CacheExchange.CacheOperationVerb.UPDATE)
       val updatedValue = DataSourceUpdater.update(valueToSave, dataSource)
-      return flowOf(updatedValue)
+      return flowOf(updatedValue.right())
    }
 
    private fun doDelete(
@@ -87,7 +90,7 @@ class HazelcastMutatingInvoker {
       schema: Schema,
       operation: RemoteOperation,
       reportAndGenerateDataSource: (String, String, Int, CacheExchange.CacheOperationVerb) -> DataSource
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val deleteAnnotation = operation.firstMetadata(HazelcastTaxi.Annotations.DeleteOperation.parameterizedName)
       val mapName = deleteAnnotation.params["mapName"] as String?
          ?: error("Operation ${operation.qualifiedName.parameterizedName} does not declare a mapName")
@@ -108,7 +111,7 @@ class HazelcastMutatingInvoker {
       reportAndGenerateDataSource: (String, String, Int, CacheExchange.CacheOperationVerb) -> DataSource,
       schema: Schema,
       operation: RemoteOperation
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
 
       val keyValue = deleteKey.toRawObject() ?: error("Cannot delete from map $mapName as provided key was null")
       val removedValue = map.remove(keyValue)
@@ -119,7 +122,7 @@ class HazelcastMutatingInvoker {
          recordCount,
          CacheExchange.CacheOperationVerb.DELETE,
       )
-      val result = TypedInstance.from(operation.returnType, removedValue, schema, source = dataSource)
+      val result = TypedInstance.tryFrom(operation.returnType, removedValue, schema, source = dataSource)
       return flowOf(result)
    }
 
@@ -128,14 +131,14 @@ class HazelcastMutatingInvoker {
       map: IMap<Any, Any>,
       reportAndGenerateDataSource: (String, String, Int, CacheExchange.CacheOperationVerb) -> DataSource,
       schema: Schema
-   ): Flow<TypedNull> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       logger.info { "Performing deleteAll on map $mapName" }
       val sizeBeforeDelete = map.size
       map.clear()
       val dataSource =
          reportAndGenerateDataSource("DELETE *", mapName, sizeBeforeDelete, CacheExchange.CacheOperationVerb.DELETE)
       // Not really sure on what we should be returning here.
-      return flowOf(TypedNull.create(schema.type(PrimitiveType.VOID), source = dataSource))
+      return flowOf(TypedNull.create(schema.type(PrimitiveType.VOID), source = dataSource).right())
    }
 
    fun invoke(
@@ -149,7 +152,7 @@ class HazelcastMutatingInvoker {
       queryId: String,
       queryOptions: QueryOptions,
       schema: Schema
-   ): Flow<TypedInstance> {
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val startTime = Instant.now()
       fun reportResult(
          sql: String,
