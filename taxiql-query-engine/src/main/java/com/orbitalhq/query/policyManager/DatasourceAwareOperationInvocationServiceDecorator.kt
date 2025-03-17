@@ -8,13 +8,19 @@ import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.slf4j.MDCContext
 import kotlinx.coroutines.withContext
 
 class DatasourceAwareOperationInvocationServiceDecorator(private val operationService: OperationInvocationService): OperationInvocationService {
-   override suspend fun invokeOperation(service: Service, operation: RemoteOperation, preferredParams: Set<TypedInstance>, context: QueryContext, providedParamValues: List<Pair<Parameter, TypedInstance>>): Flow<TypedInstance> = withContext(
-      Dispatchers.Default) {
-      val result = operationService.invokeOperation(service, operation, preferredParams, context, providedParamValues)
-      context.onServiceInvoked(service)
-      result
+   override suspend fun invokeOperation(service: Service,
+                                        operation: RemoteOperation,
+                                        preferredParams: Set<TypedInstance>,
+                                        context: QueryContext,
+                                        providedParamValues: List<Pair<Parameter, TypedInstance>>): Flow<TypedInstance> {
+       return withContext(Dispatchers.Default + MDCContext()) {
+           val result = operationService.invokeOperation(service, operation, preferredParams, context, providedParamValues)
+           context.onServiceInvoked(service)
+           result
+       }
    }
 }

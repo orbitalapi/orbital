@@ -5,12 +5,15 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.orbitalhq.AuthClaimType
 import com.orbitalhq.FactSetId
 import com.orbitalhq.FactSets
+import com.orbitalhq.logging.MDCContextKeys.ClientQueryId
+import com.orbitalhq.logging.MDCContextKeys.QueryId
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.auth.EmptyAuthenticationToken
 import com.orbitalhq.auth.authentication.VyneUser
 import com.orbitalhq.auth.authentication.toVyneUser
 import com.orbitalhq.auth.getAuthClaimsAsFacts
 import com.orbitalhq.errors.ErrorType
+import com.orbitalhq.logging.MDCContextKeys.QueryName
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.Fact
@@ -46,10 +49,12 @@ import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.slf4j.MDCContext
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
 import org.reactivestreams.Publisher
+import org.slf4j.MDC
 import org.springframework.core.io.buffer.DataBufferUtils
 import org.springframework.core.io.buffer.PooledDataBuffer
 import org.springframework.http.HttpHeaders
@@ -345,6 +350,7 @@ class QueryService(
       }
       val user = auth?.toVyneUser()
       val queryId = UUID.randomUUID().toString()
+      MDC.put(QueryId, queryId)
       val (queryResponse, queryOptions) = vyneQLQuery(query, user, clientQueryId, queryId)
       return when (queryResponse) {
          is FailedSearchResponse -> flowOf(queryResponse)
@@ -417,7 +423,8 @@ class QueryService(
          .subscribe { (auth, message) ->
             val websocketQuery = objectMapper.readValue<WebsocketQuery>(message.payloadAsText)
             clientQueryId = websocketQuery.clientQueryId
-            queryScope.launch {
+            MDC.put(ClientQueryId, clientQueryId)
+            queryScope.launch(MDCContext(MDC.getCopyOfContextMap())) {
                try {
                   val nullableAuth = EmptyAuthenticationToken.nullIfEmpty(auth) as Authentication?
                   getVyneQlQueryStreamingResponse(
@@ -493,8 +500,9 @@ class QueryService(
       logger.info { "[$queryId] $query" }
       val schema = schemaProvider.schema
       val (taxiQlQuery, queryOptions, querySchema) = schema.parseQuery(query)
+      MDC.put(QueryName, taxiQlQuery.name.parameterizedName)
       return monitored(query = taxiQlQuery, clientQueryId = clientQueryId, queryId = queryId, vyneUser = vyneUser) {
-         logger.info { "[$queryId] using cache ${queryOptions.cachingStrategy}" }
+         logger.info { "using cache ${queryOptions.cachingStrategy}" }
 
          // TODO : MP - 2-Aug-24
          // Need to talk to Serhat about this.

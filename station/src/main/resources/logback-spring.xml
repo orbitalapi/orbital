@@ -1,49 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-   <springProperty scope="context" name="logstashHostname" source="logstash.hostname" defaultValue="logstash"/>
-   <springProperty scope="context" name="logstashPort" source="logstash.port" defaultValue="5044"/>
-   <springProperty scope="context" name="appName" source="spring.application.name"/>
+    <!--
+      vyne.logging.format can have the following values:
 
-   <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-      <!-- encoders are assigned the type
-           ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
-      <encoder>
-         <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger - %msg%n</pattern>
-      </encoder>
-   </appender>
+      text
+      json
 
-   <springProfile name="logstash">
-      <appender name="stash" class="net.logstash.logback.appender.LogstashTcpSocketAppender">
-         <destination>${logstashHostname}:${logstashPort}</destination>
+      When it is not specified its value is set to text
 
-         <!-- encoder is required -->
-         <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <customFields>{"application":"${appName}"}</customFields>
-         </encoder>
-      </appender>
+    -->
+    <springProperty scope="context" name="vyne.logging.format" source="vyne.logging.format" defaultValue="text"/>
 
-   </springProfile>
+    <if condition='property("vyne.logging.format").equals("json")'>
+        <then>
+            <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+                <encoder class="ch.qos.logback.classic.encoder.JsonEncoder">
+                    <withFormattedMessage>true</withFormattedMessage>
+                    <withMessage>false</withMessage>
+                    <withArguments>false</withArguments>
+                    <withProperties>false</withProperties>
+                    <withContext>false</withContext>
+                    <withSequenceNumber>false</withSequenceNumber>
+                    <withNanoseconds>false</withNanoseconds>
+                </encoder>
+            </appender>
+        </then>
+        <else>
+            <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+                <encoder>
+                    <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger - [%X{ClientQueryId} %X{QueryId} %X{QueryName}] - %msg%n</pattern>
+                </encoder>
+            </appender>
+        </else>
+    </if>
 
-   <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-      <file>logs/vyne.log</file>
-      <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-         <!-- daily rollover -->
-         <fileNamePattern>logs/vyne.%d{yyyy-MM-dd}_%i.log</fileNamePattern>
-         <!-- each file should be at most 100MB, keep 30 days worth of history, but at most 5GB -->
-         <maxFileSize>100MB</maxFileSize>
-         <maxHistory>10</maxHistory>
-         <totalSizeCap>1GB</totalSizeCap>
-      </rollingPolicy>
-      <encoder>
-         <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %highlight(%-5level) %logger - %msg%n</pattern>
-      </encoder>
-   </appender>
-
-   <root level="INFO">
-      <appender-ref ref="STDOUT"/>
-      <!--      <springProfile name="logstash">-->
-      <!--         <appender-ref ref="stash" />-->
-      <!--      </springProfile>-->
-      <appender-ref ref="FILE"></appender-ref>
-   </root>
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+    </root>
 </configuration>

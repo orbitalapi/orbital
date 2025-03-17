@@ -31,6 +31,7 @@ import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.slf4j.MDCContext
 import lang.taxi.types.Arrays
 import mu.KotlinLogging
 import java.time.Instant
@@ -56,7 +57,7 @@ class LocalProjectionProvider : ProjectionProvider {
          ).asCoroutineDispatcher()
    }
 
-   private val projectingScope = CoroutineScope(projectingDispatcher)
+   private val projectingScope = CoroutineScope(projectingDispatcher + MDCContext())
 
    /**
     * processes the given source
