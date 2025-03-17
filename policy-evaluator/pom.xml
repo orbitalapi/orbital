@@ -71,7 +71,7 @@
       <dependency>
          <groupId>org.jetbrains.kotlin</groupId>
          <artifactId>kotlin-test-junit5</artifactId>
-         <version>1.9.23</version>
+         <version>${kotlin.version}</version>
          <scope>test</scope>
       </dependency>
       <dependency>
@@ -83,7 +83,7 @@
       <dependency>
          <groupId>org.jetbrains.kotlin</groupId>
          <artifactId>kotlin-stdlib</artifactId>
-         <version>1.9.23</version>
+         <version>${kotlin.version}</version>
       </dependency>
    </dependencies>
 

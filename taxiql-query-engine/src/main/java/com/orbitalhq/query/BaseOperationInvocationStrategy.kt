@@ -164,7 +164,7 @@ abstract class BaseOperationInvocationStrategy(
    ): Flow<TypedInstance> {
       val (service, _) = context.schema.remoteOperation(operation.qualifiedName)
       // Adding logging as seeing too many http calls.
-      log().info("[${context.queryId}] As part of search for ${target.joinToString { it.description }} operation ${operation.qualifiedName} will be invoked.")
+      log().info("As part of search for ${target.joinToString { it.description }} operation ${operation.qualifiedName} will be invoked.")
 
       return invocationService.invokeOperation(
          service,

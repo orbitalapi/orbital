@@ -1,5 +1,7 @@
 package io.orbital.station
 
+import ch.qos.logback.classic.LoggerContext
+import ch.qos.logback.core.util.StatusPrinter
 import com.orbitalhq.cockpit.core.CustomSettings
 import com.orbitalhq.cockpit.core.DatabaseConfig
 import com.orbitalhq.cockpit.core.FeatureTogglesConfig
@@ -8,6 +10,8 @@ import com.orbitalhq.cockpit.core.security.VyneUserConfig
 import com.orbitalhq.copilot.CopilotSpringModule
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.licensing.LicenseConfig
+import com.orbitalhq.logging.MDCContextKeys.ClientQueryId
+import com.orbitalhq.logging.MDCContextKeys.QueryId
 import com.orbitalhq.plugins.PluginLoader
 import com.orbitalhq.plugins.PluginLoaderInitializer
 import com.orbitalhq.schemaServer.core.VersionedSourceLoader
@@ -22,8 +26,11 @@ import com.orbitalhq.spring.http.websocket.WebSocketPingConfig
 import com.orbitalhq.spring.metrics.MicrometerMetricsReporter
 import com.orbitalhq.spring.projection.ApplicationContextProvider
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
+import io.micrometer.context.ContextRegistry
 import io.micrometer.core.instrument.MeterRegistry
 import mu.KotlinLogging
+import org.slf4j.LoggerFactory
+import org.slf4j.MDC
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.Banner
 import org.springframework.boot.SpringApplication
@@ -33,6 +40,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.boot.info.BuildProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
+import reactor.core.publisher.Hooks
 import java.nio.file.Paths
 
 @SpringBootApplication(
@@ -68,6 +76,27 @@ class OrbitalStationApp {
    companion object {
       @JvmStatic
       fun main(args: Array<String>) {
+         /**
+          * Configuration to pass queryId and ClientQueryId MDC variables across reactor therads.
+          * see https://spring.io/blog/2023/03/30/context-propagation-with-project-reactor-3-unified-bridging-between-reactive
+          * for more information.
+          */
+         Hooks.enableAutomaticContextPropagation()
+
+         ContextRegistry.getInstance()
+            .registerThreadLocalAccessor(ClientQueryId,
+               { MDC.get(ClientQueryId) },
+               { value -> MDC.put(ClientQueryId, value) },
+               { MDC.remove(ClientQueryId) })
+
+         ContextRegistry.getInstance()
+            .registerThreadLocalAccessor(
+               QueryId,
+               { MDC.get(QueryId) },
+               { value -> MDC.put(QueryId, value) },
+               { MDC.remove(QueryId) })
+
+
          // Before starting spring, load any plugins so that scanning is effective
          val pluginLoader: PluginLoader = loadPlugins(args)
 
@@ -105,6 +134,8 @@ class OrbitalStationApp {
 
    @Autowired
    fun logInfo(@Autowired(required = false) buildInfo: BuildProperties? = null) {
+      val lc: LoggerContext = LoggerFactory.getILoggerFactory() as LoggerContext
+      StatusPrinter.print(lc)
       val baseVersion = buildInfo?.get("baseVersion")
       val buildNumber = buildInfo?.get("buildNumber")
       val version = if (!baseVersion.isNullOrEmpty() && buildNumber != "0" && buildInfo.version.contains("SNAPSHOT")) {

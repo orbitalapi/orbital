@@ -1,5 +1,6 @@
 package com.orbitalhq.query.connectors
 
+import com.orbitalhq.logging.MDCContextKeys.QueryId
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.caching.CacheAnnotation
@@ -20,10 +21,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.slf4j.MDCContext
 import lang.taxi.services.OperationScope
 import lang.taxi.types.EnumMember
 import lang.taxi.types.EnumValue
 import mu.KotlinLogging
+import org.slf4j.MDC
 import reactor.core.publisher.Flux
 import java.time.Duration
 
@@ -68,6 +72,7 @@ class CacheAwareOperationInvocationDecorator(
       queryId: String,
       queryOptions: QueryOptions
    ): Flow<TypedInstance> {
+      MDC.put(QueryId, queryId)
       /**
        * You can turn off caching for all operations, by directly returning here as:
        * return invoker.invoke(service, operation, parameters, eventDispatcher, queryId, queryOptions)
@@ -253,9 +258,10 @@ class DefaultCachingOperatorInvoker(
 //      val context = currentCoroutineContext()
 
       return Flux.create<TypedInstance> { sink ->
+         MDC.put(QueryId, queryId)
          // This isn't really blocking anything. We just didn't understand how suspend / flux functions
          // worked when we wrote the underlying interface.
-         operationScope.launch {
+         operationScope.launch(MDCContext()) {
             try {
                invoker.invoke(service, operation, parameters, eventDispatcher, queryId, queryOptions)
                   .asFlux()

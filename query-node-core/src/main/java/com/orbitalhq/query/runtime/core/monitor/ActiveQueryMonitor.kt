@@ -5,6 +5,7 @@ import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.map.IMap
 import com.hazelcast.map.listener.EntryAddedListener
 import com.hazelcast.map.listener.EntryUpdatedListener
+import com.orbitalhq.logging.MDCContextKeys
 import com.orbitalhq.query.EstimatedRecordCountUpdateHandler
 import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.QueryContextEventHandler
@@ -19,6 +20,7 @@ import lang.taxi.query.QueryMode
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
+import org.slf4j.MDC
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
@@ -29,7 +31,7 @@ class ActiveQueryMonitor(private val hazelcast: HazelcastInstance):EntryUpdatedL
    private val queryMetadataSink = MutableSharedFlow<RunningQueryStatus>()
    private val queryMetadataFlow = queryMetadataSink.asSharedFlow()
    private val runningQueryCache:IMap<String,RunningQueryStatus> = hazelcast.getMap("queryStatus")
-   private val cancellationEventTopic = hazelcast.getTopic<String>("cancellationEvents")
+   private val cancellationEventTopic = hazelcast.getTopic<QueryCancellationMessage>("cancellationEvents")
 
    //Map of clientQueryId to actual queryId - allows client to specify handle
    private val queryIdToClientQueryIdMap:IMap<String,String> = hazelcast.getMap("queryIdToClientQueryId")
@@ -37,7 +39,10 @@ class ActiveQueryMonitor(private val hazelcast: HazelcastInstance):EntryUpdatedL
 
    init {
        cancellationEventTopic.addMessageListener { message ->
-          queryBrokers.computeIfPresent(message.messageObject) { id, broker ->
+          queryBrokers.computeIfPresent(message.messageObject.queryId) { id, broker ->
+              // This is a HZ callback, so re-populate MDC with query Id.
+              MDC.put(MDCContextKeys.QueryId, id)
+              MDC.put(MDCContextKeys.ClientQueryId, message.messageObject.queryClientId)
              broker.requestCancel()
              logger.info { "Requested cancellation of query $id with query broker" }
              broker
@@ -55,9 +60,11 @@ class ActiveQueryMonitor(private val hazelcast: HazelcastInstance):EntryUpdatedL
    }
 
   fun cancelQuery(queryId: String):Boolean {
-     return if (queryIdExists(queryId)) {
-        logger.info { "Dispatching cancellation request of query $queryId to topic" }
-        cancellationEventTopic.publish(queryId)
+      val clientQueryId = queryIdExists(queryId)
+     return if (clientQueryId != null) {
+         MDC.put(MDCContextKeys.QueryId, queryId)
+         logger.info { "Dispatching cancellation request of query $queryId to topic" }
+        cancellationEventTopic.publish(QueryCancellationMessage(queryId = queryId, queryClientId = clientQueryId))
         true
      } else {
         false
@@ -70,8 +77,8 @@ class ActiveQueryMonitor(private val hazelcast: HazelcastInstance):EntryUpdatedL
    /**
     * Indicates if a query exists with the queryId anywhere in the cluster (not specifically on this node)
     */
-   private fun queryIdExists(queryId:String): Boolean {
-      return queryIdToClientQueryIdMap.containsKey(queryId)
+   private fun queryIdExists(queryId:String): String? {
+      return queryIdToClientQueryIdMap[queryId]
    }
    private fun clientQueryIdExists(clientQueryId:String): Boolean {
       return clientQueryIdToQueryIdMap.containsKey(clientQueryId)
@@ -79,7 +86,9 @@ class ActiveQueryMonitor(private val hazelcast: HazelcastInstance):EntryUpdatedL
 
    fun cancelQueryByClientQueryId(clientQueryId: String): Boolean {
       return if (clientQueryIdExists(clientQueryId)) {
+          MDC.put(MDCContextKeys.ClientQueryId, clientQueryId)
          val queryId = clientQueryIdToQueryIdMap[clientQueryId]!!
+          MDC.put(MDCContextKeys.QueryId, queryId)
          cancelQuery(queryId)
       } else {
          false
@@ -208,3 +217,4 @@ data class RunningQueryStatus(
    val queryMode: QueryMode
 ) : java.io.Serializable
 
+data class QueryCancellationMessage(val queryId: String, val queryClientId: String): java.io.Serializable

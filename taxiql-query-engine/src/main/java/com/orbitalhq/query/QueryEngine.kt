@@ -56,6 +56,7 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.isActive
 import lang.taxi.mutations.Mutation
 import mu.KotlinLogging
+import org.slf4j.MDC
 import java.time.Duration
 import java.time.Instant
 
@@ -680,7 +681,10 @@ class StatefulQueryEngine(
       // "Unable to perform this search" (flow is null), and "Performed the search (but might not produce results)" (flow present)
       var strategyProvidedFlow = false
       val failedAttempts = mutableListOf<DataSource>()
+      val contextMap = MDC.getCopyOfContextMap()
       val resultsFlow: Flow<TypedInstance> = channelFlow {
+         // re-populate the QueryId for the channel flow collection.
+         MDC.setContextMap(contextMap)
          if (!isActive) {
             logger.warn { "Query ${context.queryId} has been cancelled - exiting" }
          }
@@ -793,6 +797,7 @@ class StatefulQueryEngine(
          }
 
       }.catch { exception ->
+         MDC.setContextMap(contextMap)
          if (exception !is CancellationException) {
             metricsReporter.failed(Duration.between(queryStartTime, Instant.now()), metricsTags)
             throw exception

@@ -104,4 +104,5 @@ logging:
 
       # Unfortunately, this is really really noisy when we try to test
       # kafka connections, that have failed
+   config: classpath:logback-spring.xml
 #      org.apache.kafka.clients.NetworkClient: ERROR
