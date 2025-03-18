@@ -19,6 +19,8 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedInstance.Companion.EXPIRY_METADATA
 import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.QueryContext
+import com.orbitalhq.query.QueryContextEventBroker
+import com.orbitalhq.query.RemoteCallOperationResultHandler
 import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
@@ -52,7 +54,6 @@ import java.math.BigDecimal
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Consumer
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
 import kotlin.time.ExperimentalTime
 
 private val logger = KotlinLogging.logger {}
@@ -1136,7 +1137,7 @@ namespace vyne {
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
             .setBody("""{}""")
-            .setResponseCode(501)
+            .setResponseCode(503)
 
       }
       server.prepareResponse { response ->
@@ -1181,7 +1182,7 @@ namespace vyne {
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
             .setBody("""{}""")
-            .setResponseCode(501)
+            .setResponseCode(503)
 
       }
       server.prepareResponse { response ->
@@ -1226,7 +1227,7 @@ namespace vyne {
       server.prepareResponse { response ->
          response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
             .setBody("""[ { "name" : "Jimmy" }]""")
-            .setResponseCode(501)
+            .setResponseCode(503)
 
       }
       server.prepareResponse { response ->
@@ -1241,15 +1242,89 @@ namespace vyne {
             .setResponseCode(502)
 
       }
-      assertFailsWith<OperationInvocationException> {
-         vyne.query(
-            """
+
+      val remoteCalls = object: RemoteCallOperationResultHandler {
+          val operationResults = mutableListOf<OperationResult>()
+          override fun recordResult(operation: OperationResult, queryId: String) {
+              operationResults.add(operation)
+          }
+      }
+
+       val queryEventBroker = QueryContextEventBroker()
+       queryEventBroker.addHandler(remoteCalls)
+
+       var queryException: Exception? = null
+       val queryResult = vyne.query(
+           vyneQlQuery =  """
          find { Person[] }
-      """.trimMargin()
-         )
-            .rawObjects()
-      }
+      """.trimMargin(),
+           eventBroker = queryEventBroker
+       )
+
+       try {
+           queryResult.rawObjects()
+       } catch (e: Exception) {
+           queryException = e
+       }
+
+       queryException.should.be.instanceof(OperationInvocationException::class.java)
+       remoteCalls.operationResults.size.should.equal(3)
+       val resultCodes =  remoteCalls.operationResults.map { it.remoteCall.resultCode }
+       resultCodes.count { it == 502 }.should.equal(2)
+       resultCodes.count { it == 503 }.should.equal(1)
    }
+
+    @Test
+    fun `will not retry if the received error does not match retry codes`(): Unit = runBlocking {
+        val vyne = testVyne(
+            """
+         type ApiKey inherits String
+         model Person {
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people?apiKey={apiKey}")
+            @HttpRetry(responseCode = [502, 503], fixedRetryPolicy = @HttpFixedRetryPolicy(maxRetries = 2, retryDelay = 1))
+            operation listPeople(apiKey:ApiKey):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+        )
+
+        server.prepareResponse { response ->
+            response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+                .setBody("""{}""")
+                // We should not retry as the server returns 501.
+                .setResponseCode(501)
+
+        }
+
+        val remoteCalls = object: RemoteCallOperationResultHandler {
+            val operationResults = mutableListOf<OperationResult>()
+            override fun recordResult(operation: OperationResult, queryId: String) {
+                operationResults.add(operation)
+            }
+        }
+
+        val queryEventBroker = QueryContextEventBroker()
+        queryEventBroker.addHandler(remoteCalls)
+
+        val queryResults = vyne.query(vyneQlQuery = """given { key : ApiKey = "hello" } find { Person[] }""",
+            eventBroker = queryEventBroker)
+
+        var queryException: Exception? = null
+        try {
+            queryResults.rawObjects()
+        } catch (e: Exception) {
+            queryException = e
+        }
+        queryException.should.be.instanceof(OperationInvocationException::class.java)
+        remoteCalls.operationResults.first().remoteCall.resultCode.should.equal(501)
+        expectRequestCount(1)
+        expectRequest { request ->
+            assertEquals("/people?apiKey=hello", request.path)
+            assertEquals(HttpMethod.GET.name(), request.method)
+        }
+    }
 
    @Test
    fun `can use HttpIgnoreErrors to return result from responses with Http error status`(): Unit = runBlocking {
