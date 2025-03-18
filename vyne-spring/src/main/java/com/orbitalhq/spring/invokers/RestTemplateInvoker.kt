@@ -213,17 +213,21 @@ class RestTemplateInvoker(
                if (httpIgnoreErrorSpec == null || !httpIgnoreErrorSpec.match(clientResponse.statusCode().value())) {
                   return@flatMapMany clientResponse.bodyToMono<String>()
                      .switchIfEmpty(Mono.just(""))
-                     .map { responseBody ->
+                     .handle { responseBody, sink ->
                         val remoteCall = remoteCall(responseBody = responseBody, failed = true)
-                        eventDispatcher.reportRemoteOperationInvoked(
-                           OperationResult.from(parameters, remoteCall),
-                           queryId
-                        )
-                        throw OperationInvocationException(
-                           "http error ${clientResponse.statusCode()} from url $expandedUri - $responseBody",
-                           clientResponse.statusCode().value(),
-                           remoteCall,
-                           parameters
+                        if (retrySpec == null) {
+                           eventDispatcher.reportRemoteOperationInvoked(
+                              OperationResult.from(parameters, remoteCall),
+                              queryId
+                           )
+                        }
+                        sink.error(
+                           OperationInvocationException(
+                              "http error ${clientResponse.statusCode()} from url $expandedUri - $responseBody",
+                              clientResponse.statusCode().value(),
+                              remoteCall,
+                              parameters
+                           )
                         )
                      }
                }
@@ -273,7 +277,23 @@ class RestTemplateInvoker(
 
       return if (retrySpec != null) {
          results
-            .retryWhen(retrySpec.retrySpec)
+            .retryWhen(retrySpec.retrySpec
+               .filter { error ->  error is RestRetryException}
+               .doAfterRetry {
+               mapError(
+                  it.failure(),
+                  remoteCallId,
+                  service,
+                  operation,
+                  httpEntity,
+                  httpMethod,
+                  expandedUri,
+                  eventDispatcher,
+                  absoluteUrl,
+                  queryId,
+                  parameters)
+
+            })
             .onErrorMap { error -> mapError(
                error,
                remoteCallId,
@@ -304,6 +324,12 @@ class RestTemplateInvoker(
                         queryId: String,
                         parameters: List<Pair<Parameter, TypedInstance>>
    ): Throwable {
+      val httpStatus = when  {
+         error is RestRetryException -> error.httpStatus
+         error.cause is RestRetryException -> (error.cause as RestRetryException).httpStatus
+         error is OperationInvocationException -> error.httpStatus
+         else -> -1
+      }
       val remoteCall = RemoteCall(
          remoteCallId = remoteCallId,
          responseId = UUID.randomUUID().toString(),
@@ -313,7 +339,7 @@ class RestTemplateInvoker(
          responseTypeName = operation.returnType.name,
          method = httpMethod.name(),
          requestBody = httpEntity.body,
-         resultCode = -1,
+         resultCode = httpStatus,
          durationMs = 0,
          response = error.message,
          timestamp = Instant.now(),
@@ -323,7 +349,7 @@ class RestTemplateInvoker(
             url = expandedUri.toASCIIString(),
             verb = httpMethod.name(),
             requestBody = httpEntity.body?.toString(),
-            responseCode = -1,
+            responseCode = httpStatus,
             responseSize = 0,
             headers = com.orbitalhq.query.HttpHeaders.empty()
          )
@@ -331,7 +357,7 @@ class RestTemplateInvoker(
       eventDispatcher.reportRemoteOperationInvoked(OperationResult.from(parameters, remoteCall), queryId)
       return OperationInvocationException(
          "Failed to invoke service ${operation.name} at url $absoluteUrl - ${error.message ?: "No message in instance of ${error::class.simpleName}"}",
-         0,
+         httpStatus,
          remoteCall,
          parameters
       )
