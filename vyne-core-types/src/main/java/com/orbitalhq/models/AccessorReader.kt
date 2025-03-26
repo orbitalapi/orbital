@@ -58,7 +58,7 @@ import lang.taxi.types.FieldReferenceSelector
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.FormulaOperator
 import lang.taxi.types.LambdaExpressionType
-import lang.taxi.types.ModelAttributeReferenceSelector
+import lang.taxi.types.MemberTypeReferenceExpression
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.TypeReference
 import lang.taxi.types.TypeReferenceSelector
@@ -269,7 +269,8 @@ class AccessorReader(
             evaluateFieldReference(
                targetType,
                accessor.selectors,
-               source
+               source,
+               value
             )
          }
 
@@ -298,11 +299,13 @@ class AccessorReader(
          )
 
          is TypeExpression -> readTypeExpression(accessor, allowContextQuerying, targetType)
-         is ModelAttributeReferenceSelector -> xtimed("read model Attribute ${accessor.asTaxi()}") {
+         is MemberTypeReferenceExpression -> xtimed("read model Attribute ${accessor.asTaxi()}") {
             readModelAttributeSelector(
                accessor,
                allowContextQuerying,
-               schema
+               schema,
+               value,
+               source
             )
          }
 
@@ -453,12 +456,20 @@ class AccessorReader(
 
 
    private fun readModelAttributeSelector(
-      accessor: ModelAttributeReferenceSelector,
+      accessor: MemberTypeReferenceExpression,
       allowContextQuerying: Boolean,
-      schema: Schema
+      schema: Schema,
+      value: Any,
+      dataSource: DataSource
    ): TypedInstance {
       val source = xtimed("source value lookup") {
-         objectFactory.getValue(accessor.memberSource.toVyneQualifiedName(), queryIfNotFound = allowContextQuerying)
+         if (accessor.sourceExpression != null) {
+            val evaluationResult = evaluate(value, schema.type(accessor.sourceExpression!!.returnType), accessor.sourceExpression!!, dataSource = dataSource, format = null)
+            evaluationResult
+         } else {
+            objectFactory.getValue(accessor.memberSource.toVyneQualifiedName(), queryIfNotFound = allowContextQuerying)
+         }
+
       }
       val requestedType = schema.type(accessor.targetType)
       val accessorReturnType = schema.type(accessor.returnType.toVyneQualifiedName())
@@ -536,7 +547,8 @@ class AccessorReader(
             accessor.selectors,
             scopedInstance,
             schema.type(accessor.returnType),
-            accessor.path
+            accessor.path,
+            value
          )
       } else {
          scopedInstance
@@ -547,7 +559,8 @@ class AccessorReader(
    private fun evaluateFieldReference(
       targetType: Type,
       selectors: List<FieldReferenceSelector>,
-      source: DataSource
+      source: DataSource,
+      value: Any
    ): TypedInstance {
       val (firstFieldRef, remainingFields) = selectors.takeHead()
       val firstObject = objectFactory.getValue(firstFieldRef.fieldName)
@@ -555,14 +568,16 @@ class AccessorReader(
          remainingFields,
          firstObject,
          targetType,
-         selectors.joinToString(".") { it.fieldName })
+         selectors.joinToString(".") { it.fieldName },
+         value)
    }
 
    private fun readFieldSelectorsAgainstObject(
       remainingFields: List<FieldReferenceSelector>,
       firstObject: TypedInstance,
       targetType: Type,
-      fullPath: String
+      fullPath: String,
+      value: Any
    ): TypedInstance {
       var errorMessage: String? = null
       val value = remainingFields
@@ -1110,13 +1125,13 @@ class AccessorReader(
          )
 
          is FieldReferenceExpression -> {
-            evaluateFieldReference(returnType, expression.selectors, dataSource)
+            evaluateFieldReference(returnType, expression.selectors, dataSource, value)
          }
 
-         is ModelAttributeReferenceSelector -> {
+         is MemberTypeReferenceExpression -> {
             // not sure what to set for allow context querying - seems like we shouldn't
             // for reading one value from another, but there might be a use-case
-            readModelAttributeSelector(expression, false, schema)
+            readModelAttributeSelector(expression, false, schema, value, dataSource)
          }
 
          is CastExpression -> {
@@ -1177,7 +1192,7 @@ class AccessorReader(
          value, returnType, expression.lhs, schema, nullValues, dataSource, format, resultCache
       )
       return readFieldSelectorsAgainstObject(
-         listOf(expression.rhs), source, schema.type(expression.returnType), expression.rhs.fieldName
+         listOf(expression.rhs), source, schema.type(expression.returnType), expression.rhs.fieldName, value
       )
    }
 

@@ -1,10 +1,10 @@
 package com.orbitalhq
 
 import com.orbitalhq.models.OperationResultReference
+import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.utils.asA
 import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldHaveSize
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.Test
@@ -608,5 +608,93 @@ find {DealResponse(DealId == dealId)} as  (deal:Deal = first(Deal[])) -> {
          borrowerIdCallInputs.single().toRawObject().shouldBe("b1")
 
       }
+
+   @Test
+   fun `can use nested constraints to resolve data via an operation`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+model Film {
+    @Id
+    id: FilmId inherits String
+    title: Title inherits String
+}
+
+model ReviewData {
+    reviewId: ReviewId inherits String
+}
+
+model FilmReview {
+    reviewId: ReviewId
+    rating: StarRating inherits Decimal
+}
+type CollectionId inherits String
+model MovieLibraryResponse {
+    films: Film[]
+}
+service MovieService {
+  operation getReviewData(FilmId): ReviewData(...)
+  operation getReview(ReviewId): FilmReview(...)
+   operation getLibrary(CollectionId): MovieLibraryResponse(...)
+}
+      """.trimIndent())
+
+      stub.addResponse("getLibrary", """{
+  "films": [
+    {
+      "id": "film-001",
+      "title" : "Star Wars"
+    },
+    {
+      "id": "film-002",
+      "title" :"Jaws"
+    }
+  ]
+}""")
+      stub.addResponse("getReviewData", { _,params ->
+         val filmId = params.single().second.toRawObject() as String? ?: error("Stubbing error: No FilmId passed to getReviewData")
+         val result = vyne.parseJson("ReviewData", """{ "reviewId" : "review-${filmId.substringAfter("-")}"  }""")
+         listOf(result)
+      })
+      stub.addResponse("getReview", { _,params ->
+         val reviewId = params.single().second.toRawObject() as String? ?: error("Stubbing error: No ReviewId passed to getReview")
+         val reviews = mapOf("review-001" to 4.0.toBigDecimal(), "review-002" to 3.0.toBigDecimal())
+         val reviewResult = vyne.parseJson("FilmReview", """{ "reviewId" : "$reviewId", "rating" : ${reviews[reviewId]} }""")
+         listOf(reviewResult)
+      })
+      val resultUsingTypeReference = vyne.query("""
+         given { CollectionId = 'collection-001' }
+         find { MovieLibraryResponse } as {
+               films: Film[] as (film:Film) -> {
+                  title : Title
+                  review : FilmReview(ReviewId == ReviewData(FilmId == film::FilmId)::ReviewId) as {
+                        reviewId: ReviewId
+                        rating: StarRating
+                  }
+               }[]
+         }
+      """.trimIndent())
+         .firstRawObject()
+      val expectedResult = mapOf("films" to listOf(
+         mapOf("title" to "Star Wars", "review" to mapOf("reviewId" to "review-001", "rating" to 4.0.toBigDecimal())),
+         mapOf("title" to "Jaws", "review" to mapOf("reviewId" to "review-002", "rating" to 3.0.toBigDecimal())),
+      ))
+      resultUsingTypeReference.shouldBe(expectedResult)
+
+
+      val resultUsingFieldReference = vyne.query("""
+         given { CollectionId = 'collection-001' }
+         find { MovieLibraryResponse } as {
+               films: Film[] as (film:Film) -> {
+                  title : Title
+                  // This is the test -- note here we're using a property name, instead of a type reference
+                  review : FilmReview(ReviewId == ReviewData(FilmId == film::FilmId).reviewId) as {
+                        reviewId: ReviewId
+                        rating: StarRating
+                  }
+               }[]
+         }
+      """.trimIndent())
+         .firstRawObject()
+      resultUsingFieldReference.shouldBe(expectedResult)
+   }
 
 }

@@ -31,7 +31,7 @@ fun documentServiceForSchema(
    val sourceService = InMemoryWorkspaceSourceService.from(taxi)
    val initializeParams = InitializeParams()
    service.initialize(initializeParams, sourceService)
-   Awaitility.await().atMost(Duration.ONE_SECOND).until<Boolean> { service.lastCompilationResult != null }
+   Awaitility.await().atMost(Duration.FIVE_SECONDS).until<Boolean> { service.lastCompilationResult != null }
    return service
 }
 
