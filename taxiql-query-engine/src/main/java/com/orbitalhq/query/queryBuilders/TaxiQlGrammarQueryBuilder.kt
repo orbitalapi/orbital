@@ -18,7 +18,7 @@ import lang.taxi.expressions.OperatorExpression
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.services.operations.constraints.ExpressionConstraint
 import lang.taxi.types.ArgumentSelector
-import lang.taxi.types.ModelAttributeReferenceSelector
+import lang.taxi.types.MemberTypeReferenceExpression
 import mu.KotlinLogging
 
 /**
@@ -103,7 +103,7 @@ fun Expression.resolveVariablesUsing(context:QueryContext):Pair<Expression,List<
          val value = context.evaluate(this)
          LiteralExpression(LiteralAccessor(value.value!!, value.type.taxiType), this.compilationUnits) to listOf(value)
       }
-      is ModelAttributeReferenceSelector -> {
+      is MemberTypeReferenceExpression -> {
          val value = context.evaluate(this)
          LiteralExpression(LiteralAccessor(value.value!!, value.type.taxiType), this.compilationUnits) to listOf(value)
       }

@@ -17,9 +17,8 @@ import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.TypeExpression
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.services.operations.constraints.ExpressionConstraint
-import lang.taxi.services.operations.constraints.PropertyToParameterConstraint
 import lang.taxi.types.ArgumentSelector
-import lang.taxi.types.ModelAttributeReferenceSelector
+import lang.taxi.types.MemberTypeReferenceExpression
 import mu.KotlinLogging
 
 class QueryOperationInvocationStrategy(
@@ -141,7 +140,7 @@ class QueryOperationInvocationStrategy(
             is LiteralExpression -> true
             is ArgumentSelector -> true
             is OperatorExpression -> canFilterForExpression(expressionPart, schema, operationReturnType)
-            is ModelAttributeReferenceSelector -> canFilterOnPropertyType(schema, schema.type(expressionPart.targetType), operationReturnType)
+            is MemberTypeReferenceExpression -> canFilterOnPropertyType(schema, schema.type(expressionPart.targetType), operationReturnType)
             is TypeExpression -> canFilterOnPropertyType(schema, schema.type(expressionPart.type), operationReturnType)
 
             else -> {

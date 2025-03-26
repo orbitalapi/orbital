@@ -2,6 +2,7 @@ package com.orbitalhq.cockpit.core.lsp.querying
 
 import arrow.core.Either
 import arrow.core.getOrElse
+import arrow.core.right
 import com.orbitalhq.query.graph.Algorithms
 import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.RemoteOperation
@@ -18,7 +19,6 @@ import lang.taxi.TaxiParser.FactListContext
 import lang.taxi.TaxiParser.FunctionCallContext
 import lang.taxi.TaxiParser.GivenBlockContext
 import lang.taxi.TaxiParser.IdentifierContext
-import lang.taxi.TaxiParser.K_Call
 import lang.taxi.TaxiParser.MemberReferenceContext
 import lang.taxi.TaxiParser.MutationContext
 import lang.taxi.TaxiParser.NullableTypeReferenceContext
@@ -30,6 +30,7 @@ import lang.taxi.TaxiParser.SingleNamespaceDocumentContext
 import lang.taxi.TaxiParser.ToplevelObjectContext
 import lang.taxi.TaxiParser.TypeReferenceContext
 import lang.taxi.TaxiParser.VariableNameContext
+import lang.taxi.expressions.ServiceExpression
 import lang.taxi.lsp.CompilationResult
 import lang.taxi.lsp.completion.CompletionDecorator
 import lang.taxi.lsp.completion.CompletionItemList
@@ -45,7 +46,6 @@ import lang.taxi.lsp.completion.locationIsAfterOrEqualTo
 import lang.taxi.lsp.completion.locationIsBeforeOrEqualTo
 import lang.taxi.query.QueryMode
 import lang.taxi.searchUpForRule
-import lang.taxi.types.Arrays
 import lang.taxi.types.Named
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.Type
@@ -172,6 +172,9 @@ class QueryCodeCompletionProvider(
          }
 
          // Mutations
+         contextAtCursor is TypeReferenceContext &&  isDefiningMemberReference(contextAtCursor) -> suggestCallMutationTargets(
+            contextAtCursor, decorators, compilationResult, lastSuccessfulCompilation
+         )
          contextAtCursor is QualifiedNameContext && isDefiningMemberReference(contextAtCursor) -> suggestCallMutationTargets(
             contextAtCursor, decorators, compilationResult, lastSuccessfulCompilation
          )
@@ -234,11 +237,10 @@ class QueryCodeCompletionProvider(
       lastSuccessfulCompilation: CompilationResult?
    ): CompletionItemList {
       val serviceOrMember = contextAtCursor.searchUpForRule<MemberReferenceContext>().let { memberReferenceContext ->
-         if (memberReferenceContext == null) return@let SuggestServiceOrMember.Service
-         when (memberReferenceContext.typeReference().size) {
-            0 -> SuggestServiceOrMember.Service
-            1 -> SuggestServiceOrMember.Service
-            else -> SuggestServiceOrMember.Member
+         if (memberReferenceContext == null) {
+            SuggestServiceOrMember.Service
+         } else {
+            SuggestServiceOrMember.Member
          }
       }
 
@@ -276,18 +278,20 @@ class QueryCodeCompletionProvider(
       // Foo::Bar
       val serviceAndMember = contextAtCursor.searchUpForRule<MemberReferenceContext>() ?: return CompletionItemList.empty()
       // In Foo::Bar, select Foo
-      val service = serviceAndMember.typeReference().getOrNull(0) ?: return CompletionItemList.empty()
-      val completionsOrErrors: Either<List<CompilationError>, CompletionItemList> = lastSuccessfulCompilation.compiler.findInSymbolTree(service.text, service)
-         .map { textFragments ->
-            textFragments.map { it.value }
-               .filterIsInstance<lang.taxi.services.Service>()
-               .flatMap { service ->
-                  service.members.map { member ->
-                     // Don't decorate members, as they're not importable on their own
-                     typeCompletionBuilder.buildCompletionItem(member, member.toQualifiedName(), emptyList())
-                  }
-               }.asExclusiveCompletionItemList()
-         }
+
+      val service = serviceAndMember.typeReference() ?: return CompletionItemList.empty()
+      // The LHS is an expression - compile it
+      // We could just try and read the text here, but that's error-prone
+      val lhsExpressionContext = service.searchUpForRule<ExpressionGroupContext>()?.expressionGroup()?.firstOrNull() ?: return CompletionItemList.empty()
+      val lhsExpression = lastSuccessfulCompilation.compiler.compileExpression(lhsExpressionContext).getOrNull() ?: return CompletionItemList.empty()
+      val completionsOrErrors: Either<List<CompilationError>, CompletionItemList> = if (lhsExpression is ServiceExpression) {
+         lhsExpression.service.members.map { member ->
+            // Don't decorate members, as they're not importable on their own
+            typeCompletionBuilder.buildCompletionItem(member, member.toQualifiedName(), emptyList())
+         }.asExclusiveCompletionItemList().right()
+      } else {
+         CompletionItemList.empty().right()
+      }
       return completionsOrErrors.getOrElse { CompletionItemList.empty() }
    }
 

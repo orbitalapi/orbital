@@ -791,14 +791,19 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
       )
 
       // if we ask for a collection of values, we should match...
-      val positiveResult = vyne.query(
-         """find { Catalog } as {
-         | filmIds : (FilmCatalog::FilmId)[]
-         |}
-      """.trimMargin()
-      )
-         .firstRawObject()
-      positiveResult["filmIds"].should.equal(listOf(1, 2))
+      // MP: 25-03-25: We updated the grammar to support
+      // expressions on the LHS of a type reference -eg:
+      // filmIds: FilmCatalog(Foo == bar)::FilmId
+      // However, that meant we lost the ability to these types of statements.
+      // We can review and re-introduce if there's a requirement.
+//      val positiveResult = vyne.query(
+//         """find { Catalog } as {
+//         | filmIds : (FilmCatalog::FilmId)[]
+//         |}
+//      """.trimMargin()
+//      )
+//         .firstRawObject()
+//      positiveResult["filmIds"].should.equal(listOf(1, 2))
 
       // ... but if we ask for an array, we shouldn't, as there is no FilmId[] present
       val negativeResult = vyne.query(
