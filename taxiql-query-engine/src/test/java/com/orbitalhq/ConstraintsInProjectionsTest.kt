@@ -2,6 +2,7 @@ package com.orbitalhq
 
 import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.right
 import com.orbitalhq.utils.asA
 import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldHaveSize
@@ -652,13 +653,13 @@ service MovieService {
       stub.addResponse("getReviewData", { _,params ->
          val filmId = params.single().second.toRawObject() as String? ?: error("Stubbing error: No FilmId passed to getReviewData")
          val result = vyne.parseJson("ReviewData", """{ "reviewId" : "review-${filmId.substringAfter("-")}"  }""")
-         listOf(result)
+         listOf(result.right())
       })
       stub.addResponse("getReview", { _,params ->
          val reviewId = params.single().second.toRawObject() as String? ?: error("Stubbing error: No ReviewId passed to getReview")
          val reviews = mapOf("review-001" to 4.0.toBigDecimal(), "review-002" to 3.0.toBigDecimal())
          val reviewResult = vyne.parseJson("FilmReview", """{ "reviewId" : "$reviewId", "rating" : ${reviews[reviewId]} }""")
-         listOf(reviewResult)
+         listOf(reviewResult.right())
       })
       val resultUsingTypeReference = vyne.query("""
          given { CollectionId = 'collection-001' }
