@@ -28,11 +28,13 @@ FROM ${REGISTRY}eclipse-temurin:21-jdk-alpine as base-alpine
 RUN apk --no-cache add zip
 
 ## MP: 11-Mar-25
-## Short term workaround to CVE-2025-0840
+## Short term workaround to CVE-2025-0840 (binutils) and CVE-2024-8176 (libexpat)
 ## which requires >=2.43.1-r2 of binutils
 ## Remove once that has made it into the mainlline of alpine
-RUN apk --no-cache upgrade binutils
+## Expect that to be alpine >= 3.21.4
+RUN apk --no-cache upgrade binutils libexpat
 RUN apk info binutils
+RUN apk info libexpat
 
 FROM ${REGISTRY}eclipse-temurin:21-jdk-jammy as base-jammy
 RUN apt-get update && apt-get install zip -y
