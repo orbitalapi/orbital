@@ -10,11 +10,25 @@ import lang.taxi.packages.SourcesType
 import lang.taxi.policies.Policy
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
+import mu.KotlinLogging
 
 @Deprecated("This class fails to handle type extensions correctly.  Use TaxiSchema.fromNamedSources().first(), which will correctly order, compose and compile the sources")
 class CompositeSchema(private val schemas: List<Schema>) : Schema {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
+   init {
+      if (schemas.size > 1) {
+         logger.warn { "CompositeSchema instantiated with >1 schema. This is unexpected" }
+      }
+   }
+
    private val queryCompiler = DefaultQueryCompiler(this, 100)
-   override fun parseQuery(vyneQlQuery: TaxiQLQueryString, useCache: Boolean): Triple<TaxiQlQuery, QueryOptions, Schema> {
+   override fun parseQuery(
+      vyneQlQuery: TaxiQLQueryString,
+      useCache: Boolean
+   ): Triple<TaxiQlQuery, QueryOptions, Schema> {
       return queryCompiler.compile(vyneQlQuery, useCache)
    }
 
@@ -75,7 +89,15 @@ class CompositeSchema(private val schemas: List<Schema>) : Schema {
    override val policies: Set<Policy> =
       schemas.flatMap { it.policies }.distinctBy { it.qualifiedName }.toSet()
 
-   override val typeCache: TypeCache = DefaultTypeCache(this.types)
+   // MP: 14-Apr-25:
+   // Observed an issue when using a DefaultTypeCache that some primitive Taxi types
+   // (like Map<>) aren't returned from the type cache.
+   // However, in practice these days a CompositeSchema only has a single shema anyway,
+   // and that's generally a TaxiSchema, so just return that.
+   override val typeCache: TypeCache = when {
+      this.schemas.size == 1 -> this.schemas.single().typeCache
+      else -> DefaultTypeCache(this.types)
+   }
 
    override fun taxiType(name: QualifiedName): lang.taxi.types.Type {
       return schemas.first {
