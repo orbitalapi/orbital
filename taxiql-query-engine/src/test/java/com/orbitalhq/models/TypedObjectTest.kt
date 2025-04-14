@@ -2,10 +2,13 @@ package com.orbitalhq.models
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.orbitalhq.firstRawObject
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import com.orbitalhq.firstTypedObject
+import com.orbitalhq.from
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.schemas.CompositeSchema
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
@@ -260,4 +263,45 @@ class TypedObjectTest {
       )
    }
 
+   @Test // ORB-936
+   fun `can parse any using composite schema`() {
+      // this bug appears specifically when using the COmpositeSchema
+      val schema = CompositeSchema(
+         listOf(
+            TaxiSchema.from(
+               """
+      model TestObject {
+            name : Name inherits String
+            thing : Any
+            things : Any[]
+         }
+
+      """
+            )
+         )
+      )
+      val json = """{
+               "name" : "Jimmy",
+               "thing" : {
+                  "param1" : "Value1"
+               },
+               "things" : [
+                  { "param1" : "Value1" },
+                  { "param1" : "Value2" }
+               ]
+            }
+         """
+      val typedInstance = TypedInstance.from(schema.type("TestObject"), json, schema)
+      typedInstance.shouldBeInstanceOf<TypedObject>()
+      typedInstance.toRawObject().shouldBe(
+         mapOf(
+            "name" to "Jimmy",
+            "thing" to mapOf("param1" to "Value1"),
+            "things" to listOf(
+               mapOf("param1" to "Value1"),
+               mapOf("param1" to "Value2")
+            )
+         )
+      )
+   }
 }
