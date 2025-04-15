@@ -1,17 +1,15 @@
 package com.orbitalhq
 
+import com.orbitalhq.models.json.parseJson
 import io.kotest.common.runBlocking
 import io.kotest.matchers.shouldBe
-import com.orbitalhq.models.json.parseJson
-import io.kotest.matchers.nulls.shouldNotBeNull
-import lang.taxi.compiledWithQuery
 import org.junit.Test
 import kotlin.test.assertFailsWith
 
 class QueryWithScopedParamsTest {
 
    @Test
-   fun `can pass a scoped param to Vyne`() = runBlocking {
+   fun `can pass a scoped param to Vyne`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
          model Film {

@@ -1,11 +1,13 @@
 package com.orbitalhq.spring.invokers
 
+import app.cash.turbine.test
 import app.cash.turbine.testIn
 import arrow.core.Either
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.doAnswer
 import com.nhaarman.mockito_kotlin.mock
+import com.orbitalhq.expectTypedInstance
 import com.orbitalhq.expectTypedObject
 import com.orbitalhq.expectTypedObjectFromEither
 import com.orbitalhq.http.MockWebServerRule
@@ -17,6 +19,7 @@ import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedInstance.Companion.EXPIRY_METADATA
+import com.orbitalhq.models.TypedNull
 import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QueryContextEventBroker
@@ -40,6 +43,7 @@ import io.kotest.matchers.maps.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
@@ -54,6 +58,7 @@ import java.math.BigDecimal
 import java.util.concurrent.ConcurrentHashMap
 import java.util.function.Consumer
 import kotlin.test.assertEquals
+import kotlin.test.fail
 import kotlin.time.ExperimentalTime
 
 private val logger = KotlinLogging.logger {}
@@ -132,6 +137,140 @@ namespace vyne {
          throw IllegalStateException(ex)
       }
    }
+
+    @Test
+    fun `will enrich a stream against a rest api when first rest call fails with 400`() = runBlocking {
+        val (vyne, stub) = testVyneWithStub(
+            """
+         type FilmId inherits Int
+         model Film {
+            @Id
+            filmId : FilmId
+            title : FilmTitle inherits String
+         }
+         model NewReleaseAnnouncement {
+            filmId : FilmId
+         }
+         service FilmService {
+            @HttpOperation(method = "GET",url = "http://localhost:${server.port}/films/{filmId}")
+            operation lookupFilm(@PathVariable("filmId") filmId: FilmId):Film
+            operation streamAnnouncements():Stream<NewReleaseAnnouncement>
+         }
+      """.trimIndent(),
+            Invoker.RestTemplate
+        )
+        stub.addResponseFlow("streamAnnouncements") { _, _ ->
+            val typedInstance1 = TypedInstance.tryFrom(
+                vyne.type("NewReleaseAnnouncement"),
+                mapOf("filmId" to 1),
+                vyne.schema
+            )
+
+            val typedInstance2 = TypedInstance.tryFrom(
+                vyne.type("NewReleaseAnnouncement"),
+                mapOf("filmId" to 2),
+                vyne.schema
+            )
+            listOf(typedInstance1, typedInstance2).asFlow()
+        }
+
+        val invokedPaths: ConcurrentHashMap<String, Int> = ConcurrentHashMap()
+        server.prepareResponse(
+            invokedPaths,
+            "/films/1" to response("", 400),
+            "/films/2" to response("""{ "filmId" : 2, "title" : "A new hope" }"""),
+        )
+
+        vyne.query(
+            """stream { NewReleaseAnnouncement } as {
+         | filmId : FilmId
+         | title : FilmTitle
+         | }[]
+      """.trimMargin()
+        ).results.test {
+            val item1 = expectTypedObject()
+            item1.toRawObject().should.equal(
+                mapOf(
+                    "filmId" to 1,
+                    "title" to null
+                )
+            )
+
+            val item2 = expectTypedObject()
+            item2.toRawObject().should.equal(
+                mapOf(
+                    "filmId" to 2,
+                    "title" to "A new hope"
+                )
+            )
+            awaitComplete()
+
+        }
+    }
+
+    @Test
+    fun `will mutate a stream against a rest api when first rest call fails with 400`() = runBlocking {
+        val (vyne, stub) = testVyneWithStub(
+            """
+         type FilmId inherits Int
+         model Film {
+            @Id
+            filmId : FilmId
+            title : FilmTitle inherits String
+         }
+          model NewReleaseAnnouncement {
+            filmId : FilmId
+         }
+         
+         parameter model FilmUpdate {
+            filmId: FilmId
+         }
+         service FilmService {
+            @HttpOperation(method = "POST",url = "http://localhost:${server.port}/films/{filmId}")
+            write operation persistFilm(@RequestBody FilmUpdate, @PathVariable("filmId") filmId: FilmId):Film
+            operation streamAnnouncements():Stream<NewReleaseAnnouncement>
+         }
+      """.trimIndent(),
+            Invoker.RestTemplate
+        )
+        stub.addResponseFlow("streamAnnouncements") { _, _ ->
+            val typedInstance1 = TypedInstance.tryFrom(
+                vyne.type("NewReleaseAnnouncement"),
+                mapOf("filmId" to 1),
+                vyne.schema
+            )
+
+            val typedInstance2 = TypedInstance.tryFrom(
+                vyne.type("NewReleaseAnnouncement"),
+                mapOf("filmId" to 2),
+                vyne.schema
+            )
+            listOf(typedInstance1, typedInstance2).asFlow()
+        }
+
+        val invokedPaths: ConcurrentHashMap<String, Int> = ConcurrentHashMap()
+        server.prepareResponse(
+            invokedPaths,
+            "/films/1" to response("", 404),
+            "/films/2" to response("""{ "filmId" : 2, "title" : "A new hope" }"""),
+        )
+
+        vyne.query(
+            """stream { NewReleaseAnnouncement } 
+                | call FilmService::persistFilm
+      """.trimMargin()
+        ).results.test {
+            val item1 = expectTypedInstance()
+            val item2 = expectTypedInstance()
+
+            // Either item1 or item2 should be TypedNull for failed mutation
+            if (item2 !is TypedNull && item1 !is TypedNull) {
+                fail("mutation failure should yield an TypedNull")
+            }
+            awaitComplete()
+
+        }
+    }
 
    @Test
    @OptIn(ExperimentalTime::class)

@@ -5,8 +5,6 @@ import com.orbitalhq.stubbing.StubService
 import io.kotest.common.runBlocking
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.mockk.MockKGateway
-import org.junit.Before
 import org.junit.Test
 
 class ProjectionsOnArraysTest {
@@ -183,7 +181,4 @@ class ProjectionsOnArraysTest {
          .firstRawObject()
       result.shouldBe(mapOf("title" to "Star Wars", "cast" to emptyList<Map<String,Any>>()))
    }
-
-
-
 }

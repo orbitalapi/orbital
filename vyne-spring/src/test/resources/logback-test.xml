@@ -13,7 +13,7 @@
     <!--<logger level="trace" name="org.springframework.data.hazelcast" />-->
     <!--<logger level="trace" name="com" />-->
 
-   <logger level="WARN" name="io.vyne" />
+   <logger level="WARN" name="com.orbitalhq" />
    <logger level="INFO" name="com.orbitalhq.spring.invokers" />
 	<root level="WARN">
 		<appender-ref ref="console" />

@@ -2,10 +2,6 @@ package com.orbitalhq
 
 import app.cash.turbine.test
 import app.cash.turbine.testIn
-import com.winterbe.expekt.should
-import io.kotest.matchers.collections.shouldBeEmpty
-import io.kotest.matchers.nulls.shouldBeNull
-import io.kotest.matchers.nulls.shouldNotBeNull
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseJsonModel
@@ -13,6 +9,9 @@ import com.orbitalhq.models.json.tryParseJson
 import com.orbitalhq.query.connectors.OperationResponseHandler
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
+import com.winterbe.expekt.should
+import io.kotest.matchers.nulls.shouldBeNull
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
@@ -25,7 +24,7 @@ import kotlin.time.ExperimentalTime
 @ExperimentalCoroutinesApi
 class GraphSearchQueryStrategyTest {
    @Test
-   fun `Discover required type from a service returning child type of required type`() = runBlocking {
+   fun `Discover required type from a service returning child type of required type`(): Unit = runBlocking {
       val schema = """
          type Isin inherits String
          type NotionalValue inherits Decimal
