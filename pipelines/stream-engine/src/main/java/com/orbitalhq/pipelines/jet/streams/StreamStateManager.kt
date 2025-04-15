@@ -34,6 +34,7 @@ import org.springframework.stereotype.Component
 import org.springframework.transaction.TransactionManager
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
+import reactor.core.scheduler.Schedulers
 
 
 @Configuration
@@ -117,7 +118,12 @@ class StreamStateManager @Autowired constructor(
    }
 
    init {
-      pipelineManager.jobStatusEvents.subscribe { (job, event) ->
+      pipelineManager
+         .jobStatusEvents
+         // Hopping on an elastic thread here to not block hazelcast event thread.
+         // as JobStatusEvents are published from an HZ Event Listener.
+         .publishOn(Schedulers.boundedElastic())
+         .subscribe { (job, event) ->
          handleJobStatusEvent(job, event)
       }
    }

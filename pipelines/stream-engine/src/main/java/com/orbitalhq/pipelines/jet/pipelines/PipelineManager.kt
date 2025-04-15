@@ -139,6 +139,7 @@ class PipelineManager(
 
    private fun cancelPipelineIfActive(pipelineSpec: PipelineSpec<*, *>) {
       if (hasPipeline(pipelineSpec.id)) {
+         logger.info { "Canceling active pipeline ${pipelineSpec.id}" }
          terminatePipeline(pipelineSpec.id, deletePipelineRecord = true)
       }
    }
@@ -332,7 +333,18 @@ class PipelineManager(
          logger.info { "Terminating running pipeline $pipelineId" }
          val submittedPipeline = getSubmittedPipeline(pipelineId)
          val job = getPipelineJob(submittedPipeline)
+         /**
+          * Job.cancel() just initiates the cancellation, and returns.
+          * You can then join the job and wait until it actually terminates.
+          */
          job.cancel()
+         try {
+            job.join()
+         } catch (e: Exception) {
+            // CancellationException if the job was cancelled
+            logger.info { "$pipelineId cancelled." }
+
+         }
          if (deletePipelineRecord) {
             enabledPipelines.remove(job.idString)
          } else {
@@ -424,6 +436,7 @@ class PipelineManager(
    fun suspendPipelineByName(name: QualifiedName) {
       val pipeline = getPendingOrRunningPipelineSpecByName(name)
       pendingPipelines.put(name.parameterizedName, pipeline)
+      logger.info { "terminating the pipeline ${pipeline.id}" }
       terminatePipeline(pipeline.id, true)
    }
 
