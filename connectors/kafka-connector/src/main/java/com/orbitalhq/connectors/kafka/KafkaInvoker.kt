@@ -1,7 +1,10 @@
 package com.orbitalhq.connectors.kafka
 
 import arrow.core.Either
+import arrow.core.right
 import com.orbitalhq.VyneTypes
+import com.orbitalhq.models.DataSourceUpdater
+import com.orbitalhq.models.OperationResultDataSourceWrapper
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.query.QueryContextEventDispatcher
@@ -14,6 +17,7 @@ import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.mapNotNull
 import lang.taxi.services.OperationScope
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
@@ -102,7 +106,22 @@ class KafkaInvoker(
             operation,
             streamSourceId = queryOptions.streamConsumerId
          )
-      )
+      ).mapNotNull { errorOrInstance ->
+         when (errorOrInstance) {
+            is Either.Right -> {
+               val instance = errorOrInstance.value
+               val dataSource = instance.source
+               require(dataSource is OperationResultDataSourceWrapper) { "Expected OperationResultDataSourceWrapper as the datasource, found ${dataSource::class.simpleName}" }
+               eventDispatcher.reportRemoteOperationInvoked(dataSource.operationResult, queryId)
+
+               DataSourceUpdater.update(instance, dataSource.operationResultReferenceSource).right()
+            }
+
+            is Either.Left -> {
+               errorOrInstance
+            }
+         }
+      }
       return stream
    }
 }
