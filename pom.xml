@@ -65,9 +65,7 @@
       <!-- CVE-2022-31692  -->
       <!--      <spring-security.version>5.7.5</spring-security.version>-->
       <!--      <spring-security-test.version>5.7.5</spring-security-test.version>-->
-      <kotest.version>5.5.5</kotest.version>
-      <junit.jupiter.version>5.9.2</junit.jupiter.version>
-      <junit.vintage.version>5.9.2</junit.vintage.version>
+      <kotest.version>5.6.2</kotest.version>
 
       <json-path.version>2.9.0</json-path.version>
 
@@ -270,20 +268,17 @@ Transitive dependency in wire-compiler and calcite-core
       <dependency>
          <groupId>org.junit.jupiter</groupId>
          <artifactId>junit-jupiter-api</artifactId>
-         <version>${junit.jupiter.version}</version>
          <scope>test</scope>
       </dependency>
       <dependency>
          <groupId>org.junit.vintage</groupId>
          <artifactId>junit-vintage-engine</artifactId>
-         <version>${junit.vintage.version}</version>
          <scope>test</scope>
       </dependency>
 
       <dependency>
          <groupId>org.junit.jupiter</groupId>
          <artifactId>junit-jupiter-engine</artifactId>
-         <version>${junit.jupiter.version}</version>
          <scope>test</scope>
       </dependency>
       <dependency>
@@ -567,6 +562,7 @@ Transitive dependency in wire-compiler and calcite-core
       <finalName>${project.artifactId}</finalName>
       <plugins>
          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-surefire-plugin</artifactId>
             <version>3.2.5</version>
          </plugin>
@@ -642,6 +638,7 @@ Transitive dependency in wire-compiler and calcite-core
             </configuration>
          </plugin>
          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.10.1</version>
             <configuration>

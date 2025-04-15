@@ -1,7 +1,6 @@
 package com.orbitalhq.models.expressions
 
 import com.orbitalhq.firstRawObject
-import com.orbitalhq.firstTypedCollection
 import com.orbitalhq.firstTypedInstace
 import com.orbitalhq.models.EvaluatedExpression
 import com.orbitalhq.models.FailedEvaluatedExpression
@@ -23,7 +22,6 @@ import com.orbitalhq.testVyne
 import com.orbitalhq.typedInstances
 import com.orbitalhq.typedObjects
 import com.winterbe.expekt.should
-import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
@@ -817,7 +815,7 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
    }
 
     @Test
-    fun `can evaluate an object expression consists of literal and type expressions`() = runBlocking {
+    fun `can evaluate an object expression consists of literal and type expressions`(): Unit = runBlocking {
         val (vyne,stub) = testVyne(
             """
          model FilmDistribution {
@@ -852,7 +850,7 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
     }
 
     @Test
-    fun `can evaluate an object expression consists of literal and function expressions`() = runBlocking {
+    fun `can evaluate an object expression consists of literal and function expressions`(): Unit = runBlocking {
         val functionRegistry = FunctionRegistry.default.add(
             functionOf("lookupStudio") { inputValues, _, returnType, _ ->
                 TypedValue.from(returnType, "Twentieth Century-Fox", source = Provided)

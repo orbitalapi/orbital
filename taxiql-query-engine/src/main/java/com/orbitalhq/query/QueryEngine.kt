@@ -10,8 +10,10 @@ import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.DataSourceUpdater
+import com.orbitalhq.models.FailedEvaluation
 import com.orbitalhq.models.FailedSearch
 import com.orbitalhq.models.MixedSources
+import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.QueryFailureBehaviour
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
@@ -27,6 +29,7 @@ import com.orbitalhq.query.graph.operationInvocation.SearchRuntimeException
 import com.orbitalhq.query.projection.ProjectionProvider
 import com.orbitalhq.retainFactsFromFactSet
 import com.orbitalhq.schemas.Operation
+import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.QueryOptions
@@ -428,9 +431,19 @@ class StatefulQueryEngine(
          setOfNotNull(inputValue),
          searchContext,
          paramValues
-      )
+      ).catch {
+         context.eventBroker.queryErrorPublisher.onError(context.queryId,
+            StreamErrorMessage.fromThrowable(it, operation.returnType.paramaterizedName))
+         val dataSource = when (it) {
+            is OperationInvocationException -> OperationResult.from(it.parameters, it.remoteCall)
+               .asOperationReferenceDataSource()
 
+            else -> FailedEvaluation("An error occurred when invoking operation ${operation.qualifiedName.longDisplayName}: ${it.message} ")
+         }
 
+         logger.warn { "Operation ${operation.qualifiedName} failed with exception ${it.message}. " }
+         emit(TypedNull.create(operation.returnType, dataSource))
+      }
       return resultFlow to searchContext
    }
 
@@ -805,6 +818,12 @@ class StatefulQueryEngine(
          when (exception) {
             !is CancellationException -> {
                metricsReporter.failed(Duration.between(queryStartTime, Instant.now()), metricsTags)
+               if (exception !is UnresolvedTypeInQueryException) {
+                  context.eventBroker.queryErrorPublisher.onError(
+                     context.queryId,
+                     StreamErrorMessage.fromThrowable(exception, target.type.paramaterizedName)
+                  )
+               }
                throw exception
             }
 

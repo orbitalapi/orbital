@@ -103,7 +103,7 @@ service Broker1Service {
 
 
    @Test
-   fun `Should throw error when there is no discovery path and model is closed`() = runBlocking {
+   fun `Should throw error when there is no discovery path and model is closed`(): Unit = runBlocking {
       val schemaStr = """
          closed model Film {
              id : FilmId inherits Int
@@ -124,7 +124,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `tail spin`() = runBlocking {
+   fun `tail spin`():  Unit = runBlocking {
       val schemaStr = """
          type Puid inherits Int
          type CfiCode inherits String
@@ -216,7 +216,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `can perform simple projection`() = runBlocking {
+   fun `can perform simple projection`():  Unit = runBlocking {
       val (vyne, _) = testVyne(
          """
          type FirstName inherits String
@@ -239,7 +239,7 @@ service Broker1Service {
    }
 
    @Test
-   fun `project by enriching from other services`() = runBlocking {
+   fun `project by enriching from other services`():  Unit = runBlocking {
       val schemaStr = """
          type Symbol inherits String
          type Field1 inherits String
@@ -321,7 +321,7 @@ service Broker1Service {
 
    @Test
    @Ignore("Querying on base types has been disabled: See ADR 20240215-find-does-not-query-on-base-types/")
-   fun `project an array of Orders to the array of CommonOrder`() = runBlocking {
+   fun `project an array of Orders to the array of CommonOrder`():  Unit = runBlocking {
       // prepare
       val schema = """
 type OrderDate inherits Date
@@ -448,7 +448,7 @@ service UserService {
    """
    )
    @Test
-   fun `project to CommonOrder and resolve Enum synonyms and Instruments`() = runBlocking {
+   fun `project to CommonOrder and resolve Enum synonyms and Instruments`():  Unit = runBlocking {
       // prepare
       val schema = """
 // Primitives
@@ -577,7 +577,7 @@ service InstrumentService {
 
    @Test
    @Ignore
-   fun `project to CommonOrder with Trades`() = runBlocking {
+   fun `project to CommonOrder with Trades`():  Unit = runBlocking {
       // TODO confirm how the mappings should look like
       val noOfRecords = 100
       val schema = """
@@ -723,7 +723,7 @@ service Broker1Service {
 
    @Test
    @Ignore("One-to-many not currenty supported")
-   fun `One to Many Mapping Projection with a date between query`() = runBlocking {
+   fun `One to Many Mapping Projection with a date between query`(): Unit = runBlocking {
       val (vyne, stubService) = testVyne(testSchema)
       // 1 order and 3 matching trades.
       val numberOfOrders = 1
@@ -793,7 +793,7 @@ service Broker1Service {
 
    @Test
    @Ignore("One-to-many not supported currently")
-   fun `One to Many Mapping Projection with an Id equals query`() = runBlocking {
+   fun `One to Many Mapping Projection with an Id equals query`():  Unit = runBlocking {
       val (vyne, stubService) = testVyne(testSchema)
       // 1 order and 3 matching trades.
       val numberOfOrders = 1
@@ -849,7 +849,7 @@ service Broker1Service {
 
    @Test
    @Ignore("One-to-many not currently supported")
-   fun `One to Many Mapping Projection with an Id equals query returning zero match`() = runBlocking {
+   fun `One to Many Mapping Projection with an Id equals query returning zero match`(): Unit= runBlocking {
       val (vyne, stubService) = testVyne(testSchema)
       // 1 order and 3 matching trades.
       val numberOfOrders = 1
@@ -899,7 +899,7 @@ service Broker1Service {
 
    @Test
    @Ignore("One-to-many not supported currently")
-   fun `Multiple orders with same id and multiple trades with same order Id`() = runBlocking {
+   fun `Multiple orders with same id and multiple trades with same order Id`():  Unit = runBlocking {
       val (vyne, stubService) = testVyne(testSchema)
       val numberOfCorrespondingTrades = 3
       // 2 orders (with same id) will have 3 corresponding trades
