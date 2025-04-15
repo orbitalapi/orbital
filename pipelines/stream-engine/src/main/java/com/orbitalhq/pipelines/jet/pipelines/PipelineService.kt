@@ -12,12 +12,12 @@ import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.NotFoundException
-import jakarta.annotation.PostConstruct
 import mu.KotlinLogging
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.*
 import reactor.core.publisher.Mono
 
+private val logger = KotlinLogging.logger {  }
 @RestController
 class PipelineService(
    private val pipelineManager: PipelineManager,
@@ -122,6 +122,7 @@ class PipelineService(
    @PreAuthorize("hasAuthority('${VynePrivileges.EditPipelines}')")
    @DeleteMapping("/api/pipelines/{pipelineId}")
    override fun deletePipeline(@PathVariable("pipelineId") pipelineSpecId: String): Mono<PipelineStatus> {
+      logger.info { "deleting pipeline $pipelineSpecId" }
       val status = pipelineManager.terminatePipeline(pipelineSpecId)
       TODO("Deleting pipelines not supported whilst we migrate to using schema loaders")
 //      if (status.status != JobStatus.RUNNING && status.status != JobStatus.SCHEDULED) {
