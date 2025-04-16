@@ -934,4 +934,45 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
          .map { it.toRawObject() }
       result.shouldBe(listOf(1,2,3))
    }
+
+   @Test //ORB-941
+   fun `when nulls are present in context can still perform lookups`():Unit = runBlocking {
+      val (vyne,_) = testVyne("""
+model Person {
+  name: Name inherits String
+  isPrimary: IsPrimary inherits Boolean
+  address: Address
+}
+
+model Address {
+  street : StreetName inherits String
+}
+
+model Case {
+  address: PropertyAddress inherits Address
+  applicants: Person[]
+}
+
+extension function secondary(ppl:Person[]):Person -> ppl.single((p:IsPrimary) -> p == false)
+      """.trimIndent())
+      val result = vyne.query("""
+given {
+    Case = {
+        address: { street: 'Charles'},
+        applicants: [
+            { name: 'Jimmy', isPrimary: true, address: {street: 'S1 st'}}
+            // No secondary present, causing null to enter the scope
+            // { name: 'Jack', isPrimary: false, address: {street: 'S2 st'}}
+        ]
+    }
+}
+// secondary is null
+find { Case } as (secondary:Person[].secondary()) -> {
+    street: PropertyAddress::StreetName
+    // s: secondary::Name
+}
+      """.trimIndent())
+         .firstRawObject()
+      result.shouldBe(mapOf("street" to "Charles"))
+   }
 }
