@@ -91,7 +91,7 @@ data class TypedNull private constructor(private val wrapper: TypedNullWrapper,
       return if (remaining.isEmpty()) {
          listOf(thisTypedNull)
       } else {
-         listOf(thisTypedNull) + nullsForPropertyPath(remaining.joinToString("."))
+         listOf(thisTypedNull) + thisTypedNull.nullsForPropertyPath(remaining.joinToString("."))
       }
    }
 }
