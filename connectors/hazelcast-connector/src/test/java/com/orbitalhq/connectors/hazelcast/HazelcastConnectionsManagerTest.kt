@@ -2,6 +2,7 @@ package com.orbitalhq.connectors.hazelcast
 
 import com.google.common.io.Resources
 import com.hazelcast.client.test.TestHazelcastFactory
+import com.hazelcast.config.Config
 import com.hazelcast.core.Hazelcast
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.config.FileConfigSourceLoader
@@ -49,6 +50,25 @@ class HazelcastConnectionsManagerTest {
       val destFile = destDirectory.resolve(source.name)
       FileUtils.copyFile(source, destFile)
       return destFile
+   }
+
+   @Test
+   fun `should return hz connection without blocking when the connection can't connect to hazelcast`() {
+      val config =  Config()
+      config.setProperty( "hazelcast.logging.type", "slf4j")
+      val hazelcast = Hazelcast.newHazelcastInstance(config)
+      val hazelcastConnectionsManager = HazelcastConnectionsManager(
+         buildRegistry("hz-default-connection.conf"),
+         hazelcast
+      )
+      // Shutdown the Hazelcast Cluster against which we supposed to connect.
+      hazelcast.shutdown()
+      val (_, hzConfiguration) = hazelcastConnectionsManager
+         .hazelcastConnection("integrationHazelcast")
+      hzConfiguration.connectionName.should.equal("integrationHazelcast")
+      // Try to re-fetch a client for the same connection
+      hazelcastConnectionsManager.hazelcastConnection("integrationHazelcast")
+      hazelcastConnectionsManager.connectionsCount().should.equal(1)
    }
 
    @Test

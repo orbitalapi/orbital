@@ -2,6 +2,7 @@ package com.orbitalhq.connectors.hazelcast
 
 import com.hazelcast.client.HazelcastClient
 import com.hazelcast.client.config.ClientConfig
+import com.hazelcast.client.config.ClientConnectionStrategyConfig
 import com.hazelcast.client.config.XmlClientConfigBuilder
 import com.hazelcast.client.config.YamlClientConfigBuilder
 import com.hazelcast.config.SSLConfig
@@ -32,6 +33,12 @@ object HazelcastBuilder {
       }
    }
 
+   private fun ClientConfig.setOrbitalConfig() {
+      setProperty("hazelcast.logging.type", "slf4j")
+      connectionStrategyConfig.setAsyncStart(true)
+      connectionStrategyConfig.setReconnectMode(ClientConnectionStrategyConfig.ReconnectMode.ASYNC)
+      serializationConfig = serializationConfig()
+   }
 
    fun build(
       config: HazelcastConfiguration,
@@ -41,23 +48,23 @@ object HazelcastBuilder {
          config.xmlConfig != null ->  {
            val xmlConfig =  XmlClientConfigBuilder(config.xmlConfigFilePath())
             HazelcastClient.newHazelcastClient(xmlConfig.build().apply {
-               serializationConfig = serializationConfig()
+               setOrbitalConfig()
             })
          }
 
          config.yamlConfig != null -> {
             val yamlConfig = YamlClientConfigBuilder(config.yamlConfigFilePath())
             HazelcastClient.newHazelcastClient(yamlConfig.build().apply {
-               serializationConfig = serializationConfig()
+               setOrbitalConfig()
             })
          }
 
          else -> {
             val clientConfig = ClientConfig().apply {
+               setOrbitalConfig()
                config.hazelcastClusterName()?.let {
                   clusterName = it
                }
-               serializationConfig = serializationConfig()
 
                config.hazelcastClientName()?.let {
                   instanceName = "${it}$instanceNameSuffix"
