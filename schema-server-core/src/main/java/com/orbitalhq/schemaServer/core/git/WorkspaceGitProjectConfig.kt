@@ -3,6 +3,7 @@ package com.orbitalhq.schemaServer.core.git
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.orbitalhq.schema.publisher.loaders.ProjectTransportConfig
+import com.orbitalhq.schemaServer.core.config.WorkspaceSettings
 import com.orbitalhq.schemaServer.core.file.FileChangeDetectionMethod
 import com.orbitalhq.schemaServer.packages.PackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
@@ -33,7 +34,10 @@ data class WorkspaceGitProjectConfig(
    val diskPollFrequency: Duration = Duration.ofSeconds(30),
 ) {
    companion object {
-      fun default():WorkspaceGitProjectConfig = WorkspaceGitProjectConfig()
+      fun default(workspaceConfig: WorkspaceSettings = WorkspaceSettings()):WorkspaceGitProjectConfig = WorkspaceGitProjectConfig(
+         diskChangeDetectionMethod = workspaceConfig.fileChangeDetectionMethod,
+         diskPollFrequency = workspaceConfig.filePollFrequency
+      )
    }
 }
 
