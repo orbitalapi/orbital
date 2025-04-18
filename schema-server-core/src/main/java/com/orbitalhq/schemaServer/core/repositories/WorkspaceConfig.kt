@@ -2,6 +2,7 @@ package com.orbitalhq.schemaServer.core.repositories
 
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
+import com.orbitalhq.schemaServer.core.config.WorkspaceSettings
 import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.file.WorkspaceFileProjectConfig
 import com.orbitalhq.schemaServer.core.git.GitProjectSpec
@@ -25,8 +26,11 @@ data class WorkspaceConfig(
 ) {
 
    companion object {
-      fun defaultEmpty():WorkspaceConfig {
-         return WorkspaceConfig(WorkspaceFileProjectConfig(), WorkspaceGitProjectConfig.default())
+      fun defaultEmpty(workspaceConfig: WorkspaceSettings):WorkspaceConfig {
+         return WorkspaceConfig(WorkspaceFileProjectConfig(
+            changeDetectionMethod = workspaceConfig.fileChangeDetectionMethod,
+            pollFrequency = workspaceConfig.filePollFrequency
+         ), WorkspaceGitProjectConfig.default(workspaceConfig))
       }
    }
    fun repoCountDescription(): String {

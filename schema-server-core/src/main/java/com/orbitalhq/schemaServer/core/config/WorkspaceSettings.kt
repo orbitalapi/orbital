@@ -1,6 +1,7 @@
 package com.orbitalhq.schemaServer.core.config
 
 import com.orbitalhq.schema.publisher.ProjectLoaderManager
+import com.orbitalhq.schemaServer.core.file.FileChangeDetectionMethod
 import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.git.SimpleGitRepositoryConnectionConfig
 import com.orbitalhq.schemaServer.core.repositories.FileWorkspaceConfigLoader
@@ -53,12 +54,17 @@ data class WorkspaceSettings(
     * Often (eg: ECS) attaching storage to a server and injecting a projectFile is cumbersome.
     * Additionally, fetching directly from Git aligns more with IAC / Immutable infrastructure.
     */
-   val git: WorkspaceGitSettings? = null
+   val git: WorkspaceGitSettings? = null,
+
+   val fileChangeDetectionMethod: FileChangeDetectionMethod = FileChangeDetectionMethod.WATCH,
+   val filePollFrequency: Duration = Duration.ofSeconds(30),
 ) {
    companion object {
       private val logger = KotlinLogging.logger {}
    }
-   fun createLoader(eventDispatcher: ProjectSpecLifecycleEventDispatcher, projectManager: ProjectLoaderManager): WorkspaceConfigLoader {
+   fun createLoader(eventDispatcher: ProjectSpecLifecycleEventDispatcher,
+                    projectManager: ProjectLoaderManager,
+                    workspaceConfig: WorkspaceSettings): WorkspaceConfigLoader {
       return when {
          // MP: 16-Sep-24
          // When a user provided a project file, we used to skip creating a proper workspace (using an in-memory
@@ -91,7 +97,7 @@ data class WorkspaceSettings(
             // Force the creation of the workspace file if missing
             if (!absolutePath.exists()) {
                logger.info { "Created blank workspace.conf file at $absolutePath" }
-               configLoader.save(WorkspaceConfig.defaultEmpty())
+               configLoader.save(WorkspaceConfig.defaultEmpty(workspaceConfig))
             }
             try {
                val config = configLoader.load()
@@ -152,7 +158,7 @@ class WorkspaceLoaderConfig {
       eventDispatcher: ProjectSpecLifecycleEventDispatcher,
       projectManager: ProjectLoaderManager
    ): WorkspaceConfigLoader {
-      return workspaceConfig.createLoader(eventDispatcher,projectManager)
+      return workspaceConfig.createLoader(eventDispatcher, projectManager, workspaceConfig)
    }
 
 }
