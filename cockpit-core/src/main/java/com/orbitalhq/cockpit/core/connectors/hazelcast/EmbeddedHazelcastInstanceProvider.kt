@@ -30,6 +30,7 @@ class EmbeddedHazelcastInstanceProvider {
                                         springManagedContext: SpringManagedContext,
                                         config: Config,
                                         licenseKeyFn: () -> String?): Config {
+        config.setProperty("hazelcast.logging.type", "slf4j")
         config.managedContext = springManagedContext
         logger.info { "setting the mapstore config for ${StreamStateManagerHazelcastConfig.STREAM_STATUS_CACHE_NAME}" }
         /**

@@ -48,6 +48,8 @@ class HazelcastConnectionsManager(private val connectors: SourceLoaderConnectors
 
    }
 
+   internal fun connectionsCount() = hazelcastConnections.size
+
    override fun provide(config: HazelcastConfiguration): HazelcastInstance {
       return hazelcastConnection(config.connectionName).first
    }

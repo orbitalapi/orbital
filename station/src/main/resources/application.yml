@@ -85,7 +85,7 @@ logging:
       org.apache.http: OFF
       com.netflix: WARN
       com.hazelcast: WARN
-      io.vyne: INFO
+      com.orbitalhq: INFO
 #      io.vyne.query.chat: DEBUG
       #       Enable this to get graph debug schemas:
       #      io.vyne.query.GraphSearcher: TRACE
