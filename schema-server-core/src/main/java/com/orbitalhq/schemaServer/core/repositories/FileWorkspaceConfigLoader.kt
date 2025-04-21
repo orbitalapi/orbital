@@ -228,7 +228,7 @@ class FileWorkspaceConfigLoader(
    private fun convertDescendantPathsToRelative(path: Path): Path {
       return when {
          !path.isAbsolute -> path
-         path.startsWith(configFilePath.parent) -> {
+         configFilePath.parent != null && path.startsWith(configFilePath.parent) -> {
             configFilePath.parent.relativize(path)
          }
          else -> path
