@@ -242,3 +242,4 @@ orbital/
 
 station/.unikraft
 /station/search/
+/prometheus_data/
