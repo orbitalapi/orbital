@@ -19,7 +19,6 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
 import java.net.URI
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -37,7 +36,7 @@ class WorkspaceSettingsTest {
             url = URI.create("https://github.om/something.git").toURL(),
             branch = "main"
          )
-      ).createLoader(mock { }, mock { }, workspaceConfig = mock {})
+      ).createLoader(mock { }, mock { }, workspaceSettings = mock {})
          .shouldBeInstanceOf<GitWorkspaceConfigLoader>()
    }
 
@@ -48,7 +47,7 @@ class WorkspaceSettingsTest {
       val loader = WorkspaceSettings(
          configFile = workspaceFile
       )
-         .createLoader(mock { }, mock { }, workspaceConfig = WorkspaceSettings())
+         .createLoader(mock { }, mock { }, workspaceSettings = WorkspaceSettings())
       loader.shouldBeInstanceOf<FileWorkspaceConfigLoader>()
       (loader as FileWorkspaceConfigLoader)
       workspaceFile.shouldExist()
@@ -69,7 +68,7 @@ class WorkspaceSettingsTest {
       val loader = WorkspaceSettings(
          configFile = workspaceFile
       )
-         .createLoader(mock { }, mock { }, workspaceConfig = WorkspaceSettings(
+         .createLoader(mock { }, mock { }, workspaceSettings = WorkspaceSettings(
             fileChangeDetectionMethod = FileChangeDetectionMethod.POLL,
             filePollFrequency = pollFrequency
          ))
@@ -95,7 +94,7 @@ class WorkspaceSettingsTest {
          configFile = workspaceFile,
          projectFile = Paths.get("project/taxi.conf")
       )
-         .createLoader(mock { }, mock { }, workspaceConfig = WorkspaceSettings())
+         .createLoader(mock { }, mock { }, workspaceSettings = WorkspaceSettings())
       val loadedConfig = loader.load()
 
       val config = ConfigFactory.parseFile(workspaceFile.toFile())

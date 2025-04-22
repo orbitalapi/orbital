@@ -4,6 +4,7 @@ import com.google.common.io.Resources
 import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
+import com.orbitalhq.schemaServer.core.config.WorkspaceSettings
 import com.orbitalhq.schemaServer.core.file.FileChangeDetectionMethod
 import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.file.WorkspaceFileProjectConfig
@@ -43,9 +44,11 @@ class ConfigTest {
       // MP 06-Sep-24: We now populate the file with defaults,
       // as we need to make the paths relative to the config file.
 //      empty.file.should.be.`null`
-      empty.fileConfigOrDefault.projects.shouldBeEmpty()
+      empty.fileConfigOrDefault(WorkspaceSettings()).projects.shouldBeEmpty()
       empty.file!!.projects.shouldBeEmpty()
       empty.git!!.repositories.shouldBeEmpty()
+      empty.file!!.changeDetectionMethod.should.equal(FileChangeDetectionMethod.WATCH)
+      empty.git!!.diskChangeDetectionMethod.should.equal(FileChangeDetectionMethod.WATCH)
    }
 
    @Test

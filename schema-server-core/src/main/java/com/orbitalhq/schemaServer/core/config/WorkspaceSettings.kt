@@ -15,7 +15,6 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import java.net.URL
-import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
 import java.time.Duration
@@ -64,7 +63,7 @@ data class WorkspaceSettings(
    }
    fun createLoader(eventDispatcher: ProjectSpecLifecycleEventDispatcher,
                     projectManager: ProjectLoaderManager,
-                    workspaceConfig: WorkspaceSettings): WorkspaceConfigLoader {
+                    workspaceSettings: WorkspaceSettings): WorkspaceConfigLoader {
       return when {
          // MP: 16-Sep-24
          // When a user provided a project file, we used to skip creating a proper workspace (using an in-memory
@@ -93,16 +92,16 @@ data class WorkspaceSettings(
          else -> {
             val absolutePath = configFile.toAbsolutePath()
             logger.info { "Using workspace config file at ${configFile}, absolute path => $absolutePath" }
-            val configLoader = FileWorkspaceConfigLoader(configFile, eventDispatcher = eventDispatcher, projectManager = projectManager)
+            val configLoader = FileWorkspaceConfigLoader(configFile, eventDispatcher = eventDispatcher, projectManager = projectManager, workspaceSettings = workspaceSettings)
             // Force the creation of the workspace file if missing
             if (!absolutePath.exists()) {
                logger.info { "Created blank workspace.conf file at $absolutePath" }
-               configLoader.save(WorkspaceConfig.defaultEmpty(workspaceConfig))
+               configLoader.save(WorkspaceConfig.defaultEmpty(workspaceSettings))
             }
             try {
                val config = configLoader.load()
                if (projectFile != null) {
-                  if (config.fileConfigOrDefault.projects.none { it.pathString.endsWith(projectFile.toString()) }) {
+                  if (config.fileConfigOrDefault(workspaceSettings).projects.none { it.pathString.endsWith(projectFile.toString()) }) {
                      logger.info { "Workspace file at $absolutePath does not contain project $projectFile so adding it" }
                      configLoader.addFileSpec(
                         FileProjectSpec(

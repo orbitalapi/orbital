@@ -3,6 +3,7 @@ package com.orbitalhq.schemaServer.core.repositories
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schema.publisher.loaders.LoaderStatus
+import com.orbitalhq.schemaServer.core.config.WorkspaceSettings
 import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitProjectSpec
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
@@ -17,7 +18,9 @@ import reactor.core.publisher.Mono
 import java.nio.file.Path
 
 class InMemoryWorkspaceConfigLoader(
-   private var config: WorkspaceConfig, private val eventDispatcher: ProjectSpecLifecycleEventDispatcher
+   private var config: WorkspaceConfig,
+   private val eventDispatcher: ProjectSpecLifecycleEventDispatcher,
+   private val workspaceSettings: WorkspaceSettings = WorkspaceSettings()
 ) : WorkspaceConfigLoader {
 
    override val loaderStatus: Flux<LoaderStatus> = Flux.fromIterable(listOf(LoaderStatus.OK))
@@ -65,8 +68,8 @@ class InMemoryWorkspaceConfigLoader(
 
    override fun addGitSpec(gitSpec: GitProjectSpec): ModifyWorkspaceResponse {
       config = config.copy(
-         git = config.gitConfigOrDefault.copy(
-            repositories = config.gitConfigOrDefault.repositories.concat(gitSpec)
+         git = config.gitConfigOrDefault(workspaceSettings).copy(
+            repositories = config.gitConfigOrDefault(workspaceSettings).repositories.concat(gitSpec)
          )
       )
       eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(gitSpec, config.git!!))
@@ -79,8 +82,8 @@ class InMemoryWorkspaceConfigLoader(
    ): List<PackageIdentifier> {
 
       config = config.copy(
-         git = config.gitConfigOrDefault.copy(
-            repositories = config.gitConfigOrDefault.repositories.filterNot { it.name == repositoryName }
+         git = config.gitConfigOrDefault(workspaceSettings).copy(
+            repositories = config.gitConfigOrDefault(workspaceSettings).repositories.filterNot { it.name == repositoryName }
          )
       )
       eventDispatcher.schemaSourceRemoved(listOf(packageIdentifier))
@@ -89,8 +92,8 @@ class InMemoryWorkspaceConfigLoader(
 
    override fun removeFileRepository(repositoryPath: Path, packageIdentifier: PackageIdentifier): List<PackageIdentifier> {
       config = config.copy(
-         file = config.fileConfigOrDefault.copy(
-            projects = config.fileConfigOrDefault.projects.filterNot {
+         file = config.fileConfigOrDefault(workspaceSettings).copy(
+            projects = config.fileConfigOrDefault(workspaceSettings).projects.filterNot {
                it.path == repositoryPath
             }
          )
