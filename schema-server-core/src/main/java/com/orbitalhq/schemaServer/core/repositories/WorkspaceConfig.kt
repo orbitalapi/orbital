@@ -39,8 +39,10 @@ data class WorkspaceConfig(
       return "$fileRepos file repositories and $gitRepos git repositories"
    }
 
-   val gitConfigOrDefault:WorkspaceGitProjectConfig = git ?: WorkspaceGitProjectConfig.default()
-   val fileConfigOrDefault:WorkspaceFileProjectConfig = file ?: WorkspaceFileProjectConfig()
+   fun gitConfigOrDefault(workspaceSettings: WorkspaceSettings):WorkspaceGitProjectConfig = git ?: WorkspaceGitProjectConfig.default(workspaceSettings)
+   fun fileConfigOrDefault(workspaceSettings:WorkspaceSettings): WorkspaceFileProjectConfig {
+      return file ?: WorkspaceFileProjectConfig (changeDetectionMethod = workspaceSettings.fileChangeDetectionMethod, pollFrequency = workspaceSettings.filePollFrequency)
+   }
 }
 
 enum class ModifyProjectResponseStatus {

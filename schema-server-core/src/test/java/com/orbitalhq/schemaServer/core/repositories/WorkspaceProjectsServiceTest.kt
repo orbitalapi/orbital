@@ -3,6 +3,7 @@ package com.orbitalhq.schemaServer.core.repositories
 import com.google.common.io.Resources
 import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.schemaServer.core.config.WorkspaceSettings
 import com.orbitalhq.schemaServer.core.file.deployProject
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
 import com.orbitalhq.schemaServer.packages.OpenApiPackageLoaderSpec
@@ -238,7 +239,7 @@ class WorkspaceProjectsServiceTest {
    fun `creating a new workspace project creates relative to the new projects setting in the workspace file`() {
       val workspaceConfig = loader.load()
       val updatedConfig = workspaceConfig.copy(
-         file = workspaceConfig.fileConfigOrDefault.copy(
+         file = workspaceConfig.fileConfigOrDefault(WorkspaceSettings()).copy(
             newProjectsPath = Paths.get("projects/go/here")
          )
       )

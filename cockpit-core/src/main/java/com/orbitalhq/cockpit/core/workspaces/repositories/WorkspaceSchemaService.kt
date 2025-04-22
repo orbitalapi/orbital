@@ -3,6 +3,7 @@ package com.orbitalhq.cockpit.core.workspaces.repositories
 import com.orbitalhq.cockpit.core.auth.requireIsAuthenticated
 import com.orbitalhq.config.getSafeConfigString
 import com.orbitalhq.config.toHocon
+import com.orbitalhq.schemaServer.core.config.WorkspaceSettings
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfig
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
@@ -13,6 +14,7 @@ import com.orbitalhq.schemaServer.repositories.AddFileProjectRequest
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
 import com.orbitalhq.security.VynePrivileges
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.withContext
 import mu.KotlinLogging
 import org.springframework.security.access.prepost.PreAuthorize
@@ -42,7 +44,8 @@ class WorkspaceSchemaService(
     *
     * In time, this could probably do with some seperation.
     */
-   private val schemaConfigLoader: WorkspaceConfigLoader
+   private val schemaConfigLoader: WorkspaceConfigLoader,
+   private val workspaceSettings: WorkspaceSettings = WorkspaceSettings()
 ) {
 
    companion object {
@@ -86,7 +89,7 @@ class WorkspaceSchemaService(
       logger.info { "Sending File repo added event for repository at $description" }
       eventDispatcher.fileRepositorySpecAdded(
          FileSpecAddedEvent(
-            filePackageSpec, schemaConfig.fileConfigOrDefault
+            filePackageSpec, schemaConfig.fileConfigOrDefault(workspaceSettings)
          )
       )
 
@@ -154,7 +157,7 @@ class WorkspaceSchemaService(
       logger.info { "Sending Git repo added event for repository at ${gitRepoConfig.redactedUri}" }
       eventDispatcher.gitRepositorySpecAdded(
          GitSpecAddedEvent(
-            gitRepoConfig, schemaConfig.gitConfigOrDefault
+            gitRepoConfig, schemaConfig.gitConfigOrDefault(workspaceSettings)
          )
       )
 

@@ -12,6 +12,7 @@ import com.orbitalhq.schema.publisher.loaders.ProjectTransportConfig
 import com.orbitalhq.schemaServer.core.adaptors.InstantHoconSupport
 import com.orbitalhq.schemaServer.core.adaptors.PackageLoaderSpecHoconSupport
 import com.orbitalhq.schemaServer.core.adaptors.UriHoconSupport
+import com.orbitalhq.schemaServer.core.config.WorkspaceSettings
 import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.file.WorkspaceFileProjectConfig
 import com.orbitalhq.schemaServer.core.git.GitProjectSpec
@@ -57,7 +58,8 @@ class FileWorkspaceConfigLoader(
    fallback: Config = ConfigFactory.systemEnvironment(),
    private val eventDispatcher: ProjectSpecLifecycleEventDispatcher,
    private val projectManager: ProjectLoaderManager,
-   emitStateOnInit: Boolean = true
+   emitStateOnInit: Boolean = true,
+   private val workspaceSettings: WorkspaceSettings = WorkspaceSettings()
 ) :
    ChangeWatchingConfigFileRepository<WorkspaceConfig>(
       configFilePath, fallback
@@ -120,8 +122,8 @@ class FileWorkspaceConfigLoader(
    }
 
    private fun emitUpdateEvents(oldConfig: WorkspaceConfig?, workspaceConfig: WorkspaceConfig) {
-      val oldFileSpecs = oldConfig?.fileConfigOrDefault?.projects?.toSet() ?: emptySet()
-      val newFileSpecs = workspaceConfig.fileConfigOrDefault.projects.toSet()
+      val oldFileSpecs = oldConfig?.fileConfigOrDefault(workspaceSettings)?.projects?.toSet() ?: emptySet()
+      val newFileSpecs = workspaceConfig.fileConfigOrDefault(workspaceSettings).projects.toSet()
       val removedPackages = mutableListOf<PackageIdentifier>()
       val fileSpecsRemoved = Sets.difference(oldFileSpecs, newFileSpecs)
       fileSpecsRemoved.forEach { removedFileSpec ->
@@ -130,11 +132,11 @@ class FileWorkspaceConfigLoader(
       }
       val fileSpecsAdded = Sets.difference(newFileSpecs, oldFileSpecs)
       fileSpecsAdded.forEach { addedFileSpec ->
-         eventDispatcher.fileRepositorySpecAdded(FileSpecAddedEvent(addedFileSpec, workspaceConfig.fileConfigOrDefault))
+         eventDispatcher.fileRepositorySpecAdded(FileSpecAddedEvent(addedFileSpec, workspaceConfig.fileConfigOrDefault(workspaceSettings)))
       }
 
-      val oldGitSpecs = oldConfig?.gitConfigOrDefault?.repositories?.toSet() ?: emptySet()
-      val newGitSpecs = workspaceConfig.gitConfigOrDefault.repositories.toSet()
+      val oldGitSpecs = oldConfig?.gitConfigOrDefault(workspaceSettings)?.repositories?.toSet() ?: emptySet()
+      val newGitSpecs = workspaceConfig.gitConfigOrDefault(workspaceSettings).repositories.toSet()
       val gitSpecsRemoved = Sets.difference(oldGitSpecs, newGitSpecs)
       gitSpecsRemoved.forEach { removedGitSpec ->
          removedPackages.addAll(getPackageIdentifierForTransport(removedGitSpec))
@@ -143,7 +145,7 @@ class FileWorkspaceConfigLoader(
 
       val addedGitSpecs = Sets.difference(newGitSpecs, oldGitSpecs)
       addedGitSpecs.forEach { addedGitSpec ->
-         eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(addedGitSpec, workspaceConfig.gitConfigOrDefault))
+         eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(addedGitSpec, workspaceConfig.gitConfigOrDefault(workspaceSettings)))
       }
 
       if (removedPackages.isNotEmpty()) {
@@ -256,7 +258,7 @@ class FileWorkspaceConfigLoader(
       // MP: 06-Sep-24: Changed from original.file -> original.fileConfigOrDefault
       // We need to make newPaths relative to the location of the file, and this is the
       // only / best place to do it.
-      val updatedFileConfig = original.fileConfigOrDefault.let { fileConfig ->
+      val updatedFileConfig = original.fileConfigOrDefault(workspaceSettings).let { fileConfig ->
          val resolvedPaths = fileConfig.projects
             .map { packageSpec ->
                val updatedPath = updater(packageSpec.path)
@@ -285,7 +287,7 @@ class FileWorkspaceConfigLoader(
             newProjectsPath = updater(fileConfig.newProjectsPath)
          )
       }
-      val updatedGitConfig = original.gitConfigOrDefault.let { gitConfig ->
+      val updatedGitConfig = original.gitConfigOrDefault(workspaceSettings).let { gitConfig ->
          val checkoutRoot = convertRelativePathsToAbsoluteFromWorkspaceFile(gitConfig.checkoutRoot)
          gitConfig.copy(checkoutRoot = checkoutRoot)
       }

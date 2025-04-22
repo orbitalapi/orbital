@@ -2,6 +2,7 @@ package com.orbitalhq.schemaServer.core.repositories
 
 import com.google.common.annotations.VisibleForTesting
 import com.orbitalhq.PackageIdentifier
+import com.orbitalhq.schemaServer.core.config.WorkspaceSettings
 import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitUtils
@@ -37,7 +38,9 @@ import java.nio.file.Paths
 @RestController
 class WorkspaceProjectsService(
    private val configRepo: WorkspaceConfigLoader,
-   private val projectUploadHandlers: List<ProjectUploadHandler> = ProjectUploadHandler.DEFAULT
+   private val projectUploadHandlers: List<ProjectUploadHandler> = ProjectUploadHandler.DEFAULT,
+   private val workspaceSettings: WorkspaceSettings = WorkspaceSettings()
+
 ) {
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -72,7 +75,7 @@ class WorkspaceProjectsService(
    @PostMapping("/api/repositories/new")
    fun createNewEmptyRepository(@RequestBody request: CreateEmptyProjectRequest): Mono<ModifyWorkspaceResponse> {
       val workspaceNewProjectsPath = configRepo.load()
-         .fileConfigOrDefault.newProjectsPath
+         .fileConfigOrDefault(workspaceSettings).newProjectsPath
       val fileSpec = request.toRepositorySpec(workspaceNewProjectsPath)
       return Mono.just(configRepo.addFileSpec(fileSpec)).map {
          if (it.status == ModifyProjectResponseStatus.Failed) {
@@ -108,7 +111,7 @@ class WorkspaceProjectsService(
          PackageIdentifier.fromUriSafeId(uriSafeProjectId)
       }
       val workspaceProjectsRoot = configRepo.load()
-         .fileConfigOrDefault
+         .fileConfigOrDefault(workspaceSettings)
          .newProjectsPath
 
       val projectRoot = workspaceProjectsRoot.resolve(packageIdentifier.unversionedId.replace(".", "/"))
