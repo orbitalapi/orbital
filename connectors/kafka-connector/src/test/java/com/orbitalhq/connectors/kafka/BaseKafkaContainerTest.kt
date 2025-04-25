@@ -16,6 +16,7 @@ import com.orbitalhq.models.format.DefaultFormatRegistry
 import com.orbitalhq.protobuf.ProtobufFormatSpec
 import com.orbitalhq.query.QueryResult
 import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.schema.consumer.SimpleSchemaStore
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.testVyneWithStub
@@ -56,6 +57,7 @@ abstract class BaseKafkaContainerTest {
 
    lateinit var kafkaProducer: Producer<String, ByteArray>
    lateinit var connectionRegistry: InMemoryKafkaConnectorRegistry
+   lateinit var schemaStore: SimpleSchemaStore
 
    val formatRegistry = DefaultFormatRegistry(listOf(ProtobufFormatSpec, AvroFormatSpec))
 
@@ -162,6 +164,7 @@ abstract class BaseKafkaContainerTest {
    }
 
    fun vyneWithKafkaInvoker(schema: TaxiSchema): KafkaTestSetUp {
+      schemaStore = SimpleSchemaStore.forSchema(schema)
       val kafkaStreamPublisher = KafkaStreamPublisher(
          connectionRegistry,
          formatRegistry = formatRegistry,
@@ -169,7 +172,7 @@ abstract class BaseKafkaContainerTest {
       )
       val kafkaStreamManager = KafkaStreamManager(
          connectionRegistry,
-         SimpleSchemaProvider(schema),
+         schemaStore,
          formatRegistry = formatRegistry,
          meterRegistry = SimpleMeterRegistry(),
          emitConsumerInfoMessages = false,

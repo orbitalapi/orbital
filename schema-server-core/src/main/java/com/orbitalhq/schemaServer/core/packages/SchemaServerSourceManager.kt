@@ -10,6 +10,7 @@ import com.orbitalhq.schema.api.SchemaSourceProvider
 import com.orbitalhq.schema.publisher.*
 import com.orbitalhq.schema.publisher.rsocket.RSocketPublisherKeepAliveStrategyMonitor
 import com.orbitalhq.schema.rsocket.RSocketRoutes
+import com.orbitalhq.schemaServer.core.adaptors.taxi.TaxiSourceTranspiler
 import com.orbitalhq.schemaServer.core.config.LocalSchemaNotifier
 import com.orbitalhq.schemaServer.core.config.SchemaUpdateNotifier
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
@@ -49,7 +50,8 @@ class SchemaServerSourceManager(
    // internal for testing purposes.
    internal val taxiSchemaStoreWatcher: ExpiringSourcesStore = ExpiringSourcesStore(keepAliveStrategyMonitors = keepAliveStrategyMonitors),
    private val validatingStore: ValidatingSchemaStoreClient = LocalValidatingSchemaStoreClient(),
-   private val schemaUpdateNotifier: SchemaUpdateNotifier = LocalSchemaNotifier(validatingStore)
+   private val schemaUpdateNotifier: SchemaUpdateNotifier = LocalSchemaNotifier(validatingStore),
+   private val taxiTranspiler: TaxiSourceTranspiler = TaxiSourceTranspiler()
 ) :
    SchemaSourceProvider, SchemaPublisherTransport {
 
@@ -179,8 +181,9 @@ class SchemaServerSourceManager(
 
    override fun submitPackage(submission: SourcePackage): Either<CompilationException, Schema> {
       logger.info { "Received Schema Submission From ${submission.packageMetadata.identifier} without keepalive data. This will not be automatically tidied up" }
+      val sourcePackageWithTranspiledSources:SourcePackage = taxiTranspiler.transpileAndCombineSources(submission)
       return submitKeepAlivePackage(
-         KeepAlivePackageSubmission(submission)
+         KeepAlivePackageSubmission(sourcePackageWithTranspiledSources)
       )
 
    }

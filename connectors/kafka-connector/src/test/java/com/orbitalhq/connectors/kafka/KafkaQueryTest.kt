@@ -9,6 +9,7 @@ import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.winterbe.expekt.should
 import io.kotest.assertions.timing.eventually
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.timeout
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.generators.protobuf.TaxiGenerator
@@ -34,6 +36,7 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.test.context.junit4.SpringRunner
 import reactor.test.StepVerifier
 import java.math.BigInteger
+import java.time.Duration
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.random.Random
@@ -113,10 +116,10 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
          )
    }
 
-    @Test
-    fun `When Kafka subscription fails streaming query returns error`(): Unit = runBlocking {
-        val (vyne, kafkaStreamManager) = vyneWithKafkaInvoker(
-            """
+   @Test
+   fun `When Kafka subscription fails streaming query returns error`(): Unit = runBlocking {
+      val (vyne, kafkaStreamManager) = vyneWithKafkaInvoker(
+         """
          ${KafkaConnectorTaxi.Annotations.imports}
 
          import com.orbitalhq.kafka.KafkaMessageKey
@@ -133,20 +136,22 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
             stream streamMovieQuery:Stream<Movie>
          }
       """.trimIndent()
-        )
+      )
 
-        sendMessage("""{ "title" : "Star Wars" }""".toByteArray(), key = "sw-IV")
+      sendMessage("""{ "title" : "Star Wars" }""".toByteArray(), key = "sw-IV")
 
-        try {
-            val result = vyne.query(
-                """
+      try {
+         val result = vyne.query(
+            """
          stream { Movie }"""
-                    .trimIndent()
-            ) .results.take(1).toList() as List<TypedObject>
-        } catch (e: Exception ) {
-            e.message.should.equal("Error in Kafka connection: invalidConnection, details: Failed to construct kafka consumer")
-        }
-    }
+               .trimIndent()
+         ).results.take(1)
+            .timeout(30.seconds)
+            .toList() as List<TypedObject>
+      } catch (e: Exception) {
+         e.message.should.equal("Error in Kafka connection: invalidConnection, details: JAAS config entry not terminated by semi-colon")
+      }
+   }
 
    @Test
    fun `can read Kafka message metadata key into message payload`(): Unit = runBlocking {
@@ -226,9 +231,11 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       """.trimIndent()
       )
 
-      sendMessage("""{ "title" : "Star Wars" }""".toByteArray(), headers = listOf(
-         RecordHeader("correlationId", "24601".toByteArray())
-      ))
+      sendMessage(
+         """{ "title" : "Star Wars" }""".toByteArray(), headers = listOf(
+            RecordHeader("correlationId", "24601".toByteArray())
+         )
+      )
 
       val result = vyne.query(
          """
@@ -240,10 +247,12 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
       result.should.have.size(1)
       result.single().toRawObject()
-         .shouldBe(mapOf(
-            "correlationId" to "24601",
-            "title" to "Star Wars",
-         ))
+         .shouldBe(
+            mapOf(
+               "correlationId" to "24601",
+               "title" to "Star Wars",
+            )
+         )
    }
 
    @Test
@@ -505,7 +514,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
             .results
             .map { "query2" to it }
 
-         val recievedResults = mutableListOf<Pair<String,TypedInstance>>()
+         val recievedResults = mutableListOf<Pair<String, TypedInstance>>()
          val mergedResults = merge(result, result2).take(20)
             .toList(recievedResults)
          eventually(10.seconds) {
@@ -514,6 +523,71 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
             receivedPerQuery.keys.size == 2 && receivedPerQuery.all { it.value.size == 10 }
          }.shouldBeTrue()
       }
+
+   @Test
+   fun `when schema changes kafka connection is reset but consumers are unaffected`():Unit = runBlocking {
+      val baseSchema = """
+               ${KafkaConnectorTaxi.Annotations.imports}
+               type MovieId inherits String
+               type MovieTitle inherits String
+               type ReleaseDate inherits Instant
+
+               @KafkaService( connectionName = "moviesConnection" )
+               service MovieService {
+                  @KafkaOperation( topic = "movies", offset = "earliest" )
+                  stream streamMovieQuery:Stream<Movie>
+               }
+            """.trimIndent()
+      val schemaV1 = listOf(baseSchema, """
+               model Movie {
+                  id : MovieId inherits String
+                  title : MovieTitle inherits String
+               }
+
+      """.trimIndent()).joinToString("\n")
+      val schemaV2 = listOf(baseSchema, """
+               model Movie {
+                  id : MovieId inherits String
+                  // Change the name
+                  name : MovieTitle inherits String
+               }
+
+      """.trimIndent()).joinToString("\n")
+
+      val (vyne, _) = vyneWithKafkaInvoker(schemaV1)
+      val resultsFromQuery = mutableListOf<TypedInstance>()
+      val query = runBlocking { vyne.query("""stream { Movie } as {
+         | movieTitle : MovieTitle
+         |}[]
+      """.trimMargin()) }
+      collectQueryResults(query, resultsFromQuery)
+
+      sendMessage("""{ "id" : "MOV-1", "title" : "Star Wars" }""")
+
+      eventually(5.seconds) {
+         resultsFromQuery.shouldHaveSize(1)
+      }
+
+      // Update the schema
+      schemaStore.setSchema(TaxiSchema.from(schemaV2))
+
+      // Wait a bit.
+      Thread.sleep(5_000)
+
+      sendMessage("""{ "id" : "MOV-2", "name" : "Jaws" }""")
+
+      eventually(5.seconds) {
+         resultsFromQuery.shouldHaveSize(2)
+      }
+
+      resultsFromQuery
+         .map { it.toRawObject() }
+         .shouldBe(listOf(
+         mapOf("movieTitle" to "Star Wars" ),
+         mapOf("movieTitle" to "Jaws" ),
+      ))
+
+   }
 
    @Test
    fun `subscription is not cancelled when there is a parsing exception`(): Unit = runBlocking {
@@ -626,10 +700,6 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       results: MutableList<TypedInstance>,
       recordCount: Int = 2
    ): Deferred<List<TypedInstance>> {
-      val queryContext = runBlocking {
-         vyne.query("""stream { Movie }""")
-      }
-
       return GlobalScope.async {
          val queryContext = vyne.query("""stream { Movie }""")
          queryContext.results

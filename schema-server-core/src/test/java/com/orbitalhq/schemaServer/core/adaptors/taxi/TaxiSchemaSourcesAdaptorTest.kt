@@ -38,6 +38,13 @@ class TaxiSchemaSourcesAdaptorTest {
          .type.shouldBe("foo.EmailAddress".fqn())
    }
    @Test
+   fun `can load taxi project with protobuf additional sources`() {
+      val source = loadSourcePackage("mixed-sources/single-protobuf-directory")
+      val schema = TaxiSchema.from(source)
+      schema.hasType("CafeDrink")
+         .shouldBeTrue()
+   }
+   @Test
    fun `can load taxi project with openAPI additional sources with config files`() {
       val source = loadSourcePackage("mixed-sources/openapi-with-conf-file")
       val schema = TaxiSchema.from(source)

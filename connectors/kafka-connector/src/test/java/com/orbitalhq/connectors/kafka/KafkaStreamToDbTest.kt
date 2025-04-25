@@ -12,6 +12,7 @@ import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import com.orbitalhq.metrics.GaugeRegistry
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.schema.consumer.SimpleSchemaStore
 import com.orbitalhq.testVyne
 import com.zaxxer.hikari.HikariConfig
 import io.kotest.matchers.collections.shouldContainAll
@@ -118,7 +119,7 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
          val kafkaStreamManager =
             KafkaStreamManager(
                connectionRegistry,
-               SimpleSchemaProvider(testSchema),
+               SimpleSchemaStore.forSchema(testSchema),
                formatRegistry = formatRegistry,
                meterRegistry = SimpleMeterRegistry(),
                emitConsumerInfoMessages = false,
@@ -214,7 +215,7 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
          val kafkaStreamManager =
             KafkaStreamManager(
                connectionRegistry,
-               SimpleSchemaProvider(testSchema),
+               SimpleSchemaStore.forSchema(testSchema),
                formatRegistry = formatRegistry,
                meterRegistry = SimpleMeterRegistry(),
                emitConsumerInfoMessages = false,

@@ -4,6 +4,7 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.base.Throwables
 import com.google.common.cache.CacheBuilder
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.KafkaConnectionRegistry
@@ -21,23 +22,21 @@ import com.orbitalhq.query.MessageStreamExchange
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
-import com.orbitalhq.schema.api.SchemaProvider
+import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import com.orbitalhq.utils.orElse
 import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.merge
-import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
+import reactor.core.Disposable
+import reactor.core.publisher.Flux
+import reactor.core.publisher.Sinks
 import reactor.core.scheduler.Scheduler
 import reactor.core.scheduler.Schedulers
 import reactor.kafka.receiver.KafkaReceiver
@@ -45,8 +44,9 @@ import reactor.kafka.receiver.ReceiverOptions
 import reactor.util.retry.Retry
 import java.time.Duration
 import java.time.Instant
-import java.util.Locale
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
 private val logger = KotlinLogging.logger {}
@@ -62,26 +62,67 @@ data class KafkaConsumerRequest(
    val messageType = operation.returnType.name
 
    override fun toString(): String {
-      return "KafkaConsumerRequest:  Operation: ${service.name} / ${operation.name} connection: $connectionName topic: $topicName offset: $offset consumerGroupId: ${streamSourceId.orElse("-")}"
+      return "KafkaConsumerRequest:  Operation: ${service.name} / ${operation.name} connection: $connectionName topic: $topicName offset: $offset consumerGroupId: ${
+         streamSourceId.orElse(
+            "-"
+         )
+      }"
    }
+}
+
+val kafkaDispatcher = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
+
+private data class PublicEventStream(
+   val sink: Sinks.Many<Either<StreamErrorMessage, TypedInstance>>,
+   val flux: Flux<Either<StreamErrorMessage, TypedInstance>>
+) {
+   val flow = flux.asFlow()
 }
 
 class KafkaStreamManager(
    private val connectionRegistry: KafkaConnectionRegistry,
-   private val schemaProvider: SchemaProvider,
-   private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
+   private val schemaProvider: SchemaStore,
+   private val scope: CoroutineScope = CoroutineScope(kafkaDispatcher),
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val formatRegistry: FormatRegistry,
    private val meterRegistry: MeterRegistry,
    private val emitConsumerInfoMessages: Boolean,
-   private val kafkaConsumerStatsFlowBuilder: KafkaConsumerStatsFlowBuilder
+   private val kafkaConsumerStatsFlowBuilder: KafkaConsumerStatsFlowBuilder,
 ) {
 
    private val elasticScheduler: Scheduler = Schedulers.newBoundedElastic(20, Integer.MAX_VALUE, "orbital-kafka-stream")
-   private val cache = CacheBuilder.newBuilder()
-      .build<KafkaConsumerRequest, Flow<Either<StreamErrorMessage, TypedInstance>>>()
+
+   // These are the flows returned to callers.
+   // They're the long-lived 'outer' flows, that callers subscribe to, which survive
+   // schema changes.
+   // Internal kafka-facing flows emit into these flows.
+   private val publicFlowCache = CacheBuilder.newBuilder()
+      .build<KafkaConsumerRequest, PublicEventStream>()
+
+   // These are the internal kafka flows.
+   // These connect to Kafka and emit messags into the public flows.
+   // These are scoped to live as long as a schema, and are destroyed and recreated
+   // when the schema changes
+   private val kafkaFlowCache = ConcurrentHashMap<KafkaConsumerRequest, Disposable>()
 
    private val messageCounter = ConcurrentHashMap<KafkaConsumerRequest, AtomicInteger>()
+
+   init {
+      Flux.from(schemaProvider.schemaChanged)
+         // Debounce a little
+         .bufferTimeout(100, Duration.ofSeconds(5))
+         .subscribe {
+            val activeRequests = publicFlowCache.asMap()
+            if (activeRequests.isNotEmpty()) {
+               logger.info { "Schema changed - rebuilding existing Kafka subscriptions (${activeRequests.size} active subscriptions)" }
+            }
+            activeRequests.entries.forEach { (request, publicFlow) ->
+               terminateKafkaFlow(request)
+               launchKafkaFlowInto(publicFlow.sink, request)
+            }
+         }
+
+   }
 
    /**
     * Returns the message counts received on topics where we're still subscribed.
@@ -90,35 +131,61 @@ class KafkaStreamManager(
       return messageCounter.toMap()
    }
 
-   fun getActiveRequests(): List<KafkaConsumerRequest> = cache.asMap().keys.toList()
+   fun getActiveRequests(): List<KafkaConsumerRequest> = publicFlowCache.asMap().keys.toList()
 
    fun getStream(request: KafkaConsumerRequest): Flow<Either<StreamErrorMessage, TypedInstance>> {
-      val flow = cache.getIfPresent(request)?.let {
-         logger.info { "Reusing existing kafka subscription for request $request" }
-         return it
-      }
-         ?: cache.get(request) {
-            getCounter(request) // Force creation
-            val kafkaMessagesFlow = buildSharedFlow(request)
-            // We create the stats flow regardless of if emitConsumerInfoMessages is set to true.
-            // This is so we can emit stats to prometheus.
-            // However, if emitConsumerInfoMessages = false,
-            // we filter the messages out so they don't appear in the stream.
-            val statsFlow = buildStatsFlow(request)
-               .filter { emitConsumerInfoMessages }
-            merge(kafkaMessagesFlow, statsFlow)
+      val flow =
+         publicFlowCache.getIfPresent(request)?.let {
+            logger.info { "Reusing existing kafka subscription for request $request" }
+            return it.flow
          }
-      return flow
+            ?: publicFlowCache.get(request) {
+               getCounter(request) // Force creation
+
+               val sink = Sinks.many().multicast().directBestEffort<Either<StreamErrorMessage, TypedInstance>>()
+               val flux = sink.asFlux()
+                  .doOnCancel {
+                     logger.info { "Cancelling Kafka subscription as all consumers have gone away: $request" }
+                     evictConnection(request)
+                  }
+
+               launchKafkaFlowInto(sink, request)
+               // Unsubscribe when all consumers have gone away
+               val publicSharedFlow = PublicEventStream(sink, flux)
+               publicSharedFlow
+            }
+      return flow.flow
    }
 
-   private fun buildStatsFlow(request: KafkaConsumerRequest): Flow<Either<StreamErrorMessage, TypedInstance>> {
+   /**
+    * Creates a flow that emits info messages (like the group Id, the subscribed topic, etc)
+    * as messages.
+    *
+    * Was originally built as a short-term stop-gap for a customer with observability challenges.
+    * Note: There's a bug in that implementation that seems to cause the server to become
+    * unresponsive when a kafka broker is removed.
+    *
+    * !!!THE BUG HAS NOT BEEN ADDRESSED, BECAUSE THIS FEATURE HAS BEEN REMOVED!!!
+    * !!!DO NOT RE-ENABLE THIS CODE WITHOUT INVESTIGATING THE BUG!!!
+    *
+    * To reproduce:
+    *  - Re-enable this code
+    *  - Start a streaming query
+    *  - With the query still running, destroy the Kafka topic
+    *  - After a few seconds, refresh the UI - the server becomes unresponsive.
+    *
+    *  The issue is likely caused by two issues:
+    *   - Inappropriate blocking inside the StatsFlowBuilder
+    *   - Not removing the connections when the schema changes and the Kafka instance is no longer around.
+    */
+   private fun buildStatsFlow(request: KafkaConsumerRequest): Flux<Either<StreamErrorMessage, TypedInstance>> {
       val (connectionConfiguration, receiverOptions) = buildReceiverOptions(request)
       val consumerStatsFlow = kafkaConsumerStatsFlowBuilder
          .buildAndWrapAsErrorMessages(request, connectionConfiguration, receiverOptions)
          .map {
             it.left()
          }
-      return consumerStatsFlow
+      return consumerStatsFlow as Flux<Either<StreamErrorMessage, TypedInstance>>
    }
 
    private fun getCounter(request: KafkaConsumerRequest): AtomicInteger {
@@ -130,26 +197,66 @@ class KafkaStreamManager(
 
    private fun evictConnection(consumerRequest: KafkaConsumerRequest) {
       kafkaConsumerStatsFlowBuilder.stopMonitoring(consumerRequest)
-      cache.invalidate(consumerRequest)
+      terminateKafkaFlow(consumerRequest)
+      publicFlowCache.invalidate(consumerRequest)
       messageCounter.remove(consumerRequest)
-      cache.cleanUp()
+      publicFlowCache.cleanUp()
       logger.info { "Evicted connection ${consumerRequest.connectionName} / ${consumerRequest.topicName}" }
    }
 
-   private fun buildSharedFlow(request: KafkaConsumerRequest): SharedFlow<Either<StreamErrorMessage, TypedInstance>> {
+
+   private fun terminateKafkaFlow(request: KafkaConsumerRequest) {
+      val existingConsumer = kafkaFlowCache.remove(request)
+      if (existingConsumer != null) {
+         logger.info { "Terminating internal Kafka consumer for connection ${request.connectionName} topic ${request.topicName}" }
+         existingConsumer.dispose()
+      }
+   }
+
+   private fun launchKafkaFlowInto(
+      sink: Sinks.Many<Either<StreamErrorMessage, TypedInstance>>,
+      request: KafkaConsumerRequest
+   ) {
+      // Kill the existing inner flow (and associated Kafka subscription, if present)
+      terminateKafkaFlow(request)
+
+      // Create a subscription to Kafka, and emit on the provided flow.
+      val kafkaFlow = buildKafkaConsumer(request)
+      val subscription = kafkaFlow
+         .subscribeOn(Schedulers.boundedElastic())
+         .subscribe {
+            val emitResult = sink.tryEmitNext(it)
+            if (emitResult.isFailure) {
+               logger.info { "Failed to emit Kafka message from ${request.topicName} to consumers: ${emitResult.name}" }
+            }
+         }
+      // Atomically replace the old consumer (if present) with the new one.
+      // This is thread-safe.
+      kafkaFlowCache.compute(request) { _, previousConsumerJob ->
+         previousConsumerJob?.dispose()
+         subscription
+      }
+
+   }
+
+   /**
+    * Builds the internal, kafka-facing connection.
+    * This flow should emit into a seperate, shared public-facing flow, rather than be returned
+    * directly to consumers.
+    */
+   private fun buildKafkaConsumer(request: KafkaConsumerRequest): Flux<Either<StreamErrorMessage, TypedInstance>> {
       logger.info { "Creating new kafka subscription for request $request" }
       val (connectionConfiguration, receiverOptions) = buildReceiverOptions(request)
       // The groupId gets updated by the consumer after we connect, so capture now.
       val originalGroupId = receiverOptions.groupId() ?: "Unknown"
 
-      val messageType = schemaProvider.schema.type(request.messageType).let { type ->
+      val messageType = schemaProvider.schema().type(request.messageType).let { type ->
          require(type.name.name == "Stream") { "Expected to receive a Stream type for consuming from Kafka. Instead found ${type.name.parameterizedName}" }
          type.typeParameters[0]
       }
       val encoding = MessageEncodingType.forType(messageType)
-      val schema = schemaProvider.schema
       val dataSource = buildDataSource(request, connectionConfiguration)
-      val flow = KafkaReceiver.create<Any, ByteArray>(
+      val kafkaFlow = KafkaReceiver.create<Any, ByteArray>(
          // Commits are performed when either the interval or batch size is reached.
          receiverOptions
             .commitInterval(Duration.ofSeconds(2L))
@@ -159,18 +266,17 @@ class KafkaStreamManager(
          .publishOn(elasticScheduler) // Cannot block the receiver thread
          .doOnSubscribe {
             logger.info { "Subscriber detected for Kafka consumer on ${request.connectionName} / ${request.topicName}" }
-         }.doOnError {
-            logger.error(it) { "Error in kafka subscriber" }
          }
          .repeat()
          .retryWhen(Retry.backoff(3, Duration.ofSeconds(2)).transientErrors(true))
          .doOnComplete {
             logger.info { "Flow Complete detected for Kafka consumer on ${request.connectionName} / ${request.topicName}" }
-            evictConnection(request)
+//            evictConnection(request)
          }
          .doOnCancel {
+            // Note: Don't
             logger.info { "Subscriber cancel detected for Kafka consumer on ${request.connectionName} / ${request.topicName}" }
-            evictConnection(request)
+//            evictConnection(request)
          }
          .doOnEach { _ ->
             meterRegistry.counter(
@@ -198,7 +304,10 @@ class KafkaStreamManager(
                   TypedInstance.from(
                      messageType,
                      messageValue,
-                     schema,
+                     // Note: Don't store a reference here, as the schema may change over the course
+                     // of a subscription.
+                     // Calls to schemaProvider.schema() should be cheap.
+                     schemaProvider.schema(),
                      formatSpecs = formatRegistry.formats,
                      source = dataSource,
                      valueSuppliers = listOf(KafkaValueSupplier(record))
@@ -217,7 +326,7 @@ class KafkaStreamManager(
                   "orbital.connections.kafka.messageErrors",
                   listOf(
                      MetricTags.KafkaGroupId.of(originalGroupId),
-                     MetricTags.ConnectionName.of( request.connectionName),
+                     MetricTags.ConnectionName.of(request.connectionName),
                      MetricTags.Topic.of(request.topicName)
                   )
                )
@@ -230,23 +339,21 @@ class KafkaStreamManager(
             }
             typedInstanceOrError
          }
-         .asFlow()
-         .catch {
+         .onErrorResume { error ->
+            // Note: These are errors thrown when making a connection, NOT
+            // parsing errors within the message itself.
 
-            logger.error(
-               it.cause ?: it
-            ) { "Error in Kafka subscription for kafka connection ${request.connectionName}" }
+            val rootCause = Throwables.getRootCause(error)
+            logger.error(rootCause) { "Error in Kafka subscription for kafka connection ${request.connectionName}" }
             // see the error handling notes for SharedFlow:
             // https://github.com/Kotlin/kotlinx.coroutines/issues/2034
-            val errorMessage = "Error in Kafka connection: ${request.connectionName}, details: ${it.cause?.message}"
-            this.emit(ErrorType.errorMessage(errorMessage, schemaProvider.schema, dataSource).right())
+            val errorMessage = "Error in Kafka connection: ${request.connectionName}, details: ${rootCause.message}"
+            Flux.just(ErrorType.errorMessage(errorMessage, schemaProvider.schema(), dataSource).right())
          }
 
-         // SharingStarted.WhileSubscribed() means that we unsubscribe when all subscribers have gone away.
-         .shareIn(scope, SharingStarted.WhileSubscribed())
-
-
-      return flow
+      return kafkaFlow
+//      val statsFlux = buildStatsFlow(request)
+//      return Flux.merge(kafkaFlow, statsFlux)
    }
 
    private fun buildDataSource(

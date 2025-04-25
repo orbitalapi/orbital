@@ -1,0 +1,7 @@
+import "google/protobuf/descriptor.proto";
+
+package taxi;
+
+extend google.protobuf.FieldOptions {
+   optional string dataType = 50002;
+}
