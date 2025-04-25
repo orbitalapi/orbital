@@ -21,6 +21,7 @@ import com.orbitalhq.connectors.nosql.mongodb.MongoDbInvoker
 import com.orbitalhq.metrics.GaugeRegistry
 import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.schema.api.SchemaProvider
+import com.orbitalhq.schema.consumer.SchemaStore
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -71,7 +72,7 @@ class InvokerConfiguration {
    @Bean
    fun kafkaStreamManager(
       connectionRegistry: KafkaConnectionRegistry,
-      schemaProvider: SchemaProvider,
+      schemaProvider: SchemaStore,
       formatRegistry: FormatRegistry,
       meterRegistry: MeterRegistry,
       gaugeRegistry: GaugeRegistry

@@ -1,0 +1,4 @@
+namespace foo
+
+type CustomerName inherits String
+type CustomerId inherits Int

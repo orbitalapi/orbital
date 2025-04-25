@@ -8,9 +8,6 @@ import com.orbitalhq.metrics.GaugeRegistry
 import com.orbitalhq.metrics.MetricTags
 import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.utils.orElse
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
 import org.apache.kafka.clients.admin.AdminClient
 import org.apache.kafka.clients.consumer.KafkaConsumer
@@ -219,12 +216,11 @@ class KafkaConsumerStatsFlowBuilder(
       request: KafkaConsumerRequest,
       connectionConfiguration: KafkaConnectionConfiguration,
       receiverOptions: ReceiverOptions<Any, ByteArray>,
-   ): Flow<KafkaConsumerGroupInfoMessage> {
+   ): Flux<KafkaConsumerGroupInfoMessage> {
       // We are adding into monitoredTopics directly here, as KafkaStreamManager handles the caching on KafkaConsumerRequest.
       monitoredTopics[request] = MonitoredKafkaConsumerTopic(request, connectionConfiguration, receiverOptions)
       return monitoringStatusMessageFlux
          .filter { message -> message.request == request }
-         .asFlow()
    }
 
    fun stopMonitoring(consumerRequest: KafkaConsumerRequest) {
@@ -243,7 +239,7 @@ class KafkaConsumerStatsFlowBuilder(
       request: KafkaConsumerRequest,
       connectionConfiguration: KafkaConnectionConfiguration,
       receiverOptions: ReceiverOptions<Any, ByteArray>,
-   ): Flow<StreamErrorMessage> {
+   ): Flux<StreamErrorMessage> {
       return buildConsumerStatsFlow(request, connectionConfiguration, receiverOptions)
          .map {
             StreamErrorMessage(

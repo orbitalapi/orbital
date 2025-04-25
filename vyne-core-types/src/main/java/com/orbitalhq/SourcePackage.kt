@@ -26,21 +26,10 @@ private val logger = KotlinLogging.logger {}
 data class PathGlob(val basePath: Path, val glob: String) {
 
    fun <T> mapEachDirectoryEntry(action: (Path) -> T): Map<Path, T> {
-      val result = mutableMapOf<Path, T>()
-      // After messing about, glob:${glob} doesn't work, but glob:**/${glob} does.
-      // Suspect this needs more digging later...
-      val pathMatcher = this.basePath.fileSystem.getPathMatcher("glob:**/${glob}")
-      Files.walk(basePath)
-         .filter { path -> pathMatcher.matches(path) }
-         .forEach { path ->
-            try {
-               result[path] = action(path)
-            } catch (e: Exception) {
-               logger.error(e) { "Failed to process path at $path: ${e.message}" }
-            }
-
-         }
-      return result
+      // MP: 21-Apr-25 -- Using a single version.
+      // The taxi version of this code correctly handles **/*
+      return lang.taxi.utils.PathGlob(basePath, glob)
+         .mapEachDirectoryEntry(action)
    }
 }
 

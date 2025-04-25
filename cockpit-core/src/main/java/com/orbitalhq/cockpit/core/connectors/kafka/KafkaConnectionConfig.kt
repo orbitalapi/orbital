@@ -11,6 +11,7 @@ import com.orbitalhq.connectors.kafka.registry.SourceLoaderKafkaConnectionRegist
 import com.orbitalhq.metrics.GaugeRegistry
 import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.schema.api.SchemaProvider
+import com.orbitalhq.schema.consumer.SchemaStore
 import io.micrometer.core.instrument.MeterRegistry
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.EnableConfigurationProperties
@@ -29,7 +30,7 @@ class KafkaConnectionConfig {
    @Bean
    fun kafkaStreamManager(
       connectionRegistry: KafkaConnectionRegistry,
-      schemaProvider: SchemaProvider,
+      schemaStore: SchemaStore,
       formatRegistry: FormatRegistry,
       meterRegistry: MeterRegistry,
       gaugeRegistry: GaugeRegistry,
@@ -40,7 +41,7 @@ class KafkaConnectionConfig {
       )
       return KafkaStreamManager(
          connectionRegistry,
-         schemaProvider,
+         schemaStore,
          formatRegistry = formatRegistry,
          meterRegistry = meterRegistry,
          emitConsumerInfoMessages = emitKafkaConsumerGroupInfo,
