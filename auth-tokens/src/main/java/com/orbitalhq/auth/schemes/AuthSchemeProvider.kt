@@ -3,10 +3,12 @@ package com.orbitalhq.auth.schemes
 import arrow.core.filterIsInstance
 import com.orbitalhq.config.RepositoryWithWildcardSupport
 import com.orbitalhq.schemas.ServiceName
+import reactor.core.publisher.Flux
 
 interface AuthSchemeProvider : RepositoryWithWildcardSupport {
    fun getAuthScheme(serviceName: ServiceName): AuthScheme?
    fun getAll(): Map<ServiceName, AuthScheme>
+   val configUpdated: Flux<AuthTokens>
 }
 
 inline fun <reified T : AuthScheme> AuthSchemeProvider.getAllOfType(): Map<ServiceName, T> {
@@ -22,6 +24,9 @@ class SimpleAuthSchemeProvider(private val authTokens: AuthTokens) : AuthSchemeP
    override fun getAll(): Map<ServiceName, AuthScheme> {
       return authTokens.authenticationTokens
    }
+
+   override val configUpdated: Flux<AuthTokens>
+      get() = Flux.empty()
 
    override fun getRegisteredKey(presentedKey: String): String? {
       return getRegisteredKey(presentedKey, authTokens.authenticationTokens)
