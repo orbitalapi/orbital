@@ -28,15 +28,12 @@ class PartialModelsSpec : DescribeSpec({
          )
 
          stub.addResponseReturningInputs("patchFilmWithPartial")
-         shouldThrow<UnresolvedTypeInQueryException> {
             vyne.query(
                """
          given { Revenue = 200 }
          call FilmsApi::patchFilmWithOriginal
       """.trimIndent()
-            )
-               .firstRawObject()
-         }
+            ).shouldEmitError()
 
 
          vyne.query(
@@ -77,7 +74,7 @@ class PartialModelsSpec : DescribeSpec({
                {
                   "revenue": 200,
                   "info": {
-                  
+
                   }
                }
            """.trimIndent())
@@ -104,7 +101,7 @@ class PartialModelsSpec : DescribeSpec({
                  director: {
                    name: DirectorName inherits String
                    country: Country inherits String
-                 } 
+                 }
             }
             revenue : Revenue inherits Int
          }
@@ -124,7 +121,7 @@ class PartialModelsSpec : DescribeSpec({
                   "info": {
                      "title": "The Wild Bunch",
                      "director": {}
-                  
+
                   }
                }
            """.trimIndent())

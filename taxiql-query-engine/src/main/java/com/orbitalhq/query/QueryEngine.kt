@@ -70,8 +70,8 @@ open class SearchFailedException(
    message: String,
    val evaluatedPath: List<EvaluatedEdge>,
    val profilerOperation: ProfilerOperation,
-   val failedAttempts: List<DataSource>
-) : NoStackException(message)
+   override val failedAttempts: List<DataSource>
+) : ExceptionWithFailedAttempts, NoStackException(message)
 
 class UnresolvedTypeInQueryException(
    message: String,
@@ -350,7 +350,7 @@ class StatefulQueryEngine(
             responseType = querySpecTypeNode.type,
             onCancelRequestHandler = { context.requestCancel() },
             schema = schema,
-            errors =  context.eventBroker.queryErrorPublisher.errors
+            errors = context.eventBroker.queryErrorPublisher.errors
          )
       } else {
          QueryResult(
@@ -364,7 +364,7 @@ class StatefulQueryEngine(
             responseType = querySpecTypeNode.type,
             onCancelRequestHandler = { context.requestCancel() },
             schema = schema,
-            errors =  context.eventBroker.queryErrorPublisher.errors
+            errors = context.eventBroker.queryErrorPublisher.errors
          )
       }
    }
@@ -384,7 +384,8 @@ class StatefulQueryEngine(
       val resultsWithProjections = performMutationProjection(
          context,
          resultFlowWithProcessingTime,
-         mutation)
+         mutation
+      )
 
       val metricsCapturedResultStream = context.metricsReporter.observeEventStream(
          resultsWithProjections, startTime, metricsTags, false
@@ -420,7 +421,17 @@ class StatefulQueryEngine(
          context
       }
 
-      val paramValues = ParameterFactory().discoverAll(operation, searchContext)
+      val paramValues = try {
+         ParameterFactory().discoverAll(operation, searchContext)
+      } catch (e: Exception) {
+         val streamErrorMessage = StreamErrorMessage.fromThrowable(e, operation.returnType.paramaterizedName)
+         context.eventBroker.queryErrorPublisher.onError(context.queryId, streamErrorMessage)
+         val loggerMessage =
+            "Failed to fetch parameters to call mutation ${operation.qualifiedName} - ${streamErrorMessage.message}. "
+         logger.warn { loggerMessage }
+         val dataSource = FailedEvaluation(loggerMessage)
+         return flowOf(TypedNull.create(operation.returnType, dataSource)) to context
+      }
 
       // First pass.
       // TODO : Work out how to pass context (like facts from given clauses etc) into this.
@@ -432,8 +443,10 @@ class StatefulQueryEngine(
          searchContext,
          paramValues
       ).catch {
-         context.eventBroker.queryErrorPublisher.onError(context.queryId,
-            StreamErrorMessage.fromThrowable(it, operation.returnType.paramaterizedName))
+         context.eventBroker.queryErrorPublisher.onError(
+            context.queryId,
+            StreamErrorMessage.fromThrowable(it, operation.returnType.paramaterizedName)
+         )
          val dataSource = when (it) {
             is OperationInvocationException -> OperationResult.from(it.parameters, it.remoteCall)
                .asOperationReferenceDataSource()
@@ -675,7 +688,7 @@ class StatefulQueryEngine(
       val isStreamingQuery = target.type.isStream
       val targetIsCollection = target.type.isCollection
       if (target.type.isPrimitive && target.expression != null) {
-         logger.warn { "A search was started for a primitive type (${target.type.qualifiedName.shortDisplayName} - this is almost certainly a bug" }
+         logger.debug { "A search was started for a primitive type (${target.type.qualifiedName.shortDisplayName}" }
       }
       logger.debug { "Initiating find for ${target.description}" }
       if (context.cancelRequested) {
@@ -878,7 +891,8 @@ class StatefulQueryEngine(
             performMutationProjection(
                context,
                performMutation(target, projectedResults, context),
-               target.mutation)
+               target.mutation
+            )
       }
 
 
@@ -952,10 +966,10 @@ class StatefulQueryEngine(
             projectedResults
                .flatMapMerge(concurrency = Int.MAX_VALUE) { queryResult ->
                   doMutate(target.mutation!!, context, queryResult.instance).first
-                  .map { typedInstance ->
-                     typedInstance.withProcessingMetadata(asOf = queryResult.processingStart)
-                  }
-            }
+                     .map { typedInstance ->
+                        typedInstance.withProcessingMetadata(asOf = queryResult.processingStart)
+                     }
+               }
          }
       }
    }
@@ -963,7 +977,8 @@ class StatefulQueryEngine(
    private fun performMutationProjection(
       context: QueryContext,
       mutationFlow: Flow<TypedInstanceWithMetadata>,
-      mutation: Mutation?): Flow<TypedInstanceWithMetadata> {
+      mutation: Mutation?
+   ): Flow<TypedInstanceWithMetadata> {
       return mutation?.projectedType?.let { mutationProjectedType ->
          val factsToPropagate = initialState.toFactBag(schema)
          projectionProvider.project(
@@ -971,7 +986,8 @@ class StatefulQueryEngine(
             schema.type(mutation.operation.returnType),
             Projection(schema.type(mutationProjectedType.first), mutationProjectedType.second),
             context,
-            factsToPropagate)
+            factsToPropagate
+         )
 
       } ?: mutationFlow
    }

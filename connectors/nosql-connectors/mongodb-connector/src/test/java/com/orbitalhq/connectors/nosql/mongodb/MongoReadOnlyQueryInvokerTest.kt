@@ -4,17 +4,20 @@ import com.orbitalhq.connectors.config.mongodb.MongoConnection
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.nosql.mongodb.registry.InMemoryMongoConnectionRegistry
 import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.testVyne
+import com.orbitalhq.testVyneWithStub
 import com.orbitalhq.typedObjects
 import com.winterbe.expekt.should
 import io.kotest.matchers.maps.shouldContainKey
+import io.kotest.matchers.shouldBe
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 
-class MongoReadOnlyQueryInvokerTest: MongoDbTestcontainer() {
+class MongoReadOnlyQueryInvokerTest : MongoDbTestcontainer() {
 
    private lateinit var connectionRegistry: InMemoryMongoConnectionRegistry
    private lateinit var connectionFactory: MongoConnectionFactory
@@ -114,91 +117,154 @@ class MongoReadOnlyQueryInvokerTest: MongoDbTestcontainer() {
       val connectionParams = mapOf(MongoConnection.Parameters.CONNECTION_STRING.templateParamName to connectionString)
       val mongo1ConnectionConfig = MongoConnectionConfiguration("usersMongo", connectionParams)
       connectionRegistry = InMemoryMongoConnectionRegistry(listOf(mongo1ConnectionConfig))
-      connectionFactory =  MongoConnectionFactory(connectionRegistry, SimpleMeterRegistry())
+      connectionFactory = MongoConnectionFactory(connectionRegistry, SimpleMeterRegistry())
    }
 
    @Test
-   fun `can fetch data from mongodb with equals criteria`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
+   fun `can fetch data from mongodb with equals criteria`(): Unit = runBlocking {
+      val vyne = testVyne(harryPotterSchema) { schema ->
+         listOf(
+            MongoDbInvoker(
+               connectionFactory,
+               SimpleSchemaProvider(schema),
+               SimpleMeterRegistry()
+            )
+         )
+      }
       val result = vyne.query("""find { User[]( FirstName == "Harry" ) } """)
          .typedObjects()
       result.should.have.size(1)
       result.first().toRawObject()
-         .should.equal(mapOf(
-            "firstName" to "Harry",
-            "lastName" to "Potter",
-            "nickname" to "The Slayer",
-            "email" to "harry.potter@gmail.com",
-            "age" to 11))
+         .should.equal(
+            mapOf(
+               "firstName" to "Harry",
+               "lastName" to "Potter",
+               "nickname" to "The Slayer",
+               "email" to "harry.potter@gmail.com",
+               "age" to 11
+            )
+         )
    }
 
    @Test
-   fun `can fetch data from mongodb with less than criteria`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
+   fun `can fetch data from mongodb with less than criteria`(): Unit = runBlocking {
+      val vyne = testVyne(harryPotterSchema) { schema ->
+         listOf(
+            MongoDbInvoker(
+               connectionFactory,
+               SimpleSchemaProvider(schema),
+               SimpleMeterRegistry()
+            )
+         )
+      }
       val result = vyne.query("""find { User[]( Age < 14 ) } """)
          .typedObjects()
       result.should.have.size(1)
       result.first().toRawObject()
-         .should.equal(mapOf(
-            "firstName" to "Harry",
-            "lastName" to "Potter",
-            "nickname" to "The Slayer",
-            "email" to "harry.potter@gmail.com",
-            "age" to 11))
+         .should.equal(
+            mapOf(
+               "firstName" to "Harry",
+               "lastName" to "Potter",
+               "nickname" to "The Slayer",
+               "email" to "harry.potter@gmail.com",
+               "age" to 11
+            )
+         )
    }
 
    @Test
-   fun `can fetch data from mongodb with larger than criteria`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
+   fun `can fetch data from mongodb with larger than criteria`(): Unit = runBlocking {
+      val vyne = testVyne(harryPotterSchema) { schema ->
+         listOf(
+            MongoDbInvoker(
+               connectionFactory,
+               SimpleSchemaProvider(schema),
+               SimpleMeterRegistry()
+            )
+         )
+      }
       val result = vyne.query("""find { User[]( Age > 65 ) } """)
          .typedObjects()
       result.should.have.size(1)
       result.first().toRawObject()
-         .should.equal(mapOf(
-            "firstName" to "Albus",
-            "lastName" to "Dumbledore",
-            "nickname" to "",
-            "email" to "albus.dumbledore@gmail.com",
-            "age" to 110))
+         .should.equal(
+            mapOf(
+               "firstName" to "Albus",
+               "lastName" to "Dumbledore",
+               "nickname" to "",
+               "email" to "albus.dumbledore@gmail.com",
+               "age" to 110
+            )
+         )
    }
 
    @Test
-   fun `can fetch data from mongodb with logical and criteria`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
+   fun `can fetch data from mongodb with logical and criteria`(): Unit = runBlocking {
+      val vyne = testVyne(harryPotterSchema) { schema ->
+         listOf(
+            MongoDbInvoker(
+               connectionFactory,
+               SimpleSchemaProvider(schema),
+               SimpleMeterRegistry()
+            )
+         )
+      }
 
       val query = "find { User[]( Age >= 60 && Age < 70 ) }"
       val result = vyne.query(query)
          .typedObjects()
       result.should.have.size(1)
       result.first().toRawObject()
-         .should.equal(mapOf(
-            "firstName" to "Tom",
-            "lastName" to "Riddle",
-            "nickname" to "Lord Voldemort",
-            "email" to "tom.riddle@gmail.com",
-            "age" to 65))
+         .should.equal(
+            mapOf(
+               "firstName" to "Tom",
+               "lastName" to "Riddle",
+               "nickname" to "Lord Voldemort",
+               "email" to "tom.riddle@gmail.com",
+               "age" to 65
+            )
+         )
    }
 
    @Test
-   fun `can fetch data from mongodb with logical or criteria`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
+   fun `can fetch data from mongodb with logical or criteria`(): Unit = runBlocking {
+      val vyne = testVyne(harryPotterSchema) { schema ->
+         listOf(
+            MongoDbInvoker(
+               connectionFactory,
+               SimpleSchemaProvider(schema),
+               SimpleMeterRegistry()
+            )
+         )
+      }
 
       val query = "find { User[]( Age == 14 || Age == 15 ) }"
       val result = vyne.query(query)
          .typedObjects()
       result.should.have.size(1)
       result.first().toRawObject()
-         .should.equal(mapOf(
-            "firstName" to "George",
-            "lastName" to "Weasley",
-            "nickname" to "The holy",
-            "email" to "george.weasley@gmail.com",
-            "age" to 14))
+         .should.equal(
+            mapOf(
+               "firstName" to "George",
+               "lastName" to "Weasley",
+               "nickname" to "The holy",
+               "email" to "george.weasley@gmail.com",
+               "age" to 14
+            )
+         )
    }
 
    @Test
-   fun `can fetch data from mongodb with ObjectId with equals criteria`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
+   fun `can fetch data from mongodb with ObjectId with equals criteria`(): Unit = runBlocking {
+      val vyne = testVyne(harryPotterSchema) { schema ->
+         listOf(
+            MongoDbInvoker(
+               connectionFactory,
+               SimpleSchemaProvider(schema),
+               SimpleMeterRegistry()
+            )
+         )
+      }
       val result = vyne.query("""find { UserWithObjectId[]( FirstName == "Harry" ) } """)
          .typedObjects()
       result.should.have.size(1)
@@ -206,68 +272,180 @@ class MongoReadOnlyQueryInvokerTest: MongoDbTestcontainer() {
       (resultMap as Map<String, Any>).shouldContainKey("objectId")
       resultMap
          .filter { it.key != "objectId" }
-         .should.equal(mapOf(
-            "firstName" to "Harry",
-            "lastName" to "Potter",
-            "nickname" to "The Slayer",
-            "email" to "harry.potter@gmail.com",
-            "age" to 11))
+         .should.equal(
+            mapOf(
+               "firstName" to "Harry",
+               "lastName" to "Potter",
+               "nickname" to "The Slayer",
+               "email" to "harry.potter@gmail.com",
+               "age" to 11
+            )
+         )
    }
 
    @Test
-   fun `can fetch data from mongodb with Integer _id fields`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
+   fun `can fetch data from mongodb with Integer _id fields`(): Unit = runBlocking {
+      val vyne = testVyne(harryPotterSchema) { schema ->
+         listOf(
+            MongoDbInvoker(
+               connectionFactory,
+               SimpleSchemaProvider(schema),
+               SimpleMeterRegistry()
+            )
+         )
+      }
       val result = vyne.query("""find { FilmsWithIntObjectId[]( FilmId == 1 ) } """)
          .typedObjects()
       result.should.have.size(1)
       result.first().toRawObject()
-         .should.equal(mapOf(
-            "id" to 1,
-            "name" to "Star Wars"))
+         .should.equal(
+            mapOf(
+               "id" to 1,
+               "name" to "Star Wars"
+            )
+         )
    }
 
    @Test
-   fun `can fetch data from mongodb with String _id field`(): Unit = runBlocking  {
-      val vyne = testVyne(harryPotterSchema) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
+   fun `can fetch data from mongodb with String _id field`(): Unit = runBlocking {
+      val vyne = testVyne(harryPotterSchema) { schema ->
+         listOf(
+            MongoDbInvoker(
+               connectionFactory,
+               SimpleSchemaProvider(schema),
+               SimpleMeterRegistry()
+            )
+         )
+      }
       val result = vyne.query("""find { RatingsWithStringMongoId[]( RatingId == "goodRating" ) }""")
          .typedObjects()
       result.should.have.size(1)
       result.first().toRawObject()
-         .should.equal(mapOf(
-            "id" to "goodRating",
-            "name" to "Good"))
+         .should.equal(
+            mapOf(
+               "id" to "goodRating",
+               "name" to "Good"
+            )
+         )
    }
 
+   @Test
+   fun `can enrich against a mongo collection`(): Unit = runBlocking {
+      val eventsSchema = """
+         type FirstName inherits String
+         type LastName inherits String
+         type NickName inherits String
 
+         @Collection(connection = "usersMongo", collection = "films")
+         model FilmsWithIntObjectId {
+            @Id
+            id: FilmId inherits Int
+            name: FilmName inherits String
+         }
 
+         @MongoService( connection = "usersMongo" )
+         service UsersDb {
+            table films : FilmsWithIntObjectId[]
+         }
+         model FilmWatchedEvent {
+            filmId : FilmId inherits Int
+         }
 
+         service FilmEventApi {
+            operation getEvents():FilmWatchedEvent[]
+         }
+      """.trimIndent()
+      val (vyne, stub) = testVyneWithStub(
+         listOf(
+            MongoConnector.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            eventsSchema
+         )
+      ) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
+      stub.addResponse(
+         "getEvents", """[
+         | { "filmId" : 1 },
+         | { "filmId" : 2 }
+         |]
+      """.trimMargin()
+      )
+      val results = vyne.query(
+         """
+         find { FilmWatchedEvent[] } as {
+          // From event
+          filmId: FilmId
+          // Comes from enrichment
+          name : FilmName
+       }[]
+      """.trimIndent()
+      )
+         .rawObjects()
 
+      results.shouldBe(
+         listOf(
+            mapOf("filmId" to 1, "name" to "Star Wars"),
+            mapOf("filmId" to 2, "name" to "Death in Venice"),
+         )
+      )
+   }
 
+   @Test
+   fun `can enrich against a mongo collection returning full object`(): Unit = runBlocking {
+      val eventsSchema = """
+         type FirstName inherits String
+         type LastName inherits String
+         type NickName inherits String
 
+         @Collection(connection = "usersMongo", collection = "films")
+         model FilmsWithIntObjectId {
+            @Id
+            id: FilmId inherits Int
+            name: FilmName inherits String
+         }
 
+         @MongoService( connection = "usersMongo" )
+         service UsersDb {
+            table films : FilmsWithIntObjectId[]
+         }
+         model FilmWatchedEvent {
+            filmId : FilmId inherits Int
+         }
 
+         service FilmEventApi {
+            operation getEvents():FilmWatchedEvent[]
+         }
+      """.trimIndent()
+      val (vyne, stub) = testVyneWithStub(
+         listOf(
+            MongoConnector.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            eventsSchema
+         )
+      ) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
+      stub.addResponse(
+         "getEvents", """[
+         | { "filmId" : 1 },
+         | { "filmId" : 2 }
+         |]
+      """.trimMargin()
+      )
+      val results = vyne.query(
+         """
+         find { FilmWatchedEvent[] } as {
+          // From event
+          filmId: FilmId
+          // Comes from enrichment
+          film : FilmsWithIntObjectId
+       }[]
+      """.trimIndent()
+      )
+         .rawObjects()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+      results.shouldBe(
+         listOf(
+            mapOf("filmId" to 1, "film" to mapOf("id" to 1, "name" to "Star Wars")),
+            mapOf("filmId" to 2, "film" to mapOf("id" to 2, "name" to "Death in Venice")),
+         )
+      )
+   }
 }

@@ -1,62 +1,73 @@
 package com.orbitalhq.query
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.google.common.base.Throwables
+import com.orbitalhq.models.FailedSearch
 import com.orbitalhq.utils.RetryFailOnSerializeEmitHandler
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.time.Duration
 import java.time.Instant
 
-class StreamErrorPublisher: AutoCloseable {
-    private val streamErrorsSink = Sinks.many()
-        .replay()
-        // Limit is quite short - we just want
-        // to allow any late UI subscribers to get recent events
-        .limit<StreamQueryErrorEvent>(Duration.ofSeconds(30))
+class StreamErrorPublisher : AutoCloseable {
+   private val streamErrorsSink = Sinks.many()
+      .replay()
+      // Limit is quite short - we just want
+      // to allow any late UI subscribers to get recent events
+      .limit<StreamQueryErrorEvent>(Duration.ofSeconds(30))
 
-    val errors: Flux<StreamQueryErrorEvent>
-        get() = streamErrorsSink.asFlux()
+   val errors: Flux<StreamQueryErrorEvent>
+      get() = streamErrorsSink.asFlux()
 
-    fun onError(queryId: String, error: StreamErrorMessage) {
-        streamErrorsSink.emitNext(
-            StreamQueryErrorEvent(queryId, error),
-            RetryFailOnSerializeEmitHandler
-        )
-    }
+   fun onError(queryId: String, error: StreamErrorMessage) {
+      streamErrorsSink.emitNext(
+         StreamQueryErrorEvent(queryId, error),
+         RetryFailOnSerializeEmitHandler
+      )
+   }
 
-    override fun close() {
-        streamErrorsSink.tryEmitComplete()
-    }
+   override fun close() {
+      streamErrorsSink.tryEmitComplete()
+   }
 }
 
-class StreamErrorException(streamErrorMessage: StreamErrorMessage): IllegalStateException(streamErrorMessage.exception)
+class StreamErrorException(streamErrorMessage: StreamErrorMessage) : IllegalStateException(streamErrorMessage.exception)
 data class StreamErrorMessage(
-    val timestamp: Instant,
-    @JsonIgnore
-    val exception: Exception,
-    val message: String,
-    val typeName: String,
-    val payload: Any
+   val timestamp: Instant,
+   @JsonIgnore
+   val exception: Exception,
+   val message: String,
+   val typeName: String,
+   val payload: Any
 ) {
-    companion object {
-        fun fromException(ex: Exception, typeName: String): StreamErrorMessage {
-            return StreamErrorMessage(Instant.now(),
-                ex,
-                ex.message ?: "",
-                typeName,
-                ex.message ?: "")
-        }
+   companion object {
+      fun fromException(ex: Exception, typeName: String): StreamErrorMessage {
+         val rootCause = Throwables.getRootCause(ex)
+         val rootCauseMessage = "A ${rootCause::class.simpleName} exception was thrown - ${rootCause.message ?: "No message provided"}."
+         val message = if (rootCause is ExceptionWithFailedAttempts) {
+            val failedAttempts = rootCause.failedAttempts.joinToString(separator = "; ") { it.toString() }
+            "$rootCauseMessage - ${rootCause.failedAttempts.size} failed attempts were captured: $failedAttempts"
+         } else rootCauseMessage
+         return StreamErrorMessage(
+            timestamp = Instant.now(),
+            exception = ex,
+            message = message,
+            typeName = typeName,
+            payload = message
+         )
+      }
 
-        fun fromThrowable(throwable: Throwable, typeName: String): StreamErrorMessage {
-            return StreamErrorMessage(Instant.now(),
-                IllegalStateException(throwable),
-                throwable.message ?: "",
-                typeName,
-                throwable.message ?: "")
-        }
+      fun fromThrowable(throwable: Throwable, typeName: String): StreamErrorMessage {
+         return if (throwable is Exception) {
+            fromException(throwable, typeName)
+         } else {
+            fromException(RuntimeException(throwable), typeName)
+         }
+      }
 
-    }
+   }
 
-    fun toException(): StreamErrorException = StreamErrorException(this)
+   fun toException(): StreamErrorException = StreamErrorException(this)
 }
+
 data class StreamQueryErrorEvent(val queryId: String, val error: StreamErrorMessage)

@@ -24,15 +24,15 @@ class StreamsWithErrorsTest : DescribeSpec({
             userId : UserId inherits String
             message : StatusMessage inherits String
          }
-         
-         model UserDepartment {
+
+         closed model UserDepartment {
             userId: UserId
             department: Department inherits String
          }
-       
+
          service UserService {
             operation getUpdates():Stream<UserUpdateMessage>
-            operation getUserDepartment(userId: UserId): UserDepartment
+            operation getUserDepartment(userId: UserId): UserDepartment(...)
          }
       """.trimIndent()
      it("should report an error and continue if a parsing error happens on source data") {
@@ -63,8 +63,8 @@ class StreamsWithErrorsTest : DescribeSpec({
              .expectSubscription()
              .expectNextMatches {
                  it.error.typeName == "UserUpdateMessage" &&
-                         it.error.message == "Unexpected end-of-input: was expecting closing quote for a string value\n" +
-                         " at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 39]"
+                         it.error.message == """A JsonEOFException exception was thrown - Unexpected end-of-input: was expecting closing quote for a string value
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 39]."""
              }
              .thenCancel()
              .verify()
@@ -89,7 +89,7 @@ class StreamsWithErrorsTest : DescribeSpec({
          //Second Message is valid.
          val queryResult = vyne.query(
              """
-         stream { UserUpdateMessage } as { 
+         stream { UserUpdateMessage } as {
           userId: UserId
           department: Department
           }[]
@@ -116,8 +116,8 @@ class StreamsWithErrorsTest : DescribeSpec({
              .expectSubscription()
              .expectNextMatches {
                  it.error.typeName == "UserDepartment" &&
-                         it.error.message == "Unexpected end-of-input: was expecting closing quote for a string value\n" +
-                         " at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 39]"
+                         it.error.message == """A JsonEOFException exception was thrown - Unexpected end-of-input: was expecting closing quote for a string value
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 39]."""
              }
              .thenCancel()
              .verify()
@@ -140,7 +140,7 @@ class StreamsWithErrorsTest : DescribeSpec({
          //Second Message is valid.
          val queryResult = vyne.query(
              """
-         stream { UserUpdateMessage } as { 
+         stream { UserUpdateMessage } as {
           userId: UserId
           department: Department
           }[]
@@ -167,7 +167,7 @@ class StreamsWithErrorsTest : DescribeSpec({
              .expectSubscription()
              .expectNextMatches {
                  it.error.typeName == "UserDepartment" &&
-                         it.error.message == "Invalid person id"
+                         it.error.message == "A IllegalStateException exception was thrown - Invalid person id."
              }
              .thenCancel()
              .verify()
@@ -246,7 +246,7 @@ class StreamsWithErrorsTest : DescribeSpec({
              .expectSubscription()
              .expectNextMatches {
                  it.error.typeName == "RichUserUpdateMessage" &&
-                         it.error.message == "invalid user Id"
+                         it.error.message == "A IllegalStateException exception was thrown - invalid user Id."
              }
              .thenCancel()
              .verify()
@@ -320,8 +320,8 @@ class StreamsWithErrorsTest : DescribeSpec({
              .expectSubscription()
              .expectNextMatches {
                  it.error.typeName == "RichUserUpdateMessage" &&
-                         it.error.message == "Unexpected end-of-input: was expecting closing quote for a string value\n" +
-                         " at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 36]"
+                         it.error.message == """A JsonEOFException exception was thrown - Unexpected end-of-input: was expecting closing quote for a string value
+ at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 36]."""
              }
              .thenCancel()
              .verify()

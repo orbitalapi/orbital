@@ -38,6 +38,13 @@ class QueryOperationInvocationStrategy(
       if (candidateOperations.values.all { it.isEmpty() }) {
          return QueryStrategyResult.searchFailed()
       }
+      // MP: 28-Apr-25
+      // Don't run a query for a single object if there are no constraints.
+      // Otherwise, a query for T can end up invoking database queries (that return T[]), and taking
+      // the first result.
+      if (target.any { !it.type.isCollection && it.dataConstraints.isEmpty() }) {
+         return QueryStrategyResult.searchFailed()
+      }
       val result = invokeOperations(candidateOperations, context, target)
       return result
    }

@@ -34,7 +34,7 @@ class MongoMutatingQueryInvokerUniqueIndexTest: MongoDbTestcontainer() {
          import ${VyneQlGrammar.QUERY_TYPE_NAME}
 
          @Collection(connection = "accountsMongo", collection = "accounts")
-         model Account {
+         closed model Account {
             @UniqueIndex
             accountId : AccountId inherits String
             currency : Currency inherits String
@@ -66,7 +66,7 @@ class MongoMutatingQueryInvokerUniqueIndexTest: MongoDbTestcontainer() {
         insertResult.single()["currency"].value.should.equal("TL")
 
         val originalInsertedAt =  vyne.query("""
-            find { Account }
+            find { Account[] }
         """.trimIndent()).typedObjects().single()["insertedAt"].value
 
 
@@ -80,14 +80,14 @@ class MongoMutatingQueryInvokerUniqueIndexTest: MongoDbTestcontainer() {
         updatedResult.single()["currency"].value.should.equal("USD")
 
         val updatedInsertedAt =  vyne.query("""
-            find { Account }
+            find { Account[] }
         """.trimIndent()).typedObjects().single()["insertedAt"].value
 
         originalInsertedAt.should.equal(originalInsertedAt)
 
         //Now fetch all the accounts, there should only be one!
         val fetchAllAccounts = vyne.query("""
-            find { Account }
+            find { Account[] }
         """.trimIndent()).typedObjects()
         fetchAllAccounts.should.have.size(1)
         fetchAllAccounts.single()["currency"].value.should.equal("USD")

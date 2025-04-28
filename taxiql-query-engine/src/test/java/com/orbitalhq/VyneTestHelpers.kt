@@ -6,8 +6,12 @@ import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QueryResult
+import com.orbitalhq.query.StreamQueryErrorEvent
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.reactive.awaitFirst
+import org.junit.jupiter.api.fail
+import java.time.Duration
 
 suspend fun QueryContext.findBlocking(typeName: String): List<TypedInstance> {
    return this.find(typeName)
@@ -53,6 +57,20 @@ suspend fun QueryResult.expectReturnsNull(): TypedNull {
 
 suspend fun QueryResult.firstRawObject(): Map<String, Any?> {
    return this.rawObjects().first()
+}
+
+suspend fun QueryResult.shouldEmitError(timeout: Duration = Duration.ofSeconds(5)):StreamQueryErrorEvent {
+   try {
+      val error = this.firstError(timeout)
+      return error
+   } catch (e:Exception) {
+      fail(e)
+   }
+}
+suspend fun QueryResult.firstError(timeout: Duration = Duration.ofSeconds(5)): StreamQueryErrorEvent {
+   return this.errors.take(1).timeout(timeout).collectList().awaitFirst()
+      .single()
+
 }
 
 suspend fun QueryResult.firstTypedCollection(): TypedCollection {
