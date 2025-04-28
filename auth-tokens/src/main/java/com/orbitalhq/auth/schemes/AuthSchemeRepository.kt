@@ -2,6 +2,7 @@ package com.orbitalhq.auth.schemes
 
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemas.ServiceName
+import reactor.core.publisher.Flux
 
 // Spiritual successor to AuthTokenRepository
 // Not very well implemented at the moment.
@@ -36,6 +37,9 @@ object EmptyAuthSchemeRepository : AuthSchemeRepository {
    override fun getAll(): Map<ServiceName,AuthScheme> {
       return emptyMap()
    }
+
+   override val configUpdated: Flux<AuthTokens>
+      get() = Flux.empty()
 
    override fun saveToken(
       targetPackage: PackageIdentifier,
