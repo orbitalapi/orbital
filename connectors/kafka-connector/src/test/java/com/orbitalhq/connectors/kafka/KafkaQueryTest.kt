@@ -4,6 +4,8 @@ import com.jayway.awaitility.Awaitility.await
 import com.orbitalhq.Vyne
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
+import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.right
 import com.orbitalhq.protobuf.wire.RepoBuilder
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.winterbe.expekt.should
@@ -36,7 +38,6 @@ import org.springframework.context.annotation.Configuration
 import org.springframework.test.context.junit4.SpringRunner
 import reactor.test.StepVerifier
 import java.math.BigInteger
-import java.time.Duration
 import java.time.format.DateTimeFormatter
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.random.Random
@@ -354,7 +355,9 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
       Thread.sleep(1000)
 
-      await().atMost(15, SECONDS).until<Boolean> { resultsFromQuery2.size == 2 }
+      await().atMost(15, SECONDS).until<Boolean> {
+         resultsFromQuery2.size == 2
+      }
    }
 
 
@@ -587,6 +590,224 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
          mapOf("movieTitle" to "Jaws" ),
       ))
 
+   }
+
+   @Test
+   fun `subscription does not fail if field is not discoverable because service errors`():Unit = runBlocking {
+      val (vyne,_,stub) = vyneWithKafkaInvoker("""
+         model OrderPlacedEvent {
+            orderId : OrderId inherits String
+            customerId : CustomerId inherits Int
+         }
+         model Customer {
+            name : CustomerName inherits String
+         }
+         @KafkaService( connectionName = "moviesConnection" )
+         service Orders {
+            @KafkaOperation( topic = "newOrders", offset = "earliest" )
+            stream newOrders: Stream<OrderPlacedEvent>
+         }
+         service Customers {
+            operation getCustomer(CustomerId):Customer
+         }
+      """.trimIndent())
+
+      stub.addResponse("getCustomer") { _,params ->
+         val customerId = params.first().second.toRawObject() as Int
+         if (customerId == 2) {
+            error("This service has failed")
+         }
+         listOf(vyne.parseJson("Customer", """{ "name" : "Jimmy" }""").right())
+      }
+
+      val resultsFromQuery1 = mutableListOf<TypedInstance>()
+      val query1 = runBlocking { vyne.query("""stream { OrderPlacedEvent } as {
+         | orderId: OrderId
+         | name : CustomerName
+         |}[]
+      """.trimMargin()) }
+      collectQueryResults(query1, resultsFromQuery1)
+
+      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
+      eventually(10.seconds) {
+         resultsFromQuery1.shouldHaveSize(1)
+      }
+
+      // This message should fail, as it has a bad customer id
+      sendMessage("""{ "orderId" : "O1", "customerId" : 2 }""", "newOrders" )
+
+      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
+      eventually(10.seconds) {
+         resultsFromQuery1.shouldHaveSize(3)
+      }
+
+   }
+
+   @Test
+   fun `subscription does not fail if field is not discoverable because service returns null`():Unit = runBlocking {
+      val (vyne,_,stub) = vyneWithKafkaInvoker("""
+         model OrderPlacedEvent {
+            orderId : OrderId inherits String
+            customerId : CustomerId inherits Int
+         }
+         model Customer {
+            name : CustomerName inherits String
+         }
+         @KafkaService( connectionName = "moviesConnection" )
+         service Orders {
+            @KafkaOperation( topic = "newOrders", offset = "earliest" )
+            stream newOrders: Stream<OrderPlacedEvent>
+         }
+         service Customers {
+            operation getCustomer(CustomerId):Customer
+         }
+      """.trimIndent())
+
+      stub.addResponse("getCustomer") { _,params ->
+         val customerId = params.first().second.toRawObject() as Int
+         if (customerId == 2) {
+            listOf(vyne.parseJson("Customer", """{ "name" : null }""").right())
+         } else {
+            listOf(vyne.parseJson("Customer", """{ "name" : "Jimmy" }""").right())
+         }
+
+      }
+
+      val resultsFromQuery1 = mutableListOf<TypedInstance>()
+      val query1 = runBlocking { vyne.query("""stream { OrderPlacedEvent } as {
+         | orderId: OrderId
+         | name : CustomerName
+         |}[]
+      """.trimMargin()) }
+      collectQueryResults(query1, resultsFromQuery1)
+
+      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
+      eventually(10.seconds) {
+         resultsFromQuery1.shouldHaveSize(1)
+      }
+
+      // This message should fail, as it has a bad customer id
+      sendMessage("""{ "orderId" : "O1", "customerId" : 2 }""", "newOrders" )
+
+      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
+      eventually(10.seconds) {
+         resultsFromQuery1.shouldHaveSize(3)
+      }
+   }
+
+   @Test
+   fun `subscription does not fail if field is not discoverable because service returns null when building input to mutation`():Unit = runBlocking {
+      val (vyne,_,stub) = vyneWithKafkaInvoker("""
+         model OrderPlacedEvent {
+            orderId : OrderId inherits String
+            customerId : CustomerId inherits Int
+         }
+         model Customer {
+            name : CustomerName inherits String
+         }
+         @KafkaService( connectionName = "moviesConnection" )
+         service Orders {
+            @KafkaOperation( topic = "newOrders", offset = "earliest" )
+            stream newOrders: Stream<OrderPlacedEvent>
+         }
+
+         closed parameter model CustomerOrder {
+            name : CustomerName
+            orderId : OrderId
+         }
+         service Customers {
+            operation getCustomer(CustomerId):Customer
+            write operation updateCustomerOrder(CustomerOrder):CustomerOrder
+         }
+      """.trimIndent())
+
+      stub.addResponse("getCustomer") { _,params ->
+         val customerId = params.first().second.toRawObject() as Int
+         if (customerId == 2) {
+            listOf(vyne.parseJson("Customer", """{ "name" : null }""").right())
+         } else {
+            listOf(vyne.parseJson("Customer", """{ "name" : "Jimmy" }""").right())
+         }
+      }
+      stub.addResponseReturningInputs("updateCustomerOrder")
+
+      val resultsFromQuery1 = mutableListOf<TypedInstance>()
+      val query1 = runBlocking { vyne.query("""stream { OrderPlacedEvent }
+         |call Customers::updateCustomerOrder
+      """.trimMargin()) }
+      collectQueryResults(query1, resultsFromQuery1)
+
+//      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
+//      eventually(10.seconds) {
+//         resultsFromQuery1.shouldHaveSize(1)
+//      }
+
+      // This message should fail, as it has a bad customer id
+      sendMessage("""{ "orderId" : "O1", "customerId" : null }""", "newOrders" )
+
+      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
+      eventually(5.seconds) {
+         resultsFromQuery1.shouldHaveSize(2)
+      }
+   }
+
+   @Test
+   fun `subscription does not fail if field is not discoverable because service returns null for input required to function`():Unit = runBlocking {
+      val (vyne,_,stub) = vyneWithKafkaInvoker("""
+         model OrderPlacedEvent {
+            orderId : OrderId inherits String
+            customerId : CustomerId inherits Int
+         }
+         model Customer {
+            name : CustomerName inherits String
+         }
+         @KafkaService( connectionName = "moviesConnection" )
+         service Orders {
+            @KafkaOperation( topic = "newOrders", offset = "earliest" )
+            stream newOrders: Stream<OrderPlacedEvent>
+         }
+         service Customers {
+            operation getCustomer(CustomerId):Customer
+         }
+         service WriteDestination {
+            write operation storeData(CustomerOrderEvent):CustomerOrderEvent
+         }
+         parameter model CustomerOrderEvent {
+            orderId : OrderId
+            customerName : CustomerName
+            customerId : CustomerId
+         }
+
+      """.trimIndent())
+
+      stub.addResponse("getCustomer") { _,params ->
+         val customerId = params.first().second.toRawObject() as Int
+         if (customerId == 2) {
+            listOf(vyne.parseJson("Customer", """{ "name" : null }""").right())
+         } else {
+            listOf(vyne.parseJson("Customer", """{ "name" : "Jimmy" }""").right())
+         }
+      }
+      stub.addResponseReturningInputs("storeData")
+
+      val resultsFromQuery1 = mutableListOf<TypedInstance>()
+      val query1 = runBlocking { vyne.query("""stream { OrderPlacedEvent }
+         |call WriteDestination::storeData
+      """.trimMargin()) }
+      collectQueryResults(query1, resultsFromQuery1)
+
+      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
+      eventually(10.seconds) {
+         resultsFromQuery1.shouldHaveSize(1)
+      }
+
+      // This message should fail, as it has a bad customer id
+      sendMessage("""{ "orderId" : "O1", "customerId" : 2 }""", "newOrders" )
+
+      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
+      eventually(10.seconds) {
+         resultsFromQuery1.shouldHaveSize(3)
+      }
    }
 
    @Test
