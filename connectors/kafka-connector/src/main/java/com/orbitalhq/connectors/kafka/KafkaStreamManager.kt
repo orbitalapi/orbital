@@ -1,7 +1,6 @@
 package com.orbitalhq.connectors.kafka
 
 import arrow.core.Either
-import arrow.core.left
 import arrow.core.right
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Throwables
@@ -30,8 +29,6 @@ import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
 import reactor.core.Disposable
@@ -142,7 +139,7 @@ class KafkaStreamManager(
             ?: publicFlowCache.get(request) {
                getCounter(request) // Force creation
 
-               val sink = Sinks.many().multicast().directBestEffort<Either<StreamErrorMessage, TypedInstance>>()
+               val sink = Sinks.many().multicast().onBackpressureBuffer<Either<StreamErrorMessage, TypedInstance>>()
                val flux = sink.asFlux()
                   .doOnCancel {
                      logger.info { "Cancelling Kafka subscription as all consumers have gone away: $request" }
@@ -157,35 +154,9 @@ class KafkaStreamManager(
       return flow.flow
    }
 
-   /**
-    * Creates a flow that emits info messages (like the group Id, the subscribed topic, etc)
-    * as messages.
-    *
-    * Was originally built as a short-term stop-gap for a customer with observability challenges.
-    * Note: There's a bug in that implementation that seems to cause the server to become
-    * unresponsive when a kafka broker is removed.
-    *
-    * !!!THE BUG HAS NOT BEEN ADDRESSED, BECAUSE THIS FEATURE HAS BEEN REMOVED!!!
-    * !!!DO NOT RE-ENABLE THIS CODE WITHOUT INVESTIGATING THE BUG!!!
-    *
-    * To reproduce:
-    *  - Re-enable this code
-    *  - Start a streaming query
-    *  - With the query still running, destroy the Kafka topic
-    *  - After a few seconds, refresh the UI - the server becomes unresponsive.
-    *
-    *  The issue is likely caused by two issues:
-    *   - Inappropriate blocking inside the StatsFlowBuilder
-    *   - Not removing the connections when the schema changes and the Kafka instance is no longer around.
-    */
-   private fun buildStatsFlow(request: KafkaConsumerRequest): Flux<Either<StreamErrorMessage, TypedInstance>> {
+   private fun startTopicMonitoring(request: KafkaConsumerRequest) {
       val (connectionConfiguration, receiverOptions) = buildReceiverOptions(request)
-      val consumerStatsFlow = kafkaConsumerStatsFlowBuilder
-         .buildAndWrapAsErrorMessages(request, connectionConfiguration, receiverOptions)
-         .map {
-            it.left()
-         }
-      return consumerStatsFlow as Flux<Either<StreamErrorMessage, TypedInstance>>
+      kafkaConsumerStatsFlowBuilder.startMonitoring(request, connectionConfiguration, receiverOptions)
    }
 
    private fun getCounter(request: KafkaConsumerRequest): AtomicInteger {
@@ -227,7 +198,7 @@ class KafkaStreamManager(
          .subscribe {
             val emitResult = sink.tryEmitNext(it)
             if (emitResult.isFailure) {
-               logger.info { "Failed to emit Kafka message from ${request.topicName} to consumers: ${emitResult.name}" }
+               logger.warn { "Failed to emit Kafka message from ${request.topicName} to consumers: ${emitResult.name} - Message is dropped" }
             }
          }
       // Atomically replace the old consumer (if present) with the new one.
@@ -351,9 +322,8 @@ class KafkaStreamManager(
             Flux.just(ErrorType.errorMessage(errorMessage, schemaProvider.schema(), dataSource).right())
          }
 
+      startTopicMonitoring(request)
       return kafkaFlow
-//      val statsFlux = buildStatsFlow(request)
-//      return Flux.merge(kafkaFlow, statsFlux)
    }
 
    private fun buildDataSource(

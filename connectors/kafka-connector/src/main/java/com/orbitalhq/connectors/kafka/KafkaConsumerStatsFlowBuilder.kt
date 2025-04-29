@@ -6,19 +6,21 @@ import com.orbitalhq.connectors.kafka.registry.toAdminProps
 import com.orbitalhq.connectors.kafka.registry.toConsumerProps
 import com.orbitalhq.metrics.GaugeRegistry
 import com.orbitalhq.metrics.MetricTags
-import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.utils.orElse
 import mu.KotlinLogging
 import org.apache.kafka.clients.admin.AdminClient
+import org.apache.kafka.clients.admin.ConsumerGroupDescription
 import org.apache.kafka.clients.consumer.KafkaConsumer
+import org.apache.kafka.clients.consumer.OffsetAndMetadata
 import org.apache.kafka.common.TopicPartition
 import org.eclipse.collections.impl.map.mutable.ConcurrentHashMap
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
 import reactor.core.scheduler.Schedulers
 import reactor.kafka.receiver.ReceiverOptions
+import java.io.Serializable
 import java.time.Duration
-import java.time.Instant
 
 
 private data class MonitoredKafkaConsumerTopic(
@@ -42,9 +44,15 @@ private data class MonitoredKafkaConsumerTopic(
  */
 class KafkaConsumerStatsFlowBuilder(
    private val gaugeRegistry: GaugeRegistry,
-   pollFrequency: Duration = Duration.ofSeconds(15)
+   pollFrequency: Duration = Duration.ofSeconds(15),
+   private val operationTimeout: Duration = Duration.ofSeconds(10)
 ) {
 
+   private val monitoringScheduler = Schedulers.newBoundedElastic(
+      5, // Number of threads
+      100, // Queue size
+      "kafka-monitoring"
+   )
 
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -57,23 +65,28 @@ class KafkaConsumerStatsFlowBuilder(
 
    private val monitoredTopics = ConcurrentHashMap<KafkaConsumerRequest, MonitoredKafkaConsumerTopic>()
 
-   private val monitoringStatusMessageSink = Sinks.many().multicast().directBestEffort<KafkaConsumerGroupInfoMessage>()
-   private val monitoringStatusMessageFlux = monitoringStatusMessageSink.asFlux()
-
-
    init {
-      Flux.interval(pollFrequency)
-         .subscribeOn(Schedulers.boundedElastic())
-           .onBackpressureBuffer() // If emitConsumerStat takes longer than pollFrequency, don't schedule new one when emitConsumerStats is in progress.
-         .subscribe {
-            try {
-               logger.debug { "Starting to update Kafka monitoring stats" }
-               emitConsumerStats()
-               logger.debug { "Finished updating Kafka monitoring stats" }
-            } catch (e: Exception) {
-               logger.warn(e) { "Exception thrown while monitoring kafka stats" }
+      monitoringScheduler.schedule {
+         Flux.interval(pollFrequency, monitoringScheduler)
+            .publishOn(monitoringScheduler)
+            .onBackpressureBuffer() // If emitConsumerStat takes longer than pollFrequency, don't schedule new one when emitConsumerStats is in progress.
+            .subscribeOn(monitoringScheduler)
+            .subscribe {
+               try {
+                  logger.info { "Starting to update Kafka monitoring stats" }
+                  val monos = emitConsumerStats()
+                  Flux.concat(monos)
+                     .subscribeOn(monitoringScheduler)
+                     .doOnComplete {
+                        logger.debug { "Finished updating Kafka monitoring stats" }
+                     }
+                     .subscribe()
+               } catch (e: Exception) {
+                  logger.warn(e) { "Exception thrown while monitoring kafka stats" }
+               }
             }
-         }
+      }
+
    }
 
    // Note: Refactored this to put the interactions with AdminClient / KafkaConsumer
@@ -81,11 +94,10 @@ class KafkaConsumerStatsFlowBuilder(
    // We want a long-lived adminClient and consumer, but KafkaConsumer is not safe for multithreaded
    // access (it throws an exception saying as much),
    // so we work by storing a list of monitored topics, and emitting stats from a single thread.
-   private fun emitConsumerStats() {
-      monitoredTopics.forEachIndexed { index, monitoringConfig ->
+   private fun emitConsumerStats(): List<Mono<out MutableMap<out Serializable, out Any>>> {
+      return monitoredTopics.flatMapIndexed { index, monitoringConfig ->
 
          logger.debug { "Capturing Kafka consumer stats for $monitoringConfig (${index + 1} / ${monitoredTopics.size})" }
-         val messages = mutableListOf<KafkaConsumerGroupInfoMessage>()
 
          val connectionConfiguration = monitoringConfig.connectionConfiguration
          val receiverOptions = monitoringConfig.receiverOptions
@@ -115,112 +127,129 @@ class KafkaConsumerStatsFlowBuilder(
          val endOffsets = consumer.endOffsets(partitionsInfo)
 
          // Get consumer groups
-         try {
-            adminClient.describeConsumerGroups(listOf(groupId))
-               .all()
-               .whenComplete { groupDescriptions, throwable ->
-                  if (throwable == null) {
-                     val groupInfo = groupDescriptions[groupId]
-                     val members = groupInfo?.members() ?: emptyList()
-                     gaugeRegistry.int(
-                        "orbital.connections.kafka.members",
-                        listOf(
-                           MetricTags.ConnectionName.of(connectionConfiguration.connectionName),
-                           MetricTags.Topic.of(request.topicName),
-                           MetricTags.KafkaGroupId.of(groupId)
-                        )
-                     ).set(members.size)
-                     messages.add(
-                        KafkaConsumerGroupInfoMessage(
-                           "Consumer Group: $groupId has ${members.size} member(s): ${members.joinToString { it.consumerId() }}",
-                           request
-                        )
-                     )
-
-                  monitoringStatusMessageSink.tryEmitNext(
-                     KafkaConsumerGroupInfoMessage(
-                        "Consumer Group: $groupId has ${members.size} member(s): ${members.joinToString { it.consumerId() }}",
-                        request
-                     )
-                  ).logIfFailed()
-
-                  } else {
-                     val rootCause = Throwables.getRootCause(throwable)
-                     logger.warn { "Failed to monitor consumer group info  for Kafka connection $monitoringConfig - ${rootCause.message ?: "A ${rootCause::class.simpleName} exception was thrown"}" }
-                  }
-               }
-               .get()
-         } catch (throwable:Exception) {
-            val rootCause = Throwables.getRootCause(throwable)
-            logger.warn { "Failed to monitor consumer group info  for Kafka connection $monitoringConfig - ${rootCause.message ?: "A ${rootCause::class.simpleName} exception was thrown"}" }
-         }
-
+         val consumerGroupMetricsMono = emitConsumerGroupMetrics(adminClient, groupId, connectionConfiguration, request, monitoringConfig)
 
 
          // Get current consumer group offsets asynchronously
-         try {
-            adminClient.listConsumerGroupOffsets(groupId)
-               .partitionsToOffsetAndMetadata()
-               .whenComplete { currentOffsets, throwable ->
-                  if (throwable == null) {
-                     partitionsInfo.map { partition ->
-                        val currentOffset = currentOffsets[partition]?.offset() ?: 0L
-                        val endOffset = endOffsets[partition] ?: 0L
-                        val topic = partition.topic()
-                        val lag = endOffset - currentOffset
-                        val tags = listOf(
-                           MetricTags.ConnectionName.of(connectionConfiguration.connectionName),
-                           MetricTags.Topic.of(request.topicName),
-                           MetricTags.KafkaPartition.of(partition.partition()),
-                           MetricTags.KafkaGroupId.of(groupId)
-                        )
-                        gaugeRegistry.long(
-                           "orbital.connections.kafka.lag",
-                           tags
-                        ).set(lag)
-                        gaugeRegistry.long(
-                           "orbital.connections.kafka.end",
-                           tags
-                        ).set(endOffset)
-                        gaugeRegistry.long(
-                           "orbital.connections.kafka.offset",
-                           tags
-                        ).set(currentOffset)
-                        monitoringStatusMessageSink.tryEmitNext(
-                           KafkaConsumerGroupInfoMessage("Partition ${partition.partition()} topic: ${topic}, current offset: $currentOffset, end: $endOffset, lag: $lag", request)
-                        ).logIfFailed()
-
-                     }
-                  } else {
-                     val rootCause = Throwables.getRootCause(throwable)
-                     logger.warn { "Failed to monitor consumer offsets for Kafka connection $monitoringConfig - ${rootCause.message ?: "A ${rootCause::class.simpleName} exception was thrown"}" }
-                  }
-               }.get()
-         } catch (throwable: Exception) {
-            val rootCause = Throwables.getRootCause(throwable)
-            logger.warn { "Failed to monitor consumer offsets for Kafka connection $monitoringConfig - ${rootCause.message ?: "A ${rootCause::class.simpleName} exception was thrown"}" }
-         }
+         val topicOffsetMono = emitConsumerGroupTopicOffsets(
+            adminClient,
+            groupId,
+            partitionsInfo,
+            endOffsets,
+            connectionConfiguration,
+            request,
+            monitoringConfig
+         )
+         listOf(consumerGroupMetricsMono,topicOffsetMono)
 
       }
    }
 
+   private fun emitConsumerGroupTopicOffsets(
+      adminClient: AdminClient,
+      groupId: String,
+      partitionsInfo: MutableList<TopicPartition>,
+      endOffsets: MutableMap<TopicPartition, Long>,
+      connectionConfiguration: KafkaConnectionConfiguration,
+      request: KafkaConsumerRequest,
+      monitoringConfig: MonitoredKafkaConsumerTopic?
+   ): Mono<MutableMap<TopicPartition, OffsetAndMetadata>> {
+      return Mono.fromFuture {
+         adminClient.listConsumerGroupOffsets(groupId)
+            .partitionsToOffsetAndMetadata()
+            .whenComplete { currentOffsets, throwable ->
+               if (throwable == null) {
+                  partitionsInfo.map { partition ->
+                     val currentOffset = currentOffsets[partition]?.offset() ?: 0L
+                     val endOffset = endOffsets[partition] ?: 0L
+                     val lag = endOffset - currentOffset
+                     val tags = listOf(
+                        MetricTags.ConnectionName.of(connectionConfiguration.connectionName),
+                        MetricTags.Topic.of(partition.topic()),
+                        MetricTags.KafkaPartition.of(partition.partition()),
+                        MetricTags.KafkaGroupId.of(groupId)
+                     )
+                     gaugeRegistry.long(
+                        "orbital.connections.kafka.lag",
+                        tags
+                     ).set(lag)
+                     gaugeRegistry.long(
+                        "orbital.connections.kafka.end",
+                        tags
+                     ).set(endOffset)
+                     gaugeRegistry.long(
+                        "orbital.connections.kafka.offset",
+                        tags
+                     ).set(currentOffset)
+                  }
+               } else {
+                  val rootCause = Throwables.getRootCause(throwable)
+                  logger.warn { "Failed to monitor consumer offsets for Kafka connection $monitoringConfig - ${rootCause.message ?: "A ${rootCause::class.simpleName} exception was thrown"}" }
+               }
+            }
+            .toCompletionStage().toCompletableFuture()
+      }
+         .timeout(operationTimeout)
+         .doOnError { throwable ->
+            val rootCause = Throwables.getRootCause(throwable)
+            logger.warn { "Failed to monitor consumer offsets for Kafka connection $monitoringConfig - ${rootCause.message ?: "A ${rootCause::class.simpleName} exception was thrown"}" }
+         }
+   }
+
+   private fun emitConsumerGroupMetrics(
+      adminClient: AdminClient,
+      groupId: String,
+      connectionConfiguration: KafkaConnectionConfiguration,
+      request: KafkaConsumerRequest,
+      monitoringConfig: MonitoredKafkaConsumerTopic?
+   ): Mono<MutableMap<String, ConsumerGroupDescription>> {
+      return Mono.fromFuture {
+         adminClient.describeConsumerGroups(listOf(groupId))
+            .all()
+            .whenComplete { groupDescriptions, throwable ->
+               if (throwable == null) {
+                  val groupInfo = groupDescriptions[groupId]
+                  val members = groupInfo?.members() ?: emptyList()
+                  gaugeRegistry.int(
+                     "orbital.connections.kafka.members",
+                     listOf(
+                        MetricTags.ConnectionName.of(connectionConfiguration.connectionName),
+                        MetricTags.KafkaGroupId.of(groupId)
+                     )
+                  ).set(members.size)
+
+
+               } else {
+                  val rootCause = Throwables.getRootCause(throwable)
+                  logger.warn { "Failed to monitor consumer group info  for Kafka connection $monitoringConfig - ${rootCause.message ?: "A ${rootCause::class.simpleName} exception was thrown"}" }
+               }
+            }.toCompletionStage().toCompletableFuture()
+      }.timeout(operationTimeout)
+         .doOnError { throwable ->
+            val rootCause = Throwables.getRootCause(throwable)
+            logger.warn { "Failed to monitor consumer group info  for Kafka connection $monitoringConfig - ${rootCause.message ?: "A ${rootCause::class.simpleName} exception was thrown"}" }
+         }
+
+   }
+
    /**
-    * Builds a flow that emits consumer group statistics without blocking.
-    * The flow emits messages as each piece of data becomes available and then completes.
-    * Messages include:
+    * Registers a Kafka connection / consumer for emitting monitoring stats.
+    * Stats mesaured include:
     * - Number of consumers in the consumer group
     * - Current offset of our consumer group
     * - Head offset of the topic (for lag calculation)
     */
-   private fun buildConsumerStatsFlow(
+   fun startMonitoring(
       request: KafkaConsumerRequest,
       connectionConfiguration: KafkaConnectionConfiguration,
       receiverOptions: ReceiverOptions<Any, ByteArray>,
-   ): Flux<KafkaConsumerGroupInfoMessage> {
-      // We are adding into monitoredTopics directly here, as KafkaStreamManager handles the caching on KafkaConsumerRequest.
-      monitoredTopics[request] = MonitoredKafkaConsumerTopic(request, connectionConfiguration, receiverOptions)
-      return monitoringStatusMessageFlux
-         .filter { message -> message.request == request }
+   ) {
+      monitoredTopics.computeIfAbsent(request) {
+         logger.info { "starting monitoring of ${request.connectionName} / ${request.topicName}" }
+         MonitoredKafkaConsumerTopic(request, connectionConfiguration, receiverOptions)
+      }
+
+
    }
 
    fun stopMonitoring(consumerRequest: KafkaConsumerRequest) {
@@ -228,29 +257,6 @@ class KafkaConsumerStatsFlowBuilder(
       monitoredTopics.remove(consumerRequest)
    }
 
-   /**
-    * Currently all streams emit either a TypedInstance or an error.
-    * We need to change that to allow non-error messages (such as these).
-    * However, there's other refactoring happening in that area right now.
-    *
-    * As a workaround, modify our messages to look like errors.
-    */
-   fun buildAndWrapAsErrorMessages(
-      request: KafkaConsumerRequest,
-      connectionConfiguration: KafkaConnectionConfiguration,
-      receiverOptions: ReceiverOptions<Any, ByteArray>,
-   ): Flux<StreamErrorMessage> {
-      return buildConsumerStatsFlow(request, connectionConfiguration, receiverOptions)
-         .map {
-            StreamErrorMessage(
-               Instant.now(),
-               RuntimeException("This is not a real exception"),
-               it.message,
-               "",
-               ""
-            )
-         }
-   }
 
    private fun Sinks.EmitResult.logIfFailed() {
       if (this.isFailure) {
