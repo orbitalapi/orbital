@@ -73,7 +73,7 @@ class KafkaConsumerStatsFlowBuilder(
             .subscribeOn(monitoringScheduler)
             .subscribe {
                try {
-                  logger.info { "Starting to update Kafka monitoring stats" }
+                  logger.debug { "Starting to update Kafka monitoring stats" }
                   val monos = emitConsumerStats()
                   Flux.concat(monos)
                      .subscribeOn(monitoringScheduler)
