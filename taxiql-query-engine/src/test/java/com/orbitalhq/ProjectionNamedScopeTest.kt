@@ -110,25 +110,27 @@ class ProjectionNamedScopeTest {
       """.trimMargin()
       )
          .rawObjects() as Any
-      result.should.equal(listOf(
-         mapOf(
-            "title" to "Star Wars",
-            "star" to mapOf(
-               "name" to "Mark Hamill", "title" to "Star Wars"
-            )
-         ),
-         mapOf(
-            "title" to "Empire Strikes Back",
-            "star" to mapOf(
-               "name" to "Mark Hamill", "title" to "Empire Strikes Back"
+      result.should.equal(
+         listOf(
+            mapOf(
+               "title" to "Star Wars",
+               "star" to mapOf(
+                  "name" to "Mark Hamill", "title" to "Star Wars"
+               )
+            ),
+            mapOf(
+               "title" to "Empire Strikes Back",
+               "star" to mapOf(
+                  "name" to "Mark Hamill", "title" to "Empire Strikes Back"
+               )
             )
          )
-      ))
+      )
    }
 
    @Test
-   fun `a projection can refine whats in scope`():Unit = runBlocking {
-      val (vyne,stub) = testVyne(
+   fun `a projection can refine whats in scope`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
          """
             model Film {
                title : Title inherits String
@@ -142,30 +144,39 @@ class ProjectionNamedScopeTest {
             }
          """.trimIndent()
       )
-      stub.addResponse("getFilm", vyne.parseJson("Film", """{
+      stub.addResponse(
+         "getFilm", vyne.parseJson(
+            "Film", """{
          "title" : "Star Wars",
           "cast" : [ { "name" : "Mark" } , { "name" : "Carrie" } ]
-           }"""))
-      val queryResult = vyne.query("""find { Film } as (Actor[]) -> {
+           }"""
+         )
+      )
+      val queryResult = vyne.query(
+         """find { Film } as (Actor[]) -> {
          | actorName : Name
          | filmTitle : Title // should be null, as it's out-of-scope on Actor
          |}[]
-      """.trimMargin())
+      """.trimMargin()
+      )
          .rawObjects()
-      queryResult.shouldBe(listOf(
-         // filmTitle is null, because it's out-of-scope
-         mapOf("actorName" to "Mark", "filmTitle" to null),
-         mapOf("actorName" to "Carrie", "filmTitle" to null)
-      ))
+      queryResult.shouldBe(
+         listOf(
+            // filmTitle is null, because it's out-of-scope
+            mapOf("actorName" to "Mark", "filmTitle" to null),
+            mapOf("actorName" to "Carrie", "filmTitle" to null)
+         )
+      )
    }
 
    @Test
    fun `can use expressions in projection scopes`() {
 
    }
+
    @Test
-   fun `expressions in projection scopes can trigger discovery`():Unit = runBlocking {
-      val (vyne,stub) = testVyne(
+   fun `expressions in projection scopes can trigger discovery`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
          """
             model Film {
                id : FilmId inherits Int
@@ -184,23 +195,30 @@ class ProjectionNamedScopeTest {
          """.trimIndent()
       )
       stub.addResponse("getFilm", vyne.parseJson("Film", """{ "title" : "Star Wars", "id": 1}"""))
-      stub.addResponse("getCast", vyne.parseJson("Cast", """{ "actors" : [ { "name" : "Mark" }, {"name" : "Carrie" }]  }"""))
+      stub.addResponse(
+         "getCast",
+         vyne.parseJson("Cast", """{ "actors" : [ { "name" : "Mark" }, {"name" : "Carrie" }]  }""")
+      )
 
-      val resultWithoutExplicitScope = vyne.query("""
+      val resultWithoutExplicitScope = vyne.query(
+         """
          find { Film } as (first(Actor[])) -> { // note that film has been removed from the scope...
             title : Title //... so we expect this isn't discoverable.
             starring : ActorName
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
          .firstRawObject()
       resultWithoutExplicitScope.shouldBe(mapOf("title" to null, "starring" to "Mark"))
 
-      val resultWithExplicitScope = vyne.query("""
+      val resultWithExplicitScope = vyne.query(
+         """
          find { Film } as (Film, first(Actor[])) -> { // Here, Film is in scope...
             title : Title // .. so this is knowable
             starring : ActorName
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
          .firstRawObject()
       resultWithExplicitScope.shouldBe(mapOf("title" to "Star Wars", "starring" to "Mark"))
    }
@@ -241,10 +259,10 @@ class ProjectionNamedScopeTest {
             """[ { "id" : 1, "filmId": ${params[0].second.value} } ]"""
          )
 
-          when(reviews) {
-              is Either.Left -> listOf(Either.Left(reviews.value))
-              is Either.Right -> (reviews.value as TypedCollection).map { it.right() }
-          }
+         when (reviews) {
+            is Either.Left -> listOf(Either.Left(reviews.value))
+            is Either.Right -> (reviews.value as TypedCollection).map { it.right() }
+         }
       }
       val response = vyne.query(
          """find { Film[] } as (src:Film) -> {
@@ -257,8 +275,9 @@ class ProjectionNamedScopeTest {
    }
 
    @Test
-   fun `can use a named scope to project to a static array type`():Unit = runBlocking {
-      val (vyne,stub) = testVyne("""
+   fun `can use a named scope to project to a static array type`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
             model Film {
                title : Title inherits String
             }
@@ -271,20 +290,86 @@ class ProjectionNamedScopeTest {
             service Films {
                operation getFilms():FilmCatalog
             }
-      """.trimIndent())
-      stub.addResponse("getFilms", vyne.parseJson("FilmCatalog", """
+      """.trimIndent()
+      )
+      stub.addResponse(
+         "getFilms", vyne.parseJson(
+            "FilmCatalog", """
          { "films" : [ { "title" : "Jaws" }, { "title" : "Star Wars" } ] }
-      """.trimIndent()))
+      """.trimIndent()
+         )
+      )
       val result = vyne.query("""find { FilmCatalog } as (films:Film[]) -> Movie[]""")
          .rawObjects()
-      result.shouldBe(listOf(
-         mapOf("name" to "Jaws"),
-         mapOf("name" to "Star Wars"),
-      ))
+      result.shouldBe(
+         listOf(
+            mapOf("name" to "Jaws"),
+            mapOf("name" to "Star Wars"),
+         )
+      )
    }
 
+   @Test // ORB-945
+   fun `can have multiple named projection scopes in nested projection`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
 
+         model Application {
+             caseId: ApplicationId inherits String
+             title : Title inherits String
+         }
 
+         model Applicant {
+             name : Name inherits String
+         }
+         service CaseApi {
+             operation getCase(ApplicationId):Application
+             operation getApplicant(ApplicationId):Applicant
+         }
+      """.trimIndent()
+      )
+      stub.addResponsesByParameter(
+         "getCase", responses = mapOf(
+            "CASE-1" to """{ "caseId" : "CASE-1", "title" : "Mortgage application" }""",
+            "CASE-2" to """{ "caseId" : "CASE-2", "title" : "Mortgage application II" }""",
+         )
+      )
+      stub.addResponsesByParameter(
+         "getApplicant", responses = mapOf(
+            "CASE-1" to """{ "name" : "Jimmy" }""",
+            "CASE-2" to """{ "name" : "Jack" }""",
+         )
+      )
+      val result = vyne.query(
+         """given { ApplicationId[] = ['CASE-1','CASE-2']}
+find { ApplicationId[] } as {
+    application: ApplicationId as (theCase: Application, applicant: Applicant) -> {
+    caseId: theCase.caseId
+    title : theCase.title
+    name : applicant.name
+  }
+}[]"""
+      ).rawObjects()
+      result.shouldBe(
+         listOf(
+            mapOf(
+               "application" to mapOf(
+                  "caseId" to "CASE-1",
+                  "title" to "Mortgage application",
+                  "name" to "Jimmy"
+               )
+            ),
+            mapOf(
+               "application" to mapOf(
+                  "caseId" to "CASE-2",
+                  "title" to "Mortgage application II",
+                  "name" to "Jack"
+               )
+            )
+
+         )
+      )
+   }
 
 
 }

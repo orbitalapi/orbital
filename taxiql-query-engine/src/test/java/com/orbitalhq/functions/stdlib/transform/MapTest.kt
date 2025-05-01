@@ -31,7 +31,7 @@ class MapTest {
       result.shouldBe(listOf("STAR WARS", "JAWS"))
    }
 
-   @org.junit.Test
+   @Test
    fun `can project from one array to another using a map function`():Unit = io.kotest.common.runBlocking {
       val (vyne, stub) = testVyne(
          """

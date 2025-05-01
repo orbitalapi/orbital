@@ -2,6 +2,7 @@ package com.orbitalhq.stubbing
 
 import arrow.core.Either
 import arrow.core.flatMap
+import arrow.core.right
 import com.google.common.collect.MultimapBuilder
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneCacheConfiguration
@@ -13,6 +14,7 @@ import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedInstanceConverter
 import com.orbitalhq.models.json.parseJson
+import com.orbitalhq.models.json.right
 import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.HttpHeaders
 import com.orbitalhq.query.QueryContextEventDispatcher
@@ -271,25 +273,25 @@ class StubService(
     * of collectons from HttpServices
     */
    private fun unwrapTypedCollections(errorOrTypedInstances: Either<StreamErrorMessage, List<TypedInstance>>): Flow<Either<StreamErrorMessage, TypedInstance>> {
-    return when (errorOrTypedInstances) {
-        is Either.Left -> flowOf(Either.Left(errorOrTypedInstances.value))
-        is Either.Right ->  {
-           val typedInstances = errorOrTypedInstances.value
-           typedInstances.flatMap { typedInstance ->
-              when (typedInstance) {
-                 is TypedCollection -> typedInstance.value.map { Either.Right(it) }
-                 else -> listOf(Either.Right(typedInstance))
-              }
-           }.asFlow()
-        }
-     }
+      return when (errorOrTypedInstances) {
+         is Either.Left -> flowOf(Either.Left(errorOrTypedInstances.value))
+         is Either.Right -> {
+            val typedInstances = errorOrTypedInstances.value
+            typedInstances.flatMap { typedInstance ->
+               when (typedInstance) {
+                  is TypedCollection -> typedInstance.value.map { Either.Right(it) }
+                  else -> listOf(Either.Right(typedInstance))
+               }
+            }.asFlow()
+         }
+      }
    }
 
    private fun unwrapTypedCollections(errorOrTypedInstances: List<Either<StreamErrorMessage, TypedInstance>>): Flow<Either<StreamErrorMessage, TypedInstance>> {
-     return  errorOrTypedInstances.flatMap { errorOrTypedInstance ->
+      return errorOrTypedInstances.flatMap { errorOrTypedInstance ->
          when (errorOrTypedInstance) {
             is Either.Left -> listOf(Either.Left(errorOrTypedInstance.value))
-            is Either.Right -> when(errorOrTypedInstance.value) {
+            is Either.Right -> when (errorOrTypedInstance.value) {
                is TypedCollection -> (errorOrTypedInstance.value as TypedCollection).value.map { Either.Right(it) }
                else -> listOf(Either.Right(errorOrTypedInstance.value))
             }
@@ -320,7 +322,7 @@ class StubService(
       return this
    }
 
-   private fun findServiceFromOperation(remoteOperation: RemoteOperation):Service {
+   private fun findServiceFromOperation(remoteOperation: RemoteOperation): Service {
       // reverse lookup - not efficient, but not called under normal situations, so shouldn't matter.
       return schema!!.services.first {
          it.remoteOperations.contains(remoteOperation)
@@ -345,7 +347,7 @@ class StubService(
                .map { typedInstanceOrError ->
                   typedInstanceOrError.flatMap { typedInstance ->
                      val service = findServiceFromOperation(remoteOperation)
-                     val dataSource = getRemoteCallDataSource(service,remoteOperation, listOf(typedInstance), params)
+                     val dataSource = getRemoteCallDataSource(service, remoteOperation, listOf(typedInstance), params)
                      val updated = TypedInstanceConverter(DataSourceMutatingMapper(dataSource)).convert(typedInstance)
                      Either.Right(TypedInstance.from(typedInstance.type, updated, schema!!, source = dataSource))
                   }
@@ -356,6 +358,34 @@ class StubService(
       }
 
       return this
+   }
+
+   /**
+    * Adds multiple responses, where the value returned is determined by the first parameter of the operation
+    */
+   fun addResponsesByParameter(
+      stubOperationKey: String,
+      /**
+       * A map of parameter value to Json string of the return value
+       */
+      responses: Map<Any, String>, modifyDataSource: Boolean = false
+   ) {
+      val operation = schema!!.operations.firstOrNull { it.name == stubOperationKey }
+         ?: error("Cannot stub $stubOperationKey as it's not a valid operation")
+      val responseTypedInstances = responses.mapValues { (_, json) ->
+         parseJson(schema, operation.returnType.paramaterizedName, json)
+      }
+      addResponse(stubOperationKey, modifyDataSource) { _, parameters: List<Pair<Parameter, TypedInstance>> ->
+         val param = parameters.first().second.toRawObject()
+         val response = responseTypedInstances[param] ?: error("No response provided for parameter of $param")
+         // Note: Haven't checked the List stuff here - if it fails, fix it
+         if (response is List<*>) {
+            response.map { (it as TypedInstance).right() }
+         } else {
+            listOf(response.right())
+         }
+
+      }
    }
 
    fun addResponse(stubOperationKey: String, json: String, modifyDataSource: Boolean = false) {
@@ -406,7 +436,7 @@ class StubService(
 
    fun addResponseReturningInputs(stubOperationKey: String): StubService {
       return addResponse(stubOperationKey) { op, parameters ->
-         listOf (Either.Right(parameters[0].second))
+         listOf(Either.Right(parameters[0].second))
       }
    }
 
@@ -446,6 +476,6 @@ class StubService(
    }
 }
 
-object DefaultStubbedOperationPlanner : OperationInvocationPlanner{
+object DefaultStubbedOperationPlanner : OperationInvocationPlanner {
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean = true
 }
