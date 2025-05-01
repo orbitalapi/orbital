@@ -54,7 +54,7 @@ class TypedObjectFactory(
    private val formatSpecs: List<ModelFormatSpec> = emptyList(),
    private val parsingErrorBehaviour: ParsingFailureBehaviour = ParsingFailureBehaviour.ThrowException,
    private val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf(),
-   private val projectionScope: ProjectionFunctionScope? = null,
+   private val projectionScope: List<ProjectionFunctionScope> = emptyList(),
    private val metadata: Map<String, Any> = emptyMap(),
    private val valueSuppliers: List<ValueSupplier> = emptyList(),
    /**
@@ -217,10 +217,6 @@ class TypedObjectFactory(
       nullable: Boolean,
       allowContextQuerying: Boolean
    ): TypedInstance {
-      // MP: 26-Feb-24: We now support multiple scoped facts in the projection context.
-      // However, it's not obvious how to handle this here.
-      // Let's fail for now, then implement once the use-case is better understood.
-      require(projection.projectionFunctionScope.size <= 1) { "How to handle multiple scoped facts here?" }
       val projectedFieldValue = if (valueToProject is TypedCollection && targetType.isCollection) {
          // Project each member of the collection seperately
          valueToProject
@@ -229,7 +225,7 @@ class TypedObjectFactory(
                newFactory(
                   targetType.collectionType!!,
                   collectionMember,
-                  scope = projection.projectionFunctionScope.firstOrNull()
+                  scopedArguments = projection.projectionFunctionScope
                )
                   .build()
             }.collect(Collectors.toList())
@@ -238,7 +234,7 @@ class TypedObjectFactory(
                TypedCollection.arrayOf(targetType.collectionType!!, projectedCollection, source)
             }
       } else {
-         newFactory(targetType, valueToProject, scope = projection.projectionFunctionScope.firstOrNull()).build()
+         newFactory(targetType, valueToProject, scopedArguments = projection.projectionFunctionScope).build()
       }
       return projectedFieldValue
    }
@@ -247,7 +243,7 @@ class TypedObjectFactory(
    fun newFactoryWithOnly(
       type: Type,
       newValue: FactBag,
-      scope: ProjectionFunctionScope? = null
+      scopedArguments: List<ProjectionFunctionScope> = emptyList()
    ): TypedObjectFactory {
       return TypedObjectFactory(
          type,
@@ -263,7 +259,7 @@ class TypedObjectFactory(
          formatSpecs,
          parsingErrorBehaviour,
          functionResultCache,
-         scope,
+         scopedArguments,
          factBagSearchStrategy = factBagSearchStrategy,
          parsingOptions = parsingOptions
       )
@@ -279,35 +275,26 @@ class TypedObjectFactory(
       factsToExclude: Set<TypedInstance> = emptySet(),
       // TODO : 20-01-25: I suspect this should be List<ProjectionFunctionScope>, as
       // I'm pretty sure we support multiple scoped variables here.
-      scope: ProjectionFunctionScope?
+      scopedArguments: List<ProjectionFunctionScope>
    ): TypedObjectFactory {
 
 
       val newMergedValue = when {
          this.value is FactBag && newValue is TypedInstance -> {
-            if (scope != null) {
+            if (scopedArguments.isNotEmpty()) {
 
                // MP: 20-Jan-25:
                // Added this, as we need to call ProjectionFunctionScopeEvaluator.build
                // to consistently convert scope into ScopedFacts (previously we were
                // constructing inline, without evaluating an expression on the scope)
                // Not sure if this is actually a problem -- could we hit this without a query engine?
-               require(inPlaceQueryEngine != null) { "Cannot evaluate scope $scope as no query engine is present" }
+               require(inPlaceQueryEngine != null) { "Cannot evaluate scope $scopedArguments as no query engine is present" }
                val primaryFacts: List<TypedInstance> = listOf(newValue)
-               val inputs: List<Argument> = listOf(scope)
                val scopedFacts = ProjectionFunctionScopeEvaluator.build(
-                  inputs,
+                  scopedArguments,
                   primaryFacts,
                   this.inPlaceQueryEngine
                )
-
-               // old way:
-//               val oldScopedFact = ScopedFact(scope, newValue)
-//               if (oldScopedFact != scopedFacts.single()) {
-//                  println("This should be removed.")
-//               }
-
-
                CascadingFactBag(
                   CopyOnWriteFactBag(CopyOnWriteArrayList(), scopedFacts, schema),
                   this.value
@@ -319,11 +306,11 @@ class TypedObjectFactory(
 
          this.value is FactBag && newValue is FactBag -> {
             // Validate that the factbag has correctly defined it's scope.
-            if (scope != null) {
-               require(newValue.scopedFacts.any { it.scope == scope }) {
-                  "The new factbag has been prepared incorrectly, as it doesn't contain a scoped value matching the provided scope"
-               }
-            }
+//            if (scopedArguments.isNotEmpty()) {
+//               require(newValue.scopedFacts.any { it.scope == scopedArguments }) {
+//                  "The new factbag has been prepared incorrectly, as it doesn't contain a scoped value matching the provided scope"
+//               }
+//            }
             CascadingFactBag(newValue, this.value)
 
          }
@@ -346,7 +333,7 @@ class TypedObjectFactory(
          formatSpecs,
          parsingErrorBehaviour,
          functionResultCache,
-         scope,
+         scopedArguments,
          factBagSearchStrategy = factBagSearchStrategy,
          parsingOptions = parsingOptions
       )
@@ -549,12 +536,12 @@ class TypedObjectFactory(
       return when (value) {
          is FactBag -> newFactory(
             this.type, value.withAdditionalScopedFacts(scopedFacts, this.schema),
-            scope = this.projectionScope
+            scopedArguments = this.projectionScope
          )
 
          is TypedInstance -> newFactory(
             this.type, FactBag.of(this.value, this.schema).withAdditionalScopedFacts(scopedFacts, this.schema),
-            scope = this.projectionScope
+            scopedArguments = this.projectionScope
          )
 
          else -> {
@@ -866,7 +853,7 @@ class TypedObjectFactory(
       // then it can't also be present without the argument scope, or it'll pollute the scope
       // with duplicate values.
       val inputsForLambda = FactBag.empty().withAdditionalScopedFacts(inputs, schema)
-      val evaluationContext = newFactory(type, inputsForLambda, scope = null)
+      val evaluationContext = newFactory(type, inputsForLambda, scopedArguments = emptyList())
 
       // If the expression contains a nested lambda (ie., with inputs), then we recurse into
       // that expression to collection inputs etc...
@@ -1177,7 +1164,7 @@ class TypedObjectFactory(
       if (constraints.isNotEmpty()) {
          return null
       }
-      val result = newFactory(fieldType, this.value, scope = projectionScope).build()
+      val result = newFactory(fieldType, this.value, scopedArguments = projectionScope).build()
       return if (result is TypedNull) {
          null
       } else {
@@ -1359,7 +1346,7 @@ class TypedObjectFactory(
          // However, additional thought in future should be given to
          // do we need a broader scoped fact?
          val additionalFacts = emptyList<TypedInstance>()
-         val scopedFacts = listOfNotNull(this.projectionScope?.let { scope -> value.getScopedFact(scope) })
+         val scopedFacts = this.projectionScope.mapNotNull { value.getScopedFactOrNull(it) }
          additionalFacts to scopedFacts
       } else {
          emptyList<TypedInstance>() to emptyList();
@@ -1374,7 +1361,7 @@ class TypedObjectFactory(
       format: FormatsAndZoneOffset?
    ): TypedInstance {
       val attributeValue = valueReader.read(value, attributeName).let { attributeValue ->
-         if (type.isCollection && attributeValue is Map<*,*> && parsingOptions.convertSingleObjectToArray) {
+         if (type.isCollection && attributeValue is Map<*, *> && parsingOptions.convertSingleObjectToArray) {
             listOf(attributeValue)
          } else {
             attributeValue
