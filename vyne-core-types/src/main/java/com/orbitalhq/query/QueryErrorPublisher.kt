@@ -70,4 +70,4 @@ data class StreamErrorMessage(
    fun toException(): StreamErrorException = StreamErrorException(this)
 }
 
-data class StreamQueryErrorEvent(val queryId: String, val error: StreamErrorMessage)
+data class StreamQueryErrorEvent(val queryId: String, val error: StreamErrorMessage, val tags: MetricTags = MetricTags.NONE)

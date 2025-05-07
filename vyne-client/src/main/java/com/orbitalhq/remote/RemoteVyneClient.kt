@@ -3,6 +3,7 @@ package com.orbitalhq.remote
 import com.orbitalhq.VyneClient
 import com.orbitalhq.VyneClientWithSchema
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.EmitMetrics
 import com.orbitalhq.query.MetricTags
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.Schema
@@ -18,11 +19,16 @@ import java.security.Principal
 open class RemoteVyneClient(
    protected val queryService: RemoteVyneQueryService
 ) : VyneClient {
-   override fun <T : Any> queryWithType(query: String, type: Class<T>, metricsTags: MetricTags, principal: Principal?): Flux<T> {
+   override fun <T : Any> queryWithType(query: String, type: Class<T>, metricsTags: MetricTags, principal: Principal?, emitMetrics: EmitMetrics): Flux<T> {
       return queryService.queryWithType(query, type)
    }
 
-   override fun queryAsTypedInstance(query: TaxiQLQueryString, metricsTags: MetricTags, principal: Principal?): Flux<TypedInstance> {
+   override fun queryAsTypedInstance(
+       query: TaxiQLQueryString,
+       metricsTags: MetricTags,
+       principal: Principal?,
+       emitMetrics: EmitMetrics
+   ): Flux<TypedInstance> {
       TODO("Not implemented yet")
    }
 
@@ -37,7 +43,7 @@ class RemoteVyneClientWithSchema(queryService: RemoteVyneQueryService, private v
    override val schema: Schema
       get() = schemaStore.schemaSet.schema
 
-   override fun <T : Any> queryWithType(query: String, type: Class<T>, metricsTags: MetricTags, principal: Principal?): Flux<T> {
+   override fun <T : Any> queryWithType(query: String, type: Class<T>, metricsTags: MetricTags, principal: Principal?, emitMetrics: EmitMetrics): Flux<T> {
       return queryService.queryWithType(query, type, schema)
    }
 }

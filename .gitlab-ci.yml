@@ -1,5 +1,4 @@
 include:
-   - template: Terraform/Base.gitlab-ci.yml
 #  This doesn't seem to work.
 #   - template: Security/Dependency-Scanning.gitlab-ci.yml
 
@@ -398,39 +397,6 @@ publish-voyager-to-gitlab-container-registry:
          --push
          -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${tag}"
          -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${CI_COMMIT_SHORT_SHA}" .
-
-.terraform-deploy:
-  extends: .terraform:deploy
-  stage: deploy
-  before_script:
-     - echo ${TF_ROOT}
-     - cd ${TF_ROOT}
-     - gitlab-terraform plan
-     - gitlab-terraform plan-json
-
-terraform-deploy-dev-voyager:
-   extends: .terraform-deploy
-   stage: deploy
-   environment:
-      name: $TF_STATE_NAME_DEV
-   variables:
-      TF_ROOT: ${CI_PROJECT_DIR}/voyager/terraform/environments/orbital_$TF_STATE_NAME_DEV
-      TF_STATE_NAME: voyager_$TF_STATE_NAME_DEV
-      TF_VAR_environment: $TF_STATE_NAME_DEV
-      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
-   when: manual
-
-terraform-deploy-prod-voyager:
-   extends: .terraform-deploy
-   stage: deploy
-   environment:
-      name: $TF_STATE_NAME_PROD
-   variables:
-      TF_ROOT: ${CI_PROJECT_DIR}/voyager/terraform/environments/orbital_$TF_STATE_NAME_PROD
-      TF_STATE_NAME: voyager_$TF_STATE_NAME_PROD
-      TF_VAR_environment: $TF_STATE_NAME_PROD
-      TF_VAR_taxi_playground_docker_image_id: $CI_COMMIT_SHORT_SHA
-   when: manual
 
 .container_scanning:
    image:

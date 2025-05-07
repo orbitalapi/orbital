@@ -2,8 +2,10 @@ package com.orbitalhq.spring.metrics
 
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.MetricTags
+import com.orbitalhq.query.StreamQueryErrorEvent
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
+import reactor.core.publisher.Flux
 import java.time.Duration
 
 fun MetricTags.micrometerTags(): List<Tag> {
@@ -38,6 +40,11 @@ class MicrometerMetricsReporter(private val meterRegistry: MeterRegistry) : Quer
    override fun failed(duration: Duration, tags: MetricTags) {
       if (tags == MetricTags.NONE) return
       meterRegistry.counter("orbital.query.failures", tags.micrometerTags())
+         .increment()
+   }
+
+   override fun errorEmitted(tags: MetricTags) {
+      meterRegistry.counter("orbital.query.errorEmitted", tags.micrometerTags())
          .increment()
    }
 

@@ -5,9 +5,11 @@ import com.orbitalhq.VyneClientWithSchema
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.auth.getAuthClaimsAsFacts
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.EmitMetrics
 import com.orbitalhq.query.MetricTags
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QueryContextEventBroker
+import com.orbitalhq.query.QueryResult
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.Schema
 import kotlinx.coroutines.flow.Flow
@@ -21,6 +23,7 @@ import reactor.kotlin.core.publisher.toFlux
 import java.security.Principal
 import java.util.*
 
+
 /**
  * An implementation of the VyneClient that uses an embedded Vyne instance instead of a remote one. Runs the queries
  * in the same JVM as the client.
@@ -29,27 +32,34 @@ open class EmbeddedVyneClient(
    private val vyneProvider: VyneProvider
 ) : VyneClient {
    override fun <T : Any> queryWithType(
-       query: String,
-       type: Class<T>,
-       metricsTags: MetricTags,
-       principal: Principal?
+      query: String,
+      type: Class<T>,
+      metricsTags: MetricTags,
+      principal: Principal?,
+      emitMetrics: EmitMetrics
    ): Flux<T> {
       return runBlocking {
          val vyne = vyneProvider.createVyne()
          val authClaims = principal.getAuthClaimsAsFacts(vyne.schema)
          return@runBlocking if (type == TypedInstance::class.java) {
-            val flow = vyneProvider.createVyne()
-               .query(query, metricsTags = metricsTags, executionContextFacts = authClaims.toSet()).results as Flow<T>
-            flow.asFlux()
+            val queryResult = vyneProvider.createVyne()
+               .query(query, metricsTags = metricsTags, executionContextFacts = authClaims.toSet())
+            captureMetrics(queryResult, emitMetrics)
+            queryResult.results.asFlux() as Flux<T>
          } else {
-            val flow = vyneProvider.createVyne().query(
+            val queryResult = vyneProvider.createVyne().query(
                query,
                metricsTags = metricsTags,
                executionContextFacts = authClaims.toSet()
-            ).rawResults as Flow<T>
-            flow.asFlux()
+            )
+            captureMetrics(queryResult, emitMetrics)
+            (queryResult.rawResults as Flow<T>).asFlux()
          }
       }
+   }
+
+   private fun captureMetrics(queryResult: QueryResult, emitMetrics: EmitMetrics) {
+      vyneProvider.emitMetrics(queryResult, emitMetrics)
    }
 
    override fun compile(query: TaxiQLQueryString): TaxiQlQuery {
@@ -59,9 +69,10 @@ open class EmbeddedVyneClient(
 
 
    override fun queryAsTypedInstance(
-       query: TaxiQLQueryString,
-       metricsTags: MetricTags,
-       principal: Principal?
+      query: TaxiQLQueryString,
+      metricsTags: MetricTags,
+      principal: Principal?,
+      emitMetrics: EmitMetrics
    ): Flux<TypedInstance> {
       // This is obviously not correct.
       // We're run blocking, and then wrapping a list to a flux, it's all sorts of level of messed up

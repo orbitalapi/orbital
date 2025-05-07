@@ -2,6 +2,7 @@ package com.orbitalhq.metrics
 
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.MetricTags
+import com.orbitalhq.query.StreamQueryErrorEvent
 import com.orbitalhq.query.TypedInstanceWithMetadata
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -11,6 +12,7 @@ import kotlinx.coroutines.flow.onStart
 import org.reactivestreams.Publisher
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicBoolean
@@ -19,6 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger
 interface QueryMetricsReporter {
    fun invoked(tags: MetricTags)
    fun resultEmitted(tags: MetricTags)
+   fun errorEmitted(tags: MetricTags)
    fun firstResult(duration: Duration, tags: MetricTags)
    fun completed(duration: Duration, finalCount: Int, tags: MetricTags)
    fun failed(duration: Duration, tags: MetricTags)
@@ -99,6 +102,8 @@ interface QueryMetricsReporter {
          .map { it.instance }
    }
 
+
+
    fun observeResultFlux(
       resultsWithMetadata: Flux<Any>,
       startTime: Instant,
@@ -145,6 +150,14 @@ interface QueryMetricsReporter {
          }
          .mapNotNull { getRawResultFromFluxEvent(it) }
    }
+
+   fun observeErrorStream(errors: Flux<StreamQueryErrorEvent>) {
+      errors
+         .subscribeOn(Schedulers.boundedElastic())
+         .subscribe { error ->
+            errorEmitted(error.tags)
+         }
+   }
 }
 
 object NoOpMetricsReporter : QueryMetricsReporter {
@@ -161,6 +174,9 @@ object NoOpMetricsReporter : QueryMetricsReporter {
    }
 
    override fun failed(duration: Duration, tags: MetricTags) {
+   }
+
+   override fun errorEmitted(tags: MetricTags) {
    }
 }
 
