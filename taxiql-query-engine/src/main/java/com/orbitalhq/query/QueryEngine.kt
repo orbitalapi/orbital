@@ -424,6 +424,8 @@ class StatefulQueryEngine(
       val paramValues = try {
          ParameterFactory().discoverAll(operation, searchContext)
       } catch (e: Exception) {
+         // Emit the error message, so that stats counters can pick it up
+         // TODO : In future, we really need to associate this error back to the originating inbound message
          val streamErrorMessage = StreamErrorMessage.fromThrowable(e, operation.returnType.paramaterizedName)
          context.eventBroker.queryErrorPublisher.onError(context.queryId, streamErrorMessage)
          val loggerMessage =
