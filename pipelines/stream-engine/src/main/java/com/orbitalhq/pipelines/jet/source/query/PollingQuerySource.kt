@@ -19,6 +19,7 @@ import com.orbitalhq.pipelines.jet.api.transport.query.TaxiQlQueryPipelineTransp
 import com.orbitalhq.pipelines.jet.source.PipelineSourceBuilder
 import com.orbitalhq.pipelines.jet.source.PipelineSourceType
 import com.orbitalhq.query
+import com.orbitalhq.query.EmitMetrics
 import com.orbitalhq.query.tagsOf
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
@@ -145,7 +146,10 @@ class QueryBufferingPipelineContext(
          querySubscription = vyneClient.query<TypedInstance>(
             pipelineSpec.input.query,
             tagsOf().queryStream(pipelineSpec.name).tags(),
-            principal
+            principal,
+            // We capture the errors here.
+            // This is not ideal ... as we have different approaches for capturing errors and results
+            EmitMetrics.ErrorCounts
          )
             .map {
                TypedInstanceContentProvider(

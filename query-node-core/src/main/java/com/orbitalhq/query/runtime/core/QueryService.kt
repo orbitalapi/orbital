@@ -16,6 +16,7 @@ import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.logging.MDCContextKeys.QueryName
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.EmitMetrics
 import com.orbitalhq.query.Fact
 import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.Query

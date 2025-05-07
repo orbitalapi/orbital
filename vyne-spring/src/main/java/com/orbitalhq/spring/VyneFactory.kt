@@ -5,8 +5,10 @@ import com.orbitalhq.VyneCacheConfiguration
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
+import com.orbitalhq.query.EmitMetrics
 import com.orbitalhq.query.Fact
 import com.orbitalhq.query.QueryEngineFactory
+import com.orbitalhq.query.QueryResult
 import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.query.connectors.CacheAwareOperationInvocationDecorator
 import com.orbitalhq.query.connectors.CountingOperationInvokerDecorator
@@ -73,6 +75,20 @@ class VyneFactory(
    override fun createVyne(facts: Set<Fact>) = buildVyne(facts)
    override fun createVyne(facts: Set<Fact>, schema: Schema, queryOptions: QueryOptions): Vyne {
       return buildVyne(facts, schema, queryOptions)
+   }
+
+   override fun emitMetrics(queryResult: QueryResult, emitMetrics: EmitMetrics) {
+      // MP: 1-May-25: This is part of a suboptimal solution, as we end up montioring
+      // results and errors differently.
+      // let's get rid of it asap
+      // Need a way of monitoring the error stream from the
+      // QueryResult that only monitors the "outer" query stream
+      if (emitMetrics.results) {
+         TODO("Emitting results not implemented here")
+      }
+      if (emitMetrics.errors) {
+         metricsReporter.observeErrorStream(queryResult.errors)
+      }
    }
 
    private fun buildVyne(

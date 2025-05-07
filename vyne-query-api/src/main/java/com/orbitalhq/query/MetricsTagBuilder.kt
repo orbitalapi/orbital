@@ -16,3 +16,15 @@ class MetricsTagBuilder {
 
    fun tags(): MetricTags = MetricTags(tags)
 }
+
+
+// MP: 1-May-25: This is part of a suboptimal solution,
+// let's get rid of it asap
+// Need a way of monitoring the error stream from the
+// QueryResult that only monitors the "outer" query stream
+enum class EmitMetrics(val results: Boolean, val errors: Boolean) {
+   None(false, false),
+   ResultCounts(true,false),
+   ErrorCounts(false, true),
+   ResultsAndErrors(true, true)
+}
