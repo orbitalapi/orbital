@@ -1,5 +1,6 @@
-package com.orbitalhq.models.functions.stdlib
+package com.orbitalhq.models.functions.stdlib.math
 
+import com.orbitalhq.models.functions.stdlib.MathIteratingFunction
 import lang.taxi.types.QualifiedName
 import java.math.BigDecimal
 

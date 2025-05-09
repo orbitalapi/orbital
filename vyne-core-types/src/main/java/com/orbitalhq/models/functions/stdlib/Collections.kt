@@ -8,6 +8,7 @@ import com.orbitalhq.models.*
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.functions.NamedFunctionInvoker
 import com.orbitalhq.models.functions.NullSafeInvoker
+import com.orbitalhq.models.functions.stdlib.collections.JoinToString
 import com.orbitalhq.models.functions.stdlib.collections.ListOf
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
@@ -22,7 +23,8 @@ object Collections {
       AnyOf,
       AllOf,
       NoneOf,
-      ListOf
+      ListOf,
+      JoinToString
    )
 }
 
