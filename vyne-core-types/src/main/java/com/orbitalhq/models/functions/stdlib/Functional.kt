@@ -24,10 +24,6 @@ object Functional {
       Reduce,
       Fold,
       MapFunction,
-      Sum,
-      Max,
-      Min
-
    )
 }
 
