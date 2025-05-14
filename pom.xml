@@ -60,6 +60,8 @@
       <guava.version>32.1.3-jre</guava.version>
       <reactor-bom.version>2023.0.0</reactor-bom.version>
 
+      <logbook.version>3.12.0</logbook.version>
+
       <jgit.version>6.9.0.202403050737-r</jgit.version>
       <!--      <netty.version>4.1.75.Final</netty.version>-->
       <!-- CVE-2022-31692  -->
@@ -296,7 +298,13 @@ Transitive dependency in wire-compiler and calcite-core
             <artifactId>commons-io</artifactId>
             <version>${commons-io.version}</version>
          </dependency>
-
+         <dependency>
+            <groupId>org.zalando</groupId>
+            <artifactId>logbook-bom</artifactId>
+            <version>${logbook.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+         </dependency>
 
          <!-- Set to 1.26.0 because of vulnerabilities:
          CVE-2024-25710 , CVE-2024-26308.
