@@ -3,6 +3,8 @@ package com.orbitalhq
 import com.orbitalhq.models.json.right
 import com.orbitalhq.models.json.tryParseJson
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.junit.Test
 
@@ -11,7 +13,7 @@ import org.junit.Test
  * map indicates that the input should be iterated and a find performed
  * for each value.
  */
-class CollectionMapTest {
+class MapKeywordTest {
    @Test
    fun `can use map keyword to project a collection type`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
@@ -60,7 +62,7 @@ class CollectionMapTest {
    }
 
    @Test
-   fun `can project and map to transform a collection then call a mutation`() : Unit = runBlocking{
+   fun `can project and map to transform a collection then call a mutation`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
          model Film {
@@ -113,5 +115,67 @@ class CollectionMapTest {
             )
          )
       )
+   }
+
+   @Test
+   fun `can use map keyword to iterate and call a mutation with multiple facts in scope`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            name :  PersonName inherits String
+            points : Points inherits Int
+            score : Score inherits Int
+         }
+         parameter model PersonUpdate {
+            called : PersonName
+            newPoints : NewPoints
+         }
+         // This is to ensure that projection is happening correctly, and that
+         // evals are performed with the correct scope
+         type NewPoints inherits Int = (Points,Score) -> Points + Score
+         service PersonApi {
+            write operation saveOne( PersonName, ApiKey, PersonUpdate ) : PersonUpdate
+         }
+      """.trimIndent()
+      )
+      stub.addResponseReturningInputs("saveOne")
+      val result = vyne.query(
+         """
+         given {
+            ApiKey = "IAmTheApiKey",
+            Person[] = [
+               { name : "Jimmy", points : 2, score: 3 },
+               { name : "Jack", points : 4, score: 5 }
+            ]
+         }
+         map { Person[] }
+         call PersonApi::saveOne
+      """.trimIndent()
+      )
+         .typedInstances()
+
+      val calls = stub.calls["saveOne"]
+      calls.shouldHaveSize(2)
+
+      // The order of the calls isn't guaranteed because we run in parallel,
+      // so find each of the calls and assert
+      val jimmyCall = calls.single { params -> params[0].toRawObject().toString() == "Jimmy" }
+      jimmyCall.map { it.toRawObject() }.shouldBe(
+         listOf(
+            "Jimmy",
+            "IAmTheApiKey",
+            mapOf("called" to "Jimmy", "newPoints" to 5)
+         )
+      )
+      val jackCall = calls.single { params -> params[0].toRawObject().toString() == "Jack" }
+      jackCall.map { it.toRawObject() }.shouldBe(
+         listOf(
+            "Jack",
+            "IAmTheApiKey",
+            mapOf("called" to "Jack", "newPoints" to 9)
+         )
+      )
+
    }
 }

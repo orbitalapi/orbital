@@ -223,9 +223,10 @@ data class QueryContext(
          this.scopedFacts.isNotEmpty() -> this.scopedFacts.map { it.fact } // query foo( @RequestBody input:T[] ) ....
          else -> error("When calling map {}, exactly one input fact is expected, but none were found.")
       }
-      require(sourceFacts.size == 1) { "When calling map { }, exactly one input fact is expected, but found ${sourceFacts.size}" }
-      val sourceCollection = sourceFacts.single()
-      require(sourceCollection is TypedCollection) { "When calling map {}, the input fact is expected to be a collection.  Instead, found ${sourceCollection.type.paramaterizedName}" }
+      val candidateCollections = sourceFacts.filterIsInstance<TypedCollection>()
+      require(candidateCollections.size == 1) { "When calling map {}, expected exactly one collection to iterate, however there were ${candidateCollections.size} collections present" }
+      val sourceCollection = candidateCollections.single()
+
       val mappingResult = sourceCollection.map { inputValue ->
          try {
             // Do not include the source collection,
