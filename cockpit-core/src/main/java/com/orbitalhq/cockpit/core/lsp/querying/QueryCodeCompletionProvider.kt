@@ -75,7 +75,7 @@ class QueryCodeCompletionProvider(
    // The "normal" editor, not used when building queries
    private val editorCompletionService = EditorCompletionService(typeCompletionBuilder)
 
-   private val topLevelQueryCompletionItems:CompletionItemList = listOf(
+   private val topLevelQueryCompletionItems: CompletionItemList = listOf(
       "find" to "Query for a single item, or a list of items",
       "stream" to "Query for a continuous stream of data",
       "given" to "Provide a set of facts for the starting point for a query",
@@ -130,7 +130,7 @@ class QueryCodeCompletionProvider(
       val decorators = listOf(importDecorator)
 
 
-      val completions:CompletionItemList = when {
+      val completions: CompletionItemList = when {
          contextAtCursor is IdentifierContext && isDefiningConstraint(contextAtCursor) -> {
             suggestFilterTypes(contextAtCursor, importDecorator, compilationResult)
          }
@@ -172,18 +172,22 @@ class QueryCodeCompletionProvider(
          }
 
          // Mutations
-         contextAtCursor is TypeReferenceContext &&  isDefiningMemberReference(contextAtCursor) -> suggestCallMutationTargets(
+         contextAtCursor is TypeReferenceContext && isDefiningMemberReference(contextAtCursor) -> suggestCallMutationTargets(
             contextAtCursor, decorators, compilationResult, lastSuccessfulCompilation
          )
+
          contextAtCursor is QualifiedNameContext && isDefiningMemberReference(contextAtCursor) -> suggestCallMutationTargets(
             contextAtCursor, decorators, compilationResult, lastSuccessfulCompilation
          )
+
          contextAtCursor is IdentifierContext && isDefiningMemberReference(contextAtCursor) -> suggestCallMutationTargets(
             contextAtCursor, decorators, compilationResult, lastSuccessfulCompilation
          )
+
          contextAtCursor is IdentifierContext && isDefiningMutation(contextAtCursor) -> suggestCallMutationTargets(
             contextAtCursor, decorators, compilationResult, lastSuccessfulCompilation
          )
+
          contextAtCursor is MutationContext -> {
             suggestCallMutationTargets(contextAtCursor, decorators, compilationResult, lastSuccessfulCompilation)
          }
@@ -237,7 +241,7 @@ class QueryCodeCompletionProvider(
       lastSuccessfulCompilation: CompilationResult?
    ): CompletionItemList {
       val serviceOrMember = contextAtCursor.searchUpForRule<MemberReferenceContext>().let { memberReferenceContext ->
-         if (memberReferenceContext == null) {
+         if (memberReferenceContext == null || memberReferenceContext.typeReference() == null) {
             SuggestServiceOrMember.Service
          } else {
             SuggestServiceOrMember.Member
@@ -246,7 +250,11 @@ class QueryCodeCompletionProvider(
 
       return when (serviceOrMember) {
          SuggestServiceOrMember.Service -> suggestServices(lastSuccessfulCompilation, decorators)
-         SuggestServiceOrMember.Member -> suggestMembersOfService(contextAtCursor, lastSuccessfulCompilation, decorators)
+         SuggestServiceOrMember.Member -> suggestMembersOfService(
+            contextAtCursor,
+            lastSuccessfulCompilation,
+            decorators
+         )
       }
    }
 
@@ -271,28 +279,27 @@ class QueryCodeCompletionProvider(
       contextAtCursor: ParserRuleContext,
       lastSuccessfulCompilation: CompilationResult?,
       decorators: List<CompletionDecorator>,
-   ): CompletionItemList{
+   ): CompletionItemList {
       if (lastSuccessfulCompilation == null) {
          return CompletionItemList.empty()
       }
-      // Foo::Bar
-      val serviceAndMember = contextAtCursor.searchUpForRule<MemberReferenceContext>() ?: return CompletionItemList.empty()
-      // In Foo::Bar, select Foo
+      val mutation = contextAtCursor.searchUpForRule<MutationContext>() ?: return CompletionItemList.empty()
+      val serviceStatement = mutation.typeReference() ?: return CompletionItemList.empty()
 
-      val service = serviceAndMember.typeReference() ?: return CompletionItemList.empty()
-      // The LHS is an expression - compile it
-      // We could just try and read the text here, but that's error-prone
-      val lhsExpressionContext = service.searchUpForRule<ExpressionGroupContext>()?.expressionGroup()?.firstOrNull() ?: return CompletionItemList.empty()
-      val lhsExpression = lastSuccessfulCompilation.compiler.compileExpression(lhsExpressionContext).getOrNull() ?: return CompletionItemList.empty()
-      val completionsOrErrors: Either<List<CompilationError>, CompletionItemList> = if (lhsExpression is ServiceExpression) {
-         lhsExpression.service.members.map { member ->
-            // Don't decorate members, as they're not importable on their own
-            typeCompletionBuilder.buildCompletionItem(member, member.toQualifiedName(), emptyList())
-         }.asExclusiveCompletionItemList().right()
-      } else {
-         CompletionItemList.empty().right()
-      }
-      return completionsOrErrors.getOrElse { CompletionItemList.empty() }
+      // MP : 13-May-25:
+      // There was a comment here saying
+      // > The LHS is an expression - compile it
+      // However, the LHS isn't an expression (according to the grammar) - it's a typeReference.
+      // Assuming that this is in the context of a mutation, whcih is the only place this method is called from.
+
+      if (!lastSuccessfulCompilation.documentOrEmpty.containsService(serviceStatement.qualifiedName().text))
+         return CompletionItemList.empty()
+
+      val service = lastSuccessfulCompilation.documentOrEmpty.service(serviceStatement.qualifiedName().text)
+      return service.members.map { member ->
+         // Don't decorate members, as they're not importable on their own
+         typeCompletionBuilder.buildCompletionItem(member, member.toQualifiedName(), emptyList())
+      }.asExclusiveCompletionItemList()
    }
 
 
@@ -321,7 +328,11 @@ class QueryCodeCompletionProvider(
          }
       val queryOperationAttributes = if (isExposedByQueryOperations) {
          schema.type(typeToFilter).attributes.map { (fieldName, field) ->
-            typeCompletionBuilder.buildCompletionItem(schema.type(field.type).taxiType, field.type.toTaxiQualifiedName(), listOf(importDecorator))
+            typeCompletionBuilder.buildCompletionItem(
+               schema.type(field.type).taxiType,
+               field.type.toTaxiQualifiedName(),
+               listOf(importDecorator)
+            )
          }
       } else {
          emptyList()

@@ -43,6 +43,7 @@ import com.orbitalhq.utils.log
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.job
 import lang.taxi.accessors.ProjectionFunctionScope
+import lang.taxi.expressions.ProjectingExpression
 import lang.taxi.policies.Policy
 import lang.taxi.query.FactValue
 import lang.taxi.query.Parameter
@@ -593,15 +594,14 @@ class CompositeSchemaBuilder(val aggregators: List<SchemaAggregator> = SchemaAgg
 }
 
 fun QueryExpression.applyProjection(
-   projectedType: lang.taxi.types.Type?,
-   projectionScope: List<ProjectionFunctionScope>,
+   expression: ProjectingExpression?,
    schema: Schema
 ): QueryExpression {
-   if (projectedType == null) {
+   if (expression == null) {
       return this
    }
 
-   val unwrappedScope= projectionScope.map { scopeMember ->
+   val unwrappedScope= expression.projection.projectionFunctionScope.map { scopeMember ->
       // When building a projection, streams that are in scope should be unpacked to their individual items.
       // Otherwise, when we're projecting a stream the scope contains a reference to the stream itself, not the emitted items.
       // Given we don't have an instance of the stream, this triggers another discovery, searching for the stream again.
@@ -614,8 +614,9 @@ fun QueryExpression.applyProjection(
    return ProjectedExpression(
       this,
       Projection(
-         ProjectionAnonymousTypeProvider.projectedTo(projectedType, schema),
+         ProjectionAnonymousTypeProvider.projectedTo(expression.returnType, schema),
          unwrappedScope,
+         expression
       )
    )
 }

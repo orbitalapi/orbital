@@ -21,7 +21,7 @@ class ExpressionEvaluatingQueryStrategy : QueryStrategy {
          return QueryStrategyResult.searchFailed()
       }
       val node = target.single()
-      val expression = node.expression ?: return QueryStrategyResult.searchFailed()
+      val expression = node.projection?.projectingExpression?.expression ?: node.expression ?: return QueryStrategyResult.searchFailed()
       if (expression is TypeExpression) {
          // leave this to other strategies
          return QueryStrategyResult.searchFailed()
@@ -67,7 +67,7 @@ class ExpressionEvaluatingQueryStrategy : QueryStrategy {
       // At this point, we fall back to evaluating the expression.
       // Bear in mind that this is blocking, so heavy evaluations (including those that perform discoveries)
       // could block the system
-      val evaluated = context.evaluate(node.expression, context.facts)
+      val evaluated = context.evaluate(expression, context.facts)
       return QueryStrategyResult.from(evaluated)
    }
 }

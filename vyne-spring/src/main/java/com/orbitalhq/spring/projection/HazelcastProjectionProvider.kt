@@ -16,7 +16,6 @@ import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.TypedInstanceWithMetadata
 import com.orbitalhq.query.projection.ProjectionProvider
 import com.orbitalhq.query.withProcessingMetadata
-import com.orbitalhq.schemas.Type
 import com.spikhalskiy.futurity.Futurity
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -45,22 +44,19 @@ class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistrib
    val hazelcastScheduler: Scheduler = Schedulers.parallel()
 
    override fun project(
-      results: Flow<TypedInstanceWithMetadata>,
-      declaredSourceType: Type,
-      projection: Projection,
-      context: QueryContext,
-      globalFacts: FactBag
+       results: Flow<TypedInstanceWithMetadata>,
+       projection: Projection,
+       context: QueryContext,
+       globalFacts: FactBag
    ): Flow<TypedInstanceWithMetadata> {
       return project(
          results.map { it.instance },
-         declaredSourceType,
          projection,
          context,
          globalFacts)
    }
    override fun project(
       results: Flow<TypedInstance>,
-      declaredSourceType: Type,
       projection: Projection,
       context: QueryContext,
       globalFacts: FactBag,

@@ -153,7 +153,7 @@ class ProjectionNamedScopeTest {
          )
       )
       val queryResult = vyne.query(
-         """find { Film } as (Actor[]) -> {
+         """find { Film } as Actor[] as {
          | actorName : Name
          | filmTitle : Title // should be null, as it's out-of-scope on Actor
          |}[]
@@ -299,7 +299,7 @@ class ProjectionNamedScopeTest {
       """.trimIndent()
          )
       )
-      val result = vyne.query("""find { FilmCatalog } as (films:Film[]) -> Movie[]""")
+      val result = vyne.query("""find { FilmCatalog } as Film[] as Movie[]""")
          .rawObjects()
       result.shouldBe(
          listOf(

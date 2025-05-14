@@ -163,6 +163,7 @@ class KafkaConsumerStatsFlowBuilder(
                      val currentOffset = currentOffsets[partition]?.offset() ?: 0L
                      val endOffset = endOffsets[partition] ?: 0L
                      val lag = endOffset - currentOffset
+
                      val tags = listOf(
                         MetricTags.ConnectionName.of(connectionConfiguration.connectionName),
                         MetricTags.Topic.of(partition.topic()),

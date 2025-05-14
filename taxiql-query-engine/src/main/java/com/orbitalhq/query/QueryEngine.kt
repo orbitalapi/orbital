@@ -57,7 +57,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.isActive
+import lang.taxi.expressions.ProjectingExpression
+import lang.taxi.expressions.TypeExpression
 import lang.taxi.mutations.Mutation
+import lang.taxi.types.CompilationUnit
+import lang.taxi.types.FieldProjection
 import mu.KotlinLogging
 import org.slf4j.MDC
 import java.time.Duration
@@ -868,7 +872,7 @@ class StatefulQueryEngine(
             // The projection provider handles picking the correct entity to project,
             // so we don't need to consider that here.
             val factsToPropagate = initialState.toFactBag(schema)
-            projectionProvider.project(resultsFlow, target.type, target.projection, context, factsToPropagate)
+            projectionProvider.project(resultsFlow, target.projection, context, factsToPropagate)
                .map { projectedInstanceWithMetadata ->
                   if (!isStreamingQuery) {
                      projectedInstanceWithMetadata.copy(processingStart = queryStartTime)
@@ -985,8 +989,19 @@ class StatefulQueryEngine(
          val factsToPropagate = initialState.toFactBag(schema)
          projectionProvider.project(
             mutationFlow,
-            schema.type(mutation.operation.returnType),
-            Projection(schema.type(mutationProjectedType.first), mutationProjectedType.second),
+            Projection(
+               schema.type(mutationProjectedType.first), mutationProjectedType.second,
+
+               ProjectingExpression(
+                  TypeExpression(mutation.operation.returnType, emptyList(), listOf(CompilationUnit.unspecified())),
+                  FieldProjection(
+                     mutation.operation.returnType,
+                     emptyList(),
+                     mutationProjectedType.first,
+                     mutationProjectedType.second
+                  )
+               )
+            ),
             context,
             factsToPropagate
          )
