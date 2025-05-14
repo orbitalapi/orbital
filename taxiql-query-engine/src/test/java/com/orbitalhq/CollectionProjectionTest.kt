@@ -247,7 +247,7 @@ class CollectionProjectionTest {
       stub.addResponse("getDirector", vyne.parseJson("Director", """{ "name" : "Jimmy" }"""))
 
       val result = vyne.query("""given { PerformanceDate = parseDate('2023-11-10') }
-         |find { MovieSchedule } as (Movie[]) -> {
+         |find { MovieSchedule } as Movie[] as {
          |  id : MovieId
          |  director : PersonName
          |}[]

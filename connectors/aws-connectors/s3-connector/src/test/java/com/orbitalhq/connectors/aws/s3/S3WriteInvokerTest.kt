@@ -140,7 +140,7 @@ GBPBTC,6262.37,6312.36""")
             """.trimMargin()))
 
       val results = vyne.query("""
-         |find { PriceSummary } as (price:StockPrice[]) -> StockPriceCsv[]
+         |find { PriceSummary } as StockPrice[] as StockPriceCsv[]
          |call AwsBucketService::writeValue
       """.trimMargin())
          .firstTypedCollection()

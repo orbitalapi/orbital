@@ -5,7 +5,8 @@ import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Assertions.*
 
 class TaxiQlRewriterTest : DescribeSpec({
-   describe("rewriting taxiQL queries") {
+   // We don't rewrite queries anymore
+   xdescribe("rewriting taxiQL queries") {
       it("should append a stream source") {
          val originalQuery = """stream { Foo } as {
     bar : Bar

@@ -130,7 +130,7 @@ class QueryExpressionBuilder(private val queryPlanner: QueryPlanner) {
          ExpressionQuery(discoveryType.expression, legacyExpression)
       }?.let { expressionQuery ->
          // Handle projections
-         expressionQuery.applyProjection(taxiQl.projectedType, taxiQl.projectionScopeVars, schema)
+         expressionQuery.applyProjection(taxiQl.projectingExpression, schema)
       }.let { possibleQueryExpression ->
          // At this point we have either:
          // Mutation -only query.

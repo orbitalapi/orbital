@@ -100,11 +100,11 @@ class LocalProjectionProvider : ProjectionProvider {
    private suspend fun projectItem(
       index: Int,
       emittedResult: TypedInstance,
-      declaredSourceType: Type,
       projection: Projection,
       context: QueryContext,
       globalFacts: FactBag,
-      inputStartTime: Instant? = null): Deferred<Flow<TypedInstanceWithMetadata>> {
+      inputStartTime: Instant? = null
+   ): Deferred<Flow<TypedInstanceWithMetadata>> {
       logger.trace { "Starting to project instance of ${emittedResult.type.qualifiedName.shortDisplayName} (index $index) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
       return projectingScope.async {
          val startTime = inputStartTime ?: Instant.now()
@@ -112,13 +112,13 @@ class LocalProjectionProvider : ProjectionProvider {
             logger.warn { "Query Cancelled exiting!" }
             cancel()
          }
-
          val scopedFacts = buildScopedProjectionFacts(projection, emittedResult, context)
          logger.trace { "project or map instance of ${emittedResult.type.qualifiedName.shortDisplayName} (index ${index}) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
 
+         val projectionSourceType = context.schema.type(projection.projectingExpression.projection.sourceType)
          projectOrMap(
             scopedFacts,
-            declaredSourceType,
+            projectionSourceType,
             context,
             globalFacts,
             emittedResult,
@@ -127,9 +127,9 @@ class LocalProjectionProvider : ProjectionProvider {
          )
       }
    }
+
    override fun project(
       source: Flow<TypedInstanceWithMetadata>,
-      declaredSourceType: Type,
       projection: Projection,
       context: QueryContext,
       globalFacts: FactBag
@@ -154,13 +154,14 @@ class LocalProjectionProvider : ProjectionProvider {
          .map { emittedResultWithMetadata ->
             val emittedResult = emittedResultWithMetadata.value.instance
             val startTime = emittedResultWithMetadata.value.processingStart
-            projectItem(emittedResultWithMetadata.index,
+            projectItem(
+               emittedResultWithMetadata.index,
                emittedResult,
-               declaredSourceType,
                projection,
                context,
                globalFacts,
-               startTime)
+               startTime
+            )
          }
          .buffer(threadPoolSize).map {
             val result = it.await()
@@ -171,7 +172,6 @@ class LocalProjectionProvider : ProjectionProvider {
 
    override fun project(
       source: Flow<TypedInstance>,
-      declaredSourceType: Type,
       projection: Projection,
       context: QueryContext,
       globalFacts: FactBag,
@@ -195,12 +195,13 @@ class LocalProjectionProvider : ProjectionProvider {
          .filter { !context.cancelRequested }
          .distinctUntilChanged()
          .map { emittedResult ->
-            projectItem(emittedResult.index,
+            projectItem(
+               emittedResult.index,
                emittedResult.value,
-               declaredSourceType,
                projection,
                context,
-               globalFacts)
+               globalFacts
+            )
          }
          .buffer(threadPoolSize).map {
             val result = it.await()
@@ -245,31 +246,33 @@ class LocalProjectionProvider : ProjectionProvider {
       projectionType: Type,
       startTime: Instant
    ): Flow<TypedInstanceWithMetadata> {
-      val primaryFact = when {
-         scopedFacts.isEmpty() -> {
-            emittedResult
-         }
+//      val primaryFact = when {
+//         scopedFacts.isEmpty() -> {
+//            emittedResult
+//         }
+//
+//         scopedFacts.size == 1 -> scopedFacts.single().fact
+//         else -> {
+//            // 26-Feb-24:
+//            // By adding support for multiple scoped facts in the projection context,
+//            // the above logic (which decides "what is the thing we're projecting?" became less obvious.
+//            // Considered:
+//            // - Build an anonymous object with all the scoped facts - however, this is complex at this point of execution,
+//            //   and if we were to do this, it makes sense to do it inside the query compiler. It also changes scope evaluation rules,
+//            //   as something like ( f: Foo ) -> {} changes from "f is the name of the scope" to ( { f: Foo } ) -> {} , where "f is the name
+//            //   of the property on the scope", meaning that named scopes are just properties. That's a big change, and not one I want to undertake
+//            //   as a side-effect.
+//            // - Treat the first item as the "thing to project". This is what I went with - turns out that later we just
+//            //   merge everything into a context set anyway, so it's really only material for deciding what type of projection we're performing.
+//            //   (the logic that follows next)
+//            //   "first thing is the thing" follows the pattern used in List / Array mapping in other languages, so feels ok-ish.
+//            //   This becomes important below in Map A[] -> B[], where if the user has declared multiple scoped facts, we are using the first
+//            //   as the "value to map"
+//            scopedFacts.first().fact
+//         }
+//      }
 
-         scopedFacts.size == 1 -> scopedFacts.single().fact
-         else -> {
-            // 26-Feb-24:
-            // By adding support for multiple scoped facts in the projection context,
-            // the above logic (which decides "what is the thing we're projecting?" became less obvious.
-            // Considered:
-            // - Build an anonymous object with all the scoped facts - however, this is complex at this point of execution,
-            //   and if we were to do this, it makes sense to do it inside the query compiler. It also changes scope evaluation rules,
-            //   as something like ( f: Foo ) -> {} changes from "f is the name of the scope" to ( { f: Foo } ) -> {} , where "f is the name
-            //   of the property on the scope", meaning that named scopes are just properties. That's a big change, and not one I want to undertake
-            //   as a side-effect.
-            // - Treat the first item as the "thing to project". This is what I went with - turns out that later we just
-            //   merge everything into a context set anyway, so it's really only material for deciding what type of projection we're performing.
-            //   (the logic that follows next)
-            //   "first thing is the thing" follows the pattern used in List / Array mapping in other languages, so feels ok-ish.
-            //   This becomes important below in Map A[] -> B[], where if the user has declared multiple scoped facts, we are using the first
-            //   as the "value to map"
-            scopedFacts.first().fact
-         }
-      }
+      val primaryFact = emittedResult
 
 
       return when {

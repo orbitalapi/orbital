@@ -371,7 +371,11 @@ data class Type(
    override val isCollection: Boolean =
       (listOfNotNull(this.name, this.aliasForTypeName) + this.inheritanceGraph.flatMap {
          listOfNotNull(it.name, it.aliasForTypeName)
-      }).any { it.parameterizedName.startsWith(ArrayType.NAME) }
+      }).any {
+         // Don't use parameterizedName.startsWith(ArrayType.NAME) here,
+         // as some anonymous types end up being named lang.taxi.Array$Foo$Bar
+         it.fullyQualifiedName == ArrayType.NAME
+      }
 
    @get:JsonProperty("isStream")
    val isStream: Boolean =

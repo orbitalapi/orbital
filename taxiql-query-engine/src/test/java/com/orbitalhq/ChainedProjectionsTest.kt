@@ -334,7 +334,6 @@ class ChainedProjectionsTest {
    }
 
    @Test
-   @Ignore // not yet ready
    fun `can chain top-level projections to access iteration scope`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
@@ -364,14 +363,13 @@ class ChainedProjectionsTest {
             }[]
       """.trimIndent()
       )
-         .typedInstances()
+         .rawObjects()
 
 
       result.shouldBe(listOf(mapOf("personName" to "Jimmy")))
    }
 
    @Test
-   @Ignore // Not yet ready
    fun `can use top-level projections which aren't chained`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
@@ -401,7 +399,7 @@ class ChainedProjectionsTest {
       )
          .firstRawObject()
 
-      result.shouldBe(listOf(mapOf("personName" to "Jimmy")))
+      result.shouldBe(mapOf("actors" to listOf(mapOf("name" to "Jimmy"))))
    }
 
    @Test

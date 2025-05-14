@@ -18,7 +18,6 @@ import com.orbitalhq.query.*
 import com.orbitalhq.query.projection.ProjectionProvider
 import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.OperationNames
-import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.utils.Benchmark
@@ -2721,7 +2720,6 @@ service Broker1Service {
       val explodingProjectionProvider: ProjectionProvider = object : ProjectionProvider {
          override fun project(
             results: Flow<TypedInstance>,
-            declaredSourceType: Type,
             projection: Projection,
             context: QueryContext,
             globalFacts: FactBag,
@@ -2735,7 +2733,6 @@ service Broker1Service {
 
           override fun project(
               source: Flow<TypedInstanceWithMetadata>,
-              declaredSourceType: Type,
               projection: Projection,
               context: QueryContext,
               globalFacts: FactBag
