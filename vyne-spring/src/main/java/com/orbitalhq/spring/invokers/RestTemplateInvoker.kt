@@ -31,6 +31,7 @@ import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.spring.http.auth.schemes.addAuthTokenAttributes
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
@@ -62,6 +63,7 @@ class RestTemplateInvoker(
    private val webClientFactory: WebClientFactory,
    private val requestFactory: HttpRequestFactory = DefaultRequestFactory(FormatSpecRegistry.default().formats),
    val formats: FormatSpecRegistry = FormatSpecRegistry.default(),
+   val logbookProvider: LogbookProvider = LogbookProvider()
 ) : OperationInvoker {
    companion object {
       val defaultAcceptHeaderValue = listOf(MediaType.TEXT_EVENT_STREAM, MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML)
@@ -116,8 +118,7 @@ class RestTemplateInvoker(
 
       val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl, uriVariables)
 
-      val webClient = webClientFactory.webClientFor(service)
-
+      val (webClient, trafficSink) = logbookProvider.modify(webClientFactory.webClientFor(service))
       //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
       val request = webClient
          .method(httpMethod)
@@ -172,7 +173,10 @@ class RestTemplateInvoker(
                "[$queryId] - $httpMethod to ${expandedUri.toASCIIString()} returned status ${clientResponse.statusCode()} after ${duration}ms"
             }
 
-            fun remoteCall(responseBody: String, failed: Boolean = false): RemoteCall {
+            fun remoteCall(failed: Boolean = false): RemoteCall {
+               val capturedRequestBody = trafficSink.request?.bodyAsString
+               val capturedResponseBody = trafficSink.response?.bodyAsString
+
                return RemoteCall(
                   remoteCallId = remoteCallId,
                   responseId = UUID.randomUUID().toString(),
@@ -181,24 +185,26 @@ class RestTemplateInvoker(
                   operation = operation.name,
                   responseTypeName = operation.returnType.name,
                   method = httpMethod.name(),
-                  requestBody = httpEntity.body,
+                  requestBody = capturedRequestBody,
                   resultCode = clientResponse.statusCode().value(),
                   durationMs = duration,
-                  response = responseBody,
+                  response = capturedResponseBody,
                   timestamp = initiationTime,
                   responseMessageType = responseMessageType,
                   isFailed = failed,
                   exchange = HttpExchange(
                      url = expandedUri.toASCIIString(),
                      verb = httpMethod.name(),
-                     requestBody = httpEntity.body?.toString(),
+                     requestBody = capturedRequestBody,
                      responseCode = clientResponse.statusCode().value(),
                      // Strictly, this isn't the size in bytes,
                      // but it's close enough until someone complains.
-                     responseSize = responseBody.length,
+                     responseSize = trafficSink.response?.body?.size ?: 0,
                      headers = com.orbitalhq.query.HttpHeaders(
-                        responseHeaders = clientResponse.headers().asHttpHeaders().asVyneHeadersMap(),
-                        requestHeaders = clientResponse.requestHeaders()
+                        // Use trafficSink (which uses logbook), as it applied sensible filtering
+                        requestHeaders = trafficSink.requestHeaders(),
+                        responseHeaders = trafficSink.responseHeaders(),
+
                      )
                   )
                )
@@ -214,7 +220,7 @@ class RestTemplateInvoker(
                   return@flatMapMany clientResponse.bodyToMono<String>()
                      .switchIfEmpty(Mono.just(""))
                      .handle { responseBody, sink ->
-                        val remoteCall = remoteCall(responseBody = responseBody, failed = true)
+                        val remoteCall = remoteCall(failed = true)
                         if (retrySpec == null) {
                            eventDispatcher.reportRemoteOperationInvoked(
                               OperationResult.from(parameters, remoteCall),
@@ -241,7 +247,7 @@ class RestTemplateInvoker(
                logger.debug { "Request to ${expandedUri.toASCIIString()} is streaming" }
                clientResponse.bodyToFlux<String>()
                   .flatMap { responseString ->
-                     val remoteCall = remoteCall(responseBody = responseString)
+                     val remoteCall = remoteCall()
                      handleSuccessfulHttpResponse(
                         responseString,
                         operation,
@@ -261,7 +267,7 @@ class RestTemplateInvoker(
                clientResponse.bodyToMono(String::class.java)
                   .switchIfEmpty { Mono.just("") } // 204 responses (no content)
                   .flatMapMany { responseString ->
-                     val remoteCall = remoteCall(responseBody = responseString)
+                     val remoteCall = remoteCall()
                      handleSuccessfulHttpResponse(
                         responseString,
                         operation,

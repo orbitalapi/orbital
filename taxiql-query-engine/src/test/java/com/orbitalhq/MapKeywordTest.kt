@@ -149,7 +149,7 @@ class MapKeywordTest {
                { name : "Jack", points : 4, score: 5 }
             ]
          }
-         map { Person[] }
+         map { Person }
          call PersonApi::saveOne
       """.trimIndent()
       )
