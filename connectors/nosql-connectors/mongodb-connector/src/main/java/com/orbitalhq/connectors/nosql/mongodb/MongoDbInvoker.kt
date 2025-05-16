@@ -83,7 +83,7 @@ class MongoDbInvoker(
             queryOptions
          )
 
-         else -> error("Unhandled Mongo Operation type: ${operation.qualifiedName.parameterizedName}")
+         else -> error("Cannot determine how to process Mongo operation ${operation.qualifiedName.parameterizedName}. Are you missing an annotation or import? Consider adding an annotation such as ${MongoConnector.Annotations.UpsertOperationAnnotationName.parameterizedName}")
       }
    }
 
