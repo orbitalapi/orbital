@@ -614,7 +614,11 @@ fun QueryExpression.applyProjection(
    return ProjectedExpression(
       this,
       Projection(
-         ProjectionAnonymousTypeProvider.projectedTo(expression.returnType, schema),
+         // MP 16-May-25:
+         // expression.projection.projectionType correctly handles
+         // edge cases, like a stream is actually projected as an array, not a stream,
+         // even though it returns a Stream
+         ProjectionAnonymousTypeProvider.projectedTo(expression.projection.projectedType, schema),
          unwrappedScope,
          expression
       )
