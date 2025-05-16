@@ -35,7 +35,9 @@ class QueryPlanBuilderTest : DescribeSpec({
             .shouldContainAll("FilmTitle", "Actor[]", "PersonName", "Film[]")
          metadata.allCandidateOperations.shouldHaveSize(2)
       }
-      it("should list all stream types") {
+      // Stream merging in this fashion is not supported,
+      // instead use a stream union type - ie: stream { Tweet | Analytics }
+      xit("should list all stream types") {
          val schema = TaxiSchema.from("""
             model Tweet {
                id : TweetId inherits String
