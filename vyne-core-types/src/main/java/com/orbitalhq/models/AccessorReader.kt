@@ -382,8 +382,18 @@ class AccessorReader(
             }
             TypedInstance.from(targetType, typedInstances, schema, source = source)
          }
+
          is MemberAccessExpression -> {
-            evaluateMemberAccessExpression(value, schema.type(accessor.returnType), accessor, schema, nullValues, source, format,functionResultCache)
+            evaluateMemberAccessExpression(
+               value,
+               schema.type(accessor.returnType),
+               accessor,
+               schema,
+               nullValues,
+               source,
+               format,
+               functionResultCache
+            )
          }
 
          else -> {
@@ -463,11 +473,39 @@ class AccessorReader(
       dataSource: DataSource
    ): TypedInstance {
       val source = xtimed("source value lookup") {
-         if (accessor.sourceExpression != null) {
-            val evaluationResult = evaluate(value, schema.type(accessor.sourceExpression!!.returnType), accessor.sourceExpression!!, dataSource = dataSource, format = null)
-            evaluationResult
-         } else {
-            objectFactory.getValue(accessor.memberSource.toVyneQualifiedName(), queryIfNotFound = allowContextQuerying)
+         when {
+            accessor.sourceExpression != null -> {
+               val evaluationResult = evaluate(
+                  value,
+                  schema.type(accessor.sourceExpression!!.returnType),
+                  accessor.sourceExpression!!,
+                  dataSource = dataSource,
+                  format = null
+               )
+               evaluationResult
+            }
+
+            accessor.argumentSelector != null -> {
+               val argument = accessor.argumentSelector!!
+               if (value is FactBag) {
+                  value.getScopedFactOrNull(argument.scope)?.fact ?: TypedNull.create(
+                     schema.type(argument.returnType),
+                     FailedEvaluation("Attempted to evaluate an argument scope ${argument.scope.name} but the value is not present in the fact bag")
+                  )
+               } else {
+                  TypedNull.create(
+                     schema.type(argument.returnType),
+                     FailedEvaluation("Attempted to evaluate an argument scope ${argument.scope.name} but the value is not a FactBag (it's a ${value::class.simpleName})")
+                  )
+               }
+            }
+
+            else -> {
+               objectFactory.getValue(
+                  accessor.memberSource.toVyneQualifiedName(),
+                  queryIfNotFound = allowContextQuerying
+               )
+            }
          }
 
       }
@@ -495,15 +533,28 @@ class AccessorReader(
             FactBag.of(listOf(source), schema)
                .getFactOrNull(requestedType, discoveryStrategy)
          }
-      return fact ?: TypedNull.create(
-         requestedType,
-         FailedEvaluatedExpression(
-            accessor.asTaxi(),
-            emptyList(),
-            "Unable to find instance of ${requestedType.qualifiedName.shortDisplayName} from source of ${source.type.qualifiedName.shortDisplayName}"
+
+      // First: Do we explicitly have a fact? If so, that takes precedence
+      if (fact != null) return fact;
+
+      // Is the requested type an expression type?
+      // If so, evaluate it against the source
+      return if (requestedType.expression != null) {
+         // To evaluate the expression, we need to create a new scope containing our source
+         (objectFactory as TypedObjectFactory).newFactory(requestedType, source, scopedArguments = emptyList())
+            .evaluateExpression(requestedType.expression!!)
+      } else {
+         TypedNull.create(
+            requestedType,
+            FailedEvaluatedExpression(
+               accessor.asTaxi(),
+               emptyList(),
+               "Unable to find instance of ${requestedType.qualifiedName.shortDisplayName} from source of ${source.type.qualifiedName.shortDisplayName}"
+            )
          )
-      )
+      }
    }
+
 
    /**
     * Reads a type expression (eg., a token where a type has been used as an input).
@@ -569,7 +620,8 @@ class AccessorReader(
          firstObject,
          targetType,
          selectors.joinToString(".") { it.fieldName },
-         value)
+         value
+      )
    }
 
    private fun readFieldSelectorsAgainstObject(
@@ -697,8 +749,8 @@ class AccessorReader(
                // so that they can be evaluated by later params
                // eg: function sayHello(name: String, upperName:String = name.upperCase()):String
                val valueWithEvaluatedParams = when (value) {
-                   is FactBag -> value.withAdditionalScopedFacts(scopedFacts, schema)
-                  is TypedInstance -> FactBag.of(value, schema).withAdditionalScopedFacts(scopedFacts,schema)
+                  is FactBag -> value.withAdditionalScopedFacts(scopedFacts, schema)
+                  is TypedInstance -> FactBag.of(value, schema).withAdditionalScopedFacts(scopedFacts, schema)
                   else -> {
                      // We can't append previous params if the input value is just an untyped value, (eg., a map, or a string),
                      // and we don't have enough context to turn this into a Factbag, so we'll just have to use it as-is,
@@ -792,10 +844,11 @@ class AccessorReader(
 
       val evaluationContext = objectFactory //.withAdditionalScopedFacts(allInputArguments)
       return when (evaluationContext) {
-          is TypedObjectFactory -> {
-             evaluationContext.newFactoryWithOnly(schema.type(function.returnType!!), args)
-                .evaluateExpression(function.body!!)
-          }
+         is TypedObjectFactory -> {
+            evaluationContext.newFactoryWithOnly(schema.type(function.returnType!!), args)
+               .evaluateExpression(function.body!!)
+         }
+
          is FactBagValueSupplier -> {
             evaluate(
                args,
@@ -1169,8 +1222,18 @@ class AccessorReader(
             WhenBlockEvaluator(this.objectFactory, schema, this)
                .evaluate(value, expression, dataSource, returnType, format)
          }
+
          is MemberAccessExpression -> {
-            evaluateMemberAccessExpression(value, returnType, expression, schema, nullValues, dataSource, format, resultCache)
+            evaluateMemberAccessExpression(
+               value,
+               returnType,
+               expression,
+               schema,
+               nullValues,
+               dataSource,
+               format,
+               resultCache
+            )
          }
 
          else -> TODO("Support for expression type ${expression::class.toString()} is not yet implemented")
