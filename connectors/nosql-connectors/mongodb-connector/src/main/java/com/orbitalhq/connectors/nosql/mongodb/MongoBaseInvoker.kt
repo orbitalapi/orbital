@@ -25,9 +25,11 @@ import com.orbitalhq.schemas.fqn
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.query.TaxiQlQuery
+import org.bson.types.Decimal128
 import org.bson.types.ObjectId
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
 import reactor.core.publisher.Flux
+import java.math.BigDecimal
 import java.time.Duration
 import java.time.Instant
 
@@ -202,7 +204,13 @@ abstract class MongoBaseInvoker(
          } else {
             // When writing the object out, don't apply formats, as we want
             // dates persisted as dates, not strings
-            fieldValue.toRawObject(ObjectMapperConfig(applyFormats = false))
+            fieldValue.toRawObject(ObjectMapperConfig(applyFormats = false))?.let { rawValue ->
+               when (rawValue) {
+                  // ORB-957
+                  is BigDecimal -> Decimal128(rawValue)
+                  else -> rawValue
+               }
+            }
          }
          val mongoFieldName = if (idField == name) MongoIdField else name
          val mongoValue = if (mongoFieldName == MongoIdField)  {
