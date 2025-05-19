@@ -24,14 +24,12 @@ open class CollectionFilteringFunction {
       )
    }
 
-   protected fun applyFilter(
+   protected fun extractAndValidateInputs(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier,
-      rawMessageBeingParsed: Any?
-   ): Either<TypedNull, List<TypedInstance>> {
+   ): Either<TypedNull, Triple<TypedCollection, DeferredExpression, EvaluatedExpression>> {
       fun createTypeNullFailure(message: String): TypedNull {
          return createFailureWithTypedNull(
             message, returnType, function, inputValues
@@ -55,22 +53,46 @@ open class CollectionFilteringFunction {
             .left()
       }
       val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
-
-      val filtered = collection.filter { collectionMember ->
-         val filtered = applyFilterToMember(collectionMember, schema, objectFactory, deferredInstance, dataSource, returnType, function, inputValues)
-         when (filtered) {
-            // If the evaluation returned a typedNull, it indicates it failed, so
-            // bail out of the evaluation, returning at the top level
-            is Either.Left -> return filtered.value.left()
-            // Otherwise, return the filter result
-            is Either.Right -> return@filter filtered.value
-         }
-
-      }
-      return filtered.right()
+      return Triple(collection, deferredInstance, dataSource).right()
    }
 
-   protected fun applyFilterToMember(
+   protected fun applyFilter(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier,
+      rawMessageBeingParsed: Any?
+   ): Either<TypedNull, List<TypedInstance>> {
+      return extractAndValidateInputs(inputValues, schema, returnType, function)
+         .map { (collection, deferredExpression, dataSource) ->
+            val filtered = collection.filter { collectionMember ->
+               val filtered = evaluatePredicateAgainstMember(
+                  collectionMember,
+                  schema,
+                  objectFactory,
+                  deferredExpression,
+                  dataSource,
+                  returnType,
+                  function,
+                  inputValues
+               )
+               when (filtered) {
+                  // If the evaluation returned a typedNull, it indicates it failed, so
+                  // bail out of the evaluation, returning at the top level
+                  is Either.Left -> return filtered.value.left()
+                  // Otherwise, return the filter result
+                  is Either.Right -> return@filter filtered.value
+               }
+
+            }
+            filtered
+         }
+
+
+   }
+
+   protected fun evaluatePredicateAgainstMember(
       collectionMember: TypedInstance,
       schema: Schema,
       objectFactory: EvaluationValueSupplier,
@@ -79,7 +101,7 @@ open class CollectionFilteringFunction {
       returnType: Type,
       function: FunctionAccessor,
       inputValues: List<TypedInstance>
-   ): Either<TypedNull,Boolean> {
+   ): Either<TypedNull, Boolean> {
       val factBag = FactBagValueSupplier.of(listOf(collectionMember), schema, thisScopeValueSupplier = objectFactory)
       val evaluated = deferredInstance.evaluate(collectionMember, dataSource, factBag)
 
