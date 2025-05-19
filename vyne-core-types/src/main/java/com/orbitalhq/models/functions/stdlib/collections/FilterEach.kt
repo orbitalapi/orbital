@@ -1,18 +1,15 @@
 package com.orbitalhq.models.functions.stdlib.collections
 
 import arrow.core.Either
-import arrow.core.getOrHandle
 import com.orbitalhq.models.DeferredExpression
 import com.orbitalhq.models.EvaluatedExpression
 import com.orbitalhq.models.EvaluationValueSupplier
-import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.functions.NamedFunctionInvoker
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
-import com.orbitalhq.utils.get
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
@@ -35,7 +32,7 @@ object FilterEach : NamedFunctionInvoker, CollectionFilteringFunction() {
          return failed(returnType,function,inputValues,"Expected a predicate in position 1, but got ${predicate::class.simpleName}", predicate)
       }
       val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
-      val filterResult = applyFilterToMember(
+      val filterResult = evaluatePredicateAgainstMember(
          inputValue,
          schema,
          objectFactory,
