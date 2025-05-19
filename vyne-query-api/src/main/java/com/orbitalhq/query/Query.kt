@@ -13,6 +13,7 @@ import lang.taxi.expressions.Expression
 import lang.taxi.expressions.ProjectingExpression
 import lang.taxi.mutations.Mutation
 import lang.taxi.services.operations.constraints.Constraint
+import lang.taxi.types.ProjectionKind
 import mu.KotlinLogging
 import java.util.*
 
@@ -133,7 +134,9 @@ data class QueryAndMutateExpression(val query: QueryExpression, override val mut
 data class ProjectedExpression(val source: QueryExpression, val projection: Projection): QueryExpression
 
 // TODO : Can we replace / collapse with FieldProjection?
-data class Projection(val type: Type, val scopedVars: List<ProjectionFunctionScope>, val projectingExpression: ProjectingExpression)
+data class Projection(val type: Type, val scopedVars: List<ProjectionFunctionScope>, val projectingExpression: ProjectingExpression) {
+   val projectionKind: ProjectionKind = projectingExpression.projection.projectionKind
+}
 
 
 enum class QueryMode {

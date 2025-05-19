@@ -1,10 +1,13 @@
 package com.orbitalhq.models.functions.stdlib
 
+import com.orbitalhq.firstRawObject
 import com.orbitalhq.firstTypedInstace
 import com.winterbe.expekt.should
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.testVyne
+import com.orbitalhq.typedObjects
 import io.kotest.common.runBlocking
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import org.junit.Test
 import java.math.BigDecimal
@@ -81,6 +84,46 @@ class SumTest {
       """.trimIndent())
          .firstTypedInstace()
       result.toRawObject().shouldBe(6)
+   }
+
+   @Test
+   fun `can sum in non-array response`() : Unit = runBlocking{
+      val (vyne,stub) = testVyne("""
+         type MetroLimitId inherits String
+         type AdvisedAmount inherits Decimal
+
+         closed parameter model LimitRead {
+             limitId: MetroLimitId
+             advisedAmount: AdvisedAmount
+         }
+
+         service limitsMongoService {
+             operation getLimits() : LimitRead[]
+         }
+      """.trimIndent())
+      stub.addResponse("getLimits", """
+         [
+         {
+            "limitId":"10001771.0011000.01",
+            "advisedAmount":5,
+            "availableMarker":"Y",
+            "expiryDate": "2099-12-31T00:00:00.000"
+         },
+         {
+            "limitId":"10001771.0011000.01",
+            "advisedAmount":6,
+            "availableMarker":"Y",
+            "expiryDate": "2099-12-31T00:00:00.000"
+         }
+         ]
+      """.trimIndent())
+      val result = vyne.query("""
+find {
+    LimitRead[]
+} as  {
+    sum : LimitRead[].sum((LimitRead) -> AdvisedAmount)
+}""").typedObjects()
+      result.shouldNotBeNull()
    }
 
 }

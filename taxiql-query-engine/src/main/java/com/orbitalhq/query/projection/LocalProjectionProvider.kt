@@ -23,16 +23,21 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.buffer
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapMerge
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.slf4j.MDCContext
 import lang.taxi.types.Arrays
+import lang.taxi.types.ProjectionKind
+import lang.taxi.types.StreamType
 import mu.KotlinLogging
 import java.time.Instant
 import java.util.concurrent.LinkedBlockingQueue
@@ -65,7 +70,7 @@ class LocalProjectionProvider : ProjectionProvider {
    override fun process(
       source: Flow<TypedInstanceWithMetadata>,
       context: QueryContext,
-      block: suspend kotlinx.coroutines.CoroutineScope.(item: TypedInstanceWithMetadata) -> Flow<TypedInstanceWithMetadata>
+      block: suspend CoroutineScope.(item: TypedInstanceWithMetadata) -> Flow<TypedInstanceWithMetadata>
    ): Flow<TypedInstanceWithMetadata> {
       context.cancelFlux.subscribe {
          logger.info { "QueryEngine for queryId ${context.queryId} is cancelling" }
@@ -183,11 +188,23 @@ class LocalProjectionProvider : ProjectionProvider {
          projectingScope.cancel()
       }
 
+      return when (projection.projectionKind) {
+         ProjectionKind.Iteration -> doIteratingProjection(source, context, projection, globalFacts)
+         // We can treat everything that's not an iteration as an aggregation,
+         // since it boils down to "Collect the entire source Flow, then map"
+         else -> doAggregatingProjection(source, context, projection, globalFacts)
+      }
+   }
+
+   private fun doIteratingProjection(
+      source: Flow<TypedInstance>,
+      context: QueryContext,
+      projection: Projection,
+      globalFacts: FactBag
+   ): Flow<TypedInstanceWithMetadata> {
       // This pattern aims to allow the concurrent execution of multiple flows.
       // Normally, flow execution is sequential - ie., one flow must complete befre the next
       // item is taken.  buffer() is used here to allow up to n parallel flows to execute.
-      // MP: @Anthony - please leave some comments here that describe the rationale for
-      // map { async { .. } }.flatMapMerge { await }
       return source
          .buffer()
          .withIndex()
@@ -195,19 +212,59 @@ class LocalProjectionProvider : ProjectionProvider {
          .filter { !context.cancelRequested }
          .distinctUntilChanged()
          .map { emittedResult ->
-            projectItem(
-               emittedResult.index,
-               emittedResult.value,
-               projection,
-               context,
-               globalFacts
-            )
+               projectItem(
+                  emittedResult.index,
+                  emittedResult.value,
+                  projection,
+                  context,
+                  globalFacts
+               )
          }
          .buffer(threadPoolSize).map {
-            val result = it.await()
-            logger.trace { "projected or mapped instance of ${projection.type.qualifiedName.shortDisplayName} completed" }
-            result
+               val result = it.await()
+               logger.trace { "projected or mapped instance of ${projection.type.qualifiedName.shortDisplayName} completed" }
+               result
          }.flatMapMerge { it }
+   }
+
+   private fun doAggregatingProjection(
+      source: Flow<TypedInstance>,
+      context: QueryContext,
+      projection: Projection,
+      globalFacts: FactBag
+   ): Flow<TypedInstanceWithMetadata> {
+
+      if (StreamType.isStream(projection.projectingExpression.projection.sourceType)) {
+         error("Aggregating projections are not allowed on a stream")
+      }
+      return flow<TypedInstanceWithMetadata> {
+         val collectedResult =  source.toList()
+         val sourceType = context.schema.type(projection.projectingExpression.projection.sourceType)
+         val sourceValue = when {
+            Arrays.isArray(projection.projectingExpression.projection.sourceType) -> TypedCollection.from(collectedResult)
+            collectedResult.size == 1 -> collectedResult.single()
+            collectedResult.size == 0 -> {
+               // this is an error, as we should've at least received a TypedNull
+               error("Cannot aggregate or convert the result of the query, as the source did not provide any items.")
+            }
+            // Final branch, could be else, but I'm trying to be explicit
+            collectedResult.size > 1 -> {
+               // this is an error, as the source is not expected to emit multiple items
+               error("Cannot aggregate or convert the result of the query, as the source emitted ${collectedResult.size} items, but the declared type is not a collection type (It's ${projection.projectingExpression.projection.sourceType.toQualifiedName().parameterizedName})")
+            }
+            else -> error("Unexpected branch hit when calculating aggregating projection")
+         }
+
+         val projectedFlow: Flow<TypedInstanceWithMetadata> = projectItem(
+            0,
+            sourceValue,
+            projection,
+            context,
+            globalFacts
+         ).await() // ok to await here, as we're inside a flow { ... }, so the call isn't blocking.
+         emitAll(projectedFlow)
+      }
+
    }
 
    /**
