@@ -154,4 +154,26 @@ class ExtensionFunctionTest {
       result.shouldBe(mapOf("starring" to listOf(mapOf("name" to "Mark"))))
    }
 
+   @Test
+   fun `can call extension function on chain of parameter names`():Unit = runBlocking {
+      val (vyne, _) = testVyne("""
+         model Person {
+            identity: {
+               names : {
+                  firstName : FirstName inherits String
+               }
+            }
+         }
+      """.trimIndent())
+      vyne.query("""given {
+         | person:Person = { identity: { names : { firstName : 'jimmy' } } }
+         |}
+         |find {
+         |  first : String = person.identity.names.firstName.upperCase()
+         |  //name : String = FirstName.upperCase()
+         |}
+      """.trimMargin())
+         .firstRawObject()
+   }
+
 }
