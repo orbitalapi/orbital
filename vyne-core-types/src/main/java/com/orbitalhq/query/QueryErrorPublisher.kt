@@ -2,7 +2,6 @@ package com.orbitalhq.query
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.common.base.Throwables
-import com.orbitalhq.models.FailedSearch
 import com.orbitalhq.utils.RetryFailOnSerializeEmitHandler
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
@@ -14,14 +13,14 @@ class StreamErrorPublisher : AutoCloseable {
       .replay()
       // Limit is quite short - we just want
       // to allow any late UI subscribers to get recent events
-      .limit<StreamQueryErrorEvent>(Duration.ofSeconds(30))
+      .limit<QueryErrorEvent>(Duration.ofSeconds(30))
 
-   val errors: Flux<StreamQueryErrorEvent>
+   val errors: Flux<QueryErrorEvent>
       get() = streamErrorsSink.asFlux()
 
    fun onError(queryId: String, error: StreamErrorMessage) {
       streamErrorsSink.emitNext(
-         StreamQueryErrorEvent(queryId, error),
+         QueryErrorEvent(queryId, error),
          RetryFailOnSerializeEmitHandler
       )
    }
@@ -70,4 +69,4 @@ data class StreamErrorMessage(
    fun toException(): StreamErrorException = StreamErrorException(this)
 }
 
-data class StreamQueryErrorEvent(val queryId: String, val error: StreamErrorMessage, val tags: MetricTags = MetricTags.NONE)
+data class QueryErrorEvent(val queryId: String, val error: StreamErrorMessage, val tags: MetricTags = MetricTags.NONE)

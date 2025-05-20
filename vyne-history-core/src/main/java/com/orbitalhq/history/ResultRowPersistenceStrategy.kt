@@ -9,13 +9,15 @@ import com.orbitalhq.models.TypeNamedInstanceMapper
 import com.orbitalhq.models.TypedInstanceConverter
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.models.serde.DataSourceReference
+import com.orbitalhq.query.QueryErrorStreamEvent
 import com.orbitalhq.query.QueryResultEvent
 import com.orbitalhq.query.history.LineageRecord
+import com.orbitalhq.query.history.QueryErrorEventRow
 import com.orbitalhq.query.history.QueryResultRow
 import com.orbitalhq.query.history.RemoteCallResponse
 import mu.KotlinLogging
+import java.time.ZoneOffset
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
 
 
@@ -28,6 +30,8 @@ interface ResultRowPersistenceStrategy {
    fun persistResultRowAndLineage(event: QueryResultEvent) {
       // default no-op
    }
+
+   fun persistErrorEvent(event: QueryErrorStreamEvent) {}
 
    fun createLineageRecords(
       dataSources: List<DataSource>,
@@ -50,7 +54,8 @@ object ResultRowPersistenceStrategyFactory {
             persistenceQueue,
             config.persistRemoteCallResponses,
             config.persistRemoteCallMetadata,
-            config.persistResults
+            config.persistResults,
+            config.persistErrors
          )
       } else {
          NoOpResultRowPersistenceStrategy()
@@ -83,7 +88,8 @@ open class DatabaseResultRowPersistenceStrategy(
    private val observabilityWriter: QueryObservabilityWriter?,
    private val persistRemoteResponses: Boolean,
    private val persistRemoteMetadata: Boolean,
-   private val persistResults: Boolean
+   private val persistResults: Boolean,
+   private val persistErrors: Boolean
 ) : ResultRowPersistenceStrategy {
    private val converter = TypedInstanceConverter(TypeNamedInstanceMapper)
    private val createdLineageRecordIds = ConcurrentHashMap<String, String>()
@@ -139,6 +145,19 @@ open class DatabaseResultRowPersistenceStrategy(
       )
    }
 
+   override fun persistErrorEvent(event: QueryErrorStreamEvent) {
+      if (persistErrors) {
+         val errorRow = QueryErrorEventRow(
+            queryId = event.queryId,
+            timestamp = event.event.error.timestamp.atZone(ZoneOffset.UTC),
+            typeName = event.event.error.typeName,
+            payload = event.event.error.payload.toString(),
+            message = event.event.error.message,
+            taskStackJson = null // TODO
+         )
+         observabilityWriter?.storeErrorEvent(errorRow)
+      }
+   }
    override fun persistResultRowAndLineage(event: QueryResultEvent) {
       val resultRowCallsAndLineage = this.extractResultRowAndLineage(event)
       resultRowCallsAndLineage?.let {

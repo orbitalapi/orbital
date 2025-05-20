@@ -1,8 +1,8 @@
 package com.orbitalhq.query.runtime.core.gateway
 
+import com.orbitalhq.auth.EmptyAuthenticationToken
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.MetricTags
-import com.orbitalhq.auth.EmptyAuthenticationToken
 import com.orbitalhq.query.tagsOf
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.consumer.SchemaStore
@@ -10,10 +10,15 @@ import com.orbitalhq.spring.http.HttpStatusException
 import lang.taxi.query.QueryMode
 import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
+import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
-import org.springframework.web.reactive.function.server.*
+import org.springframework.web.reactive.function.server.HandlerFunction
+import org.springframework.web.reactive.function.server.RouterFunction
+import org.springframework.web.reactive.function.server.RouterFunctions
+import org.springframework.web.reactive.function.server.ServerRequest
+import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.ServerResponse.status
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
@@ -56,6 +61,11 @@ class QueryRouteService(
       get() {
          return queryRouter.routes
       }
+
+   // For testing
+   fun findRoute(path: String, method: HttpMethod): TaxiQlQuery? {
+      return queryRouter.getQuery(path, method)
+   }
 
    fun router(): RouterFunction<ServerResponse> {
       return RouterFunctions.route({ request ->

@@ -25,6 +25,8 @@ data class QueryAnalyticsConfig(
 
    // Mutable for testing
    var persistResults: Boolean = true,
+
+   var persistErrors: Boolean = true,
    // Mutable for testing
    var analyticsServerApplicationName: String = "analytics-server",
    // Mutable for testing

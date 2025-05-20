@@ -1,5 +1,8 @@
 package com.orbitalhq.schema.consumer
 
+import com.orbitalhq.SourcePackage
+import com.orbitalhq.VersionedSource
+import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.SchemaSetChangedEvent
@@ -26,6 +29,25 @@ interface SchemaStore: SchemaChangedEventProvider {
    fun schema(): Schema {
       return this.schemaSet.schema
    }
+}
+
+// Introduced for testing, but might make sense overall, given the above comments
+class SchemaStoreToSchemaProviderWrapper(private val store: SchemaStore) : SchemaProvider {
+   override val packages: List<SourcePackage>
+      get() {
+         return store.schemaSet.packages
+      }
+   @Deprecated("use packages instead")
+   override val versionedSources: List<VersionedSource>
+      get() {
+         return store.schemaSet.allSources
+      }
+
+   override val schema: Schema
+      get() {
+         return store.schema()
+      }
+
 }
 
 interface SchemaChangedEventProvider {

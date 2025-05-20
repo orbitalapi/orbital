@@ -102,18 +102,33 @@ data class RoutedQuery(
                Mono.justOrEmpty(responseHeaderAnnotation!!.value)
             }
 
-            else -> Mono.error(
-               HttpStatusException(
-                  HttpStatus.BAD_REQUEST,
+            else -> {
+               // This is a common error when people forget to add an annotation (or an import
+               // for an annotation). So try and detect that case and provide a helpful error
+               // message
+               val errorMessage = if (!hasAnyExpectedHttpAnnotation(parameter)) {
+                  "Parameter '${parameter.name}' needs an annotation to specify how it should be resolved from the request. Consider adding one of ${listOf(
+                     HttpHeader.NAME, HttpRequestBody.NAME, HttpQueryVariable.NAME, HttpPathVariable.NAME).joinToString()}. (Check imports if annotation seems present but isn't recognized)."
+               } else {
                   "Parameter ${parameter.name} was not provided through the request"
+               }
+               Mono.error(
+                  HttpStatusException(
+                     HttpStatus.BAD_REQUEST,
+                     errorMessage
+                  )
                )
-            )
+            }
          }
             .map { rawValue ->
                FactValue.Constant(TypedValue(parameter.type, rawValue))
             }
 
             as Mono<FactValue>
+      }
+
+      private fun hasAnyExpectedHttpAnnotation(parameter: Parameter): Boolean {
+         return isRequestBody(parameter) || pathVariableName(parameter) != null || queryVariableName(parameter) != null
       }
 
       private fun isRequestBody(parameter: Parameter): Boolean {

@@ -8,6 +8,7 @@ import com.orbitalhq.history.ResultRowPersistenceStrategyFactory
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.query.QueryCompletedEvent
+import com.orbitalhq.query.QueryErrorStreamEvent
 import com.orbitalhq.query.QueryEvent
 import com.orbitalhq.query.QueryEventConsumer
 import com.orbitalhq.query.QueryFailureEvent
@@ -109,6 +110,7 @@ class PersistingQueryEventConsumer(
             is RestfulQueryExceptionEvent -> persistEvent(event)
             is QueryStartEvent -> persistEvent(event)
             is StreamingQueryCancelledEvent -> processStreamingQueryCancelledEvent(event)
+            is QueryErrorStreamEvent -> persistEvent(event)
          }
       }
       if (logger.isTraceEnabled) {
@@ -123,6 +125,10 @@ class PersistingQueryEventConsumer(
       createQuerySummaryRecord(event.queryId) {
          QueryResultEventMapper.toQuerySummary(event)
       }
+   }
+
+   private fun persistEvent(event: QueryErrorStreamEvent) {
+      resultRowPersistenceStrategy.persistErrorEvent(event)
    }
 
    private fun persistEvent(event: RestfulQueryResultEvent) {
@@ -161,10 +167,6 @@ class PersistingQueryEventConsumer(
             config.persistRemoteCallResponses
          )
       )
-   }
-
-   fun finalize() {
-      logger.debug { "PersistingQueryEventConsumer being finalized for query id $queryId now" }
    }
 
 }

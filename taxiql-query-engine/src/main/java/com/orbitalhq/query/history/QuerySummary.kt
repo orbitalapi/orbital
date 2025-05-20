@@ -9,12 +9,14 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.orbitalhq.models.TypeNamedInstance
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.models.serde.InstantSerializer
+import com.orbitalhq.models.serde.ZonedDateTimeTimeSerializer
 import com.orbitalhq.query.*
 import com.orbitalhq.schemas.*
 import jakarta.persistence.*
 import kotlinx.serialization.Serializable
 import java.time.Duration
 import java.time.Instant
+import java.time.ZonedDateTime
 
 
 @Entity(name = "QUERY_SUMMARY")
@@ -77,6 +79,30 @@ data class QueryResultRow(
       return mapper.readValue(json)
    }
 }
+
+@Entity(name = "QUERY_ERROR_EVENT")
+@Serializable
+data class QueryErrorEventRow(
+   @Id
+   @GeneratedValue(strategy = GenerationType.IDENTITY)
+   @Column(name = "row_id")
+   val rowId: Long? = null,
+   @Column(name = "query_id")
+   val queryId: String,
+   @Column(name = "timestamp")
+   @Serializable(ZonedDateTimeTimeSerializer::class)
+   val timestamp: ZonedDateTime,
+   @Column(name = "message")
+   val message: String,
+   @Column(name = "type_name")
+   val typeName: String,
+   @Column(name = "payload")
+   val payload: String,
+   // For future use
+   @Column(name = "task_stack")
+   val taskStackJson: String?
+
+)
 
 @Entity(name = "LINEAGE_RECORD")
 @Serializable

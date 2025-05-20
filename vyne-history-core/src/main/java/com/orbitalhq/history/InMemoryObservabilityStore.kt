@@ -1,6 +1,8 @@
 package com.orbitalhq.history
 
+import com.orbitalhq.query.QueryErrorStreamEvent
 import com.orbitalhq.query.history.LineageRecord
+import com.orbitalhq.query.history.QueryErrorEventRow
 import com.orbitalhq.query.history.QueryResultRow
 import com.orbitalhq.query.history.RemoteCallResponse
 
@@ -19,6 +21,7 @@ class InMemoryObservabilityStore : QueryObservabilityWriter {
    private val _resultRows = mutableListOf<QueryResultRow>()
    private val _remoteCallResponses = mutableListOf<RemoteCallResponse>()
    private val _lineageRecords = mutableListOf<LineageRecord>()
+   private val _errorEvents = mutableListOf<QueryErrorEventRow>()
    override fun storeResultRow(resultRow: QueryResultRow) {
       _resultRows.add(resultRow)
    }
@@ -29,6 +32,10 @@ class InMemoryObservabilityStore : QueryObservabilityWriter {
 
    override fun storeLineageRecord(lineageRecord: LineageRecord) {
       _lineageRecords.add(lineageRecord)
+   }
+
+   override fun storeErrorEvent(event: QueryErrorEventRow) {
+      _errorEvents.add(event)
    }
 
    val resultRows: List<QueryResultRow>

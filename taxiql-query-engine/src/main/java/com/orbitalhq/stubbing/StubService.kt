@@ -436,7 +436,9 @@ class StubService(
 
    fun addResponseReturningInputs(stubOperationKey: String): StubService {
       return addResponse(stubOperationKey) { op, parameters ->
-         listOf(Either.Right(parameters[0].second))
+         // find the return type somewhere in the params
+         val returnParam = parameters.single { it.first.type.isAssignableTo(op.returnType) }.second
+         listOf(Either.Right(returnParam))
       }
    }
 

@@ -1,35 +1,38 @@
-import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
-import {QueryHistorySummary, QueryProfileData, QueryService} from '../services/query.service';
-import {ActivatedRoute, Router} from '@angular/router';
-import {DownloadClickedEvent} from '../object-view/object-view-container.component';
-import {TypesService} from '../services/types.service';
-import {BaseQueryResultDisplayComponent} from '../query-panel/BaseQueryResultDisplayComponent';
-import { combineLatest, Observable, of, ReplaySubject } from 'rxjs';
-import {InstanceLike, tryFindType, Type} from '../services/schema';
-import {map, startWith, take, tap} from 'rxjs/operators';
+import { ChangeDetectorRef, Component, OnDestroy, OnInit } from "@angular/core";
+import { QueryHistorySummary, QueryProfileData, QueryService, StreamQueryErrorEvent } from "../services/query.service";
+import { ActivatedRoute, Router } from "@angular/router";
+import { DownloadClickedEvent } from "../object-view/object-view-container.component";
+import { TypesService } from "../services/types.service";
+import { BaseQueryResultDisplayComponent } from "../query-panel/BaseQueryResultDisplayComponent";
+import { combineLatest, mergeMap, Observable, of, ReplaySubject } from "rxjs";
+import { InstanceLike, tryFindType, Type } from "../services/schema";
+import { flatMap, map, shareReplay, startWith, take, tap } from "rxjs/operators";
 import {
   ActiveQueriesNotificationService,
   RunningQueryStatus
-} from '../services/active-queries-notification-service';
-import {ValueWithTypeName} from '../services/models';
-import {Subscription} from 'rxjs';
-import {AppInfoService, AppConfig} from '../services/app-info.service';
-import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/BaseQueryResultComponent';
-import {ExportFormat, ResultsDownloadService} from 'src/app/results-download/results-download.service';
-import {isNullOrUndefined} from "../utils/utils";
-import {HttpRequestState, httpRequestStates} from 'ngx-http-request-state';
+} from "../services/active-queries-notification-service";
+import { ValueWithTypeName } from "../services/models";
+import { Subscription } from "rxjs";
+import { AppInfoService, AppConfig } from "../services/app-info.service";
+import { QueryResultInstanceSelectedEvent } from "../query-panel/result-display/BaseQueryResultComponent";
+import { ExportFormat, ResultsDownloadService } from "src/app/results-download/results-download.service";
+import { isNullOrUndefined } from "../utils/utils";
+import { HttpRequestState, httpRequestStates } from "ngx-http-request-state";
+import { fromIterable } from "rxjs/internal/observable/innerFrom";
 
 @Component({
-  selector: 'app-query-history',
-  templateUrl: './query-history.component.html',
-  styleUrls: ['./query-history.component.scss']
+  selector: "app-query-history",
+  templateUrl: "./query-history.component.html",
+  styleUrls: ["./query-history.component.scss"]
 })
 export class QueryHistoryComponent extends BaseQueryResultDisplayComponent implements OnInit, OnDestroy {
-  history$: Observable<HttpRequestState<QueryHistorySummary[]>>
+  history$: Observable<HttpRequestState<QueryHistorySummary[]>>;
   activeRecordResults$: Observable<InstanceLike>;
   activeRecordResultType: Type;
   activeQueryProfileData$: Observable<QueryProfileData>;
   isQueryLoading$: Observable<boolean>;
+  activeRecordErrors$: Observable<StreamQueryErrorEvent>;
+  errorCount: number =0;
 
   instanceSelected$ = new ReplaySubject<QueryResultInstanceSelectedEvent>(1);
   sidePanelVisible: boolean = false;
@@ -62,8 +65,8 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   ngOnInit() {
     this.loadQuerySummaries();
     this.activatedRoute.paramMap.subscribe(location => {
-        if (location.has('queryResponseId')) {
-          this.selectedQueryId = location.get('queryResponseId');
+        if (location.has("queryResponseId")) {
+          this.selectedQueryId = location.get("queryResponseId");
           this.loadQueryResults(this.selectedQueryId);
         }
       }
@@ -76,7 +79,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
       try {
         subscription.unsubscribe();
       } catch (e) {
-        console.log('Error thrown while unsubscribing : ' + e.message);
+        console.log("Error thrown while unsubscribing : " + e.message);
       }
     });
   }
@@ -84,7 +87,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   loadQuerySummaries() {
     this.history$ = this.queryService.getHistory().pipe(
       // We don't want any queries that are still running, they're already stored in the activeQueries prop
-      map(results => results.filter(result => result.responseStatus !== 'RUNNING')),
+      map(results => results.filter(result => result.responseStatus !== "RUNNING")),
       httpRequestStates()
     );
   }
@@ -94,11 +97,11 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
     // which can handle generics.
     // Consider using that, instead of this dirty hack
 
-    if (qualifiedTypeName.startsWith('lang.taxi.Array<')) {
-      const collectionMemberName = qualifiedTypeName.replace('lang.taxi.Array<', '').slice(0, -1);
-      return this.typeName(collectionMemberName) + '[]';
+    if (qualifiedTypeName.startsWith("lang.taxi.Array<")) {
+      const collectionMemberName = qualifiedTypeName.replace("lang.taxi.Array<", "").slice(0, -1);
+      return this.typeName(collectionMemberName) + "[]";
     } else {
-      const parts = qualifiedTypeName.split('.');
+      const parts = qualifiedTypeName.split(".");
       return parts[parts.length - 1];
     }
   }
@@ -139,8 +142,31 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
           }
         )
       );
-    // Don't subscribe here.  We'll only fetch these results if the user opens the profile data
-    this.activeQueryProfileData$ = this.queryService.getQueryProfile(selectedQueryId);
+    this.activeQueryProfileData$ = this.queryService.getQueryProfile(selectedQueryId).pipe(
+      shareReplay(1)
+    );
+    this.activeRecordErrors$ = this.activeQueryProfileData$.pipe(
+      mergeMap(profileData => {
+        const errorEvents = profileData.errors.map(error => {
+          return {
+            queryId: error.queryId,
+            error: {
+              timestamp: error.timestamp,
+              message: error.message,
+              payload: error.payload,
+              typeName: error.typeName
+            }
+          } as StreamQueryErrorEvent;
+        });
+        this.errorCount = errorEvents.length;
+        return fromIterable(errorEvents);
+      })
+    );
+
+    // Subscribe to error records, as we need to get the error count.
+    // This will trigger a subscription on profile data, which is
+    // why it's shareReplay(), to avoid loading it mulitple times.
+    this.activeRecordErrors$.subscribe()
 
     this.isQueryLoading$ = combineLatest([
       this.activeRecordResults$.pipe(map(val => false), startWith(true)),

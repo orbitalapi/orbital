@@ -425,6 +425,7 @@ export interface QueryProfileData {
   remoteCalls: RemoteCallResponse[];
   operationStats: RemoteOperationPerformanceStats[];
   queryLineageData: QuerySankeyChartRow[];
+  errors: QueryErrorRow[]
 }
 
 export interface QueryParseMetadata {
@@ -440,6 +441,13 @@ export interface QueryParseMetadata {
   hasQueryErrors: boolean
 }
 
+interface QueryErrorRow {
+  queryId: string;
+  timestamp: Date;
+  message: string,
+  typeName: string;
+  payload: string;
+}
 
 export interface QueryParameter {
   name: string;
@@ -584,7 +592,7 @@ export type MessageChunk = ChatMessageChunk | QueryMessageChunk | CompiledQueryM
 
 export interface StreamErrorMessage {
   timestamp: Date
-  message: StreamErrorMessage;
+  message: string;
   typeName: string;
   payload: any;
 }

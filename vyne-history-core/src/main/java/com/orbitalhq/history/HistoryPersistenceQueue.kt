@@ -1,7 +1,9 @@
 package com.orbitalhq.history
 
 import com.orbitalhq.history.chronicle.ChronicleStore
+import com.orbitalhq.query.QueryErrorStreamEvent
 import com.orbitalhq.query.history.LineageRecord
+import com.orbitalhq.query.history.QueryErrorEventRow
 import com.orbitalhq.query.history.QueryResultRow
 import com.orbitalhq.query.history.RemoteCallResponse
 import kotlinx.serialization.cbor.Cbor
@@ -68,13 +70,12 @@ fun Path.deleteRecursively() {
  */
 class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) : QueryObservabilityWriter {
 
-   val queryBasePath = baseQueuePath.resolve("$queryId/").toFile().canonicalPath
+   val queryBasePath: String = baseQueuePath.resolve("$queryId/").toFile().canonicalPath
 
    private val queryResultRowStore: ChronicleStore<QueryResultRow>
-
    private val remoteCallResponseStore: ChronicleStore<RemoteCallResponse>
-
    private val lineageRecordStore: ChronicleStore<LineageRecord>
+   private val errorEventStore: ChronicleStore<QueryErrorEventRow>
 
    init {
       queryResultRowStore =
@@ -94,14 +95,18 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) : Qu
             { lineageRecord -> lineageRecordToByteArray(lineageRecord) },
             { bytes -> lineageRecordFromByteArray(bytes) }
          )
-
+      errorEventStore =
+         ChronicleStore(baseQueuePath.resolve("$queryBasePath/errors/").toFile().canonicalPath,
+            { errorEvent -> errorEventRowToByteArray(errorEvent) },
+            { bytes -> errorEventRowFromByteArray(bytes) }
+         )
       logger.info { "History queue working in $queryBasePath" }
    }
 
    fun retrieveNewResultRows(): Flux<QueryResultRow> = queryResultRowStore.retrieveNewValues()
    fun retrieveNewRemoteCalls(): Flux<RemoteCallResponse> = remoteCallResponseStore.retrieveNewValues()
    fun retrieveNewLineageRecords(): Flux<LineageRecord> = lineageRecordStore.retrieveNewValues()
-
+   fun retrieveNewErrorEvents(): Flux<QueryErrorEventRow> = errorEventStore.retrieveNewValues()
    override fun storeResultRow(resultRow: QueryResultRow) {
       queryResultRowStore.store(resultRow)
    }
@@ -114,6 +119,16 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) : Qu
       lineageRecordStore.store(lineageRecord)
    }
 
+   override fun storeErrorEvent(event: QueryErrorEventRow) {
+      errorEventStore.store(event)
+   }
+   private fun errorEventRowToByteArray(eventRow: QueryErrorEventRow): ByteArray {
+      return Cbor.encodeToByteArray(eventRow)
+   }
+
+   private fun errorEventRowFromByteArray(byteArray: ByteArray): QueryErrorEventRow {
+      return Cbor.decodeFromByteArray(byteArray)
+   }
    private fun queryResultRowToByteArray(queryResultRow: QueryResultRow): ByteArray {
       return Cbor.encodeToByteArray(queryResultRow)
    }

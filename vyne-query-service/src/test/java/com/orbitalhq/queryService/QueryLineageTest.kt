@@ -107,6 +107,9 @@ class QueryLineageTest : BaseQueryServiceTest() {
    lateinit var remoteCallResponseRepository: RemoteCallResponseRepository
 
    @Autowired
+   lateinit var errorEventRowRepository: QueryErrorEventRowRepository
+
+   @Autowired
    lateinit var sankeyChartRowRepository: QuerySankeyChartRowRepository
 
 
@@ -331,10 +334,12 @@ class QueryLineageTest : BaseQueryServiceTest() {
          lineageRecordRepository,
          remoteCallResponseRepository,
          sankeyChartRowRepository,
+         errorEventRowRepository = errorEventRowRepository,
          config = QueryAnalyticsConfig(
             persistenceQueueStorePath = tempDir.toPath()
          ),
-         meterRegistry = SimpleMeterRegistry()
+         meterRegistry = SimpleMeterRegistry(),
+
       )
    }
 }

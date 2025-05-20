@@ -9,6 +9,7 @@ import com.orbitalhq.cockpit.core.content.DefaultContentRepository
 import com.orbitalhq.copilot.OpenAiChatService
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.history.db.LineageRecordRepository
+import com.orbitalhq.history.db.QueryErrorEventRowRepository
 import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.history.db.QueryHistoryRecordRepository
 import com.orbitalhq.history.db.QueryResultRowRepository
@@ -115,6 +116,7 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
    lateinit var licenseManager: OrbitalLicenseManager
 
 
+
    @MockBean
    lateinit var schemaEditorService: SchemaEditorService
 
@@ -133,6 +135,10 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
 
    @Autowired
    lateinit var remoteCallResponseRepository: RemoteCallResponseRepository
+
+   @Autowired
+   lateinit var errorEventRowRepository: QueryErrorEventRowRepository
+
 
    @Autowired
    lateinit var sankeyChartRowRepository: QuerySankeyChartRowRepository
@@ -394,6 +400,7 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
          lineageRecordRepository,
          remoteCallResponseRepository,
          sankeyChartRowRepository,
+         errorEventRowRepository = errorEventRowRepository,
          config = QueryAnalyticsConfig(
             persistenceQueueStorePath = tempDir.root.toPath()
          ),
