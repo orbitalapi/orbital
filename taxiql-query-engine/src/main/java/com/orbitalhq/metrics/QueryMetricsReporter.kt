@@ -2,7 +2,7 @@ package com.orbitalhq.metrics
 
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.MetricTags
-import com.orbitalhq.query.StreamQueryErrorEvent
+import com.orbitalhq.query.QueryErrorEvent
 import com.orbitalhq.query.TypedInstanceWithMetadata
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -151,7 +151,7 @@ interface QueryMetricsReporter {
          .mapNotNull { getRawResultFromFluxEvent(it) }
    }
 
-   fun observeErrorStream(errors: Flux<StreamQueryErrorEvent>) {
+   fun observeErrorStream(errors: Flux<QueryErrorEvent>) {
       errors
          .subscribeOn(Schedulers.boundedElastic())
          .subscribe { error ->

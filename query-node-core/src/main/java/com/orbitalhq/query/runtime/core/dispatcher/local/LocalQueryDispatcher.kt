@@ -11,6 +11,7 @@ import mu.KotlinLogging
 import org.springframework.security.core.Authentication
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import java.security.Principal
 
 
@@ -47,7 +48,7 @@ class LocalQueryDispatcher(
       val auth: Authentication? = if (principal is Authentication) {
          principal
       } else null
-      val responseEntity = runBlocking {
+      val (responseEntity, errors) = runBlocking {
          try {
             queryService.submitVyneQlQuery(
                query,
@@ -73,6 +74,14 @@ class LocalQueryDispatcher(
             TODO()
          }*/
          else -> error("Unhandled usecase: ${responseEntity.body::class.simpleName}")
+      }
+
+      errors
+         .subscribeOn(Schedulers.boundedElastic())
+         .subscribe { event ->
+         // Do nothing.
+         // But we need to subscribe so that the stream has a consumer, and
+         // side effects like persistence kick in.
       }
 
       return RoutedQueryResponse(response, responseHeaders)

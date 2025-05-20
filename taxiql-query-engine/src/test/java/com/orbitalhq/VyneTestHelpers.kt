@@ -6,7 +6,7 @@ import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QueryResult
-import com.orbitalhq.query.StreamQueryErrorEvent
+import com.orbitalhq.query.QueryErrorEvent
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.awaitFirst
@@ -59,7 +59,7 @@ suspend fun QueryResult.firstRawObject(): Map<String, Any?> {
    return this.rawObjects().first()
 }
 
-suspend fun QueryResult.shouldEmitError(timeout: Duration = Duration.ofSeconds(5)):StreamQueryErrorEvent {
+suspend fun QueryResult.shouldEmitError(timeout: Duration = Duration.ofSeconds(5)):QueryErrorEvent {
    try {
       val error = this.firstError(timeout)
       return error
@@ -67,7 +67,7 @@ suspend fun QueryResult.shouldEmitError(timeout: Duration = Duration.ofSeconds(5
       fail(e)
    }
 }
-suspend fun QueryResult.firstError(timeout: Duration = Duration.ofSeconds(5)): StreamQueryErrorEvent {
+suspend fun QueryResult.firstError(timeout: Duration = Duration.ofSeconds(5)): QueryErrorEvent {
    return this.errors.take(1).timeout(timeout).collectList().awaitFirst()
       .single()
 

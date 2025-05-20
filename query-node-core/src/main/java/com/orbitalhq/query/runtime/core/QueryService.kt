@@ -21,6 +21,7 @@ import com.orbitalhq.query.Fact
 import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.Query
 import com.orbitalhq.query.QueryCancelledException
+import com.orbitalhq.query.QueryErrorEvent
 import com.orbitalhq.query.QueryFailedException
 import com.orbitalhq.query.QueryMode
 import com.orbitalhq.query.QueryResponse
@@ -73,6 +74,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.reactive.socket.CloseStatus
 import org.springframework.web.reactive.socket.WebSocketSession
 import reactor.core.CorePublisher
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
 import java.security.Principal
@@ -276,7 +278,7 @@ class QueryService(
       auth: Authentication?,
       clientQueryId: String?,
       arguments: Map<String, Any?>
-   ): ResponseEntity<Publisher<Any>> {
+   ): Pair<ResponseEntity<Publisher<Any>>, Flux<QueryErrorEvent>> {
 
       val user = auth?.toVyneUser()
 
@@ -292,7 +294,11 @@ class QueryService(
             arguments = arguments
          )
       }
-      return queryResultToResponseEntity(response, resultMode, contentType, queryOptions)
+      val errors = when (response) {
+         is QueryResult -> response.errors
+         else -> Flux.empty()
+      }
+      return queryResultToResponseEntity(response, resultMode, contentType, queryOptions) to errors
    }
 
    /**

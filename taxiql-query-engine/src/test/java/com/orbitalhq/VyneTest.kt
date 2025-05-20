@@ -4,6 +4,7 @@ import app.cash.turbine.testIn
 import arrow.core.Either
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.orbitalhq.models.*
+import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.models.json.*
 import com.orbitalhq.query.*
@@ -86,7 +87,8 @@ fun testVyne(
    schema: TaxiSchema,
    projectionProvider: ProjectionProvider = LocalProjectionProvider(),
    stateStoreProvider: StateStoreProvider? = null,
-   queryStrategyFilter: QueryStrategyFilter = QueryEngineFactory.DEFAULT_QUERY_STRATEGY_FILTER
+   queryStrategyFilter: QueryStrategyFilter = QueryEngineFactory.DEFAULT_QUERY_STRATEGY_FILTER,
+   formatSpecs: List<ModelFormatSpec> = emptyList()
 ): Pair<Vyne, StubService> {
    val stubService = StubService(schema = schema)
    val queryEngineFactory =
@@ -98,7 +100,7 @@ fun testVyne(
          stateStoreProvider = stateStoreProvider,
          queryStrategyFilter = queryStrategyFilter
       )
-   val vyne = Vyne(listOf(schema), queryEngineFactory)
+   val vyne = Vyne(listOf(schema), queryEngineFactory, formatSpecs = formatSpecs)
    return vyne to stubService
 }
 

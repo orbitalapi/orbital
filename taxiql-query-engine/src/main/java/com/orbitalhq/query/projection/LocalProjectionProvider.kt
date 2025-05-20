@@ -339,7 +339,7 @@ class LocalProjectionProvider : ProjectionProvider {
          }
          // Streams.
          // Note that streams are projected to arrays, so projectionType should be T[]
-         declaredSourceType.isStream && primaryFact.type.isAssignableTo(declaredSourceType.typeParameters[0]!!) && projectionType.isCollection -> {
+         declaredSourceType.isStream && primaryFact.type.isAssignableTo(declaredSourceType.typeParameters[0]!!) && (projectionType.isCollection || projectionType.isStream)-> {
             doProjection(scopedFacts, context, globalFacts, emittedResult, projectionType.typeParameters[0], startTime)
          }
          // Map A[] -> B[]. Use-case when mapping a full array that we already have. (eg: find { MovieSchedule } as (Movie[]) -> { .... }[]

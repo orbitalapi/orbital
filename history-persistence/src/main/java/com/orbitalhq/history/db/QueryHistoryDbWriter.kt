@@ -14,11 +14,8 @@ import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asCoroutineDispatcher
 import mu.KotlinLogging
-import org.springframework.scheduling.annotation.Scheduled
-import reactor.core.scheduler.Schedulers
 import reactor.util.function.Tuple2
 import java.time.Duration
-import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 
 private val logger = KotlinLogging.logger {}
@@ -29,6 +26,7 @@ class QueryHistoryDbWriter(
    lineageRecordRepository: LineageRecordRepository,
    remoteCallResponseRepository: RemoteCallResponseRepository,
    sankeyChartRowRepository: QuerySankeyChartRowRepository,
+   errorEventRowRepository: QueryErrorEventRowRepository,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    // Visible for testing
    internal val config: QueryAnalyticsConfig = QueryAnalyticsConfig(),
@@ -40,7 +38,8 @@ class QueryHistoryDbWriter(
       resultRowRepository,
       lineageRecordRepository,
       remoteCallResponseRepository,
-      sankeyChartRowRepository
+      sankeyChartRowRepository,
+      errorEventRowRepository
    )
    private val persistenceQueue = HistoryPersistenceQueue("combined", config.persistenceQueueStorePath)
    private val createdRemoteCallRecordIds = CacheBuilder.newBuilder()
@@ -69,6 +68,22 @@ class QueryHistoryDbWriter(
             logger.info { "Processing QueryResultRows on Queue for All Queries - position $latestIndex" }
          }
 
+      persistenceQueue.retrieveNewErrorEvents().index()
+         .publishOn(QuerySummaryPersister.queryHistoryScheduler)
+         .bufferTimeout(config.writerMaxBatchSize, config.writerMaxDuration)
+         .doOnError { t ->
+            val rootCause = Throwables.getRootCause(t)
+            logger.error(rootCause) { "Subscription to QueryErrorEvent Queue for All Queries encountered an error ${rootCause.message}" }
+         }
+         .doOnComplete {
+            logger.info { "Subscription to QueryErrorEvent Queue for All Queries has completed" }
+         }
+         .subscribe { batch ->
+            val resultRows = batch.map { it.t2 }
+            queryHistoryDao.saveQueryErrorRows(resultRows)
+            val latestIndex = batch.lastOrNull()?.t1 ?: -1
+            logger.info { "Processing QueryErrorEvent on Queue for All Queries - position $latestIndex" }
+         }
       persistenceQueue.retrieveNewLineageRecords().index()
          .publishOn(QuerySummaryPersister.queryHistoryScheduler)
          .bufferTimeout(config.writerMaxBatchSize, config.writerMaxDuration)

@@ -12,6 +12,7 @@ import com.orbitalhq.utils.Ids
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
 import lang.taxi.services.operations.constraints.PropertyIdentifier
 import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
+import lang.taxi.types.Arrays
 import lang.taxi.types.AttributePath
 import mu.KotlinLogging
 
@@ -35,7 +36,9 @@ data class TypedObject(
    override val value: Map<String, TypedInstance>
       get() = combinedValues
 
-
+   init {
+//      require(!Arrays.isArray(type.taxiType)) { "It is illegal to construct a TypedObject with an array type (found ${type.qualifiedName.shortDisplayName})"}
+   }
 
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -136,7 +139,6 @@ data class TypedObject(
    }
 
 
-
    fun hasAttribute(name: String): Boolean {
       return this.combinedValues.containsKey(name)
    }
@@ -206,7 +208,7 @@ data class TypedObject(
     * Does not support path navigation (eg., a.b.c), but
     * is more performant than get()
     */
-   fun getDirectAttribute(key:String):TypedInstance {
+   fun getDirectAttribute(key: String): TypedInstance {
       return this.value[key]
          ?: error("No attribute named $key found on this type (${type.name})")
    }

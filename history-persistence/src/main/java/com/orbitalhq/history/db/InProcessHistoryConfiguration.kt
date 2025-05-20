@@ -38,7 +38,8 @@ class InProcessHistoryConfiguration {
       remoteCallResponseRepository: RemoteCallResponseRepository,
       sankeyChartRowRepository: QuerySankeyChartRowRepository,
       config: QueryAnalyticsConfig = QueryAnalyticsConfig(),
-      meterRegistry: MeterRegistry
+      meterRegistry: MeterRegistry,
+      errorEventRowRepository: QueryErrorEventRowRepository
    ): HistoryEventConsumerProvider {
       logger.info { "Analytics Data will be stored in a disk database." }
       return QueryHistoryDbWriter(
@@ -47,6 +48,7 @@ class InProcessHistoryConfiguration {
          lineageRecordRepository,
          remoteCallResponseRepository,
          sankeyChartRowRepository,
+         errorEventRowRepository,
          Jackson.defaultObjectMapper,
          config, meterRegistry
       )

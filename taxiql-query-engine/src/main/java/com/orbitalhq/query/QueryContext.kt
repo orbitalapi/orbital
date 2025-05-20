@@ -214,7 +214,11 @@ data class QueryContext(
                        metricsTags: MetricTags = MetricTags.NONE): QueryResult =
       queryEngine.findAll(queryString, this.newSearchContext(), metricsTags)
 
-   suspend fun doMap(expression: QueryExpression, metricsTags : MetricTags = MetricTags.NONE): QueryResult {
+   suspend fun doMap(
+      expression: QueryExpression,
+      metricsTags: MetricTags = MetricTags.NONE,
+      returnType: lang.taxi.types.Type
+   ): QueryResult {
       val querySpec = queryEngine.parse(expression)
       val sourceFacts = when {
          // Don't use .isEmpty(), as it also considers scoped facts
@@ -261,8 +265,8 @@ data class QueryContext(
                emptySet(),
                clientQueryId, queryId,
                schema = schema,
-               responseType = responseType,
-               errors =  Flux.just(StreamQueryErrorEvent(queryId, StreamErrorMessage.fromException(e, expression.toString())))
+               responseType = schema.type(returnType),
+               errors =  Flux.just(QueryErrorEvent(queryId, StreamErrorMessage.fromException(e, expression.toString())))
             )
 
          }
@@ -280,13 +284,13 @@ data class QueryContext(
             emptySet(),
             clientQueryId, queryId,
             schema = schema,
-            responseType = responseType,
+            responseType = schema.type(returnType),
             errors = Flux.empty()
          )
       } else {
          val firstResult = mappingResult.first()
          val combinedResultsFlow = mappingResult.map { it.results }.merge()
-         firstResult.copy(results = combinedResultsFlow, queryId = this.queryId, clientQueryId = this.clientQueryId)
+         firstResult.copy(results = combinedResultsFlow, queryId = this.queryId, clientQueryId = this.clientQueryId, responseType = schema.type(returnType))
       }
    }
 

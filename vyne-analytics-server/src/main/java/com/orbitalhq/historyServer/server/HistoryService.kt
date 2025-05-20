@@ -15,6 +15,7 @@ class HistoryService(
    lineageRecordRepository: LineageRecordRepository,
    remoteCallResponseRepository: RemoteCallResponseRepository,
    sankeyChartRowRepository: QuerySankeyChartRowRepository,
+   queryErrorEventRowRepository: QueryErrorEventRowRepository,
    private val messageSink: Sinks.Many<VyneHistoryRecord>
 ) : InitializingBean {
 
@@ -27,7 +28,8 @@ class HistoryService(
       resultRowRepository,
       lineageRecordRepository,
       remoteCallResponseRepository,
-      sankeyChartRowRepository
+      sankeyChartRowRepository,
+      queryErrorEventRowRepository
    )
 
    override fun afterPropertiesSet() {

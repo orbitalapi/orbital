@@ -2,10 +2,8 @@ package com.orbitalhq.spring.metrics
 
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.MetricTags
-import com.orbitalhq.query.StreamQueryErrorEvent
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag
-import reactor.core.publisher.Flux
 import java.time.Duration
 
 fun MetricTags.micrometerTags(): List<Tag> {

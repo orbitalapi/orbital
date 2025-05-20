@@ -46,7 +46,7 @@ data class QueryResult(
    override val responseHeaders: Map<String, List<String>>? = null,
 
    @field:JsonIgnore
-   val errors: Flux<StreamQueryErrorEvent>
+   val errors: Flux<QueryErrorEvent>
 ) : QueryResponse {
    override val queryResponseId: String = queryId
    val duration = profilerOperation?.duration

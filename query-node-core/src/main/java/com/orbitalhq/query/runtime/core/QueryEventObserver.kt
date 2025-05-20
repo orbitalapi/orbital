@@ -4,6 +4,7 @@ import com.orbitalhq.query.FailedQueryResponse
 import com.orbitalhq.query.Query
 import com.orbitalhq.query.QueryCancelledException
 import com.orbitalhq.query.QueryCompletedEvent
+import com.orbitalhq.query.QueryErrorStreamEvent
 import com.orbitalhq.query.QueryEventConsumer
 import com.orbitalhq.query.QueryFailureEvent
 import com.orbitalhq.query.QueryResponse
@@ -70,6 +71,15 @@ class QueryLifecycleEventObserver(
       )
 
       return queryResult.copy(
+         errors = queryResult.errors
+            .doOnNext { queryErrorEvent ->
+               val historyEvent = QueryErrorStreamEvent(
+                  queryId = queryResult.queryResponseId,
+                  clientQueryId = queryResult.clientQueryId,
+                  event = queryErrorEvent
+               )
+               consumer.handleEvent(historyEvent)
+            },
          results = queryResult.results
             .onEach { typedInstance ->
 
@@ -148,6 +158,15 @@ class QueryLifecycleEventObserver(
       )
 
       return queryResult.copy(
+         errors = queryResult.errors
+            .doOnNext { queryErrorEvent ->
+               val historyEvent = QueryErrorStreamEvent(
+                  queryId = queryResult.queryResponseId,
+                  clientQueryId = queryResult.clientQueryId,
+                  event = queryErrorEvent
+               )
+               consumer.handleEvent(historyEvent)
+            },
          results = queryResult.results
             .onEach { typedInstance ->
                activeQueryMonitor?.incrementEmittedRecordCount(queryId = queryResult.queryResponseId)
@@ -177,7 +196,7 @@ class QueryLifecycleEventObserver(
 //                  metricsEventConsumer.handleEvent(event)
                } else {
                   val event = when (error) {
-                     is kotlinx.coroutines.CancellationException ->  StreamingQueryCancelledEvent(
+                     is kotlinx.coroutines.CancellationException -> StreamingQueryCancelledEvent(
                         query,
                         queryResult.queryResponseId,
                         queryResult.clientQueryId,
@@ -186,6 +205,7 @@ class QueryLifecycleEventObserver(
                         queryStartTime,
                         activeQueryMonitor?.queryMetaData(queryResult.queryResponseId)?.completedProjections ?: 0
                      )
+
                      is QueryCancelledException -> StreamingQueryCancelledEvent(
                         query,
                         queryResult.queryResponseId,

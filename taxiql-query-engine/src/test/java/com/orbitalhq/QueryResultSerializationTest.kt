@@ -6,7 +6,7 @@ import com.orbitalhq.models.json.parseJsonModel
 import com.orbitalhq.query.QueryResult
 import com.orbitalhq.query.QuerySpecTypeNode
 import com.orbitalhq.query.StreamErrorMessage
-import com.orbitalhq.query.StreamQueryErrorEvent
+import com.orbitalhq.query.QueryErrorEvent
 import kotlinx.coroutines.flow.flow
 import org.junit.Test
 import org.skyscreamer.jsonassert.JSONAssert
@@ -45,7 +45,7 @@ class QueryResultSerializationTest {
          isFullyResolved = true,
          schema = vyne.schema,
          responseType = clientInstnace.type,
-         errors = Flux.just(StreamQueryErrorEvent(queryId, StreamErrorMessage.fromException(IllegalArgumentException("error"), "Client")))
+         errors = Flux.just(QueryErrorEvent(queryId, StreamErrorMessage.fromException(IllegalArgumentException("error"), "Client")))
       )
 
       val expectedJson = """

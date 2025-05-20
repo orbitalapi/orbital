@@ -6,6 +6,7 @@ import com.orbitalhq.history.RemoteCallAnalyzer
 import com.orbitalhq.history.api.QueryResultNodeDetail
 import com.orbitalhq.history.api.RegressionPackRequest
 import com.orbitalhq.history.db.LineageRecordRepository
+import com.orbitalhq.history.db.QueryErrorEventRowRepository
 import com.orbitalhq.history.db.QueryHistoryRecordRepository
 import com.orbitalhq.history.db.QueryResultRowRepository
 import com.orbitalhq.history.db.QuerySankeyChartRowRepository
@@ -63,7 +64,8 @@ class QueryHistoryService(
    private val regressionPackProvider: RegressionPackProvider,
    private val queryAnalyticsConfig: QueryAnalyticsConfig,
    private val exceptionProvider: ExceptionProvider,
-   private val jdbcTemplate: JdbcTemplate
+   private val jdbcTemplate: JdbcTemplate,
+   private val queryErrorEventRowRepository: QueryErrorEventRowRepository
 ) : IQueryHistoryService {
    private val remoteCallAnalyzer = RemoteCallAnalyzer()
 
@@ -201,7 +203,7 @@ class QueryHistoryService(
             val record = ValueWithTypeName(
                typeNamedInstance.typeName.fqn(),
                anonymousTypes,
-               typeNamedInstance.convertToRaw()!!,
+               typeNamedInstance.convertToRaw(),
                resultRow.valueHash,
                resultRow.queryId
             )
@@ -378,14 +380,15 @@ class QueryHistoryService(
          .map { it.toDto() }
       val stats = remoteCallAnalyzer.generateStats(remoteCalls)
       val queryLineageData = sankeyChartRowRepository.findAllByQueryId(querySummary.queryId)
-
+      val errors = queryErrorEventRowRepository.findAllByQueryId(querySummary.queryId)
       return Mono.just(
          QueryProfileData(
             querySummary.queryId,
             querySummary.durationMs ?: 0,
             remoteCalls,
             operationStats = stats,
-            queryLineageData = queryLineageData
+            queryLineageData = queryLineageData,
+            errors = errors
          )
       )
    }

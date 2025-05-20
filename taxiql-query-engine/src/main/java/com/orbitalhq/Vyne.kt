@@ -168,7 +168,7 @@ class Vyne(
          lang.taxi.query.QueryMode.FIND_ALL -> queryContext.findAll(expression, metricsTags = metricsTags)
          lang.taxi.query.QueryMode.FIND_ONE -> queryContext.find(expression, metricsTags = metricsTags)
          lang.taxi.query.QueryMode.STREAM -> queryContext.findAll(expression, metricsTags = metricsTags)
-         lang.taxi.query.QueryMode.MAP -> queryContext.doMap(expression, metricsTags = metricsTags)
+         lang.taxi.query.QueryMode.MAP -> queryContext.doMap(expression, metricsTags = metricsTags, taxiQl.returnType)
          lang.taxi.query.QueryMode.MUTATE -> queryContext.mutate(
             expression as MutatingQueryExpression,
             metricsTags = metricsTags

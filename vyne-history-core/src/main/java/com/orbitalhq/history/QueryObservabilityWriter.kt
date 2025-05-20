@@ -1,6 +1,8 @@
 package com.orbitalhq.history
 
+import com.orbitalhq.query.QueryErrorStreamEvent
 import com.orbitalhq.query.history.LineageRecord
+import com.orbitalhq.query.history.QueryErrorEventRow
 import com.orbitalhq.query.history.QueryResultRow
 import com.orbitalhq.query.history.RemoteCallResponse
 
@@ -16,4 +18,5 @@ interface QueryObservabilityWriter {
    fun storeResultRow(resultRow: QueryResultRow)
    fun storeRemoteCallResponse(remoteCallResponse: RemoteCallResponse)
    fun storeLineageRecord(lineageRecord: LineageRecord)
+   fun storeErrorEvent(event: QueryErrorEventRow)
 }

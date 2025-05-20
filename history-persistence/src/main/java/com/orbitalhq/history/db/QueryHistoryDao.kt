@@ -22,7 +22,8 @@ class QueryHistoryDao(
    private val resultRowRepository: QueryResultRowRepository,
    private val lineageRecordRepository: LineageRecordRepository,
    private val remoteCallResponseRepository: RemoteCallResponseRepository,
-   private val sankeyChartRowRepository: QuerySankeyChartRowRepository
+   private val sankeyChartRowRepository: QuerySankeyChartRowRepository,
+   private val errorRowRepository: QueryErrorEventRowRepository
 ) {
    fun persistLineageRecordBatch(lineageRecords: List<LineageRecord>) {
       val sw = Stopwatch.createStarted()
@@ -85,6 +86,10 @@ class QueryHistoryDao(
 
    fun saveQueryResultRows(queryResults: List<QueryResultRow>) {
       resultRowRepository.saveAll(queryResults)
+   }
+
+   fun saveQueryErrorRows(errorRows: List<QueryErrorEventRow>) {
+      errorRowRepository.saveAll(errorRows)
    }
 
    fun saveRemoteCallResponse(remoteCallResponse: RemoteCallResponse) {

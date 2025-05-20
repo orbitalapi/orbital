@@ -21,6 +21,17 @@ class QueryRouter private constructor(val routes: List<RoutableQuery>) {
       }?.let { routableQuery -> routableQuery.query }
    }
 
+   /**
+    * For testing. In prod cost, use request, which provides a richer matching predicate
+    */
+   fun getQuery(path: String, method: HttpMethod): TaxiQlQuery? {
+      val matchingRoute = routes.firstOrNull { route ->
+         val operation = HttpOperation.fromQuery(route.query)
+            ?: return@firstOrNull false
+         operation.url == path && operation.method == method.name()
+      }
+      return matchingRoute?.query
+   }
 
    companion object {
       /**
@@ -31,20 +42,20 @@ class QueryRouter private constructor(val routes: List<RoutableQuery>) {
       fun build(queries: Iterable<TaxiQlQuery>): QueryRouter {
          val routes = queries
             .mapNotNull { query ->
-            val httpAnnotation = HttpOperation.fromQuery(query)
-            if (httpAnnotation != null) {
-               query to httpAnnotation
-            } else null
-         }.map { (query, httpOperation) ->
-            val predicate = when (val method = getHttpMethod(httpOperation.method)) {
-               HttpMethod.GET -> RequestPredicates.GET(httpOperation.url)
-               HttpMethod.POST -> RequestPredicates.POST(httpOperation.url)
-               HttpMethod.PUT -> RequestPredicates.PUT(httpOperation.url)
-               HttpMethod.DELETE -> RequestPredicates.DELETE(httpOperation.url)
-               else -> error("HttpMethod $method is not supported")
+               val httpAnnotation = HttpOperation.fromQuery(query)
+               if (httpAnnotation != null) {
+                  query to httpAnnotation
+               } else null
+            }.map { (query, httpOperation) ->
+               val predicate = when (val method = getHttpMethod(httpOperation.method)) {
+                  HttpMethod.GET -> RequestPredicates.GET(httpOperation.url)
+                  HttpMethod.POST -> RequestPredicates.POST(httpOperation.url)
+                  HttpMethod.PUT -> RequestPredicates.PUT(httpOperation.url)
+                  HttpMethod.DELETE -> RequestPredicates.DELETE(httpOperation.url)
+                  else -> error("HttpMethod $method is not supported")
+               }
+               RoutableQuery(query, predicate, httpOperation)
             }
-            RoutableQuery(query, predicate, httpOperation)
-         }
          return QueryRouter(routes)
       }
 

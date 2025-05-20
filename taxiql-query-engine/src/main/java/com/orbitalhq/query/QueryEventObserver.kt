@@ -28,6 +28,16 @@ data class QueryFailureEvent(
    val failure: FailedQueryResponse
 ) : QueryEvent()
 
+/**
+ * An event captured from the error stream of a query, wrapped for
+ * persistence
+ */
+data class QueryErrorStreamEvent(
+   val queryId: String,
+   val clientQueryId: String?,
+   val event: QueryErrorEvent
+): QueryEvent()
+
 data class TaxiQlQueryResultEvent(
    val query: TaxiQLQueryString,
    override val queryId: String,

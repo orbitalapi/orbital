@@ -19,6 +19,8 @@
                                [instances$]="activeRecordResults$"
                                [type]="activeRecordResultType"
                                [onlyShowResultsViewMode]="true"
+                               [errorMessages$]="activeRecordErrors$"
+                               [errorCount]="errorCount"
                                (downloadClicked)="downloadQueryHistory($event)"
                                (instanceSelected)="sidePanelVisible = true; instanceSelected$.next($event)"></app-tabbed-results-view>
     </as-split-area>
