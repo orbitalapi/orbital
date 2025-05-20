@@ -8,6 +8,7 @@ import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.functions.NamedFunctionInvoker
 import com.orbitalhq.models.functions.NullSafeInvoker
+import com.orbitalhq.models.functions.stdlib.collections.createFailureWithTypedNull
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.log
@@ -31,7 +32,10 @@ object Strings {
       Find,
       ContainsString,
       Replace,
-      Coalesce
+      Coalesce,
+      PadStart,
+      PadEnd,
+      ApplyFormat
    )
 }
 
@@ -351,3 +355,73 @@ object Replace : NamedFunctionInvoker {
    }
 }
 
+object PadStart : NullSafeInvoker() {
+   override fun doInvoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
+   ): TypedInstance {
+      val source = inputValues[0].valueAs<String>()
+      val desiredLength = inputValues[1].valueAs<Int>()
+      val padChar = inputValues[2].valueAs<String>().toCharArray().firstOrNull()
+         ?: return createFailureWithTypedNull("No padding character was provided", returnType, function, inputValues)
+
+      val result = source.padStart(desiredLength,padChar)
+      val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
+      return TypedInstance.from(returnType, result, schema, source = dataSource)
+   }
+
+   override val functionName: QualifiedName= lang.taxi.functions.stdlib.PadStart.name
+}
+
+
+object PadEnd : NullSafeInvoker() {
+   override fun doInvoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
+   ): TypedInstance {
+      val source = inputValues[0].valueAs<String>()
+      val desiredLength = inputValues[1].valueAs<Int>()
+      val padChar = inputValues[2].valueAs<String>().toCharArray().firstOrNull()
+         ?: return createFailureWithTypedNull("No padding character was provided", returnType, function, inputValues)
+
+      val result = source.padEnd(desiredLength,padChar)
+      val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
+      return TypedInstance.from(returnType, result, schema, source = dataSource)
+   }
+
+   override val functionName: QualifiedName= lang.taxi.functions.stdlib.PadEnd.name
+}
+
+object ApplyFormat : NullSafeInvoker() {
+   override fun doInvoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
+   ): TypedInstance {
+      val source = inputValues[0].valueAs<Any>()
+      val format = inputValues[1].valueAs<String>()
+
+      val result = format.format(source)
+      val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
+      return TypedInstance.from(returnType, result, schema, source = dataSource)
+   }
+
+   override val functionName: QualifiedName= lang.taxi.functions.stdlib.ApplyFormat.name
+}
