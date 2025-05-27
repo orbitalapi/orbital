@@ -13,7 +13,6 @@ import org.springframework.boot.web.client.RestTemplateBuilder
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Profile
-import org.springframework.data.jpa.repository.config.EnableJpaRepositories
 import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.security.config.web.server.ServerHttpSecurity
 import org.springframework.security.web.server.SecurityWebFilterChain
@@ -27,11 +26,11 @@ import java.time.Duration
 
 
 @SpringBootApplication()
-class VoyagerApp {
+class TaxiPlaygroundApp {
    companion object {
       @JvmStatic
       fun main(args: Array<String>) {
-         SpringApplication.run(VoyagerApp::class.java, *args)
+         SpringApplication.run(TaxiPlaygroundApp::class.java, *args)
       }
    }
 
@@ -138,10 +137,6 @@ class WebConfiguration : WebFluxConfigurer {
 
 
 data class MetricsTags(val tags: List<String>)
-
-@Configuration
-@EnableJpaRepositories
-class JpaConfig
 
 @Configuration
 class UnsecureConfig {

@@ -9,13 +9,13 @@ import {SchemaDiagramModule} from 'src/app/schema-diagram/schema-diagram.module'
 import {HttpClientModule} from '@angular/common/http';
 import {AuthModule} from '@auth0/auth0-angular';
 import {WebsocketService} from 'src/app/services/websocket.service';
-import {environment} from 'src/voyager-app/environments/environment';
+import {environment} from 'src/taxi-playground-app/environments/environment';
 import { TuiRoot, TuiDialog } from '@taiga-ui/core';
 
 import Plausible from 'plausible-tracker'
 import {PLAUSIBLE_ANALYTICS} from './plausible';
 import {RouterModule} from '@angular/router';
-import {VoyagerContainerAppComponent} from 'src/voyager-app/voyager-container-app.component';
+import {VoyagerContainerAppComponent} from 'src/taxi-playground-app/voyager-container-app.component';
 import {VoyagerAppComponent} from "./voyager-app.component";
 import {VoyagerModule} from "src/app/voyager/voyager.module";
 import {LANGUAGE_SERVER_WS_ADDRESS_TOKEN} from "../app/code-editor/language-server.tokens";

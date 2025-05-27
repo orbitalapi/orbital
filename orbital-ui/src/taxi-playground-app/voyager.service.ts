@@ -2,7 +2,7 @@ import {Injectable} from '@angular/core';
 import {HttpClient} from '@angular/common/http';
 import {Observable} from 'rxjs';
 import {CompilationMessage, QualifiedName, Schema, Type} from 'src/app/services/schema';
-import {environment} from 'src/voyager-app/environments/environment';
+import {environment} from 'src/taxi-playground-app/environments/environment';
 import {map} from 'rxjs/operators';
 import {
   convertRemoteCallTimestampsToDates,

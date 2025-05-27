@@ -18,20 +18,6 @@ hubspot:
       general-marketing:
 
 spring:
-   flyway:
-      enabled: true
-      url: ${spring.datasource.url}
-      user: ${spring.datasource.username}
-      password: ${spring.datasource.password}
-      locations: classpath:postgres
-
-   datasource:
-      url: "jdbc:postgresql://${DB_HOST}:${DB_PORT}/voyager"
-      username: ${DB_USERNAME}
-      password: ${DB_PASSWORD}
-      driver: "org.postgresql.Driver"
-      driverClassName: org.postgresql.Driver
-
    web:
       resources:
          cache:

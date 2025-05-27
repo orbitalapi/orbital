@@ -7,7 +7,7 @@
     "build": "node --max_old_space_size=16000 node_modules/@angular/cli/bin/ng build",
     "start-dev": "node --max_old_space_size=10192 node_modules/@angular/cli/bin/ng serve --configuration dev",
     "build-prod": "ng build --configuration production vyne-app",
-    "build-prod-voyager": "ng build --configuration production voyager",
+    "build-prod-playground": "ng build --configuration production taxi-playground",
     "test": "ng test",
     "lint": "ng lint",
     "e2e": "ng e2e",

@@ -1,7 +1,7 @@
 import {Component, Inject} from '@angular/core';
 import {TuiDialogContext} from '@taiga-ui/core';
 import {POLYMORPHEUS_CONTEXT} from '@taiga-ui/polymorpheus';
-import {SharedSchemaResponse} from 'src/voyager-app/voyager.service';
+import {SharedSchemaResponse} from 'src/taxi-playground-app/voyager.service';
 import {UntypedFormControl, UntypedFormGroup} from '@angular/forms';
 
 @Component({

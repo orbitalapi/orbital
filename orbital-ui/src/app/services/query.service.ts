@@ -630,9 +630,9 @@ export function emptyQueryMessage(): StubQueryMessage {
     stubs: [],
     readme: '',
     layout: {
-      showSchema: false,
-      showQuery: false,
-      showReadme: true,
+      showSchema: true,
+      showQuery: true,
+      showReadme: false,
       showDiagram: true
     }
   }

@@ -1,7 +1,7 @@
 import { TUI_ARROW } from "@taiga-ui/legacy";
 import {Component, EventEmitter, Inject, Input, Output} from '@angular/core';
 import {TuiDialogService} from '@taiga-ui/core';
-import {CodeSample, ExampleGroups} from 'src/voyager-app/code-examples';
+import {CodeSample, ExampleGroups} from 'src/taxi-playground-app/code-examples';
 import {TuiStringHandler} from '@taiga-ui/cdk';
 import { tuiItemsHandlersProvider, TUI_CONFIRM, TuiConfirmData } from '@taiga-ui/kit';
 import {StubQueryMessageWithSlug, StubQueryMessage} from "../../services/query.service";
