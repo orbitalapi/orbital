@@ -1403,13 +1403,13 @@ class AccessorReader(
       return when (expression) {
          is TypeExpression -> schema.type(expression.type)
          is FunctionExpression -> schema.type(expression.function.returnType)
-         is OperatorExpression -> {
-            val lhsType = getReturnTypeFromExpression(expression.lhs, schema)
-            val rhsType = getReturnTypeFromExpression(expression.rhs, schema)
-            val calculator = calculatorRegistry.getCalculator(expression.operator, listOf(lhsType, rhsType))
-               ?: error("No calculator exists to perform operation ${expression.operator} against types ${lhsType.fullyQualifiedName} and ${rhsType.fullyQualifiedName}")
-            return calculator.getReturnType(expression.operator, listOf(lhsType, rhsType), schema)
-         }
+         is OperatorExpression -> schema.type(expression.returnType)
+//            val lhsType = getReturnTypeFromExpression(expression.lhs, schema)
+//            val rhsType = getReturnTypeFromExpression(expression.rhs, schema)
+//            val calculator = calculatorRegistry.getCalculator(expression.operator, listOf(lhsType, rhsType))
+//               ?: error("No calculator exists to perform operation ${expression.operator} against types ${lhsType.fullyQualifiedName} and ${rhsType.fullyQualifiedName}")
+//            return calculator.getReturnType(expression.operator, listOf(lhsType, rhsType), schema)
+//         }
 
          is LiteralExpression -> return schema.type(expression.literal.returnType)
          else -> return schema.type(expression.returnType)
