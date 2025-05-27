@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import {MatIconModule} from "@angular/material/icon";
 import { TuiLink, TuiHint } from "@taiga-ui/core";
 import {openNewSiteAndCancel} from "../toolbar/playground-toolbar.component";
-import {environment} from "../../../voyager-app/environments/environment";
+import {environment} from "../../.././taxi-playground-app/environments/environment";
 import {ActivatedRoute} from "@angular/router";
 import {SvgIconComponent} from "../../svg-icon/svg-icon.component";
 
@@ -31,6 +31,12 @@ import {SvgIconComponent} from "../../svg-icon/svg-icon.component";
       <app-svg-icon tabler="route-square-2" width="32" height="32" />
     </button>
     <div class="spacer"></div>
+    <div class="button-with-lang-badge"
+         *ngIf="showCopyCodeButton"
+         (click)="copyDevCode.emit('PlaygroundSnippet')" tuiHint="Copy as Playground TSX snippet" tuiHintDirection="right">
+      <app-svg-icon tabler="code-circle" width="32" height="32" />
+      <div class="lang-badge">TSX</div>
+    </div>
     <div class="button-with-lang-badge"
             *ngIf="showCopyCodeButton"
             (click)="copyDevCode.emit('JS')" tuiHint="Copy as JS snippet" tuiHintDirection="right">
@@ -121,4 +127,4 @@ export class VoyagerSidebarComponent {
   }
 }
 
-export type SnippetType = 'JSON' | 'JS';
+export type SnippetType = 'JSON' | 'JS' | 'PlaygroundSnippet';

@@ -2,8 +2,8 @@ import {ChangeDetectorRef, Component, Inject} from '@angular/core';
 import {UntypedFormControl, UntypedFormGroup, Validators} from '@angular/forms';
 import {TuiDialogContext} from '@taiga-ui/core';
 import {POLYMORPHEUS_CONTEXT} from '@taiga-ui/polymorpheus';
-import {PLAUSIBLE_ANALYTICS} from 'src/voyager-app/plausible';
-import {SubscriptionResult, VoyagerService} from 'src/voyager-app/voyager.service';
+import {PLAUSIBLE_ANALYTICS} from 'src/taxi-playground-app/plausible';
+import {SubscriptionResult, VoyagerService} from 'src/taxi-playground-app/voyager.service';
 
 @Component({
   selector: 'app-subscribe-dialog',

@@ -121,7 +121,7 @@ Transitive dependency in wire-compiler and calcite-core
       <module>licensing</module>
       <module>vyne-spring-http-client</module>
       <module>datatype-converters</module>
-      <module>voyager</module>
+      <module>taxi-playground</module>
       <module>station</module>
       <module>auth-common</module>
       <module>query-node-core</module>

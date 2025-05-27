@@ -17,7 +17,7 @@ import {CodeEditorModule} from "../../code-editor/code-editor.module";
 import {StubPanelComponent} from "./stub-panel.component";
 import {Schema} from "../../services/schema";
 import {HttpClientModule} from "@angular/common/http";
-import {VoyagerService} from "../../../voyager-app/voyager.service";
+import {VoyagerService} from "../../.././taxi-playground-app/voyager.service";
 import {
   emptyQueryMessage,
   OperationStub,

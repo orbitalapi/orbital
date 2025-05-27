@@ -92,7 +92,7 @@ stages:
          - "station/target/orbital.zip"
          - "orbital-taxi-publisher/target/packagePublisher.zip"
 #         - "test-cli/target/*.zip"
-         - "voyager/target/voyager.jar"
+         - "taxi-playground/target/taxi-playground.jar"
       expire_in: 1 hours
       reports:
          junit:
@@ -128,15 +128,15 @@ build-vyne-ui:
          - licenses.csv
       expire_in: 1 hours
 
-build-voyager-ui:
+build-playground-ui:
    extends: .build-ui
    script:
       - cd orbital-ui
       - npm ci
-      - npm run-script build-prod-voyager
+      - npm run-script build-prod-playground
    artifacts:
       paths:
-         - "voyager/target/classes/static"
+         - "taxi-playground/target/classes/static"
       expire_in: 1 hours
 
 
@@ -361,11 +361,11 @@ tag-query-node-as-latest:
       microservice_orbital: query-node
       registry_orbital: orbitalhq
 
-publish-voyager-to-gitlab-container-registry:
+publish-playground-to-gitlab-container-registry:
    extends: .publish-to-gitlab-container-registry
    variables:
-      projectDir: voyager
-      microservice_orbital: voyager
+      projectDir: taxi-playground
+      microservice_orbital: taxi-playground
 
 .publish-docker-gitlab:
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.8-0.6.3
@@ -479,10 +479,10 @@ publish-core-types:
       - cd packagePublisher
       - mkdir -p schema
       - echo ${PROJECT_VERSION}
-      - > 
-         ./bin/packagePublisher 
-         --output=./schema 
-         --version=${PROJECT_VERSION} 
-         --remote-url=git@github.com:orbitalapi/orbital-core-taxi 
+      - >
+         ./bin/packagePublisher
+         --output=./schema
+         --version=${PROJECT_VERSION}
+         --remote-url=git@github.com:orbitalapi/orbital-core-taxi
          --ssh-key=/root/.ssh/id_rsa
 

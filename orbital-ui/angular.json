@@ -17,7 +17,7 @@
         "build": {
           "builder": "@angular-builders/custom-webpack:browser",
           "options": {
-            "outputPath": "../station/target/classes/static",
+            "outputPath": "../taxi-playground/target/classes/static",
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": [
@@ -57,7 +57,7 @@
               "path": "./custom-webpack.config.js"
             },
             "styles": [
-              "node_modules/github-markdown-css/github-markdown.css",
+              "src/github-markdown.css",
               "node_modules/prismjs/themes/prism.min.css",
               "node_modules/@taiga-ui/core/styles/taiga-ui-theme.less",
               "node_modules/@taiga-ui/core/styles/taiga-ui-fonts.less",
@@ -196,7 +196,7 @@
         }
       }
     },
-    "voyager": {
+    "taxi-playground": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -213,11 +213,11 @@
         "build": {
           "builder": "@angular-builders/custom-webpack:browser",
           "options": {
-            "outputPath": "../voyager/target/classes/static",
-            "index": "src/voyager-app/index.html",
-            "main": "src/voyager-app/main.ts",
-            "polyfills": "src/voyager-app/polyfills.ts",
-            "tsConfig": "src/voyager-app/tsconfig.app.json",
+            "outputPath": "../taxi-playground/target/classes/static",
+            "index": "src/taxi-playground-app/index.html",
+            "main": "src/taxi-playground-app/main.ts",
+            "polyfills": "src/taxi-playground-app/polyfills.ts",
+            "tsConfig": "src/taxi-playground-app/tsconfig.app.json",
             "inlineStyleLanguage": "scss",
             "customWebpackConfig": {
               "path": "./custom-webpack.config.js"
@@ -237,12 +237,12 @@
               }
             ],
             "styles": [
-              "node_modules/github-markdown-css/github-markdown.css",
+              "src/github-markdown.css",
               "node_modules/prismjs/themes/prism.min.css",
               "node_modules/@taiga-ui/core/styles/taiga-ui-theme.less",
               "node_modules/@taiga-ui/core/styles/taiga-ui-fonts.less",
               "node_modules/@xyflow/react/dist/style.css",
-              "src/voyager-app/styles.scss"
+              "src/taxi-playground-app/styles.scss"
             ],
             "scripts": [
               "node_modules/marked/marked.min.js",
@@ -255,8 +255,8 @@
             "production": {
               "fileReplacements": [
                 {
-                  "replace": "src/voyager-app/environments/environment.ts",
-                  "with": "src/voyager-app/environments/environment.prod.ts"
+                  "replace": "src/taxi-playground-app/environments/environment.ts",
+                  "with": "src/taxi-playground-app/environments/environment.prod.ts"
                 }
               ],
               "outputHashing": "all"

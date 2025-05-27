@@ -7,7 +7,7 @@ import {
   model, OnInit,
   ViewChild,
 } from '@angular/core';
-import {ParsedSchema, VoyagerService} from 'src/voyager-app/voyager.service';
+import {ParsedSchema, VoyagerService} from 'src/taxi-playground-app/voyager.service';
 import {
   catchError,
   debounceTime,
@@ -21,7 +21,7 @@ import {
 import {combineLatest} from 'rxjs'
 import {emptySchema, Schema} from 'src/app/services/schema';
 import {Observable, of, ReplaySubject} from 'rxjs';
-import {ExampleGroups} from 'src/voyager-app/code-examples';
+import {ExampleGroups} from 'src/taxi-playground-app/code-examples';
 import {TuiAlertService, TuiDialogService} from '@taiga-ui/core';
 import {ShareDialogComponent} from 'src/app/voyager/share-dialog/share-dialog.component';
 import {PolymorpheusComponent} from '@taiga-ui/polymorpheus';
@@ -330,9 +330,35 @@ export class VoyagerAppComponent implements OnInit {
   copyDevCode(language: SnippetType) {
     if (language === "JSON") {
       this.clipboard.copy(JSON.stringify(this.queryMessage, null, 3))
+    } else if (language === 'PlaygroundSnippet') {
+      this.copyAsPlaygroundSnippet(this.queryMessage)
     } else {
       this.copyAsJavascriptSnippet(this.queryMessage)
     }
+  }
+
+  /**
+   * Returns a TSX component for use in MDX docs
+   */
+  private copyAsPlaygroundSnippet(queryMessage: StubQueryMessage) {
+    const snippet = this.createJavascriptSnippet(queryMessage);
+    const stringifiedJson = JSON.stringify(queryMessage, null, 2)
+    const tsx = `
+<PlaygroundSnippet
+  title = '' // Add a title here
+  scenario={${stringifiedJson}
+}>
+  <PlaygroundSnippet.Description>
+    ${queryMessage.readme}
+  </PlaygroundSnippet.Description>
+</PlaygroundSnippet>
+    `
+
+    // Even though the string is now correct, if we copy it to the clipboard as-is,
+    // we get the \n output in lines, rather than actual newlines.
+    // So, we stick it in a text area, then copy the value from there.
+    // Create a temporary textarea element to hold the text
+    this.safelyCopyToClipboard(tsx)
   }
 
   private copyAsJavascriptSnippet(queryMessage: StubQueryMessage) {
@@ -340,6 +366,20 @@ export class VoyagerAppComponent implements OnInit {
     // into a javascript snippet, where long strings like the query and schema
     // have actual new-lines (instead of the string "\n"), and are quoted in backticks.
     const snippet = this.createJavascriptSnippet(queryMessage)
+
+    // Even though the string is now correct, if we copy it to the clipboard as-is,
+    // we get the \n output in lines, rather than actual newlines.
+    // So, we stick it in a text area, then copy the value from there.
+    // Create a temporary textarea element to hold the text
+    this.safelyCopyToClipboard(snippet)
+  }
+
+  /**
+   * Copies a string to the clipboard, handling newlines
+   * @param snippet
+   * @private
+   */
+  private safelyCopyToClipboard(snippet: string) {
 
     // Even though the string is now correct, if we copy it to the clipboard as-is,
     // we get the \n output in lines, rather than actual newlines.
