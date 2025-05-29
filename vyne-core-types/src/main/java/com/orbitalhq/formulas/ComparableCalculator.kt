@@ -50,8 +50,8 @@ class ComparableCalculator : Calculator {
       val result = when (operator) {
          FormulaOperator.GreaterThan -> a > b
          FormulaOperator.GreaterThanOrEqual -> a >= b
-         FormulaOperator.LessThan -> a <= b
-         FormulaOperator.LessThanOrEqual -> a < b
+         FormulaOperator.LessThan -> a < b
+         FormulaOperator.LessThanOrEqual -> a <= b
          FormulaOperator.Equal -> a == b
          FormulaOperator.NotEqual -> a != b
          else -> error("Unexpected symbol in comparator operator: ${operator.symbol}")
