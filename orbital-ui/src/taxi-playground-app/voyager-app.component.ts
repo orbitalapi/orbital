@@ -327,16 +327,37 @@ export class VoyagerAppComponent implements OnInit {
 
   }
 
-  copyDevCode(language: SnippetType) {
-    if (language === "JSON") {
+  copyDevCode(snippetType: SnippetType) {
+    if (snippetType === "JSON") {
       this.clipboard.copy(JSON.stringify(this.queryMessage, null, 3))
-    } else if (language === 'PlaygroundSnippet') {
+    } else if (snippetType === 'PlaygroundSnippet') {
       this.copyAsPlaygroundSnippet(this.queryMessage)
+    } else if (snippetType === 'KotlinDocs') {
+      this.copyAsKotlinDocsAnnotation(this.queryMessage)
     } else {
       this.copyAsJavascriptSnippet(this.queryMessage)
     }
   }
 
+  private copyAsKotlinDocsAnnotation(queryMessage: StubQueryMessage) {
+    const snippet = `
+      DocsSnippet(
+        markdown = """${queryMessage.readme}""",
+        query = StubQueryMessage(
+          schema = """${queryMessage.schema}
+          """.trimIndent(),
+          query = """
+          ${queryMessage.query}
+          """.trimIndent(),
+          expectedJson = """<<PASTE EXPECTED JSON HERE>>"""
+        )
+    `
+    // Even though the string is now correct, if we copy it to the clipboard as-is,
+    // we get the \n output in lines, rather than actual newlines.
+    // So, we stick it in a text area, then copy the value from there.
+    // Create a temporary textarea element to hold the text
+    this.safelyCopyToClipboard(snippet)
+  }
   /**
    * Returns a TSX component for use in MDX docs
    */
