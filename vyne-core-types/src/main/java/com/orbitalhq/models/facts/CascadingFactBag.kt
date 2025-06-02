@@ -1,12 +1,18 @@
 package com.orbitalhq.models.facts
 
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import com.google.common.collect.Iterators
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
 import com.orbitalhq.query.TypedInstanceValidPredicate
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
+import com.orbitalhq.utils.recoverWith
 import lang.taxi.accessors.Argument
+import lang.taxi.utils.flatMapLeft
 
 /**
  * Allows for segreated searches of facts.
@@ -113,6 +119,7 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
    }
 
 
+   @Deprecated("Use getFactOrTypedNull instead")
    override fun getFact(type: Type, strategy: FactDiscoveryStrategy, spec: TypedInstanceValidPredicate): TypedInstance {
       return when (cascadingApproach(type, strategy)) {
          CascadeApproach.CombineCollections -> {
@@ -135,6 +142,34 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
       }
    }
 
+   override fun getFactOrTypedNull(
+      type: Type,
+      strategy: FactDiscoveryStrategy,
+      spec: TypedInstanceValidPredicate
+   ): Either<TypedNull, TypedInstance> {
+      return when (cascadingApproach(type, strategy)) {
+         CascadeApproach.CombineCollections -> {
+            combineCollections(
+               primary.getFactOrTypedNull(type, strategy, spec) ,
+               secondary.getFactOrTypedNull(type, strategy, spec),
+               type,
+               permitNull = false
+            )
+         }
+
+
+         CascadeApproach.Cascade -> {
+            return primary.getFactOrTypedNull(
+               type,
+               strategy,
+               spec
+            ).recoverWith {
+               secondary.getFactOrTypedNull(type, strategy, spec)
+            }
+         }
+      }
+   }
+
    private fun combineCollections(
       a: TypedCollection?,
       b: TypedCollection?,
@@ -151,7 +186,35 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
       val populatedList = (a?.value ?: emptyList<TypedInstance>()) + (b?.value ?: emptyList<TypedInstance>())
       return TypedCollection.from(populatedList)
    }
+   private fun combineCollections(
+      a: Either<TypedNull,TypedInstance>,
+      b: Either<TypedNull,TypedInstance>,
+      type: Type,
+      permitNull: Boolean
+   ): Either<TypedNull,TypedCollection> {
+      if (a.isLeft() && b.isLeft()) {
+         if (permitNull) {
+            return TypedNull.noInstancesPresent(type).left()
+         } else {
+            return TypedCollection.empty(type).right()
+         }
+      }
+      // Note: The original implementation assumed these were TypedCollections or Nulls
+      // I'm not sure that's correct, but I'm turning the assumption into an assertion.
+      // If the assertion fails, understand why.
+      fun typedInstances(either: Either<TypedNull,TypedInstance>):List<TypedInstance> {
+         return if (either.isLeft()) emptyList() else {
+            val value = either.getOrNull()
+            require(value is TypedCollection) { "Expected a typed collection, but found ${value!!::class.simpleName}"}
+            value.value
+         }
+      }
 
+      val populatedList = typedInstances(a) + typedInstances(b)
+      return TypedCollection.from(populatedList).right()
+   }
+
+   @Deprecated("Use getFactOrTypedNull instead")
    override fun getFactOrNull(
       type: Type,
       strategy: FactDiscoveryStrategy,
@@ -178,6 +241,7 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
       }
    }
 
+   @Deprecated("Use getFactOrTypedNull instead")
    override fun getFactOrNull(search: FactSearch): TypedInstance? {
       return if (search.strategy == FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) {
          val primaryFact = primary.getFactOrNull(search)
@@ -188,6 +252,24 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
       }
    }
 
+   override fun getFactOrTypedNull(search: FactSearch): Either<TypedNull, TypedInstance> {
+      return if (search.strategy == FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) {
+         val primaryFact = primary.getFactOrTypedNull(search)
+         val secondaryFact = secondary.getFactOrTypedNull(search)
+         combineIfPossible(primaryFact, secondaryFact)
+      } else {
+         primary.getFactOrTypedNull(search).recoverWith { secondary.getFactOrTypedNull(search) }
+      }
+   }
+
+   private fun combineIfPossible(primaryFact: Either<TypedNull,TypedInstance>, secondaryFact: Either<TypedNull,TypedInstance>): Either<TypedNull,TypedInstance> {
+      return when {
+         primaryFact.isLeft() && secondaryFact.isLeft() -> primaryFact
+         primaryFact.isRight() -> primaryFact
+         secondaryFact.isRight() -> secondaryFact
+         else -> combineIfPossible(primaryFact.getOrNull(), secondaryFact.getOrNull())!!.right()
+      }
+   }
    private fun combineIfPossible(primaryFact: TypedInstance?, secondaryFact: TypedInstance?): TypedInstance? {
       when {
          primaryFact == null && secondaryFact == null -> return null

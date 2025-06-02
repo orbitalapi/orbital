@@ -469,6 +469,15 @@ class TypedObjectFactory(
          return queryForParentType()
       }
 
+      if (type.isScalar) {
+         if (value is FactBag) {
+            // This would almost always return a typed null, since the check for hasFact
+            // failed above. By calling this method, we get consistent hanlding of "not present" vs "ambiguous"
+            return value.getFactOrTypedNull(type, factBagSearchStrategy)
+               .orTypedNull()
+         }
+      }
+
       // Attempt to build / discover each attribute
       val mappedAttributes = attributesToMap.map { (attributeName) ->
          // The value may have already been populated on-demand from a conditional

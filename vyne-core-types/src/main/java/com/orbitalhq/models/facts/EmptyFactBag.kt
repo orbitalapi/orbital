@@ -1,5 +1,7 @@
 package com.orbitalhq.models.facts
 
+import arrow.core.Either
+import arrow.core.left
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.query.TypedInstanceValidPredicate
@@ -35,6 +37,13 @@ class EmptyFactBag(private val list: List<TypedInstance> = emptyList()) : FactBa
    ): TypedInstance? = null
 
    override fun getFactOrNull(search: FactSearch): TypedInstance? = null
+   override fun getFactOrTypedNull(search: FactSearch): Either<TypedNull, TypedInstance> = TypedNull.noInstancesPresent(search.targetType).left()
+
+   override fun getFactOrTypedNull(
+      type: Type,
+      strategy: FactDiscoveryStrategy,
+      spec: TypedInstanceValidPredicate
+   ): Either<TypedNull, TypedInstance> = TypedNull.noInstancesPresent(type).left()
 
    override fun hasFact(search: FactSearch): Boolean = false
    override fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>, schema: Schema): FactBag {

@@ -1,9 +1,13 @@
 package com.orbitalhq.models
 
 import com.google.common.collect.Interners
+import com.google.common.collect.Streams
+import com.orbitalhq.models.facts.FactSearch
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.ImmutableEquality
+import lang.taxi.types.Arrays
+import lang.taxi.types.StreamType
 import lang.taxi.utils.log
 import lang.taxi.utils.takeHead
 
@@ -40,6 +44,10 @@ data class TypedNull private constructor(private val wrapper: TypedNullWrapper,
    companion object {
       // Intern the wrappers, so that we can do fast equality checks
       private val internedWrappers = Interners.newWeakInterner<TypedNullWrapper>()
+
+      fun noInstancesPresent(type:Type):TypedNull = TypedNull.create(type, ValueLookupReturnedNull("No instances present", type.name))
+      fun ambiguousResult(search: FactSearch, size: Int) = TypedNull.create(search.targetType, AmbiguousResult("Expected a single ${search.targetType.name.shortDisplayName}, found ${size} using search of ${search.name}", search.targetType.name))
+
 
       fun create(type: Type, source: DataSource = UndefinedSource): TypedNull {
          val wrapper = internedWrappers.intern(TypedNullWrapper(type))
@@ -85,7 +93,13 @@ data class TypedNull private constructor(private val wrapper: TypedNullWrapper,
       val parts = path.split(".")
       val (thisPropertyName, remaining) = parts.takeHead()
       val attributeTypeName = this.type.attribute(thisPropertyName).type
-      val attributeType = this.type.typeCache.type(attributeTypeName)
+      val attributeType = this.type.typeCache.type(attributeTypeName).let {
+         when {
+            it.isCollection -> it.collectionType!!
+            StreamType.isStream(it.paramaterizedName) -> it.typeParameters.first()!!
+            else -> it
+         }
+      }
       val thisTypedNull = create(attributeType, this.source)
 
       return if (remaining.isEmpty()) {
@@ -95,3 +109,5 @@ data class TypedNull private constructor(private val wrapper: TypedNullWrapper,
       }
    }
 }
+
+

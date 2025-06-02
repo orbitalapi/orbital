@@ -5,10 +5,12 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.google.common.cache.CacheBuilder
 import com.google.common.collect.Interners
+import com.google.common.hash.HashCode
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.models.*
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
+import com.orbitalhq.utils.ImmutableEquality
 import lang.taxi.expressions.Expression
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.services.operations.constraints.PropertyFieldNameIdentifier
@@ -17,6 +19,7 @@ import lang.taxi.services.operations.constraints.PropertyTypeIdentifier
 import lang.taxi.types.*
 import lang.taxi.utils.takeHead
 import mu.KotlinLogging
+import org.apache.commons.lang3.builder.HashCodeBuilder
 
 interface TypeFullView : TypeLightView
 interface TypeLightView
@@ -144,16 +147,22 @@ data class Type(
       }
    }
 
+   private val equality = ImmutableEquality(
+      this,
+      Type::paramaterizedName,
+      Type::inherits,
+      Type::attributes
+   )
 
    private val cachedHashCode: Int = run {
-      paramaterizedName.hashCode()
+      equality.hash()
    }
 
    override fun equals(other: Any?): Boolean {
       if (this === other) return true
       if (other !is Type) return false
 
-      return paramaterizedName == other.paramaterizedName
+      return equality.isEqualTo(other)
    }
 
    override fun hashCode(): Int {
@@ -430,7 +439,8 @@ data class Type(
    }
 
    fun attribute(name: AttributeName): Field {
-      return attributes.getValue(name)
+      return attributes.get(name)
+         ?: throw NoSuchElementException("Type ${this.name.shortDisplayName} does not have an attribute of $name")
    }
 
    fun attribute(path: AttributePath): Field {

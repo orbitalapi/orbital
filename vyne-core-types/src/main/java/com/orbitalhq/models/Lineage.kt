@@ -9,8 +9,6 @@ import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.orElse
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.Transient
 import mu.KotlinLogging
 import java.util.*
 
@@ -321,6 +319,15 @@ data class ValueLookupReturnedNull(
    override val failedAttempts: List<DataSource> = emptyList()
 ) : DataSource {
    override val name: String = "Failed lookup"
+}
+
+data class AmbiguousResult(
+   val message: String,
+   val requestedTypeName: QualifiedName,
+   override val id: String = Ids.fastUuid(),
+   override val failedAttempts: List<DataSource> = emptyList()
+) : DataSource {
+   override val name: String = "Lookup result was ambiguous"
 }
 
 data class FailedSearch(val message: String, override val failedAttempts: List<DataSource> = emptyList()) : DataSource {
