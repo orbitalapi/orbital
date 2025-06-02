@@ -42,7 +42,7 @@ class PathTraversingFactSearcherTest {
       val factBag = CopyOnWriteFactBag(listOf(person), schema)
       val value =
          factBag.getFactFast(schema.type("FirstName"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
-      value.toRawObject().should.equal("Jimmy")
+      value.getOrNull()!!.toRawObject().should.equal("Jimmy")
    }
 
    @Test
@@ -52,7 +52,7 @@ class PathTraversingFactSearcherTest {
       val factBag = CopyOnWriteFactBag(listOf(person, actor), schema)
 
       val collection =
-         factBag.getFactFast(schema.type("Person"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
+         factBag.getFactFast(schema.type("Person"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY).getOrNull() as TypedCollection
       collection.should.have.size(2)
    }
 
@@ -71,7 +71,7 @@ class PathTraversingFactSearcherTest {
 
       val factBag = CopyOnWriteFactBag(name, schema)
       val fact =
-         factBag.getFactFast(schema.type("Name[]"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedInstance
+         factBag.getFactFast(schema.type("Name[]"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY).getOrNull() as TypedInstance
       fact.shouldNotBeInstanceOf<TypedNull>()
       val typedCollection = fact.shouldBeInstanceOf<TypedCollection>()
       typedCollection.shouldHaveSize(1)
@@ -101,7 +101,7 @@ class PathTraversingFactSearcherTest {
       )
       val factBag = CopyOnWriteFactBag(catalog, schema)
       val fact =
-         factBag.getFactFast(schema.type("Catalog"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE) as TypedInstance
+         factBag.getFactFast(schema.type("Catalog"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE).getOrNull() as TypedInstance
       fact.shouldNotBeInstanceOf<TypedNull>()
 
    }
@@ -129,7 +129,7 @@ class PathTraversingFactSearcherTest {
       )
       val factBag = CopyOnWriteFactBag(catalog, schema)
       val collection =
-         factBag.getFactFast(schema.type("AgentName"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
+         factBag.getFactFast(schema.type("AgentName"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY).getOrNull() as TypedCollection
       collection.should.have.size(4)
 
    }
@@ -146,7 +146,7 @@ class PathTraversingFactSearcherTest {
       val factBag = CopyOnWriteFactBag(listOf(film), schema)
 
       val collection =
-         factBag.getFactFast(schema.type("Person"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
+         factBag.getFactFast(schema.type("Person"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY).getOrNull() as TypedCollection
       // Result should be flattened - i.e.,
       // Expect a single collection with all elements, not a collection of two collections, with two elements each
       collection.should.have.size(4)
@@ -163,7 +163,7 @@ class PathTraversingFactSearcherTest {
       )
       val factBag = CopyOnWriteFactBag(listOf(film), schema)
       val facts =
-         factBag.getFactFast(schema.type("ImdbScore[]"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
+         factBag.getFactFast(schema.type("ImdbScore[]"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY).getOrNull() as TypedCollection
       facts.toRawObject().should.equal(listOf(5.5))
    }
 
@@ -187,7 +187,7 @@ class PathTraversingFactSearcherTest {
       )
       val factBag = CopyOnWriteFactBag(listOf(film), schema)
       val facts =
-         factBag.getFactFast(schema.type("ImdbScore[]"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY) as TypedCollection
+         factBag.getFactFast(schema.type("ImdbScore[]"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY).getOrNull() as TypedCollection
       facts.toRawObject().should.equal(listOf(5.5, 2.5))
    }
 
@@ -211,7 +211,7 @@ class PathTraversingFactSearcherTest {
       )
       val factBag = CopyOnWriteFactBag(listOf(film), schema)
       val facts =
-         factBag.getFactFast(schema.type("Film[]"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE) as TypedCollection
+         factBag.getFactFast(schema.type("Film[]"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE).getOrNull() as TypedCollection
       facts.should.have.size(2)
    }
 
@@ -237,8 +237,8 @@ class PathTraversingFactSearcherTest {
       val result =
          factBag.getFactFast(schema.type("ThreeLetterCountryCode"), FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE)
       result.shouldNotBeNull()
-      result.typeName.shouldBe("ThreeLetterCountryCode")
-      result.toRawObject().shouldBe("NZL")
+      result.getOrNull()!!.typeName.shouldBe("ThreeLetterCountryCode")
+      result.getOrNull()!!.toRawObject().shouldBe("NZL")
    }
 
 }

@@ -1,5 +1,8 @@
 package com.orbitalhq.models.facts
 
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedEnumValue
 import com.orbitalhq.models.TypedInstance
@@ -328,6 +331,9 @@ private class ReadField(private val fieldName: String) : TypeAttributeNavigator 
       strategy: FactDiscoveryStrategy
    ): List<TypedInstance>? {
       return previous.map { instance ->
+         if (instance is TypedNull) {
+            return null
+         }
          require(instance is TypedObject) { "cannot navigate field $fieldName as was passed a ${instance::class.simpleName}" }
          // If the source object didn't provide a field (rather than providing it as null, which becomes a TypedNull),
          // then return null.
@@ -409,7 +415,7 @@ data class NavigatableTypeAttributePath(
    fun navigate(
       source: TypedInstance,
       search: FactSearch
-   ): TypedInstance? {
+   ): Either<TypedNull,TypedInstance> {
       val collected = navigators.mapNotNull { pathNavigator ->
          val navigationResult = pathNavigator.navigate(listOf(source), search.strategy)
          // Resolve any enum synonyms that were returned, by converting back to the requested type
@@ -426,11 +432,12 @@ data class NavigatableTypeAttributePath(
             filteredBySearchPredicate?.let { result -> search.strategy.applyToResults(result, search) }
          finalNavigationResult
       }
+      val collectedValues = collected.mapNotNull { it.getOrNull() }
 
       // This is different from the original implementation
       // Since there are potentially multiple paths to navigate,
       // we apply the search strategy filter again here.
-      val finalResults = search.strategy.applyToResults(collected, search)
+      val finalResults = search.strategy.applyToResults(collectedValues, search)
       return finalResults
    }
 }
@@ -451,12 +458,12 @@ class PathTraversingFactSearcher(private val searchCache: TypeTraversalPathCache
       schema: Schema,
       strategy: FactDiscoveryStrategy,
       spec: TypedInstanceValidPredicate
-   ): TypedInstance? {
+   ): Either<TypedNull,TypedInstance> {
       val search = FactSearch.findType(type, strategy, spec)
       return getFact(search, facts, schema)
    }
 
-   fun getFact(search: FactSearch, facts: List<TypedInstance>, schema: Schema): TypedInstance? {
+   fun getFact(search: FactSearch, facts: List<TypedInstance>, schema: Schema): Either<TypedNull, TypedInstance> {
       if (search.strategy == FactDiscoveryStrategy.TOP_LEVEL_ONLY) {
          return searchTopLevelFactsOnly(search, facts, schema)
       }
@@ -470,10 +477,12 @@ class PathTraversingFactSearcher(private val searchCache: TypeTraversalPathCache
          ) ?: return@mapNotNull null
          traversalPath.navigate(sourceFact, search)
       }.distinct()
-      return search.strategy.applyToResults(result, search)
+      val collectedValues = result.mapNotNull { it.getOrNull() }
+      return search.strategy.applyToResults(collectedValues, search)
    }
 
-   private fun searchTopLevelFactsOnly(search: FactSearch, facts: List<TypedInstance>, schema: Schema): TypedInstance? {
-      return facts.firstOrNull { search.filterPredicate.predicate(it) }
+   private fun searchTopLevelFactsOnly(search: FactSearch, facts: List<TypedInstance>, schema: Schema): Either<TypedNull,TypedInstance> {
+      return facts.firstOrNull { search.filterPredicate.predicate(it) }?.right()
+         ?: TypedNull.noInstancesPresent(search.targetType).left()
    }
 }

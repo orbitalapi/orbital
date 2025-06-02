@@ -1,5 +1,6 @@
 package com.orbitalhq.models.facts
 
+import arrow.core.Either
 import com.diffplug.common.base.TreeDef
 import com.diffplug.common.base.TreeStream
 import com.google.common.annotations.VisibleForTesting
@@ -202,7 +203,7 @@ open class CopyOnWriteFactBag(
       type: Type,
       strategy: FactDiscoveryStrategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec
-   ): TypedInstance {
+   ): Either<TypedNull,TypedInstance> {
       return getFactOrNullFast(type, strategy, spec)
          ?: error("Failed to resolve type ${type.name.shortDisplayName} using strategy $strategy")
    }
@@ -213,7 +214,8 @@ open class CopyOnWriteFactBag(
       spec: TypedInstanceValidPredicate
    ): TypedInstance {
       return if (useExperimentalFactSearch) {
-         getFactFast(type, strategy, spec)
+         getFactFast(type, strategy, spec).getOrNull()
+            ?: error("Failed to resolve type ${type.name.shortDisplayName} using strategy $strategy")
       } else {
          getFactOrNull(type, strategy, spec)
             ?: error("Failed to resolve type ${type.name.shortDisplayName} using strategy $strategy")
@@ -226,28 +228,34 @@ open class CopyOnWriteFactBag(
     * seen 40k calls to getFactOrNull, which in turn generates a call stack with over 18M invocations.
     * So, cache the calls.
     */
-   private val factSearchCache = ConcurrentHashMap<GetFactOrNullCacheKey, Optional<TypedInstance>>()
-   private fun fromFactCache(key: GetFactOrNullCacheKey): TypedInstance? {
-      val optionalVal = factSearchCache.getOrPut(key) {
+   private val factSearchCache = ConcurrentHashMap<GetFactOrNullCacheKey, Either<TypedNull, TypedInstance>>()
+   private fun fromFactCache(key: GetFactOrNullCacheKey): Either<TypedNull, TypedInstance> {
+      return factSearchCache.getOrPut(key) {
          val result = timeBucket("FactBag search for ${key.search.name}") {
-            Optional.ofNullable(
                key.search.strategy.getFact(
                   this,
                   key.search
                )
-            )
          }
          result
       }
-      return if (optionalVal.isPresent) optionalVal.get() else null
    }
 
+   @Deprecated("Use getFactOrTypedNull instead")
    override fun getFactOrNull(
       type: Type,
       strategy: FactDiscoveryStrategy,
       spec: TypedInstanceValidPredicate
    ): TypedInstance? {
-      logger.trace { "Searching for type ${type.name.shortDisplayName}" }
+     return getFactOrTypedNull(type,strategy,spec)
+        .getOrNull()
+   }
+
+   override fun getFactOrTypedNull(
+      type: Type,
+      strategy: FactDiscoveryStrategy,
+      spec: TypedInstanceValidPredicate
+   ): Either<TypedNull, TypedInstance> {
       val f =  if (useExperimentalFactSearch) {
          getFactOrNullFast(type, strategy, spec)
       } else {
@@ -256,7 +264,6 @@ open class CopyOnWriteFactBag(
          val result = fromFactCache(searchCacheKey)
          result
       }
-      logger.trace { "Search for type returned ${f?.type?.name?.shortDisplayName}" }
       return f
    }
 
@@ -269,7 +276,8 @@ open class CopyOnWriteFactBag(
       type: Type,
       strategy: FactDiscoveryStrategy,
       spec: TypedInstanceValidPredicate
-   ): TypedInstance? {
+   ): Either<TypedNull,TypedInstance> {
+      // TODO : This searcher is not implemeneted
       return factSearcher.getFact(this.rootAndScopedFacts(), type, this.schema, strategy, spec)
    }
 
@@ -290,11 +298,16 @@ open class CopyOnWriteFactBag(
    }
 
 
+   @Deprecated("Use getFactOrTypedNull instead")
    override fun getFactOrNull(
       search: FactSearch,
    ): TypedInstance? {
-      logger.trace { "Search: $search" }
-      val f = when (search.searchAlgorithm) {
+      return getFactOrTypedNull(search)
+         .getOrNull()
+   }
+
+   override fun getFactOrTypedNull(search: FactSearch): Either<TypedNull, TypedInstance> {
+      val result = when (search.searchAlgorithm) {
          // This is the preferred approach, but is newer so toggled-off
          // by default.
          FactSearch.SearchAlgorithm.AttributeNavigation -> {
@@ -308,8 +321,7 @@ open class CopyOnWriteFactBag(
             fromFactCache(GetFactOrNullCacheKey(search))
          }
       }
-      logger.trace { "Search returned ${f?.type?.name?.shortDisplayName}" }
-      return f
+      return result
    }
 
    override fun hasFact(

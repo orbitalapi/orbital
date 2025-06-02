@@ -1,5 +1,7 @@
 package com.orbitalhq
 
+import com.orbitalhq.models.AmbiguousResult
+import com.orbitalhq.models.TypedNull
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.utils.removeNewLines
 import io.kotest.core.spec.style.DescribeSpec
@@ -269,6 +271,103 @@ find { Case } as (
             """.trimIndent())
                .firstRawObject()
             result.shouldBe(mapOf("activeJim" to mapOf("line1" to "1 new st",  "active" to true)))
+         }
+
+         // ORB-966
+         it("handles a null value in a chain of expression types") {
+            val (vyne,stub) = testVyne("""
+type CaseId inherits String
+
+model Address {
+  line1: AddressLine1 inherits String
+  isCurrentAddress: IsCurrentAddress
+}
+
+type IsCurrentAddress inherits Boolean
+type IsPrimaryApplicant inherits Boolean
+
+type ActiveAddress inherits Address = (Address[]) -> Address[].single((IsCurrentAddress) -> IsCurrentAddress == true)
+
+model Individual {
+  addresses: Address[]
+  isPrimaryApplicant: IsPrimaryApplicant
+}
+
+model Case {
+  individuals: Individual[]
+}
+
+extension function secondaryApplicant(applicants:Individual[]):Individual -> applicants.single((IsPrimaryApplicant) -> IsPrimaryApplicant != true)
+
+service CaseService {
+  operation getCase(id: CaseId): Case
+}
+            """.trimIndent())
+            stub.addResponse("getCase", """{
+    "individuals": [
+        {
+            "addresses": [
+                {
+                    "line1": "1 home st",
+                    "isCurrentAddress": true
+                },
+                {
+                    "line1": "1 old home st",
+                    "isCurrentAddress": false
+                }
+
+            ],
+            "isPrimaryApplicant": true
+        }
+
+    ]
+}""")
+            val result = vyne.query("""
+               given { CaseId = '123' }
+               find { Case } as (secondary: Individual[].secondaryApplicant()) -> {
+                   addressLine1: secondary::ActiveAddress::AddressLine1
+               }
+            """.trimIndent())
+               .firstRawObject()
+            result.shouldBe(mapOf("addressLine1" to null))
+         }
+
+         it("should return null when type cast is ambiguous") {
+            val (vyne,stub) = testVyne("""
+               closed model Address {
+                 line1: AddressLine1 inherits String
+               }
+               closed model Individual {
+                 addresses: Address[]
+               }
+               closed model Case {
+                 individuals: Individual[]
+               }
+               service CaseService {
+                 operation getCase(): Case
+               }
+            """.trimIndent())
+            stub.addResponse("getCase","""{
+    "individuals": [
+        {
+            "addresses": [
+                {
+                    "line1": "1 home st"
+                },
+                {
+                    "line1": "1 old home st"
+                }
+            ]
+        }
+    ]
+}""")
+            val result = vyne.query("""find { Case } as {
+    // This should return null
+    line1: Individual as AddressLine1
+}""").firstTypedObject()
+            result.toRawObject().shouldBe(mapOf("line1" to null))
+            val line1 = result.get("line1").shouldBeInstanceOf<TypedNull>()
+            line1.source.shouldBeInstanceOf<AmbiguousResult>()
          }
       }
    }

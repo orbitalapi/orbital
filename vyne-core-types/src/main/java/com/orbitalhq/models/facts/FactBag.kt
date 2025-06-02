@@ -1,6 +1,8 @@
 package com.orbitalhq.models.facts
 
+import arrow.core.Either
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
 import com.orbitalhq.query.AlwaysGoodSpec
 import com.orbitalhq.query.TypedInstanceValidPredicate
 import com.orbitalhq.schemas.Schema
@@ -18,6 +20,7 @@ interface FactBag : Collection<TypedInstance> {
       fun of(facts: List<TypedInstance>, schema: Schema): FactBag {
          return CopyOnWriteFactBag(facts, schema)
       }
+
       fun of(typedInstance: TypedInstance, schema: Schema) = of(listOf(typedInstance), schema)
 
       fun empty(): FactBag {
@@ -34,8 +37,7 @@ interface FactBag : Collection<TypedInstance> {
    val scopedFacts: List<ScopedFact>
 
    fun getScopedFact(scope: Argument): ScopedFact {
-      return getScopedFactOrNull(scope) ?:
-         error("No scope of ${scope.name} exists in this FactBag")
+      return getScopedFactOrNull(scope) ?: error("No scope of ${scope.name} exists in this FactBag")
    }
 
    fun getScopedFactOrNull(scope: Argument): ScopedFact? {
@@ -113,21 +115,40 @@ interface FactBag : Collection<TypedInstance> {
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec
    ): Boolean
 
+   @Deprecated("Use getFactOrTypedNull instead")
    fun getFact(
       type: Type,
       strategy: FactDiscoveryStrategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec
    ): TypedInstance
 
+   @Deprecated("Use getFactOrTypedNull instead")
    fun getFactOrNull(
       type: Type,
       strategy: FactDiscoveryStrategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec
    ): TypedInstance?
 
+   @Deprecated("Use getFactOrTypedNull instead")
    fun getFactOrNull(
       search: FactSearch,
    ): TypedInstance?
+
+   /**
+    * Returns the fact if present, or a typed null
+    * explaining why the search failed if not.
+    *
+    * Provides a clean way of signalling type-not-present vs ambiguous search result.
+    */
+   fun getFactOrTypedNull(
+      search: FactSearch
+   ): Either<TypedNull, TypedInstance>
+
+   fun getFactOrTypedNull(
+      type: Type,
+      strategy: FactDiscoveryStrategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY,
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+   ): Either<TypedNull, TypedInstance>
 
    fun hasFact(
       search: FactSearch
@@ -137,12 +158,23 @@ interface FactBag : Collection<TypedInstance> {
     * Returns a new factbag, with additional scoped facts.
     * The current factbag is not affected
     */
-   fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>, schema: Schema):FactBag
+   fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>, schema: Schema): FactBag
 
    /**
     * Returns a new factback, with additional facts.
     * The current factbag is not affected
     */
-   fun withAdditionalFacts(otherFacts: List<TypedInstance>, schema: Schema):FactBag
+   fun withAdditionalFacts(otherFacts: List<TypedInstance>, schema: Schema): FactBag
 
+}
+
+/**
+ * Returns the current value, or the left (which is a typed null)
+ */
+fun Either<TypedNull, TypedInstance>.orTypedNull(): TypedInstance {
+   return when (this) {
+      is Either.Left -> this.value
+      is Either.Right -> this.value
+      else -> error("Unexpected branch in when clause - expected Either.Left or Either.Right")
+   }
 }

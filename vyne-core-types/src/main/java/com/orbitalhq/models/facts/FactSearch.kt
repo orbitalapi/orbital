@@ -1,8 +1,16 @@
 package com.orbitalhq.models.facts
 
+import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
+import com.orbitalhq.models.AmbiguousResult
 import com.orbitalhq.models.MixedSources
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
+import com.orbitalhq.models.TypedNull.Companion.ambiguousResult
+import com.orbitalhq.models.TypedNull.Companion.noInstancesPresent
+import com.orbitalhq.models.ValueLookupReturnedNull
 import com.orbitalhq.query.AlwaysGoodSpec
 import com.orbitalhq.query.TypedInstanceValidPredicate
 import com.orbitalhq.schemas.Type
@@ -184,12 +192,13 @@ enum class FactDiscoveryStrategy {
       override fun getFact(
          facts: FactBag,
          search: FactSearch
-      ): TypedInstance? {
-         return facts.firstOrNull { search.filterPredicate.predicate(it) }
+      ): Either<TypedNull, TypedInstance> {
+         return facts.filter { search.filterPredicate.predicate(it) }
+            .singleOrFailForAmbiguous(search)
       }
 
-      override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): TypedInstance? {
-         return matches.singleOrNull()
+      override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): Either<TypedNull, TypedInstance> {
+         return matches.singleOrFailForAmbiguous(search)
       }
    },
 
@@ -201,7 +210,7 @@ enum class FactDiscoveryStrategy {
       override fun getFact(
          facts: FactBag,
          search: FactSearch
-      ): TypedInstance? {
+      ): Either<TypedNull, TypedInstance> {
          val matches = facts
             .breadthFirstFilter(
                ANY_DEPTH_EXPECT_ONE,
@@ -212,18 +221,8 @@ enum class FactDiscoveryStrategy {
 
       }
 
-      override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): TypedInstance? {
-         return when {
-            matches.isEmpty() -> null
-            matches.size == 1 -> matches.first()
-            else -> {
-               logger.debug {
-                  "ANY_DEPTH_EXPECT_ONE strategy found ${matches.size} for search ${search.name}, so returning null"
-               }
-               null
-            }
-
-         }
+      override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): Either<TypedNull, TypedInstance> {
+         return matches.singleOrFailForAmbiguous(search)
       }
    },
 
@@ -235,7 +234,7 @@ enum class FactDiscoveryStrategy {
       override fun getFact(
          facts: FactBag,
          search: FactSearch
-      ): TypedInstance? {
+      ): Either<TypedNull, TypedInstance> {
          val matches = facts
             .breadthFirstFilter(
                ANY_DEPTH_ALLOW_MANY,
@@ -246,10 +245,10 @@ enum class FactDiscoveryStrategy {
 
       }
 
-      override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): TypedInstance? {
+      override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): Either<TypedNull, TypedInstance> {
          return when {
-            matches.isEmpty() -> null
-            else -> matches.last()
+            matches.isEmpty() -> TypedNull.noInstancesPresent(search.targetType).left()
+            else -> matches.last().right()
          }
       }
    },
@@ -258,11 +257,12 @@ enum class FactDiscoveryStrategy {
     * Will return matches from any depth, providing there is exactly
     * one DISTINCT match within the context
     */
+   @Deprecated("This can lead to unexpected behaviour -- why are we searching for distinct values? The language doesn't specify this behaviour, so should prefer to return null")
    ANY_DEPTH_EXPECT_ONE_DISTINCT {
       override fun getFact(
          facts: FactBag,
          search: FactSearch
-      ): TypedInstance? {
+      ): Either<TypedNull, TypedInstance> {
          val matches = facts
             .breadthFirstFilter(
                ANY_DEPTH_EXPECT_ONE,
@@ -273,24 +273,21 @@ enum class FactDiscoveryStrategy {
          return applyToResults(matches, search)
       }
 
-      override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): TypedInstance? {
+      override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): Either<TypedNull, TypedInstance> {
          return when {
-            matches.isEmpty() -> null
-            matches.size == 1 -> toCollectionIfRequested(matches.first(), search.targetType)
+            matches.isEmpty() -> noInstancesPresent(search.targetType).left()
+            matches.size == 1 -> toCollectionIfRequested(matches.first(), search.targetType).right()
             else -> {
                // last ditch attempt
                val refinedSelection = search.refiningPredicate.predicate(matches)
                if (refinedSelection != null) {
-                  refinedSelection
+                  refinedSelection.right()
                } else {
                   val nonNullMatches = matches.filter { it.value != null }
                   if (nonNullMatches.size == 1) {
-                     toCollectionIfRequested(nonNullMatches.first(), search.targetType)
+                     toCollectionIfRequested(nonNullMatches.first(), search.targetType).right()
                   } else {
-                     logger.debug {
-                        "ANY_DEPTH_EXPECT_ONE_DISTINCT strategy found ${matches.size} of search ${search.name}, so returning null"
-                     }
-                     null
+                     ambiguousResult(search, nonNullMatches.size).left()
                   }
                }
             }
@@ -306,7 +303,7 @@ enum class FactDiscoveryStrategy {
       override fun getFact(
          factBag: FactBag,
          search: FactSearch
-      ): TypedCollection? {
+      ): Either<TypedNull, TypedInstance> {
          val matches = factBag
             .breadthFirstFilter(
                ANY_DEPTH_ALLOW_MANY,
@@ -318,10 +315,10 @@ enum class FactDiscoveryStrategy {
 
       }
 
-      override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): TypedCollection? {
+      override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): Either<TypedNull, TypedInstance> {
          return when {
-            matches.isEmpty() -> null
-            else -> TypedCollection.flatten(matches, MixedSources.singleSourceOrMixedSources(matches))
+            matches.isEmpty() -> TypedNull.create(search.targetType, ValueLookupReturnedNull("No instances present", search.targetType.name)).left()
+            else -> TypedCollection.flatten(matches, MixedSources.singleSourceOrMixedSources(matches)).right()
          }
       }
    };
@@ -330,9 +327,9 @@ enum class FactDiscoveryStrategy {
    abstract fun getFact(
       facts: FactBag,
       search: FactSearch
-   ): TypedInstance?
+   ): Either<TypedNull, TypedInstance>
 
-   abstract fun applyToResults(matches: List<TypedInstance>, search: FactSearch): TypedInstance?
+   abstract fun applyToResults(matches: List<TypedInstance>, search: FactSearch): Either<TypedNull,TypedInstance>
 
 
 }
@@ -354,3 +351,14 @@ fun toCollectionIfRequested(singleInstance: TypedInstance, targetType: Type): Ty
       singleInstance
    }
 }
+
+
+fun Collection<TypedInstance>.singleOrFailForAmbiguous(search: FactSearch):Either<TypedNull, TypedInstance> {
+   val requestedType = search.targetType
+   return when (this.size) {
+      0 -> TypedNull.noInstancesPresent(requestedType).left()
+      1 -> this.single().right()
+      else ->  TypedNull.ambiguousResult(search, this.size).left()
+   }
+}
+

@@ -77,13 +77,21 @@ class PathTraversingFactSearcherPerformanceTest {
 
       expectedResult.shouldHaveSize(200)
 
-      Benchmark.benchmark("finding a collection of deeply nested fields", warmup = 100, iterations = 10000, timeUnit = TimeUnit.MICROSECONDS) {
+      val averageDuration = Benchmark.benchmark("finding a collection of deeply nested fields", warmup = 100, iterations = 10000, timeUnit = TimeUnit.MICROSECONDS) {
          GlobalSchemaFactSearchCache.clear()
          val factBag = CopyOnWriteFactBag(typedInstance, schema)
-         val result = factBag.getFactFast(schema.type("FirstName"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
+         val result = factBag.getFactFast(schema.type("FirstName"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY).getOrNull()
          result.shouldBeInstanceOf<TypedCollection>()
             .shouldHaveSize(expectedResult.size)
       }
+      val averageDurationOld = Benchmark.benchmark("finding a collection of deeply nested fields", warmup = 100, iterations = 10000, timeUnit = TimeUnit.MICROSECONDS) {
+         GlobalSchemaFactSearchCache.clear()
+         val factBag = CopyOnWriteFactBag(typedInstance, schema)
+         val result = factBag.getFact(schema.type("FirstName"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
+         result.shouldBeInstanceOf<TypedCollection>()
+            .shouldHaveSize(expectedResult.size)
+      }
+      println("Old approach: $averageDurationOld  New approach: $averageDuration")
    }
 
    private fun createFakeFilm(rowCount: Int): List<Map<String,Any>> {
