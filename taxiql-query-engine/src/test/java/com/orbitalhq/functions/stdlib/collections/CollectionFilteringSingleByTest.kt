@@ -1,5 +1,6 @@
 package com.orbitalhq.functions.stdlib.collections
 
+import com.orbitalhq.firstRawObject
 import com.orbitalhq.firstTypedObject
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.schemas.taxi.TaxiSchema
@@ -139,4 +140,39 @@ class CollectionFilteringSingleByTest {
    }
 
 
+   @Test
+   fun `will match against a literal value if provided`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+model Product {
+   name: Name inherits String
+   sku: SKU inherits String
+}
+
+model Inventory {
+   products: Product[]
+}
+      """.trimIndent())
+      val result = vyne.query("""
+given {
+   inventory: Inventory = {
+      products: [
+         { name: 'Laptop', sku: 'LT-001'},
+         { name: 'Smartphone', sku: 'SP-002'},
+         { name: 'Tablet', sku: 'TB-003' }
+      ]
+   }
+}
+find {
+   // Find products by SKU code
+   laptop: inventory.products.singleBy((product:Product) -> product.sku, 'LT-001' as SKU)
+   // Alternative syntax, using types for selection
+   tablet: inventory.products.singleBy((Product) -> SKU, 'TB-003' as SKU)
+}
+      """.trimIndent())
+         .firstRawObject()
+      result.shouldBe(mapOf(
+         "laptop" to mapOf("name" to "Laptop", "sku" to "LT-001"),
+         "tablet" to mapOf("name" to "Tablet", "sku" to "TB-003")
+      ))
+   }
 }

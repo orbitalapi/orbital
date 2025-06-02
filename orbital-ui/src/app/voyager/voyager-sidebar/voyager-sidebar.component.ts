@@ -33,6 +33,12 @@ import {SvgIconComponent} from "../../svg-icon/svg-icon.component";
     <div class="spacer"></div>
     <div class="button-with-lang-badge"
          *ngIf="showCopyCodeButton"
+         (click)="copyDevCode.emit('KotlinDocs')" tuiHint="Copy as Kotlin docs snippet" tuiHintDirection="right">
+      <app-svg-icon tabler="code-circle" width="32" height="32" />
+      <div class="lang-badge">Docs</div>
+    </div>
+    <div class="button-with-lang-badge"
+         *ngIf="showCopyCodeButton"
          (click)="copyDevCode.emit('PlaygroundSnippet')" tuiHint="Copy as Playground TSX snippet" tuiHintDirection="right">
       <app-svg-icon tabler="code-circle" width="32" height="32" />
       <div class="lang-badge">TSX</div>
@@ -127,4 +133,4 @@ export class VoyagerSidebarComponent {
   }
 }
 
-export type SnippetType = 'JSON' | 'JS' | 'PlaygroundSnippet';
+export type SnippetType = 'JSON' | 'JS' | 'PlaygroundSnippet' | 'KotlinDocs';
