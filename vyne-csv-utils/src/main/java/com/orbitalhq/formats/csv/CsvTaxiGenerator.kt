@@ -6,13 +6,12 @@ import lang.taxi.generators.GeneratedTaxiCode
 import lang.taxi.generators.Logger
 import lang.taxi.generators.NamespacedType
 import lang.taxi.generators.SchemaWriter
-import lang.taxi.generators.TypeNameHelper
+import lang.taxi.generators.TypeDefinitionHelper
 import lang.taxi.types.CompilationUnit
 import lang.taxi.types.Field
 import lang.taxi.types.Modifier
 import lang.taxi.types.ObjectType
 import lang.taxi.types.ObjectTypeDefinition
-import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
 import lang.taxi.types.Type
 import org.jetbrains.kotlinx.dataframe.DataFrame
@@ -79,7 +78,7 @@ class CsvTaxiGenerator(
    }
 
    private fun createScalarType(name: String, primitiveType: Type): Type {
-      val qualifiedName = TypeNameHelper.forHint(NamespacedType(modelTypeName.namespace, modelTypeName.typeName))
+      val qualifiedName = TypeDefinitionHelper.forHint(NamespacedType(modelTypeName.namespace, modelTypeName.typeName))
          .append(FieldName(name))
          .suggestName()
       return _generatedTypes.getOrPut(qualifiedName) {
