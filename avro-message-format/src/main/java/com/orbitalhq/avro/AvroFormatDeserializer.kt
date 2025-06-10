@@ -108,11 +108,7 @@ class AvroFormatDeserializer(
     */
    private fun isConfluentAvroFormat(value: ByteArray): Boolean {
       if (value.size < 5) return false
-      if (value[0] != CONFLUENT_MAGIC_BYTE) return false
-      // Additional validation: check if bytes 1-4 form a reasonable schema ID
-      // Schema IDs are typically positive integers
-      val schemaId = ByteBuffer.wrap(value, 1, 4).int
-      return schemaId > 0  // Schema IDs should be positive
+      return value[0] == CONFLUENT_MAGIC_BYTE
    }
 
    private fun isJsonString(data: ByteArray): Boolean {
