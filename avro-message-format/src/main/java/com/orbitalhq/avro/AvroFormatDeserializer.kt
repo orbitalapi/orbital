@@ -6,6 +6,8 @@ import com.orbitalhq.models.format.ModelFormatDeserializer
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
+import mu.KotlinLogging
+import org.apache.avro.AvroRuntimeException
 import org.apache.avro.generic.GenericArray
 import org.apache.avro.generic.GenericContainer
 import org.apache.avro.generic.GenericData
@@ -13,6 +15,8 @@ import org.apache.avro.generic.GenericDatumReader
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.io.DecoderFactory
 import org.apache.avro.util.Utf8
+import java.lang.Exception
+import java.nio.ByteBuffer
 
 class AvroFormatDeserializer(
    private val schemaCache: AvroSchemaCache,
@@ -24,12 +28,25 @@ class AvroFormatDeserializer(
        * messages, to indicate that the message is the confluent variation of Avro.
        */
       const val CONFLUENT_MAGIC_BYTE: Byte = 0;
+      private val logger = KotlinLogging.logger {}
    }
 
 
    override fun canParse(value: Any, metadata: Metadata, type: Type): Boolean = value is ByteArray || value is String
 
    override fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema, source: DataSource): Any {
+      return decodeAvroMessage(schema, type, value, metadata, source)
+   }
+
+   private fun decodeAvroMessage(
+      schema: Schema,
+      type: Type,
+      value: Any,
+      metadata: Metadata,
+      source: DataSource,
+      allowDetectionOfConfluentEncoding: Boolean = true
+   ): Any {
+      var detectedConfluentEncoding = false
       val avroSchema = schemaCache.get(schema, type)
       val decoder = when (value) {
          is ByteArray -> {
@@ -37,9 +54,10 @@ class AvroFormatDeserializer(
             // either as JSON or binary
             if (isJsonString(value)) {
                decoderFactory.jsonDecoder(avroSchema, String(value))
-            } else if (isConfluentAvroFormat(value)) {
+            } else if (allowDetectionOfConfluentEncoding && !isConfluentAvroFormat(value)) {
                // Strip off the Confluent-specific prelude.
                val avroWithoutConfluentPrelude = value.copyOfRange(5, value.size)
+               detectedConfluentEncoding = true
                decoderFactory.binaryDecoder(avroWithoutConfluentPrelude, null)
             } else {
                decoderFactory.binaryDecoder(value, null)
@@ -53,6 +71,7 @@ class AvroFormatDeserializer(
                return parse(value.toByteArray(), type, metadata, schema, source)
             }
          }
+
          else -> error("Decoding Avro from input type ${value::class.simpleName} is not supported")
       }
       val reader = if (type.isCollection) {
@@ -63,6 +82,17 @@ class AvroFormatDeserializer(
       }
       val deserializedRecord = try {
          reader.read(null, decoder)
+      } catch (e: AvroRuntimeException) {
+         if (e.message.orEmpty()
+               .startsWith("Malformed data. Length is negative") && detectedConfluentEncoding && allowDetectionOfConfluentEncoding
+         ) {
+            // Last ditch attempt.
+            // Try and read the original, non-stripped message
+            logger.warn { "An Avro message was detected as using Confluent encoding, which then subsequently threw an exception when decoding. Attempting to fall back to vanilla format" }
+            return decodeAvroMessage(schema, type, value, metadata, source, allowDetectionOfConfluentEncoding = false)
+         } else {
+            throw e
+         }
       } catch (e: Exception) {
          throw e
       }
@@ -71,9 +101,18 @@ class AvroFormatDeserializer(
       return TypedInstance.from(type, rawValue, schema, source = source)
    }
 
+   /**
+    * Attempts to detect if a message is encoded using Confluents 'magic byte' at the start.
+    * This is a best-effort attempt, and doesn't always work.
+    * We need to add support for a dedicated annotation -- see ORB-970
+    */
    private fun isConfluentAvroFormat(value: ByteArray): Boolean {
       if (value.size < 5) return false
-      return value[0] == CONFLUENT_MAGIC_BYTE
+      if (value[0] != CONFLUENT_MAGIC_BYTE) return false
+      // Additional validation: check if bytes 1-4 form a reasonable schema ID
+      // Schema IDs are typically positive integers
+      val schemaId = ByteBuffer.wrap(value, 1, 4).int
+      return schemaId > 0  // Schema IDs should be positive
    }
 
    private fun isJsonString(data: ByteArray): Boolean {
