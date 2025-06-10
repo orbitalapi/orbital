@@ -54,7 +54,7 @@ class AvroFormatDeserializer(
             // either as JSON or binary
             if (isJsonString(value)) {
                decoderFactory.jsonDecoder(avroSchema, String(value))
-            } else if (allowDetectionOfConfluentEncoding && !isConfluentAvroFormat(value)) {
+            } else if (allowDetectionOfConfluentEncoding && isConfluentAvroFormat(value)) {
                // Strip off the Confluent-specific prelude.
                val avroWithoutConfluentPrelude = value.copyOfRange(5, value.size)
                detectedConfluentEncoding = true
