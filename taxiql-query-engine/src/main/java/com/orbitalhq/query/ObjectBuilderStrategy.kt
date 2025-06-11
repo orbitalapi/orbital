@@ -92,7 +92,7 @@ class ObjectBuilderStrategy(val formatSpecs: List<ModelFormatSpec> = emptyList()
          formatSpecs = formatSpecs,
       ).build()
       return when {
-         match != null && match is TypedNull -> QueryStrategyResult.searchFailed()
+         match != null && match is TypedNull -> QueryStrategyResult.searchFailed(failedAttempts = listOf(match.source))
          match != null -> QueryStrategyResult(listOf(match).asFlow())
          else -> QueryStrategyResult.searchFailed()
       }

@@ -100,21 +100,22 @@ class TaxiSchemaSourcesAdaptorTest {
       val actualSourceMap = jacksonObjectMapper().readValue<Map<String, Any>>(sourceMap.content)
       val mappedTypes = actualSourceMap["types"] as Map<String, Any>
       mappedTypes.shouldBe(
+         // MP: 10-Jun-26: Commented out types are because these are now expected to be imported
          mapOf(
             "foo.AddressBook" to "avro/addressBookWithTaxiAnnotations.avsc",
             "foo.addressbook.People" to "avro/addressBookWithTaxiAnnotations.avsc",
-            "foo.PersonName" to "avro/addressBookWithTaxiAnnotations.avsc",
-            "foo.PersonId" to "avro/addressBookWithTaxiAnnotations.avsc",
-            "foo.EmailAddress" to "avro/addressBookWithTaxiAnnotations.avsc",
+//            "foo.PersonName" to "avro/addressBookWithTaxiAnnotations.avsc",
+//            "foo.PersonId" to "avro/addressBookWithTaxiAnnotations.avsc",
+//            "foo.EmailAddress" to "avro/addressBookWithTaxiAnnotations.avsc",
             "foo.addressbook.people.Phones" to "avro/addressBookWithTaxiAnnotations.avsc",
             "foo.addressbook.people.phones.Number" to "avro/addressBookWithTaxiAnnotations.avsc",
             "foo.PhoneTypeEnum" to "avro/addressBookWithTaxiAnnotations.avsc",
             "foo.addressbook.people.LastUpdated" to "avro/addressBookWithTaxiAnnotations.avsc",
             "movies.Film" to "avro/fillms.avsc",
-            "movies.FilmTitle" to "avro/fillms.avsc",
-            "movies.ReleaseYear" to "avro/fillms.avsc",
-            "movies.Genre" to "avro/fillms.avsc",
-            "movies.Rating" to "avro/fillms.avsc"
+//            "movies.FilmTitle" to "avro/fillms.avsc",
+//            "movies.ReleaseYear" to "avro/fillms.avsc",
+//            "movies.Genre" to "avro/fillms.avsc",
+//            "movies.Rating" to "avro/fillms.avsc"
          )
       )
 
