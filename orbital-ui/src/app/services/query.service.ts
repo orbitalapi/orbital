@@ -114,7 +114,7 @@ export class QueryService {
 
   getQueryResults(queryId: string, limit: number | null = 100): Observable<ValueWithTypeName> {
     const url = encodeURI(`${this.environment.serverUrl}/api/query/history/${queryId}/results?limit=${limit || ''}`);
-    return this.sse.getEventStream<ValueWithTypeName>(url).pipe(
+    return this.sse.getEventStream<ValueWithTypeName>(url, true).pipe(
       shareReplay(limit)
     );
   }

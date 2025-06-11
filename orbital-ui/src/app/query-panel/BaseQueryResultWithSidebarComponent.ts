@@ -32,6 +32,7 @@ export abstract class BaseQueryResultWithSidebarComponent extends ComponentWithS
   discoverableTypes: QualifiedName[];
   isLoading: boolean;
 
+  errorMessage: string;
   schema: Schema;
 
   // get showSidePanel(): boolean {
@@ -69,6 +70,7 @@ export abstract class BaseQueryResultWithSidebarComponent extends ComponentWithS
     const eventTypeInstance = $event.instanceSelectedEvent.selectedTypeInstance;
     if ($event.instanceSelectedEvent.rowValueId) {
       this.isLoading = true;
+      this.errorMessage = null;
       this.queryService.getQueryResultNodeDetail(
         $event.instanceSelectedEvent.queryId, $event.instanceSelectedEvent.rowValueId, $event.instanceSelectedEvent.attributeName
       )
@@ -93,7 +95,13 @@ export abstract class BaseQueryResultWithSidebarComponent extends ComponentWithS
               value: $event.instanceSelectedEvent.selectedTypeInstance.value
             } as TypeNamedInstance;
           }
-        });
+        },
+          error => {
+            this.isLoading = false;
+            this.errorMessage = 'Query results have not been captured for this query'
+            this.changeDetector.markForCheck();
+
+          });
     }
     this.shouldTypedInstancePanelBeVisible = true;
     if (isTypedInstance(eventTypeInstance) || isTypeNamedInstance(eventTypeInstance)) {
