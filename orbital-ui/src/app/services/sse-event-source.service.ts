@@ -10,7 +10,9 @@ export class SseEventSourceService {
   constructor(private zone: NgZone) {
   }
 
-  getEventStream<T>(url: string, errorAfterMessageIndicatesClosed: boolean = true): Observable<T> {
+  // Note: Some publishers are sending errors down as an error message, so
+  // treatClosingWithNoResultsAsError becomes opt-in
+  getEventStream<T>(url: string, treatClosingWithNoResultsAsError: boolean = false): Observable<T> {
     return new Observable<T>(observer => {
       console.log(`Initiating event stream at ${url}`);
       const eventSource = new EventSource(url);
@@ -33,8 +35,14 @@ export class SseEventSourceService {
         // Note: We're now sending errors down as an error message, so
         // assume that all onerror signals are just completion.
         // if (messageReceived && errorAfterMessageIndicatesClosed) {
+        if (!messageReceived && treatClosingWithNoResultsAsError) {
+          console.log('Event source closed with no results, and consumer opted in to treat this as an error.');
+          observer.error(error)
+        } else {
           console.log('Received error event  - treating this as a close signal');
           observer.complete();
+        }
+
         // } else {
         //   console.log('Received error event' + JSON.stringify(error));
           // observer.error(error);
@@ -45,8 +53,6 @@ export class SseEventSourceService {
         eventSource.close();
       });
     });
-
-
   }
 }
 

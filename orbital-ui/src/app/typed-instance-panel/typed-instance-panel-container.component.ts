@@ -28,6 +28,7 @@ import {QueryResultInstanceSelectedEvent} from '../query-panel/result-display/Ba
         iconStart="@tui.x"
       ></button>
     </app-panel-header>
+    <tui-notification appearance="negative" *ngIf="errorMessage">{{ errorMessage }}</tui-notification>
     <app-typed-instance-panel
       [type]="selectedTypeInstanceType"
       [instance]="selectedTypeInstance"

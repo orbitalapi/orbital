@@ -14,7 +14,8 @@
         new
         *ngIf='isQueryLoading$ | async'
       ></progress>
-      <app-tabbed-results-view *ngIf="activeRecordResults$"
+      <tui-notification *ngIf="queryLoadingErrorMessage" appearance="negative">{{ queryLoadingErrorMessage }}</tui-notification>
+      <app-tabbed-results-view *ngIf="activeRecordResults$ && !queryLoadingErrorMessage"
                                [profileData$]="activeQueryProfileData$"
                                [instances$]="activeRecordResults$"
                                [type]="activeRecordResultType"

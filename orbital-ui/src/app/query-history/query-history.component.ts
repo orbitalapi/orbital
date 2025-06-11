@@ -6,7 +6,7 @@ import { TypesService } from "../services/types.service";
 import { BaseQueryResultDisplayComponent } from "../query-panel/BaseQueryResultDisplayComponent";
 import { combineLatest, mergeMap, Observable, of, ReplaySubject } from "rxjs";
 import { InstanceLike, tryFindType, Type } from "../services/schema";
-import { flatMap, map, shareReplay, startWith, take, tap } from "rxjs/operators";
+import { catchError, flatMap, map, shareReplay, startWith, take, tap } from "rxjs/operators";
 import {
   ActiveQueriesNotificationService,
   RunningQueryStatus
@@ -33,6 +33,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   isQueryLoading$: Observable<boolean>;
   activeRecordErrors$: Observable<StreamQueryErrorEvent>;
   errorCount: number =0;
+  queryLoadingErrorMessage: string = null;
 
   instanceSelected$ = new ReplaySubject<QueryResultInstanceSelectedEvent>(1);
   sidePanelVisible: boolean = false;
@@ -116,7 +117,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   }
 
   private loadQueryResults(selectedQueryId: string) {
-
+    this.queryLoadingErrorMessage = null;
     console.log(`Fetching query results for query ${selectedQueryId}`);
 
     this.activeRecordResults$ = this.queryService.getQueryResults(selectedQueryId, null)
@@ -140,7 +141,11 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
                 }));
             }
           }
-        )
+        ),
+        catchError((err, observable) => {
+          this.queryLoadingErrorMessage = 'Query results are not available for this query';
+          return of(err);
+        })
       );
     this.activeQueryProfileData$ = this.queryService.getQueryProfile(selectedQueryId).pipe(
       shareReplay(1)
@@ -169,8 +174,8 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
     this.activeRecordErrors$.subscribe()
 
     this.isQueryLoading$ = combineLatest([
-      this.activeRecordResults$.pipe(map(val => false), startWith(true)),
-      this.activeQueryProfileData$.pipe(map(val => false), startWith(true))
+      this.activeRecordResults$.pipe(map(val => false), startWith(true), catchError(() => of(false))),
+      this.activeQueryProfileData$.pipe(map(val => false), startWith(true), catchError(() => of(false)))
     ]).pipe(
       map(([resultsLoaded, profileDataLoaded]) => resultsLoaded || profileDataLoaded)
     );

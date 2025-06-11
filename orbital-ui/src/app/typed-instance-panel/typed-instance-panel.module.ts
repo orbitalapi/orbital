@@ -1,4 +1,4 @@
-import { TuiButton } from "@taiga-ui/core";
+import {TuiButton, TuiNotification} from "@taiga-ui/core";
 import {NgModule} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {TypedInstancePanelContainerComponent} from './typed-instance-panel-container.component';
@@ -16,21 +16,22 @@ import { TuiLineClamp, TuiProgress } from '@taiga-ui/kit';
 
 
 @NgModule({
-  imports: [
-    CommonModule,
-    DescriptionEditorModule,
-    EnumTableModule,
-    AttributeTableModule,
-    InlineQueryRunnerModule,
-    InheritanceGraphModule,
-    LineageDisplayModule,
-    MatButtonModule,
-    MatIconModule,
-    ExpandingPanelSetModule,
-    TuiButton,
-    TuiLineClamp,
-    ...TuiProgress
-  ],
+    imports: [
+        CommonModule,
+        DescriptionEditorModule,
+        EnumTableModule,
+        AttributeTableModule,
+        InlineQueryRunnerModule,
+        InheritanceGraphModule,
+        LineageDisplayModule,
+        MatButtonModule,
+        MatIconModule,
+        ExpandingPanelSetModule,
+        TuiButton,
+        TuiLineClamp,
+        ...TuiProgress,
+        TuiNotification
+    ],
     exports: [TypedInstancePanelContainerComponent, TypedInstancePanelComponent],
   declarations: [
     TypedInstancePanelComponent,

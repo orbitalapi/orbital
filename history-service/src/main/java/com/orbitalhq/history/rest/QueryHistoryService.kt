@@ -25,6 +25,7 @@ import com.orbitalhq.query.history.toDto
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.config.RequiresOrbitalDbEnabled
+import com.orbitalhq.spring.http.BadRequestException
 import com.orbitalhq.utils.ExceptionProvider
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.reactor.asFlux
@@ -238,7 +239,9 @@ class QueryHistoryService(
       @PathVariable("attributePath") attributePath: String
    ): Mono<QueryResultNodeDetail> {
       logger.info { "getting node details for query Id $queryId, row hash $rowValueHash attribute path $attributePath" }
-      val resultRow = queryResultRowRepository.findByQueryIdAndValueHash(queryId, rowValueHash).first()
+      val resultRow = queryResultRowRepository.findByQueryIdAndValueHash(queryId, rowValueHash).firstOrNull()
+         ?: throw BadRequestException("No query results available for query $queryId")
+
       val typeNamedInstance = resultRow.asTypeNamedInstance(objectMapper)
       val nodeParts = attributePath.split(".")
       val nodeDetail = QueryHistoryResultNodeFinder.find(nodeParts, typeNamedInstance, attributePath, exceptionProvider)
