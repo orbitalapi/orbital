@@ -65,7 +65,8 @@ class ExpressionTypeSpec : DescribeSpec({
             service FilmsService {
                operation getFilms():Film[]
             }
-            type AllowedFilms by (Film[], viewerAge:Age) -> Film[].filter( (Film) -> Film::Age > viewerAge )
+            type FirstAllowedFilmTitle by (Film[], viewerAge:Age) -> Film[].filter( (Film) -> Film::Age > viewerAge )
+               .first()
                .convert(Title)
          """.trimIndent()
          )
@@ -73,9 +74,10 @@ class ExpressionTypeSpec : DescribeSpec({
             "getFilms",
             """[{"title" : "Star Wars", "minAge" : 8 }, {"title" : "Jaws" , "minAge" : 12 }]"""
          )
-         val f = vyne.query("""given { Age = 6 } find { AllowedFilms }""")
+         val f = vyne.query("""given { Age = 6 } find { FirstAllowedFilmTitle }""")
             .typedInstances()
-         f.shouldNotBeNull()
+         f.shouldHaveSize(1)
+         f.single().toRawObject().shouldBe("Star Wars")
       }
 
       it("is possible to use argument names in expression types") {
