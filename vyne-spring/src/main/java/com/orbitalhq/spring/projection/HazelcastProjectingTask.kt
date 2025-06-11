@@ -9,6 +9,7 @@ import com.orbitalhq.models.serde.toSerializable
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QueryProfiler
 import com.orbitalhq.query.SearchGraphExclusion
+import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.QueryOptions
 import kotlinx.coroutines.GlobalScope
@@ -57,7 +58,8 @@ class HazelcastProjectingTask(
           queryId = queryId,
           queryEngine = vyne.queryEngine(),
           profiler = QueryProfiler(),
-          queryOptions = QueryOptions.default()
+          queryOptions = QueryOptions.default(),
+          traceContext = TraceContext.noOp()
        )
         context.excludedServices.addAll( Cbor.decodeFromByteArray<MutableSet<SearchGraphExclusion<QualifiedName>>>(excludedServices) )
 

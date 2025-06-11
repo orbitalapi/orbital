@@ -27,6 +27,7 @@ import com.orbitalhq.query.graph.edges.ParameterFactory
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.query.graph.operationInvocation.SearchRuntimeException
 import com.orbitalhq.query.projection.ProjectionProvider
+import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.retainFactsFromFactSet
 import com.orbitalhq.schemas.Operation
 import com.orbitalhq.schemas.OperationInvocationException
@@ -155,7 +156,8 @@ interface QueryEngine {
       additionalFacts: Set<TypedInstance> = emptySet(),
       queryId: String,
       clientQueryId: String?,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+      traceContext: TraceContext,
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceContext = traceContext),
       scopedFacts: List<ScopedFact> = emptyList(),
       queryOptions: QueryOptions = QueryOptions.default()
    ): QueryContext
@@ -258,6 +260,7 @@ class StatefulQueryEngine(
       additionalFacts: Set<TypedInstance>,
       queryId: String,
       clientQueryId: String?,
+      traceContext: TraceContext,
       eventBroker: QueryContextEventBroker,
       scopedFacts: List<ScopedFact>,
       queryOptions: QueryOptions
@@ -273,7 +276,8 @@ class StatefulQueryEngine(
          eventBroker = eventBroker,
          scopedFacts = scopedFacts,
          queryOptions = queryOptions,
-         metricsReporter = metricsReporter
+         metricsReporter = metricsReporter,
+         traceContext = traceContext
       )
    }
 

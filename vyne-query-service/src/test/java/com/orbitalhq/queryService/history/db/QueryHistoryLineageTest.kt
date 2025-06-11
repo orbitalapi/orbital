@@ -21,6 +21,7 @@ import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.query.runtime.core.QueryResponseFormatter
 import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
+import com.orbitalhq.query.tracing.NoopTracingEventSink
 import com.orbitalhq.queryService.TestSpringConfig
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.api.SimpleSchemaProvider
@@ -146,7 +147,8 @@ class QueryHistoryLineageTest {
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor(TestHazelcastInstanceFactory().newHazelcastInstance()),
-         QueryResponseFormatter(listOf(CsvFormatSpec))
+         QueryResponseFormatter(listOf(CsvFormatSpec)),
+         NoopTracingEventSink
       )
       runBlocking {
          val results = queryService.submitVyneQlQueryStreamingResponse(

@@ -25,6 +25,7 @@ import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.RemoteCallOperationResultHandler
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.OperationInvocationException
@@ -221,7 +222,7 @@ namespace vyne {
           model NewReleaseAnnouncement {
             filmId : FilmId
          }
-         
+
          parameter model FilmUpdate {
             filmId: FilmId
          }
@@ -256,7 +257,7 @@ namespace vyne {
         )
 
         vyne.query(
-            """stream { NewReleaseAnnouncement } 
+            """stream { NewReleaseAnnouncement }
                 | call FilmService::persistFilm
       """.trimMargin()
         ).results.test {
@@ -589,25 +590,25 @@ namespace vyne {
    @Test
    fun `When @OmitNulls annotation is set on parameter object null values are filtered`() {
       val testSchema = """
-         namespace vyne {   
+         namespace vyne {
              @com.orbitalhq.models.OmitNulls
              parameter model CreditScoreRequest {
                  clientId : ClientId inherits String
                  clientName: ClientName? inherits String
              }
-         
+
              type ClientId inherits String
-         
+
               model CreditScoreResponse {
                  score : CreditScore inherits Decimal
              }
-         
-            
+
+
              service CreditScoreService {
                  @HttpOperation(method = "POST",url = "http://localhost:{{PORT}}/score/doCalculate")
                  operation calculateCreditScore(@RequestBody CreditScoreRequest ) : CreditScoreResponse
              }
-        
+
          }      """
 
       server.prepareResponse { response ->
@@ -657,7 +658,7 @@ namespace vyne {
 
    @Test
    fun `When @OmitNulls annotation is set on parameter object null values are filtered for object members`() {
-      val testSchema = """  
+      val testSchema = """
              @com.orbitalhq.models.OmitNulls
              parameter model OrderUpdateData {
                 requestId: RequestId inherits String
@@ -666,12 +667,12 @@ namespace vyne {
                    id: OrderId? inherits String
                }
              }
-        
+
              service OrderService {
                  @HttpOperation(method = "POST",url = "http://localhost:{{PORT}}/order/update")
                  operation updateOrder(@RequestBody OrderUpdateData ) : String
              }
-        
+
         """
 
       server.prepareResponse { response ->
@@ -699,7 +700,7 @@ namespace vyne {
 
     @Test
     fun `partials with nested object works with OmitNull`()  {
-        val testSchema = """  
+        val testSchema = """
          closed parameter model Film {
             info : {
              title: Title inherits String
@@ -1389,7 +1390,7 @@ namespace vyne {
           }
       }
 
-       val queryEventBroker = QueryContextEventBroker()
+       val queryEventBroker = QueryContextEventBroker(traceContext = TraceContext.noOp())
        queryEventBroker.addHandler(remoteCalls)
 
        var queryException: Exception? = null
@@ -1444,7 +1445,7 @@ namespace vyne {
             }
         }
 
-        val queryEventBroker = QueryContextEventBroker()
+        val queryEventBroker = QueryContextEventBroker(traceContext = TraceContext.noOp())
         queryEventBroker.addHandler(remoteCalls)
 
         val queryResults = vyne.query(vyneQlQuery = """given { key : ApiKey = "hello" } find { Person[] }""",

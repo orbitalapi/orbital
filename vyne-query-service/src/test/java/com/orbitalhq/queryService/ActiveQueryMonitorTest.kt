@@ -10,6 +10,7 @@ import com.orbitalhq.query.QueryResponse
 import com.winterbe.expekt.should
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
 import com.orbitalhq.query.runtime.core.monitor.RunningQueryStatus
+import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import io.kotest.assertions.timing.eventually
 import io.kotest.matchers.collections.shouldHaveSize
@@ -120,7 +121,7 @@ class ActiveQueryMonitorTest {
 
       // Need to set up the event dispatcher, or there's nothing to cancel later
       val queryEventHandler: CancelRequestHandler = mock {  }
-      queryMonitor.eventDispatcherForQuery(queryId, listOf(queryEventHandler))
+      queryMonitor.eventDispatcherForQuery(queryId, TraceContext.noOp(), listOf(queryEventHandler))
       queryMonitor.reportStart(queryId, clientQueryId, query)
       eventually(5.seconds) {
          events.shouldHaveSize(1)

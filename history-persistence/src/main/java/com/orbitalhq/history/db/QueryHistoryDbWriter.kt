@@ -30,7 +30,7 @@ class QueryHistoryDbWriter(
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    // Visible for testing
    internal val config: QueryAnalyticsConfig = QueryAnalyticsConfig(),
-   meterRegistry: MeterRegistry
+   private val persistenceQueue:HistoryPersistenceQueue = HistoryPersistenceQueue("combined", config.persistenceQueueStorePath)
 ) : HistoryEventConsumerProvider {
 
    private val queryHistoryDao = QueryHistoryDao(
@@ -41,7 +41,7 @@ class QueryHistoryDbWriter(
       sankeyChartRowRepository,
       errorEventRowRepository
    )
-   private val persistenceQueue = HistoryPersistenceQueue("combined", config.persistenceQueueStorePath)
+
    private val createdRemoteCallRecordIds = CacheBuilder.newBuilder()
       .maximumSize(2000L)
       .expireAfterAccess(Duration.ofSeconds(60))
@@ -59,13 +59,13 @@ class QueryHistoryDbWriter(
             logger.error(rootCause) { "Subscription to QueryResultRow Queue for All Queries encountered an error ${rootCause.message}" }
          }
          .doOnComplete {
-            logger.info { "Subscription to QueryResultRow Queue for All Queries has completed" }
+            logger.debug { "Subscription to QueryResultRow Queue for All Queries has completed" }
          }
          .subscribe { batch ->
             val resultRows = batch.map { it.t2 }
             queryHistoryDao.saveQueryResultRows(resultRows)
             val latestIndex = batch.lastOrNull()?.t1 ?: -1
-            logger.info { "Processing QueryResultRows on Queue for All Queries - position $latestIndex" }
+            logger.debug { "Processing QueryResultRows on Queue for All Queries - position $latestIndex" }
          }
 
       persistenceQueue.retrieveNewErrorEvents().index()
@@ -82,7 +82,7 @@ class QueryHistoryDbWriter(
             val resultRows = batch.map { it.t2 }
             queryHistoryDao.saveQueryErrorRows(resultRows)
             val latestIndex = batch.lastOrNull()?.t1 ?: -1
-            logger.info { "Processing QueryErrorEvent on Queue for All Queries - position $latestIndex" }
+            logger.debug { "Processing QueryErrorEvent on Queue for All Queries - position $latestIndex" }
          }
       persistenceQueue.retrieveNewLineageRecords().index()
          .publishOn(QuerySummaryPersister.queryHistoryScheduler)
@@ -92,7 +92,7 @@ class QueryHistoryDbWriter(
             logger.error(rootCause) { "Subscription to LineageRecord Queue for All Queries encountered an error - ${rootCause.message}" }
          }
          .doOnComplete {
-            logger.info { "Subscription to LineageRecord queue for All Queries  has completed" }
+            logger.debug { "Subscription to LineageRecord queue for All Queries  has completed" }
          }
          .subscribe { batch: MutableList<Tuple2<Long, LineageRecord>> ->
             try {
@@ -123,7 +123,7 @@ class QueryHistoryDbWriter(
 
             try {
                queryHistoryDao.saveRemoteCallResponses(batchToWrite.map { it.t2 })
-               logger.info { "Processing RemoteCallResponse on Queue for All Queries - position ${batch.lastOrNull()?.t1}" }
+               logger.debug { "Processing RemoteCallResponse on Queue for All Queries - position ${batch.lastOrNull()?.t1}" }
             } catch (e: Exception) {
                val rootCause = Throwables.getRootCause(e)
                logger.warn(rootCause) { "Persisting batch of remote call responses failed: ${rootCause.message}" }

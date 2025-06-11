@@ -1,6 +1,7 @@
 package com.orbitalhq.query
 
 import com.orbitalhq.models.OperationResult
+import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 
@@ -31,6 +32,8 @@ interface QueryContextEventDispatcher {
    fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String)
 
    val queryErrorPublisher: StreamErrorPublisher
+
+   val traceContext: TraceContext
 
 // TODO: This didn't get implemented, as passing tags around was too messy / too easy
    // to miss.

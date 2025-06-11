@@ -11,9 +11,14 @@ import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.models.serde.InstantSerializer
 import com.orbitalhq.models.serde.ZonedDateTimeTimeSerializer
 import com.orbitalhq.query.*
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEventExchangeMetadata
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schemas.*
 import jakarta.persistence.*
 import kotlinx.serialization.Serializable
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.Duration
 import java.time.Instant
 import java.time.ZonedDateTime
@@ -101,6 +106,43 @@ data class QueryErrorEventRow(
    // For future use
    @Column(name = "task_stack")
    val taskStackJson: String?
+)
+
+/**
+ * See TracingEvent for what all the properties mean
+ */
+@Entity(name = "TRACE_EVENT")
+@Serializable
+data class TraceEventRow(
+   @Id
+   @Column(name = "event_id")
+   val eventId: String,
+
+   @Column(name = "query_id")
+   val queryId: String,
+
+   @Column(name = "trace_id")
+   val traceId: String,
+
+   @Column(name = "span_id")
+   val spanId: String,
+
+   @Column(name = "parent_span_id")
+   val parentSpanId: String?,
+
+   @Column(name = "tracing_event_kind")
+   @Enumerated(EnumType.STRING)
+   val tracingEventKind: TracingEventKind,
+   @Column(name = "span_state")
+   @Enumerated(EnumType.STRING)
+   val spanState: SpanState,
+   @Serializable(with = ZonedDateTimeTimeSerializer::class)
+   val timestamp: ZonedDateTime,
+
+   @Column(name = "exchange_metadata", columnDefinition = "jsonb")
+   @JdbcTypeCode(SqlTypes.JSON)
+   val exchangeMetadata: String,
+
 
 )
 

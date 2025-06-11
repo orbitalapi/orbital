@@ -10,8 +10,12 @@ import com.orbitalhq.query.MetricTags
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.QueryResult
+import com.orbitalhq.query.tracing.NoopTracingEventSink
+import com.orbitalhq.query.tracing.TraceContext
+import com.orbitalhq.query.tracing.TracingEventSink
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.Schema
+import com.orbitalhq.utils.Ids
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactor.asFlux
@@ -29,14 +33,16 @@ import java.util.*
  * in the same JVM as the client.
  */
 open class EmbeddedVyneClient(
-   private val vyneProvider: VyneProvider
+   private val vyneProvider: VyneProvider,
+   private val tracingEventSink: TracingEventSink = NoopTracingEventSink
 ) : VyneClient {
    override fun <T : Any> queryWithType(
       query: String,
       type: Class<T>,
       metricsTags: MetricTags,
       principal: Principal?,
-      emitMetrics: EmitMetrics
+      emitMetrics: EmitMetrics,
+      traceId: String
    ): Flux<T> {
       return runBlocking {
          val vyne = vyneProvider.createVyne()
@@ -47,10 +53,13 @@ open class EmbeddedVyneClient(
             captureMetrics(queryResult, emitMetrics)
             queryResult.results.asFlux() as Flux<T>
          } else {
+            val queryId = Ids.fastUuid()
             val queryResult = vyneProvider.createVyne().query(
                query,
                metricsTags = metricsTags,
-               executionContextFacts = authClaims.toSet()
+               executionContextFacts = authClaims.toSet(),
+               queryId =  queryId,
+               eventBroker = QueryContextEventBroker(traceContext = TraceContext.forTraceId(traceId,queryId, tracingEventSink))
             )
             captureMetrics(queryResult, emitMetrics)
             (queryResult.rawResults as Flow<T>).asFlux()
@@ -72,13 +81,14 @@ open class EmbeddedVyneClient(
       query: TaxiQLQueryString,
       metricsTags: MetricTags,
       principal: Principal?,
-      emitMetrics: EmitMetrics
+      emitMetrics: EmitMetrics,
+      traceId: String
    ): Flux<TypedInstance> {
       // This is obviously not correct.
       // We're run blocking, and then wrapping a list to a flux, it's all sorts of level of messed up
       // But, it works. We REALLY need to get this async shit sorted out.
       val flow = runBlocking {
-         vyneProvider.createVyne().query(query, metricsTags = metricsTags).results
+         vyneProvider.createVyne().query(query, metricsTags = metricsTags,traceId = traceId).results
             .toList()
 
       }
@@ -89,13 +99,16 @@ open class EmbeddedVyneClient(
       facts: Set<TypedInstance>,
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker()
+      traceContext: TraceContext,
+      // TODO : I don't think this is used anymore. If it
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceContext = traceContext)
    ): QueryContext {
       return vyneProvider.createVyne().from(
          facts,
          queryId,
          clientQueryId,
-         eventBroker
+         traceContext.traceId,
+         eventBroker,
       )
    }
 
@@ -103,12 +116,14 @@ open class EmbeddedVyneClient(
       fact: TypedInstance,
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker()
+      traceContext: TraceContext,
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceContext = traceContext)
    ): QueryContext {
       return vyneProvider.createVyne().from(
          fact,
          queryId,
          clientQueryId,
+         traceContext.traceId,
          eventBroker
       )
    }

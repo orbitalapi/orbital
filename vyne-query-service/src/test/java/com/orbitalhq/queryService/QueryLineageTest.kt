@@ -338,7 +338,6 @@ class QueryLineageTest : BaseQueryServiceTest() {
          config = QueryAnalyticsConfig(
             persistenceQueueStorePath = tempDir.toPath()
          ),
-         meterRegistry = SimpleMeterRegistry(),
 
       )
    }

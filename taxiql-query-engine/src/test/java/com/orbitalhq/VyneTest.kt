@@ -14,6 +14,7 @@ import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.graph.operationInvocation.cache.local.LocalCachingInvokerProvider
 import com.orbitalhq.query.projection.LocalProjectionProvider
 import com.orbitalhq.query.projection.ProjectionProvider
+import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.schemas.Operation
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.taxi.TaxiSchema
@@ -80,7 +81,7 @@ service ClientService {
    }
 
    fun queryContext(queryId: String = UUID.randomUUID().toString()): QueryContext =
-      vyne().queryEngine().queryContext(queryId = queryId, clientQueryId = null)
+      vyne().queryEngine().queryContext(queryId = queryId, clientQueryId = null, traceContext = TraceContext.noOp())
 }
 
 fun testVyne(
