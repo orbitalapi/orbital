@@ -59,7 +59,7 @@ open class EmbeddedVyneClient(
                metricsTags = metricsTags,
                executionContextFacts = authClaims.toSet(),
                queryId =  queryId,
-               eventBroker = QueryContextEventBroker(traceContext = TraceContext.forTraceId(traceId,queryId, tracingEventSink))
+               eventBroker = QueryContextEventBroker(traceSpan = TraceContext.forTraceId(traceId,queryId, tracingEventSink).rootSpan)
             )
             captureMetrics(queryResult, emitMetrics)
             (queryResult.rawResults as Flow<T>).asFlux()
@@ -101,7 +101,7 @@ open class EmbeddedVyneClient(
       clientQueryId: String? = null,
       traceContext: TraceContext,
       // TODO : I don't think this is used anymore. If it
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceContext = traceContext)
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = traceContext.rootSpan)
    ): QueryContext {
       return vyneProvider.createVyne().from(
          facts,
@@ -117,7 +117,7 @@ open class EmbeddedVyneClient(
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
       traceContext: TraceContext,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceContext = traceContext)
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = traceContext.rootSpan)
    ): QueryContext {
       return vyneProvider.createVyne().from(
          fact,

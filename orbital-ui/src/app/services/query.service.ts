@@ -136,7 +136,6 @@ export class QueryService {
     );
   }
 
-
   getQueryProfileFromClientId(clientQueryId: string): Observable<QueryProfileData> {
     return this.http.get<QueryProfileData>(`${this.environment.serverUrl}/api/query/history/clientId/${clientQueryId}/profile`, this.httpOptions)
       .pipe(
@@ -426,6 +425,7 @@ export interface QueryProfileData {
   operationStats: RemoteOperationPerformanceStats[];
   queryLineageData: QuerySankeyChartRow[];
   errors: QueryErrorRow[]
+  traceSpans: TraceSpanRecord[]
 }
 
 export interface QueryParseMetadata {
@@ -656,4 +656,43 @@ export interface ResponseCondition {
 export interface ParameterValue {
   name: string;
   value: any,
+}
+
+export type SpanState = 'ACTIVE' | 'COMPLETE';
+export type TracingEventKind = 'OK' | 'ERROR';
+
+export interface TraceEventRow {
+  eventId: string;
+  queryId: string;
+  traceId: string;
+  spanId: string;
+  parentSpanId: string | null;
+  tracingEventKind: TracingEventKind;
+  spanState: SpanState;
+  timestamp: Date;
+  exchangeMetadata: any; // TODO : There's lots of metadata types that are sent down, not yet defined
+  eventVerb: string;
+  eventResource: string;
+  eventSourceQualifiedName: string;
+  linkedEventId: string | null;
+}
+
+export interface TraceSpanRecord {
+  readonly spanId: string;
+  readonly parentSpanId: string | null;
+  readonly events: TraceEventRow[];
+  readonly children: TraceSpanRecord[];
+  readonly traceStartTime: Date;
+  readonly firstEventTimestamp: Date;
+  readonly lastEventTimestamp: Date;
+  readonly spanStartTimestamp: Date | null;
+  readonly spanEndTimestamp: Date | null;
+  readonly eventVerb: string;
+  readonly eventResource: string;
+  readonly eventSourceQualifiedName: string;
+  readonly offsetMs: number;
+  readonly durationMs: number;
+  readonly spanDurationMs: number | null;
+  readonly isComplete: boolean;
+  readonly hasErrors: boolean;
 }

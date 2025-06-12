@@ -1,4 +1,4 @@
-import { TuiTabs } from "@taiga-ui/kit";
+import { TuiSegmented, TuiTabs } from "@taiga-ui/kit";
 import {NgModule} from '@angular/core';
 import { CdkFixedSizeVirtualScroll, CdkVirtualForOf, CdkVirtualScrollViewport } from '@angular/cdk/scrolling';
 import {CallExplorerComponent} from './call-explorer.component';
@@ -21,32 +21,37 @@ import {ExpandingPanelSetModule} from 'src/app/expanding-panelset/expanding-pane
 import {AngularSplitModule} from 'angular-split';
 import {FileSizePipeModule} from 'src/app/file-size-pipe/file-size-pipe.module';
 import {HeadersViewComponent} from "./headers-view.component";
+import {WaterfallComponent} from "src/app/query-panel/taxi-viewer/waterfall/waterfall.component";
+import { SvgIconComponent } from "src/app/svg-icon/svg-icon.component";
 
 @NgModule({
-    imports: [
-        SequenceDiagramModule,
-        MatButtonToggleModule,
-        MatIconModule,
-        ServiceGraphModule,
-        CommonModule,
-        SimpleCodeViewerModule,
-        MatTooltipModule,
-        MatButtonModule,
-        ErrorBarModule,
-        RouterModule,
-        FormsModule,
-        ServiceStatsModule,
-        LineageDisplayModule,
-        JsonViewerModule,
-        ExpandingPanelSetModule,
-        AngularSplitModule,
-        FileSizePipeModule,
-        ...TuiTabs,
-        HeadersViewComponent,
-        CdkFixedSizeVirtualScroll,
-        CdkVirtualForOf,
-        CdkVirtualScrollViewport
-    ],
+  imports: [
+    SequenceDiagramModule,
+    MatButtonToggleModule,
+    MatIconModule,
+    ServiceGraphModule,
+    CommonModule,
+    SimpleCodeViewerModule,
+    MatTooltipModule,
+    MatButtonModule,
+    ErrorBarModule,
+    RouterModule,
+    FormsModule,
+    ServiceStatsModule,
+    LineageDisplayModule,
+    JsonViewerModule,
+    ExpandingPanelSetModule,
+    AngularSplitModule,
+    FileSizePipeModule,
+    ...TuiTabs,
+    HeadersViewComponent,
+    CdkFixedSizeVirtualScroll,
+    CdkVirtualForOf,
+    CdkVirtualScrollViewport,
+    WaterfallComponent,
+    TuiSegmented,
+    SvgIconComponent
+  ],
   exports: [CallExplorerComponent, CallExplorerOperationViewComponent],
   declarations: [CallExplorerComponent, CallExplorerOperationViewComponent],
   providers: [],

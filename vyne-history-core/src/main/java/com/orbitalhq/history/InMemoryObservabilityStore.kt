@@ -1,12 +1,10 @@
 package com.orbitalhq.history
 
-import com.orbitalhq.query.QueryErrorStreamEvent
 import com.orbitalhq.query.history.LineageRecord
 import com.orbitalhq.query.history.QueryErrorEventRow
 import com.orbitalhq.query.history.QueryResultRow
 import com.orbitalhq.query.history.RemoteCallResponse
-import com.orbitalhq.query.history.TraceEventRow
-import com.orbitalhq.query.tracing.TracingEvent
+import com.orbitalhq.query.history.tracing.TraceEventRow
 
 
 /**

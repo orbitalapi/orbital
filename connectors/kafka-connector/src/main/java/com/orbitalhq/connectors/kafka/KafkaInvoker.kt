@@ -1,6 +1,7 @@
 package com.orbitalhq.connectors.kafka
 
 import arrow.core.Either
+import arrow.core.left
 import arrow.core.right
 import com.orbitalhq.VyneTypes
 import com.orbitalhq.models.DataSourceUpdater
@@ -12,18 +13,22 @@ import com.orbitalhq.query.QueryContextSchemaProvider
 import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationCachingBehaviour
 import com.orbitalhq.query.connectors.OperationInvoker
+import com.orbitalhq.query.tracing.MessageStreamDisconnection
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.onCompletion
 import lang.taxi.services.OperationScope
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 
 
-private val logger = KotlinLogging.logger {  }
+private val logger = KotlinLogging.logger { }
 
 class KafkaInvoker(
    private val streamManager: KafkaStreamManager,
@@ -54,7 +59,8 @@ class KafkaInvoker(
       queryOptions: QueryOptions
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
 
-      val connectionName = service.firstMetadata("${VyneTypes.NAMESPACE}.kafka.KafkaService").params["connectionName"] as String
+      val connectionName =
+         service.firstMetadata("${VyneTypes.NAMESPACE}.kafka.KafkaService").params["connectionName"] as String
       val kafkaOperation = operation.firstMetadata(KafkaConnectorTaxi.Annotations.KafkaOperation.NAME)
          .let { KafkaConnectorTaxi.Annotations.KafkaOperation.from(it) }
 
@@ -97,7 +103,9 @@ class KafkaInvoker(
       queryId: String,
       queryOptions: QueryOptions
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
-      val stream = streamManager.getStream(
+      val span = eventDispatcher.createOperationTraceSpan(service, operation, kafkaOperation.topic)
+
+      val (eventMetadata, rawStream) = streamManager.getStream(
          KafkaConsumerRequest(
             connectionName,
             kafkaOperation.topic,
@@ -106,21 +114,30 @@ class KafkaInvoker(
             operation,
             streamSourceId = queryOptions.streamConsumerId
          )
-      ).mapNotNull { errorOrInstance ->
+      )
+      span.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, null, eventMetadata, "Subscribe")
+      val stream = rawStream.mapNotNull { errorOrInstance ->
          when (errorOrInstance) {
             is Either.Right -> {
-               val instance = errorOrInstance.value
+               val (traceMessage, instance) = errorOrInstance.value
                val dataSource = instance.source
-               require(dataSource is OperationResultDataSourceWrapper) { "Expected OperationResultDataSourceWrapper as the datasource, found ${dataSource::class.simpleName}" }
-               eventDispatcher.reportRemoteOperationInvoked(dataSource.operationResult, queryId)
+               val event = span.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, instance.type, traceMessage, "Message received")
 
-               DataSourceUpdater.update(instance, dataSource.operationResultReferenceSource).right()
+               require(dataSource is OperationResultDataSourceWrapper) { "Expected OperationResultDataSourceWrapper as the datasource, found ${dataSource::class.simpleName}" }
+               val dataSourceWithTraceId = dataSource.copy(sourceEventId = event.idSet)
+               eventDispatcher.reportRemoteOperationInvoked(dataSourceWithTraceId.operationResult, queryId)
+
+               DataSourceUpdater.update(instance, dataSourceWithTraceId.operationResultReferenceSource).right()
             }
 
             is Either.Left -> {
-               errorOrInstance
+               val (traceEvent, streamErrorMessage) = errorOrInstance.value
+               span.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, null, traceEvent, "Message error")
+               streamErrorMessage.left()
             }
          }
+      }.onCompletion {
+         span.emitEvent(TracingEventKind.OK, SpanState.COMPLETE, null, MessageStreamDisconnection(disconnectionAction = MessageStreamDisconnection.DisconnectionAction.NOT_CAPTURED), "Disconnect")
       }
       return stream
    }

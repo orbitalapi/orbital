@@ -148,7 +148,6 @@ class QueryHistoryLineageTest {
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor(TestHazelcastInstanceFactory().newHazelcastInstance()),
          QueryResponseFormatter(listOf(CsvFormatSpec)),
-         NoopTracingEventSink
       )
       runBlocking {
          val results = queryService.submitVyneQlQueryStreamingResponse(

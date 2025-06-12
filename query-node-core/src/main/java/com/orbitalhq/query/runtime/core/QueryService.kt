@@ -17,6 +17,7 @@ import com.orbitalhq.logging.MDCContextKeys.QueryName
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.EmitMetrics
+import com.orbitalhq.query.EmptyExchangeData
 import com.orbitalhq.query.Fact
 import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.Query
@@ -32,8 +33,12 @@ import com.orbitalhq.query.SearchFailedException
 import com.orbitalhq.query.runtime.FailedSearchResponse
 import com.orbitalhq.query.runtime.QueryServiceApi
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
+import com.orbitalhq.query.tracing.EmptyTraceMetadata
+import com.orbitalhq.query.tracing.QueryEngineSpanEventSource
+import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.query.tracing.TracingEvent
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.query.tracing.TracingEventSink
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.QueryOptions
@@ -111,7 +116,6 @@ class QueryService(
    val objectMapper: ObjectMapper,
    val activeQueryMonitor: ActiveQueryMonitor,
    private val queryResponseFormatter: QueryResponseFormatter,
-   private val traceEventSink: TracingEventSink
 ) : QueryServiceApi, WebSocketController {
 
 
@@ -531,9 +535,12 @@ class QueryService(
 
          val vyne = vyneProvider.createVyne(executionContextFacts + userAuthTokenFacts, querySchema, queryOptions)
          val historyWriterEventConsumer = historyWriterProvider.createEventConsumer(queryId, vyne.schema)
+         val traceEventSink = historyWriterProvider.createTraceEventSink(queryId, traceId, schema, queryOptions)
          val response = try {
             val eventDispatcherForQuery =
-               activeQueryMonitor.eventDispatcherForQuery(queryId, TraceContext.forTraceId(traceId, queryId, traceEventSink), listOf(historyWriterEventConsumer))
+               activeQueryMonitor.eventDispatcherForQuery(queryId, TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan, listOf(historyWriterEventConsumer))
+            // Emit a start event. Without this, the root is never captured, and the traces look odd.
+            eventDispatcherForQuery.traceSpan.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, EmptyTraceMetadata, QueryEngineSpanEventSource, QueryEngineSpanEventSource.QUERY_ENGINE_RESOURCE, "Start", "")
             vyne.query(
                taxiQlQuery,
                queryId = queryId,

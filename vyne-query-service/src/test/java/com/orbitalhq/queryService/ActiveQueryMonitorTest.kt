@@ -121,7 +121,7 @@ class ActiveQueryMonitorTest {
 
       // Need to set up the event dispatcher, or there's nothing to cancel later
       val queryEventHandler: CancelRequestHandler = mock {  }
-      queryMonitor.eventDispatcherForQuery(queryId, TraceContext.noOp(), listOf(queryEventHandler))
+      queryMonitor.eventDispatcherForQuery(queryId, TraceContext.noOp().rootSpan, listOf(queryEventHandler))
       queryMonitor.reportStart(queryId, clientQueryId, query)
       eventually(5.seconds) {
          events.shouldHaveSize(1)

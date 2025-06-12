@@ -1,17 +1,21 @@
 -- V001__Create_trace_event_table.sql
 
-CREATE TABLE TRACE_EVENT (
-                            event_id VARCHAR(255) NOT NULL,
-                            query_id VARCHAR(255) NOT NULL,
-                            trace_id VARCHAR(255) NOT NULL,
-                            span_id VARCHAR(255) NOT NULL,
-                            parent_span_id VARCHAR(255),
-                            tracing_event_kind VARCHAR(50) NOT NULL,
-                            span_state VARCHAR(50) NOT NULL,
-                            exchange_metadata JSONB,
-                            timestamp timestamptz DEFAULT CURRENT_TIMESTAMP,
-
-                            CONSTRAINT pk_trace_event PRIMARY KEY (event_id)
+CREATE TABLE TRACE_EVENT
+(
+   event_id           VARCHAR(255) NOT NULL,
+   query_id           VARCHAR(255) NOT NULL,
+   trace_id           VARCHAR(255) NOT NULL,
+   span_id            VARCHAR(255) NOT NULL,
+   parent_span_id     VARCHAR(255),
+   tracing_event_kind VARCHAR(50)  NOT NULL,
+   span_state         VARCHAR(50)  NOT NULL,
+   exchange_metadata  JSONB,
+   timestamp          timestamptz DEFAULT CURRENT_TIMESTAMP,
+   event_verb         VARCHAR(255) NOT NULL,
+   event_resource     VARCHAR(255) NOT NULL,
+   event_source       VARCHAR(255) NOT NULL,
+   linked_event_id    VARCHAR(255),
+   CONSTRAINT pk_trace_event PRIMARY KEY (event_id)
 );
 
 -- Index for query_id (likely to be queried frequently)

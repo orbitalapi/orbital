@@ -59,7 +59,7 @@ class HazelcastProjectingTask(
           queryEngine = vyne.queryEngine(),
           profiler = QueryProfiler(),
           queryOptions = QueryOptions.default(),
-          traceContext = TraceContext.noOp()
+          traceSpan = TraceContext.noOp().rootSpan
        )
         context.excludedServices.addAll( Cbor.decodeFromByteArray<MutableSet<SearchGraphExclusion<QualifiedName>>>(excludedServices) )
 

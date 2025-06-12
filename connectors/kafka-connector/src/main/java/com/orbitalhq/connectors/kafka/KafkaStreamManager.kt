@@ -1,7 +1,7 @@
 package com.orbitalhq.connectors.kafka
 
 import arrow.core.Either
-import arrow.core.right
+import arrow.core.left
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Throwables
 import com.google.common.cache.CacheBuilder
@@ -21,6 +21,10 @@ import com.orbitalhq.query.MessageStreamExchange
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.tracing.MessageStreamErrorEvent
+import com.orbitalhq.query.tracing.MessageStreamEventReceived
+import com.orbitalhq.query.tracing.MessageStreamSubscription
+import com.orbitalhq.query.tracing.PayloadEncoding
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
@@ -70,8 +74,8 @@ data class KafkaConsumerRequest(
 val kafkaDispatcher = Executors.newFixedThreadPool(4).asCoroutineDispatcher()
 
 private data class PublicEventStream(
-   val sink: Sinks.Many<Either<StreamErrorMessage, TypedInstance>>,
-   val flux: Flux<Either<StreamErrorMessage, TypedInstance>>
+   val sink: Sinks.Many<Either<Pair<MessageStreamErrorEvent, StreamErrorMessage>, Pair<MessageStreamEventReceived, TypedInstance>>>,
+   val flux: Flux<Either<Pair<MessageStreamErrorEvent, StreamErrorMessage>, Pair<MessageStreamEventReceived, TypedInstance>>>
 ) {
    val flow = flux.asFlow()
 }
@@ -130,28 +134,41 @@ class KafkaStreamManager(
 
    fun getActiveRequests(): List<KafkaConsumerRequest> = publicFlowCache.asMap().keys.toList()
 
-   fun getStream(request: KafkaConsumerRequest): Flow<Either<StreamErrorMessage, TypedInstance>> {
-      val flow =
+   fun getStream(request: KafkaConsumerRequest): Pair<MessageStreamSubscription, Flow<Either<Pair<MessageStreamErrorEvent, StreamErrorMessage>, Pair<MessageStreamEventReceived, TypedInstance>>>> {
+      val flowFromCache =
          publicFlowCache.getIfPresent(request)?.let {
             logger.info { "Reusing existing kafka subscription for request $request" }
-            return it.flow
-         }
-            ?: publicFlowCache.get(request) {
-               getCounter(request) // Force creation
+            it.flow
+         };
+      if (flowFromCache != null) {
+         return MessageStreamSubscription(
+            request.topicName,
+            request.connectionName,
+            MessageStreamSubscription.SubscriptionAction.JOINED_EXISTING_SUBSCRIPTION
+         ) to flowFromCache
+      }
+      val newFlow = publicFlowCache.get(request) {
+         getCounter(request) // Force creation
 
-               val sink = Sinks.many().multicast().onBackpressureBuffer<Either<StreamErrorMessage, TypedInstance>>()
-               val flux = sink.asFlux()
-                  .doOnCancel {
-                     logger.info { "Cancelling Kafka subscription as all consumers have gone away: $request" }
-                     evictConnection(request)
-                  }
-
-               launchKafkaFlowInto(sink, request)
-               // Unsubscribe when all consumers have gone away
-               val publicSharedFlow = PublicEventStream(sink, flux)
-               publicSharedFlow
+         val sink = Sinks.many().multicast()
+            .onBackpressureBuffer<Either<Pair<MessageStreamErrorEvent, StreamErrorMessage>, Pair<MessageStreamEventReceived, TypedInstance>>>()
+         val flux = sink.asFlux()
+            .doOnCancel {
+               logger.info { "Cancelling Kafka subscription as all consumers have gone away: $request" }
+               evictConnection(request)
             }
-      return flow.flow
+
+         launchKafkaFlowInto(sink, request)
+         // Unsubscribe when all consumers have gone away
+         val publicSharedFlow = PublicEventStream(sink, flux)
+         publicSharedFlow
+      }
+      val subscriptionEvent = MessageStreamSubscription(
+         request.topicName,
+         request.connectionName,
+         MessageStreamSubscription.SubscriptionAction.CREATED_NEW_SUBSCRIPTION
+      )
+      return subscriptionEvent to newFlow.flow
    }
 
    private fun startTopicMonitoring(request: KafkaConsumerRequest) {
@@ -185,7 +202,7 @@ class KafkaStreamManager(
    }
 
    private fun launchKafkaFlowInto(
-      sink: Sinks.Many<Either<StreamErrorMessage, TypedInstance>>,
+      sink: Sinks.Many<Either<Pair<MessageStreamErrorEvent, StreamErrorMessage>, Pair<MessageStreamEventReceived, TypedInstance>>>,
       request: KafkaConsumerRequest
    ) {
       // Kill the existing inner flow (and associated Kafka subscription, if present)
@@ -215,7 +232,7 @@ class KafkaStreamManager(
     * This flow should emit into a seperate, shared public-facing flow, rather than be returned
     * directly to consumers.
     */
-   private fun buildKafkaConsumer(request: KafkaConsumerRequest): Flux<Either<StreamErrorMessage, TypedInstance>> {
+   private fun buildKafkaConsumer(request: KafkaConsumerRequest): Flux<Either<Pair<MessageStreamErrorEvent, StreamErrorMessage>, Pair<MessageStreamEventReceived, TypedInstance>>> {
       logger.info { "Creating new kafka subscription for request $request" }
       val (connectionConfiguration, receiverOptions) = buildReceiverOptions(request)
       // The groupId gets updated by the consumer after we connect, so capture now.
@@ -269,10 +286,17 @@ class KafkaStreamManager(
             } else {
                String(record.value())
             }
+            val (messageEncoding, messageValueAsString) = if (messageValue is ByteArray) {
+               PayloadEncoding.BASE64_BYTEARRAY to { Base64.getEncoder().encodeToString(messageValue) }
+            } else PayloadEncoding.STRING to { messageValue as String }
 
             val typedInstanceOrError = try {
                Either.Right(
-                  TypedInstance.from(
+                  MessageStreamEventReceived(
+                     record.serializedValueSize().toLong(),
+                     messageEncoding,
+                     messageValueAsString
+                  ) to TypedInstance.from(
                      messageType,
                      messageValue,
                      // Note: Don't store a reference here, as the schema may change over the course
@@ -303,7 +327,14 @@ class KafkaStreamManager(
                )
                   .increment()
                logger.info { "Failed to parse TypedInstance from kafka data for type => ${messageType.longDisplayName}  - error: ${errorMessage.message}" }
-               Either.Left(errorMessage)
+               Either.Left(
+                  MessageStreamErrorEvent(
+                     record.serializedValueSize().toLong(),
+                     errorMessage.message,
+                     messageEncoding,
+                     messageValueAsString
+                  ) to errorMessage
+               )
             } finally {
                // Only offsets explicitly acknowledged using ReceiverOffset#acknowledge() are committed.
                record.receiverOffset().acknowledge()
@@ -318,8 +349,17 @@ class KafkaStreamManager(
             logger.error(rootCause) { "Error in Kafka subscription for kafka connection ${request.connectionName}" }
             // see the error handling notes for SharedFlow:
             // https://github.com/Kotlin/kotlinx.coroutines/issues/2034
-            val errorMessage = "Error in Kafka connection: ${request.connectionName}, details: ${rootCause.message}"
-            Flux.just(ErrorType.errorMessage(errorMessage, schemaProvider.schema(), dataSource).right())
+            val errorMessageText = "Error in Kafka connection: ${request.connectionName}, details: ${rootCause.message}"
+            val errorEvent = MessageStreamErrorEvent(0, errorMessageText, PayloadEncoding.STRING, { null })
+            val streamErrorMessage = StreamErrorMessage(
+               timestamp = Instant.now(),
+               exception = rootCause,
+               message = rootCause.message ?: rootCause::class.simpleName!!,
+               typeName = messageType.paramaterizedName,
+               payload = errorMessageText
+            )
+            val errorResponse = (errorEvent to streamErrorMessage).left()
+            Flux.just(errorResponse)
          }
 
       startTopicMonitoring(request)

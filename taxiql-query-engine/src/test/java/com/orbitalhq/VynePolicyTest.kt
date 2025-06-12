@@ -177,7 +177,7 @@ namespace test {
       stubService.addResponse("listTrades", vyne.parseJsonModel("test.Trade[]", tradeList))
       stubService.addResponse("findClient", clientHandler(vyne))
 
-      val context = vyne.queryEngine().queryContext(queryId = "ABCD", clientQueryId = null, traceContext = TraceContext.noOp())
+      val context = vyne.queryEngine().queryContext(queryId = "ABCD", clientQueryId = null, traceSpan = TraceContext.noOp().rootSpan)
       runBlocking {context.find("test.Trade[]").results.toList()}
 
       expect(stubService.invocations["tokenToUserId"]).to.have.size(1)
@@ -199,7 +199,7 @@ namespace test {
       val context = vyne.queryEngine().queryContext(
          additionalFacts = setOf(vyne.typedValue("TradeId", 1)),
          queryId = "ABCD",
-         clientQueryId = null, traceContext = TraceContext.noOp()
+         clientQueryId = null, traceSpan = TraceContext.noOp().rootSpan
       )
       val queryResultsList = runBlocking {context.find("test.Trade").results.toList()}
 
@@ -220,7 +220,7 @@ namespace test {
       stubService.addResponse("findClient", clientHandler(vyne))
 
       // Trade2 is filtered because our trader belongs to a different desl
-      val context = vyne.queryEngine().queryContext(queryId = "ABCD", clientQueryId = null, traceContext = TraceContext.noOp())
+      val context = vyne.queryEngine().queryContext(queryId = "ABCD", clientQueryId = null, traceSpan = TraceContext.noOp().rootSpan)
       val queryResult = runBlocking {context.find("test.Trade[]")}
 
       //val tradeCollection = queryResult["test.Trade[]"] as TypedCollection
@@ -259,7 +259,7 @@ namespace test {
       val context = vyne.queryEngine().queryContext(
          additionalFacts = setOf(vyne.typedValue("TradeId", 1)),
          queryId = "ABCD",
-         clientQueryId = null, traceContext = TraceContext.noOp()
+         clientQueryId = null, traceSpan = TraceContext.noOp().rootSpan
       )
       val queryResult = context.find("test.Trade").results
          .test {
@@ -287,7 +287,7 @@ namespace test {
       val context = vyne.queryEngine().queryContext(
          additionalFacts = setOf(vyne.typedValue("TradeId", 1)),
          queryId = "ABCD",
-         clientQueryId = null, traceContext = TraceContext.noOp()
+         clientQueryId = null, traceSpan = TraceContext.noOp().rootSpan
       )
       val queryResult = runBlocking {context.find("test.TradeWrapper").results.toList()}
 
@@ -314,7 +314,7 @@ namespace test {
       val context = vyne.queryEngine().queryContext(
          additionalFacts = setOf(vyne.typedValue("TradeId", 2)),
          queryId = "ABCD",
-         clientQueryId = null, traceContext = TraceContext.noOp()
+         clientQueryId = null, traceSpan = TraceContext.noOp().rootSpan
       )
       val queryResult = runBlocking {context.find("test.Trade").results.toList()}
 

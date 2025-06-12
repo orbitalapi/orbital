@@ -181,7 +181,6 @@ abstract class BaseQueryServiceTest {
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor(TestHazelcastInstanceFactory().newHazelcastInstance()),
          QueryResponseFormatter(listOf(CsvFormatSpec)),
-         NoopTracingEventSink
       )
       return queryService
    }

@@ -15,23 +15,30 @@ import { isNullOrUndefined } from 'src/app/utils/utils';
   selector: 'app-call-explorer',
   template: `
     <div class="toolbar" *ngIf="!onlyShowQueryPlan">
-      <mat-button-toggle-group [(ngModel)]='displayMode' data-e2e-id='profiler-call-operation-selection'>
-        <mat-button-toggle value='lineage' data-e2e-id='call-select' title='Query Lineage'>
-          <img class='icon' src='assets/img/lineage-nodes.svg'>
-        </mat-button-toggle>
-        <mat-button-toggle value='sequence' data-e2e-id='call-select' title='Sequence Diagram'>
-          <img class='icon' src='assets/img/sequence.svg'>
-        </mat-button-toggle>
-        <mat-button-toggle value='stats' data-e2e-id='operation-select' title='Stats'>
-          <img class='icon' src='assets/img/table-view.svg'>
-        </mat-button-toggle>
-      </mat-button-toggle-group>
+      <tui-segmented size="s">
+        <label><input name="radio" type="radio" value="lineage" [(ngModel)]="displayMode"><app-svg-icon [width]="22" [height]="22" [strokeWidth]="1.5" tabler="binary-tree"></app-svg-icon>Lineage</label>
+        <label><input name="radio" type="radio" value="sequence" [(ngModel)]="displayMode"><app-svg-icon [width]="22" [height]="22" [strokeWidth]="1.5" tabler="arrows-right-left"></app-svg-icon>Sequence</label>
+        <label><input name="radio" type="radio" value="stats" [(ngModel)]="displayMode"><app-svg-icon [width]="22" [height]="22" [strokeWidth]="1.5" tabler="table"></app-svg-icon>Stats</label>
+        <label><input name="radio" type="radio" value="trace" [(ngModel)]="displayMode"><app-svg-icon [width]="22" [height]="22" [strokeWidth]="1.5" tabler="arrows-right-left"></app-svg-icon>Trace</label>
+      </tui-segmented>
+<!--      <mat-button-toggle-group [(ngModel)]='displayMode' data-e2e-id='profiler-call-operation-selection'>-->
+<!--        <mat-button-toggle value='lineage' data-e2e-id='call-select' title='Query Lineage'>-->
+<!--          <img class='icon' src='assets/img/lineage-nodes.svg'>-->
+<!--        </mat-button-toggle>-->
+<!--        <mat-button-toggle value='sequence' data-e2e-id='call-select' title='Sequence Diagram'>-->
+<!--          <img class='icon' src='assets/img/sequence.svg'>-->
+<!--        </mat-button-toggle>-->
+<!--        <mat-button-toggle value='stats' data-e2e-id='operation-select' title='Stats'>-->
+<!--          <img class='icon' src='assets/img/table-view.svg'>-->
+<!--        </mat-button-toggle>-->
+<!--      </mat-button-toggle-group>-->
     </div>
     <app-query-lineage
       *ngIf="displayMode === 'lineage'"
       [rows]='querySankeyChartRows$ | async'
       [class.has-margin-top]="onlyShowQueryPlan"
     ></app-query-lineage>
+    <app-waterfall *ngIf="displayMode === 'trace'" [traceSpans]="(queryProfileData$ | async).traceSpans"></app-waterfall>
     <div class='sequence-diagram-container' *ngIf="displayMode === 'sequence'">
       <as-split direction='horizontal' unit='pixel'>
         <as-split-area [size]='500'>
@@ -134,7 +141,7 @@ export class CallExplorerComponent {
   }
 }
 
-export type CallExplorerDisplayMode = 'sequence' | 'stats' | 'lineage';
+export type CallExplorerDisplayMode = 'sequence' | 'stats' | 'lineage' | 'trace';
 
 export function statusTextClass(resultCode: string): string {
 

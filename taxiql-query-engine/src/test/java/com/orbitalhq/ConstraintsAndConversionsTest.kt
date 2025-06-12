@@ -68,7 +68,7 @@ service MyService {
       val queryEngine = vyne.queryEngine()
       queryEngine.addModel(money(5, "USD", vyne))
       queryEngine.addModel(vyne.parseKeyValuePair("ClientId","1234"))
-      val result = runBlocking { queryEngine.queryContext(queryId = UUID.randomUUID().toString(), clientQueryId = null, traceContext = TraceContext.noOp()).find("ClientRisk").results.toList() }
+      val result = runBlocking { queryEngine.queryContext(queryId = UUID.randomUUID().toString(), clientQueryId = null, traceSpan = TraceContext.noOp().rootSpan).find("ClientRisk").results.toList() }
 
       expect(stubService.invocations).to.contain.keys("convertCurrency")
       expect(stubService.invocations).to.contain.keys("calculateRiskForClient")
@@ -92,7 +92,7 @@ service MyService {
 
       val queryEngine = vyne.queryEngine()
       queryEngine.addModel(money(5, "USD", vyne))
-      val result = runBlocking { queryEngine.queryContext(queryId = UUID.randomUUID().toString(), clientQueryId = null, traceContext = TraceContext.noOp()).find("Risk").results.toList() }
+      val result = runBlocking { queryEngine.queryContext(queryId = UUID.randomUUID().toString(), clientQueryId = null, traceSpan = TraceContext.noOp().rootSpan).find("Risk").results.toList() }
 
       expect(stubService.invocations).to.contain.keys("convertCurrency")
       expect(stubService.invocations).to.contain.keys("calculateRisk")
@@ -135,7 +135,7 @@ service TestService {
       queryEngine.addModel(vyne.parseKeyValuePair("UkSic2003","SickOf2003"))
       val resultList = runBlocking { queryEngine.queryContext(
          queryId = UUID.randomUUID().toString(),
-         clientQueryId = null, traceContext = TraceContext.noOp()
+         clientQueryId = null, traceSpan = TraceContext.noOp().rootSpan
       ).find("Foo").results.toList() }
 
       expect( (resultList.get(0) as TypedValue).value).to.equal("Hello")
@@ -168,7 +168,7 @@ service TestService {
 
       val queryEngine: StatefulQueryEngine = vyne.queryEngine()
       queryEngine.addModel(vyne.parseKeyValuePair("UkSic2003","SickOf2003"))
-      val result = runBlocking{ queryEngine.queryContext(queryId = UUID.randomUUID().toString(), clientQueryId = null, traceContext = TraceContext.noOp()).find("Foo").results.toList() }
+      val result = runBlocking{ queryEngine.queryContext(queryId = UUID.randomUUID().toString(), clientQueryId = null, traceSpan = TraceContext.noOp().rootSpan).find("Foo").results.toList() }
 
       //expect(result["Foo"]!!.value).to.equal("Hello")
       // Assert correct params were passed

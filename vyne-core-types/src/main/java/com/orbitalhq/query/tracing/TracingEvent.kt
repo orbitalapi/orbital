@@ -1,13 +1,12 @@
 package com.orbitalhq.query.tracing
 
+import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.utils.Ids
 import kotlinx.serialization.Serializable
 import java.time.Instant
-
-
 
 
 /**
@@ -55,6 +54,29 @@ data class TracingEvent(
    val spanState: SpanState,
    val exchangeMetadata: TracingEventExchangeMetadata,
    /**
+    * A verb, as determined by the event emitter, that provides a succinct description of
+    * what this event was.
+    * eg: "Subscribe", "Disconnect", "Receive", "Get", "Post", "Invoke", etc.
+    */
+   val eventVerb: String,
+   /**
+    * A human readable name for the resource that this event relates to.
+    * Could be a table name, topic, url, etc.
+    */
+   val eventResource: String,
+   /**
+    * The qualified name of the operation, (or if this was a taxi function),
+    * the taxi function qualified name
+    */
+   val eventSourceQualifiedName: String,
+
+   /**
+    * Indicates this event is linked to another event.
+    * Generally, it indicates that this event was triggered by the other
+    * event
+    */
+   val linkedEventId: String?,
+   /**
     * The id for this specific event.
     * Unlike traceId and spanId, this id is entirely unique, and represents just this event.
     */
@@ -62,7 +84,9 @@ data class TracingEvent(
    val timestamp: Instant = Instant.now(),
 
    ) {
+   val idSet = TracingEventIdSet(eventId, spanId, traceId)
    companion object {
+
       fun newTraceId(): String {
          return Ids.fastUuid()
       }
@@ -71,6 +95,24 @@ data class TracingEvent(
          return Ids.fastUuid()
       }
    }
+}
+
+/**
+ * The collection of IDs used to help identify a single specific event
+ */
+data class TracingEventIdSet(
+   /**
+    * This is the unique event id.
+    * This is really all you need
+    */
+   val eventId: String,
+   // These are for reference / to help
+   val spanId: String,
+   val traceId: String
+)
+
+enum class TraceEventVerb {
+
 }
 
 /**
@@ -104,15 +146,18 @@ enum class TracingEventKind {
 @JsonSubTypes(
    JsonSubTypes.Type(value = HttpRequest::class, name = "HttpRequest"),
    JsonSubTypes.Type(value = HttpResponse::class, name = "HttpResponse"),
-   JsonSubTypes.Type(value = SqlRequest::class, name = "SqlRequest"),
-   JsonSubTypes.Type(value = SqlResponse::class, name = "SqlResponse"),
+   JsonSubTypes.Type(value = DatabaseRequest::class, name = "DatabaseRequest"),
+   JsonSubTypes.Type(value = DatabaseResponse::class, name = "DatabaseResponse"),
    JsonSubTypes.Type(value = MessageStreamSubscription::class, name = "MessageStreamSubscription"),
    JsonSubTypes.Type(value = MessageStreamDisconnection::class, name = "MessageStreamDisconnection"),
+   JsonSubTypes.Type(value = MessageStreamErrorEvent::class, name = "MessageStreamErrorEvent"),
    JsonSubTypes.Type(value = MessageStreamEventReceived::class, name = "MessageStreamEventReceived"),
    JsonSubTypes.Type(value = CacheRequest::class, name = "CacheRequest"),
    JsonSubTypes.Type(value = CacheResponse::class, name = "CacheResponse"),
    JsonSubTypes.Type(value = ObjectStoreRequest::class, name = "ObjectStoreRequest"),
    JsonSubTypes.Type(value = ObjectStoreResponse::class, name = "ObjectStoreResponse"),
+   JsonSubTypes.Type(value = ProjectionTraceMetadata::class, name = "ProjectionTraceMetadata"),
+   JsonSubTypes.Type(value = EmptyTraceMetadata::class, name = "EmptyTraceMetadata"),
 )
 sealed class TracingEventExchangeMetadata {
    /**
@@ -125,14 +170,15 @@ sealed class TracingEventExchangeMetadata {
     * This payload may be null if the event system has disabled capture for the source,
     * and it may be truncated if the payload size exceeds configured defaults.
     */
-   abstract val payload: String?
+   @get:JsonIgnore
+   abstract val payload: () -> String?
 }
 
 @Serializable
 data class HttpRequest(
    val url: String,
    val verb: String,
-   override val payload: String?,
+   override val payload: () -> String?,
    /**
     * The size in bytes
     */
@@ -140,11 +186,18 @@ data class HttpRequest(
    val headers: Map<String, List<String>>
 ) : TracingEventExchangeMetadata() {
 }
+
+data object EmptyTraceMetadata : TracingEventExchangeMetadata() {
+   override val payload: () -> String? = { null }
+}
+data class ProjectionTraceMetadata(
+   override val payload: () -> String?,
+) : TracingEventExchangeMetadata()
 
 @Serializable
 data class HttpResponse(
    val responseCode: Int,
-   override val payload: String?,
+   override val payload: () -> String?,
    /**
     * The size in bytes
     */
@@ -153,38 +206,71 @@ data class HttpResponse(
 ) : TracingEventExchangeMetadata()
 
 @Serializable
-data class SqlRequest(
-   override val payload: String?,
-   val connectionName: String
+data class DatabaseRequest(
+   val connectionName: String,
+   val verb: String,
+   val tableName: String,
+   override val payload: () -> String?,
 ) : TracingEventExchangeMetadata()
 
 @Serializable
-data class SqlResponse(
-   override val payload: String?,
-   val recordCount: Int
+data class DatabaseResponse(
+   val recordCount: Long,
+   override val payload: () -> String?,
 ) : TracingEventExchangeMetadata()
 
 @Serializable
 data class MessageStreamSubscription(
-   val address: String,
    val topic: String,
-   val connectionName: String
+   val connectionName: String,
+   val subscriptionAction: SubscriptionAction
 ) : TracingEventExchangeMetadata() {
-   override val payload: String? = null
+   enum class SubscriptionAction {
+      NOT_CAPTURED,
+      JOINED_EXISTING_SUBSCRIPTION,
+      CREATED_NEW_SUBSCRIPTION
+   }
+
+   override val payload: () -> String? = { null }
 }
 
 @Serializable
-data object MessageStreamDisconnection : TracingEventExchangeMetadata() {
-   override val payload: String? = null
+data class MessageStreamDisconnection(
+   val disconnectionAction: DisconnectionAction
+) : TracingEventExchangeMetadata() {
+   override val payload: () -> String? = { null }
+
+   enum class DisconnectionAction {
+      NOT_CAPTURED,
+      SUBSCRIPTION_TERMINATED,
+      SUBSCRIPTION_LEFT_ACTIVE
+   }
 }
 
 @Serializable
 data class MessageStreamEventReceived(
-   override val payload: String?,
    /**
     * The size in bytes
     */
    val size: Long,
+   val payloadEncoding: PayloadEncoding,
+   override val payload: () -> String?,
+) : TracingEventExchangeMetadata()
+
+enum class PayloadEncoding {
+   STRING,
+   BASE64_BYTEARRAY
+}
+
+@Serializable
+data class MessageStreamErrorEvent(
+   /**
+    * The size in bytes
+    */
+   val size: Long,
+   val errorMessage: String,
+   val payloadEncoding: PayloadEncoding,
+   override val payload: () -> String?,
 ) : TracingEventExchangeMetadata()
 
 @Serializable
@@ -197,13 +283,13 @@ data class CacheRequest(
     * If performing a key-based lookup, this is the key.
     * If doing a cache query, this is the actual query
     */
-   override val payload: String? = null
+   override val payload: () -> String? = { null }
 }
 
 @Serializable
 data class CacheResponse(
    val recordCount: Int,
-   override val payload: String?,
+   override val payload: () -> String?,
 ) : TracingEventExchangeMetadata()
 
 @Serializable
@@ -216,12 +302,12 @@ data class ObjectStoreRequest(
     * use the sql query here.
     * Otherwise, if this is a file-based interaction, use the file name (or file pattern)
     */
-   override val payload: String? = null
+   override val payload: () -> String? = { null }
 }
 
 @Serializable
 data class ObjectStoreResponse(
-   override val payload: String?,
+   override val payload: () -> String?,
    /**
     * The size in bytes
     */

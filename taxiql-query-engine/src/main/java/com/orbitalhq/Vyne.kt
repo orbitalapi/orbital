@@ -122,7 +122,7 @@ class Vyne(
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
       traceId: String = TracingEvent.newTraceId(),
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceContext = TraceContext.forTraceId(traceId, queryId, traceEventSink)),
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan),
       arguments: Map<String, Any?> = emptyMap(),
       metricsTags: MetricTags = MetricTags.NONE,
       executionContextFacts: Set<Fact> = emptySet()
@@ -152,7 +152,7 @@ class Vyne(
        queryId: String = UUID.randomUUID().toString(),
        clientQueryId: String? = null,
        traceId: String = TracingEvent.newTraceId(),
-       eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceContext = TraceContext.forTraceId(traceId, queryId, traceEventSink)),
+       eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan),
        arguments: Map<String, Any?> = emptyMap(),
        queryOptions: QueryOptions,
        metricsTags: MetricTags = MetricTags.NONE,
@@ -226,7 +226,7 @@ class Vyne(
       queryId: String,
       clientQueryId: String?,
       traceId: String = TracingEvent.newTraceId(),
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceContext = TraceContext.forTraceId(traceId, queryId, traceEventSink)),
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan),
       arguments: Map<String, Any?> = emptyMap(),
       queryOptions: QueryOptions,
       querySchema: Schema,
@@ -396,7 +396,7 @@ class Vyne(
             queryId = Ids.id("queryId"),
             clientQueryId = null,
             scopedFacts = authFactsToScopedFacts(factSets[FactSets.AUTHENTICATION]),
-            traceContext = TraceContext.noOp()
+            traceSpan = TraceContext.noOp().rootSpan
          )
       return queryContext
    }
@@ -406,7 +406,7 @@ class Vyne(
       val (schemaWithType, expressionType) = this.schema.compileExpression(taxiExpression, returnType)
 
       val queryContext = queryEngine(schema = schemaWithType)
-         .queryContext(queryId = Ids.id("queryId"), clientQueryId = null, traceContext = TraceContext.noOp())
+         .queryContext(queryId = Ids.id("queryId"), clientQueryId = null, traceSpan = TraceContext.noOp().rootSpan)
 
       // Using TypedObjectFactory directly, rather than queryEngine().build(...).
       // This is because of a bug that if the fact we're searching is a collection,
@@ -431,7 +431,7 @@ class Vyne(
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
       traceId: String = TracingEvent.newTraceId(),
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceContext = TraceContext.forTraceId(traceId, queryId, traceEventSink)),
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan),
       scopedFacts: List<ScopedFact> = emptyList(),
       queryOptions: QueryOptions = QueryOptions.default(),
       querySchema: Schema = this.schema
@@ -450,7 +450,7 @@ class Vyne(
          factSetIds = factSetIds,
          queryId = queryId,
          clientQueryId = clientQueryId,
-         traceContext = eventBroker.traceContext,
+         traceSpan = eventBroker.traceSpan,
          eventBroker = eventBroker,
          scopedFacts = scopedFacts,
          queryOptions = queryOptions
@@ -510,7 +510,7 @@ class Vyne(
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
       traceId: String = TracingEvent.newTraceId(),
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceContext = TraceContext.forTraceId(traceId, queryId, traceEventSink)),
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan),
       ): QueryContext {
       return query(
          additionalFacts = facts,
@@ -525,7 +525,7 @@ class Vyne(
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
       traceId: String = TracingEvent.newTraceId(),
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceContext = TraceContext.forTraceId(traceId, queryId, traceEventSink)),
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan),
       ): QueryContext {
       return query(
          additionalFacts = setOf(fact),

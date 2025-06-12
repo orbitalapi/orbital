@@ -81,7 +81,7 @@ service ClientService {
    }
 
    fun queryContext(queryId: String = UUID.randomUUID().toString()): QueryContext =
-      vyne().queryEngine().queryContext(queryId = queryId, clientQueryId = null, traceContext = TraceContext.noOp())
+      vyne().queryEngine().queryContext(queryId = queryId, clientQueryId = null, traceSpan = TraceContext.noOp().rootSpan)
 }
 
 fun testVyne(

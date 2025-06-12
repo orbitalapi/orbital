@@ -114,7 +114,7 @@ class StubQueryService(
 
       val (dispatcher, remoteCallCollector) = buildQueryEventConsumer()
       val queryPlanEventHandler = QueryPlanEventHandler.createFor(vyne.schema)
-      val eventBroker = QueryContextEventBroker(traceContext = TraceContext.noOp())
+      val eventBroker = QueryContextEventBroker(traceSpan = TraceContext.noOp().rootSpan)
          .addHandlers(listOf(remoteCallCollector, queryPlanEventHandler))
       val resultFlux = runBlocking {
          vyne.query(query.query, arguments = query.parameters, eventBroker = eventBroker)

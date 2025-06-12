@@ -1,9 +1,9 @@
 package com.orbitalhq.query.tracing
 
 interface TracingEventSink {
-   fun emitEvent(event: TracingEvent)
+   fun emitEvent(source: SpanEventSource, event: TracingEvent)
 }
 object NoopTracingEventSink : TracingEventSink {
-   override fun emitEvent(event: TracingEvent) {
+   override fun emitEvent(source: SpanEventSource, event: TracingEvent) {
    }
 }

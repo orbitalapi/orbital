@@ -28,7 +28,7 @@ class HazelcastMutatingInvokerTest : BaseHazelcastInvokerTest() {
            operationResults.add(operation)
        }
    }
-       val queryEventBroker = QueryContextEventBroker(traceContext = TraceContext.noOp())
+       val queryEventBroker = QueryContextEventBroker(traceSpan = TraceContext.noOp().rootSpan)
        queryEventBroker.addHandler(remoteCallOperationResultHandler)
 
       val upsertedInstance = vyne.query(

@@ -38,7 +38,7 @@ class QueryVisualizer(
       // This belongs in the service
       val (vyne, stubService) = StubService.stubbedVyne(schema, planners, stateStoreProvider)
       stubService.returnStubValuesForAllOperations()
-      val lineageEventBroker = QueryContextEventBroker(traceContext =  TraceContext.noOp())
+      val lineageEventBroker = QueryContextEventBroker(traceSpan = TraceContext.noOp().rootSpan)
       val viewBuilder = LineageSankeyViewBuilder(schema)
       lineageEventBroker.addHandler(QueryPlanEventHandler(viewBuilder))
 

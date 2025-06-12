@@ -499,7 +499,6 @@ class QueryRequestHandlerTest {
             Jackson2ObjectMapperBuilder().build(),
             ActiveQueryMonitor(TestHazelcastInstanceFactory().newHazelcastInstance()),
             QueryResponseFormatter(listOf(CsvFormatSpec)),
-            NoopTracingEventSink
          )
       }
 

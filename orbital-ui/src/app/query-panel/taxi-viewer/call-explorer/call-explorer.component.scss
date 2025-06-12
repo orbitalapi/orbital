@@ -23,6 +23,7 @@ app-sequence-diagram {
 }
 
 .toolbar {
+  display: flex;
   margin: 1rem 1rem 0 1rem;
 
   // Override the width & height of the toggle button from 48x48 to
@@ -30,6 +31,13 @@ app-sequence-diagram {
   ::ng-deep .mat-button-toggle-appearance-standard .mat-button-toggle-label-content {
     padding: 0 6px !important;
     line-height: 36px !important;
+  }
+  label {
+    font-size: 0.9rem;
+  }
+
+  app-svg-icon {
+    color: $slate-700;
   }
 }
 
@@ -41,6 +49,10 @@ app-call-explorer-operation-view {
   flex-grow: 1;
 }
 
+app-waterfall {
+  padding: 0 1rem 0.5rem;
+  flex-grow: 1;
+}
 app-service-stats {
   padding: 1rem;
 }

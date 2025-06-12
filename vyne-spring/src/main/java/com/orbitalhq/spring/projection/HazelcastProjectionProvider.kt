@@ -85,7 +85,7 @@ class HazelcastProjectionProvider(val taskSize: Int, private val nonLocalDistrib
          } //Distribute on hazelcast
          .map { (startTime, taskResults) ->
             deserialiseTaskResults(context, vyne, taskResults.first, taskResults.second)
-               .map { it.withProcessingMetadata(asOf = startTime) }
+               .map { it.withProcessingMetadata(asOf = startTime, processingTraceSpan = context.traceSpan) }
          }
 
       return projectedResults.asFlow().flatMapMerge { it }

@@ -1,6 +1,8 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
 import arrow.core.Either
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.orbitalhq.connectors.BatchWriteCacheProvider
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnector.Annotations.BatchSizeAttributeName
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnector.Annotations.batchDurationAttributeName
@@ -24,7 +26,8 @@ private val logger = KotlinLogging.logger {}
 class MongoDbInvoker(
    connectionFactory: MongoConnectionFactory,
    schemaProvider: SchemaProvider,
-   meterRegistry: MeterRegistry
+   meterRegistry: MeterRegistry,
+   objectMapper: ObjectMapper = jacksonObjectMapper().findAndRegisterModules(),
 ) : OperationInvoker {
 
    companion object {
@@ -34,8 +37,8 @@ class MongoDbInvoker(
    }
 
    private val batchWriteCacheProvider = BatchWriteCacheProvider<TypedInstance, OperationResultReference>()
-   private val readOnlyInvoker = MongoReadOnlyQueryInvoker(connectionFactory, schemaProvider)
-   private val upsertInvoker = MongoMutatingQueryInvoker(connectionFactory, schemaProvider, meterRegistry)
+   private val readOnlyInvoker = MongoReadOnlyQueryInvoker(connectionFactory, schemaProvider, objectMapper)
+   private val upsertInvoker = MongoMutatingQueryInvoker(connectionFactory, schemaProvider, meterRegistry, objectMapper)
    private val bulkUpsertInvoker =
       MongoBulkMutatingQueryInvoker(connectionFactory, schemaProvider, batchWriteCacheProvider, meterRegistry)
 

@@ -108,43 +108,6 @@ data class QueryErrorEventRow(
    val taskStackJson: String?
 )
 
-/**
- * See TracingEvent for what all the properties mean
- */
-@Entity(name = "TRACE_EVENT")
-@Serializable
-data class TraceEventRow(
-   @Id
-   @Column(name = "event_id")
-   val eventId: String,
-
-   @Column(name = "query_id")
-   val queryId: String,
-
-   @Column(name = "trace_id")
-   val traceId: String,
-
-   @Column(name = "span_id")
-   val spanId: String,
-
-   @Column(name = "parent_span_id")
-   val parentSpanId: String?,
-
-   @Column(name = "tracing_event_kind")
-   @Enumerated(EnumType.STRING)
-   val tracingEventKind: TracingEventKind,
-   @Column(name = "span_state")
-   @Enumerated(EnumType.STRING)
-   val spanState: SpanState,
-   @Serializable(with = ZonedDateTimeTimeSerializer::class)
-   val timestamp: ZonedDateTime,
-
-   @Column(name = "exchange_metadata", columnDefinition = "jsonb")
-   @JdbcTypeCode(SqlTypes.JSON)
-   val exchangeMetadata: String,
-
-
-)
 
 @Entity(name = "LINEAGE_RECORD")
 @Serializable

@@ -1390,7 +1390,7 @@ namespace vyne {
           }
       }
 
-       val queryEventBroker = QueryContextEventBroker(traceContext = TraceContext.noOp())
+       val queryEventBroker = QueryContextEventBroker(traceSpan = TraceContext.noOp().rootSpan)
        queryEventBroker.addHandler(remoteCalls)
 
        var queryException: Exception? = null
@@ -1445,7 +1445,7 @@ namespace vyne {
             }
         }
 
-        val queryEventBroker = QueryContextEventBroker(traceContext = TraceContext.noOp())
+        val queryEventBroker = QueryContextEventBroker(traceSpan = TraceContext.noOp().rootSpan)
         queryEventBroker.addHandler(remoteCalls)
 
         val queryResults = vyne.query(vyneQlQuery = """given { key : ApiKey = "hello" } find { Person[] }""",

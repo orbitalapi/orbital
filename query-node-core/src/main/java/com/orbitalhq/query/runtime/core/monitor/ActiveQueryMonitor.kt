@@ -11,6 +11,7 @@ import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.QueryContextEventHandler
 import com.orbitalhq.query.QueryResponse
 import com.orbitalhq.query.tracing.TraceContext
+import com.orbitalhq.query.tracing.TraceSpan
 import com.orbitalhq.schemas.RemoteOperation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -187,8 +188,8 @@ class ActiveQueryMonitor(private val hazelcast: HazelcastInstance):EntryUpdatedL
 
    }
 
-   fun eventDispatcherForQuery(queryId: String, traceContext: TraceContext, handlers:List<QueryContextEventHandler> = emptyList()): QueryContextEventBroker {
-      val broker = QueryContextEventBroker(traceContext = traceContext)
+   fun eventDispatcherForQuery(queryId: String, traceSpan: TraceSpan, handlers:List<QueryContextEventHandler> = emptyList()): QueryContextEventBroker {
+      val broker = QueryContextEventBroker(traceSpan = traceSpan)
          .addHandlers(handlers)
          .addHandler(object : EstimatedRecordCountUpdateHandler {
          override fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {

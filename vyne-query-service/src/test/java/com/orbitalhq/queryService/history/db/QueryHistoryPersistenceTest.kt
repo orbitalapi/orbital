@@ -13,9 +13,11 @@ import com.orbitalhq.copilot.OpenAiChatService
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import com.orbitalhq.history.db.LineageRecordRepository
+import com.orbitalhq.history.db.PersistingTraceEventConsumer
 import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.history.db.QueryHistoryRecordRepository
 import com.orbitalhq.history.db.QueryResultRowRepository
+import com.orbitalhq.history.db.tracing.TraceEventRepository
 import com.orbitalhq.history.rest.QueryHistoryService
 import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.http.respondWith
@@ -102,7 +104,7 @@ private val logger = KotlinLogging.logger {}
 @ExperimentalCoroutinesApi
 @RunWith(SpringRunner::class)
 @ActiveProfiles("test")
-@Import(TestSpringConfig::class)
+@Import(TestSpringConfig::class, PersistingTraceEventConsumer::class)
 @SpringBootTest(
    properties = [
       "vyne.schema.publicationMethod=LOCAL",
@@ -124,6 +126,8 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       } as PostgreSQLContainer<*>
 
    }
+   @Autowired
+   lateinit var traceEventConsumer: PersistingTraceEventConsumer
 
    @MockBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
@@ -151,6 +155,8 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    @MockBean
    lateinit var licenseManager: OrbitalLicenseManager
 
+   @Autowired
+   lateinit var traceEventRepository: TraceEventRepository
 
    @Autowired
    lateinit var queryHistoryRecordRepository: QueryHistoryRecordRepository
@@ -270,6 +276,38 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
             // Why sn't this workig?
             updatedHistoryRecord.get().endTime.should.not.be.`null`
          }
+   }
+
+   @Test
+   fun `query trace events are persisted`() {
+      setupTestService(historyDbWriter)
+      val id = UUID.randomUUID().toString()
+
+      runTest {
+         val turbine =
+            queryService.submitVyneQlQueryStreamingResponse("find { Order[] } as Report[]", clientQueryId = id).testIn(this)
+
+         val first = turbine.awaitItem()
+         first.should.not.be.`null`
+         turbine.awaitComplete()
+      }
+
+      await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
+         val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
+         historyRecord != null && historyRecord.endTime != null
+      }
+
+      val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)
+      val traceEvents = traceEventRepository.findByQueryIdOrderByTimestampAsc(historyRecord!!.queryId)
+
+      historyRecord.should.not.be.`null`
+      historyRecord!!.taxiQl.should.equal("find { Order[] } as Report[]")
+      historyRecord.endTime.should.not.be.`null`
+
+      val results = resultRowRepository.findAllByQueryId(historyRecord.queryId)
+
+      results.shouldNotBeEmpty()
+
    }
 
    @Test

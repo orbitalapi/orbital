@@ -3,6 +3,73 @@ package com.orbitalhq.query.tracing
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.Type
+import mu.KotlinLogging
+import java.util.concurrent.atomic.AtomicInteger
+
+data class TraceSpan(
+   private val traceContext: TraceContext,
+   /**
+    * Represents this specific activity.
+    * A request / response would share the same spanId.
+    *
+    * (Http call request/response, Kafka subscription, etc.)
+    * Multiple events can relate to a single Span
+    * For things that are long-lived, (like Kafka), you'd have a single span for the entire subscription,
+    * with multiple tracing events.
+    */
+   val spanId: String,
+   /**
+    * Parent. Will be null for the root, otherwise should be populated
+    */
+   val parentSpanId: String?,
+) {
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
+   private val eventCount = AtomicInteger(0)
+   fun createChild(): TraceSpan {
+      val child = TraceSpan(traceContext, spanId = TracingEvent.newSpanId(), parentSpanId = this.spanId)
+      if (eventCount.get() == 0 && parentSpanId != null) {
+         logger.debug { "Child event span created without any events emitted - this could be a bug" }
+      }
+      return child
+   }
+
+   fun emitEvent(
+      kind: TracingEventKind,
+      spanState: SpanState,
+      exchangeMetadata: TracingEventExchangeMetadata,
+      /**
+       * The emitter provides identifying information (like Service, Operation),
+       * of where the event is being emitter for. This allows us to contextually exclude
+       * payloads from being captured by allowing annotations on services / operations / payload types.
+       */
+      spanEventSource: SpanEventSource,
+      eventResource: String,
+      eventVerb: String,
+      eventSourceQualifiedName: String,
+      linkedEventId: String? = null
+   ): TracingEvent {
+      this.eventCount.incrementAndGet()
+      val event = TracingEvent(
+         queryId = traceContext.queryId,
+         traceId = traceContext.traceId,
+         spanId = spanId,
+         parentSpanId = parentSpanId,
+         tracingEventKind = kind,
+         spanState = spanState,
+         exchangeMetadata = exchangeMetadata,
+         eventResource = eventResource,
+         eventVerb = eventVerb,
+         eventSourceQualifiedName = eventSourceQualifiedName,
+         linkedEventId = linkedEventId
+      )
+      this.traceContext.emitEvent(spanEventSource, event)
+      return event
+   }
+}
+
 
 data class TraceContext(
    /**
@@ -19,31 +86,25 @@ data class TraceContext(
     * event in the chain, create a new tracing id
     */
    val traceId: String,
-   /**
-    * Represents this specific activity.
-    * A request / response would share the same spanId.
-    *
-    * (Http call request/response, Kafka subscription, etc.)
-    * Multiple events can relate to a single Span
-    * For things that are long-lived, (like Kafka), you'd have a single span for the entire subscription,
-    * with multiple tracing events.
-    */
-   val spanId: String,
-   val parentSpanId: String?,
-   val eventSink: TracingEventSink
+   private val eventSink: TracingEventSink
 ) {
+   val rootSpan: TraceSpan = TraceSpan(
+      traceContext = this,
+      spanId = TracingEvent.newSpanId(),
+      parentSpanId = null
+   )
+
    companion object {
-      fun noOp():TraceContext {
+      fun noOp(): TraceContext {
          return newTrace("no-op", NoopTracingEventSink)
       }
+
       /**
        * Creates a new root trace context (no parent)
        */
       fun newTrace(queryId: String, eventSink: TracingEventSink): TraceContext {
          return TraceContext(
             traceId = TracingEvent.newTraceId(),
-            spanId = TracingEvent.newSpanId(),
-            parentSpanId = null,
             queryId = queryId,
             eventSink = eventSink
          )
@@ -59,41 +120,22 @@ data class TraceContext(
       ): TraceContext {
          return TraceContext(
             traceId = traceId,
-            spanId = TracingEvent.newSpanId(),
-            parentSpanId = null,
             queryId = queryId,
             eventSink = eventSink
          )
       }
    }
-   fun createChildSpan(): TraceContext {
-      return copy(
-         spanId = TracingEvent.newSpanId(),
-         parentSpanId = this.spanId,
-      )
-   }
 
    fun emitEvent(
-       kind: TracingEventKind,
-       spanState: SpanState,
-       exchangeMetadata: TracingEventExchangeMetadata,
-       /**
-        * The emitter provides identifying information (like Service, Operation),
-        * of where the event is being emitter for. This allows us to contextually exclude
-        * payloads from being captured by allowing annotations on services / operations / payload types.
-        */
-       emitter: EventEmitter
+      /**
+       * The emitter provides identifying information (like Service, Operation),
+       * of where the event is being emitter for. This allows us to contextually exclude
+       * payloads from being captured by allowing annotations on services / operations / payload types.
+       */
+      spanEventSource: SpanEventSource,
+      event: TracingEvent
    ) {
-      val event = TracingEvent(
-          queryId = queryId,
-          traceId = traceId,
-          spanId = spanId,
-          parentSpanId = parentSpanId,
-          tracingEventKind = kind,
-          spanState = spanState,
-          exchangeMetadata = exchangeMetadata
-      )
-      this.eventSink.emitEvent(event)
+      this.eventSink.emitEvent(spanEventSource, event)
    }
 }
 
@@ -103,10 +145,64 @@ data class TraceContext(
  * Allows us to control payload filtering by annotation on operations or operation
  * payload types
  */
-sealed interface EventEmitter
+sealed interface SpanEventSource
 
-data class OperationEventEmitter(
+data object QueryEngineSpanEventSource : SpanEventSource {
+   const val QUERY_ENGINE_RESOURCE = "Query engine"
+}
+
+data class OperationSpanEventSource(
    val service: Service,
    val operation: RemoteOperation,
-   val payloadType: Type
-) : EventEmitter
+   val payloadType: Type?
+) : SpanEventSource {
+}
+
+/**
+ * This is syntactic sugar to reduce boilerplate
+ * when emitting events.
+ */
+class OperationTraceSpan(
+   private val traceSpan: TraceSpan,
+   private val service: Service,
+   private val operation: RemoteOperation,
+   /**
+    * A human readable name for the resource that this event relates to.
+    * Could be a table name, topic, url, etc.
+    */
+   private val eventResourceName: String
+) {
+   fun emitEvent(
+      kind: TracingEventKind,
+      spanState: SpanState,
+      /**
+       * The payload of the request / response, if applicable.
+       * If passed, this will be used to determine event emission behaviour
+       * (based on annotations present on the type).
+       */
+      payloadType: Type?,
+      exchangeMetadata: TracingEventExchangeMetadata,
+      /**
+       * A verb, as determined by the event emitter, that provides a succinct description of
+       * what this event was.
+       * eg: "Subscribe", "Disconnect", "Receive", "Get", "Post", "Invoke", etc.
+       */
+      verb: String,
+
+      /**
+       * Indicates that this event was triggered by the provided event.
+       * Normally used when linking the start of a projection to a
+       * source message
+       */
+      linkedEventId: String? = null
+   ): TracingEvent = traceSpan.emitEvent(
+      kind,
+      spanState,
+      exchangeMetadata,
+      OperationSpanEventSource(service, operation, payloadType),
+      eventSourceQualifiedName = operation.qualifiedName.fullyQualifiedName,
+      eventResource = eventResourceName,
+      eventVerb = verb,
+      linkedEventId = linkedEventId
+   )
+}
