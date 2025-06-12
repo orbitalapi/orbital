@@ -67,6 +67,36 @@ $label-column-width: 300px;
   overflow-y: auto;
   flex-basis: auto;
   height: 10px; // any height to comply with flexing, will grow
+  position: relative; // For absolute positioning of SVG
+}
+
+.connection-lines-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none; // Allow clicks to pass through to spans
+  z-index: 1; // Above spans but below event markers
+}
+
+.connection-line {
+  stroke: $slate-600;
+  stroke-dasharray: 3, 2;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+
+  &.error-connection {
+    stroke: $red-500;
+    stroke-width: 3;
+    opacity: 0.7;
+  }
+}
+
+.arrow-marker {
+  fill: $slate-600;
+
+  .error-connection + defs .arrow-marker {
+    fill: $red-500;
+  }
 }
 
 .span-row {
@@ -341,5 +371,21 @@ $label-column-width: 300px;
   .empty-state {
     border-color: $slate-700;
     color: $slate-400;
+  }
+
+  .connection-line {
+    stroke: $slate-400;
+
+    &.error-connection {
+      stroke: $red-400;
+    }
+  }
+
+  .arrow-marker {
+    fill: $slate-400;
+
+    .error-connection + defs .arrow-marker {
+      fill: $red-400;
+    }
   }
 }

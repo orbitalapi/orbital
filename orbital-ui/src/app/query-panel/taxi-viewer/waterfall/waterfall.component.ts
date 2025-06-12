@@ -7,9 +7,14 @@ import {
   SimpleChanges,
   input,
   computed,
-  effect
+  effect,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+  HostListener,
+  ChangeDetectorRef
 } from "@angular/core";
-import { TraceEventRow, TraceSpanRecord } from "src/app/services/query.service";
+import { TraceSpanRecord, TraceEventRow } from "src/app/services/query.service";
 import { NgForOf, NgIf } from "@angular/common";
 
 interface WaterfallSpan extends TraceSpanRecord {
@@ -23,6 +28,14 @@ interface EventMarker {
   event: TraceEventRow;
   positionPercent: number;
   isLinked: boolean;
+}
+
+interface ConnectionLine {
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
+  isError: boolean;
 }
 
 @Component({
@@ -49,12 +62,47 @@ interface EventMarker {
       </div>
 
       <!-- Spans -->
-      <div class="spans-container">
+      <div class="spans-container" #spansContainer>
+        <!-- SVG overlay for connection lines -->
+        <svg
+          class="connection-lines-svg"
+          [attr.width]="svgWidth"
+          [attr.height]="svgHeight"
+          *ngIf="connectionLines.length > 0">
+          <line
+            *ngFor="let line of connectionLines"
+            [attr.x1]="line.x1"
+            [attr.y1]="line.y1"
+            [attr.x2]="line.x2"
+            [attr.y2]="line.y2"
+            class="connection-line"
+            [class.error-connection]="line.isError"
+            stroke-width="2"
+            marker-end="url(#arrowhead)">
+          </line>
+
+          <!-- Arrow marker definition -->
+          <defs>
+            <marker
+              id="arrowhead"
+              markerWidth="6"
+              markerHeight="4"
+              refX="5"
+              refY="2"
+              orient="auto">
+              <polygon
+                points="0 0, 6 2, 0 4"
+                class="arrow-marker" />
+            </marker>
+          </defs>
+        </svg>
+
         <div
-          *ngFor="let span of waterfallSpans; trackBy: trackBySpanId"
+          *ngFor="let span of waterfallSpans; let spanIndex = index; trackBy: trackBySpanId"
           class="span-row"
           [class.has-errors]="span.hasErrors"
           [class.incomplete]="!span.isComplete"
+          [attr.data-span-index]="spanIndex"
           (click)="onSpanClick(span)">
 
           <!-- Span label with indentation -->
@@ -77,11 +125,14 @@ interface EventMarker {
 
               <!-- Event markers for all events in the span -->
               <div
-                *ngFor="let marker of span.eventMarkers; trackBy: trackByEventId"
+                *ngFor="let marker of span.eventMarkers; let eventIndex = index; trackBy: trackByEventId"
                 class="event-marker"
                 [class.linked-event]="marker.isLinked"
                 [class.error-event]="marker.event.tracingEventKind === 'ERROR'"
                 [style.left.%]="marker.positionPercent"
+                [attr.data-event-id]="marker.event.eventId"
+                [attr.data-span-index]="spanIndex"
+                [attr.data-event-index]="eventIndex"
                 [title]="getEventTooltip(marker.event)">
               </div>
             </div>
@@ -103,7 +154,7 @@ interface EventMarker {
   `,
   styleUrl: './waterfall.component.scss'
 })
-export class WaterfallComponent {
+export class WaterfallComponent implements AfterViewInit {
 
   spanInitialPadding = 8; // pixels.
   spanStepPadding = 20; // pixels. Additional padding for each level of nesting
@@ -113,18 +164,43 @@ export class WaterfallComponent {
   maxLabelWidth = input<number>(300);// pixels
 
   @Output() spanClick = new EventEmitter<TraceSpanRecord>();
+  @ViewChild('spansContainer', { static: false }) spansContainer!: ElementRef<HTMLDivElement>;
 
   waterfallSpans: WaterfallSpan[] = [];
   timeMarkers: { position: number; label: string }[] = [];
   totalDurationMs: number = 0;
   errorCount: number = 0;
+  connectionLines: ConnectionLine[] = [];
+  svgWidth: number = 0;
+  svgHeight: number = 0;
 
 
-  constructor() {
+  constructor(private cdr: ChangeDetectorRef) {
     effect(() => {
       const spans = this.traceSpans();
-      this.calculateWaterfallData(spans)
+      this.calculateWaterfallData(spans);
+      // Use longer delay to ensure DOM is fully rendered
+      setTimeout(() => {
+        this.calculateConnectionLines();
+        this.cdr.detectChanges(); // Force change detection
+      }, 50);
     })
+  }
+
+  ngAfterViewInit() {
+    // Calculate once after view is initialized
+    setTimeout(() => {
+      this.calculateConnectionLines();
+      this.cdr.detectChanges();
+    }, 100);
+  }
+
+  @HostListener('window:resize')
+  onWindowResize() {
+    setTimeout(() => {
+      this.calculateConnectionLines();
+      this.cdr.detectChanges();
+    }, 10);
   }
 
 
@@ -284,6 +360,76 @@ export class WaterfallComponent {
 
   onSpanClick(span: TraceSpanRecord): void {
     this.spanClick.emit(span);
+  }
+
+  private calculateConnectionLines(): void {
+    if (!this.spansContainer || this.waterfallSpans.length === 0) {
+      this.connectionLines = [];
+      this.svgWidth = 0;
+      this.svgHeight = 0;
+      return;
+    }
+
+    const container = this.spansContainer.nativeElement;
+
+    // Ensure container has rendered content
+    if (container.scrollWidth === 0 || container.scrollHeight === 0) {
+      // Retry after a short delay if container isn't ready
+      setTimeout(() => this.calculateConnectionLines(), 10);
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+
+    // Update SVG dimensions
+    this.svgWidth = container.scrollWidth;
+    this.svgHeight = container.scrollHeight;
+
+    const lines: ConnectionLine[] = [];
+    const eventIdToPosition = new Map<string, { x: number; y: number; isError: boolean }>();
+
+    // First pass: collect all event positions
+    this.waterfallSpans.forEach((span, spanIndex) => {
+      span.eventMarkers.forEach((marker, eventIndex) => {
+        const eventElement = container.querySelector(
+          `[data-span-index="${spanIndex}"] [data-event-index="${eventIndex}"]`
+        ) as HTMLElement;
+
+        if (eventElement) {
+          const eventRect = eventElement.getBoundingClientRect();
+          const relativeX = eventRect.left - containerRect.left + eventElement.offsetWidth / 2;
+          const relativeY = eventRect.top - containerRect.top + eventElement.offsetHeight / 2;
+
+          eventIdToPosition.set(marker.event.eventId, {
+            x: relativeX,
+            y: relativeY,
+            isError: marker.event.tracingEventKind === 'ERROR'
+          });
+        }
+      });
+    });
+
+    // Second pass: create lines for linked events
+    this.waterfallSpans.forEach(span => {
+      span.eventMarkers.forEach(marker => {
+        if (marker.event.linkedEventId) {
+          const sourcePos = eventIdToPosition.get(marker.event.linkedEventId);
+          const targetPos = eventIdToPosition.get(marker.event.eventId);
+
+          if (sourcePos && targetPos) {
+            lines.push({
+              x1: sourcePos.x,
+              y1: sourcePos.y,
+              x2: targetPos.x,
+              y2: targetPos.y,
+              isError: sourcePos.isError || targetPos.isError
+            });
+          }
+        }
+      });
+    });
+
+    this.connectionLines = lines;
   }
 
   trackBySpanId(index: number, span: WaterfallSpan): string {
