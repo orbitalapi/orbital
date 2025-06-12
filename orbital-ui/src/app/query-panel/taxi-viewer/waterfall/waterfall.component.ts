@@ -1,21 +1,18 @@
 import {
-  Component,
-  EventEmitter,
-  Input,
-  OnChanges,
-  Output,
-  SimpleChanges,
-  input,
-  computed,
-  effect,
-  ViewChild,
-  ElementRef,
   AfterViewInit,
+  ChangeDetectorRef,
+  Component,
+  effect,
+  ElementRef,
+  EventEmitter,
   HostListener,
-  ChangeDetectorRef
+  input,
+  Output,
+  ViewChild
 } from "@angular/core";
-import { TraceSpanRecord, TraceEventRow } from "src/app/services/query.service";
-import { NgForOf, NgIf, DatePipe, JsonPipe } from "@angular/common";
+import { TraceEventRow, TraceSpanRecord } from "src/app/services/query.service";
+import { NgForOf, NgIf } from "@angular/common";
+import { TraceDetailComponent } from "src/app/query-panel/taxi-viewer/waterfall/trace-detail.component";
 
 interface WaterfallSpan extends TraceSpanRecord {
   depth: number;
@@ -44,8 +41,7 @@ interface ConnectionLine {
   imports: [
     NgIf,
     NgForOf,
-    DatePipe,
-    JsonPipe
+    TraceDetailComponent
   ],
   template: `
     <div class="waterfall-container" *ngIf="waterfallSpans.length > 0">
@@ -145,156 +141,12 @@ interface ConnectionLine {
       </div>
 
       <!-- Detail Panel -->
-      <div class="detail-panel" *ngIf="showDetailPanel">
-        <div class="detail-header">
-          <h3 class="detail-title">{{ getDetailTitle() }}</h3>
-          <button class="close-button" (click)="closeDetailPanel()" title="Close">
-            <span>&times;</span>
-          </button>
-        </div>
-
-        <div class="detail-content">
-          <!-- Span Details -->
-          <div *ngIf="isSpanSelected()" class="span-details">
-            <div class="detail-section">
-              <h4>Span Information</h4>
-              <div class="detail-row">
-                <label>Span ID:</label>
-                <span class="mono">{{ getSelectedSpan()!.spanId }}</span>
-              </div>
-              <div class="detail-row">
-                <label>Parent Span:</label>
-                <span class="mono">{{ getSelectedSpan()!.parentSpanId || 'None' }}</span>
-              </div>
-              <div class="detail-row">
-                <label>Resource:</label>
-                <span>{{ getSelectedSpan()!.eventResource }}</span>
-              </div>
-              <div class="detail-row">
-                <label>Verb:</label>
-                <span>{{ getSelectedSpan()!.eventVerb }}</span>
-              </div>
-              <div class="detail-row">
-                <label>Source:</label>
-                <span>{{ getSelectedSpan()!.eventSourceQualifiedName }}</span>
-              </div>
-            </div>
-
-            <div class="detail-section">
-              <h4>Timing</h4>
-              <div class="detail-row">
-                <label>Start Time:</label>
-                <span>{{ getSelectedSpan()!.firstEventTimestamp | date:'medium' }}</span>
-              </div>
-              <div class="detail-row">
-                <label>End Time:</label>
-                <span>{{ getSelectedSpan()!.lastEventTimestamp | date:'medium' }}</span>
-              </div>
-              <div class="detail-row">
-                <label>Duration:</label>
-                <span>{{ formatDuration(getSelectedSpan()!.durationMs) }}</span>
-              </div>
-              <div class="detail-row">
-                <label>Offset:</label>
-                <span>{{ formatDuration(getSelectedSpan()!.offsetMs) }}</span>
-              </div>
-            </div>
-
-            <div class="detail-section">
-              <h4>Status</h4>
-              <div class="detail-row">
-                <label>Complete:</label>
-                <span class="status-badge" [class.complete]="getSelectedSpan()!.isComplete" [class.incomplete]="!getSelectedSpan()!.isComplete">
-                  {{ getSelectedSpan()!.isComplete ? 'Yes' : 'No' }}
-                </span>
-              </div>
-              <div class="detail-row">
-                <label>Has Errors:</label>
-                <span class="status-badge" [class.error]="getSelectedSpan()!.hasErrors" [class.success]="!getSelectedSpan()!.hasErrors">
-                  {{ getSelectedSpan()!.hasErrors ? 'Yes' : 'No' }}
-                </span>
-              </div>
-            </div>
-
-            <div class="detail-section">
-              <h4>Events ({{ getSelectedSpan()!.events.length }})</h4>
-              <div class="events-list">
-                <div
-                  *ngFor="let event of getSelectedSpan()!.events; trackBy: trackByEventRowId"
-                  class="event-item"
-                  [class.error-event]="event.tracingEventKind === 'ERROR'"
-                  (click)="onEventClick($event, event)">
-                  <div class="event-summary">
-                    <span class="event-verb">{{ event.eventVerb }}</span>
-                    <span class="event-resource">{{ event.eventResource }}</span>
-                    <span class="event-time">{{ event.timestamp | date:'HH:mm:ss.SSS' }}</span>
-                  </div>
-                  <div class="event-meta">
-                    <span class="event-kind">{{ event.tracingEventKind }}</span>
-                    <span class="event-state">{{ event.spanState }}</span>
-                    <span *ngIf="event.linkedEventId" class="linked-indicator">🔗 Linked</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Event Details -->
-          <div *ngIf="isEventSelected()" class="event-details">
-            <div class="detail-section">
-              <h4>Event Information</h4>
-              <div class="detail-row">
-                <label>Event ID:</label>
-                <span class="mono">{{ getSelectedEvent()!.eventId }}</span>
-              </div>
-              <div class="detail-row">
-                <label>Span ID:</label>
-                <span class="mono">{{ getSelectedEvent()!.spanId }}</span>
-              </div>
-              <div class="detail-row">
-                <label>Resource:</label>
-                <span>{{ getSelectedEvent()!.eventResource }}</span>
-              </div>
-              <div class="detail-row">
-                <label>Verb:</label>
-                <span>{{ getSelectedEvent()!.eventVerb }}</span>
-              </div>
-              <div class="detail-row">
-                <label>Source:</label>
-                <span>{{ getSelectedEvent()!.eventSourceQualifiedName }}</span>
-              </div>
-            </div>
-
-            <div class="detail-section">
-              <h4>Status & Timing</h4>
-              <div class="detail-row">
-                <label>Kind:</label>
-                <span class="status-badge" [class.error]="getSelectedEvent()!.tracingEventKind === 'ERROR'" [class.success]="getSelectedEvent()!.tracingEventKind === 'OK'">
-                  {{ getSelectedEvent()!.tracingEventKind }}
-                </span>
-              </div>
-              <div class="detail-row">
-                <label>State:</label>
-                <span>{{ getSelectedEvent()!.spanState }}</span>
-              </div>
-              <div class="detail-row">
-                <label>Timestamp:</label>
-                <span>{{ getSelectedEvent()!.timestamp | date:'medium' }}</span>
-              </div>
-              <div class="detail-row" *ngIf="getSelectedEvent()!.linkedEventId">
-                <label>Linked Event:</label>
-                <span class="mono">{{ getSelectedEvent()!.linkedEventId }}</span>
-              </div>
-            </div>
-
-            <div class="detail-section" *ngIf="getSelectedEvent()!.exchangeMetadata">
-              <h4>Metadata</h4>
-              <pre class="metadata-content">{{ getSelectedEvent()!.exchangeMetadata | json }}</pre>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      <app-trace-detail
+        *ngIf="showDetailPanel"
+        [selectedItem]="selectedItem"
+        (close)="closeDetailPanel()"
+        (eventClick)="onEventClickFromDetail($event)">
+      </app-trace-detail>
       <!-- Summary -->
       <div class="waterfall-summary" *ngIf="showSummary">
         <span>Total: {{ waterfallSpans.length }} spans</span>
@@ -466,18 +318,6 @@ export class WaterfallComponent implements AfterViewInit {
     }
   }
 
-  formatDuration(ms: number): string {
-    if (ms < 1000) {
-      return `${Math.round(ms)}ms`;
-    } else if (ms < 60000) {
-      return `${(ms / 1000).toFixed(2)}s`;
-    } else {
-      const minutes = Math.floor(ms / 60000);
-      const seconds = ((ms % 60000) / 1000).toFixed(1);
-      return `${minutes}m ${seconds}s`;
-    }
-  }
-
   getSpanDisplayName(span: TraceSpanRecord): string {
     return `${span.eventVerb} ${span.eventResource}`;
   }
@@ -606,6 +446,11 @@ export class WaterfallComponent implements AfterViewInit {
     this.eventClick.emit(eventItem);
   }
 
+  onEventClickFromDetail(event: TraceEventRow): void {
+    this.selectedItem = event;
+    // Keep the detail panel open, just switch to showing the event
+  }
+
   closeDetailPanel(): void {
     this.showDetailPanel = false;
     this.selectedItem = null;
@@ -619,25 +464,6 @@ export class WaterfallComponent implements AfterViewInit {
     return this.selectedItem !== null && 'eventId' in this.selectedItem && !('events' in this.selectedItem);
   }
 
-  getSelectedSpan(): TraceSpanRecord | null {
-    return this.isSpanSelected() ? this.selectedItem as TraceSpanRecord : null;
-  }
-
-  getSelectedEvent(): TraceEventRow | null {
-    return this.isEventSelected() ? this.selectedItem as TraceEventRow : null;
-  }
-
-  getDetailTitle(): string {
-    if (this.isSpanSelected()) {
-      const span = this.getSelectedSpan()!;
-      return `${span.eventVerb} ${span.eventResource}`;
-    } else if (this.isEventSelected()) {
-      const event = this.getSelectedEvent()!;
-      return `${event.eventVerb} ${event.eventResource}`;
-    }
-    return 'Details';
-  }
-
   trackBySpanId(index: number, span: WaterfallSpan): string {
     return span.spanId;
   }
@@ -645,7 +471,22 @@ export class WaterfallComponent implements AfterViewInit {
   trackByEventId(index: number, marker: EventMarker): string {
     return marker.event.eventId;
   }
-  trackByEventRowId(index: number, event: TraceEventRow): string {
-    return event.eventId;
+
+  formatDuration(ms: number): string {
+    return formatDuration(ms);
+  }
+
+}
+
+
+export function formatDuration(ms: number): string {
+  if (ms < 1000) {
+    return `${Math.round(ms)}ms`;
+  } else if (ms < 60000) {
+    return `${(ms / 1000).toFixed(2)}s`;
+  } else {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = ((ms % 60000) / 1000).toFixed(1);
+    return `${minutes}m ${seconds}s`;
   }
 }
