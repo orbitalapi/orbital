@@ -195,8 +195,58 @@ export class QueryService {
   getQuerySankeyChartDataFromClientId(clientQueryId: string): Observable<QuerySankeyChartRow[]> {
     return this.http.get<QuerySankeyChartRow[]>(`${this.environment.serverUrl}/api/query/history/clientId/${clientQueryId}/sankey`);
   }
+}
 
+/**
+ * Transforms all date strings in TraceSpanRecord[] to actual Date objects.
+ * Recursively processes nested children and events.
+ */
+function transformTraceSpanDates(spans: TraceSpanRecord[]): TraceSpanRecord[] {
+  return spans.map(span => transformSingleTraceSpan(span));
+}
 
+/**
+ * Transforms a single TraceSpanRecord, converting all date strings to Date objects
+ */
+function transformSingleTraceSpan(span: TraceSpanRecord): TraceSpanRecord {
+  return {
+    ...span,
+    // Transform span-level dates
+    traceStartTime: transformToDate(span.traceStartTime),
+    firstEventTimestamp: transformToDate(span.firstEventTimestamp),
+    lastEventTimestamp: transformToDate(span.lastEventTimestamp),
+    spanStartTimestamp: span.spanStartTimestamp ? transformToDate(span.spanStartTimestamp) : null,
+    spanEndTimestamp: span.spanEndTimestamp ? transformToDate(span.spanEndTimestamp) : null,
+
+    // Transform events
+    events: span.events.map(event => transformTraceEvent(event)),
+
+    // Recursively transform children
+    children: span.children.map(child => transformSingleTraceSpan(child))
+  };
+}
+
+/**
+ * Transforms a single TraceEventRow, converting timestamp to Date object
+ */
+function transformTraceEvent(event: TraceEventRow): TraceEventRow {
+  return {
+    ...event,
+    timestamp: transformToDate(event.timestamp)
+  };
+}
+
+/**
+ * Safely converts a string or Date to a Date object
+ */
+function transformToDate(value: string | Date): Date {
+  if (value instanceof Date) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    return new Date(value);
+  }
+  throw new Error(`Invalid date value: ${value}`);
 }
 
 export function convertRemoteCallTimestampsToDates(profileData: QueryProfileData): QueryProfileData {
@@ -214,6 +264,8 @@ export function convertRemoteCallTimestampsToDates(profileData: QueryProfileData
         return 0;
     }
   });
+  const transformedSpans = transformTraceSpanDates(profileData.traceSpans)
+  profileData.traceSpans = transformedSpans;
   return profileData;
 }
 export interface LineageRecord {

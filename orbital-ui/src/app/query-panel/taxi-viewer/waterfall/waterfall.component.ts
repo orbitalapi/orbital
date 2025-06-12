@@ -9,13 +9,20 @@ import {
   computed,
   effect
 } from "@angular/core";
-import { TraceSpanRecord } from "src/app/services/query.service";
+import { TraceEventRow, TraceSpanRecord } from "src/app/services/query.service";
 import { NgForOf, NgIf } from "@angular/common";
 
 interface WaterfallSpan extends TraceSpanRecord {
   depth: number;
   leftPercent: number;
   widthPercent: number;
+  eventMarkers: EventMarker[];
+}
+
+interface EventMarker {
+  event: TraceEventRow;
+  positionPercent: number;
+  isLinked: boolean;
 }
 
 @Component({
@@ -68,16 +75,14 @@ interface WaterfallSpan extends TraceSpanRecord {
               [style.width.%]="span.widthPercent"
               [title]="getSpanTooltip(span)">
 
-              <!-- Start marker -->
+              <!-- Event markers for all events in the span -->
               <div
-                *ngIf="span.spanStartTimestamp"
-                class="span-marker start-marker">
-              </div>
-
-              <!-- End marker -->
-              <div
-                *ngIf="span.spanEndTimestamp"
-                class="span-marker end-marker">
+                *ngFor="let marker of span.eventMarkers; trackBy: trackByEventId"
+                class="event-marker"
+                [class.linked-event]="marker.isLinked"
+                [class.error-event]="marker.event.tracingEventKind === 'ERROR'"
+                [style.left.%]="marker.positionPercent"
+                [title]="getEventTooltip(marker.event)">
               </div>
             </div>
           </div>
@@ -146,11 +151,15 @@ export class WaterfallComponent {
       const leftPercent = this.totalDurationMs > 0 ? (span.offsetMs / this.totalDurationMs) * 100 : 0;
       const widthPercent = this.totalDurationMs > 0 ? (span.durationMs / this.totalDurationMs) * 100 : 0;
 
+      // Calculate event markers for this span
+      const eventMarkers = this.calculateEventMarkers(span);
+
       return {
         ...span,
         depth,
         leftPercent: Math.max(0, leftPercent),
-        widthPercent: Math.max(0.1, widthPercent) // Minimum width for visibility
+        widthPercent: Math.max(0.1, widthPercent), // Minimum width for visibility
+        eventMarkers
       };
     });
 
@@ -159,6 +168,30 @@ export class WaterfallComponent {
 
     // Generate time markers
     this.generateTimeMarkers();
+  }
+
+  private calculateEventMarkers(span: TraceSpanRecord): EventMarker[] {
+    if (!span.events || span.events.length === 0) {
+      return [];
+    }
+
+    const spanStartMs = span.offsetMs;
+    const spanDurationMs = span.durationMs;
+
+    return span.events.map(event => {
+      // Calculate event position relative to the trace start
+      const eventOffsetMs = (event.timestamp.getTime() - span.traceStartTime.getTime());
+      // Calculate position within the span bar (0-100%)
+      const positionWithinSpan = spanDurationMs > 0
+        ? ((eventOffsetMs - spanStartMs) / spanDurationMs) * 100
+        : 0;
+
+      return {
+        event,
+        positionPercent: Math.max(0, Math.min(100, positionWithinSpan)),
+        isLinked: !!event.linkedEventId
+      };
+    });
   }
 
   private flattenSpansWithDepth(spans: TraceSpanRecord[], depth: number = 0): { span: TraceSpanRecord; depth: number }[] {
@@ -233,11 +266,31 @@ export class WaterfallComponent {
     return lines.join('\n');
   }
 
+  getEventTooltip(event: TraceEventRow): string {
+    const lines = [
+      `Event: ${event.eventId}`,
+      `${event.eventVerb} ${event.eventResource}`,
+      `Kind: ${event.tracingEventKind}`,
+      `State: ${event.spanState}`,
+      `Time: ${event.timestamp.toISOString()}`
+    ];
+
+    if (event.linkedEventId) {
+      lines.push(`Linked to: ${event.linkedEventId}`);
+    }
+
+    return lines.join('\n');
+  }
+
   onSpanClick(span: TraceSpanRecord): void {
     this.spanClick.emit(span);
   }
 
   trackBySpanId(index: number, span: WaterfallSpan): string {
     return span.spanId;
+  }
+
+  trackByEventId(index: number, marker: EventMarker): string {
+    return marker.event.eventId;
   }
 }

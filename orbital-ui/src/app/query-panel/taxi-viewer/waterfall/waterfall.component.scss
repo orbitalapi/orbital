@@ -163,22 +163,45 @@ $label-column-width: 300px;
   }
 }
 
-.span-marker {
+.event-marker {
   position: absolute;
   top: 50%;
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
-  background: $background-primary;
-  transform: translateY(-50%);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2);
+  background: $white;
+  border: 2px solid $blue-500;
+  transform: translateY(-50%) translateX(-50%);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: all 0.15s ease;
+  z-index: 2;
 
-  &.start-marker {
-    left: 2px;
+  &:hover {
+    transform: translateY(-50%) translateX(-50%) scale(1.2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   }
 
-  &.end-marker {
-    right: 2px;
+  &.linked-event {
+    border-color: $purple-500;
+    background: $purple-50;
+    box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.2), 0 1px 3px rgba(0, 0, 0, 0.2);
+  }
+
+  &.error-event {
+    border-color: $red-500;
+    background: $red-50;
+
+    &::after {
+      content: '!';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 8px;
+      font-weight: bold;
+      color: $red-600;
+      line-height: 1;
+    }
   }
 }
 
@@ -283,6 +306,26 @@ $label-column-width: 300px;
 
   .span-duration {
     color: $slate-400;
+  }
+
+  .event-marker {
+    background: $slate-800;
+    border-color: $blue-400;
+
+    &.linked-event {
+      border-color: $purple-400;
+      background: $purple-900;
+      box-shadow: 0 0 0 2px rgba(167, 139, 250, 0.2), 0 1px 3px rgba(0, 0, 0, 0.4);
+    }
+
+    &.error-event {
+      border-color: $red-400;
+      background: $red-900;
+
+      &::after {
+        color: $red-400;
+      }
+    }
   }
 
   .waterfall-summary {
