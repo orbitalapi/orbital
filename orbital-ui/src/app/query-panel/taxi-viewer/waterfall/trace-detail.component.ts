@@ -1,12 +1,11 @@
 import { Component, EventEmitter, Input, Output } from "@angular/core";
 import { TraceSpanRecord, TraceEventRow } from "src/app/services/query.service";
-import { NgForOf, NgIf, DatePipe, JsonPipe } from "@angular/common";
-import { formatDuration } from "src/app/query-panel/taxi-viewer/waterfall/waterfall.component";
+import { NgForOf, NgIf, DatePipe, JsonPipe, NgSwitch, NgSwitchCase } from "@angular/common";
 
 @Component({
   selector: 'app-trace-detail',
   standalone: true,
-  imports: [NgIf, NgForOf, DatePipe, JsonPipe],
+  imports: [NgIf, NgForOf, DatePipe, JsonPipe, NgSwitch, NgSwitchCase],
   template: `
     <div class="detail-panel">
       <div class="detail-header">
@@ -152,7 +151,27 @@ import { formatDuration } from "src/app/query-panel/taxi-viewer/waterfall/waterf
 
           <div class="detail-section" *ngIf="getSelectedEvent()!.exchangeMetadata">
             <h4>Metadata</h4>
-            <pre class="metadata-content">{{ getSelectedEvent()!.exchangeMetadata | json }}</pre>
+
+            <!-- Other metadata properties (excluding type and payload) -->
+            <div class="metadata-table" *ngIf="getFilteredMetadata().length > 0">
+              <div class="metadata-row" *ngFor="let item of getFilteredMetadata()">
+                <div class="metadata-key">{{ item.key }}</div>
+                <div class="metadata-value">{{ item.value }}</div>
+              </div>
+            </div>
+
+            <!-- Payload section -->
+            <div class="payload-section" *ngIf="hasPayload()">
+              <h5>Payload</h5>
+              <div class="payload-content" [ngSwitch]="getPayloadType()">
+                <!-- JSON payload -->
+                <pre *ngSwitchCase="'json'" class="payload-json">{{ getFormattedPayload() }}</pre>
+                <!-- String payload -->
+                <div *ngSwitchCase="'string'" class="payload-string">{{ getPayloadString() }}</div>
+                <!-- Null payload -->
+                <div *ngSwitchCase="'null'" class="payload-null">No payload</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -189,10 +208,6 @@ export class TraceDetailComponent {
     return this.isEventSelected() ? this.selectedItem as TraceEventRow : null;
   }
 
-  formatDuration(ms: number): string {
-    return formatDuration(ms)
-  }
-
   getDetailTitle(): string {
     if (this.isSpanSelected()) {
       const span = this.getSelectedSpan()!;
@@ -204,9 +219,97 @@ export class TraceDetailComponent {
     return 'Details';
   }
 
-
+  formatDuration(ms: number): string {
+    if (ms < 1000) {
+      return `${Math.round(ms)}ms`;
+    } else if (ms < 60000) {
+      return `${(ms / 1000).toFixed(2)}s`;
+    } else {
+      const minutes = Math.floor(ms / 60000);
+      const seconds = ((ms % 60000) / 1000).toFixed(1);
+      return `${minutes}m ${seconds}s`;
+    }
+  }
 
   trackByEventRowId(index: number, event: TraceEventRow): string {
     return event.eventId;
+  }
+
+  getFilteredMetadata(): Array<{key: string, value: any}> {
+    const event = this.getSelectedEvent();
+    if (!event?.exchangeMetadata) return [];
+
+    return Object.entries(event.exchangeMetadata)
+      .filter(([key]) => key !== 'type' && key !== 'payload')
+      .map(([key, value]) => ({ key, value: this.formatMetadataValue(value) }));
+  }
+
+  private formatMetadataValue(value: any): string {
+    if (value === null || value === undefined) return 'null';
+    if (typeof value === 'object') return JSON.stringify(value);
+    return String(value);
+  }
+
+  hasPayload(): boolean {
+    const event = this.getSelectedEvent();
+    return event?.exchangeMetadata && 'payload' in event.exchangeMetadata;
+  }
+
+  getPayloadType(): 'json' | 'string' | 'null' {
+    const event = this.getSelectedEvent();
+    if (!event?.exchangeMetadata) return 'null';
+
+    const payload = event.exchangeMetadata.payload;
+    if (payload === null || payload === undefined) return 'null';
+
+    if (typeof payload === 'string') {
+      // Try to detect if it's a JSON-escaped string
+      if (payload.trim().startsWith('{') || payload.trim().startsWith('[')) {
+        try {
+          JSON.parse(payload);
+          return 'json';
+        } catch {
+          // Could be truncated JSON, still treat as JSON for display
+          return 'json';
+        }
+      }
+      return 'string';
+    }
+
+    // If it's already an object, treat as JSON
+    if (typeof payload === 'object') return 'json';
+
+    return 'string';
+  }
+
+  getFormattedPayload(): string {
+    const event = this.getSelectedEvent();
+    if (!event?.exchangeMetadata) return '';
+
+    const payload = event.exchangeMetadata.payload;
+    if (typeof payload === 'string') {
+      try {
+        // Try to parse and re-stringify for proper formatting
+        const parsed = JSON.parse(payload);
+        return JSON.stringify(parsed, null, 2);
+      } catch {
+        // If parsing fails (e.g., truncated), return the raw string with basic formatting
+        return payload;
+      }
+    }
+
+    if (typeof payload === 'object') {
+      return JSON.stringify(payload, null, 2);
+    }
+
+    return String(payload);
+  }
+
+  getPayloadString(): string {
+    const event = this.getSelectedEvent();
+    if (!event?.exchangeMetadata) return '';
+
+    const payload = event.exchangeMetadata.payload;
+    return String(payload);
   }
 }

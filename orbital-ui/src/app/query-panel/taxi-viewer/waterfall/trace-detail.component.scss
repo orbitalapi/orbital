@@ -95,7 +95,7 @@ $text-muted: $slate-500;
 }
 
 .mono {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-family: $mono;
   font-size: 11px;
   background: $slate-100;
   padding: 2px 6px;
@@ -169,7 +169,7 @@ $text-muted: $slate-500;
   }
 
   .event-time {
-    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-family: $mono;
     font-size: 11px;
     color: $text-muted;
     margin-left: auto;
@@ -219,6 +219,86 @@ $text-muted: $slate-500;
   max-height: 200px;
   overflow: auto;
   border: 1px solid $slate-200;
+}
+
+.metadata-table {
+  border: 1px solid $slate-200;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.metadata-row {
+  display: flex;
+  border-bottom: 1px solid $slate-200;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+.metadata-key {
+  background: $slate-100;
+  padding: 8px 12px;
+  font-weight: 500;
+  color: $text-secondary;
+  min-width: 120px;
+  border-right: 1px solid $slate-200;
+  font-size: 11px;
+}
+
+.metadata-value {
+  padding: 8px 12px;
+  color: $text-primary;
+  font-family: $mono;
+  font-size: 11px;
+  word-break: break-all;
+  flex: 1;
+}
+
+.payload-section {
+  h5 {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: $text-primary;
+  }
+}
+
+.payload-content {
+  border: 1px solid $slate-200;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.payload-json {
+  background: $slate-50;
+  padding: 12px;
+  font-size: 11px;
+  max-height: 300px;
+  overflow: auto;
+  margin: 0;
+  font-family: $mono;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.payload-string {
+  background: $slate-50;
+  padding: 12px;
+  font-size: 11px;
+  max-height: 200px;
+  overflow: auto;
+  font-family: $mono;
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.payload-null {
+  padding: 12px;
+  color: $text-muted;
+  font-style: italic;
+  text-align: center;
 }
 
 // Dark mode support
@@ -341,5 +421,41 @@ $text-muted: $slate-500;
     background: $slate-800;
     border-color: $slate-700;
     color: $slate-200;
+  }
+
+  .metadata-table {
+    border-color: $slate-700;
+  }
+
+  .metadata-row {
+    border-color: $slate-700;
+  }
+
+  .metadata-key {
+    background: $slate-800;
+    color: $slate-400;
+    border-color: $slate-700;
+  }
+
+  .metadata-value {
+    color: $slate-200;
+  }
+
+  .payload-section h5 {
+    color: $slate-100;
+  }
+
+  .payload-content {
+    border-color: $slate-700;
+  }
+
+  .payload-json,
+  .payload-string {
+    background: $slate-800;
+    color: $slate-200;
+  }
+
+  .payload-null {
+    color: $slate-500;
   }
 }
