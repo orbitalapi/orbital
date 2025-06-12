@@ -1,5 +1,6 @@
 package com.orbitalhq.query.history.tracing
 
+import com.fasterxml.jackson.annotation.JsonRawValue
 import com.orbitalhq.models.serde.ZonedDateTimeTimeSerializer
 import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.query.tracing.TracingEventExchangeMetadata
@@ -48,6 +49,7 @@ data class TraceEventRow(
 
    @Column(name = "exchange_metadata", columnDefinition = "jsonb")
    @JdbcTypeCode(SqlTypes.JSON)
+   @JsonRawValue
    val exchangeMetadata: String,
 
    /**
