@@ -3,15 +3,23 @@ package com.orbitalhq.connectors.nosql.mongodb
 import com.orbitalhq.connectors.config.mongodb.MongoConnection
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.nosql.mongodb.registry.InMemoryMongoConnectionRegistry
+import com.orbitalhq.models.OperationResultReference
+import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.query.tracing.DatabaseRequest
+import com.orbitalhq.query.tracing.DatabaseResponseComplete
+import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.testVyne
 import com.orbitalhq.testVyneWithStub
 import com.orbitalhq.typedObjects
 import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldContainKey
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
@@ -387,6 +395,39 @@ class MongoReadOnlyQueryInvokerTest : MongoDbTestcontainer() {
             mapOf("filmId" to 2, "name" to "Death in Venice"),
          )
       )
+   }
+
+   @Test
+   fun `emits trace events when reading and links instances to source events`(): Unit = runBlocking {
+      val vyne = testVyne(harryPotterSchema) { schema ->
+         listOf(
+            MongoDbInvoker(
+               connectionFactory,
+               SimpleSchemaProvider(schema),
+               SimpleMeterRegistry()
+            )
+         )
+      }
+      val (eventBroker, eventSink) = QueryContextEventBroker.withTestTraceSpan()
+      val result = vyne.query("""find { FilmsWithIntObjectId[]( FilmId == 1 ) } """, eventBroker = eventBroker)
+         .typedObjects()
+      eventSink.collectedEvents.shouldHaveSize(3)
+      val requestEvent = eventSink.collectedEvents.first()
+      val requestMetadata = requestEvent.exchangeMetadata.shouldBeInstanceOf<DatabaseRequest>()
+      requestEvent.eventResource.shouldBe("films")
+      requestEvent.eventVerb.shouldBe("Select")
+      val requestPayload = requestMetadata.payload()
+      requestPayload.shouldBe("""[{"_id":1}]""")
+      result.forEach {
+         it.source.shouldBeInstanceOf<OperationResultReference>()
+            .sourceEventId.shouldNotBeNull()
+      }
+      // There should be completion event
+      val completionEvent = eventSink.collectedEvents.last()
+      completionEvent.spanState.shouldBe(SpanState.COMPLETE)
+      completionEvent.exchangeMetadata.shouldBeInstanceOf<DatabaseResponseComplete>()
+         .recordCount.shouldBe(1)
+
    }
 
    @Test

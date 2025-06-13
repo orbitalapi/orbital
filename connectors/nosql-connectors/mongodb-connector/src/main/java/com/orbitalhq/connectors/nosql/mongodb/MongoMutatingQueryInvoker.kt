@@ -10,7 +10,6 @@ import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.query.tracing.DatabaseRequest
 import com.orbitalhq.query.tracing.DatabaseResponse
-import com.orbitalhq.query.tracing.OperationSpanEventSource
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
@@ -31,7 +30,7 @@ class MongoMutatingQueryInvoker(
    schemaProvider: SchemaProvider,
    private val meterRegistry: MeterRegistry,
    private val objectMapper: ObjectMapper
-) : MongoBaseInvoker(connectionFactory, schemaProvider) {
+) : MongoBaseInvoker(connectionFactory, schemaProvider, objectMapper) {
 
    suspend fun invoke(
       service: Service,
@@ -133,7 +132,7 @@ class MongoMutatingQueryInvoker(
             val (updateCount, data) = durationAndData.t2
             logger.info { "Mongo $verb call against mongo collectin ${connectionConfig.connectionName} / $collectionName completed  in ${duration}ms affecting $updateCount records" }
             updateCounter?.increment(updateCount.toDouble())
-            traceContext.emitEvent(
+            val resultEvent = traceContext.emitEvent(
                TracingEventKind.OK,
                SpanState.COMPLETE,
                operation.returnType,
@@ -152,7 +151,12 @@ class MongoMutatingQueryInvoker(
             )
             eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
             val resultTypedInstance =
-               mapToTypedInstance(data, inputType, schema, operationResult.asOperationReferenceDataSource())
+               mapToTypedInstance(
+                  data,
+                  inputType,
+                  schema,
+                  operationResult.asOperationReferenceDataSource(traceEventId = resultEvent.idSet),
+               )
             resultTypedInstance.map { typedInstance ->
                DataSourceUpdater.update(typedInstance, operationResult.asOperationReferenceDataSource())
             }

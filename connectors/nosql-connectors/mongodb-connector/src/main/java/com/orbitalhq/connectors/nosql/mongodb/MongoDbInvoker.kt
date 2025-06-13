@@ -40,7 +40,7 @@ class MongoDbInvoker(
    private val readOnlyInvoker = MongoReadOnlyQueryInvoker(connectionFactory, schemaProvider, objectMapper)
    private val upsertInvoker = MongoMutatingQueryInvoker(connectionFactory, schemaProvider, meterRegistry, objectMapper)
    private val bulkUpsertInvoker =
-      MongoBulkMutatingQueryInvoker(connectionFactory, schemaProvider, batchWriteCacheProvider, meterRegistry)
+      MongoBulkMutatingQueryInvoker(connectionFactory, schemaProvider, batchWriteCacheProvider, meterRegistry, objectMapper)
 
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(MongoConnector.Annotations.MongoOperation.NAME)

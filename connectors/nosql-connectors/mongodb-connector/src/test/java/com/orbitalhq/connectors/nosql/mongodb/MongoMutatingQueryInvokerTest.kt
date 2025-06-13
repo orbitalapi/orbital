@@ -7,14 +7,18 @@ import com.orbitalhq.firstRawObject
 import com.orbitalhq.firstTypedInstace
 import com.orbitalhq.firstTypedObject
 import com.orbitalhq.models.TypedValue
+import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.query.tracing.DatabaseRequest
+import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
-import com.sun.source.tree.UnionTypeTree
 import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldStartWith
 import io.kotest.matchers.types.shouldBeInstanceOf
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
@@ -22,11 +26,9 @@ import org.bson.types.Decimal128
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.data.mongodb.core.findById
-import org.springframework.data.mongodb.core.query
-import org.springframework.data.mongodb.core.query.CriteriaDefinition
 import java.math.BigDecimal
 import java.time.Instant
-import java.util.Date
+import java.util.*
 
 class MongoMutatingQueryInvokerTest : MongoDbTestcontainer() {
    private lateinit var connectionRegistry: InMemoryMongoConnectionRegistry
@@ -239,7 +241,7 @@ class MongoMutatingQueryInvokerTest : MongoDbTestcontainer() {
          .firstRawObject()
 
       val mongoTemplate = connectionFactory.reactiveMongoTemplate(connectionFactory.config("flightsMongo"))
-      val fromMongo = mongoTemplate.findById<Map<String,Any>>(result["objectId"]!!, "flightInfo")
+      val fromMongo = mongoTemplate.findById<Map<String, Any>>(result["objectId"]!!, "flightInfo")
          .block()!!
       fromMongo["depTime"].shouldNotBeNull()
 
@@ -294,7 +296,7 @@ class MongoMutatingQueryInvokerTest : MongoDbTestcontainer() {
          .firstRawObject()
 
       val mongoTemplate = connectionFactory.reactiveMongoTemplate(connectionFactory.config("flightsMongo"))
-      val fromMongo = mongoTemplate.findById<Map<String,Any>>(result["objectId"]!!, "flightInfo")
+      val fromMongo = mongoTemplate.findById<Map<String, Any>>(result["objectId"]!!, "flightInfo")
          .block()!!
       fromMongo["cost"].shouldNotBeNull()
       // Mongo reads / writes as a Decimal.
@@ -306,5 +308,56 @@ class MongoMutatingQueryInvokerTest : MongoDbTestcontainer() {
          .firstTypedObject()["cost"] as TypedValue
       readResult.value.shouldBeInstanceOf<BigDecimal>()
          .shouldBe(BigDecimal("200.15"))
+   }
+
+   @Test
+   fun `emits trace events for upserts`(): Unit = runBlocking {
+      val schema = """
+          ${MongoConnector.Annotations.imports}
+          type MongoObjectId inherits String
+
+
+         @Collection(connection = "flightsMongo", collection = "flightInfo")
+         model Flight {
+            @Id
+            objectId: MongoObjectId?
+            code: FlightCode inherits String
+            cost: Price inherits Decimal
+         }
+
+
+         @MongoService( connection = "flightsMongo" )
+         service FlightsDb {
+            table flights : Flight[]
+
+            @UpsertOperation
+            write operation insertFlight(Flight):Flight
+         }
+      """
+      val (eventBroker, eventSink) = QueryContextEventBroker.withTestTraceSpan()
+      val vyne = testVyne(listOf(schema, MongoConnector.schema, VyneQlGrammar.QUERY_TYPE_TAXI)) { schema ->
+         listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()))
+      }
+      val result = vyne.query(
+         """
+         given { Flight = {
+               objectId: null,
+               code : 'LHR-AKL',
+               cost: 200.15
+             }
+          }
+         call FlightsDb::insertFlight
+      """, eventBroker = eventBroker
+      )
+         .firstTypedInstace()
+
+      eventSink.collectedEvents.shouldHaveSize(2)
+      val writeRequestEvent = eventSink.collectedEvents.first()
+      val databaseRequestMetadata = writeRequestEvent.exchangeMetadata.shouldBeInstanceOf<DatabaseRequest>()
+      val upsertRequest = databaseRequestMetadata.payload()
+      upsertRequest.shouldNotBeNull().shouldStartWith("""{"code":"LHR-AKL","cost":200.15"""")
+
+      val upsertResponseEvent = eventSink.collectedEvents.last()
+      upsertResponseEvent.spanState.shouldBe(SpanState.COMPLETE)
    }
 }

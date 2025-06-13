@@ -85,6 +85,7 @@ data class TracingEvent(
 
    ) {
    val idSet = TracingEventIdSet(eventId, spanId, traceId)
+
    companion object {
 
       fun newTraceId(): String {
@@ -148,6 +149,7 @@ enum class TracingEventKind {
    JsonSubTypes.Type(value = HttpResponse::class, name = "HttpResponse"),
    JsonSubTypes.Type(value = DatabaseRequest::class, name = "DatabaseRequest"),
    JsonSubTypes.Type(value = DatabaseResponse::class, name = "DatabaseResponse"),
+   JsonSubTypes.Type(value = DatabaseResponseRecord::class, name = "DatabaseResponseRecord"),
    JsonSubTypes.Type(value = MessageStreamSubscription::class, name = "MessageStreamSubscription"),
    JsonSubTypes.Type(value = MessageStreamDisconnection::class, name = "MessageStreamDisconnection"),
    JsonSubTypes.Type(value = MessageStreamErrorEvent::class, name = "MessageStreamErrorEvent"),
@@ -195,12 +197,13 @@ data class HttpRequest(
 data class ConnectionError(
    val message: String,
 ) : TracingEventExchangeMetadata() {
-   override val payload: () -> String? = { null}
+   override val payload: () -> String? = { null }
 }
 
 data object EmptyTraceMetadata : TracingEventExchangeMetadata() {
    override val payload: () -> String? = { null }
 }
+
 data class ProjectionTraceMetadata(
    override val payload: () -> String?,
 ) : TracingEventExchangeMetadata()
@@ -224,6 +227,30 @@ data class DatabaseRequest(
    override val payload: () -> String?,
 ) : TracingEventExchangeMetadata()
 
+/**
+ * Emitted when working with reactive database sources,
+ * where each record is emitted individually, without a total count
+ */
+@Serializable
+data class DatabaseResponseRecord(
+   override val payload: () -> String?,
+) : TracingEventExchangeMetadata()
+
+/**
+ * Emitted when working with reactive database sources,
+ * after all responses have been returned
+ */
+@Serializable
+data class DatabaseResponseComplete(
+   val recordCount: Int,
+) : TracingEventExchangeMetadata() {
+   override val payload: () -> String? = { null }
+}
+
+/**
+ * Emitted when working with database responses that are non-streaming,
+ * where the full result set (if any) is returned in a single payload.
+ */
 @Serializable
 data class DatabaseResponse(
    val recordCount: Long,

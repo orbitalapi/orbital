@@ -28,7 +28,7 @@ class MongoReadOnlyQueryInvoker(
    connectionFactory: MongoConnectionFactory,
    schemaProvider: SchemaProvider,
    private val objectMapper: ObjectMapper
-) : MongoBaseInvoker(connectionFactory, schemaProvider) {
+) : MongoBaseInvoker(connectionFactory, schemaProvider, objectMapper) {
    suspend fun invoke(
       service: Service,
       operation: RemoteOperation,
@@ -108,7 +108,7 @@ class MongoReadOnlyQueryInvoker(
       )
 
       eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
-      return convertToTypedInstances(resultFlux, query, schema, operationResult.asOperationReferenceDataSource())
+      return convertToTypedInstances(resultFlux, query, schema, operationResult.asOperationReferenceDataSource(), traceSpan)
    }
 
 
