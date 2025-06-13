@@ -20,4 +20,6 @@ dependencies {
     
     // Test dependencies
     testImplementation("io.projectreactor:reactor-test")
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testImplementation(platform("org.junit:junit-bom"))
 }

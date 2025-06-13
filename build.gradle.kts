@@ -156,6 +156,9 @@ subprojects {
             dependency("org.taxilang:core-types:1.65.0-SNAPSHOT")
             dependency("org.taxilang:taxi-annotations:1.65.0-SNAPSHOT")
             dependency("org.taxilang:java2taxi:1.65.0-SNAPSHOT")
+            dependency("org.taxilang:lang-to-taxi-api:1.65.0-SNAPSHOT")
+            dependency("org.taxilang:taxi-stdlib-annotations:1.65.0-SNAPSHOT")
+            dependency("org.taxilang:taxi-jvm-common:1.65.0-SNAPSHOT")
             
             // Logging
             dependency("io.github.microutils:kotlin-logging-jvm:3.0.5")
