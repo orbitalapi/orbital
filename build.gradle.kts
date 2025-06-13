@@ -17,6 +17,19 @@ plugins {
 group = "com.orbitalhq"
 version = "0.36.0-SNAPSHOT"
 
+// Centralized version management
+val versions = mapOf(
+    "kotlin" to "1.9.24",
+    "kotlinxCoroutines" to "1.9.0", 
+    "kotlinxSerialization" to "1.5.1",
+    "taxi" to "1.65.0-SNAPSHOT",
+    "guava" to "32.1.3-jre",
+    "kotlinLogging" to "3.0.5",
+    "eclipseCollections" to "11.1.0",
+    "arrow" to "1.1.5",
+    "kotest" to "5.6.2"
+)
+
 // Task to print version for CI
 tasks.register("printVersion") {
     doLast {
@@ -134,49 +147,49 @@ subprojects {
         
         dependencies {
             // Kotlin
-            dependency("org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.9.24")
-            dependency("org.jetbrains.kotlin:kotlin-reflect:1.9.24")
-            dependency("org.jetbrains.kotlin:kotlin-script-runtime:1.9.24")
-            dependency("org.jetbrains.kotlin:kotlin-test-junit:1.9.24")
+            dependency("org.jetbrains.kotlin:kotlin-stdlib-jdk8:${versions["kotlin"]}")
+            dependency("org.jetbrains.kotlin:kotlin-reflect:${versions["kotlin"]}")
+            dependency("org.jetbrains.kotlin:kotlin-script-runtime:${versions["kotlin"]}")
+            dependency("org.jetbrains.kotlin:kotlin-test-junit:${versions["kotlin"]}")
             
             // Kotlin Coroutines
-            dependency("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0")
-            dependency("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:1.9.0")
-            dependency("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0")
-            dependency("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:1.9.0")
+            dependency("org.jetbrains.kotlinx:kotlinx-coroutines-core:${versions["kotlinxCoroutines"]}")
+            dependency("org.jetbrains.kotlinx:kotlinx-coroutines-reactor:${versions["kotlinxCoroutines"]}")
+            dependency("org.jetbrains.kotlinx:kotlinx-coroutines-test:${versions["kotlinxCoroutines"]}")
+            dependency("org.jetbrains.kotlinx:kotlinx-coroutines-reactive:${versions["kotlinxCoroutines"]}")
             
             // Kotlin Serialization
-            dependency("org.jetbrains.kotlinx:kotlinx-serialization-core:1.5.1")
-            dependency("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.1")
-            dependency("org.jetbrains.kotlinx:kotlinx-serialization-hocon:1.5.1")
-            dependency("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.5.1")
+            dependency("org.jetbrains.kotlinx:kotlinx-serialization-core:${versions["kotlinxSerialization"]}")
+            dependency("org.jetbrains.kotlinx:kotlinx-serialization-json:${versions["kotlinxSerialization"]}")
+            dependency("org.jetbrains.kotlinx:kotlinx-serialization-hocon:${versions["kotlinxSerialization"]}")
+            dependency("org.jetbrains.kotlinx:kotlinx-serialization-cbor:${versions["kotlinxSerialization"]}")
             
             // Taxi (requires snapshot repository access - see firewall configuration)
-            dependency("org.taxilang:compiler:1.65.0-SNAPSHOT")
-            dependency("org.taxilang:core-types:1.65.0-SNAPSHOT")
-            dependency("org.taxilang:taxi-annotations:1.65.0-SNAPSHOT")
-            dependency("org.taxilang:java2taxi:1.65.0-SNAPSHOT")
-            dependency("org.taxilang:lang-to-taxi-api:1.65.0-SNAPSHOT")
-            dependency("org.taxilang:taxi-stdlib-annotations:1.65.0-SNAPSHOT")
-            dependency("org.taxilang:taxi-jvm-common:1.65.0-SNAPSHOT")
+            dependency("org.taxilang:compiler:${versions["taxi"]}")
+            dependency("org.taxilang:core-types:${versions["taxi"]}")
+            dependency("org.taxilang:taxi-annotations:${versions["taxi"]}")
+            dependency("org.taxilang:java2taxi:${versions["taxi"]}")
+            dependency("org.taxilang:lang-to-taxi-api:${versions["taxi"]}")
+            dependency("org.taxilang:taxi-stdlib-annotations:${versions["taxi"]}")
+            dependency("org.taxilang:taxi-jvm-common:${versions["taxi"]}")
             
             // Logging
-            dependency("io.github.microutils:kotlin-logging-jvm:3.0.5")
+            dependency("io.github.microutils:kotlin-logging-jvm:${versions["kotlinLogging"]}")
             dependency("net.logstash.logback:logstash-logback-encoder:7.4")
             
             // Common utilities
-            dependency("com.google.guava:guava:32.1.3-jre")
-            dependency("com.google.guava:guava-testlib:32.1.3-jre")
+            dependency("com.google.guava:guava:${versions["guava"]}")
+            dependency("com.google.guava:guava-testlib:${versions["guava"]}")
             dependency("org.apache.commons:commons-lang3:3.12.0")
             dependency("commons-io:commons-io:2.17.0")
             dependency("com.diffplug.durian:durian:3.4.0")
             
             // Eclipse Collections
-            dependency("org.eclipse.collections:eclipse-collections-api:11.1.0")
-            dependency("org.eclipse.collections:eclipse-collections:11.1.0")
+            dependency("org.eclipse.collections:eclipse-collections-api:${versions["eclipseCollections"]}")
+            dependency("org.eclipse.collections:eclipse-collections:${versions["eclipseCollections"]}")
             
             // Arrow
-            dependency("io.arrow-kt:arrow-core:1.1.5")
+            dependency("io.arrow-kt:arrow-core:${versions["arrow"]}")
             
             // Other
             dependency("com.aventrix.jnanoid:jnanoid:2.0.0")
@@ -207,8 +220,8 @@ subprojects {
             dependency("org.jetbrains.spek:spek-api:1.1.5")
             dependency("com.winterbe:expekt:0.5.0")
             dependency("com.nhaarman:mockito-kotlin:1.6.0")
-            dependency("io.kotest:kotest-runner-junit5-jvm:5.6.2")
-            dependency("io.kotest:kotest-assertions-core-jvm:5.6.2")
+            dependency("io.kotest:kotest-runner-junit5-jvm:${versions["kotest"]}")
+            dependency("io.kotest:kotest-assertions-core-jvm:${versions["kotest"]}")
             
             // AWS
             dependency("com.amazonaws:aws-java-sdk-s3:1.12.778")
