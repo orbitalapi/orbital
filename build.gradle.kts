@@ -11,6 +11,7 @@ plugins {
     id("org.graalvm.buildtools.native") version "0.10.3" apply false
     id("com.github.jk1.dependency-license-report") version "2.8" apply false
     id("com.github.hierynomus.license") version "0.16.1" apply false
+    id("net.researchgate.release") version "3.0.2" apply false
 }
 
 group = "com.orbitalhq"
@@ -21,6 +22,15 @@ tasks.register("printVersion") {
     doLast {
         println(project.version)
     }
+}
+
+// Apply license reporting to root project  
+apply(plugin = "com.github.jk1.dependency-license-report")
+
+configure<com.github.jk1.license.LicenseReportExtension> {
+    outputDir = "$buildDir/reports/dependency-license"
+    projects = arrayOf(project)
+    configurations = arrayOf("compileClasspath")
 }
 
 allprojects {
