@@ -71,12 +71,6 @@ allprojects {
             url = uri("https://repo.orbitalhq.com/snapshot")
             content {
                 includeGroup("com.orbitalhq")
-            }
-        }
-        maven {
-            name = "TaxiSnapshots"
-            url = uri("https://s01.oss.sonatype.org/content/repositories/snapshots")
-            content {
                 includeGroup("org.taxilang")
             }
         }
