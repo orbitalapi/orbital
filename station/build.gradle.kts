@@ -25,11 +25,7 @@ dependencies {
     implementation(project(":avro-message-format"))
     implementation("org.springframework.boot:spring-boot-starter-data-jpa")
     implementation(project(":license-client"))
-    testImplementation(project(":vyne-core-types")) {
-        artifact {
-            type = "test-jar"
-        }
-    }
+    testImplementation(testFixtures(project(":vyne-core-types")))
     implementation(project(":hazelcast-connector"))
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("io.micrometer:micrometer-core")

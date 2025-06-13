@@ -54,9 +54,11 @@ dependencies {
     // Test dependencies
     testImplementation("io.kotest:kotest-runner-junit5-jvm")
     testImplementation("io.kotest:kotest-assertions-core-jvm")
-    testImplementation(project(":taxiql-query-engine", "tests")) {
-        exclude(group = "com.fasterxml.woodstox", module = "woodstox-core")
-    }
+}
+
+// Exclude woodstox from all configurations to prevent native compilation issues
+configurations.all {
+    exclude(group = "com.fasterxml.woodstox", module = "woodstox-core")
 }
 
 dependencyManagement {

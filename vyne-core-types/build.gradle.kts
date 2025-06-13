@@ -36,9 +36,10 @@ dependencies {
     implementation("io.arrow-kt:arrow-core")
     
     // Test dependencies
-    testImplementation("org.taxilang:compiler") {
+    testImplementation("org.taxilang:compiler:1.65.0-SNAPSHOT") {
         artifact {
-            type = "test-jar"
+            classifier = "tests"
+            type = "jar"
         }
     }
     testImplementation("com.nhaarman.mockitokotlin2:mockito-kotlin:2.2.0")
