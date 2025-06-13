@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.atomic.AtomicBoolean
 
 private val logger = KotlinLogging.logger {  }
-class SuspendableEventPublisher<T>(private val sink: Sinks.Many<T>,
+class SuspendableEventPublisher<T : Any>(private val sink: Sinks.Many<T>,
                                    private val publishOnlyOneWhenResumed: Boolean = true,
                                    comparator: Comparator<T>) {
     private val suspended: AtomicBoolean = AtomicBoolean(false)
