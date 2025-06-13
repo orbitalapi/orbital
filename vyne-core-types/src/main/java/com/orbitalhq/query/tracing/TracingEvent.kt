@@ -158,6 +158,7 @@ enum class TracingEventKind {
    JsonSubTypes.Type(value = ObjectStoreResponse::class, name = "ObjectStoreResponse"),
    JsonSubTypes.Type(value = ProjectionTraceMetadata::class, name = "ProjectionTraceMetadata"),
    JsonSubTypes.Type(value = EmptyTraceMetadata::class, name = "EmptyTraceMetadata"),
+   JsonSubTypes.Type(value = ConnectionError::class, name = "ConnectionError"),
 )
 sealed class TracingEventExchangeMetadata {
    /**
@@ -184,7 +185,17 @@ data class HttpRequest(
     */
    val size: Long,
    val headers: Map<String, List<String>>
+) : TracingEventExchangeMetadata()
+
+
+/**
+ * Emitted when a service (any kind of service) failed to connect
+ */
+@Serializable
+data class ConnectionError(
+   val message: String,
 ) : TracingEventExchangeMetadata() {
+   override val payload: () -> String? = { null}
 }
 
 data object EmptyTraceMetadata : TracingEventExchangeMetadata() {

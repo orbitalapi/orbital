@@ -170,6 +170,7 @@ export class WaterfallComponent implements AfterViewInit {
   showSummary = input<boolean>(true);
   maxLabelWidth = input<number>(300);// pixels
 
+
   @Output() spanClick = new EventEmitter<TraceSpanRecord>();
   @Output() eventClick = new EventEmitter<TraceEventRow>();
   @ViewChild('spansContainer', { static: false }) spansContainer!: ElementRef<HTMLDivElement>;

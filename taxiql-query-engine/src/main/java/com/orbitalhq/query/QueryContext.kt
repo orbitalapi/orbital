@@ -24,6 +24,7 @@ import com.orbitalhq.query.graph.ServiceAnnotations
 import com.orbitalhq.query.graph.ServiceParams
 import com.orbitalhq.query.graph.edges.EvaluatableEdge
 import com.orbitalhq.query.graph.edges.EvaluatedEdge
+import com.orbitalhq.query.tracing.CollectingEventSink
 import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.query.tracing.TraceSpan
 import com.orbitalhq.retainFactsFromFactSet
@@ -394,7 +395,8 @@ data class QueryContext(
    fun withChildTraceSpan(): QueryContext {
       return attachToTraceSpan(traceSpan.createChild())
    }
-   fun attachToTraceSpan(traceSpan: TraceSpan):QueryContext {
+
+   fun attachToTraceSpan(traceSpan: TraceSpan): QueryContext {
       val childEventBroker = eventBroker.attachToTraceSpan(traceSpan)
       return copy(traceSpan = childEventBroker.traceSpan, eventBroker = childEventBroker)
    }
@@ -628,11 +630,27 @@ fun <K, V> HashMultimap<K, V>.copy(): HashMultimap<K, V> {
  * I'm like...three wines deep, and three weeks late in shipping this f**ing release.
  * It'll do, ok?
  */
-class QueryContextEventBroker(override val queryErrorPublisher: StreamErrorPublisher = StreamErrorPublisher(), override val traceSpan: TraceSpan) :
+class QueryContextEventBroker(
+   override val queryErrorPublisher: StreamErrorPublisher = StreamErrorPublisher(),
+   override val traceSpan: TraceSpan
+) :
    QueryContextEventDispatcher {
+   companion object {
+      /**
+       * For testing tracing.
+       * Returns a QueryContextEventBroker that's wired up with a collecting event sink and a default
+       * trace spam
+       */
+      fun withTestTraceSpan(queryId: String = "fake-query-id"):Pair<QueryContextEventBroker, CollectingEventSink> {
+         val eventSink = CollectingEventSink()
+         val eventBroker = QueryContextEventBroker(traceSpan = TraceContext.newTrace(queryId, eventSink).rootSpan)
+         return eventBroker to eventSink
+      }
+   }
+
    private val handlers = CopyOnWriteArrayList<QueryContextEventHandler>()
 
-   fun attachToTraceSpan(traceSpan: TraceSpan) :QueryContextEventBroker {
+   fun attachToTraceSpan(traceSpan: TraceSpan): QueryContextEventBroker {
       val childBroker = QueryContextEventBroker(queryErrorPublisher, traceSpan)
       childBroker.handlers.addAll(handlers)
       return childBroker

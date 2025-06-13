@@ -46,8 +46,21 @@ data class TraceSpan(
        * payloads from being captured by allowing annotations on services / operations / payload types.
        */
       spanEventSource: SpanEventSource,
+      /**
+       * A human readable name for the resource that this event relates to.
+       * Could be a table name, topic, url, etc.
+       */
       eventResource: String,
+      /**
+       * A verb, as determined by the event emitter, that provides a succinct description of
+       * what this event was.
+       * eg: "Subscribe", "Disconnect", "Receive", "Get", "Post", "Invoke", etc.
+       */
       eventVerb: String,
+      /**
+       * The qualified name of the operation, (or if this was a taxi function),
+       * the taxi function qualified name
+       */
       eventSourceQualifiedName: String,
       linkedEventId: String? = null
    ): TracingEvent {

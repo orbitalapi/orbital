@@ -44,7 +44,7 @@ class ReplayingOperationInvoker(private val remoteCalls: List<RemoteCall>, priva
          .buildAndExpand(uriVariables)
          .path
       val bodyFactory = DefaultRequestFactory(listOf())
-      val requestBody = bodyFactory.buildRequestBody(operation, parameters.map { it.second })
+      val (_,requestBody) = bodyFactory.buildRequestBody(operation, parameters.map { it.second })
       val recordedCall = findRecordedCall(operation, path, requestBody) ?: error("Expected a matching recorded call")
       val responseType = schema.type(recordedCall.responseTypeName)
       return flow {
