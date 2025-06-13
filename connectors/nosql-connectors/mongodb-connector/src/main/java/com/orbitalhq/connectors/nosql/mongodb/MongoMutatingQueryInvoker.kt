@@ -104,6 +104,15 @@ class MongoMutatingQueryInvoker(
                   upsertDefinition
                   logger.warn { "Upsert to Mongo collection ${connectionConfig.connectionName} / $collectionName reported 0 records updated" }
                }
+               traceContext.emitEvent(
+                  TracingEventKind.OK,
+                  SpanState.COMPLETE,
+                  null,
+                  DatabaseResponse(
+                     modifiedCount,
+                  ) { objectMapper.writeValueAsString(upsertResult) },
+                  "Upsert"
+               )
                modifiedCount to documentMap
             }
       }
