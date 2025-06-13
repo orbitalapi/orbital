@@ -151,7 +151,7 @@ subprojects {
             dependency("org.jetbrains.kotlinx:kotlinx-serialization-hocon:1.5.1")
             dependency("org.jetbrains.kotlinx:kotlinx-serialization-cbor:1.5.1")
             
-            // Taxi
+            // Taxi (requires snapshot repository access - see firewall configuration)
             dependency("org.taxilang:compiler:1.65.0-SNAPSHOT")
             dependency("org.taxilang:core-types:1.65.0-SNAPSHOT")
             dependency("org.taxilang:taxi-annotations:1.65.0-SNAPSHOT")
