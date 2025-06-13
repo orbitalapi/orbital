@@ -16,6 +16,13 @@ plugins {
 group = "com.orbitalhq"
 version = "0.36.0-SNAPSHOT"
 
+// Task to print version for CI
+tasks.register("printVersion") {
+    doLast {
+        println(project.version)
+    }
+}
+
 allprojects {
     repositories {
         mavenCentral()
@@ -57,10 +64,24 @@ allprojects {
 subprojects {
     apply(plugin = "kotlin")
     apply(plugin = "io.spring.dependency-management")
+    apply(plugin = "maven-publish")
 
     configure<JavaPluginExtension> {
         sourceCompatibility = JavaVersion.VERSION_21
         targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    configure<PublishingExtension> {
+        repositories {
+            maven {
+                name = "orbital"
+                url = uri(if (version.toString().contains("SNAPSHOT")) {
+                    "s3://repo.orbitalhq.com/snapshot"
+                } else {
+                    "s3://repo.orbitalhq.com/release"
+                })
+            }
+        }
     }
 
     tasks.withType<KotlinCompile> {
