@@ -1,18 +1,26 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
 import arrow.core.Either
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.connectors.collectionTypeOrType
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.resultType
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.ObjectMapperConfig
 import com.orbitalhq.models.OperationResult
+import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.SqlExchange
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.tracing.DatabaseResponseComplete
+import com.orbitalhq.query.tracing.DatabaseResponseRecord
+import com.orbitalhq.query.tracing.OperationTraceSpan
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEvent
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.AttributeName
 import com.orbitalhq.schemas.OperationInvocationException
@@ -32,10 +40,12 @@ import reactor.core.publisher.Flux
 import java.math.BigDecimal
 import java.time.Duration
 import java.time.Instant
+import java.util.concurrent.atomic.AtomicInteger
 
 abstract class MongoBaseInvoker(
    private val connectionFactory: MongoConnectionFactory,
-   protected val schemaProvider: SchemaProvider
+   protected val schemaProvider: SchemaProvider,
+   private val objectMapper: ObjectMapper
 ) {
    protected fun getConnectionConfigAndTemplate(service: Service): Pair<MongoConnectionConfiguration, ReactiveMongoTemplate> {
       val connectionName =
@@ -43,7 +53,6 @@ abstract class MongoBaseInvoker(
       val mongoConnectionConfig = connectionFactory.config(connectionName)
       return mongoConnectionConfig to connectionFactory.reactiveMongoTemplate(mongoConnectionConfig)
    }
-
 
 
    private fun objectIdField(vyneType: Type): AttributeName? {
@@ -74,35 +83,36 @@ abstract class MongoBaseInvoker(
       )
    }
 
-   protected fun mapError(error: Throwable,
-                        service: Service,
-                        operation: RemoteOperation,
-                         parameters: List<Pair<Parameter, TypedInstance>>,
-                        criteria: String,
-                        mongoHosts: String,
-                        elapsed: Duration,
-                        recordCount: Int,
-                        verb: String = "Query"
+   protected fun mapError(
+      error: Throwable,
+      service: Service,
+      operation: RemoteOperation,
+      parameters: List<Pair<Parameter, TypedInstance>>,
+      criteria: String,
+      mongoHosts: String,
+      elapsed: Duration,
+      recordCount: Int,
+      verb: String = "Query"
    ): Throwable {
       val remoteCall = RemoteCall(
-      service = service.name,
-      address = mongoHosts,
-      operation = operation.name,
-      responseTypeName = operation.returnType.name,
-      requestBody = criteria,
-      durationMs = elapsed.toMillis(),
-      timestamp = Instant.now(),
-      // If we implement streaming database queries, this will change
-      responseMessageType = ResponseMessageType.FULL,
-      // Feels like capturing the results are a bad idea.  Can revisit if there's a use-case
-      response = error.message,
-      exchange = SqlExchange(
-         sql = criteria,
-         recordCount = recordCount,
-         verb = verb
-      ),
+         service = service.name,
+         address = mongoHosts,
+         operation = operation.name,
+         responseTypeName = operation.returnType.name,
+         requestBody = criteria,
+         durationMs = elapsed.toMillis(),
+         timestamp = Instant.now(),
+         // If we implement streaming database queries, this will change
+         responseMessageType = ResponseMessageType.FULL,
+         // Feels like capturing the results are a bad idea.  Can revisit if there's a use-case
+         response = error.message,
+         exchange = SqlExchange(
+            sql = criteria,
+            recordCount = recordCount,
+            verb = verb
+         ),
 
-      )
+         )
       return OperationInvocationException(
          "Failed to invoke service ${operation.name} at url $mongoHosts - ${error.message ?: "No message in instance of ${error::class.simpleName}"}",
          0,
@@ -143,16 +153,40 @@ abstract class MongoBaseInvoker(
       resultList: Flux<Map<*, *>>,
       query: TaxiQlQuery,
       schema: Schema,
-      datasource: DataSource
-   ): Flow<Either<StreamErrorMessage, TypedInstance>>  {
+      datasource: OperationResultReference,
+      traceSpan: OperationTraceSpan
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val resultTypeName = query.resultType()
       val resultTaxiType = collectionTypeOrType(schema.taxi.type(resultTypeName))
       val vyneType = schema.type(resultTaxiType)
       val mapTransform: (Map<*, *>) -> Map<*, *> = objectIdFieldTransform(vyneType)
-
+      val recordCount = AtomicInteger(0)
       val typedInstances = resultList
          .map { mapValue ->
-            mapToTypedInstance(mapValue, vyneType, schema, datasource, mapTransform)
+            recordCount.incrementAndGet()
+            val recordEvent = traceSpan.emitEvent(
+               TracingEventKind.OK,
+               SpanState.ACTIVE,
+               vyneType,
+               DatabaseResponseRecord() { objectMapper.writeValueAsString(mapValue) },
+               "Record received"
+            )
+            mapToTypedInstance(
+               mapValue,
+               vyneType,
+               schema,
+               datasource.copy(sourceEventId = recordEvent.idSet),
+               mapTransform
+            )
+         }
+         .doOnComplete {
+            val recordEvent = traceSpan.emitEvent(
+               TracingEventKind.OK,
+               SpanState.COMPLETE,
+               vyneType,
+               DatabaseResponseComplete(recordCount.get()),
+               "Select complete"
+            )
          }
       return typedInstances.asFlow()
    }
@@ -161,19 +195,22 @@ abstract class MongoBaseInvoker(
       mapValue: Map<*, *>, vyneType: Type,
       schema: Schema,
       datasource: DataSource,
-      mapTransform: MongoIdTransformFunc? = null): Either<StreamErrorMessage, TypedInstance> {
+      mapTransform: MongoIdTransformFunc? = null,
+   ): Either<StreamErrorMessage, TypedInstance> {
       val idFieldTransform = mapTransform ?: objectIdFieldTransform(vyneType)
       return try {
-          Either.Right(TypedInstance.from(
-             vyneType,
-             idFieldTransform(mapValue),
-             schema,
-             source = datasource,
-             evaluateAccessors = false
-          ))
-        } catch (e: Exception) {
-           Either.Left(StreamErrorMessage.fromException(e, vyneType.paramaterizedName))
-        }
+         Either.Right(
+            TypedInstance.from(
+               vyneType,
+               idFieldTransform(mapValue),
+               schema,
+               source = datasource,
+               evaluateAccessors = false
+            )
+         )
+      } catch (e: Exception) {
+         Either.Left(StreamErrorMessage.fromException(e, vyneType.paramaterizedName))
+      }
    }
 
    private fun objectIdFieldTransform(vyneType: Type): MongoIdTransformFunc {
@@ -182,7 +219,7 @@ abstract class MongoBaseInvoker(
          fun(mongoMap: Map<*, *>): Map<*, *> {
             val hashMap = mongoMap as HashMap<String, Any?>
             hashMap.remove(MongoIdField)?.let { objectId ->
-               hashMap[idField] = if (objectId is ObjectId)  objectId.toString() else objectId
+               hashMap[idField] = if (objectId is ObjectId) objectId.toString() else objectId
             }
             return hashMap
          }
@@ -194,12 +231,12 @@ abstract class MongoBaseInvoker(
    }
 
 
-   protected fun typedInstanceToMap( recordToWrite: TypedInstance, idFieldCheck: Boolean = true): Map<String, Any?> {
+   protected fun typedInstanceToMap(recordToWrite: TypedInstance, idFieldCheck: Boolean = true): Map<String, Any?> {
       require(recordToWrite is TypedObject) { "Writes not supported on instances of type ${recordToWrite::class.simpleName}" }
       val idField = if (idFieldCheck) objectIdField(recordToWrite.type) else null
       return recordToWrite.type.attributes.map { (name, field) ->
          val fieldValue = recordToWrite[name]
-         val value =  if (fieldValue is TypedObject) {
+         val value = if (fieldValue is TypedObject) {
             typedInstanceToMap(fieldValue, false)
          } else {
             // When writing the object out, don't apply formats, as we want
@@ -213,10 +250,10 @@ abstract class MongoBaseInvoker(
             }
          }
          val mongoFieldName = if (idField == name) MongoIdField else name
-         val mongoValue = if (mongoFieldName == MongoIdField)  {
-           value?.let {
-              it
-           }
+         val mongoValue = if (mongoFieldName == MongoIdField) {
+            value?.let {
+               it
+            }
          } else value
          mongoFieldName to mongoValue
       }.toMap()

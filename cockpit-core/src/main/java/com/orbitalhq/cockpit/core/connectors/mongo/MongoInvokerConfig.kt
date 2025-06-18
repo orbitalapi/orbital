@@ -1,5 +1,6 @@
 package com.orbitalhq.cockpit.core.connectors.mongo
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.connectors.VyneConnectionsConfig
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnectionFactory
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnectionUIDisplayProvider
@@ -18,5 +19,5 @@ class MongoInvokerConfig {
    fun mongoConnectionUIDisplayProvider(): ConnectionUIDisplayProvider = MongoConnectionUIDisplayProvider()
 
    @Bean
-   fun mongoDbInvoker(mongoConnectionFactory: MongoConnectionFactory, schemaProvider: SchemaProvider, meterRegistry: MeterRegistry) = MongoDbInvoker(mongoConnectionFactory, schemaProvider, meterRegistry)
+   fun mongoDbInvoker(mongoConnectionFactory: MongoConnectionFactory, schemaProvider: SchemaProvider, meterRegistry: MeterRegistry, objectMapper: ObjectMapper) = MongoDbInvoker(mongoConnectionFactory, schemaProvider, meterRegistry, objectMapper)
 }

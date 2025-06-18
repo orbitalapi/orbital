@@ -27,6 +27,8 @@ import com.orbitalhq.query.graph.edges.ParameterFactory
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.query.graph.operationInvocation.SearchRuntimeException
 import com.orbitalhq.query.projection.ProjectionProvider
+import com.orbitalhq.query.tracing.TraceContext
+import com.orbitalhq.query.tracing.TraceSpan
 import com.orbitalhq.retainFactsFromFactSet
 import com.orbitalhq.schemas.Operation
 import com.orbitalhq.schemas.OperationInvocationException
@@ -155,7 +157,8 @@ interface QueryEngine {
       additionalFacts: Set<TypedInstance> = emptySet(),
       queryId: String,
       clientQueryId: String?,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+      traceSpan: TraceSpan,
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = traceSpan),
       scopedFacts: List<ScopedFact> = emptyList(),
       queryOptions: QueryOptions = QueryOptions.default()
    ): QueryContext
@@ -258,6 +261,7 @@ class StatefulQueryEngine(
       additionalFacts: Set<TypedInstance>,
       queryId: String,
       clientQueryId: String?,
+      traceSpan: TraceSpan,
       eventBroker: QueryContextEventBroker,
       scopedFacts: List<ScopedFact>,
       queryOptions: QueryOptions
@@ -273,7 +277,8 @@ class StatefulQueryEngine(
          eventBroker = eventBroker,
          scopedFacts = scopedFacts,
          queryOptions = queryOptions,
-         metricsReporter = metricsReporter
+         metricsReporter = metricsReporter,
+         traceSpan = traceSpan
       )
    }
 
@@ -373,6 +378,11 @@ class StatefulQueryEngine(
       }
    }
 
+   /**
+    * Performs a standalone mutation.
+    * Note that no tracing propogation is performed here, so do not call this as part of a broader iterate-then-mutate
+    * query, or the tracing / OTEL will not be correctly nested.
+    */
    override suspend fun mutate(
       mutation: Mutation,
       spec: QuerySpecTypeNode,
@@ -383,8 +393,9 @@ class StatefulQueryEngine(
       val startTime = Instant.now()
       // First pass.
       // TODO : Work out how to pass context (like facts from given clauses etc) into this.
+      val mutatingContext = context.withChildTraceSpan()
       val (resultFlow, searchContext) = doMutate(mutation, context, inputValue)
-      val resultFlowWithProcessingTime = resultFlow.map { it.withProcessingMetadata(asOf = startTime) }
+      val resultFlowWithProcessingTime = resultFlow.map { it.withProcessingMetadata(asOf = startTime, processingTraceSpan = mutatingContext.traceSpan) }
       val resultsWithProjections = performMutationProjection(
          context,
          resultFlowWithProcessingTime,
@@ -745,6 +756,12 @@ class StatefulQueryEngine(
                      resultsReceivedFromStrategy = true
 
                      if (value.typeName == ErrorType.type.paramaterizedName) {
+                        // See also:
+                        // Vyne.query() where we listen for terminal events on the
+                        // error stream, which can also trigger the stream to die if the stream error
+                        // has isTerminal set to true.
+                        // That has become the preferred approach, since we introduced the concept
+                        // of the error stream
                         throw IllegalStateException(value.value!! as String)
                         //  close()
                      }
@@ -859,9 +876,9 @@ class StatefulQueryEngine(
             // When working with streaming, we consider the "start" of the processing
             // window as when the message arrived, not when the query started.
             if (isStreamingQuery) {
-               it.withProcessingMetadata()
+               it.withProcessingMetadata(processingTraceSpan = context.withChildTraceSpan().traceSpan)
             } else {
-               it.withProcessingMetadata(asOf = queryStartTime)
+               it.withProcessingMetadata(asOf = queryStartTime, processingTraceSpan = context.withChildTraceSpan().traceSpan)
             }
          }
 
@@ -943,10 +960,14 @@ class StatefulQueryEngine(
       }
       return if (mutationProps?.mutationOperationHasCollectionParameters == true) {
          val typedCollection = CollectionBuilder.toCollectionType(projectedResults)
-         projectionProvider.process(flowOf(typedCollection.withProcessingMetadata(asOf = Instant.now())), context) {
-            doMutate(target.mutation!!, context, it.instance).first
+         // Create a dedicated span for processing the collection.
+         // We've had to wait for all the items to complete, so it makes sense at this point that the
+         // next phase is it's own span.
+         val collectionProcessingSpan = context.traceSpan.createChild()
+         projectionProvider.process(flowOf(typedCollection.withProcessingMetadata(asOf = Instant.now(), processingTraceSpan = collectionProcessingSpan)), context) {
+            doMutate(target.mutation!!, context.attachToTraceSpan(collectionProcessingSpan), it.instance).first
                .map { typedInstance ->
-                  typedInstance.withProcessingMetadata(asOf = it.processingStart)
+                  typedInstance.withProcessingMetadata(asOf = it.processingStart, processingTraceSpan = collectionProcessingSpan)
                }
          }
       } else {
@@ -958,10 +979,10 @@ class StatefulQueryEngine(
             projectionProvider
                .process(projectedResults, context)
                { flowOf(it) }
-               .flatMapMerge(concurrency = Int.MAX_VALUE) {
-                  doMutate(target.mutation!!, context, it.instance).first
+               .flatMapMerge(concurrency = Int.MAX_VALUE) { typedInstanceWithMetadata ->
+                  doMutate(target.mutation!!, context.attachToTraceSpan(typedInstanceWithMetadata.processingTraceSpan), typedInstanceWithMetadata.instance).first
                      .map { typedInstance ->
-                        typedInstance.withProcessingMetadata(asOf = it.processingStart)
+                        typedInstance.withProcessingMetadata(asOf = typedInstanceWithMetadata.processingStart, processingTraceSpan = typedInstanceWithMetadata.processingTraceSpan)
                      }
                }
          } else {
@@ -971,9 +992,9 @@ class StatefulQueryEngine(
              */
             projectedResults
                .flatMapMerge(concurrency = Int.MAX_VALUE) { queryResult ->
-                  doMutate(target.mutation!!, context, queryResult.instance).first
+                  doMutate(target.mutation!!, context.attachToTraceSpan(queryResult.processingTraceSpan), queryResult.instance).first
                      .map { typedInstance ->
-                        typedInstance.withProcessingMetadata(asOf = queryResult.processingStart)
+                        typedInstance.withProcessingMetadata(asOf = queryResult.processingStart, processingTraceSpan = queryResult.processingTraceSpan)
                      }
                }
          }
@@ -1072,12 +1093,26 @@ class QueryFailedException(message: String) : Exception(message)
  */
 data class TypedInstanceWithMetadata(
    val processingStart: Instant,
-   val instance: TypedInstance
+   val instance: TypedInstance,
+   /**
+    * When we're working on items, (projecting, calling mutations, etc)
+    * we want the work for a specific item to be grouped under a single span.
+    *
+    * This should be captured as high up in the stack as possible.
+    * ie., it's generally either the first projection, or - if there's no projection - the mutation
+    * span.
+    *
+    * TODO : When there are nested projections, which call functions, it's probably ok for those to
+    * get their own "processingTraceSpan". But, I don't really know yet.
+    *
+    */
+   val processingTraceSpan: TraceSpan
 )
 
-fun TypedInstance.withProcessingMetadata(asOf: Instant = Instant.now()): TypedInstanceWithMetadata {
+fun TypedInstance.withProcessingMetadata(processingTraceSpan: TraceSpan, asOf: Instant = Instant.now()): TypedInstanceWithMetadata {
    return TypedInstanceWithMetadata(
       processingStart = asOf,
-      this
+      processingTraceSpan = processingTraceSpan,
+      instance = this
    )
 }

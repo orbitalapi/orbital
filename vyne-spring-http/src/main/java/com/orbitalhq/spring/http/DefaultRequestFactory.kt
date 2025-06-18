@@ -6,6 +6,7 @@ import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Type
 import lang.taxi.annotations.HttpHeader
 import lang.taxi.annotations.HttpQueryVariable
 import lang.taxi.annotations.HttpRequestBody
@@ -17,7 +18,10 @@ import org.springframework.util.LinkedMultiValueMap
 import org.springframework.util.MultiValueMap
 
 interface HttpRequestFactory {
-   fun buildRequestBody(operation: RemoteOperation, parameters: List<TypedInstance>): HttpEntity<*>
+   /**
+    * Returns a pair of the type of the declared request body, along with a constructed http entity to submit
+    */
+   fun buildRequestBody(operation: RemoteOperation, parameters: List<TypedInstance>): Pair<Type?, HttpEntity<*>>
    fun buildRequestQueryParams(parametersAndValues: List<Pair<Parameter, TypedInstance>>): MultiValueMap<String, String>? = null
 }
 
@@ -30,10 +34,10 @@ class DefaultRequestFactory(private val formatSpecs: List<ModelFormatSpec>) : Ht
 
    }
 
-   override fun buildRequestBody(operation: RemoteOperation, parameters: List<TypedInstance>): HttpEntity<*> {
+   override fun buildRequestBody(operation: RemoteOperation, parameters: List<TypedInstance>): Pair<Type?, HttpEntity<*>> {
       val headers = buildHttpHeaders(operation, parameters)
       val requestBodyParamIdx = operation.parameters.indexOfFirst { it.hasMetadata(HttpRequestBody.NAME) }
-      if (requestBodyParamIdx == -1) return HttpEntity<Any>(headers)
+      if (requestBodyParamIdx == -1) return (null to HttpEntity<Any>(headers))
       // TODO : For now, only looking up param based on type.  This is obviously naieve, and should
       // be improved, using name / position?  (note that parameters don't appear to be ordered in the list).
 
@@ -53,7 +57,7 @@ class DefaultRequestFactory(private val formatSpecs: List<ModelFormatSpec>) : Ht
          headers.contentType = bodyMediaType
          it.second.serializer.write(requestBodyTypedInstance.toRawObject(), it.first, 0)
       } ?: requestBodyTypedInstance.toRawObject()
-      return HttpEntity(httpBody, headers)
+      return requestBodyParamType to  HttpEntity(httpBody, headers)
 
    }
 

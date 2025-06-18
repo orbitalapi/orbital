@@ -9,6 +9,12 @@ import com.orbitalhq.models.TypedNull
 import com.orbitalhq.query.ConstructedQueryDataSource
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.tracing.DatabaseRequest
+import com.orbitalhq.query.tracing.DatabaseResponse
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEventKind
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.orbitalhq.query.tracing.OperationTraceSpan
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
@@ -38,6 +44,7 @@ class DynamoDbQueryInvoker(
    private val schemaProvider: SchemaProvider,
    private val dispatcher: CoroutineDispatcher = Dispatchers.IO
 ) : BaseDynamoInvoker(connectionRegistry) {
+   private val objectMapper = ObjectMapper()
    private val queryBuilder = DynamoDbRequestBuilder()
 
    companion object {
@@ -55,6 +62,7 @@ class DynamoDbQueryInvoker(
       val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
       val query = queryBuilder.buildQuery(schema, taxiQuery)
       val (client, awsConfig) = buildClient(service, operation)
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, "")
 
       return Mono.fromFuture(executeRequest(query, client))
          .doOnError { e ->
@@ -63,6 +71,13 @@ class DynamoDbQueryInvoker(
                else -> 400
             }
             val message = "Call to Dynamo failed: ${e.message ?: e.toString()}"
+            traceContext.emitEvent(
+               TracingEventKind.ERROR,
+               SpanState.COMPLETE,
+               null,
+               DatabaseResponse(-1) { message },
+               "Query error"
+            )
             val remoteCall = buildRemoteCall(service, awsConfig, operation, query, -1, -1, errorCode, message)
             val operationResult = OperationResult.fromTypedInstances(constructedQueryDataSource.inputs, remoteCall)
             eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
@@ -79,6 +94,13 @@ class DynamoDbQueryInvoker(
          }
          .doOnSubscribe {
             logger.info { "Sending request to Dynamo $query" }
+            traceContext.emitEvent(
+               kind = TracingEventKind.OK,
+               spanState = SpanState.ACTIVE,
+               payloadType = null,
+               exchangeMetadata = DatabaseRequest(awsConfig.connectionName, "Query", "") { query.toString() },
+               verb = "Query"
+            )
          }
          .elapsed()
          .flatMapMany { responsePair ->
@@ -89,7 +111,7 @@ class DynamoDbQueryInvoker(
             val remoteCall = buildRemoteCall(service, awsConfig, operation, query, duration, count)
             val operationResult = OperationResult.fromTypedInstances(constructedQueryDataSource.inputs, remoteCall)
             eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
-            val items = safeParse(responsePair, operation, eventDispatcher, queryId, schema, operationResult)
+            val items = safeParse(responsePair, operation, eventDispatcher, queryId, schema, operationResult, traceContext)
             Flux.fromIterable(items)
          }.asFlow().flowOn(dispatcher)
 
@@ -102,35 +124,72 @@ class DynamoDbQueryInvoker(
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
       schema: Schema,
-      operationResult: OperationResult
+      operationResult: OperationResult,
+      traceContext: OperationTraceSpan
    ): List<Either<StreamErrorMessage, TypedInstance>> {
       val duration = responsePair.t1
      // logger.info { "DynamoDb call completed in ${duration}ms for request $query" }
       val response = responsePair.t2
       eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
       return when (response) {
-         is GetItemResponse -> listOf(
-            readItem(
-               response,
+         is GetItemResponse -> {
+            val resultEvent = traceContext.emitEvent(
+               TracingEventKind.OK,
+               SpanState.COMPLETE,
+               operation.returnType,
+               DatabaseResponse(if (response.hasItem()) 1L else 0L) {
+                  // Outputs something like:
+                  // GetItemResponse(Item={score=AttributeValue(N=3), movieId=AttributeValue(N=1)})
+                  // Which is probably fine
+                  response.toString()
+               },
+               "GetItem response"
+            )
+            listOf(
+               readItem(
+                  response,
+                  operation.returnType,
+                  schema,
+                  operationResult.asOperationReferenceDataSource(resultEvent.idSet)
+               )
+            )
+         }
+
+         is QueryResponse -> {
+            val resultEvent = traceContext.emitEvent(
+               TracingEventKind.OK,
+               SpanState.COMPLETE,
+               operation.returnType,
+               DatabaseResponse(response.count().toLong()) {
+                  response.toString()
+               },
+               "Query response"
+            )
+            readItems(
+               response.items(),
                operation.returnType,
                schema,
-               operationResult.asOperationReferenceDataSource()
+               operationResult.asOperationReferenceDataSource(resultEvent.idSet)
             )
-         )
+         }
 
-         is QueryResponse -> readItems(
-            response.items(),
-            operation.returnType,
-            schema,
-            operationResult.asOperationReferenceDataSource()
-         )
-
-         is ScanResponse -> readItems(
-            response.items(),
-            operation.returnType,
-            schema,
-            operationResult.asOperationReferenceDataSource()
-         )
+         is ScanResponse -> {
+            val resultEvent = traceContext.emitEvent(
+               TracingEventKind.OK,
+               SpanState.COMPLETE,
+               operation.returnType,
+               DatabaseResponse(response.count().toLong()) {
+                  response.toString()
+               },
+               "Scan response"
+            )
+            readItems(
+               response.items(),
+               operation.returnType,
+               schema,
+               operationResult.asOperationReferenceDataSource(resultEvent.idSet)
+            )
+         }
 
          else -> error("Not implemented - Response type of ${response::class.simpleName}")
       }

@@ -29,6 +29,7 @@ import com.orbitalhq.query.history.RemoteCallResponseDto
 import com.orbitalhq.query.history.toDto
 import com.orbitalhq.query.runtime.core.ModelFormatSpecSerializer
 import com.orbitalhq.query.runtime.core.RawResultsSerializer
+import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
@@ -113,7 +114,7 @@ class StubQueryService(
 
       val (dispatcher, remoteCallCollector) = buildQueryEventConsumer()
       val queryPlanEventHandler = QueryPlanEventHandler.createFor(vyne.schema)
-      val eventBroker = QueryContextEventBroker()
+      val eventBroker = QueryContextEventBroker(traceSpan = TraceContext.noOp().rootSpan)
          .addHandlers(listOf(remoteCallCollector, queryPlanEventHandler))
       val resultFlux = runBlocking {
          vyne.query(query.query, arguments = query.parameters, eventBroker = eventBroker)

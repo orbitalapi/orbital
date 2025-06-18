@@ -12,6 +12,7 @@ import com.orbitalhq.query.QueryEventConsumer
 import com.orbitalhq.query.caching.StateStoreProvider
 import com.orbitalhq.query.connectors.OperationInvocationPlanner
 import com.orbitalhq.query.history.QuerySankeyChartRow
+import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.stubbing.StubService
 import kotlinx.coroutines.runBlocking
@@ -37,7 +38,7 @@ class QueryVisualizer(
       // This belongs in the service
       val (vyne, stubService) = StubService.stubbedVyne(schema, planners, stateStoreProvider)
       stubService.returnStubValuesForAllOperations()
-      val lineageEventBroker = QueryContextEventBroker()
+      val lineageEventBroker = QueryContextEventBroker(traceSpan = TraceContext.noOp().rootSpan)
       val viewBuilder = LineageSankeyViewBuilder(schema)
       lineageEventBroker.addHandler(QueryPlanEventHandler(viewBuilder))
 

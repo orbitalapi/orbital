@@ -29,7 +29,7 @@ class JdbcInvoker(
 ) :
    OperationInvoker {
 
-   private val queryInvoker = JdbcQueryInvoker(connectionFactory, schemaProvider)
+   private val queryInvoker = JdbcQueryInvoker(connectionFactory, schemaProvider, objectMapper)
    private val upsertInvoker = JdbcUpsertInvoker(connectionFactory, schemaProvider)
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(JdbcConnectorTaxi.Annotations.DatabaseOperation.NAME)

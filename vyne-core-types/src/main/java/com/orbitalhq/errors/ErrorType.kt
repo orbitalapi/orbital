@@ -14,6 +14,7 @@ import lang.taxi.types.PrimitiveType
 // See design doc:
 // https://projects.notional.uk/youtrack/articles/ORB-A-27/Error-Handling
 object ErrorType {
+   @Deprecated("Prefer emitting a StreamErrorEvent on the error stream, or if inside an invoker, returning Either.left(StreamErrorEvent()), as it keeps the errors more cleanly seperated from values")
    fun errorMessage(message: String, schema: Schema, source: DataSource = FailedSearch(message)): TypedInstance {
       return TypedInstance.from(
          type = schema.type(ErrorMessageQualifiedName),

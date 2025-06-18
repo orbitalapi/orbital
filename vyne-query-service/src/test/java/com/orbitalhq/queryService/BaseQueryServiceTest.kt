@@ -23,6 +23,9 @@ import com.orbitalhq.query.runtime.core.QueryLifecycleEventObserver
 import com.orbitalhq.query.runtime.core.QueryResponseFormatter
 import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
+import com.orbitalhq.query.tracing.CollectingEventSink
+import com.orbitalhq.query.tracing.NoopTracingEventSink
+import com.orbitalhq.query.tracing.TracingEventSink
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.SimpleVyneProvider
@@ -111,11 +114,11 @@ abstract class BaseQueryServiceTest {
             clientId: ClientId inherits String
             clientName: ClientName inherits String
          }
-         
+
          model UserInfo inherits com.orbitalhq.auth.AuthClaims {
             roles: Role[]
          }
-         
+
          policy AdminRestrictedClients against Client  (userInfo : UserInfo) -> {
             read {
                when {
@@ -124,7 +127,7 @@ abstract class BaseQueryServiceTest {
                }
             }
          }
-         
+
          service MultipleInvocationService {
             operation getOrders(): Order[]
             operation getTrades(orderIds: OrderId): Trade
@@ -132,8 +135,8 @@ abstract class BaseQueryServiceTest {
             operation getInstrument(instrumentId: InstrumentId): Instrument
             operation getClients(): Client[]
          }
-         
-         
+
+
       """.trimIndent()
    }
 
@@ -148,6 +151,7 @@ abstract class BaseQueryServiceTest {
       val eventConsumer: QueryEventConsumer = mock {}
       val historyWriter: QueryHistoryDbWriter = mock {
          on { createEventConsumer(any(), any()) } doReturn eventConsumer
+         on { createTraceEventSink(any(), any(), any(), any())} doReturn CollectingEventSink()
       }
       return historyWriter
    }
@@ -179,7 +183,7 @@ abstract class BaseQueryServiceTest {
          historyDbWriter,
          Jackson2ObjectMapperBuilder().build(),
          ActiveQueryMonitor(TestHazelcastInstanceFactory().newHazelcastInstance()),
-         QueryResponseFormatter(listOf(CsvFormatSpec))
+         QueryResponseFormatter(listOf(CsvFormatSpec)),
       )
       return queryService
    }

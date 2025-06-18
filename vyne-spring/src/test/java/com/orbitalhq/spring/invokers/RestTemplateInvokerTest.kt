@@ -6,6 +6,7 @@ import arrow.core.Either
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.nhaarman.mockito_kotlin.argumentCaptor
 import com.nhaarman.mockito_kotlin.doAnswer
+import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.expectTypedInstance
 import com.orbitalhq.expectTypedObject
@@ -23,15 +24,31 @@ import com.orbitalhq.models.TypedNull
 import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QueryContextEventBroker
+import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCallOperationResultHandler
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.graph.operationInvocation.OperationInvocationEvaluator
+import com.orbitalhq.query.tracing.CollectingEventSink
+import com.orbitalhq.query.tracing.ConnectionError
+import com.orbitalhq.query.tracing.HttpRequest
+import com.orbitalhq.query.tracing.HttpResponse
+import com.orbitalhq.query.tracing.NoopTracingEventSink
+import com.orbitalhq.query.tracing.OperationTraceSpan
+import com.orbitalhq.query.tracing.TraceContext
+import com.orbitalhq.query.tracing.TraceSpan
+import com.orbitalhq.query.tracing.TracingEventExchangeMetadata
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
+import com.orbitalhq.schemas.Operation
 import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
+import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
+import com.orbitalhq.typedInstances
 import com.orbitalhq.typedObjects
 import com.orbitalhq.utils.Benchmark
 import com.orbitalhq.utils.StrategyPerformanceProfiler
@@ -40,6 +57,7 @@ import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -51,6 +69,7 @@ import mu.KotlinLogging
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.assertThrows
 import org.springframework.http.HttpMethod
 import org.springframework.http.MediaType
 import org.springframework.web.reactive.function.client.WebClient
@@ -138,10 +157,10 @@ namespace vyne {
       }
    }
 
-    @Test
-    fun `will enrich a stream against a rest api when first rest call fails with 400`() = runBlocking {
-        val (vyne, stub) = testVyneWithStub(
-            """
+   @Test
+   fun `will enrich a stream against a rest api when first rest call fails with 400`() = runBlocking {
+      val (vyne, stub) = testVyneWithStub(
+         """
          type FilmId inherits Int
          model Film {
             @Id
@@ -157,61 +176,61 @@ namespace vyne {
             operation streamAnnouncements():Stream<NewReleaseAnnouncement>
          }
       """.trimIndent(),
-            Invoker.RestTemplate
-        )
-        stub.addResponseFlow("streamAnnouncements") { _, _ ->
-            val typedInstance1 = TypedInstance.tryFrom(
-                vyne.type("NewReleaseAnnouncement"),
-                mapOf("filmId" to 1),
-                vyne.schema
-            )
+         Invoker.RestTemplate
+      )
+      stub.addResponseFlow("streamAnnouncements") { _, _ ->
+         val typedInstance1 = TypedInstance.tryFrom(
+            vyne.type("NewReleaseAnnouncement"),
+            mapOf("filmId" to 1),
+            vyne.schema
+         )
 
-            val typedInstance2 = TypedInstance.tryFrom(
-                vyne.type("NewReleaseAnnouncement"),
-                mapOf("filmId" to 2),
-                vyne.schema
-            )
-            listOf(typedInstance1, typedInstance2).asFlow()
-        }
+         val typedInstance2 = TypedInstance.tryFrom(
+            vyne.type("NewReleaseAnnouncement"),
+            mapOf("filmId" to 2),
+            vyne.schema
+         )
+         listOf(typedInstance1, typedInstance2).asFlow()
+      }
 
-        val invokedPaths: ConcurrentHashMap<String, Int> = ConcurrentHashMap()
-        server.prepareResponse(
-            invokedPaths,
-            "/films/1" to response("", 400),
-            "/films/2" to response("""{ "filmId" : 2, "title" : "A new hope" }"""),
-        )
+      val invokedPaths: ConcurrentHashMap<String, Int> = ConcurrentHashMap()
+      server.prepareResponse(
+         invokedPaths,
+         "/films/1" to response("", 400),
+         "/films/2" to response("""{ "filmId" : 2, "title" : "A new hope" }"""),
+      )
 
-        vyne.query(
-            """stream { NewReleaseAnnouncement } as {
+      vyne.query(
+         """stream { NewReleaseAnnouncement } as {
          | filmId : FilmId
          | title : FilmTitle
          | }[]
       """.trimMargin()
-        ).results.test {
-            val item1 = expectTypedObject()
-            item1.toRawObject().should.equal(
-                mapOf(
-                    "filmId" to 1,
-                    "title" to null
-                )
+      ).results.test {
+         val item1 = expectTypedObject()
+         item1.toRawObject().should.equal(
+            mapOf(
+               "filmId" to 1,
+               "title" to null
             )
+         )
 
-            val item2 = expectTypedObject()
-            item2.toRawObject().should.equal(
-                mapOf(
-                    "filmId" to 2,
-                    "title" to "A new hope"
-                )
+         val item2 = expectTypedObject()
+         item2.toRawObject().should.equal(
+            mapOf(
+               "filmId" to 2,
+               "title" to "A new hope"
             )
-            awaitComplete()
+         )
+         awaitComplete()
 
-        }
-    }
+      }
+   }
 
-    @Test
-    fun `will mutate a stream against a rest api when first rest call fails with 400`() = runBlocking {
-        val (vyne, stub) = testVyneWithStub(
-            """
+   @Test
+   fun `will mutate a stream against a rest api when first rest call fails with 400`() = runBlocking {
+      val (vyne, stub) = testVyneWithStub(
+         """
          type FilmId inherits Int
          model Film {
             @Id
@@ -221,7 +240,7 @@ namespace vyne {
           model NewReleaseAnnouncement {
             filmId : FilmId
          }
-         
+
          parameter model FilmUpdate {
             filmId: FilmId
          }
@@ -231,46 +250,46 @@ namespace vyne {
             operation streamAnnouncements():Stream<NewReleaseAnnouncement>
          }
       """.trimIndent(),
-            Invoker.RestTemplate
-        )
-        stub.addResponseFlow("streamAnnouncements") { _, _ ->
-            val typedInstance1 = TypedInstance.tryFrom(
-                vyne.type("NewReleaseAnnouncement"),
-                mapOf("filmId" to 1),
-                vyne.schema
-            )
+         Invoker.RestTemplate
+      )
+      stub.addResponseFlow("streamAnnouncements") { _, _ ->
+         val typedInstance1 = TypedInstance.tryFrom(
+            vyne.type("NewReleaseAnnouncement"),
+            mapOf("filmId" to 1),
+            vyne.schema
+         )
 
-            val typedInstance2 = TypedInstance.tryFrom(
-                vyne.type("NewReleaseAnnouncement"),
-                mapOf("filmId" to 2),
-                vyne.schema
-            )
-            listOf(typedInstance1, typedInstance2).asFlow()
-        }
+         val typedInstance2 = TypedInstance.tryFrom(
+            vyne.type("NewReleaseAnnouncement"),
+            mapOf("filmId" to 2),
+            vyne.schema
+         )
+         listOf(typedInstance1, typedInstance2).asFlow()
+      }
 
-        val invokedPaths: ConcurrentHashMap<String, Int> = ConcurrentHashMap()
-        server.prepareResponse(
-            invokedPaths,
-            "/films/1" to response("", 404),
-            "/films/2" to response("""{ "filmId" : 2, "title" : "A new hope" }"""),
-        )
+      val invokedPaths: ConcurrentHashMap<String, Int> = ConcurrentHashMap()
+      server.prepareResponse(
+         invokedPaths,
+         "/films/1" to response("", 404),
+         "/films/2" to response("""{ "filmId" : 2, "title" : "A new hope" }"""),
+      )
 
-        vyne.query(
-            """stream { NewReleaseAnnouncement } 
+      vyne.query(
+         """stream { NewReleaseAnnouncement }
                 | call FilmService::persistFilm
       """.trimMargin()
-        ).results.test {
-            val item1 = expectTypedInstance()
-            val item2 = expectTypedInstance()
+      ).results.test {
+         val item1 = expectTypedInstance()
+         val item2 = expectTypedInstance()
 
-            // Either item1 or item2 should be TypedNull for failed mutation
-            if (item2 !is TypedNull && item1 !is TypedNull) {
-                fail("mutation failure should yield an TypedNull")
-            }
-            awaitComplete()
+         // Either item1 or item2 should be TypedNull for failed mutation
+         if (item2 !is TypedNull && item1 !is TypedNull) {
+            fail("mutation failure should yield an TypedNull")
+         }
+         awaitComplete()
 
-        }
-    }
+      }
+   }
 
    @Test
    @OptIn(ExperimentalTime::class)
@@ -303,7 +322,7 @@ namespace vyne {
       val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}")).withBuiltIns()
       val service = schema.service("vyne.ClientDataService")
       val operation = service.operation("getContactsForClient")
-      val queryContext: QueryContext = mock { }
+      val queryContext: QueryContext = eventCapturingQueryContext().first
 
 
       runTest {
@@ -589,25 +608,25 @@ namespace vyne {
    @Test
    fun `When @OmitNulls annotation is set on parameter object null values are filtered`() {
       val testSchema = """
-         namespace vyne {   
+         namespace vyne {
              @com.orbitalhq.models.OmitNulls
              parameter model CreditScoreRequest {
                  clientId : ClientId inherits String
                  clientName: ClientName? inherits String
              }
-         
+
              type ClientId inherits String
-         
+
               model CreditScoreResponse {
                  score : CreditScore inherits Decimal
              }
-         
-            
+
+
              service CreditScoreService {
                  @HttpOperation(method = "POST",url = "http://localhost:{{PORT}}/score/doCalculate")
                  operation calculateCreditScore(@RequestBody CreditScoreRequest ) : CreditScoreResponse
              }
-        
+
          }      """
 
       server.prepareResponse { response ->
@@ -657,7 +676,7 @@ namespace vyne {
 
    @Test
    fun `When @OmitNulls annotation is set on parameter object null values are filtered for object members`() {
-      val testSchema = """  
+      val testSchema = """
              @com.orbitalhq.models.OmitNulls
              parameter model OrderUpdateData {
                 requestId: RequestId inherits String
@@ -666,12 +685,12 @@ namespace vyne {
                    id: OrderId? inherits String
                }
              }
-        
+
              service OrderService {
                  @HttpOperation(method = "POST",url = "http://localhost:{{PORT}}/order/update")
                  operation updateOrder(@RequestBody OrderUpdateData ) : String
              }
-        
+
         """
 
       server.prepareResponse { response ->
@@ -681,25 +700,29 @@ namespace vyne {
 
       val schema = TaxiSchema.from(testSchema.replace("{{PORT}}", "${server.port}")).withBuiltIns()
       runTest {
-          callOperation(schema,
-              "OrderService",
-             "updateOrder",
-              listOf(
-                  paramAndType("OrderUpdateData",
-                      mapOf("details" to mapOf<String, Any?>("name" to null, "id" to null), "requestId" to "req-1"),
-                      schema)
-              ))
+         callOperation(
+            schema,
+            "OrderService",
+            "updateOrder",
+            listOf(
+               paramAndType(
+                  "OrderUpdateData",
+                  mapOf("details" to mapOf<String, Any?>("name" to null, "id" to null), "requestId" to "req-1"),
+                  schema
+               )
+            )
+         )
          expectRequest { request ->
             val body = String(request.body.readByteArray())
-            assertEquals("""{"requestId":"req-1"}""", body )
+            assertEquals("""{"requestId":"req-1"}""", body)
             assertEquals(MediaType.APPLICATION_JSON_VALUE, request.getHeader("Content-Type"))
          }
       }
    }
 
-    @Test
-    fun `partials with nested object works with OmitNull`()  {
-        val testSchema = """  
+   @Test
+   fun `partials with nested object works with OmitNull`() {
+      val testSchema = """
          closed parameter model Film {
             info : {
              title: Title inherits String
@@ -714,7 +737,7 @@ namespace vyne {
             write operation patchFilmWithPartial(FilmUpdate):FilmUpdate
          }
         """
-    }
+   }
 
    private fun paramAndType(
       typeName: String,
@@ -726,26 +749,28 @@ namespace vyne {
       return Parameter(type, paramName, nullable = false) to TypedInstance.from(type, value, schema, source = Provided)
    }
 
-    private suspend fun callOperation(
-        schema: TaxiSchema,
-        serviceName: String,
-        operationName: String,
-        parameters: List<Pair<Parameter, TypedInstance>>): List<Either<StreamErrorMessage, TypedInstance>> {
-        val service = schema.service(serviceName);
-        val operation = service.operation(operationName)
-        val (context, _) = eventCapturingQueryContext()
+   private suspend fun callOperation(
+      schema: TaxiSchema,
+      serviceName: String,
+      operationName: String,
+      parameters: List<Pair<Parameter, TypedInstance>>
+   ): List<Either<StreamErrorMessage, TypedInstance>> {
+      val service = schema.service(serviceName);
+      val operation = service.operation(operationName)
+      val (context, _) = eventCapturingQueryContext()
 
-        return RestTemplateInvoker(
-            webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
-            schemaProvider = SimpleSchemaProvider(schema)
-        ).invoke(service,
-                 operation,
-                 parameters,
-                 context,
-            "testQuery",
-            QueryOptions()
-        ).toList()
-    }
+      return RestTemplateInvoker(
+         webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
+         schemaProvider = SimpleSchemaProvider(schema)
+      ).invoke(
+         service,
+         operation,
+         parameters,
+         context,
+         "testQuery",
+         QueryOptions()
+      ).toList()
+   }
 
    @Test
    @OptIn(ExperimentalTime::class)
@@ -763,7 +788,7 @@ namespace vyne {
       val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}")).withBuiltIns()
       val service = schema.service("vyne.PetService")
       val operation = service.operation("getPetById")
-
+      val queryContext: QueryContext = eventCapturingQueryContext().first
       runTest {
          val turbine = RestTemplateInvoker(
             webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
@@ -772,7 +797,7 @@ namespace vyne {
          ).invoke(
             service, operation, listOf(
                paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
-            ), mock { }, "MOCK_QUERY_ID", QueryOptions()
+            ), queryContext, "MOCK_QUERY_ID", QueryOptions()
          )
             .testIn(this)
          val typedInstance = turbine.expectTypedObjectFromEither()
@@ -827,7 +852,6 @@ namespace vyne {
    }
 
 
-
    @Test
    @OptIn(ExperimentalTime::class)
    fun whenInvoking_paramsCanBePassedByTypeIfMatchedUnambiguously() {
@@ -841,7 +865,7 @@ namespace vyne {
       val schema = TaxiSchema.from(taxiDef.replace("{{PORT}}", "${server.port}")).withBuiltIns()
       val service = schema.service("vyne.PetService")
       val operation = service.operation("getPetById")
-
+      val queryContext: QueryContext = eventCapturingQueryContext().first
       runTest {
          val turbine = RestTemplateInvoker(
             webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
@@ -849,7 +873,7 @@ namespace vyne {
          ).invoke(
             service, operation, listOf(
                paramAndType("lang.taxi.Int", 100, schema, paramName = "petId")
-            ), mock { }, "MOCK_QUERY_ID", QueryOptions()
+            ), queryContext, "MOCK_QUERY_ID", QueryOptions()
          ).testIn(this)
 
          turbine.expectTypedObjectFromEither()
@@ -899,13 +923,13 @@ namespace vyne {
 
       val service = schema.service("PetService")
       val operation = service.operation("getBestPet")
-
+      val queryContext: QueryContext = eventCapturingQueryContext().first
       runTest {
          val turbine = RestTemplateInvoker(
             webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
             schemaProvider = SimpleSchemaProvider(schema)
          )
-            .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID", QueryOptions())
+            .invoke(service, operation, emptyList(), queryContext, "MOCK_QUERY_ID", QueryOptions())
             .testIn(this)
          val instance = turbine.expectTypedObjectFromEither()
          instance["id"].value.should.equal("100")
@@ -952,14 +976,14 @@ namespace vyne {
 
       val service = schema.service("PetService")
       val operation = service.operation("getBestPet")
-
+      val queryContext: QueryContext = eventCapturingQueryContext().first
 
       runTest {
          val turbine = RestTemplateInvoker(
             webClientFactory = WebClientFactory(WebClient.builder(), AuthWebClientCustomizer.empty()),
             schemaProvider = SimpleSchemaProvider(schema)
          )
-            .invoke(service, operation, emptyList(), mock { }, "MOCK_QUERY_ID", QueryOptions())
+            .invoke(service, operation, emptyList(), queryContext, "MOCK_QUERY_ID", QueryOptions())
             .testIn(this)
 
          val instance = turbine.expectTypedObjectFromEither()
@@ -1138,7 +1162,7 @@ namespace vyne {
    }
 
    @Test
-   fun `does not use primitives to populate query params`() = runBlocking{
+   fun `does not use primitives to populate query params`() = runBlocking {
       val vyne = testVyne(
          """
             type ApiKey inherits String
@@ -1252,7 +1276,8 @@ namespace vyne {
       server.addJsonResponse("""[ { "name" : "Jimmy" } ]""")
       server.requestCount.shouldBe(0)
       vyne.query(
-         """find { Person[] } """)
+         """find { Person[] } """
+      )
          .rawObjects()
       server.requestCount.shouldBe(1)
    }
@@ -1301,6 +1326,117 @@ namespace vyne {
          assertEquals(HttpMethod.GET.name(), request.method)
       }
    }
+
+   @Test
+   fun `when server call fails because server unreachable then trace events are captured`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            name : Name inherits String
+         }
+         service PersonService {
+         // Note the intenitonally bad port - this request will fail
+            @HttpOperation(method = "GET", url = "http://localhost:123/people?apiKey={apiKey}")
+            operation listPeople(apiKey:ApiKey):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+      )
+
+      val (eventBroker,eventSink) = QueryContextEventBroker.withTestTraceSpan()
+      assertThrows<OperationInvocationException> {
+         vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""", eventBroker = eventBroker)
+            .rawObjects()
+      }
+
+      eventSink.collectedEvents.shouldHaveSize(2)
+      eventSink.collectedEvents[0].exchangeMetadata.shouldBeInstanceOf<HttpRequest>()
+      eventSink.collectedEvents[1].exchangeMetadata.shouldBeInstanceOf<ConnectionError>()
+   }
+
+   @Test
+   fun `when server calls are retried then trace events are captured`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people?apiKey={apiKey}")
+            @HttpRetry(responseCode = [502, 503], fixedRetryPolicy = @HttpFixedRetryPolicy(maxRetries = 2, retryDelay = 1))
+            operation listPeople(apiKey:ApiKey):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+      )
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""{}""")
+            .setResponseCode(503)
+
+      }
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""{}""")
+            .setResponseCode(502)
+
+
+      }
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+      }
+      val eventSink = CollectingEventSink()
+      val eventBroker = QueryContextEventBroker(traceSpan = TraceContext.newTrace("fake-query-id", eventSink).rootSpan)
+      vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""", eventBroker = eventBroker)
+         .rawObjects()
+
+      eventSink.collectedEvents.shouldHaveSize(6)
+      val eventMetadata = eventSink.collectedEvents.map { it.exchangeMetadata }
+      eventMetadata[0].shouldBeHttpRequest()
+      eventSink.collectedEvents[0].tracingEventKind.shouldBe(TracingEventKind.OK)
+      eventMetadata[1].shouldBeHttpResponseWithStatusCode(503)
+      eventSink.collectedEvents[1].tracingEventKind.shouldBe(TracingEventKind.ERROR)
+      eventMetadata[2].shouldBeHttpRequest()
+      eventMetadata[3].shouldBeHttpResponseWithStatusCode(502)
+      eventSink.collectedEvents[3].tracingEventKind.shouldBe(TracingEventKind.ERROR)
+      eventMetadata[4].shouldBeHttpRequest()
+      eventMetadata[5].shouldBeHttpResponseWithStatusCode(200)
+      eventSink.collectedEvents[5].tracingEventKind.shouldBe(TracingEventKind.OK)
+   }
+
+      @Test
+      fun `instances from HTTP requests are linked to source events`():Unit = runBlocking {
+         val vyne = testVyne(
+            """
+         type ApiKey inherits String
+         model Person {
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people?apiKey={apiKey}")
+            operation listPeople(apiKey:ApiKey):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+         )
+         server.prepareResponse { response ->
+            response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+               .setBody("""[ { "name" : "Jimmy" },  { "name" : "Jack" }]""")
+         }
+         val (eventBroker,_) = QueryContextEventBroker.withTestTraceSpan()
+         val typedInstances = vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""", eventBroker = eventBroker)
+            .typedInstances()
+
+         // Verify that the instances, when emitted, were linked back to their source events
+         typedInstances[0].source
+            .shouldBeInstanceOf<OperationResultReference>()
+            .sourceEventId.shouldNotBeNull()
+         typedInstances[1].source
+            .shouldBeInstanceOf<OperationResultReference>()
+            .sourceEventId.shouldNotBeNull()
+      }
 
    @Test
    fun `can use exponential retry policy`(): Unit = runBlocking {
@@ -1382,41 +1518,41 @@ namespace vyne {
 
       }
 
-      val remoteCalls = object: RemoteCallOperationResultHandler {
-          val operationResults = mutableListOf<OperationResult>()
-          override fun recordResult(operation: OperationResult, queryId: String) {
-              operationResults.add(operation)
-          }
+      val remoteCalls = object : RemoteCallOperationResultHandler {
+         val operationResults = mutableListOf<OperationResult>()
+         override fun recordResult(operation: OperationResult, queryId: String) {
+            operationResults.add(operation)
+         }
       }
 
-       val queryEventBroker = QueryContextEventBroker()
-       queryEventBroker.addHandler(remoteCalls)
+      val queryEventBroker = QueryContextEventBroker(traceSpan = TraceContext.noOp().rootSpan)
+      queryEventBroker.addHandler(remoteCalls)
 
-       var queryException: Exception? = null
-       val queryResult = vyne.query(
-           vyneQlQuery =  """
+      var queryException: Exception? = null
+      val queryResult = vyne.query(
+         vyneQlQuery = """
          find { Person[] }
       """.trimMargin(),
-           eventBroker = queryEventBroker
-       )
+         eventBroker = queryEventBroker
+      )
 
-       try {
-           queryResult.rawObjects()
-       } catch (e: Exception) {
-           queryException = e
-       }
+      try {
+         queryResult.rawObjects()
+      } catch (e: Exception) {
+         queryException = e
+      }
 
-       queryException.should.be.instanceof(OperationInvocationException::class.java)
-       remoteCalls.operationResults.size.should.equal(3)
-       val resultCodes =  remoteCalls.operationResults.map { it.remoteCall.resultCode }
-       resultCodes.count { it == 502 }.should.equal(2)
-       resultCodes.count { it == 503 }.should.equal(1)
+      queryException.should.be.instanceof(OperationInvocationException::class.java)
+      remoteCalls.operationResults.size.should.equal(3)
+      val resultCodes = remoteCalls.operationResults.map { it.remoteCall.resultCode }
+      resultCodes.count { it == 502 }.should.equal(2)
+      resultCodes.count { it == 503 }.should.equal(1)
    }
 
-    @Test
-    fun `will not retry if the received error does not match retry codes`(): Unit = runBlocking {
-        val vyne = testVyne(
-            """
+   @Test
+   fun `will not retry if the received error does not match retry codes`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
          type ApiKey inherits String
          model Person {
             name : Name inherits String
@@ -1427,43 +1563,45 @@ namespace vyne {
             operation listPeople(apiKey:ApiKey):Person[]
           }
       """, invoker = Invoker.RestTemplate
-        )
+      )
 
-        server.prepareResponse { response ->
-            response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
-                .setBody("""{}""")
-                // We should not retry as the server returns 501.
-                .setResponseCode(501)
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""{}""")
+            // We should not retry as the server returns 501.
+            .setResponseCode(501)
 
-        }
+      }
 
-        val remoteCalls = object: RemoteCallOperationResultHandler {
-            val operationResults = mutableListOf<OperationResult>()
-            override fun recordResult(operation: OperationResult, queryId: String) {
-                operationResults.add(operation)
-            }
-        }
+      val remoteCalls = object : RemoteCallOperationResultHandler {
+         val operationResults = mutableListOf<OperationResult>()
+         override fun recordResult(operation: OperationResult, queryId: String) {
+            operationResults.add(operation)
+         }
+      }
 
-        val queryEventBroker = QueryContextEventBroker()
-        queryEventBroker.addHandler(remoteCalls)
+      val queryEventBroker = QueryContextEventBroker(traceSpan = TraceContext.noOp().rootSpan)
+      queryEventBroker.addHandler(remoteCalls)
 
-        val queryResults = vyne.query(vyneQlQuery = """given { key : ApiKey = "hello" } find { Person[] }""",
-            eventBroker = queryEventBroker)
+      val queryResults = vyne.query(
+         vyneQlQuery = """given { key : ApiKey = "hello" } find { Person[] }""",
+         eventBroker = queryEventBroker
+      )
 
-        var queryException: Exception? = null
-        try {
-            queryResults.rawObjects()
-        } catch (e: Exception) {
-            queryException = e
-        }
-        queryException.should.be.instanceof(OperationInvocationException::class.java)
-        remoteCalls.operationResults.first().remoteCall.resultCode.should.equal(501)
-        expectRequestCount(1)
-        expectRequest { request ->
-            assertEquals("/people?apiKey=hello", request.path)
-            assertEquals(HttpMethod.GET.name(), request.method)
-        }
-    }
+      var queryException: Exception? = null
+      try {
+         queryResults.rawObjects()
+      } catch (e: Exception) {
+         queryException = e
+      }
+      queryException.should.be.instanceof(OperationInvocationException::class.java)
+      remoteCalls.operationResults.first().remoteCall.resultCode.should.equal(501)
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/people?apiKey=hello", request.path)
+         assertEquals(HttpMethod.GET.name(), request.method)
+      }
+   }
 
    @Test
    fun `can use HttpIgnoreErrors to return result from responses with Http error status`(): Unit = runBlocking {
@@ -1498,10 +1636,16 @@ namespace vyne {
       }
    }
 
-   fun eventCapturingQueryContext():Pair<QueryContext, MutableList<OperationResult>> {
+   fun eventCapturingQueryContext(): Pair<QueryContext, MutableList<OperationResult>> {
       val operationResults = mutableListOf<OperationResult>()
       val context = mock<QueryContext> {
          val capture = argumentCaptor<OperationResult>()
+         val serviceCapture = argumentCaptor<Service>()
+         val operationCapture = argumentCaptor<RemoteOperation>()
+         val resourceNameCapture = argumentCaptor<String>()
+         on { createOperationTraceSpan(serviceCapture.capture(), operationCapture.capture(), resourceNameCapture.capture())} doAnswer {
+            OperationTraceSpan(TraceContext.noOp().rootSpan, serviceCapture.lastValue, operationCapture.lastValue, resourceNameCapture.lastValue)
+         }
          on { reportRemoteOperationInvoked(capture.capture(), com.nhaarman.mockito_kotlin.any()) } doAnswer {
             operationResults.add(capture.lastValue)
             Unit
@@ -1510,4 +1654,16 @@ namespace vyne {
       }
       return context to operationResults
    }
+}
+
+private fun TracingEventExchangeMetadata.shouldBeHttpRequest(): HttpRequest {
+   return this.shouldBeInstanceOf<HttpRequest>()
+
+}
+
+private fun TracingEventExchangeMetadata.shouldBeHttpResponseWithStatusCode(statusCode: Int): HttpResponse {
+   this.shouldBeInstanceOf<HttpResponse>()
+      .responseCode.shouldBe(statusCode)
+   return this
+
 }

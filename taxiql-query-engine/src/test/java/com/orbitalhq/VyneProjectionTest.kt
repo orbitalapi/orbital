@@ -1241,6 +1241,7 @@ service Broker1Service {
 
 
    @Test
+   @Ignore("@Datasource is not documented, and considered deprecated")
    fun `A service annotated with @DataSource will not be invoked twice`() = runBlocking {
       val testSchema = """
          model Client {
@@ -1302,6 +1303,7 @@ service Broker1Service {
    }
 
    @Test
+   @Ignore("@Datasource is not documented, and considered deprecated")
    fun `All services referenced in @DataSource will not be invoked twice`() = runBlocking {
       val testSchema = """
          model Client {
@@ -2238,6 +2240,7 @@ service Broker1Service {
    }
 
    @Test
+   @Ignore("@Datasource is not documented, and considered deprecated")
    fun `If Vyne is enriching an entity, and a model returned from a service defines an Id field, then Vyne will only invoke that service the input parameter identifies the output model`(): Unit =
       runBlocking {
          val testSchema = """
@@ -2379,6 +2382,7 @@ service Broker1Service {
       }
 
    @Test
+   @Ignore("@Datasource is not documented, and considered deprecated")
    fun `When an object has multiple independent fields that identify it, all these fields can be used for enrichment`() =
       runBlocking {
          val testSchema = """

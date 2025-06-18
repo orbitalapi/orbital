@@ -8,6 +8,7 @@ import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.RemoteCallOperationResultHandler
+import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.rawObjects
 import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldHaveSize
@@ -27,7 +28,7 @@ class HazelcastMutatingInvokerTest : BaseHazelcastInvokerTest() {
            operationResults.add(operation)
        }
    }
-       val queryEventBroker = QueryContextEventBroker()
+       val queryEventBroker = QueryContextEventBroker(traceSpan = TraceContext.noOp().rootSpan)
        queryEventBroker.addHandler(remoteCallOperationResultHandler)
 
       val upsertedInstance = vyne.query(

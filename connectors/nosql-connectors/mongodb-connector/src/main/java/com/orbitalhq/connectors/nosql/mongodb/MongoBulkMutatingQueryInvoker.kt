@@ -1,6 +1,7 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
 import arrow.core.Either
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.mongodb.bulk.BulkWriteResult
 import com.mongodb.client.model.InsertOneModel
 import com.mongodb.client.model.UpdateOneModel
@@ -36,8 +37,9 @@ class MongoBulkMutatingQueryInvoker(
    connectionFactory: MongoConnectionFactory,
    schemaProvider: SchemaProvider,
    private val batchWriteCacheProvider: BatchWriteCacheProvider<TypedInstance, OperationResultReference>,
-   private val metricRegistry: MeterRegistry
-) : MongoBaseInvoker(connectionFactory, schemaProvider) {
+   private val metricRegistry: MeterRegistry,
+   objectMapper: ObjectMapper
+) : MongoBaseInvoker(connectionFactory, schemaProvider, objectMapper) {
 
    private val counter = AtomicInteger(0)
    init {

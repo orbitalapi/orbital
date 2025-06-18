@@ -3,6 +3,7 @@ package com.orbitalhq.models
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.tracing.TracingEventIdSet
 import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QualifiedName
@@ -126,8 +127,9 @@ data class OperationResultReference(
    val wasSuccessful: Boolean,
    val inputs: List<OperationResult.OperationParam>,
    val operationName: QualifiedName,
+   override val sourceEventId: TracingEventIdSet? = null,
    override val failedAttempts: List<DataSource> = emptyList()
-) : DataSource {
+) : DataSource, DataSourceWithLinkedTraceEvent {
    companion object {
       const val NAME: String = "Operation result"
    }
@@ -140,14 +142,7 @@ data class OperationResultReference(
    override val id: String = remoteCallId
 
    override fun appendFailedAttempts(failedAttempts: List<DataSource>): DataSource {
-      return OperationResultReference(
-         remoteCallId = remoteCallId,
-         remoteCallResponseId = remoteCallResponseId,
-         wasSuccessful = wasSuccessful,
-         inputs = inputs,
-         operationName = operationName,
-         failedAttempts = this.failedAttempts + failedAttempts
-      )
+      return copy(failedAttempts = this.failedAttempts + failedAttempts)
    }
 }
 
@@ -169,14 +164,30 @@ data class OperationResultReference(
  * and convert to OperationResultReference at earliest possible point.
  *
  */
-data class OperationResultDataSourceWrapper(val operationResult: OperationResult) : DataSource {
-   val operationResultReferenceSource = operationResult.asOperationReferenceDataSource()
+data class OperationResultDataSourceWrapper(
+   val operationResult: OperationResult,
+   /**
+    * The TraceEvent ID that contains the result event that triggered this
+    */
+   override val sourceEventId: TracingEventIdSet? = null
+) : DataSource, DataSourceWithLinkedTraceEvent {
+   val operationResultReferenceSource = operationResult.asOperationReferenceDataSource(sourceEventId)
    override val name: String
       get() = operationResultReferenceSource.name
    override val id: String
       get() = operationResultReferenceSource.id
    override val failedAttempts: List<DataSource> = operationResultReferenceSource.failedAttempts
+}
 
+/**
+ * Indicates that the data source exposes a tracing event Id.
+ * This will be linked to a child span, if the TypedInstance that this data source is associated with
+ * spawns a new projection / mutation span
+ */
+interface DataSourceWithLinkedTraceEvent {
+   // Nullable because this concept is being gradually introduced.
+   // But you should definitely populate it.
+   val sourceEventId: TracingEventIdSet?
 }
 
 data class OperationResult(
@@ -220,13 +231,20 @@ data class OperationResult(
 //      )
 //   }
 
-   fun asOperationReferenceDataSource(): OperationResultReference {
+   fun asOperationReferenceDataSource(
+      /**
+       * The trace event that contains the result of the operation.
+       * Optional, because this is being introduced. But you should definitely populate this
+       */
+      traceEventId: TracingEventIdSet? = null
+   ): OperationResultReference {
       return OperationResultReference(
          remoteCallId = this.remoteCall.remoteCallId,
          remoteCallResponseId = this.remoteCall.responseId,
          wasSuccessful = !remoteCall.isFailed,
          inputs = inputs,
-         operationName = remoteCall.operationQualifiedName
+         operationName = remoteCall.operationQualifiedName,
+         sourceEventId = traceEventId
       )
    }
 

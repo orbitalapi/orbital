@@ -11,6 +11,7 @@ import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.pipelines.jet.api.transport.MessageContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.TypedInstanceContentProvider
+import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import jakarta.annotation.Resource
@@ -106,7 +107,7 @@ class VyneTransformationService(
                transformationResult
             } else {
                // Verified in the earlier stage that outputType != null if a transformation is not provided
-               vyneClient.from(input)
+               vyneClient.from(input, traceContext = TraceContext.noOp())
                   .build(outputType!!.parameterizedName)
                   .results.toList()
             }

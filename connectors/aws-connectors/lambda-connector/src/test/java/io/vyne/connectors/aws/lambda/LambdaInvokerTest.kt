@@ -6,12 +6,22 @@ import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.query.tracing.FunctionCallRequest
+import com.orbitalhq.query.tracing.FunctionCallResponse
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
 import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.runBlocking
 import mu.KotlinLogging
 import org.junit.Before
@@ -110,6 +120,80 @@ class LambdaInvokerTest {
    }
 
    @Test
+   fun `emits tracing events when invoking lambda function and includes request and response payload`(): Unit = runBlocking {
+      val vyne = testVyne(
+         listOf(
+            LambdaConnectorTaxi.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            """
+         ${LambdaConnectorTaxi.Annotations.imports}
+         import ${VyneQlGrammar.QUERY_TYPE_NAME}
+         type MovieId inherits Int
+         type StreamingProviderName inherits String
+         type MonthlyPrice inherits Decimal
+         model StreamingProvider {
+            name: StreamingProviderName
+            pricePerMonth: MonthlyPrice
+         }
+
+         parameter model StreamingProviderRequest {
+            filmId: MovieId
+         }
+
+         model StreamingProviderResponse {
+            statusCode: Int
+            body: StreamingProvider
+         }
+
+         @AwsLambdaService( connectionName = "vyneAws" )
+         service MovieDb {
+            @LambdaOperation(name = "streamingprovider")
+            operation movieQuery(@RequestBody StreamingProviderRequest): StreamingProviderResponse
+         }
+      """
+         )
+      ) { schema ->
+         listOf(LambdaInvoker(connectionRegistry, SimpleSchemaProvider(schema)))
+      }
+
+      val (eventBroker, eventSink) = QueryContextEventBroker.withTestTraceSpan()
+
+      val result = vyne.query(
+         """given { request: StreamingProviderRequest = { filmId: 1 } }
+            find {StreamingProviderResponse}""",
+         eventBroker = eventBroker
+      ).rawObjects()
+
+      // Should have request and response events
+      eventSink.collectedEvents.shouldHaveSize(2)
+
+      // Verify request event
+      val requestEvent = eventSink.collectedEvents.first()
+      requestEvent.spanState.shouldBe(SpanState.ACTIVE)
+      val requestMetadata = requestEvent.exchangeMetadata.shouldBeInstanceOf<FunctionCallRequest>()
+      requestEvent.eventVerb.shouldBe("Invoke")
+      val requestPayload = requestMetadata.payload()
+      requestPayload.shouldNotBeNull()
+      requestPayload.shouldContain("filmId")
+      requestPayload.shouldContain("1")
+
+      // Verify response event
+      val responseEvent = eventSink.collectedEvents.last()
+      responseEvent.spanState.shouldBe(SpanState.COMPLETE)
+      val responseMetadata = responseEvent.exchangeMetadata.shouldBeInstanceOf<FunctionCallResponse>()
+      responseEvent.eventVerb.shouldBe("Invoke response")
+      val responsePayload = responseMetadata.payload()
+      responsePayload.shouldNotBeNull()
+      responsePayload.shouldContain("statusCode")
+      responsePayload.shouldContain("body")
+
+      // Verify actual query result
+      result.shouldHaveSize(1)
+      val resultMap = result.first() as Map<String, Any?>
+      resultMap["statusCode"].shouldBe(200)
+   }
+
+   @Test
    fun `Vyne can invoke a lambda function`(): Unit = runBlocking {
       val vyne = testVyne(
          listOf(
@@ -189,7 +273,60 @@ class LambdaInvokerTest {
       ))
    }
 
+   @Test
+   fun `emits tracing events when lambda function invocation fails`(): Unit = runBlocking {
+      val vyne = testVyne(
+         listOf(
+            LambdaConnectorTaxi.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            """
+         ${LambdaConnectorTaxi.Annotations.imports}
+         import ${VyneQlGrammar.QUERY_TYPE_NAME}
+         type MovieId inherits Int
 
+         parameter model FailureRequest {
+            movieId: MovieId
+         }
 
+         model FailureResponse {
+            error: String
+         }
+
+         @AwsLambdaService( connectionName = "vyneAws" )
+         service FailingService {
+            @LambdaOperation(name = "nonexistent-function")
+            operation failingQuery(@RequestBody FailureRequest): FailureResponse
+         }
+      """
+         )
+      ) { schema ->
+         listOf(LambdaInvoker(connectionRegistry, SimpleSchemaProvider(schema)))
+      }
+
+      val (eventBroker, eventSink) = QueryContextEventBroker.withTestTraceSpan()
+
+      try {
+         vyne.query(
+            """given { request: FailureRequest = { movieId: 999 } }
+               find { FailureResponse }""",
+            eventBroker = eventBroker
+         ).rawObjects()
+      } catch (e: Exception) {
+         // Expected to fail
+      }
+
+      // Should still have request event, and possibly an error event
+      eventSink.collectedEvents.shouldHaveSize(1) // Just the request event before failure
+
+      val requestEvent = eventSink.collectedEvents.first()
+      requestEvent.spanState.shouldBe(SpanState.ACTIVE)
+      val requestMetadata = requestEvent.exchangeMetadata.shouldBeInstanceOf<FunctionCallRequest>()
+      requestEvent.eventVerb.shouldBe("Invoke")
+
+      val requestPayload = requestMetadata.payload()
+      requestPayload.shouldNotBeNull()
+      requestPayload.shouldContain("movieId")
+      requestPayload.shouldContain("999")
+   }
 
 }

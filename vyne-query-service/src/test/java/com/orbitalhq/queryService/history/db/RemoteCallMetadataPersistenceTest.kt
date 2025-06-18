@@ -404,7 +404,6 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
          config = QueryAnalyticsConfig(
             persistenceQueueStorePath = tempDir.root.toPath()
          ),
-         meterRegistry = SimpleMeterRegistry()
       )
    }
 

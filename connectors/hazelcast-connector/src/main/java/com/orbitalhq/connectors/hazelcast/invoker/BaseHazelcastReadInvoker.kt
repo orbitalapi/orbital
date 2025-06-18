@@ -20,6 +20,11 @@ import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.tracing.CacheRequest
+import com.orbitalhq.query.tracing.CacheResponse
+import com.orbitalhq.query.tracing.OperationTraceSpan
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schemas.Field
 import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.OperationKind
@@ -160,6 +165,7 @@ abstract class BaseHazelcastReadInvoker {
       schema: Schema,
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val startTime = Instant.now()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, "")
       val executionConfig = getExecutionConfig(operation, hazelcastInstance, parameters, schema)
       return when {
          executionConfig.idLookupValue != null -> findById(
@@ -176,6 +182,7 @@ abstract class BaseHazelcastReadInvoker {
             queryId,
             executionConfig.unwrappedReturnType,
             schema,
+            traceContext
          )
 
          queryIsFindAll(executionConfig.parsedQuery) || executionConfig.parsedQuery == null && operation.operationKind == OperationKind.Stream -> findAll(
@@ -191,6 +198,7 @@ abstract class BaseHazelcastReadInvoker {
             queryId,
             executionConfig.unwrappedReturnType,
             schema,
+            traceContext
          )
 
          executionConfig.filterCriteria != null -> findByCriteria(
@@ -208,6 +216,7 @@ abstract class BaseHazelcastReadInvoker {
             queryId,
             executionConfig.unwrappedReturnType,
             schema,
+            traceContext
          )
 
          else -> error("Unsupported read scenario found in query: ${executionConfig.taxiQlQueryString}")
@@ -229,8 +238,18 @@ abstract class BaseHazelcastReadInvoker {
       queryId: String,
       unwrappedReturnType: Type,
       schema: Schema,
+      traceContext: OperationTraceSpan
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val predicate = ExpressionToPredicateConverter.convert(taxiQlQuery.discoveryType!!, filterCriteria)
+
+      traceContext.emitEvent(
+         kind = TracingEventKind.OK,
+         spanState = SpanState.ACTIVE,
+         payloadType = operation.returnType,
+         exchangeMetadata = CacheRequest(mapName, CacheOperationVerb.QUERY, hazelcastConnectionConfig.connectionName) { filterCriteria.asTaxi()},
+         verb = "Query"
+      )
+
       val (rawResults, resultSize) = buildFlowOfCriteriaSearch(
          taxiQlQueryString,
          operation,
@@ -238,6 +257,14 @@ abstract class BaseHazelcastReadInvoker {
          predicate,
       )
       val (taxiQuery, constructedQueryDataSource) = parameters.getTaxiQlQuery()
+
+      val resultEvent = traceContext.emitEvent(
+         TracingEventKind.OK,
+         SpanState.COMPLETE,
+         operation.returnType,
+         CacheResponse(resultSize) { "Retrieved $resultSize records from map $mapName with predicate $predicate" },
+         "Query response"
+      )
 
       val isSuccessful = resultSize > 0
       val operationResult = buildOperationResult(
@@ -257,7 +284,7 @@ abstract class BaseHazelcastReadInvoker {
          rawResults,
          unwrappedReturnType.taxiType as ObjectType,
          schema,
-         operationResult.asOperationReferenceDataSource()
+         operationResult.asOperationReferenceDataSource(resultEvent.idSet)
       )
    }
 
@@ -289,11 +316,29 @@ abstract class BaseHazelcastReadInvoker {
       queryId: String,
       unwrappedReturnType: Type,
       schema: Schema,
+      traceContext: OperationTraceSpan
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       logger.debug { "Query of $taxiQlQueryString converted to Id lookup against map $mapName with key $idLookupValue" }
+
+      traceContext.emitEvent(
+         kind = TracingEventKind.OK,
+         spanState = SpanState.ACTIVE,
+         payloadType = operation.returnType,
+         exchangeMetadata = CacheRequest(mapName, CacheOperationVerb.GET, hazelcastConnectionConfig.connectionName) { "Key = $idLookupValue" },
+         verb = "Get"
+      )
+
       val (rawResultFlow, recordCount) = buildFlowById(taxiQlQueryString, idLookupValue, map, operation)
 
       val (taxiQuery, constructedQueryDataSource) = parameters.getTaxiQlQuery()
+
+      val resultEvent = traceContext.emitEvent(
+         TracingEventKind.OK,
+         SpanState.COMPLETE,
+         operation.returnType,
+         CacheResponse(recordCount) { "Retrieved $recordCount record from map $mapName with key $idLookupValue" },
+         "Get response"
+      )
 
       val isSuccess = recordCount > 0
       val result = buildOperationResult(
@@ -323,7 +368,7 @@ abstract class BaseHazelcastReadInvoker {
             rawResultFlow,
             unwrappedReturnType.taxiType as ObjectType,
             schema,
-            result.asOperationReferenceDataSource()
+            result.asOperationReferenceDataSource(resultEvent.idSet)
          )
       }
    }
@@ -341,7 +386,16 @@ abstract class BaseHazelcastReadInvoker {
       queryId: String,
       unwrappedReturnType: Type,
       schema: Schema,
+      traceContext: OperationTraceSpan
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
+      traceContext.emitEvent(
+         kind = TracingEventKind.OK,
+         spanState = SpanState.ACTIVE,
+         payloadType = operation.returnType,
+         exchangeMetadata = CacheRequest(mapName, CacheOperationVerb.GET_ALL, hazelcastConnectionConfig.connectionName) { "Find all"},
+         verb = "GetAll"
+      )
+
       val (rawResultsFlow, resultSize) = buildFlowOfFullMap(map, operation, taxiQlQueryString)
 
       // Note - generally for a findAll(), there are no parameters, so an empty list
@@ -355,7 +409,13 @@ abstract class BaseHazelcastReadInvoker {
          constructedQueryDataSource.inputs
       }
 
-
+      val resultEvent = traceContext.emitEvent(
+         TracingEventKind.OK,
+         SpanState.COMPLETE,
+         operation.returnType,
+         CacheResponse(resultSize) { "Retrieved all $resultSize records from map $mapName" },
+         "GetAll response"
+      )
 
       val result = buildOperationResult(
          service,
@@ -374,7 +434,7 @@ abstract class BaseHazelcastReadInvoker {
          rawResultsFlow,
          unwrappedReturnType.taxiType as ObjectType,
          schema,
-         result.asOperationReferenceDataSource()
+         result.asOperationReferenceDataSource(resultEvent.idSet)
       )
    }
 

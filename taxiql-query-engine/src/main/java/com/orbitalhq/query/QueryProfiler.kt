@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.orbitalhq.query.history.PartialRemoteCallResponse
 import com.orbitalhq.query.history.QueryErrorEventRow
 import com.orbitalhq.query.history.QuerySankeyChartRow
+import com.orbitalhq.query.history.tracing.TraceSpanRecord
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.QualifiedNameAsStringDeserializer
 import com.orbitalhq.schemas.QualifiedNameAsStringSerializer
@@ -265,7 +266,8 @@ data class QueryProfileData(
    val timings: Map<OperationType, Long> = emptyMap(),
    val operationStats: List<RemoteOperationPerformanceStats> = emptyList(),
    val queryLineageData: List<QuerySankeyChartRow> = emptyList(),
-   val errors: List<QueryErrorEventRow> = emptyList()
+   val errors: List<QueryErrorEventRow> = emptyList(),
+   val traceSpans: List<TraceSpanRecord> = emptyList()
 )
 
 data class Result(

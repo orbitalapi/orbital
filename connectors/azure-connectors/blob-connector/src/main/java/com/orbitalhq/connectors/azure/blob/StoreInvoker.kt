@@ -18,6 +18,10 @@ import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.tracing.ObjectStoreRequest
+import com.orbitalhq.query.tracing.ObjectStoreResponse
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
@@ -63,17 +67,37 @@ class StoreInvoker(
       val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query) { type -> type.toQualifiedName().typeName.toUpperCase() }
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
       val azureStoreConnection = fetchConnection(service)
+      val containerName = fetchContainer(operation)
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, containerName)
+
+      traceContext.emitEvent(
+         kind = TracingEventKind.OK,
+         spanState = SpanState.ACTIVE,
+         payloadType = null,
+         exchangeMetadata = ObjectStoreRequest(azureStoreConnection.connectionName, containerName) { sql },
+         verb = "Query"
+      )
+
       val resultTypeQualifiedName = query.resultType()
       val resultType = schema.type(resultTypeQualifiedName.toVyneQualifiedName())
       val parametrisedType = resultType.collectionType ?: resultType
       val dataSource = VyneCalciteDataSource(
          schema,
          resultTypeQualifiedName.toVyneQualifiedName(),
-         streamProvider.stream(parametrisedType, schema, azureStoreConnection, fetchContainer(operation), null)
+         streamProvider.stream(parametrisedType, schema, azureStoreConnection, containerName, null)
       )
       val stopwatch = Stopwatch.createStarted()
       val result = NamedParameterJdbcTemplate(dataSource).queryForList(sql, paramMap)
       val elapsed = stopwatch.elapsed()
+
+      val resultEvent = traceContext.emitEvent(
+         TracingEventKind.OK,
+         SpanState.COMPLETE,
+         operation.returnType,
+         ObjectStoreResponse(errorMessage = null, result.size.toLong(), { "Retrieved ${result.size} records from Azure Store" }),
+         "Query response"
+      )
+
       val operationResult = buildDataSource(
          service,
          operation,
@@ -85,7 +109,7 @@ class StoreInvoker(
       eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
       return result.convertToTypedInstances(
          schema,
-         operationResult.asOperationReferenceDataSource(),
+         operationResult.asOperationReferenceDataSource(resultEvent.idSet),
          resultTypeQualifiedName,
          dispatcher
       )

@@ -1,5 +1,6 @@
 package com.orbitalhq.history.db
 
+import com.orbitalhq.history.HistoryPersistenceQueue
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.query.HistoryEventConsumerProvider
@@ -31,6 +32,11 @@ class InProcessHistoryConfiguration {
    }
 
    @Bean
+   fun historyPersistenceQueue(config: QueryAnalyticsConfig): HistoryPersistenceQueue {
+      return HistoryPersistenceQueue("combined", config.persistenceQueueStorePath)
+   }
+
+   @Bean
    fun historyWriterProvider(
       queryHistoryRecordRepository: QueryHistoryRecordRepository,
       resultRowRepository: QueryResultRowRepository,
@@ -39,7 +45,8 @@ class InProcessHistoryConfiguration {
       sankeyChartRowRepository: QuerySankeyChartRowRepository,
       config: QueryAnalyticsConfig = QueryAnalyticsConfig(),
       meterRegistry: MeterRegistry,
-      errorEventRowRepository: QueryErrorEventRowRepository
+      errorEventRowRepository: QueryErrorEventRowRepository,
+      persistenceQueue: HistoryPersistenceQueue,
    ): HistoryEventConsumerProvider {
       logger.info { "Analytics Data will be stored in a disk database." }
       return QueryHistoryDbWriter(
@@ -50,7 +57,9 @@ class InProcessHistoryConfiguration {
          sankeyChartRowRepository,
          errorEventRowRepository,
          Jackson.defaultObjectMapper,
-         config, meterRegistry
+         config,
+         persistenceQueue,
       )
    }
+
 }

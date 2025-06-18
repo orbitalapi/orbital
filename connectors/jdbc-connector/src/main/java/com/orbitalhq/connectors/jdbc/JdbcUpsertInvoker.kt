@@ -16,6 +16,11 @@ import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.SqlExchange
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.tracing.ConnectionError
+import com.orbitalhq.query.tracing.DatabaseRequest
+import com.orbitalhq.query.tracing.DatabaseResponse
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.OperationInvocationException
@@ -68,7 +73,8 @@ class JdbcUpsertInvoker(
     * We have single instance of JdbcUpsertInvoker instantiated by singleton JdbcInvoker bean. Therefore, we need a mechanism
     * to check to see whether we need to create the underlying relational table for different data connections.
     */
-   private val tableCheckAndExistsMap = ConcurrentHashMap<JdbcConnectorTaxi.Annotations.Table, JdbcConnectorTaxi.Annotations.Table>()
+   private val tableCheckAndExistsMap =
+      ConcurrentHashMap<JdbcConnectorTaxi.Annotations.Table, JdbcConnectorTaxi.Annotations.Table>()
 
    override suspend fun invoke(
       service: Service,
@@ -115,9 +121,23 @@ class JdbcUpsertInvoker(
          verb = verb,
       )
       logger.info { "Writing INSERT to table ${tableAnnotation.tableName}" }
+      val tableName = SqlUtils.getTableName(inputAsList.first().type.taxiType)
+      val span = eventDispatcher.createOperationTraceSpan(service, operation, tableName)
       val startTime = Instant.now()
       try {
+         // Emit event before doing the thing
+         span.emitEvent(
+            TracingEventKind.OK, SpanState.ACTIVE, operation.returnType, DatabaseRequest(
+               connectionConfig.connectionName, "Upsert", tableName, { sqlOperation.sql }), "Upsert"
+         )
          val (affectedRecordCount, insertedRecords) = sqlOperation.execute()
+         span.emitEvent(
+            TracingEventKind.OK,
+            SpanState.COMPLETE,
+            operation.returnType,
+            DatabaseResponse(affectedRecordCount.toLong(), { null }),
+            "Upsert"
+         )
 
          if (inputAsList.size == affectedRecordCount) {
             logger.info { "Successfully inserted $affectedRecordCount record(s) into table ${tableAnnotation.tableName}" }
@@ -144,12 +164,20 @@ class JdbcUpsertInvoker(
                operationResult.asOperationReferenceDataSource()
             ).asFlow()
          } else {
-            inputAsList.map { Either.Right(DataSourceUpdater.update(it, operationResult.asOperationReferenceDataSource())) }
+            inputAsList.map {
+               Either.Right(
+                  DataSourceUpdater.update(
+                     it,
+                     operationResult.asOperationReferenceDataSource()
+                  )
+               )
+            }
                .asFlow()
          }
       } catch (e: Exception) {
          val errorMessage = "Failed to insert into ${tableAnnotation.tableName} - ${e.message}"
          logger.error(e) { errorMessage }
+         span.emitEvent(TracingEventKind.ERROR, SpanState.COMPLETE, null, ConnectionError(errorMessage), "Error")
 
          val remoteCall =
             buildRemoteCall(service, connectionConfig, operation, sqlOperation.sql, startTime, errorMessage)

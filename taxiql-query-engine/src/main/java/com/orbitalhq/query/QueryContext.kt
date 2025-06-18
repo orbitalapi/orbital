@@ -24,6 +24,9 @@ import com.orbitalhq.query.graph.ServiceAnnotations
 import com.orbitalhq.query.graph.ServiceParams
 import com.orbitalhq.query.graph.edges.EvaluatableEdge
 import com.orbitalhq.query.graph.edges.EvaluatedEdge
+import com.orbitalhq.query.tracing.CollectingEventSink
+import com.orbitalhq.query.tracing.TraceContext
+import com.orbitalhq.query.tracing.TraceSpan
 import com.orbitalhq.retainFactsFromFactSet
 import com.orbitalhq.schemas.Operation
 import com.orbitalhq.schemas.OperationNames
@@ -101,7 +104,8 @@ data class QueryContext(
     */
    val queryId: String,
 
-   val eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+   override val traceSpan: TraceSpan,
+   val eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = traceSpan),
 
    val functionResultCache: MutableMap<FunctionResultCacheKey, Any> = ConcurrentHashMap(),
 
@@ -111,7 +115,8 @@ data class QueryContext(
    val metricsReporter: QueryMetricsReporter = NoOpMetricsReporter
 
 
-) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher by eventBroker, InPlaceQueryEngine, QueryContextSchemaProvider {
+) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher by eventBroker, InPlaceQueryEngine,
+   QueryContextSchemaProvider {
 
    private val logger = KotlinLogging.logger {}
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
@@ -186,19 +191,33 @@ data class QueryContext(
       metricsTags = metricsTags
    )
 
-   suspend fun find(target: QuerySpecTypeNode, failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
-                    metricsTags: MetricTags = MetricTags.NONE): QueryResult = queryEngine.find(target, this.newSearchContext(), failureBehaviour = failureBehaviour, metricsTags = metricsTags)
-   suspend fun find(target: Set<QuerySpecTypeNode>, failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
-                    metricsTags: MetricTags = MetricTags.NONE): QueryResult = queryEngine.find(target, this.newSearchContext(), failureBehaviour = failureBehaviour, metricsTags = metricsTags)
+   suspend fun find(
+      target: QuerySpecTypeNode, failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
+      metricsTags: MetricTags = MetricTags.NONE
+   ): QueryResult =
+      queryEngine.find(target, this.newSearchContext(), failureBehaviour = failureBehaviour, metricsTags = metricsTags)
+
+   suspend fun find(
+      target: Set<QuerySpecTypeNode>, failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
+      metricsTags: MetricTags = MetricTags.NONE
+   ): QueryResult =
+      queryEngine.find(target, this.newSearchContext(), failureBehaviour = failureBehaviour, metricsTags = metricsTags)
+
    suspend fun find(
       target: QuerySpecTypeNode,
       excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
-      failureBehaviour:QueryFailureBehaviour = QueryFailureBehaviour.THROW,
+      failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
       metricsTags: MetricTags = MetricTags.NONE
    ): QueryResult =
-      queryEngine.find(target, this.newSearchContext(), excludedOperations, failureBehaviour = failureBehaviour, metricsTags = metricsTags)
+      queryEngine.find(
+         target,
+         this.newSearchContext(),
+         excludedOperations,
+         failureBehaviour = failureBehaviour,
+         metricsTags = metricsTags
+      )
 
-   suspend fun build(type: Type):QueryResult = build(TypeQueryExpression(type))
+   suspend fun build(type: Type): QueryResult = build(TypeQueryExpression(type))
    suspend fun build(typeName: QualifiedName): QueryResult = build(typeName.parameterizedName)
    suspend fun build(typeName: String): QueryResult =
       queryEngine.build(TypeNameQueryExpression(typeName), this.newSearchContext())
@@ -208,10 +227,15 @@ data class QueryContext(
       queryEngine.build(expression, this.newSearchContext())
    //}
 
-   suspend fun findAll(typeName: String,
-                       metricsTags: MetricTags = MetricTags.NONE): QueryResult = findAll(TypeNameQueryExpression(typeName), metricsTags)
-   suspend fun findAll(queryString: QueryExpression,
-                       metricsTags: MetricTags = MetricTags.NONE): QueryResult =
+   suspend fun findAll(
+      typeName: String,
+      metricsTags: MetricTags = MetricTags.NONE
+   ): QueryResult = findAll(TypeNameQueryExpression(typeName), metricsTags)
+
+   suspend fun findAll(
+      queryString: QueryExpression,
+      metricsTags: MetricTags = MetricTags.NONE
+   ): QueryResult =
       queryEngine.findAll(queryString, this.newSearchContext(), metricsTags)
 
    suspend fun doMap(
@@ -266,7 +290,7 @@ data class QueryContext(
                clientQueryId, queryId,
                schema = schema,
                responseType = schema.type(returnType),
-               errors =  Flux.just(QueryErrorEvent(queryId, StreamErrorMessage.fromException(e, expression.toString())))
+               errors = Flux.just(QueryErrorEvent(queryId, StreamErrorMessage.fromException(e, expression.toString())))
             )
 
          }
@@ -290,7 +314,12 @@ data class QueryContext(
       } else {
          val firstResult = mappingResult.first()
          val combinedResultsFlow = mappingResult.map { it.results }.merge()
-         firstResult.copy(results = combinedResultsFlow, queryId = this.queryId, clientQueryId = this.clientQueryId, responseType = schema.type(returnType))
+         firstResult.copy(
+            results = combinedResultsFlow,
+            queryId = this.queryId,
+            clientQueryId = this.clientQueryId,
+            responseType = schema.type(returnType)
+         )
       }
    }
 
@@ -306,7 +335,8 @@ data class QueryContext(
          profiler: QueryProfiler,
          clientQueryId: String? = null,
          queryId: String,
-         eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+         traceSpan: TraceSpan,
+         eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = traceSpan),
          scopedFacts: List<ScopedFact> = emptyList(),
          queryOptions: QueryOptions,
          metricsReporter: QueryMetricsReporter = NoOpMetricsReporter
@@ -319,8 +349,9 @@ data class QueryContext(
             clientQueryId = clientQueryId,
             queryId = queryId,
             eventBroker = eventBroker,
-            queryOptions =  queryOptions,
-            metricsReporter = metricsReporter
+            queryOptions = queryOptions,
+            metricsReporter = metricsReporter,
+            traceSpan = traceSpan
          )
       }
    }
@@ -331,8 +362,10 @@ data class QueryContext(
       // WTF was I thinking?
       // When fixing this in the future, consider that when calling .map {} (handled in doMap()),
       // we want to reuse the same queryId and clientQueryId, as it's the same query.
+      // MP: 12-Jun-25:
+      // I experimented with creating a new trace context here, as it gave a consistent point to handle child creation.
+      // However, this gets called a lot, and we ended up with lots of child spans with no events, which broke the heirarchy.
       return this
-
       val clone = this.copy(
          clientQueryId = clientQueryId,
          queryId = Ids.id("query")
@@ -357,6 +390,15 @@ data class QueryContext(
       )
       appendExclusionsToContext(copied)
       return copied
+   }
+
+   fun withChildTraceSpan(): QueryContext {
+      return attachToTraceSpan(traceSpan.createChild())
+   }
+
+   fun attachToTraceSpan(traceSpan: TraceSpan): QueryContext {
+      val childEventBroker = eventBroker.attachToTraceSpan(traceSpan)
+      return copy(traceSpan = childEventBroker.traceSpan, eventBroker = childEventBroker)
    }
 
    fun only(): QueryContext {
@@ -394,14 +436,23 @@ data class QueryContext(
    }
 
 
-
-
-   override suspend fun findType(type: Type,
-                                 permittedStrategy: PermittedQueryStrategies,
-                                 failureBehaviour: QueryFailureBehaviour,
-                                 constraints: List<Constraint>): Flow<TypedInstance> {
-      val queryExpression = if (constraints.isEmpty()) TypeQueryExpression(type) else ConstrainedTypeNameQueryExpression(type.paramaterizedName, constraints)
-      return this.find(queryExpression, permittedStrategy, failureBehaviour = failureBehaviour, constraint = constraints)
+   override suspend fun findType(
+      type: Type,
+      permittedStrategy: PermittedQueryStrategies,
+      failureBehaviour: QueryFailureBehaviour,
+      constraints: List<Constraint>
+   ): Flow<TypedInstance> {
+      val queryExpression =
+         if (constraints.isEmpty()) TypeQueryExpression(type) else ConstrainedTypeNameQueryExpression(
+            type.paramaterizedName,
+            constraints
+         )
+      return this.find(
+         queryExpression,
+         permittedStrategy,
+         failureBehaviour = failureBehaviour,
+         constraint = constraints
+      )
          .results
    }
 
@@ -523,7 +574,9 @@ data class QueryContext(
    }
 
    /**
-    * Call this function at the mutate phase of the query execution.
+    * Performs a standalone mutation.
+    * Note that no tracing propogation is performed here, so do not call this as part of a broader iterate-then-mutate
+    * query, or the tracing / OTEL will not be correctly nested.
     */
    suspend fun mutate(expression: MutatingQueryExpression, metricsTags: MetricTags = MetricTags.NONE): QueryResult {
       val querySpec = parseQuery(expression).single()
@@ -541,6 +594,7 @@ data class QueryContext(
          functionResultCache = this.functionResultCache,
       ).evaluateExpression(expression)
    }
+
    override fun evaluate(expression: Expression, value: TypedInstance, source: DataSource): TypedInstance {
       return TypedObjectFactory(
          schema.type(expression.returnType),
@@ -552,13 +606,13 @@ data class QueryContext(
       ).evaluateExpression(expression)
    }
 
-    override fun populateResponseHeaders(): Map<String, List<String>> {
+   override fun populateResponseHeaders(): Map<String, List<String>> {
       return queryOptions.responseHeaders.mapNotNull { parameter ->
          val orbitalType = schema.type(parameter.type)
          val headerValue = facts.getFactOrNull(orbitalType)?.toRawObject()
          headerValue?.let {
             val httpResponseHeader = HttpResponseHeader.fromAnnotation(parameter.annotation(HttpResponseHeader.NAME)!!)
-            val paramName =  httpResponseHeader.name
+            val paramName = httpResponseHeader.name
             paramName to listOf(it.toString())
          }
       }.toMap()
@@ -576,8 +630,31 @@ fun <K, V> HashMultimap<K, V>.copy(): HashMultimap<K, V> {
  * I'm like...three wines deep, and three weeks late in shipping this f**ing release.
  * It'll do, ok?
  */
-class QueryContextEventBroker(override val queryErrorPublisher: StreamErrorPublisher = StreamErrorPublisher()) : QueryContextEventDispatcher {
+class QueryContextEventBroker(
+   override val queryErrorPublisher: StreamErrorPublisher = StreamErrorPublisher(),
+   override val traceSpan: TraceSpan
+) :
+   QueryContextEventDispatcher {
+   companion object {
+      /**
+       * For testing tracing.
+       * Returns a QueryContextEventBroker that's wired up with a collecting event sink and a default
+       * trace spam
+       */
+      fun withTestTraceSpan(queryId: String = "fake-query-id"):Pair<QueryContextEventBroker, CollectingEventSink> {
+         val eventSink = CollectingEventSink()
+         val eventBroker = QueryContextEventBroker(traceSpan = TraceContext.newTrace(queryId, eventSink).rootSpan)
+         return eventBroker to eventSink
+      }
+   }
+
    private val handlers = CopyOnWriteArrayList<QueryContextEventHandler>()
+
+   fun attachToTraceSpan(traceSpan: TraceSpan): QueryContextEventBroker {
+      val childBroker = QueryContextEventBroker(queryErrorPublisher, traceSpan)
+      childBroker.handlers.addAll(handlers)
+      return childBroker
+   }
 
    fun addHandler(handler: QueryContextEventHandler): QueryContextEventBroker {
       handlers.add(handler)
@@ -620,6 +697,8 @@ interface CancelRequestHandler : QueryContextEventHandler {
 
 object NoOpQueryContextEventDispatcher : QueryContextEventDispatcher {
    private val errorPublisher = StreamErrorPublisher()
+   override val traceSpan: TraceSpan = TraceContext.noOp().rootSpan
+
    override fun reportIncrementalEstimatedRecordCount(operation: RemoteOperation, estimatedRecordCount: Int) {
    }
 

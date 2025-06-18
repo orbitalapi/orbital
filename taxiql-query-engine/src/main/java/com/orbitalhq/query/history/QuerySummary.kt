@@ -11,9 +11,14 @@ import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.models.serde.InstantSerializer
 import com.orbitalhq.models.serde.ZonedDateTimeTimeSerializer
 import com.orbitalhq.query.*
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEventExchangeMetadata
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schemas.*
 import jakarta.persistence.*
 import kotlinx.serialization.Serializable
+import org.hibernate.annotations.JdbcTypeCode
+import org.hibernate.type.SqlTypes
 import java.time.Duration
 import java.time.Instant
 import java.time.ZonedDateTime
@@ -101,8 +106,8 @@ data class QueryErrorEventRow(
    // For future use
    @Column(name = "task_stack")
    val taskStackJson: String?
-
 )
+
 
 @Entity(name = "LINEAGE_RECORD")
 @Serializable
