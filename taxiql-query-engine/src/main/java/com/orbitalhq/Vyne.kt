@@ -21,6 +21,7 @@ import com.orbitalhq.query.ProjectionAnonymousTypeProvider
 import com.orbitalhq.query.Query
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.QueryContextEventBroker
+import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.QueryExpression
 import com.orbitalhq.query.QueryMode
@@ -29,6 +30,10 @@ import com.orbitalhq.query.QuerySchema
 import com.orbitalhq.query.StatefulQueryEngine
 import com.orbitalhq.query.graph.Algorithms
 import com.orbitalhq.query.planner.QueryPlanner
+import com.orbitalhq.query.tracing.NoopTracingEventSink
+import com.orbitalhq.query.tracing.TraceContext
+import com.orbitalhq.query.tracing.TracingEvent
+import com.orbitalhq.query.tracing.TracingEventSink
 import com.orbitalhq.schemas.CompositeSchema
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.Schema
@@ -51,6 +56,7 @@ import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.types.StreamType
 import lang.taxi.types.TypedValue
+import reactor.core.scheduler.Schedulers
 import java.util.UUID
 
 enum class NodeTypes {
@@ -78,6 +84,7 @@ class Vyne(
    private val queryEngineFactory: QueryEngineFactory,
    private val formatSpecs: List<ModelFormatSpec> = emptyList(),
    private val queryPlanner: QueryPlanner = QueryPlanner(),
+   private val traceEventSink: TracingEventSink = NoopTracingEventSink
 ) : ModelContainer {
 
    init {
@@ -113,19 +120,21 @@ class Vyne(
    }
 
    suspend fun query(
-       vyneQlQuery: TaxiQLQueryString,
-       queryId: String = UUID.randomUUID().toString(),
-       clientQueryId: String? = null,
-       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
-       arguments: Map<String, Any?> = emptyMap(),
-       metricsTags: MetricTags = MetricTags.NONE,
-       executionContextFacts: Set<Fact> = emptySet()
+      vyneQlQuery: TaxiQLQueryString,
+      queryId: String = UUID.randomUUID().toString(),
+      clientQueryId: String? = null,
+      traceId: String = TracingEvent.newTraceId(),
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan),
+      arguments: Map<String, Any?> = emptyMap(),
+      metricsTags: MetricTags = MetricTags.NONE,
+      executionContextFacts: Set<Fact> = emptySet()
    ): QueryResult {
       val (taxiQlQuery, queryOptions, querySchema) = parseQuery(vyneQlQuery)
       return query(
          taxiQlQuery,
          queryId,
          clientQueryId,
+         traceId = traceId,
          eventBroker,
          arguments,
          queryOptions = queryOptions,
@@ -144,7 +153,8 @@ class Vyne(
        taxiQl: TaxiQlQuery,
        queryId: String = UUID.randomUUID().toString(),
        clientQueryId: String? = null,
-       eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+       traceId: String = TracingEvent.newTraceId(),
+       eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan),
        arguments: Map<String, Any?> = emptyMap(),
        queryOptions: QueryOptions,
        metricsTags: MetricTags = MetricTags.NONE,
@@ -156,14 +166,22 @@ class Vyne(
          taxiQl,
          queryId,
          clientQueryId,
+         traceId = traceId,
          eventBroker,
          arguments,
          queryOptions,
          querySchema = querySchema,
-         executionContextFacts = executionContextFacts
+         executionContextFacts = executionContextFacts,
       )
       val queryCanceller = QueryCanceller(queryContext, currentJob)
       eventBroker.addHandler(queryCanceller)
+
+      // MP: 16-Jun-25:
+      // We used to emit a typed instance of type ErrorType to terminate the stream.
+      // We now prefer emitting a message on the error stream, but we need to terminate the
+      // stream if the error is terminal
+      eventBroker.cancelOnTerminalEvents(queryCanceller)
+
       return when (taxiQl.queryMode) {
          lang.taxi.query.QueryMode.FIND_ALL -> queryContext.findAll(expression, metricsTags = metricsTags)
          lang.taxi.query.QueryMode.FIND_ONE -> queryContext.find(expression, metricsTags = metricsTags)
@@ -216,7 +234,8 @@ class Vyne(
       taxiQl: TaxiQlQuery,
       queryId: String,
       clientQueryId: String?,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+      traceId: String = TracingEvent.newTraceId(),
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan),
       arguments: Map<String, Any?> = emptyMap(),
       queryOptions: QueryOptions,
       querySchema: Schema,
@@ -385,16 +404,18 @@ class Vyne(
          .queryContext(
             queryId = Ids.id("queryId"),
             clientQueryId = null,
-            scopedFacts = authFactsToScopedFacts(factSets[FactSets.AUTHENTICATION])
+            scopedFacts = authFactsToScopedFacts(factSets[FactSets.AUTHENTICATION]),
+            traceSpan = TraceContext.noOp().rootSpan
          )
       return queryContext
    }
 
+   @Deprecated("Looks like this is only called in tests. Does not propogate trace contexts. If this gets used, then it needs to accept a traceContext (or similar)")
    fun evaluate(taxiExpression: String, returnType: Type): TypedInstance {
       val (schemaWithType, expressionType) = this.schema.compileExpression(taxiExpression, returnType)
 
       val queryContext = queryEngine(schema = schemaWithType)
-         .queryContext(queryId = Ids.id("queryId"), clientQueryId = null)
+         .queryContext(queryId = Ids.id("queryId"), clientQueryId = null, traceSpan = TraceContext.noOp().rootSpan)
 
       // Using TypedObjectFactory directly, rather than queryEngine().build(...).
       // This is because of a bug that if the fact we're searching is a collection,
@@ -418,7 +439,8 @@ class Vyne(
       additionalFacts: Set<TypedInstance> = emptySet(),
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker(),
+      traceId: String = TracingEvent.newTraceId(),
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan),
       scopedFacts: List<ScopedFact> = emptyList(),
       queryOptions: QueryOptions = QueryOptions.default(),
       querySchema: Schema = this.schema
@@ -437,6 +459,7 @@ class Vyne(
          factSetIds = factSetIds,
          queryId = queryId,
          clientQueryId = clientQueryId,
+         traceSpan = eventBroker.traceSpan,
          eventBroker = eventBroker,
          scopedFacts = scopedFacts,
          queryOptions = queryOptions
@@ -495,8 +518,9 @@ class Vyne(
       facts: Set<TypedInstance>,
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker()
-   ): QueryContext {
+      traceId: String = TracingEvent.newTraceId(),
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan),
+      ): QueryContext {
       return query(
          additionalFacts = facts,
          queryId = queryId,
@@ -509,8 +533,9 @@ class Vyne(
       fact: TypedInstance,
       queryId: String = UUID.randomUUID().toString(),
       clientQueryId: String? = null,
-      eventBroker: QueryContextEventBroker = QueryContextEventBroker()
-   ): QueryContext {
+      traceId: String = TracingEvent.newTraceId(),
+      eventBroker: QueryContextEventBroker = QueryContextEventBroker(traceSpan = TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan),
+      ): QueryContext {
       return query(
          additionalFacts = setOf(fact),
          queryId = queryId,
@@ -542,6 +567,21 @@ class Vyne(
          QueryMode.DISCOVER -> this.query(queryId = query.queryId).find(query.expression)
          QueryMode.GATHER -> this.query(queryId = query.queryId).findAll(query.expression)
          QueryMode.BUILD -> this.query(queryId = query.queryId).build(query.expression)
+      }
+   }
+}
+
+/**
+ * If a terminal event is emitted from the error stream, this cancels the query.
+ * This is the preferred approach, since the concept of QueryErrorEvent got introduced.
+ * Previously, we'd emit an instance of an error in the results flow, using a special type
+ */
+private fun QueryContextEventDispatcher.cancelOnTerminalEvents(queryCanceller: QueryCanceller) {
+   this.queryErrorPublisher.errors
+      .subscribeOn(Schedulers.boundedElastic())
+      .subscribe {
+      if (it.error.isTerminal) {
+         queryCanceller.requestCancel()
       }
    }
 }

@@ -6,6 +6,10 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.tracing.ObjectStoreRequest
+import com.orbitalhq.query.tracing.ObjectStoreResponse
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
@@ -36,6 +40,8 @@ class S3WriteInvoker : BaseS3Invoker() {
       }
          ?: error("Expected exactly one input parameter to contain an annotation of @${S3ConnectorTaxi.RequestBodyFqn.fullyQualifiedName}")
 
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, bucketName)
+
       val (metadata, format) = formatRegistry.forType(body.type)
       val payload = if (format != null) {
          format.serializer.write(body, metadata!!, schema, 0)
@@ -45,11 +51,39 @@ class S3WriteInvoker : BaseS3Invoker() {
          body.toRawObject()
             ?: error("Got null payload of type ${body.type.name.longDisplayName}")
       }
+
+      traceContext.emitEvent(
+         kind = TracingEventKind.OK,
+         spanState = SpanState.ACTIVE,
+         payloadType = body.type,
+         exchangeMetadata = ObjectStoreRequest(awsConnection.connectionName, bucketName) { filename },
+         verb = "Write"
+      )
+
       return S3Connection(awsConnection, bucketName)
          .write(filename, payload)
-         .map {
-           Either.Right(body)
-         }.asFlow()
+         .map { info ->
+            val resultEvent = traceContext.emitEvent(
+               TracingEventKind.OK,
+               SpanState.COMPLETE,
+               operation.returnType,
+               ObjectStoreResponse(null, size = -1) { info.toString() },
+               "Write response"
+            )
+            Either.Right(body)
+         }
+         .onErrorMap { error ->
+            val errorMessage = error.message ?: "Failed to write to S3"
+            traceContext.emitEvent(
+               TracingEventKind.ERROR,
+               SpanState.COMPLETE,
+               null,
+               ObjectStoreResponse(errorMessage, -1, { null }),
+               "Write error"
+            )
+            error
+         }
+         .asFlow()
    }
 
 

@@ -1,8 +1,12 @@
 package com.orbitalhq.query
 
 import com.orbitalhq.models.OperationResult
+import com.orbitalhq.query.tracing.OperationTraceSpan
+import com.orbitalhq.query.tracing.TraceContext
+import com.orbitalhq.query.tracing.TraceSpan
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.Service
 
 
 /**
@@ -31,6 +35,27 @@ interface QueryContextEventDispatcher {
    fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String)
 
    val queryErrorPublisher: StreamErrorPublisher
+
+   val traceSpan: TraceSpan
+
+   fun createSpan(): TraceSpan {
+      return this.traceSpan.createChild()
+   }
+
+   /**
+    * Helper function, just a wrapper around createSpan() that reduces boilerplate
+    */
+   fun createOperationTraceSpan(
+      service: Service,
+      operation: RemoteOperation,
+      /**
+       * A human readable name for the resource that this event relates to.
+       * Could be a table name, topic, url, etc.
+       */
+      eventResourceName: String
+   ): OperationTraceSpan {
+      return OperationTraceSpan(this.createSpan(), service, operation, eventResourceName)
+   }
 
 // TODO: This didn't get implemented, as passing tags around was too messy / too easy
    // to miss.

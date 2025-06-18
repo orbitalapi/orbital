@@ -11,12 +11,18 @@ import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
+import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.models.json.right
 import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.tracing.CacheRequest
+import com.orbitalhq.query.tracing.CacheResponse
+import com.orbitalhq.query.tracing.OperationTraceSpan
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
@@ -64,7 +70,9 @@ class HazelcastMutatingInvoker {
       hazelcastInstance: HazelcastInstance,
       parameters: List<Pair<Parameter, TypedInstance>>,
       schema: Schema,
-      reportResult: (String, String, Int, CacheExchange.CacheOperationVerb) -> DataSource
+      reportResult: (String, String, Int, CacheExchange.CacheOperationVerb) -> DataSource,
+      traceContext: OperationTraceSpan,
+      connectionName: String
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val (_, valueToSave) = parameters[0]
       val mapName = getMapName(valueToSave.type)
@@ -77,8 +85,28 @@ class HazelcastMutatingInvoker {
 
 
       logger.debug { "Setting value on map $mapName with key $key to ${serializedValue::class.simpleName}" }
+
+      traceContext.emitEvent(
+         kind = TracingEventKind.OK,
+         spanState = SpanState.ACTIVE,
+         payloadType = parameters[0].first.type,
+         exchangeMetadata = CacheRequest(mapName, CacheExchange.CacheOperationVerb.UPDATE, connectionName) {
+            "Upsert key $key to  ${Jackson.defaultObjectMapper.writeValueAsString(valueToSave.toRawObject())}"
+         },
+         verb = "Upsert"
+      )
+
       val map: IMap<Any, Any> = hazelcastInstance.getMap(mapName)
       map[key] = serializedValue
+
+      val resultEvent = traceContext.emitEvent(
+         TracingEventKind.OK,
+         SpanState.COMPLETE,
+         valueToSave.type,
+         CacheResponse(1) { "Upserted 1 record to map $mapName with key $key" },
+         "Upsert response"
+      )
+
       val dataSource = reportResult("UPDATE * where key = $key", mapName, 1, CacheExchange.CacheOperationVerb.UPDATE)
       val updatedValue = DataSourceUpdater.update(valueToSave, dataSource)
       return flowOf(updatedValue.right())
@@ -89,18 +117,28 @@ class HazelcastMutatingInvoker {
       parameters: List<Pair<Parameter, TypedInstance>>,
       schema: Schema,
       operation: RemoteOperation,
-      reportAndGenerateDataSource: (String, String, Int, CacheExchange.CacheOperationVerb) -> DataSource
+      reportAndGenerateDataSource: (String, String, Int, CacheExchange.CacheOperationVerb) -> DataSource,
+      traceContext: OperationTraceSpan,
+      connectionName: String
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val deleteAnnotation = operation.firstMetadata(HazelcastTaxi.Annotations.DeleteOperation.parameterizedName)
       val mapName = deleteAnnotation.params["mapName"] as String?
          ?: error("Operation ${operation.qualifiedName.parameterizedName} does not declare a mapName")
 
+      traceContext.emitEvent(
+         kind = TracingEventKind.OK,
+         spanState = SpanState.ACTIVE,
+         payloadType = parameters.firstOrNull()?.first?.type,
+         exchangeMetadata = CacheRequest(mapName, CacheExchange.CacheOperationVerb.DELETE, connectionName),
+         verb = "Delete"
+      )
+
       val map = hazelcastInstance.getMap<Any, Any>(mapName)
       val deleteKey = parameters.singleOrNull()?.second
       return if (deleteKey == null) {
-         deleteAll(mapName, map, reportAndGenerateDataSource, schema)
+         deleteAll(mapName, map, reportAndGenerateDataSource, schema, traceContext)
       } else {
-         deleteByKey(deleteKey, mapName, map, reportAndGenerateDataSource, schema, operation)
+         deleteByKey(deleteKey, mapName, map, reportAndGenerateDataSource, schema, operation, traceContext)
       }
    }
 
@@ -110,12 +148,22 @@ class HazelcastMutatingInvoker {
       map: IMap<Any, Any>,
       reportAndGenerateDataSource: (String, String, Int, CacheExchange.CacheOperationVerb) -> DataSource,
       schema: Schema,
-      operation: RemoteOperation
+      operation: RemoteOperation,
+      traceContext: OperationTraceSpan
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
 
       val keyValue = deleteKey.toRawObject() ?: error("Cannot delete from map $mapName as provided key was null")
       val removedValue = map.remove(keyValue)
       val recordCount = if (removedValue != null) 1 else 0
+
+      val resultEvent = traceContext.emitEvent(
+         TracingEventKind.OK,
+         SpanState.COMPLETE,
+         operation.returnType,
+         CacheResponse(recordCount) { "Deleted $recordCount record from map $mapName with key $keyValue" },
+         "Delete response"
+      )
+
       val dataSource = reportAndGenerateDataSource(
          "DELETE * where KEY = $deleteKey",
          mapName,
@@ -130,11 +178,21 @@ class HazelcastMutatingInvoker {
       mapName: String,
       map: IMap<Any, Any>,
       reportAndGenerateDataSource: (String, String, Int, CacheExchange.CacheOperationVerb) -> DataSource,
-      schema: Schema
+      schema: Schema,
+      traceContext: OperationTraceSpan
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       logger.info { "Performing deleteAll on map $mapName" }
       val sizeBeforeDelete = map.size
       map.clear()
+
+      val resultEvent = traceContext.emitEvent(
+         TracingEventKind.OK,
+         SpanState.COMPLETE,
+         schema.type(PrimitiveType.VOID),
+         CacheResponse(sizeBeforeDelete) { "Deleted all $sizeBeforeDelete records from map $mapName" },
+         "Delete all response"
+      )
+
       val dataSource =
          reportAndGenerateDataSource("DELETE *", mapName, sizeBeforeDelete, CacheExchange.CacheOperationVerb.DELETE)
       // Not really sure on what we should be returning here.
@@ -154,6 +212,8 @@ class HazelcastMutatingInvoker {
       schema: Schema
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val startTime = Instant.now()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, "")
+
       fun reportResult(
          sql: String,
          mapName: String,
@@ -180,7 +240,9 @@ class HazelcastMutatingInvoker {
             hazelcastInstance,
             parameters,
             schema,
-            ::reportResult
+            ::reportResult,
+            traceContext,
+            hazelcastConnectionConfig.connectionName
          )
 
          CacheExchange.CacheOperationVerb.DELETE -> doDelete(
@@ -188,7 +250,9 @@ class HazelcastMutatingInvoker {
             parameters,
             schema,
             operation,
-            ::reportResult
+            ::reportResult,
+            traceContext,
+            hazelcastConnectionConfig.connectionName
          )
 
          else -> error("Unexpected type of mutation for Hazelcast: ${operation.qualifiedName.parameterizedName} ")

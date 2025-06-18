@@ -10,6 +10,7 @@ import com.orbitalhq.pipelines.jet.api.transport.MessageContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.PipelineTransportSpec
 import com.orbitalhq.pipelines.jet.api.transport.http.TaxiOperationOutputSpec
 import com.orbitalhq.pipelines.jet.sink.SingleMessagePipelineSinkBuilder
+import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.fqn
@@ -58,7 +59,7 @@ class TaxiOperationSinkBuilder : SingleMessagePipelineSinkBuilder<TaxiOperationO
             runBlocking {
                context.logger.info("Invoking operation ${operation.qualifiedName} with arg ${input.toRawObject()}")
                try {
-                  vyneClient.from(input)
+                  vyneClient.from(input, traceContext = TraceContext.noOp())
                      .invokeOperation(
                         service,
                         operation,

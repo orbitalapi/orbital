@@ -13,6 +13,10 @@ import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.tracing.HttpRequest
+import com.orbitalhq.query.tracing.HttpResponse
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
@@ -103,7 +107,7 @@ class SoapInvoker(
       queryOptions: QueryOptions
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
 
-
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, "")
       val soapClient = clientCache.get(service)
       require(parameters.size <= 1) { "SOAP services expect 0 or 1 parameters, but got ${parameters.size}" }
       val parameterValues = paramToOrderedArray(parameters.singleOrNull())
@@ -114,6 +118,13 @@ class SoapInvoker(
 
          val timestamp = Instant.now()
          val (result: Any, duration: Duration) = measureTimedValue {
+            // Emit request event before invoking
+            val outboundPayload = if (parameterValues.isNotEmpty()) {
+               Jackson.defaultObjectMapper.writeValueAsString(parameterValues.first())
+            } else {
+               "{}"
+            }
+
             val resultList = soapClient.invoke(operation.name, *parameterValues)
             require(resultList.size == 1) {
                "Expected a single result, but got ${resultList.size}"
@@ -121,8 +132,23 @@ class SoapInvoker(
             resultList.single()
          }
          val outboundMessage = OutboundPayloadCapturingInterceptor.getCapturedPayload()
+         traceContext.emitEvent(
+            kind = TracingEventKind.OK,
+            spanState = SpanState.ACTIVE,
+            payloadType = parameters.firstOrNull()?.first?.type,
+            exchangeMetadata = HttpRequest(outboundMessage.url, outboundMessage.method,{ outboundMessage.payload },outboundMessage.payload.length.toLong(),emptyMap()),
+            verb = outboundMessage.method
+         )
+
          val inboundMessage = InboundPayloadCapturingInterceptor.getCapturedPayload()
 
+         val resultEvent = traceContext.emitEvent(
+            TracingEventKind.OK,
+            SpanState.COMPLETE,
+            operation.returnType,
+            HttpResponse(200, { inboundMessage.payload }, inboundMessage.payload.length.toLong(), emptyMap()),
+            "Invoke response"
+         )
 
          val schema = schemaProvider.schema
 
@@ -133,7 +159,7 @@ class SoapInvoker(
 
          eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
          val resultTypedInstance = try {
-            Either.Right(createTypedInstance(schema, result, operation, operationResult))
+            Either.Right(createTypedInstance(schema, result, operation, operationResult, resultEvent))
          } catch (e: Exception) {
             Either.Left(StreamErrorMessage.fromException(e, operation.returnType.paramaterizedName))
          }
@@ -144,6 +170,14 @@ class SoapInvoker(
             is Fault -> (e.cause?.message ?: e.message) to e.statusCode
             else -> e.message to -1
          }
+
+         traceContext.emitEvent(
+            TracingEventKind.ERROR,
+            SpanState.COMPLETE,
+            null,
+            HttpResponse(responseCode, { message ?: "Unknown error" }, (message?.length ?: 0).toLong(), emptyMap()),
+            "Invoke error"
+         )
 
          val remoteCall = RemoteCall(
             service = service.name,
@@ -179,7 +213,8 @@ class SoapInvoker(
       schema: Schema,
       result: Any,
       operation: RemoteOperation,
-      source: OperationResult
+      source: OperationResult,
+      resultEvent: com.orbitalhq.query.tracing.TracingEvent
    ): TypedInstance {
       // See SoapNamingStrategy for why we have to instatiate a new object mapper each time.
       val mapper = Jackson.newObjectMapperWithDefaults()
@@ -187,7 +222,7 @@ class SoapInvoker(
       val resultAsMap = mapper.convertValue<Any>(result)
 
       return TypedInstance.from(
-         operation.returnType, resultAsMap, schema, source = source.asOperationReferenceDataSource()
+         operation.returnType, resultAsMap, schema, source = source.asOperationReferenceDataSource(resultEvent.idSet)
       )
    }
 

@@ -7,6 +7,8 @@ import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.right
 import com.orbitalhq.protobuf.wire.RepoBuilder
+import com.orbitalhq.query.QueryErrorEvent
+import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.winterbe.expekt.should
 import io.kotest.assertions.timing.eventually
@@ -18,12 +20,14 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.timeout
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
 import lang.taxi.generators.protobuf.TaxiGenerator
 import mu.KotlinLogging
@@ -142,15 +146,20 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       sendMessage("""{ "title" : "Star Wars" }""".toByteArray(), key = "sw-IV")
 
       try {
-         val result = vyne.query(
+         val queryResult = vyne.query(
             """
          stream { Movie }"""
                .trimIndent()
-         ).results.take(1)
+         );
+         val results = merge(queryResult.results as Flow<Any>, queryResult.errors.asFlow() as Flow<Any>)
+            .take(1)
             .timeout(30.seconds)
-            .toList() as List<TypedObject>
+            .collect {
+               it.shouldBeInstanceOf<QueryErrorEvent>()
+                  .error
+                  .payload.shouldBe("Error in Kafka connection: invalidConnection, details: JAAS config entry not terminated by semi-colon")
+            }
       } catch (e: Exception) {
-         e.message.should.equal("Error in Kafka connection: invalidConnection, details: JAAS config entry not terminated by semi-colon")
       }
    }
 

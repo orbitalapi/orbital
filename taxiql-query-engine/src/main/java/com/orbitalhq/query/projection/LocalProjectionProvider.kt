@@ -1,5 +1,7 @@
 package com.orbitalhq.query.projection
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.orbitalhq.models.DataSourceWithLinkedTraceEvent
 import com.orbitalhq.models.ProjectionFunctionScopeEvaluator
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
@@ -12,6 +14,10 @@ import com.orbitalhq.query.Projection
 import com.orbitalhq.query.QueryContext
 import com.orbitalhq.query.TypeQueryExpression
 import com.orbitalhq.query.TypedInstanceWithMetadata
+import com.orbitalhq.query.tracing.ProjectionTraceMetadata
+import com.orbitalhq.query.tracing.QueryEngineSpanEventSource
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.query.withProcessingMetadata
 import com.orbitalhq.schemas.Type
 import kotlinx.coroutines.CoroutineScope
@@ -30,6 +36,7 @@ import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.withIndex
@@ -61,7 +68,7 @@ class LocalProjectionProvider : ProjectionProvider {
             OrbitalProjectionProviderThreadFactory()
          ).asCoroutineDispatcher()
    }
-
+   private val objectMapper = jacksonObjectMapper().findAndRegisterModules()
    private val projectingScope = CoroutineScope(projectingDispatcher + MDCContext())
 
    /**
@@ -86,8 +93,6 @@ class LocalProjectionProvider : ProjectionProvider {
          .map { emittedResult ->
             //  logger.trace { "Starting to project instance of ${emittedResult.value.type.qualifiedName.shortDisplayName} (index ${emittedResult.index}) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
             projectingScope.async {
-
-               val startTime = Instant.now()
                if (!isActive) {
                   logger.warn { "Query Cancelled exiting!" }
                   cancel()
@@ -428,12 +433,37 @@ class LocalProjectionProvider : ProjectionProvider {
       // scope, with a name of "this" if not otherwise specified.
       val projectionContext = if (scopedFacts.isEmpty()) {
          context.only(globalFacts.rootFacts() + emittedResult, scopedFacts = context.scopedFacts)
+            .withChildTraceSpan()
       } else {
          context.only(globalFacts.rootFacts(), scopedFacts = scopedFacts + context.scopedFacts)
+            .withChildTraceSpan()
       }
+      val linkedEventId = if (emittedResult.source is DataSourceWithLinkedTraceEvent) {
+         (emittedResult.source as  DataSourceWithLinkedTraceEvent).sourceEventId?.eventId
+      } else null
+      projectionContext.eventBroker.traceSpan.emitEvent(
+         TracingEventKind.OK,
+         SpanState.ACTIVE,
+         ProjectionTraceMetadata({ objectMapper.writeValueAsString(emittedResult.toRawObject()) }),
+         QueryEngineSpanEventSource,
+         emittedResult.type.qualifiedName.shortDisplayName,
+         "Project",
+         QueryEngineSpanEventSource.QUERY_ENGINE_RESOURCE,
+         linkedEventId = linkedEventId
+      )
       val buildResult = projectionContext.build(TypeQueryExpression(projectionType))
       return buildResult.results.map {
-         it.withProcessingMetadata(asOf = startTime)
+         it.withProcessingMetadata(asOf = startTime, processingTraceSpan = projectionContext.traceSpan)
+      }.onCompletion {
+         projectionContext.eventBroker.traceSpan.emitEvent(
+            TracingEventKind.OK,
+            SpanState.COMPLETE,
+            ProjectionTraceMetadata({ objectMapper.writeValueAsString(emittedResult.toRawObject()) }),
+            QueryEngineSpanEventSource,
+            emittedResult.type.qualifiedName.shortDisplayName,
+            "Project",
+            QueryEngineSpanEventSource.QUERY_ENGINE_RESOURCE,
+         )
       }
    }
 }

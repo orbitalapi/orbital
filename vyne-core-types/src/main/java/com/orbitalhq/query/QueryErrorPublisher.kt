@@ -34,10 +34,14 @@ class StreamErrorException(streamErrorMessage: StreamErrorMessage) : IllegalStat
 data class StreamErrorMessage(
    val timestamp: Instant,
    @JsonIgnore
-   val exception: Exception,
+   val exception: Throwable,
    val message: String,
    val typeName: String,
-   val payload: Any
+   val payload: Any,
+   /**
+    * Indicates if the error should cancel the query.
+    */
+   val isTerminal: Boolean = false
 ) {
    companion object {
       fun fromException(ex: Exception, typeName: String): StreamErrorMessage {

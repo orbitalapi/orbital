@@ -13,6 +13,7 @@ import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationInvoker
+import com.orbitalhq.query.tracing.TracingEvent
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.Parameter
@@ -31,7 +32,6 @@ import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.spring.http.auth.schemes.addAuthTokenAttributes
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.reactive.asFlow
@@ -102,8 +102,8 @@ class RestTemplateInvoker(
       queryOptions: QueryOptions
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       logger.info { "Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}" }
-
       val (_, url, method) = operation.httpOperationMetadata()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, url)
       val retrySpec = operation.retrySpec()
       val httpMethod = HttpMethod.valueOf(method)
       //val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
@@ -113,12 +113,16 @@ class RestTemplateInvoker(
 
       logger.info { "Operation ${operation.name} resolves to $absoluteUrl" }
       val typeInstanceParameters = parameters.map { it.second }
-      val httpEntity = requestFactory.buildRequestBody(operation, typeInstanceParameters)
+      val (requestBodyType, httpEntity) = requestFactory.buildRequestBody(operation, typeInstanceParameters)
       val queryParams = requestFactory.buildRequestQueryParams(parameters)
 
       val expandedUri = defaultUriBuilderFactory.expand(absoluteUrl, uriVariables)
 
-      val (webClient, trafficSink) = logbookProvider.modify(webClientFactory.webClientFor(service))
+      val (webClient, trafficSink) = logbookProvider.modify(webClientFactory.webClientFor(service), traceContext, requestBodyType)
+//         .let { (webClient, trafficSink) ->
+//            val webClientWithTracing = TracingFilterFunction().modify(webClient, traceContext, trafficSink, requestBodyType, httpMethod)
+//            webClientWithTracing to trafficSink
+//         }
       //TODO - On upgrade to Spring boot 2.4.X replace usage of exchange with exchangeToFlow LENS-473
       val request = webClient
          .method(httpMethod)
@@ -146,6 +150,10 @@ class RestTemplateInvoker(
 
       val results = request
          .exchange()
+         .doOnSubscribe {
+
+
+         }
          .onErrorMap { error -> mapError(
             error,
             remoteCallId,
@@ -255,7 +263,8 @@ class RestTemplateInvoker(
                         remoteCall,
                         clientResponse.headers(),
                         eventDispatcher,
-                        queryId
+                        queryId,
+                        trafficSink.lastResponseTracingEvent
                      )
                   }
             } else {
@@ -275,7 +284,8 @@ class RestTemplateInvoker(
                         remoteCall,
                         clientResponse.headers(),
                         eventDispatcher,
-                        queryId
+                        queryId,
+                        trafficSink.lastResponseTracingEvent
                      )
                   }
             }
@@ -397,7 +407,8 @@ class RestTemplateInvoker(
       remoteCall: RemoteCall,
       headers: ClientResponse.Headers,
       eventDispatcher: QueryContextEventDispatcher,
-      queryId: String
+      queryId: String,
+      eventToLink: TracingEvent?
    ): Flux<Either<StreamErrorMessage, TypedInstance>> {
       // Logging responses in our logs is a security issue.  Let's not do this.
 //      logger.debug { "Result of ${operation.name} was $result" }
@@ -423,7 +434,7 @@ class RestTemplateInvoker(
             type,
             result,
             schemaProvider.schema,
-            source = operationResult.asOperationReferenceDataSource(),
+            source = operationResult.asOperationReferenceDataSource(eventToLink?.idSet),
             evaluateAccessors = evaluateAccessors,
             formatSpecs = formats.formats,
             metadata = metadata

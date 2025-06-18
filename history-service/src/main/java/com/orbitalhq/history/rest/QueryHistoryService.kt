@@ -11,6 +11,8 @@ import com.orbitalhq.history.db.QueryHistoryRecordRepository
 import com.orbitalhq.history.db.QueryResultRowRepository
 import com.orbitalhq.history.db.QuerySankeyChartRowRepository
 import com.orbitalhq.history.db.RemoteCallResponseRepository
+import com.orbitalhq.history.db.tracing.TraceEventRepository
+import com.orbitalhq.history.db.tracing.TraceSpanBuilder
 import com.orbitalhq.history.rest.export.ExportFormat
 import com.orbitalhq.history.rest.export.QueryHistoryExporter
 import com.orbitalhq.history.rest.export.RegressionPackProvider
@@ -22,6 +24,8 @@ import com.orbitalhq.query.history.PartialRemoteCallResponse
 import com.orbitalhq.query.history.QuerySankeyChartRow
 import com.orbitalhq.query.history.QuerySummary
 import com.orbitalhq.query.history.toDto
+import com.orbitalhq.query.history.tracing.TraceSpanRecord
+import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.config.RequiresOrbitalDbEnabled
@@ -44,6 +48,7 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.toFlux
 import java.nio.ByteBuffer
 import java.time.Duration
@@ -66,9 +71,11 @@ class QueryHistoryService(
    private val queryAnalyticsConfig: QueryAnalyticsConfig,
    private val exceptionProvider: ExceptionProvider,
    private val jdbcTemplate: JdbcTemplate,
-   private val queryErrorEventRowRepository: QueryErrorEventRowRepository
+   private val queryErrorEventRowRepository: QueryErrorEventRowRepository,
+   private val traceEventRepository: TraceEventRepository
 ) : IQueryHistoryService {
    private val remoteCallAnalyzer = RemoteCallAnalyzer()
+   private val traceSpanBuilder = TraceSpanBuilder()
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    @DeleteMapping("/api/query/history")
@@ -353,6 +360,18 @@ class QueryHistoryService(
       }
    }
 
+   @GetMapping("/api/query/history/{id}/trace")
+   @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
+   fun getQueryTrace(@PathVariable("id") queryId: String): Mono<List<TraceSpanRecord>> {
+      return Mono.defer<List<TraceSpanRecord>?> {
+         val traceEvents = traceEventRepository.findByQueryIdOrderByTimestampAsc(queryId)
+         val spans = traceSpanBuilder.buildTraceSpans(traceEvents)
+//            .let { traceSpanBuilder.flattenSpansForWaterfall(it) }
+         Mono.just(spans)
+      }.subscribeOn(Schedulers.boundedElastic())
+
+   }
+
    @GetMapping("/api/query/history/dataSource/{id}")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    override fun getLineageRecord(@PathVariable("id") dataSourceId: String): Mono<LineageRecord> {
@@ -378,21 +397,25 @@ class QueryHistoryService(
    }
 
 
-    fun getQueryProfileData(querySummary: QuerySummary): Mono<QueryProfileData> {
+   fun getQueryProfileData(querySummary: QuerySummary): Mono<QueryProfileData> {
       val remoteCalls = remoteCallResponseRepository.findByQueryId(querySummary.queryId)
          .map { it.toDto() }
       val stats = remoteCallAnalyzer.generateStats(remoteCalls)
       val queryLineageData = sankeyChartRowRepository.findAllByQueryId(querySummary.queryId)
       val errors = queryErrorEventRowRepository.findAllByQueryId(querySummary.queryId)
-      return Mono.just(
-         QueryProfileData(
-            querySummary.queryId,
-            querySummary.durationMs ?: 0,
-            remoteCalls,
-            operationStats = stats,
-            queryLineageData = queryLineageData,
-            errors = errors
-         )
+      val traceEvents = traceEventRepository.findByQueryIdOrderByTimestampAsc(querySummary.queryId)
+      val traceSpans = traceSpanBuilder.buildTraceSpans(traceEvents)
+//         .let { traceSpanBuilder.flattenSpansForWaterfall(it) }
+         return Mono.just(
+      QueryProfileData(
+         querySummary.queryId,
+         querySummary.durationMs ?: 0,
+         remoteCalls,
+         operationStats = stats,
+         queryLineageData = queryLineageData,
+         errors = errors,
+         traceSpans = traceSpans
+      )
       )
    }
 

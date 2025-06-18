@@ -17,6 +17,7 @@ import com.orbitalhq.logging.MDCContextKeys.QueryName
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.EmitMetrics
+import com.orbitalhq.query.EmptyExchangeData
 import com.orbitalhq.query.Fact
 import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.Query
@@ -32,6 +33,13 @@ import com.orbitalhq.query.SearchFailedException
 import com.orbitalhq.query.runtime.FailedSearchResponse
 import com.orbitalhq.query.runtime.QueryServiceApi
 import com.orbitalhq.query.runtime.core.monitor.ActiveQueryMonitor
+import com.orbitalhq.query.tracing.EmptyTraceMetadata
+import com.orbitalhq.query.tracing.QueryEngineSpanEventSource
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TraceContext
+import com.orbitalhq.query.tracing.TracingEvent
+import com.orbitalhq.query.tracing.TracingEventKind
+import com.orbitalhq.query.tracing.TracingEventSink
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.Schema
@@ -502,6 +510,7 @@ class QueryService(
       vyneUser: VyneUser? = null,
       clientQueryId: String?,
       queryId: String,
+      traceId: String = TracingEvent.newTraceId(),
       arguments: Map<String, Any?> = emptyMap()
    ): Pair<QueryResponse, QueryOptions> {
       logger.info { "[$queryId] $query" }
@@ -526,9 +535,12 @@ class QueryService(
 
          val vyne = vyneProvider.createVyne(executionContextFacts + userAuthTokenFacts, querySchema, queryOptions)
          val historyWriterEventConsumer = historyWriterProvider.createEventConsumer(queryId, vyne.schema)
+         val traceEventSink = historyWriterProvider.createTraceEventSink(queryId, traceId, schema, queryOptions)
          val response = try {
             val eventDispatcherForQuery =
-               activeQueryMonitor.eventDispatcherForQuery(queryId, listOf(historyWriterEventConsumer))
+               activeQueryMonitor.eventDispatcherForQuery(queryId, TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan, listOf(historyWriterEventConsumer))
+            // Emit a start event. Without this, the root is never captured, and the traces look odd.
+            eventDispatcherForQuery.traceSpan.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, EmptyTraceMetadata, QueryEngineSpanEventSource, QueryEngineSpanEventSource.QUERY_ENGINE_RESOURCE, "Start", "")
             vyne.query(
                taxiQlQuery,
                queryId = queryId,
@@ -580,39 +592,6 @@ class QueryService(
       }
    }
 
-
-   private suspend fun executeQuery(query: Query, clientQueryId: String?): QueryResponse {
-      val vyne = vyneProvider.createVyne()
-      val queryEventConsumer = historyWriterProvider.createEventConsumer(query.queryId, vyne.schema)
-
-      parseFacts(query.facts, vyne.schema).forEach { (fact, factSetId) ->
-         vyne.addModel(fact, factSetId)
-      }
-
-      val response = try {
-         // Note: Only using the default set for the originating query,
-         // but the queryEngine contains all the factSets, so we can expand this later.
-         val queryId = query.queryId
-         val queryContext =
-            vyne.query(
-               factSetIds = setOf(FactSets.DEFAULT),
-               queryId = queryId,
-               clientQueryId = clientQueryId,
-               eventBroker = activeQueryMonitor.eventDispatcherForQuery(queryId, listOf(queryEventConsumer))
-            )
-         when (query.queryMode) {
-            QueryMode.DISCOVER -> queryContext.find(query.expression)
-            QueryMode.GATHER -> queryContext.findAll(query.expression)
-            QueryMode.BUILD -> queryContext.build(query.expression)
-         }
-      } catch (e: SearchFailedException) {
-         FailedSearchResponse(e.message!!, e.profilerOperation, query.queryId, responseType = null)
-      }
-
-
-      return QueryLifecycleEventObserver(queryEventConsumer, activeQueryMonitor)
-         .responseWithQueryHistoryListener(query, response)
-   }
 
    private fun parseFacts(facts: List<Fact>, schema: Schema): List<Pair<TypedInstance, FactSetId>> {
 

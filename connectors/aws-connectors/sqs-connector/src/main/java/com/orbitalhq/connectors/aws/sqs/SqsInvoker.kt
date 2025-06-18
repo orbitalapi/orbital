@@ -5,7 +5,13 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.QueryContextSchemaProvider
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.tracing.MessageStreamSubscription
+import com.orbitalhq.query.tracing.MessageStreamEventReceived
+import com.orbitalhq.query.tracing.PayloadEncoding
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.query.connectors.OperationInvoker
+import com.orbitalhq.query.tracing.OperationTraceSpan
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
@@ -87,11 +93,12 @@ class SqsInvoker(
       val sqsOperation = operation.firstMetadata(SqsConnectorTaxi.Annotations.SqsOperation.NAME)
          .let { SqsConnectorTaxi.Annotations.SqsOperation.from(it) }
 
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, sqsOperation.queue)
 
       return if (operation.operationType == OperationScope.MUTATION) {
-         publishToTopic(connectionName, sqsOperation, parameters, eventDispatcher)
+         publishToTopic(connectionName, sqsOperation, parameters, eventDispatcher, traceContext)
       } else {
-         subscribeToTopic(connectionName, sqsOperation, operation)
+         subscribeToTopic(connectionName, sqsOperation, operation, traceContext)
       }
 
 
@@ -101,7 +108,8 @@ class SqsInvoker(
       connectionName: String,
       sqsOperation: SqsConnectorTaxi.Annotations.SqsOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
-      eventDispatcher: QueryContextEventDispatcher
+      eventDispatcher: QueryContextEventDispatcher,
+      traceContext: OperationTraceSpan
    ): Flow<Either<StreamErrorMessage, TypedInstance>>  {
       val publisher = connectionBuilder.buildPublisher(connectionName, sqsOperation.queue)
       require(parameters.size == 1) { "When publishing to SQS, exactly one parameter (the message to publish) is required" }
@@ -110,15 +118,54 @@ class SqsInvoker(
       require(eventDispatcher is QueryContextSchemaProvider) {
          "Provided eventDispatcher must implement QueryContextSchemaProvider. Got ${eventDispatcher::class.simpleName}"
       }
+
+      val messageBodyStr = messageBody.toRawObject().toString()
+      traceContext.emitEvent(
+         kind = TracingEventKind.OK,
+         spanState = SpanState.ACTIVE,
+         payloadType = messageBody.type,
+         exchangeMetadata = MessageStreamEventReceived(
+            messageBodyStr.length.toLong(),
+            PayloadEncoding.STRING
+         ) { messageBodyStr },
+         verb = "Publish"
+      )
+
       return publisher.sendMessage(messageBody, eventDispatcher.schema)
+         .map { result ->
+            traceContext.emitEvent(
+               TracingEventKind.OK,
+               SpanState.COMPLETE,
+               messageBody.type,
+               MessageStreamEventReceived(
+                  messageBodyStr.length.toLong(),
+                  PayloadEncoding.STRING
+               ) { "Message published successfully" },
+               "Publish response"
+            )
+            result
+         }
          .asFlow()
    }
 
    private fun subscribeToTopic(
       connectionName: String,
       sqsOperation: SqsConnectorTaxi.Annotations.SqsOperation,
-      operation: RemoteOperation
+      operation: RemoteOperation,
+      traceContext: OperationTraceSpan
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
+      traceContext.emitEvent(
+         kind = TracingEventKind.OK,
+         spanState = SpanState.ACTIVE,
+         payloadType = operation.returnType,
+         exchangeMetadata = MessageStreamSubscription(
+            sqsOperation.queue,
+            connectionName,
+            MessageStreamSubscription.SubscriptionAction.JOINED_EXISTING_SUBSCRIPTION
+         ),
+         verb = "Subscribe"
+      )
+
       return sqsStreamManager.getStream(
          SqsConsumerRequest(
             connectionName,

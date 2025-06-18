@@ -14,7 +14,13 @@ import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.tracing.HttpRequest
+import com.orbitalhq.query.tracing.HttpResponse
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.query.connectors.OperationInvoker
+import com.orbitalhq.query.tracing.FunctionCallRequest
+import com.orbitalhq.query.tracing.FunctionCallResponse
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.Parameter
@@ -98,6 +104,7 @@ class LambdaInvoker(
 
       val client = createAsyncLambdaClient(connection)
       val payload = argument?.let { objectMapper.writeValueAsString(it) } ?: "{}"
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, functionName)
 
       val invokeRequest: InvokeRequest = InvokeRequest.builder()
          .functionName(functionName)
@@ -106,6 +113,15 @@ class LambdaInvoker(
 
       val remoteCallId = UUID.randomUUID().toString()
       logger.info { "Invoking lambda function $functionName with arguments $payload" }
+
+      traceContext.emitEvent(
+         kind = TracingEventKind.OK,
+         spanState = SpanState.ACTIVE,
+         payloadType = parameters.firstOrNull()?.first?.type,
+         exchangeMetadata = FunctionCallRequest(functionName) { payload },
+         verb = "Invoke"
+      )
+
       return Mono.fromFuture(client.invoke(invokeRequest))
          .metrics()
          .elapsed()
@@ -141,7 +157,15 @@ class LambdaInvoker(
 
             val clientResponse = durationAndResponse.t2
             if (clientResponse.functionError() != null) {
-               val remoteCall = remoteCall(clientResponse.functionError() ?: "", true)
+               val errorMessage = clientResponse.functionError() ?: ""
+               traceContext.emitEvent(
+                  TracingEventKind.ERROR,
+                  SpanState.COMPLETE,
+                  null,
+                  FunctionCallResponse(0, errorMessage, clientResponse.statusCode(), { null }),
+                  "Invoke error"
+               )
+               val remoteCall = remoteCall(errorMessage, true)
                eventDispatcher.reportRemoteOperationInvoked(OperationResult.from(parameters, remoteCall), queryId)
                throw OperationInvocationException(
                   "Aws lambda invocation error ${clientResponse.functionError()} from function $functionName",
@@ -153,10 +177,17 @@ class LambdaInvoker(
 
             // UTF_8 won't be enough for all cases.
             val response = clientResponse.payload().asUtf8String()
+            val resultEvent = traceContext.emitEvent(
+               TracingEventKind.OK,
+               SpanState.COMPLETE,
+               operation.returnType,
+               FunctionCallResponse(response.length.toLong(),null,clientResponse.statusCode()) { response },
+               "Invoke response"
+            )
             val remoteCall = remoteCall(responseBody = response)
             val operationResult = OperationResult.from(parameters, remoteCall)
             eventDispatcher.reportRemoteOperationInvoked(OperationResult.from(parameters, remoteCall), queryId)
-            handleSuccessfulLambdaResponse(response, operation, operationResult)
+            handleSuccessfulLambdaResponse(response, operation, operationResult, resultEvent)
          }.asFlow().flowOn(dispatcher)
    }
 
@@ -174,7 +205,8 @@ class LambdaInvoker(
    private fun handleSuccessfulLambdaResponse(
       result: String,
       operation: RemoteOperation,
-      operationResult: OperationResult
+      operationResult: OperationResult,
+      resultEvent: com.orbitalhq.query.tracing.TracingEvent
    ): Flux<Either<StreamErrorMessage, TypedInstance>> {
       logger.debug { "Result of ${operation.name} was $result" }
 
@@ -188,7 +220,7 @@ class LambdaInvoker(
                type,
                result,
                schemaProvider.schema,
-               source = operationResult.asOperationReferenceDataSource(),
+               source = operationResult.asOperationReferenceDataSource(resultEvent.idSet),
                evaluateAccessors = true
             ))
          }

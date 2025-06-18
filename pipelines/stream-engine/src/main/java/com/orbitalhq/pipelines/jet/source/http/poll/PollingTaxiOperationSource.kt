@@ -15,6 +15,7 @@ import com.orbitalhq.pipelines.jet.api.transport.PipelineVariableKeys
 import com.orbitalhq.pipelines.jet.api.transport.TypedInstanceContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.http.PollingTaxiOperationInputSpec
 import com.orbitalhq.pipelines.jet.source.PipelineSourceBuilder
+import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
@@ -104,7 +105,7 @@ private class PollingTaxiOperationSource(
             val resolvedParameters =
                variableProvider.asTypedInstances(inputSpec.parameterMap, operation, context.vyneClient.schema)
             val parameterValues = resolvedParameters.map { it.second }.toSet()
-            val vyneClient = context.vyneClient.from(parameterValues)
+            val vyneClient = context.vyneClient.from(parameterValues, traceContext = TraceContext.noOp())
             // Then call the operation via Vyne
             vyneClient.invokeOperation(service, operation, parameterValues, resolvedParameters)
                .toList()

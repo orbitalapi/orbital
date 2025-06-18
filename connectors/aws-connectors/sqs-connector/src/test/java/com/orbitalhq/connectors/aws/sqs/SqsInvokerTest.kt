@@ -7,11 +7,19 @@ import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.firstRawObject
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.format.DefaultFormatRegistry
+import com.orbitalhq.query.QueryContextEventBroker
+import com.orbitalhq.query.tracing.MessageStreamEventReceived
+import com.orbitalhq.query.tracing.MessageStreamSubscription
+import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
+import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -91,6 +99,70 @@ class SqsInvokerTest {
           endPointOverride = endPointOverride
       )
       connectionRegistry.register(connectionConfig)
+   }
+
+   @Test
+   fun `emits tracing events when publishing to SQS and includes message payload`(): Unit = runBlocking {
+      val (vyne, _) = vyneWithSqsInvoker()
+
+      val (eventBroker, eventSink) = QueryContextEventBroker.withTestTraceSpan()
+
+      val publishedMovie = vyne.query("""
+         given { movie : Movie = { id: "1223" , title : "Star Wars" } }
+         call MovieService::publishMovie
+      """.trimIndent(),
+         eventBroker = eventBroker
+      ).firstRawObject()
+
+      // Should have request and response events
+      eventSink.collectedEvents.shouldHaveSize(2)
+
+      // Verify request event
+      val requestEvent = eventSink.collectedEvents.first()
+      requestEvent.spanState.shouldBe(SpanState.ACTIVE)
+      val requestMetadata = requestEvent.exchangeMetadata.shouldBeInstanceOf<MessageStreamEventReceived>()
+      requestEvent.eventVerb.shouldBe("Publish")
+      val requestPayload = requestMetadata.payload()
+      requestPayload.shouldNotBeNull()
+      requestPayload.shouldContain("Star Wars")
+      requestPayload.shouldContain("1223")
+
+      // Verify response event
+      val responseEvent = eventSink.collectedEvents.last()
+      responseEvent.spanState.shouldBe(SpanState.COMPLETE)
+      val responseMetadata = responseEvent.exchangeMetadata.shouldBeInstanceOf<MessageStreamEventReceived>()
+      responseEvent.eventVerb.shouldBe("Publish response")
+
+      // Verify actual message was published
+      publishedMovie.shouldNotBeNull()
+   }
+
+   @Test
+   fun `emits tracing events when subscribing to SQS stream`(): Unit = runBlocking {
+      val (vyne, _) = vyneWithSqsInvoker()
+
+      val message1 = """{"id": "1234","title": "Star Wars"}"""
+      populateSqs(message1)
+
+      val (eventBroker, eventSink) = QueryContextEventBroker.withTestTraceSpan()
+
+      val result = vyne.query(
+         """stream { Movie }""",
+         eventBroker = eventBroker
+      ).results.take(1).toList() as List<TypedObject>
+
+      // Should have subscription event
+      eventSink.collectedEvents.shouldHaveSize(1)
+
+      // Verify subscription event
+      val subscriptionEvent = eventSink.collectedEvents.first()
+      subscriptionEvent.spanState.shouldBe(SpanState.ACTIVE)
+      val subscriptionMetadata = subscriptionEvent.exchangeMetadata.shouldBeInstanceOf<MessageStreamSubscription>()
+      subscriptionEvent.eventVerb.shouldBe("Subscribe")
+      subscriptionMetadata.topic.shouldContain(sqsQueueUrl)
+
+      // Verify actual result
+      result.shouldHaveSize(1)
    }
 
    @Test

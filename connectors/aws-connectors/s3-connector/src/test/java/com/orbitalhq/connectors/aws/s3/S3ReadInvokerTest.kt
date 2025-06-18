@@ -1,12 +1,19 @@
 package com.orbitalhq.connectors.aws.s3
 
 import com.google.common.io.Resources
+import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.query.tracing.ObjectStoreRequest
+import com.orbitalhq.query.tracing.ObjectStoreResponse
+import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.rawObjects
 import io.kotest.common.runBlocking
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -52,6 +59,95 @@ class S3ReadInvokerTest : BaseS3Test() {
              Close : ClosePrice
          }
    """.trimIndent()
+   @Test
+   fun `emits tracing events when reading from S3 and includes request payload`(): Unit = runBlocking {
+      val bucketName = createBucketWithRandomName("Trades")
+      uploadResourceToS3(bucketName, "trades.csv", Resources.getResource("Coinbase_BTCUSD_3rows.csv").toURI().toPath())
+      val schema = """
+          $baseSchema
+          $columnIndexedSchema
+          @S3Service( connectionName = "$AWS_CONNECTION_NAME" )
+          service AwsBucketService {
+              @S3Operation(bucket = "$bucketName")
+              operation readBucket(filename:FilenamePattern = "trades.csv"):OrderSummary[]
+          }
+      """.trimIndent()
+      val (vyne) = vyneWithS3Invoker(schema)
+
+      val (eventBroker, eventSink) = QueryContextEventBroker.withTestTraceSpan()
+
+      val results = vyne.query(
+         """find { OrderSummary[] }""",
+         eventBroker = eventBroker
+      ).rawObjects()
+
+      // Should have request and response events
+      eventSink.collectedEvents.shouldHaveSize(2)
+
+      // Verify request event
+      val requestEvent = eventSink.collectedEvents.first()
+      requestEvent.spanState.shouldBe(SpanState.ACTIVE)
+      val requestMetadata = requestEvent.exchangeMetadata.shouldBeInstanceOf<ObjectStoreRequest>()
+      requestEvent.eventVerb.shouldBe("Read")
+      val requestPayload = requestMetadata.payload()
+      requestPayload.shouldNotBeNull()
+      requestPayload.shouldContain("trades.csv")
+
+      // Verify response event
+      val responseEvent = eventSink.collectedEvents.last()
+      responseEvent.spanState.shouldBe(SpanState.COMPLETE)
+      val responseMetadata = responseEvent.exchangeMetadata.shouldBeInstanceOf<ObjectStoreResponse>()
+      responseEvent.eventVerb.shouldBe("Read response")
+      responseMetadata.size.shouldBe(268) // Size of the test CSV file
+   }
+
+   @Test
+   fun `emits tracing events when S3 read operation fails`(): Unit = runBlocking {
+      val bucketName = createBucketWithRandomName("Trades")
+      // Note: We don't upload any file, so the read should fail
+      val schema = """
+          $baseSchema
+          $columnIndexedSchema
+          @S3Service( connectionName = "$AWS_CONNECTION_NAME" )
+          service AwsBucketService {
+              @S3Operation(bucket = "$bucketName")
+              operation readBucket(filename:FilenamePattern = "nonexistent.csv"):OrderSummary[]
+          }
+      """.trimIndent()
+      val (vyne) = vyneWithS3Invoker(schema)
+
+      val (eventBroker, eventSink) = QueryContextEventBroker.withTestTraceSpan()
+
+      val result = try {
+         vyne.query(
+            """find { OrderSummary[] }""",
+            eventBroker = eventBroker
+         ).rawObjects()
+      } catch (e: Exception) {
+         // Expected to fail
+         println(e)
+         null
+      }
+      // Should have request and error events
+      eventSink.collectedEvents.shouldHaveSize(2)
+
+      // Verify request event
+      val requestEvent = eventSink.collectedEvents.first()
+      requestEvent.spanState.shouldBe(SpanState.ACTIVE)
+      val requestMetadata = requestEvent.exchangeMetadata.shouldBeInstanceOf<ObjectStoreRequest>()
+      requestEvent.eventVerb.shouldBe("Read")
+      val requestPayload = requestMetadata.payload()
+      requestPayload.shouldNotBeNull()
+      requestPayload.shouldContain("nonexistent.csv")
+
+      // Verify error event
+      val errorEvent = eventSink.collectedEvents.last()
+      errorEvent.spanState.shouldBe(SpanState.COMPLETE)
+      val errorMetadata = errorEvent.exchangeMetadata.shouldBeInstanceOf<ObjectStoreResponse>()
+      errorEvent.eventVerb.shouldBe("Read object error")
+      errorMetadata.size.shouldBe(0) // Error case
+   }
+
    @Test
    fun `can read a single file from s3 using a default value for filename and column indexed csv`(): Unit = runBlocking {
       val bucketName = createBucketWithRandomName("Trades")

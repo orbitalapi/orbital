@@ -10,6 +10,10 @@ import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.tracing.ObjectStoreRequest
+import com.orbitalhq.query.tracing.ObjectStoreResponse
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
@@ -49,11 +53,29 @@ class S3ReadInvoker : BaseS3Invoker() {
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val filePattern = getFilenamePattern(parameters)
       val startTime = Instant.now()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, bucketName)
 
+      traceContext.emitEvent(
+         kind = TracingEventKind.OK,
+         spanState = SpanState.ACTIVE,
+         payloadType = null,
+         exchangeMetadata = ObjectStoreRequest(awsConnection.connectionName, bucketName) { filePattern },
+         verb = "Read"
+      )
+
+      var resultReturned = false
       return S3Connection(awsConnection, bucketName)
          .fetchAsInputStream(filePattern)
          .onErrorMap { error ->
             logger.warn { "Failed to read bucket $bucketName on connection ${awsConnection.connectionName} - a ${error::class.simpleName} was thrown - ${error.message}" }
+            val errorMessage = error.message ?: "No message in instance of ${error::class.simpleName}"
+            traceContext.emitEvent(
+               TracingEventKind.ERROR,
+               SpanState.COMPLETE,
+               null,
+               ObjectStoreResponse( errorMessage, -1, { null }),
+               "Read error"
+            )
             val operationResult = buildOperationResult(
                service,
                operation,
@@ -66,13 +88,25 @@ class S3ReadInvoker : BaseS3Invoker() {
             )
             eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
             OperationInvocationException(
-               "Failed to read from bucket $bucketName - ${error.message ?: "No message in instance of ${error::class.simpleName}"}",
+               "Failed to read from bucket $bucketName - $errorMessage",
                0,
                operationResult.remoteCall,
                parameters
             )
          }
+         .doOnComplete {
+            if (!resultReturned) {
+               traceContext.emitEvent(
+                  TracingEventKind.ERROR,
+                  SpanState.COMPLETE,
+                  null,
+                  ObjectStoreResponse("Nothing returned from Object Store", 0, { null }),
+                  "Read object error"
+               )
+            }
+         }
          .flatMap { fileNameAndInputStream ->
+            resultReturned = true
             val (s3Object, deferredInputStream) = fileNameAndInputStream
             deferredInputStream
                .doOnSubscribe {
@@ -81,6 +115,14 @@ class S3ReadInvoker : BaseS3Invoker() {
                .map { inputStream -> s3Object to inputStream }
                .onErrorMap { error ->
                   logger.warn { "Failed to fetch object ${s3Object.key()} from bucket $bucketName on connection ${awsConnection.connectionName} - a ${error::class.simpleName} was thrown - ${error.message}" }
+                  val errorMessage = error.message ?: "No message in instance of ${error::class.simpleName}"
+                  traceContext.emitEvent(
+                     TracingEventKind.ERROR,
+                     SpanState.COMPLETE,
+                     null,
+                     ObjectStoreResponse(errorMessage, s3Object.size(), { null }),
+                     "Read object error"
+                  )
                   val operationResult = buildOperationResult(
                      service,
                      operation,
@@ -93,7 +135,7 @@ class S3ReadInvoker : BaseS3Invoker() {
                   )
                   eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
                   OperationInvocationException(
-                     "Failed to fetch objct ${s3Object.key()} from bucket $bucketName - ${error.message ?: "No message in instance of ${error::class.simpleName}"}",
+                     "Failed to fetch object ${s3Object.key()} from bucket $bucketName - $errorMessage",
                      0,
                      operationResult.remoteCall,
                      parameters
@@ -102,6 +144,14 @@ class S3ReadInvoker : BaseS3Invoker() {
          }
 
          .flatMap { (s3Object,inputStream) ->
+            val resultEvent = traceContext.emitEvent(
+               TracingEventKind.OK,
+               SpanState.COMPLETE,
+               operation.returnType,
+               // If we store the results here, we mess about with the input stream
+               ObjectStoreResponse(null, s3Object.size()) { "S3 Results are not stored" },
+               "Read response"
+            )
             val operationResult = buildOperationResult(
                service,
                operation,
@@ -116,7 +166,7 @@ class S3ReadInvoker : BaseS3Invoker() {
                operation.returnType,
                inputStream,
                schema,
-               source = operationResult.asOperationReferenceDataSource(),
+               source = operationResult.asOperationReferenceDataSource(resultEvent.idSet),
                formatRegistry = formatRegistry,
             )
          }

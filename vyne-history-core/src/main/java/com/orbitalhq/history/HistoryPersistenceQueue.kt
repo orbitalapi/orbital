@@ -1,11 +1,11 @@
 package com.orbitalhq.history
 
 import com.orbitalhq.history.chronicle.ChronicleStore
-import com.orbitalhq.query.QueryErrorStreamEvent
 import com.orbitalhq.query.history.LineageRecord
 import com.orbitalhq.query.history.QueryErrorEventRow
 import com.orbitalhq.query.history.QueryResultRow
 import com.orbitalhq.query.history.RemoteCallResponse
+import com.orbitalhq.query.history.tracing.TraceEventRow
 import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
@@ -76,6 +76,7 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) : Qu
    private val remoteCallResponseStore: ChronicleStore<RemoteCallResponse>
    private val lineageRecordStore: ChronicleStore<LineageRecord>
    private val errorEventStore: ChronicleStore<QueryErrorEventRow>
+   private val traceEventsStore: ChronicleStore<TraceEventRow>
 
    init {
       queryResultRowStore =
@@ -100,6 +101,11 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) : Qu
             { errorEvent -> errorEventRowToByteArray(errorEvent) },
             { bytes -> errorEventRowFromByteArray(bytes) }
          )
+
+      traceEventsStore = ChronicleStore(baseQueuePath.resolve("$queryBasePath/traceEvents/").toFile().canonicalPath,
+         { tracingEvent -> traceEventToByteArray(tracingEvent) },
+         { bytes -> traceEventFromByteArray(bytes) }
+      )
       logger.info { "History queue working in $queryBasePath" }
    }
 
@@ -107,6 +113,8 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) : Qu
    fun retrieveNewRemoteCalls(): Flux<RemoteCallResponse> = remoteCallResponseStore.retrieveNewValues()
    fun retrieveNewLineageRecords(): Flux<LineageRecord> = lineageRecordStore.retrieveNewValues()
    fun retrieveNewErrorEvents(): Flux<QueryErrorEventRow> = errorEventStore.retrieveNewValues()
+   fun retrieveTraceEvents(): Flux<TraceEventRow> = traceEventsStore.retrieveNewValues()
+
    override fun storeResultRow(resultRow: QueryResultRow) {
       queryResultRowStore.store(resultRow)
    }
@@ -121,6 +129,16 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) : Qu
 
    override fun storeErrorEvent(event: QueryErrorEventRow) {
       errorEventStore.store(event)
+   }
+
+   override fun storeTraceEvent(event: TraceEventRow) {
+      traceEventsStore.store(event)
+   }
+   private fun traceEventToByteArray(traceEvent: TraceEventRow): ByteArray {
+      return Cbor.encodeToByteArray(traceEvent)
+   }
+   private fun traceEventFromByteArray(byteArray: ByteArray): TraceEventRow {
+      return Cbor.decodeFromByteArray(byteArray)
    }
    private fun errorEventRowToByteArray(eventRow: QueryErrorEventRow): ByteArray {
       return Cbor.encodeToByteArray(eventRow)

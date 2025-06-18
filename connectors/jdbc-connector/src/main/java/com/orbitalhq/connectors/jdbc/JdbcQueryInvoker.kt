@@ -1,12 +1,17 @@
 package com.orbitalhq.connectors.jdbc
 
 import arrow.core.Either
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Stopwatch
 import com.orbitalhq.connectors.getTaxiQlQuery
 import com.orbitalhq.connectors.jdbc.sql.dml.SelectStatementGenerator
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.tracing.DatabaseRequest
+import com.orbitalhq.query.tracing.DatabaseResponse
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
@@ -17,6 +22,7 @@ import mu.KotlinLogging
 class JdbcQueryInvoker(
    connectionFactory: JdbcConnectionFactory,
    private val schemaProvider: SchemaProvider,
+   private val objectMapper: ObjectMapper,
 ) : BaseJdbcOperationInvoker(connectionFactory, ) {
 
    companion object {
@@ -42,8 +48,12 @@ class JdbcQueryInvoker(
 
       logger.debug { "$queryId: Starting JDBC Query $sql" }
       val stopwatch = Stopwatch.createStarted()
+      val span = eventDispatcher.createOperationTraceSpan(service, operation, "")
+      span.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, operation.returnType, DatabaseRequest(connectionConfig.connectionName, "Select", "") { sql }, "Select")
       val resultList = jdbcTemplate.queryForList(sql, paramMap)
       val elapsed = stopwatch.elapsed()
+      val resultEvent = span.emitEvent(TracingEventKind.OK, SpanState.COMPLETE, operation.returnType, DatabaseResponse(resultList.size.toLong()) { objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(resultList) }, "Select")
+
       logger.debug { "$queryId: JDBC Query completed in $elapsed" }
       val operationResult = buildOperationResult(
          service,
@@ -55,7 +65,7 @@ class JdbcQueryInvoker(
          recordCount = resultList.size
       )
       eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
-      return convertToTypedInstances(resultList, query, schema, operationResult.asOperationReferenceDataSource())
+      return convertToTypedInstances(resultList, query, schema, operationResult.asOperationReferenceDataSource(resultEvent.idSet))
    }
 
 }
