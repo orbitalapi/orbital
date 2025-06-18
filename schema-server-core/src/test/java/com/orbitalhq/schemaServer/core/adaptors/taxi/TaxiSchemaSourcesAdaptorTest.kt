@@ -37,6 +37,7 @@ class TaxiSchemaSourcesAdaptorTest {
          .attribute("email")
          .type.shouldBe("foo.EmailAddress".fqn())
    }
+
    @Test
    fun `can load taxi project with protobuf additional sources`() {
       val source = loadSourcePackage("mixed-sources/single-protobuf-directory")
@@ -44,6 +45,7 @@ class TaxiSchemaSourcesAdaptorTest {
       schema.hasType("CafeDrink")
          .shouldBeTrue()
    }
+
    @Test
    fun `can load taxi project with openAPI additional sources with config files`() {
       val source = loadSourcePackage("mixed-sources/openapi-with-conf-file")
@@ -99,25 +101,24 @@ class TaxiSchemaSourcesAdaptorTest {
 
       val actualSourceMap = jacksonObjectMapper().readValue<Map<String, Any>>(sourceMap.content)
       val mappedTypes = actualSourceMap["types"] as Map<String, Any>
-      mappedTypes.shouldBe(
-         // MP: 10-Jun-26: Commented out types are because these are now expected to be imported
-         mapOf(
-            "foo.AddressBook" to "avro/addressBookWithTaxiAnnotations.avsc",
-            "foo.addressbook.People" to "avro/addressBookWithTaxiAnnotations.avsc",
+      // MP: 10-Jun-26: Commented out types are because these are now expected to be imported
+      val expected = mapOf(
+         "foo.AddressBook" to "avro/addressBookWithTaxiAnnotations.avsc",
+         "foo.addressbook.People" to "avro/addressBookWithTaxiAnnotations.avsc",
 //            "foo.PersonName" to "avro/addressBookWithTaxiAnnotations.avsc",
 //            "foo.PersonId" to "avro/addressBookWithTaxiAnnotations.avsc",
 //            "foo.EmailAddress" to "avro/addressBookWithTaxiAnnotations.avsc",
-            "foo.addressbook.people.Phones" to "avro/addressBookWithTaxiAnnotations.avsc",
-            "foo.addressbook.people.phones.Number" to "avro/addressBookWithTaxiAnnotations.avsc",
-            "foo.PhoneTypeEnum" to "avro/addressBookWithTaxiAnnotations.avsc",
-            "foo.addressbook.people.LastUpdated" to "avro/addressBookWithTaxiAnnotations.avsc",
-            "movies.Film" to "avro/fillms.avsc",
+         "foo.addressbook.people.Phones" to "avro/addressBookWithTaxiAnnotations.avsc",
+         "foo.addressbook.people.phones.Number" to "avro/addressBookWithTaxiAnnotations.avsc",
+         "foo.PhoneTypeEnum" to "avro/addressBookWithTaxiAnnotations.avsc",
+         "foo.addressbook.people.LastUpdated" to "avro/addressBookWithTaxiAnnotations.avsc",
+         "movies.Film" to "avro/films.avsc",
 //            "movies.FilmTitle" to "avro/fillms.avsc",
 //            "movies.ReleaseYear" to "avro/fillms.avsc",
 //            "movies.Genre" to "avro/fillms.avsc",
 //            "movies.Rating" to "avro/fillms.avsc"
-         )
       )
+      mappedTypes.shouldBe(expected)
 
    }
 
