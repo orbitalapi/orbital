@@ -401,6 +401,7 @@ class StatefulQueryEngine(
          isFullyResolved = true,
          profilerOperation = context.profiler.root,
          anonymousTypes = spec.anonymousTypes(),
+         clientQueryId = context.clientQueryId,
          queryId = context.queryId,
          responseType = spec.type,
          onCancelRequestHandler = { context.requestCancel() },
