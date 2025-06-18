@@ -19,6 +19,23 @@ class ReactivePollingFileSystemMonitor(
    val pollFrequency: Duration
 ) : ReactiveFileSystemMonitor {
 
+   companion object {
+      val monitoredSuffixes = listOf(
+         ".taxi",
+         ".conf",
+         ".kts", // nebula
+         // Avro file types
+         ".avsc",
+         // Proto file types
+         ".proto",
+         // OAS file types
+         ".yaml",
+         ".json",
+         // SOAP file types
+         ".wsdl",
+         ".xml"
+      )
+   }
    private val sink = Sinks.many().replay().latest<List<FileSystemChangeEvent>>()
    private val suspendedEvents = SuspendableEventPublisher.forFileSystemChangeEvents(sink)
 
@@ -34,13 +51,14 @@ class ReactivePollingFileSystemMonitor(
          FileFilterUtils.directoryFileFilter(),
          HiddenFileFilter.VISIBLE
       )
-      val taxiFiles: IOFileFilter = FileFilterUtils.and(
-         FileFilterUtils.fileFileFilter(),
-         FileFilterUtils.suffixFileFilter(".taxi")
-      )
-      val filter: IOFileFilter = FileFilterUtils.or(directories, taxiFiles)
-         .or(FileFilterUtils.suffixFileFilter(".conf"))
-      observer = FileAlterationObserver(rootPath.toFile(), filter).apply {
+      val suffixFileFilters = monitoredSuffixes.map { suffix ->
+         FileFilterUtils.and(
+            FileFilterUtils.fileFileFilter(),
+            FileFilterUtils.suffixFileFilter(suffix)
+         )
+      }
+      val fileFilter = FileFilterUtils.or(directories,*suffixFileFilters.toTypedArray())
+      observer = FileAlterationObserver(rootPath.toFile(), fileFilter).apply {
          addListener(object : FileAlterationListener {
             override fun onStart(observer: FileAlterationObserver) {
                logger.debug("File poll starting path => ${rootPath.toFile().canonicalPath}")

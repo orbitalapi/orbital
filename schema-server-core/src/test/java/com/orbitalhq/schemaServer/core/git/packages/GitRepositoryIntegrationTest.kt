@@ -15,7 +15,9 @@ import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectSto
 import com.orbitalhq.schemaServer.repositories.git.GitProjectStoreChangeRequest
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
+import com.orbitalhq.utils.log
 import io.kotest.matchers.booleans.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import lang.taxi.asA
@@ -26,9 +28,11 @@ import org.junit.Test
 import org.junit.rules.TemporaryFolder
 import reactor.test.StepVerifier
 import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.Duration
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.writeText
+import kotlin.math.log
 
 class GitRepositoryIntegrationTest : BaseGitTest() {
 
@@ -150,6 +154,128 @@ class GitRepositoryIntegrationTest : BaseGitTest() {
 
    }
 
+   // ORB-972
+   @Test
+   fun `changes made in a mixed sources repository are detected`() {
+      deployTestProjectToRemoteGitPath(projectName = "mixed-sources/avro-and-openapi")
+      val (eventDispatcher, workspaceProjectsService) = createWorkspaceProjectService(FileChangeDetectionMethod.POLL)
+      val (repositoryManager, schemaClient) = createProjectManager(eventDispatcher)
+
+      // Test: Add the git repository
+      workspaceProjectsService.createGitProjectStore(
+         GitProjectStoreChangeRequest(
+            "my-git-repo",
+            uri = remoteRepoDir.root.toURI().toASCIIString(),
+            branch = "master",
+         )
+      )
+      await().atMost(30, TimeUnit.SECONDS)
+         .until<Boolean> {
+            schemaClient.schema().hasType("movies.Film")
+         }
+
+
+      // baseline - verify our field we're about to remove is present
+      schemaClient.schema().type("movies.Film").hasAttribute("year").shouldBeTrue()
+      val gitLoader = repositoryManager.gitLoaders.single()
+      // commit some changes at the remote
+      val file = remoteRepoDir.root.resolve("avro/films.avsc")
+      file.writeText(
+         """{
+   "type": "record",
+   "name": "Film",
+   "taxi.dataType": "movies.Film",
+   "namespace": "com.example",
+   "fields": [
+      {
+         "name": "title",
+         "type": "string",
+         "taxi.dataType": "movies.FilmTitle"
+      }
+   ]
+}"""
+      )
+      remoteRepo.add().addFilepattern("avro/films.avsc").call()
+      remoteRepo.commit().apply { message = "update" }.call()
+      log().info("Pushed updates to avro file")
+
+      gitLoader.syncNow()
+      gitLoader.fileMonitor.asA<ReactivePollingFileSystemMonitor>().pollNow()
+
+      await().atMost(30, TimeUnit.SECONDS)
+         .until<Boolean> {
+            val filmType = schemaClient.schema()
+               .type("movies.Film")
+            // we removed this attribute, so should not be present
+            filmType.hasAttribute("year") == false
+         }
+   }
+
+   @Test
+   fun `can add non-taxi sources after a git repo has already been added`() {
+      deployTestProjectToRemoteGitPath()
+      val (eventDispatcher, workspaceProjectsService) = createWorkspaceProjectService(FileChangeDetectionMethod.POLL)
+      val (repositoryManager, schemaClient) = createProjectManager(eventDispatcher)
+      commitChanges()
+      // Test: Add the git repository
+      workspaceProjectsService.createGitProjectStore(
+         GitProjectStoreChangeRequest(
+            "my-git-repo",
+            uri = remoteRepoDir.root.toURI().toASCIIString(),
+            branch = "master",
+         )
+      )
+      await().atMost(30, TimeUnit.SECONDS)
+         .until<Boolean> { schemaClient.schema().hasType("HelloWorld") }
+
+
+      // Now, modify the project - first, update the taxi.conf to add
+      writeAndCommit("taxi.conf", """
+name: taxi/sample
+version: 0.3.0
+sourceRoot: src/
+additionalSources: {
+   "@orbital/avro" = "avro/*.avsc"
+}
+      """.trimIndent())
+      // Now add a taxi file with the required defs:
+      writeAndCommit("src/films.taxi", """
+namespace movies
+
+type FilmTitle inherits String
+      """.trimIndent())
+      // And add the avro file
+      writeAndCommit("avro/films.avsc","""
+{
+   "type": "record",
+   "name": "Film",
+   "taxi.dataType": "movies.Film",
+   "namespace": "com.example",
+   "fields": [
+      {
+         "name": "title",
+         "type": "string",
+         "taxi.dataType": "movies.FilmTitle"
+      }
+   ]
+}
+      """.trimIndent())
+
+      val gitLoader = repositoryManager.gitLoaders.single()
+      log().info("Pushed updates to avro file")
+
+      gitLoader.syncNow()
+      gitLoader.fileMonitor.asA<ReactivePollingFileSystemMonitor>().pollNow()
+
+      await().atMost(30, TimeUnit.SECONDS)
+         .until<Boolean> {
+            val filmType = schemaClient.schema()
+               .type("movies.Film")
+            // we removed this attribute, so should not be present
+            filmType.hasAttribute("title")
+         }
+   }
+
    @Test
    fun `configure a git repository at runtime and see initial state pulled along with changes`() {
       deployTestProjectToRemoteGitPath()
@@ -169,8 +295,8 @@ class GitRepositoryIntegrationTest : BaseGitTest() {
       StepVerifier
          .create(eventDispatcher.gitSpecAdded)
          .expectNextMatches { gitSpecAddedEvent ->
-         gitSpecAddedEvent.spec.name == "my-git-repo"
-      }.verifyTimeout(Duration.ofSeconds(1))
+            gitSpecAddedEvent.spec.name == "my-git-repo"
+         }.verifyTimeout(Duration.ofSeconds(1))
 
       await().atMost(30, TimeUnit.SECONDS)
          .until<Boolean> { repositoryManager.gitLoaders.size == 1 }
@@ -211,10 +337,10 @@ class GitRepositoryIntegrationTest : BaseGitTest() {
       //      val loader = FileSchemaRepositoryConfigLoader(configFile.toPath(), eventDispatcher = eventDispatcher)
       val loader = InMemoryWorkspaceConfigLoader(
          WorkspaceConfig(
-               git = WorkspaceGitProjectConfig(
-                  checkoutRoot = localRepoDir.root.toPath(),
-                  diskChangeDetectionMethod = gitDiskChangeDetectionMethod
-               )
+            git = WorkspaceGitProjectConfig(
+               checkoutRoot = localRepoDir.root.toPath(),
+               diskChangeDetectionMethod = gitDiskChangeDetectionMethod
+            )
          ),
          eventDispatcher
       )
@@ -227,6 +353,17 @@ class GitRepositoryIntegrationTest : BaseGitTest() {
       val file = remoteRepoDir.root.resolve("src/hello.taxi")
       file.writeText("type HelloWorld inherits String")
       remoteRepo.add().addFilepattern("src/hello.taxi").call()
+      remoteRepo.commit().apply { message = "update" }.call()
+   }
+
+   private fun writeAndCommit(path: String, contents: String) {
+      val file = remoteRepoDir.root.resolve(path)
+      if (!file.exists()) {
+         file.parentFile.mkdirs()
+         file.createNewFile()
+      }
+      file.writeText(contents)
+      remoteRepo.add().addFilepattern(path).call()
       remoteRepo.commit().apply { message = "update" }.call()
    }
 }
