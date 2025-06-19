@@ -2,6 +2,7 @@ package com.orbitalhq.models.functions.stdlib
 
 import com.nhaarman.mockito_kotlin.doReturn
 import com.nhaarman.mockito_kotlin.mock
+import com.orbitalhq.firstRawValue
 import com.winterbe.expekt.should
 import com.orbitalhq.models.ConversionService
 import com.orbitalhq.models.EvaluatedExpression
@@ -13,6 +14,8 @@ import com.orbitalhq.models.TypedValue
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
+import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.runBlocking
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.types.PrimitiveType
 import org.junit.Test
@@ -450,6 +453,126 @@ class StringsTest {
         val trade = TypedInstance.from(schema.type("Trade"), json, schema, source = Provided) as TypedObject
         trade["ccy1"].value.should.be.equal("TEST")
     }
+
+   @Test
+   fun `evaluates startsWith correctly`():Unit = runBlocking {
+      val (vyne,_) =  testVyne()
+      vyne.query("""find { "hello".startsWith("he") } """)
+         .firstRawValue().shouldBe(true)
+
+      vyne.query("""find { "hello".startsWith("hello") } """)
+         .firstRawValue().shouldBe(true)
+
+      vyne.query("""find { "hello".startsWith("helloThereCruelWorld") } """)
+         .firstRawValue().shouldBe(false)
+
+      vyne.query("""find { "hello".startsWith("") } """)
+         .firstRawValue().shouldBe(true)
+
+      vyne.query("""find { "hello".startsWith("world") } """)
+         .firstRawValue().shouldBe(false)
+   }
+
+   @Test
+   fun `evaluates endsWith correctly`():Unit = runBlocking {
+      val (vyne,_) =  testVyne()
+      vyne.query("""find { "hello".endsWith("lo") } """)
+         .firstRawValue().shouldBe(true)
+
+      vyne.query("""find { "hello".endsWith("hello") } """)
+         .firstRawValue().shouldBe(true)
+
+      vyne.query("""find { "hello".endsWith("helloThereCruelWorld") } """)
+         .firstRawValue().shouldBe(false)
+
+      vyne.query("""find { "hello".endsWith("") } """)
+         .firstRawValue().shouldBe(true)
+
+      vyne.query("""find { "hello".endsWith("world") } """)
+         .firstRawValue().shouldBe(false)
+   }
+
+   @Test
+   fun `evaluates matches correctly`(): Unit = runBlocking {
+      val (vyne, _) = testVyne()
+
+      // Exact match
+      vyne.query("""find { "hello".matches("^hello$") } """)
+         .firstRawValue().shouldBe(true)
+
+      // Full match with start + wildcard + end
+      vyne.query("""find { "hello".matches("^he.*o$") } """)
+         .firstRawValue().shouldBe(true)
+
+      // Match only lowercase letters
+      vyne.query("""find { "hello".matches("^[a-z]+$") } """)
+         .firstRawValue().shouldBe(true)
+
+      // Fails: too specific (missing end)
+      vyne.query("""find { "hello".matches("^he") } """)
+         .firstRawValue().shouldBe(false)
+
+      // Fails: too short
+      vyne.query("""find { "hello".matches("^h$") } """)
+         .firstRawValue().shouldBe(false)
+
+      // Fails: case mismatch
+      vyne.query("""find { "Hello".matches("^[a-z]+$") } """)
+         .firstRawValue().shouldBe(false)
+
+      // Match empty string against empty pattern
+      vyne.query("""find { "".matches("") } """)
+         .firstRawValue().shouldBe(true)
+
+      // Fails: non-empty string does not match empty pattern
+      vyne.query("""find { "x".matches("") } """)
+         .firstRawValue().shouldBe(false)
+   }
+
+   @Test
+   fun `evaluates containsPattern correctly`(): Unit = runBlocking {
+      val (vyne, _) = testVyne()
+
+      // Match substring at beginning
+      vyne.query("""find { "hello".containsPattern("^he") } """)
+         .firstRawValue().shouldBe(true)
+
+      // Match substring in the middle
+      vyne.query("""find { "hello".containsPattern("ell") } """)
+         .firstRawValue().shouldBe(true)
+
+      // Match substring at the end
+      vyne.query("""find { "hello".containsPattern("lo$") } """)
+         .firstRawValue().shouldBe(true)
+
+      // Full match also works
+      vyne.query("""find { "hello".containsPattern("^hello$") } """)
+         .firstRawValue().shouldBe(true)
+
+      // Match using dot wildcard
+      vyne.query("""find { "hello".containsPattern("h.llo") } """)
+         .firstRawValue().shouldBe(true)
+
+      // Match fails — wrong case
+      vyne.query("""find { "hello".containsPattern("HELLO") } """)
+         .firstRawValue().shouldBe(false)
+
+      // Match single character
+      vyne.query("""find { "hello".containsPattern("e") } """)
+         .firstRawValue().shouldBe(true)
+
+      // No match
+      vyne.query("""find { "hello".containsPattern("xyz") } """)
+         .firstRawValue().shouldBe(false)
+
+      // Empty pattern matches any string
+      vyne.query("""find { "hello".containsPattern("") } """)
+         .firstRawValue().shouldBe(true)
+
+      // Empty string does not contain anything
+      vyne.query("""find { "".containsPattern("h") } """)
+         .firstRawValue().shouldBe(false)
+   }
 
 }
 

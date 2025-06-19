@@ -35,7 +35,11 @@ object Strings {
       Coalesce,
       PadStart,
       PadEnd,
-      ApplyFormat
+      ApplyFormat,
+      StartsWith,
+      EndsWith,
+      Matches,
+      ContainsPattern
    )
 }
 
@@ -424,4 +428,92 @@ object ApplyFormat : NullSafeInvoker() {
    }
 
    override val functionName: QualifiedName= lang.taxi.functions.stdlib.ApplyFormat.name
+}
+
+object StartsWith : NullSafeInvoker() {
+   override fun doInvoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
+   ): TypedInstance {
+      val source = inputValues[0].valueAs<String>()
+      val valueToSearchFor = inputValues[1].valueAs<String>()
+
+      val result = source.startsWith(valueToSearchFor)
+      val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
+      return TypedInstance.from(returnType, result, schema, source = dataSource)
+   }
+
+   override val functionName: QualifiedName= lang.taxi.functions.stdlib.StartsWith.name
+}
+
+object EndsWith : NullSafeInvoker() {
+   override fun doInvoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
+   ): TypedInstance {
+      val source = inputValues[0].valueAs<String>()
+      val valueToSearchFor = inputValues[1].valueAs<String>()
+
+      val result = source.endsWith(valueToSearchFor)
+      val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
+      return TypedInstance.from(returnType, result, schema, source = dataSource)
+   }
+
+   override val functionName: QualifiedName= lang.taxi.functions.stdlib.EndsWith.name
+}
+
+object Matches : NullSafeInvoker() {
+   override fun doInvoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
+   ): TypedInstance {
+      val source = inputValues[0].valueAs<String>()
+      val regex = inputValues[1].valueAs<String>()
+
+      val result = source.matches(Regex(regex))
+      val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
+      return TypedInstance.from(returnType, result, schema, source = dataSource)
+   }
+
+   override val functionName: QualifiedName= lang.taxi.functions.stdlib.Matches.name
+}
+
+object ContainsPattern : NullSafeInvoker() {
+   override fun doInvoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
+   ): TypedInstance {
+      val source = inputValues[0].valueAs<String>()
+      val regex = inputValues[1].valueAs<String>()
+
+      val result = source.contains(Regex(regex))
+      val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
+      return TypedInstance.from(returnType, result, schema, source = dataSource)
+   }
+
+   override val functionName: QualifiedName= lang.taxi.functions.stdlib.ContainsPattern.name
 }
