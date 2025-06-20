@@ -8,6 +8,7 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedValue
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.functions.NamedFunctionInvoker
+import com.orbitalhq.models.functions.NullSafeInvoker
 import com.orbitalhq.models.functions.stdlib.collections.createFailureWithTypedNull
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
@@ -25,17 +26,16 @@ object EnumFunctions {
 }
 
 
-object EnumForName : NamedFunctionInvoker {
+object EnumForName : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.EnumForName.name
-
-   override fun invoke(
+   override fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier,
-      returnTypeFormat: FormatsAndZoneOffset?,
       rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val typeReference = inputValues[0] as TypeReferenceInstance
@@ -47,7 +47,7 @@ object EnumForName : NamedFunctionInvoker {
       if (!enumType.isEnum) {
          return createFailureWithTypedNull("Expected an enum type, but ${enumType.qualifiedName.shortDisplayName} is not an enum type",
             returnType, function, inputValues
-            )
+         )
       }
       if (value.value !is String) {
          return createFailureWithTypedNull("Expected to be passed a valid enum name in param 1, but got ${value.value ?: "null"}",
@@ -63,18 +63,19 @@ object EnumForName : NamedFunctionInvoker {
       return result
    }
 
+
 }
 
-object HasEnumNamed : NamedFunctionInvoker {
+object HasEnumNamed : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.HasEnumNamed.name
-   override fun invoke(
+   override fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier,
-      returnTypeFormat: FormatsAndZoneOffset?,
       rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val typeReference = inputValues[0] as TypeReferenceInstance
@@ -85,5 +86,4 @@ object HasEnumNamed : NamedFunctionInvoker {
       val source = EvaluatedExpression(function.asTaxi(), inputValues)
       return TypedInstance.from(returnType, result, schema, source = source)
    }
-
 }

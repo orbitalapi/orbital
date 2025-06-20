@@ -1,4 +1,4 @@
-package com.orbitalhq.functions.stdlib
+package com.orbitalhq.functions.stdlib.enums
 
 import com.orbitalhq.firstRawValue
 import com.orbitalhq.testVyne
