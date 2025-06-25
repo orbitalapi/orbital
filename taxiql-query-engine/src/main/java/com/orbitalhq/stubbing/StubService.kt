@@ -46,9 +46,104 @@ import mu.KotlinLogging
 import java.time.Instant
 
 /**
- * Stubs out Operation invocation with pre-canned responses.
- * Used primarily in tests, but also used for generating indicative query plans
- * ahead of actual execution
+ * A powerful stubbing service that provides pre-canned responses for operation invocations in the Orbital testing framework.
+ *
+ * StubService allows you to mock remote service calls with configurable responses, making it ideal for:
+ * - **Unit and integration testing** - Mock external dependencies and services
+ * - **Query plan generation** - Generate indicative execution plans without actual service calls
+ * - **Development workflows** - Test complex scenarios without external service dependencies
+ *
+ * ## Basic Usage
+ *
+ * The most common pattern is to create a stubbed Vyne instance for testing:
+ *
+ * ```kotlin
+ * val (vyne, stubs) = testVyne(schema)
+ *
+ * // Add simple typed response
+ * stubs.addResponse("getUserById", userInstance)
+ *
+ * // Add JSON response with data source tracking
+ * stubs.addResponse("getUsers", """[{"id": 1, "name": "John"}]""", modifyDataSource = true)
+ *
+ * // Execute query using stubbed responses
+ * val result = vyne.query("find { User }")
+ * ```
+ *
+ * ## Response Types
+ *
+ * StubService supports multiple response patterns:
+ *
+ * ### Static Responses
+ * ```kotlin
+ * // Single typed instance
+ * stubs.addResponse("findUser", userTypedInstance)
+ *
+ * // JSON string (automatically parsed)
+ * stubs.addResponse("getProduct", """{"id": 123, "name": "Widget"}""")
+ *
+ * // Collection responses
+ * stubs.addResponse("getAllUsers", listOf(user1, user2, user3))
+ * ```
+ *
+ * ### Dynamic Responses with Logic
+ * ```kotlin
+ * stubs.addResponse("findByStatus") { operation, parameters ->
+ *     val status = parameters.first().second.value as String
+ *     when (status) {
+ *         "ACTIVE" -> listOf(activeUserInstance.right())
+ *         "INACTIVE" -> listOf(inactiveUserInstance.right())
+ *         else -> emptyList()
+ *     }
+ * }
+ * ```
+ *
+ * ### Parameter-based Responses
+ * ```kotlin
+ * stubs.addResponsesByParameter(
+ *     "getUserByType",
+ *     mapOf(
+ *         "ADMIN" to """{"id": 1, "type": "ADMIN", "permissions": "ALL"}""",
+ *         "USER" to """{"id": 2, "type": "USER", "permissions": "LIMITED"}"""
+ *     )
+ * )
+ * ```
+ *
+ * ### Error Responses
+ * ```kotlin
+ * stubs.addResponseThrowing("failingOperation", RuntimeException("Service unavailable"))
+ * ```
+ *
+ * ## Verification and Testing
+ *
+ * Track invocations to verify your code calls the expected operations:
+ *
+ * ```kotlin
+ * // Verify operation was called
+ * stubs.callCount("getUserById") shouldBe 1
+ *
+ * // Verify parameters passed
+ * val params = stubs.invocations["getUserById"]!!
+ * params[0].value shouldBe "user123"
+ * ```
+ *
+ * ## Data Source Tracking
+ *
+ * Use `modifyDataSource = true` to track data lineage in query results:
+ *
+ * ```kotlin
+ * stubs.addResponse("getOrders", ordersJson, modifyDataSource = true)
+ * // Results will include operation metadata for data lineage tracking
+ * ```
+ *
+ * @param responses Pre-configured static responses keyed by operation name
+ * @param handlers Dynamic response handlers for conditional logic
+ * @param flowHandlers Streaming response handlers for Flow-based operations
+ * @param schema The schema defining operations and types (required for most functionality)
+ * @param planners Optional operation planners for generating query execution plans
+ *
+ * @see stubbedVyne For creating Vyne instances outside of tests
+ * @since 0.36.0
  */
 class StubService(
    val responses: MutableMap<String, Either<StreamErrorMessage, List<TypedInstance>>> = mutableMapOf(),
@@ -62,8 +157,34 @@ class StubService(
       private val logger = KotlinLogging.logger {}
 
       /**
-       * For use outside of test code. (eg., Visualizers, parsers, etc).
-       * Inside of tests, call testVyne()
+       * Creates a Vyne instance with StubService for use outside of test environments.
+       *
+       * This factory method is ideal for scenarios like query plan visualization, schema exploration,
+       * or development workflows where you need a functional Vyne instance without external dependencies.
+       *
+       * **For test code, use `testVyne()` instead** as it provides additional test-specific functionality.
+       *
+       * ## Example Usage
+       *
+       * ```kotlin
+       * val schema = loadSchema()
+       * val (vyne, stubService) = StubService.stubbedVyne(schema)
+       *
+       * // Configure responses for operations you need
+       * stubService.addResponse("getUsers", """[{"id":1,"name":"John"}]""")
+       * stubService.addResponse("getProducts", productList)
+       *
+       * // Use vyne for query execution or plan generation
+       * val queryPlan = vyne.generateQueryPlan("find { User }")
+       * val results = vyne.query("find { User where id = 1 }")
+       * ```
+       *
+       * @param schema The schema defining the operations and types available to Vyne
+       * @param planners Optional operation planners for customizing query execution planning
+       * @param stateStoreProvider Optional state store for caching and state management
+       * @return A pair containing the configured Vyne instance and the StubService for response configuration
+       *
+       * @see testVyne For test-specific Vyne instance creation
        */
       fun stubbedVyne(
          schema: Schema,
@@ -89,16 +210,46 @@ class StubService(
 
    private var wildcardHandler: OperationResponseHandler? = null
 
+   /**
+    * Clears all configured responses, handlers, and invocation history.
+    *
+    * This method provides a clean slate by removing:
+    * - All static responses
+    * - All dynamic handlers
+    * - All flow handlers
+    * - All invocation tracking data
+    *
+    * Useful for resetting state between test cases or test methods.
+    *
+    * ```kotlin
+    * @BeforeEach
+    * fun setup() {
+    *     stubService.clearAll()
+    *     // Configure fresh responses for each test
+    * }
+    * ```
+    */
    fun clearAll() {
       clearHandlers()
       clearInvocations()
    }
 
+   /**
+    * Clears only the invocation history while preserving configured responses and handlers.
+    *
+    * Use this when you want to reset call tracking between test assertions but keep
+    * the same response configuration.
+    */
    fun clearInvocations() {
       invocations.clear()
       calls.clear()
    }
 
+   /**
+    * Clears all configured responses and handlers while preserving invocation history.
+    *
+    * Use this when you want to reconfigure responses but keep tracking of previous calls.
+    */
    fun clearHandlers() {
       responses.clear()
       handlers.clear()
@@ -166,6 +317,30 @@ class StubService(
 
    val calls = MultimapBuilder.hashKeys().arrayListValues().build<String, List<TypedInstance>>()
 
+   /**
+    * Returns the number of times a specific operation has been invoked.
+    *
+    * This method is essential for verifying that your code calls the expected operations
+    * the correct number of times during testing.
+    *
+    * ## Example Usage
+    *
+    * ```kotlin
+    * // Setup
+    * stubs.addResponse("getUserById", userInstance)
+    *
+    * // Execute code under test
+    * val user1 = service.getUser("123")
+    * val user2 = service.getUser("456")
+    *
+    * // Verify
+    * stubs.callCount("getUserById") shouldBe 2
+    * stubs.callCount("deleteUser") shouldBe 0 // Verify it wasn't called
+    * ```
+    *
+    * @param stubKey The operation name to check (matches the key used in addResponse calls)
+    * @return The number of times the operation has been invoked, or 0 if never called
+    */
    fun callCount(stubKey: String): Int {
       return if (calls.containsKey(stubKey)) {
          calls.get(stubKey).size
@@ -299,6 +474,44 @@ class StubService(
       }.asFlow()
    }
 
+   /**
+    * Adds a dynamic response handler for an operation with conditional logic.
+    *
+    * This is the most flexible way to configure responses, allowing you to implement
+    * custom logic based on the operation and parameters received.
+    *
+    * ## Example Usage
+    *
+    * ```kotlin
+    * // Conditional response based on parameter values
+    * stubs.addResponse("findUserByStatus") { operation, parameters ->
+    *     val status = parameters.first().second.value as String
+    *     when (status) {
+    *         "ACTIVE" -> listOf(activeUser.right())
+    *         "INACTIVE" -> listOf(inactiveUser.right())
+    *         else -> emptyList()
+    *     }
+    * }
+    *
+    * // Dynamic response with multiple parameters
+    * stubs.addResponse("searchProducts") { operation, parameters ->
+    *     val category = parameters[0].second.value as String
+    *     val minPrice = parameters[1].second.value as Double
+    *
+    *     productDatabase
+    *         .filter { it.category == category && it.price >= minPrice }
+    *         .map { it.right() }
+    * }
+    * ```
+    *
+    * @param stubOperationKey The operation name that this handler will respond to
+    * @param modifyDataSource Whether to modify the data source for lineage tracking (default: false)
+    * @param handler Function that receives operation and parameters, returns list of responses
+    * @return This StubService instance for method chaining
+    *
+    * @see addResponse(String, TypedInstance) For simple static responses
+    * @see addResponse(String, String) For JSON-based responses
+    */
    fun addResponse(
       stubOperationKey: String,
       modifyDataSource: Boolean = false,
@@ -329,12 +542,84 @@ class StubService(
       }
    }
 
+   /**
+    * Configures an operation to throw an exception when invoked.
+    *
+    * This is useful for testing error handling scenarios and ensuring your code
+    * properly handles failures from external services.
+    *
+    * ## Example Usage
+    *
+    * ```kotlin
+    * // Test service unavailable scenario
+    * stubs.addResponseThrowing(
+    *     "getUserById",
+    *     RuntimeException("Service temporarily unavailable")
+    * )
+    *
+    * // Test validation errors
+    * stubs.addResponseThrowing(
+    *     "createUser",
+    *     IllegalArgumentException("Invalid email format")
+    * )
+    *
+    * // Verify error handling
+    * assertThrows<RuntimeException> {
+    *     userService.getUser("123")
+    * }
+    * ```
+    *
+    * @param stubOperationKey The operation name that should throw the exception
+    * @param error The exception to throw when the operation is invoked
+    */
    fun addResponseThrowing(stubOperationKey: String, error: Throwable) {
       addResponse(stubOperationKey) { _, _ ->
          throw error
       }
    }
 
+   /**
+    * Adds a streaming response handler that returns a Flow of responses.
+    *
+    * This method is designed for operations that need to return streaming data
+    * or multiple responses over time, such as real-time updates or batch processing.
+    *
+    * ## Example Usage
+    *
+    * ```kotlin
+    * // Stream of user updates
+    * stubs.addResponseFlow("watchUserUpdates") { operation, parameters ->
+    *     flowOf(
+    *         user1.right(),
+    *         user2.right(),
+    *         user3.right()
+    *     )
+    * }
+    *
+    * // Real-time price updates
+    * stubs.addResponseFlow("subscribeToPriceUpdates") { operation, parameters ->
+    *     val symbol = parameters.first().second.value as String
+    *     flow {
+    *         repeat(5) { i ->
+    *             val price = TypedInstance.from(
+    *                 priceType,
+    *                 mapOf("symbol" to symbol, "price" to (100.0 + i)),
+    *                 schema
+    *             )
+    *             emit(price.right())
+    *             delay(100) // Simulate real-time updates
+    *         }
+    *     }
+    * }
+    * ```
+    *
+    * @param stubOperationKey The operation name that this flow handler will respond to
+    * @param modifyDataSource Whether to modify the data source for lineage tracking (default: false)
+    * @param handler Function that returns a Flow of responses
+    * @return This StubService instance for method chaining
+    *
+    * @see addResponse For single response operations
+    */
    fun addResponseFlow(
       stubOperationKey: String,
       modifyDataSource: Boolean = false,
@@ -361,7 +646,43 @@ class StubService(
    }
 
    /**
-    * Adds multiple responses, where the value returned is determined by the first parameter of the operation
+    * Adds multiple responses where the returned value is determined by the first parameter of the operation.
+    *
+    * This method is perfect for operations that behave like lookups or have different responses
+    * based on input parameters, such as user lookups by ID or product searches by category.
+    *
+    * ## Example Usage
+    *
+    * ```kotlin
+    * // User lookup by role
+    * stubs.addResponsesByParameter(
+    *     "getUserByRole",
+    *     mapOf(
+    *         "ADMIN" to """{"id": 1, "name": "Admin User", "permissions": ["ALL"]}""",
+    *         "USER" to """{"id": 2, "name": "Regular User", "permissions": ["READ"]}""",
+    *         "GUEST" to """{"id": 3, "name": "Guest User", "permissions": []}"""
+    *     )
+    * )
+    *
+    * // Product lookup by category
+    * stubs.addResponsesByParameter(
+    *     "getProductsByCategory",
+    *     mapOf(
+    *         "ELECTRONICS" to """[{"id": 1, "name": "Laptop"}, {"id": 2, "name": "Phone"}]""",
+    *         "BOOKS" to """[{"id": 3, "name": "Programming Guide"}]"""
+    *     ),
+    *     modifyDataSource = true
+    * )
+    * ```
+    *
+    * **Note:** This method uses the **first parameter** of the operation to determine which response to return.
+    *
+    * @param stubOperationKey The operation name to configure
+    * @param responses A map where keys are parameter values and values are JSON strings of responses
+    * @param modifyDataSource Whether to modify the data source for lineage tracking (default: false)
+    *
+    * @throws IllegalArgumentException if the operation is not found in the schema
+    * @throws RuntimeException if no response is configured for a given parameter value
     */
    fun addResponsesByParameter(
       stubOperationKey: String,
@@ -388,6 +709,51 @@ class StubService(
       }
    }
 
+   /**
+    * Adds a JSON-based response for an operation.
+    *
+    * This is one of the most commonly used methods for configuring responses. The JSON string
+    * is automatically parsed according to the operation's return type from the schema.
+    *
+    * ## Example Usage
+    *
+    * ```kotlin
+    * // Single object response
+    * stubs.addResponse(
+    *     "getUserById",
+    *     """{"id": 123, "name": "John Doe", "email": "john@example.com"}"""
+    * )
+    *
+    * // Array response
+    * stubs.addResponse(
+    *     "getAllUsers",
+    *     """[
+    *         {"id": 1, "name": "Alice"},
+    *         {"id": 2, "name": "Bob"}
+    *     ]""",
+    *     modifyDataSource = true
+    * )
+    *
+    * // Complex nested object
+    * stubs.addResponse(
+    *     "getOrderWithItems",
+    *     """{
+    *         "orderId": "ORDER-123",
+    *         "customer": {"id": 1, "name": "Customer"},
+    *         "items": [
+    *             {"productId": "PROD-1", "quantity": 2, "price": 29.99}
+    *         ]
+    *     }"""
+    * )
+    * ```
+    *
+    * @param stubOperationKey The operation name to configure
+    * @param json The JSON string representing the response data
+    * @param modifyDataSource Whether to modify the data source for lineage tracking (default: false)
+    *
+    * @throws IllegalArgumentException if the operation is not found in the schema
+    * @throws RuntimeException if the JSON cannot be parsed according to the operation's return type
+    */
    fun addResponse(stubOperationKey: String, json: String, modifyDataSource: Boolean = false) {
       val operation = schema!!.operations.firstOrNull { it.name == stubOperationKey }
          ?: error("Cannot stub $stubOperationKey as it's not a valid operation")
@@ -395,6 +761,42 @@ class StubService(
       addResponse(stubOperationKey, response, modifyDataSource)
    }
 
+   /**
+    * Adds a response for table-based "findMany" operations.
+    *
+    * This is a convenience method for configuring responses to table queries that return
+    * collections of entities. The method automatically generates the correct operation name
+    * following the pattern: `{tableName}_findMany{EntityType}`.
+    *
+    * ## Example Usage
+    *
+    * ```kotlin
+    * // For a "users" table returning User entities
+    * stubs.addTableFindManyResponse(
+    *     "users",
+    *     """[
+    *         {"id": 1, "name": "Alice", "email": "alice@example.com"},
+    *         {"id": 2, "name": "Bob", "email": "bob@example.com"}
+    *     ]"""
+    * )
+    * // This configures the operation "users_findManyUser"
+    *
+    * // For a "products" table returning Product entities
+    * stubs.addTableFindManyResponse(
+    *     "products",
+    *     """[
+    *         {"id": 101, "name": "Laptop", "price": 999.99},
+    *         {"id": 102, "name": "Mouse", "price": 29.99}
+    *     ]"""
+    * )
+    * // This configures the operation "products_findManyProduct"
+    * ```
+    *
+    * @param tableName The name of the table (used to find the table operation in the schema)
+    * @param json JSON array string representing the collection of entities to return
+    *
+    * @throws NoSuchElementException if no table operation exists for the given table name
+    */
    fun addTableFindManyResponse(tableName: String, json: String) {
       val operation = schema!!.tableOperations.first { it.name == tableName }
       val response = parseJson(schema!!, operation.returnType.paramaterizedName, json)
@@ -410,6 +812,38 @@ class StubService(
       return addResponse(stubOperationKey, false, handler)
    }
 
+   /**
+    * Adds a response using a list of pre-constructed TypedInstance objects.
+    *
+    * This method is useful when you already have TypedInstance objects created elsewhere
+    * or when you need fine-grained control over the response data and metadata.
+    *
+    * ## Example Usage
+    *
+    * ```kotlin
+    * // Create typed instances
+    * val user1 = TypedInstance.from(userType, userData1, schema)
+    * val user2 = TypedInstance.from(userType, userData2, schema)
+    *
+    * // Add as list response
+    * stubs.addResponse("getAllUsers", listOf(user1, user2))
+    *
+    * // With data source tracking
+    * stubs.addResponse(
+    *     "getUsersWithHistory",
+    *     listOf(user1, user2),
+    *     modifyDataSource = true
+    * )
+    * ```
+    *
+    * @param stubOperationKey The operation name to configure
+    * @param response List of TypedInstance objects to return
+    * @param modifyDataSource Whether to modify the data source for lineage tracking (default: false)
+    * @return This StubService instance for method chaining
+    *
+    * @see addResponse(String, TypedInstance) For single instance responses
+    * @see addResponse(String, String) For JSON-based responses
+    */
    fun addResponse(
       stubOperationKey: String,
       response: List<TypedInstance>,
@@ -424,6 +858,42 @@ class StubService(
    }
 
 
+   /**
+    * Adds a single TypedInstance as a response for an operation.
+    *
+    * This is the most direct way to configure a response when you already have a TypedInstance
+    * object. Commonly used when you need to return a single entity or object.
+    *
+    * ## Example Usage
+    *
+    * ```kotlin
+    * // Create a user instance
+    * val user = TypedInstance.from(
+    *     userType,
+    *     mapOf("id" to 123, "name" to "John Doe"),
+    *     schema
+    * )
+    *
+    * // Add as single response
+    * stubs.addResponse("getUserById", user)
+    *
+    * // With data source tracking for lineage
+    * stubs.addResponse("getCurrentUser", user, modifyDataSource = true)
+    *
+    * // Chaining multiple responses
+    * stubs.addResponse("getAdmin", adminUser)
+    *      .addResponse("getGuest", guestUser)
+    *      .addResponse("getManager", managerUser)
+    * ```
+    *
+    * @param stubOperationKey The operation name to configure
+    * @param response The TypedInstance to return
+    * @param modifyDataSource Whether to modify the data source for lineage tracking (default: false)
+    * @return This StubService instance for method chaining
+    *
+    * @see addResponse(String, List<TypedInstance>) For multiple instance responses
+    * @see addResponse(String, String) For JSON-based responses
+    */
    fun addResponse(stubOperationKey: String, response: TypedInstance, modifyDataSource: Boolean = false): StubService {
       if (modifyDataSource) {
          addResponse(stubOperationKey, handler = justProvide(listOf(response)), modifyDataSource = true)
@@ -434,6 +904,36 @@ class StubService(
       return this
    }
 
+   /**
+    * Configures an operation to return one of its input parameters as the response.
+    *
+    * This method automatically finds a parameter whose type matches the operation's return type
+    * and returns it as the response. This is useful for operations like "save" or "update"
+    * where the operation returns the same object that was passed in.
+    *
+    * ## Example Usage
+    *
+    * ```kotlin
+    * // For a "saveUser" operation that takes a User and returns a User
+    * stubs.addResponseReturningInputs("saveUser")
+    *
+    * // For an "updateProduct" operation that takes a Product and returns a Product
+    * stubs.addResponseReturningInputs("updateProduct")
+    *
+    * // Usage in test
+    * val user = User(id = 123, name = "John")
+    * val savedUser = userService.saveUser(user)
+    * // savedUser will be the same User object that was passed in
+    * ```
+    *
+    * **Note:** This method requires that exactly one parameter matches the operation's return type.
+    *
+    * @param stubOperationKey The operation name to configure
+    * @return This StubService instance for method chaining
+    *
+    * @throws IllegalArgumentException if no parameter matches the return type
+    * @throws IllegalArgumentException if multiple parameters match the return type
+    */
    fun addResponseReturningInputs(stubOperationKey: String): StubService {
       return addResponse(stubOperationKey) { op, parameters ->
          // find the return type somewhere in the params
@@ -467,6 +967,40 @@ class StubService(
          this.wildcardHandler != null
    }
 
+   /**
+    * Configures the StubService to automatically generate mock responses for ALL operations.
+    *
+    * This method sets up a wildcard handler that will automatically create mock TypedInstance
+    * objects for any operation that doesn't have a specific response configured. The mock
+    * data is generated based on the operation's return type from the schema.
+    *
+    * This is particularly useful for:
+    * - **Query plan generation** - Generate execution plans without needing to configure every operation
+    * - **Rapid prototyping** - Quickly test complex queries without extensive setup
+    * - **Schema exploration** - Understand query behavior across entire schemas
+    *
+    * ## Example Usage
+    *
+    * ```kotlin
+    * val (vyne, stubs) = StubService.stubbedVyne(schema)
+    *
+    * // Enable automatic mock responses for all operations
+    * stubs.returnStubValuesForAllOperations()
+    *
+    * // Now you can execute any query without pre-configuring responses
+    * val users = vyne.query("find { User }")
+    * val products = vyne.query("find { Product  }")
+    * val orders = vyne.query("find { Order }")
+    *
+    * // Specific operations can still be overridden
+    * stubs.addResponse("getUserById", specificUserInstance)
+    * ```
+    *
+    * **Important:** This method enables data source tracking automatically to provide
+    * meaningful operation metadata in the generated responses.
+    *
+    * @see MockTypedInstanceBuilder For details on how mock data is generated
+    */
    fun returnStubValuesForAllOperations() {
       wildcardHandler = { remoteOperation: RemoteOperation, params: List<Pair<Parameter, TypedInstance>> ->
          val service = findServiceFromOperation(remoteOperation)
