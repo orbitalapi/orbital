@@ -27,6 +27,11 @@ class CalculatorTest {
          TestScenario(1.5, 4.0, FormulaOperator.Add, 5.5),
          TestScenario(1.5, 4.0, FormulaOperator.Multiply, 6.0),
 
+         // Test modulo
+         TestScenario(2, 2, FormulaOperator.Modulo, 0),
+         TestScenario(2, 3, FormulaOperator.Modulo, 2),
+         TestScenario(4, 3, FormulaOperator.Modulo, 1),
+
          // When mixing types, you'll get a BigDecimal back
          TestScenario(1.5, 4, FormulaOperator.Multiply, 6.0.toBigDecimal()),
          TestScenario(2L, 4.0, FormulaOperator.Multiply, 8.0.toBigDecimal()),
