@@ -7,7 +7,7 @@
    <groupId>com.orbitalhq</groupId>
    <artifactId>platform</artifactId>
    <packaging>pom</packaging>
-   <version>0.36.0-M4</version>
+   <version>0.36.0-SNAPSHOT</version>
 
    <parent>
       <groupId>org.springframework.boot</groupId>
@@ -30,7 +30,7 @@
        Saves us duplicating
        -->
       <owasp-exclusions-file>../whitelisted-cvss-list.xml</owasp-exclusions-file>
-      <taxi.version>1.65.0</taxi.version>
+      <taxi.version>1.66.0-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -264,6 +264,12 @@ Transitive dependency in wire-compiler and calcite-core
       <dependency>
          <groupId>io.kotest</groupId>
          <artifactId>kotest-assertions-core-jvm</artifactId>
+         <version>${kotest.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>io.kotest</groupId>
+         <artifactId>kotest-framework-datatest-jvm</artifactId>
          <version>${kotest.version}</version>
          <scope>test</scope>
       </dependency>

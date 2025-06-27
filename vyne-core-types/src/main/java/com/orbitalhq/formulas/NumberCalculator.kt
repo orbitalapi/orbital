@@ -32,7 +32,8 @@ internal class NumberCalculator : Calculator {
          FormulaOperator.Add,
          FormulaOperator.Subtract,
          FormulaOperator.Divide,
-         FormulaOperator.Multiply
+         FormulaOperator.Multiply,
+         FormulaOperator.Modulo
       )
    }
 
@@ -76,9 +77,25 @@ internal class NumberCalculator : Calculator {
          FormulaOperator.Subtract -> subtractNumbers(values as List<Any>)
          FormulaOperator.Multiply -> multipleNumbers(values as List<Any>)
          FormulaOperator.Divide -> divideNumbers(values as List<Any>)
+         FormulaOperator.Modulo -> moduloNumbers(values as List<Any>)
          else -> error("$operator not supported!")
       }
    }
+
+   private fun moduloNumbers(values: List<Any>): Any? {
+      return values.reduce { acc, next ->
+         when (acc) {
+            is Int -> acc % next as Int
+            is Double -> acc % next as Double
+            is Float -> acc % next as Float
+            is BigDecimal -> acc.remainder(next as BigDecimal).stripTrailingZeros()
+            is Long -> acc % next as Long
+            is Short -> acc % next as Short
+            else -> error("Unsupported number type: ${acc::class.java.simpleName}")
+         }
+      }
+   }
+
 
    private fun divideNumbers(values: List<Any>): Any? {
       return values.reduce { acc, next ->
