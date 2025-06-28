@@ -41,12 +41,14 @@ import com.orbitalhq.spring.SimpleVyneProvider
 import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.spring.invokers.RestTemplateInvoker
 import com.orbitalhq.stubbing.StubService
+import org.awaitility.Awaitility
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.support.GenericApplicationContext
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.Duration
 import java.util.*
+import java.util.concurrent.TimeUnit
 import java.util.function.Supplier
 
 data class JetTestSetup(
@@ -235,7 +237,9 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
       )
 
       if (job != null && validateJobStatusIsRunningEventually) {
-         assertJobStatusEventually(job, JobStatus.RUNNING, 5)
+         Awaitility.await().atMost(5, TimeUnit.SECONDS).until {
+            job.status == JobStatus.RUNNING
+         }
       }
 
       return Triple(pipeline, job, manager)

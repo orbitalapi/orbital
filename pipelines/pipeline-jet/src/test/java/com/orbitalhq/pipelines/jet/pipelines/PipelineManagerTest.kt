@@ -20,6 +20,7 @@ import com.orbitalhq.schemas.fqn
 import com.winterbe.expekt.should
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOf
+import org.awaitility.Awaitility
 import org.awaitility.Awaitility.await
 import org.junit.Ignore
 import org.junit.Test
@@ -107,7 +108,9 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
       )
       val (_, job) = manager.startPipeline(pipelineSpec)
 
-      assertJobStatusEventually(job, JobStatus.RUNNING, 5)
+      Awaitility.await().atMost(5, TimeUnit.SECONDS).until {
+         job?.status == JobStatus.RUNNING
+      }
 
       await().atMost(10, TimeUnit.SECONDS).until {
          listSinkTarget.list.size == 1
@@ -238,7 +241,9 @@ class PipelineManagerTest : BaseJetIntegrationTest() {
       )
       val (_, job) = manager.startPipeline(pipelineSpec)
 
-      assertJobStatusEventually(job, JobStatus.RUNNING, 5)
+      Awaitility.await().atMost(5, TimeUnit.SECONDS).until {
+         job?.status == JobStatus.RUNNING
+      }
 
       await().atMost(10, TimeUnit.SECONDS).until {
          listSinkTarget.list.size == 1
