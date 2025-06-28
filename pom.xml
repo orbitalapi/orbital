@@ -12,7 +12,7 @@
    <parent>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-parent</artifactId>
-      <version>3.3.11</version>
+      <version>3.4.7</version>
    </parent>
 
    <url>https://orbitalhq.com</url>
@@ -49,7 +49,7 @@
       <kotlin.serialization.version>1.5.1</kotlin.serialization.version>
       <kotlin.dataframe.version>0.14.0</kotlin.dataframe.version>
 
-      <spring.cloud.version>2023.0.1</spring.cloud.version>
+      <spring.cloud.version>2024.0.1</spring.cloud.version>
       <arrow.version>1.1.5</arrow.version>
       <logstash.logback.version>7.4</logstash.logback.version>
 
@@ -559,6 +559,13 @@ Transitive dependency in wire-compiler and calcite-core
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
             <version>1.78</version>
+         </dependency>
+
+         <!-- Add mockwebserver version management - removed from Spring Boot 3.4 BOM -->
+         <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <version>4.12.0</version>
          </dependency>
 
       </dependencies>
