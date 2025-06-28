@@ -61,8 +61,7 @@ class RoutedQueryDispatcherAdaptor(
 
 
    override fun handleRoutedQuery(query: RoutedQuery, principal: Principal?): RoutedQueryResponse {
-      val clientQueryId = Ids.id("routed-query-")
-      logger.info { "Received invocation of query ${query.query.name} to route.  Will be routed with queryId $clientQueryId to dispatcher ${dispatcher!!::class.simpleName}" }
+      logger.info { "Received invocation of query ${query.query.name} to route.  Will be routed with clientQueryId $query.clientQueryId to dispatcher ${dispatcher!!::class.simpleName}" }
       return if (query.query.queryMode == QueryMode.STREAM) {
          RoutedQueryResponse(dispatcher.publishResultStream(
             query.query.name,principal
@@ -70,7 +69,7 @@ class RoutedQueryDispatcherAdaptor(
       } else {
          dispatcher.dispatchQuery(
             query.querySrc,
-            clientQueryId,
+            query.clientQueryId,
             MediaType.APPLICATION_JSON_VALUE,
             arguments = query.argumentValues,
             principal = principal

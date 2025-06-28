@@ -4,6 +4,7 @@ import com.google.common.base.Throwables
 import com.orbitalhq.query.tracing.ConnectionError
 import com.orbitalhq.query.tracing.OperationTraceSpan
 import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEvent
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schemas.Type
@@ -73,7 +74,7 @@ class ConnectionErrorTracingFilterFunction(
       return next.exchange(request)
          .doOnError { error ->
             val rootCause = Throwables.getRootCause(error)
-            span.emitEvent(TracingEventKind.ERROR, SpanState.COMPLETE, null, ConnectionError(rootCause.message ?: "Failed to call ${request.url().toASCIIString()} - an unknown exception of type ${error::class.simpleName} occurred"), "Error")
+            span.emitEvent(TracingEventKind.ERROR, SpanState.COMPLETE, null, ConnectionError(rootCause.message ?: "Failed to call ${request.url().toASCIIString()} - an unknown exception of type ${error::class.simpleName} occurred"), "Error", direction = TraceEventDirection.INBOUND)
          }
    }
 }
@@ -105,7 +106,7 @@ class CapturingSink(
          request.body.size.toLong(),
          request.headers.asVyneHeadersMap()
       )
-      span.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, requestBodyType, requestMetadata, request.method)
+      span.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, requestBodyType, requestMetadata, request.method, direction = TraceEventDirection.OUTBOUND)
    }
 
 
@@ -141,7 +142,7 @@ class CapturingSink(
       } else {
          TracingEventKind.OK
       }
-      val responseEvent = span.emitEvent(eventKind, SpanState.COMPLETE, requestBodyType, requestMetadata, request.method)
+      val responseEvent = span.emitEvent(eventKind, SpanState.COMPLETE, requestBodyType, requestMetadata, request.method, direction = TraceEventDirection.INBOUND)
       responseTracingEvents.add(responseEvent)
       this.request = request
       this.response = response

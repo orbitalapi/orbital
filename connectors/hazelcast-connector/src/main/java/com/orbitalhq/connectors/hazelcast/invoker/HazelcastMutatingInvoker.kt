@@ -22,6 +22,7 @@ import com.orbitalhq.query.tracing.CacheRequest
 import com.orbitalhq.query.tracing.CacheResponse
 import com.orbitalhq.query.tracing.OperationTraceSpan
 import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
@@ -93,7 +94,8 @@ class HazelcastMutatingInvoker {
          exchangeMetadata = CacheRequest(mapName, CacheExchange.CacheOperationVerb.UPDATE, connectionName) {
             "Upsert key $key to  ${Jackson.defaultObjectMapper.writeValueAsString(valueToSave.toRawObject())}"
          },
-         verb = "Upsert"
+         verb = "Upsert",
+         direction = TraceEventDirection.OUTBOUND
       )
 
       val map: IMap<Any, Any> = hazelcastInstance.getMap(mapName)
@@ -104,7 +106,8 @@ class HazelcastMutatingInvoker {
          SpanState.COMPLETE,
          valueToSave.type,
          CacheResponse(1) { "Upserted 1 record to map $mapName with key $key" },
-         "Upsert response"
+         "Upsert response",
+         direction = TraceEventDirection.INBOUND
       )
 
       val dataSource = reportResult("UPDATE * where key = $key", mapName, 1, CacheExchange.CacheOperationVerb.UPDATE)
@@ -130,7 +133,8 @@ class HazelcastMutatingInvoker {
          spanState = SpanState.ACTIVE,
          payloadType = parameters.firstOrNull()?.first?.type,
          exchangeMetadata = CacheRequest(mapName, CacheExchange.CacheOperationVerb.DELETE, connectionName),
-         verb = "Delete"
+         verb = "Delete",
+         direction = TraceEventDirection.INBOUND
       )
 
       val map = hazelcastInstance.getMap<Any, Any>(mapName)
@@ -161,7 +165,8 @@ class HazelcastMutatingInvoker {
          SpanState.COMPLETE,
          operation.returnType,
          CacheResponse(recordCount) { "Deleted $recordCount record from map $mapName with key $keyValue" },
-         "Delete response"
+         "Delete response",
+         direction = TraceEventDirection.INBOUND
       )
 
       val dataSource = reportAndGenerateDataSource(
@@ -190,7 +195,8 @@ class HazelcastMutatingInvoker {
          SpanState.COMPLETE,
          schema.type(PrimitiveType.VOID),
          CacheResponse(sizeBeforeDelete) { "Deleted all $sizeBeforeDelete records from map $mapName" },
-         "Delete all response"
+         "Delete all response",
+         direction = TraceEventDirection.INBOUND
       )
 
       val dataSource =

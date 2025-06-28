@@ -13,6 +13,7 @@ import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.tracing.ObjectStoreRequest
 import com.orbitalhq.query.tracing.ObjectStoreResponse
 import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.Parameter
@@ -60,7 +61,8 @@ class S3ReadInvoker : BaseS3Invoker() {
          spanState = SpanState.ACTIVE,
          payloadType = null,
          exchangeMetadata = ObjectStoreRequest(awsConnection.connectionName, bucketName) { filePattern },
-         verb = "Read"
+         verb = "Read",
+         TraceEventDirection.OUTBOUND
       )
 
       var resultReturned = false
@@ -74,7 +76,8 @@ class S3ReadInvoker : BaseS3Invoker() {
                SpanState.COMPLETE,
                null,
                ObjectStoreResponse( errorMessage, -1, { null }),
-               "Read error"
+               "Read error",
+               TraceEventDirection.INBOUND
             )
             val operationResult = buildOperationResult(
                service,
@@ -101,7 +104,8 @@ class S3ReadInvoker : BaseS3Invoker() {
                   SpanState.COMPLETE,
                   null,
                   ObjectStoreResponse("Nothing returned from Object Store", 0, { null }),
-                  "Read object error"
+                  "Read object error",
+                  TraceEventDirection.INBOUND
                )
             }
          }
@@ -121,7 +125,8 @@ class S3ReadInvoker : BaseS3Invoker() {
                      SpanState.COMPLETE,
                      null,
                      ObjectStoreResponse(errorMessage, s3Object.size(), { null }),
-                     "Read object error"
+                     "Read object error",
+                     TraceEventDirection.INBOUND
                   )
                   val operationResult = buildOperationResult(
                      service,
@@ -150,7 +155,8 @@ class S3ReadInvoker : BaseS3Invoker() {
                operation.returnType,
                // If we store the results here, we mess about with the input stream
                ObjectStoreResponse(null, s3Object.size()) { "S3 Results are not stored" },
-               "Read response"
+               "Read response",
+               TraceEventDirection.INBOUND
             )
             val operationResult = buildOperationResult(
                service,

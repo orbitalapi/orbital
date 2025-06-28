@@ -3,6 +3,7 @@ package com.orbitalhq.history.db.tracing
 import com.orbitalhq.query.history.tracing.TraceEventRow
 import com.orbitalhq.query.history.tracing.TraceSpanRecord
 import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEventKind
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.collections.shouldBeEmpty
@@ -406,5 +407,6 @@ private fun createTraceEvent(
    eventVerb = eventVerb,
    eventResource = eventResource,
    eventSourceQualifiedName = eventSourceQualifiedName,
-   linkedEventId = null
+   linkedEventId = null,
+   direction = TraceEventDirection.OUTBOUND
 )

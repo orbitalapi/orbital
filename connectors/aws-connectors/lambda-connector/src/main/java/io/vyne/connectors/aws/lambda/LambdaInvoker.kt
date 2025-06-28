@@ -21,6 +21,7 @@ import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.tracing.FunctionCallRequest
 import com.orbitalhq.query.tracing.FunctionCallResponse
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.Parameter
@@ -119,7 +120,8 @@ class LambdaInvoker(
          spanState = SpanState.ACTIVE,
          payloadType = parameters.firstOrNull()?.first?.type,
          exchangeMetadata = FunctionCallRequest(functionName) { payload },
-         verb = "Invoke"
+         verb = "Invoke",
+         direction = TraceEventDirection.OUTBOUND,
       )
 
       return Mono.fromFuture(client.invoke(invokeRequest))
@@ -163,7 +165,8 @@ class LambdaInvoker(
                   SpanState.COMPLETE,
                   null,
                   FunctionCallResponse(0, errorMessage, clientResponse.statusCode(), { null }),
-                  "Invoke error"
+                  "Invoke error",
+                  TraceEventDirection.INBOUND
                )
                val remoteCall = remoteCall(errorMessage, true)
                eventDispatcher.reportRemoteOperationInvoked(OperationResult.from(parameters, remoteCall), queryId)
@@ -182,7 +185,8 @@ class LambdaInvoker(
                SpanState.COMPLETE,
                operation.returnType,
                FunctionCallResponse(response.length.toLong(),null,clientResponse.statusCode()) { response },
-               "Invoke response"
+               "Invoke response",
+               TraceEventDirection.INBOUND
             )
             val remoteCall = remoteCall(responseBody = response)
             val operationResult = OperationResult.from(parameters, remoteCall)

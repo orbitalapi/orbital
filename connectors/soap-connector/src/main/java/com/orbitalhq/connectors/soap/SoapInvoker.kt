@@ -18,6 +18,7 @@ import com.orbitalhq.query.tracing.HttpResponse
 import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.query.connectors.OperationInvoker
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
 import com.orbitalhq.schemas.OperationInvocationException
@@ -137,7 +138,8 @@ class SoapInvoker(
             spanState = SpanState.ACTIVE,
             payloadType = parameters.firstOrNull()?.first?.type,
             exchangeMetadata = HttpRequest(outboundMessage.url, outboundMessage.method,{ outboundMessage.payload },outboundMessage.payload.length.toLong(),emptyMap()),
-            verb = outboundMessage.method
+            verb = outboundMessage.method,
+            TraceEventDirection.OUTBOUND
          )
 
          val inboundMessage = InboundPayloadCapturingInterceptor.getCapturedPayload()
@@ -147,7 +149,8 @@ class SoapInvoker(
             SpanState.COMPLETE,
             operation.returnType,
             HttpResponse(200, { inboundMessage.payload }, inboundMessage.payload.length.toLong(), emptyMap()),
-            "Invoke response"
+            "Invoke response",
+            TraceEventDirection.INBOUND
          )
 
          val schema = schemaProvider.schema
@@ -176,7 +179,8 @@ class SoapInvoker(
             SpanState.COMPLETE,
             null,
             HttpResponse(responseCode, { message ?: "Unknown error" }, (message?.length ?: 0).toLong(), emptyMap()),
-            "Invoke error"
+               "Invoke error",
+            TraceEventDirection.INBOUND
          )
 
          val remoteCall = RemoteCall(

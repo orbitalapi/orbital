@@ -11,6 +11,7 @@ import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.tracing.DatabaseRequest
 import com.orbitalhq.query.tracing.DatabaseResponse
 import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
@@ -73,7 +74,8 @@ class MongoReadOnlyQueryInvoker(
                   DatabaseRequest(mongoConnectionConfig.connectionName, "find", collectionName) {
                      objectMapper.writeValueAsString(criterias.map { it.criteriaObject })
                   },
-                  "Select")
+                  "Select",
+                  TraceEventDirection.OUTBOUND)
             }
             .onErrorMap { error ->
                traceSpan.emitEvent(
@@ -81,7 +83,8 @@ class MongoReadOnlyQueryInvoker(
                   spanState = SpanState.COMPLETE,
                   operation.returnType,
                   DatabaseResponse(-1) { error.message },
-                  "Select error")
+                  "Select error",
+                  TraceEventDirection.INBOUND)
                mapError(
                   error,
                   service,

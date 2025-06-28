@@ -20,6 +20,7 @@ import com.orbitalhq.query.tracing.ConnectionError
 import com.orbitalhq.query.tracing.DatabaseRequest
 import com.orbitalhq.query.tracing.DatabaseResponse
 import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Metadata
@@ -128,7 +129,8 @@ class JdbcUpsertInvoker(
          // Emit event before doing the thing
          span.emitEvent(
             TracingEventKind.OK, SpanState.ACTIVE, operation.returnType, DatabaseRequest(
-               connectionConfig.connectionName, "Upsert", tableName, { sqlOperation.sql }), "Upsert"
+               connectionConfig.connectionName, "Upsert", tableName, { sqlOperation.sql }), "Upsert",
+            direction = TraceEventDirection.OUTBOUND
          )
          val (affectedRecordCount, insertedRecords) = sqlOperation.execute()
          span.emitEvent(
@@ -136,7 +138,8 @@ class JdbcUpsertInvoker(
             SpanState.COMPLETE,
             operation.returnType,
             DatabaseResponse(affectedRecordCount.toLong(), { null }),
-            "Upsert"
+            "Upsert",
+            direction = TraceEventDirection.INBOUND
          )
 
          if (inputAsList.size == affectedRecordCount) {
@@ -177,7 +180,7 @@ class JdbcUpsertInvoker(
       } catch (e: Exception) {
          val errorMessage = "Failed to insert into ${tableAnnotation.tableName} - ${e.message}"
          logger.error(e) { errorMessage }
-         span.emitEvent(TracingEventKind.ERROR, SpanState.COMPLETE, null, ConnectionError(errorMessage), "Error")
+         span.emitEvent(TracingEventKind.ERROR, SpanState.COMPLETE, null, ConnectionError(errorMessage), "Error", direction = TraceEventDirection.INBOUND)
 
          val remoteCall =
             buildRemoteCall(service, connectionConfig, operation, sqlOperation.sql, startTime, errorMessage)

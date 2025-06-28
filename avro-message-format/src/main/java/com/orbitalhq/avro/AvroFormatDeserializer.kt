@@ -94,7 +94,7 @@ class AvroFormatDeserializer(
             throw e
          }
       } catch (e: Exception) {
-         throw e
+         throw RuntimeException("Failed to decode Avro message - an exception was thrown while reading the payload. [allowDetectionOfConfluentEncoding = $allowDetectionOfConfluentEncoding, detectedConfluentEncoding = $detectedConfluentEncoding]. Looks like a malformed message - are the producer and consumer schemas the same? ${e.message}", e)
       }
 
       val rawValue = genericContainerToRawValue(deserializedRecord)

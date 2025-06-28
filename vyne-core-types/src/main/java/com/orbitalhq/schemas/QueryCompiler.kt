@@ -40,7 +40,7 @@ class DefaultQueryCompiler(private val schema: Schema, cacheSize: Long = 0) : Qu
          }
 
          log().debug("Compiled query in ${sw.elapsed().toMillis()}ms")
-         return Triple(taxiQlQuery, QueryOptions.fromQuery(taxiQlQuery, taxiQlQuery), merged)
+         return Triple(taxiQlQuery, QueryOptions.fromQuery(taxiQlQuery), merged)
       }
 
       return if (useCache) {

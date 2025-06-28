@@ -190,7 +190,7 @@ class AuthWebClientCustomizer(
 
       // See comments on RefreshTokenExchangeFilterFunction as to why we have to use a different
       // function here.
-      return if (authScheme.grantType == OAuth2.AuthorizationGrantType.RefreshToken) {
+       return if (authScheme.grantType == OAuth2.AuthorizationGrantType.RefreshToken) {
          RefreshTokenExchangeFilterFunction(serviceName, authScheme, oauthClientService)
       } else {
          val oauth2FilterFunction = ServerOAuth2AuthorizedClientExchangeFilterFunction(oauthClientManager)

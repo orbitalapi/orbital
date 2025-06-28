@@ -3,6 +3,7 @@ package com.orbitalhq.query.history.tracing
 import com.fasterxml.jackson.annotation.JsonRawValue
 import com.orbitalhq.models.serde.ZonedDateTimeTimeSerializer
 import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEventExchangeMetadata
 import com.orbitalhq.query.tracing.TracingEventKind
 import jakarta.persistence.Column
@@ -78,5 +79,9 @@ data class TraceEventRow(
     * was triggered by associated event
     */
    @Column(name = "linked_event_id")
-   val linkedEventId: String?
+   val linkedEventId: String?,
+
+   @Enumerated(EnumType.STRING)
+   @Column(name = "event_direction")
+   val direction: TraceEventDirection,
 )

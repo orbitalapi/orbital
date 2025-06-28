@@ -189,7 +189,7 @@ class RestTemplateInvoker(
                   remoteCallId = remoteCallId,
                   responseId = UUID.randomUUID().toString(),
                   service = service.name,
-                  address = expandedUri.toASCIIString(),
+                  address = trafficSink.request?.requestUri ?: expandedUri.toASCIIString(),
                   operation = operation.name,
                   responseTypeName = operation.returnType.name,
                   method = httpMethod.name(),

@@ -15,6 +15,7 @@ import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.query.tracing.OperationTraceSpan
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
@@ -76,7 +77,8 @@ class DynamoDbQueryInvoker(
                SpanState.COMPLETE,
                null,
                DatabaseResponse(-1) { message },
-               "Query error"
+               "Query error",
+               TraceEventDirection.INBOUND
             )
             val remoteCall = buildRemoteCall(service, awsConfig, operation, query, -1, -1, errorCode, message)
             val operationResult = OperationResult.fromTypedInstances(constructedQueryDataSource.inputs, remoteCall)
@@ -99,7 +101,8 @@ class DynamoDbQueryInvoker(
                spanState = SpanState.ACTIVE,
                payloadType = null,
                exchangeMetadata = DatabaseRequest(awsConfig.connectionName, "Query", "") { query.toString() },
-               verb = "Query"
+               verb = "Query",
+               direction = TraceEventDirection.OUTBOUND
             )
          }
          .elapsed()
@@ -143,7 +146,8 @@ class DynamoDbQueryInvoker(
                   // Which is probably fine
                   response.toString()
                },
-               "GetItem response"
+               "GetItem response",
+               direction =  TraceEventDirection.INBOUND
             )
             listOf(
                readItem(
@@ -163,7 +167,8 @@ class DynamoDbQueryInvoker(
                DatabaseResponse(response.count().toLong()) {
                   response.toString()
                },
-               "Query response"
+               "Query response",
+               direction =  TraceEventDirection.INBOUND
             )
             readItems(
                response.items(),
@@ -181,7 +186,8 @@ class DynamoDbQueryInvoker(
                DatabaseResponse(response.count().toLong()) {
                   response.toString()
                },
-               "Scan response"
+               "Scan response",
+               direction = TraceEventDirection.INBOUND
             )
             readItems(
                response.items(),

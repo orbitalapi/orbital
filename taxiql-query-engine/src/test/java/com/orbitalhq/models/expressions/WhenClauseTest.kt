@@ -10,6 +10,28 @@ import org.junit.Test
 class WhenClauseTest {
 
    @Test
+   fun `can use compound boolean expressions`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+         model Trade {
+            tradable: IsTradable inherits Boolean
+            allowedOnExchange : AllowedOnExchange inherits Boolean
+         }
+         model IsValidRule inherits Boolean = when {
+            IsTradable == true && AllowedOnExchange == true -> true
+            else -> false
+         }
+         """.trimIndent())
+      val result = vyne.query("""
+         given { Trade = { tradable: true, allowedOnExchange: true } }
+         find { isValid : IsValidRule }
+
+      """.trimIndent())
+         .firstTypedObject()
+      result
+
+   }
+
+   @Test
    fun `captures lineage data for an evaluated when clause`():Unit = runBlocking {
       val (vyne,stub) = testVyne("""
          model StockLevel {

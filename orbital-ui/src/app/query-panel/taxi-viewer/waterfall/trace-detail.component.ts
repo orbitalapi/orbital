@@ -1,11 +1,12 @@
 import { Component, EventEmitter, Input, Output } from "@angular/core";
 import { TraceSpanRecord, TraceEventRow } from "src/app/services/query.service";
 import { NgForOf, NgIf, DatePipe, JsonPipe, NgSwitch, NgSwitchCase } from "@angular/common";
+import { SvgIconComponent } from "src/app/svg-icon/svg-icon.component";
 
 @Component({
   selector: 'app-trace-detail',
   standalone: true,
-  imports: [NgIf, NgForOf, DatePipe, JsonPipe, NgSwitch, NgSwitchCase],
+  imports: [NgIf, NgForOf, DatePipe, JsonPipe, NgSwitch, NgSwitchCase, SvgIconComponent],
   template: `
     <div class="detail-panel">
       <div class="detail-header">
@@ -87,6 +88,7 @@ import { NgForOf, NgIf, DatePipe, JsonPipe, NgSwitch, NgSwitchCase } from "@angu
                 [class.error-event]="event.tracingEventKind === 'ERROR'"
                 (click)="onEventClick(event)">
                 <div class="event-summary">
+                  <span class="event-verb"><app-svg-icon [tabler]="directionIcons[event.direction]" [width]="16" [height]="16" [strokeWidth]="1.5"></app-svg-icon></span>
                   <span class="event-verb">{{ event.eventVerb }}</span>
                   <span class="event-resource">{{ event.eventResource }}</span>
                   <span class="event-time">{{ event.timestamp | date:'HH:mm:ss.SSS' }}</span>
@@ -183,6 +185,12 @@ export class TraceDetailComponent {
   @Input() selectedItem: TraceSpanRecord | TraceEventRow | null = null;
   @Output() close = new EventEmitter<void>();
   @Output() eventClick = new EventEmitter<TraceEventRow>();
+
+  directionIcons = {
+    'INBOUND': 'arrow-left',
+    'OUTBOUND': 'arrow-right',
+    'NONE': 'circle-dot',
+  }
 
   onClose(): void {
     this.close.emit();

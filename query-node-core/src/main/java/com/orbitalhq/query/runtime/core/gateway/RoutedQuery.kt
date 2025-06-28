@@ -1,7 +1,8 @@
 package com.orbitalhq.query.runtime.core.gateway
 
-import com.orbitalhq.models.TypedNull
+import com.orbitalhq.query.tracing.TracingEvent
 import com.orbitalhq.spring.http.HttpStatusException
+import com.orbitalhq.utils.Ids
 import lang.taxi.annotations.HttpHeader
 import lang.taxi.annotations.HttpPathVariable
 import lang.taxi.annotations.HttpQueryVariable
@@ -19,7 +20,6 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.switchIfEmpty
 import java.util.*
-import kotlin.jvm.optionals.getOrNull
 
 /**
  * A query that has matched a route.
@@ -29,7 +29,9 @@ import kotlin.jvm.optionals.getOrNull
 data class RoutedQuery(
    val query: TaxiQlQuery,
    val querySrc: TaxiQLQueryString,
-   val arguments: Map<Parameter, FactValue>
+   val arguments: Map<Parameter, FactValue>,
+   val rootTraceId: String,
+   val clientQueryId: String = Ids.id("routed-query-")
 ) {
 
    val argumentValues: Map<String, Any?> = arguments.map { (param, value) ->
@@ -37,6 +39,12 @@ data class RoutedQuery(
    }.toMap()
 
    companion object {
+      private val TRACE_ID_HEADER_NAMES = sequenceOf(
+         "traceparent", // New standard, w3c / OpenTelemetry standard
+         "b3", // Zipkin / Brave / Spring Sleuth
+         "uber-trace-id" // Jaeger
+      )
+
       fun build(query: TaxiQlQuery, querySrc: TaxiQLQueryString, request: ServerRequest): Mono<RoutedQuery> {
          return Flux.fromIterable(query.parameters)
             .flatMap { parameter ->
@@ -45,8 +53,23 @@ data class RoutedQuery(
             }
             .collectList()
             .map { v ->
-               RoutedQuery(query, querySrc, v.toMap())
+               val traceId = getTraceId(request)
+               RoutedQuery(query, querySrc, v.toMap(), traceId)
             }
+      }
+
+      /**
+       * Returns the traceid on the inbound request (if present), or
+       * creates a new one if not.
+       *
+       * Looks for well known headers, returning the first match
+       */
+      private fun getTraceId(request: ServerRequest): String {
+         val headers = request.headers()
+         return TRACE_ID_HEADER_NAMES
+            .mapNotNull { headerName -> headers.firstHeader(headerName) }
+            .firstOrNull()
+            ?: TracingEvent.newTraceId()
       }
 
 
@@ -107,8 +130,11 @@ data class RoutedQuery(
                // for an annotation). So try and detect that case and provide a helpful error
                // message
                val errorMessage = if (!hasAnyExpectedHttpAnnotation(parameter)) {
-                  "Parameter '${parameter.name}' needs an annotation to specify how it should be resolved from the request. Consider adding one of ${listOf(
-                     HttpHeader.NAME, HttpRequestBody.NAME, HttpQueryVariable.NAME, HttpPathVariable.NAME).joinToString()}. (Check imports if annotation seems present but isn't recognized)."
+                  "Parameter '${parameter.name}' needs an annotation to specify how it should be resolved from the request. Consider adding one of ${
+                     listOf(
+                        HttpHeader.NAME, HttpRequestBody.NAME, HttpQueryVariable.NAME, HttpPathVariable.NAME
+                     ).joinToString()
+                  }. (Check imports if annotation seems present but isn't recognized)."
                } else {
                   "Parameter ${parameter.name} was not provided through the request"
                }

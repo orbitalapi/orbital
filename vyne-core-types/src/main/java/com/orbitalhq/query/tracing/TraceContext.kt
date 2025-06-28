@@ -1,5 +1,6 @@
 package com.orbitalhq.query.tracing
 
+import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.Type
@@ -62,6 +63,7 @@ data class TraceSpan(
        * the taxi function qualified name
        */
       eventSourceQualifiedName: String,
+      direction: TraceEventDirection,
       linkedEventId: String? = null
    ): TracingEvent {
       this.eventCount.incrementAndGet()
@@ -76,7 +78,8 @@ data class TraceSpan(
          eventResource = eventResource,
          eventVerb = eventVerb,
          eventSourceQualifiedName = eventSourceQualifiedName,
-         linkedEventId = linkedEventId
+         linkedEventId = linkedEventId,
+         direction = direction
       )
       this.traceContext.emitEvent(spanEventSource, event)
       return event
@@ -158,7 +161,9 @@ data class TraceContext(
  * Allows us to control payload filtering by annotation on operations or operation
  * payload types
  */
-sealed interface SpanEventSource
+interface SpanEventSource
+
+
 
 data object QueryEngineSpanEventSource : SpanEventSource {
    const val QUERY_ENGINE_RESOURCE = "Query engine"
@@ -202,6 +207,8 @@ class OperationTraceSpan(
        */
       verb: String,
 
+      direction: TraceEventDirection,
+
       /**
        * Indicates that this event was triggered by the provided event.
        * Normally used when linking the start of a projection to a
@@ -216,6 +223,7 @@ class OperationTraceSpan(
       eventSourceQualifiedName = operation.qualifiedName.fullyQualifiedName,
       eventResource = eventResourceName,
       eventVerb = verb,
-      linkedEventId = linkedEventId
+      linkedEventId = linkedEventId,
+      direction = direction
    )
 }
