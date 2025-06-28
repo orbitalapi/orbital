@@ -10,7 +10,7 @@ import {
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {fromEventPattern, Observable, Subscription} from 'rxjs';
 import {bufferTime, filter, map} from 'rxjs/operators';
-import * as moment from 'moment';
+import moment from 'moment';
 import {
   AgGridEvent,
   CellClickedEvent,

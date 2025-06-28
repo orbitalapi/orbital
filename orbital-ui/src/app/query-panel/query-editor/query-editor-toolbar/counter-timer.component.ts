@@ -1,6 +1,6 @@
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Input, OnInit, ViewEncapsulation} from '@angular/core';
 import {interval} from 'rxjs';
-import * as moment from 'moment';
+import moment from 'moment';
 import {Observable} from 'rxjs/internal/Observable';
 import {map} from 'rxjs/operators';
 

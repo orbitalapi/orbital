@@ -145,12 +145,17 @@ $accent: (
 // Define the palettes for your theme using the Material Design palettes available in palette.scss
 // (imported above). For each palette, you can optionally specify a default, lighter, and darker
 // hue. Available color palettes: https://material.io/design/color/
-$primary-palette: mat.define-palette($primary);
-$accent-palette: mat.define-palette($accent);
+$primary-palette: mat.m2-define-palette($primary);
+$accent-palette: mat.m2-define-palette($accent);
 
 
 // Create the theme object (a Sass map containing all of the palettes).
-$vyne-app-theme: mat.define-light-theme($primary-palette, $accent-palette);
+$vyne-app-theme: mat.m2-define-light-theme((
+  color: (
+    primary: $primary-palette,
+    accent: $accent-palette
+  )
+));
 
 // Include theme styles for core and each component used in your app.
 // Alternatively, you can import and @include the theme mixins for each component
