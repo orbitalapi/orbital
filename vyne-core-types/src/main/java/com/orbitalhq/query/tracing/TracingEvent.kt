@@ -51,6 +51,7 @@ data class TracingEvent(
     */
    val parentSpanId: String?,
    val tracingEventKind: TracingEventKind,
+   val direction: TraceEventDirection,
    val spanState: SpanState,
    val exchangeMetadata: TracingEventExchangeMetadata,
    /**
@@ -112,10 +113,22 @@ data class TracingEventIdSet(
    val traceId: String
 )
 
-enum class TraceEventVerb {
+enum class TraceEventDirection {
+   /**
+    * Something received by Orbital - a triggering http request, a response to a request we sent, a kafka message, etc.
+    */
+   INBOUND,
 
+   /**
+    * Something we're sending out
+    */
+   OUTBOUND,
+
+   /**
+    * Use for things that don't have direction, such as internal logging events
+    */
+   NONE
 }
-
 /**
  * Indicates the state of the span at the point of this event.
  * A
@@ -176,13 +189,13 @@ sealed class TracingEventExchangeMetadata {
     * and it may be truncated if the payload size exceeds configured defaults.
     */
    @get:JsonIgnore
-   abstract val payload: () -> String?
+   abstract val payload: suspend () -> String?
 }
 
 @Serializable
 data class FunctionCallRequest(
    val functionName: String,
-   override val payload: () -> String?,
+   override val payload: suspend () -> String?,
 ): TracingEventExchangeMetadata()
 
 @Serializable
@@ -190,14 +203,14 @@ data class FunctionCallResponse(
    val size: Long,
    val error: String? = null,
    val statusCode: Int,
-   override val payload: () -> String?,
+   override val payload: suspend () -> String?,
 ): TracingEventExchangeMetadata()
 
 @Serializable
 data class HttpRequest(
    val url: String,
    val verb: String,
-   override val payload: () -> String?,
+   override val payload: suspend () -> String?,
    /**
     * The size in bytes
     */
@@ -213,21 +226,21 @@ data class HttpRequest(
 data class ConnectionError(
    val message: String,
 ) : TracingEventExchangeMetadata() {
-   override val payload: () -> String? = { null }
+   override val payload: suspend () -> String? = { null }
 }
 
 data object EmptyTraceMetadata : TracingEventExchangeMetadata() {
-   override val payload: () -> String? = { null }
+   override val payload: suspend () -> String? = { null }
 }
 
 data class ProjectionTraceMetadata(
-   override val payload: () -> String?,
+   override val payload: suspend () -> String?,
 ) : TracingEventExchangeMetadata()
 
 @Serializable
 data class HttpResponse(
    val responseCode: Int,
-   override val payload: () -> String?,
+   override val payload: suspend () -> String?,
    /**
     * The size in bytes
     */
@@ -240,7 +253,7 @@ data class DatabaseRequest(
    val connectionName: String,
    val verb: String,
    val tableName: String,
-   override val payload: () -> String?,
+   override val payload: suspend () -> String?,
 ) : TracingEventExchangeMetadata()
 
 /**
@@ -249,7 +262,7 @@ data class DatabaseRequest(
  */
 @Serializable
 data class DatabaseResponseRecord(
-   override val payload: () -> String?,
+   override val payload: suspend () -> String?,
 ) : TracingEventExchangeMetadata()
 
 /**
@@ -260,7 +273,7 @@ data class DatabaseResponseRecord(
 data class DatabaseResponseComplete(
    val recordCount: Int,
 ) : TracingEventExchangeMetadata() {
-   override val payload: () -> String? = { null }
+   override val payload: suspend () -> String? = { null }
 }
 
 /**
@@ -270,7 +283,7 @@ data class DatabaseResponseComplete(
 @Serializable
 data class DatabaseResponse(
    val recordCount: Long,
-   override val payload: () -> String?,
+   override val payload: suspend () -> String?,
 ) : TracingEventExchangeMetadata()
 
 @Serializable
@@ -285,14 +298,14 @@ data class MessageStreamSubscription(
       CREATED_NEW_SUBSCRIPTION
    }
 
-   override val payload: () -> String? = { null }
+   override val payload: suspend () -> String? = { null }
 }
 
 @Serializable
 data class MessageStreamDisconnection(
    val disconnectionAction: DisconnectionAction
 ) : TracingEventExchangeMetadata() {
-   override val payload: () -> String? = { null }
+   override val payload: suspend () -> String? = { null }
 
    enum class DisconnectionAction {
       NOT_CAPTURED,
@@ -308,7 +321,7 @@ data class MessageStreamEventReceived(
     */
    val size: Long,
    val payloadEncoding: PayloadEncoding,
-   override val payload: () -> String?,
+   override val payload: suspend () -> String?,
 ) : TracingEventExchangeMetadata()
 
 enum class PayloadEncoding {
@@ -324,7 +337,7 @@ data class MessageStreamErrorEvent(
    val size: Long,
    val errorMessage: String,
    val payloadEncoding: PayloadEncoding,
-   override val payload: () -> String?,
+   override val payload: suspend () -> String?,
 ) : TracingEventExchangeMetadata()
 
 @Serializable
@@ -336,7 +349,7 @@ data class CacheRequest(
     * If performing a key-based lookup, this is the key.
     * If doing a cache query, this is the actual query
     */
-   override val payload: () -> String? = { null }
+   override val payload: suspend () -> String? = { null }
 ) : TracingEventExchangeMetadata() {
 
 }
@@ -344,7 +357,7 @@ data class CacheRequest(
 @Serializable
 data class CacheResponse(
    val recordCount: Int,
-   override val payload: () -> String?,
+   override val payload: suspend () -> String?,
 ) : TracingEventExchangeMetadata()
 
 @Serializable
@@ -356,7 +369,7 @@ data class ObjectStoreRequest(
     * use the sql query here.
     * Otherwise, if this is a file-based interaction, use the file name (or file pattern)
     */
-   override val payload: () -> String? = { null }
+   override val payload: suspend () -> String? = { null }
 ) : TracingEventExchangeMetadata() {
 
 }
@@ -368,5 +381,5 @@ data class ObjectStoreResponse(
     */
    val errorMessage: String? = null,
    val size: Long,
-   override val payload: () -> String?,
+   override val payload: suspend () -> String?,
 ) : TracingEventExchangeMetadata()

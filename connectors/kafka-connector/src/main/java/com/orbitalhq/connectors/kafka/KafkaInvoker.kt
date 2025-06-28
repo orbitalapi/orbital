@@ -15,6 +15,7 @@ import com.orbitalhq.query.connectors.OperationCachingBehaviour
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.tracing.MessageStreamDisconnection
 import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
@@ -115,13 +116,13 @@ class KafkaInvoker(
             streamSourceId = queryOptions.streamConsumerId
          )
       )
-      span.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, null, eventMetadata, "Subscribe")
+      span.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, null, eventMetadata, "Subscribe", direction = TraceEventDirection.OUTBOUND)
       val stream = rawStream.mapNotNull { errorOrInstance ->
          when (errorOrInstance) {
             is Either.Right -> {
                val (traceMessage, instance) = errorOrInstance.value
                val dataSource = instance.source
-               val event = span.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, instance.type, traceMessage, "Message received")
+               val event = span.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, instance.type, traceMessage, "Message received", direction = TraceEventDirection.INBOUND)
 
                require(dataSource is OperationResultDataSourceWrapper) { "Expected OperationResultDataSourceWrapper as the datasource, found ${dataSource::class.simpleName}" }
                val dataSourceWithTraceId = dataSource.copy(sourceEventId = event.idSet)
@@ -132,12 +133,12 @@ class KafkaInvoker(
 
             is Either.Left -> {
                val (traceEvent, streamErrorMessage) = errorOrInstance.value
-               span.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, null, traceEvent, "Message error")
+               span.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, null, traceEvent, "Message error", direction = TraceEventDirection.INBOUND)
                streamErrorMessage.left()
             }
          }
       }.onCompletion {
-         span.emitEvent(TracingEventKind.OK, SpanState.COMPLETE, null, MessageStreamDisconnection(disconnectionAction = MessageStreamDisconnection.DisconnectionAction.NOT_CAPTURED), "Disconnect")
+         span.emitEvent(TracingEventKind.OK, SpanState.COMPLETE, null, MessageStreamDisconnection(disconnectionAction = MessageStreamDisconnection.DisconnectionAction.NOT_CAPTURED), "Disconnect", direction = TraceEventDirection.INBOUND)
       }
       return stream
    }

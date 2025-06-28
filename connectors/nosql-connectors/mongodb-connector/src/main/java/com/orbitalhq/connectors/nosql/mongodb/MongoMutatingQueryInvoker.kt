@@ -10,6 +10,7 @@ import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.query.tracing.DatabaseRequest
 import com.orbitalhq.query.tracing.DatabaseResponse
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
@@ -110,7 +111,8 @@ class MongoMutatingQueryInvoker(
                   DatabaseResponse(
                      modifiedCount,
                   ) { objectMapper.writeValueAsString(upsertResult) },
-                  "Upsert"
+                  "Upsert",
+                  TraceEventDirection.INBOUND
                )
                modifiedCount to documentMap
             }
@@ -124,7 +126,8 @@ class MongoMutatingQueryInvoker(
                spanState = SpanState.ACTIVE,
                payloadType = null,
                exchangeMetadata = traceRequestMetadata,
-               verb = "Upsert"
+               verb = "Upsert",
+               TraceEventDirection.OUTBOUND
             )
          }
          .map { durationAndData ->
@@ -137,7 +140,8 @@ class MongoMutatingQueryInvoker(
                SpanState.COMPLETE,
                operation.returnType,
                DatabaseResponse(updateCount) { objectMapper.writeValueAsString(data) },
-               "Upsert complete"
+               "Upsert complete",
+               TraceEventDirection.INBOUND
             )
 
             val operationResult = buildOperationResult(
@@ -168,7 +172,8 @@ class MongoMutatingQueryInvoker(
                SpanState.COMPLETE,
                null,
                DatabaseResponse(-1) { error.message },
-               "Read error"
+               "Read error",
+               TraceEventDirection.INBOUND
             )
          }
          .asFlow()

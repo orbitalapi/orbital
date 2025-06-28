@@ -11,6 +11,7 @@ import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.tracing.DatabaseRequest
 import com.orbitalhq.query.tracing.DatabaseResponse
 import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
@@ -23,7 +24,7 @@ class JdbcQueryInvoker(
    connectionFactory: JdbcConnectionFactory,
    private val schemaProvider: SchemaProvider,
    private val objectMapper: ObjectMapper,
-) : BaseJdbcOperationInvoker(connectionFactory, ) {
+) : BaseJdbcOperationInvoker(connectionFactory) {
 
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -49,10 +50,28 @@ class JdbcQueryInvoker(
       logger.debug { "$queryId: Starting JDBC Query $sql" }
       val stopwatch = Stopwatch.createStarted()
       val span = eventDispatcher.createOperationTraceSpan(service, operation, "")
-      span.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, operation.returnType, DatabaseRequest(connectionConfig.connectionName, "Select", "") { sql }, "Select")
+      span.emitEvent(
+         TracingEventKind.OK,
+         SpanState.ACTIVE,
+         operation.returnType,
+         DatabaseRequest(connectionConfig.connectionName, "Select", "") { sql },
+         "Select",
+         direction = TraceEventDirection.OUTBOUND
+      )
       val resultList = jdbcTemplate.queryForList(sql, paramMap)
       val elapsed = stopwatch.elapsed()
-      val resultEvent = span.emitEvent(TracingEventKind.OK, SpanState.COMPLETE, operation.returnType, DatabaseResponse(resultList.size.toLong()) { objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(resultList) }, "Select")
+      val resultEvent = span.emitEvent(
+         TracingEventKind.OK,
+         SpanState.COMPLETE,
+         operation.returnType,
+         DatabaseResponse(resultList.size.toLong()) {
+            // Don't use Jackson to JSON this for aestetic reasons, as it
+            // creates problem with serializers for db-specific types (like PGObjects / PGArray, etc)
+            resultList.toString()
+         },
+         "Select",
+         direction = TraceEventDirection.INBOUND
+      )
 
       logger.debug { "$queryId: JDBC Query completed in $elapsed" }
       val operationResult = buildOperationResult(
@@ -65,7 +84,12 @@ class JdbcQueryInvoker(
          recordCount = resultList.size
       )
       eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
-      return convertToTypedInstances(resultList, query, schema, operationResult.asOperationReferenceDataSource(resultEvent.idSet))
+      return convertToTypedInstances(
+         resultList,
+         query,
+         schema,
+         operationResult.asOperationReferenceDataSource(resultEvent.idSet)
+      )
    }
 
 }

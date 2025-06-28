@@ -125,11 +125,11 @@ data class QueryOptions(
    companion object {
       fun default() = QueryOptions()
 
-      fun fromQuery(query: TaxiQlQuery, taxiQlQuery: TaxiQlQuery): QueryOptions {
+      fun fromQuery(query: TaxiQlQuery): QueryOptions {
          val cachingStrategy: CachingStrategy = QueryOptionParameterKeys.cacheStrategy(query)
          val (useStateStore, stateStoreConfig) = QueryOptionParameterKeys.parseStateStoreConfig(query)
          val streamConsumerId = QueryOptionParameterKeys.streamConsumerId(query)
-         val responseHeaders = QueryOptionParameterKeys.httpResponseParameters(taxiQlQuery)
+         val responseHeaders = QueryOptionParameterKeys.httpResponseParameters(query)
          return QueryOptions(
             cachingStrategy = cachingStrategy,
             stateStoreConfig = stateStoreConfig,

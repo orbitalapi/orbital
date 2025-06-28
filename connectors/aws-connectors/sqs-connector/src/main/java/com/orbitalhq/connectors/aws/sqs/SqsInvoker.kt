@@ -12,6 +12,7 @@ import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.query.connectors.OperationInvoker
 import com.orbitalhq.query.tracing.OperationTraceSpan
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
@@ -128,7 +129,8 @@ class SqsInvoker(
             messageBodyStr.length.toLong(),
             PayloadEncoding.STRING
          ) { messageBodyStr },
-         verb = "Publish"
+         verb = "Publish",
+         direction = TraceEventDirection.OUTBOUND
       )
 
       return publisher.sendMessage(messageBody, eventDispatcher.schema)
@@ -141,7 +143,8 @@ class SqsInvoker(
                   messageBodyStr.length.toLong(),
                   PayloadEncoding.STRING
                ) { "Message published successfully" },
-               "Publish response"
+               "Publish response",
+               TraceEventDirection.INBOUND
             )
             result
          }
@@ -163,7 +166,8 @@ class SqsInvoker(
             connectionName,
             MessageStreamSubscription.SubscriptionAction.JOINED_EXISTING_SUBSCRIPTION
          ),
-         verb = "Subscribe"
+         verb = "Subscribe",
+         TraceEventDirection.OUTBOUND
       )
 
       return sqsStreamManager.getStream(

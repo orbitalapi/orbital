@@ -23,6 +23,7 @@ import com.orbitalhq.query.tracing.ObjectStoreResponse
 import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.query.connectors.OperationInvoker
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
@@ -75,7 +76,8 @@ class StoreInvoker(
          spanState = SpanState.ACTIVE,
          payloadType = null,
          exchangeMetadata = ObjectStoreRequest(azureStoreConnection.connectionName, containerName) { sql },
-         verb = "Query"
+         verb = "Query",
+         direction = TraceEventDirection.OUTBOUND
       )
 
       val resultTypeQualifiedName = query.resultType()
@@ -95,7 +97,8 @@ class StoreInvoker(
          SpanState.COMPLETE,
          operation.returnType,
          ObjectStoreResponse(errorMessage = null, result.size.toLong(), { "Retrieved ${result.size} records from Azure Store" }),
-         "Query response"
+         "Query response",
+         direction = TraceEventDirection.INBOUND
       )
 
       val operationResult = buildDataSource(

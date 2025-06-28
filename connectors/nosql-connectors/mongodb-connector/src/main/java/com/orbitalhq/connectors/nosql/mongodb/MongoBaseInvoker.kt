@@ -19,6 +19,7 @@ import com.orbitalhq.query.tracing.DatabaseResponseComplete
 import com.orbitalhq.query.tracing.DatabaseResponseRecord
 import com.orbitalhq.query.tracing.OperationTraceSpan
 import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEvent
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schema.api.SchemaProvider
@@ -169,7 +170,8 @@ abstract class MongoBaseInvoker(
                SpanState.ACTIVE,
                vyneType,
                DatabaseResponseRecord() { objectMapper.writeValueAsString(mapValue) },
-               "Record received"
+               "Record received",
+               TraceEventDirection.INBOUND
             )
             mapToTypedInstance(
                mapValue,
@@ -185,7 +187,8 @@ abstract class MongoBaseInvoker(
                SpanState.COMPLETE,
                vyneType,
                DatabaseResponseComplete(recordCount.get()),
-               "Select complete"
+               "Select complete",
+               TraceEventDirection.INBOUND
             )
          }
       return typedInstances.asFlow()

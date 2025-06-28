@@ -712,7 +712,7 @@ export interface ParameterValue {
 
 export type SpanState = 'ACTIVE' | 'COMPLETE';
 export type TracingEventKind = 'OK' | 'ERROR';
-
+export type TraceEventDirection = 'INBOUND' | 'OUTBOUND' | 'NONE';
 export interface TraceEventRow {
   eventId: string;
   queryId: string;
@@ -724,6 +724,7 @@ export interface TraceEventRow {
   timestamp: Date;
   exchangeMetadata: any; // TODO : There's lots of metadata types that are sent down, not yet defined
   eventVerb: string;
+  direction: TraceEventDirection;
   eventResource: string;
   eventSourceQualifiedName: string;
   linkedEventId: string | null;

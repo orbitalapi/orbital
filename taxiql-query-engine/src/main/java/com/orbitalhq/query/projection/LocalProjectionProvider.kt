@@ -17,6 +17,7 @@ import com.orbitalhq.query.TypedInstanceWithMetadata
 import com.orbitalhq.query.tracing.ProjectionTraceMetadata
 import com.orbitalhq.query.tracing.QueryEngineSpanEventSource
 import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.query.withProcessingMetadata
 import com.orbitalhq.schemas.Type
@@ -449,7 +450,8 @@ class LocalProjectionProvider : ProjectionProvider {
          emittedResult.type.qualifiedName.shortDisplayName,
          "Project",
          QueryEngineSpanEventSource.QUERY_ENGINE_RESOURCE,
-         linkedEventId = linkedEventId
+         linkedEventId = linkedEventId,
+         direction = TraceEventDirection.NONE
       )
       val buildResult = projectionContext.build(TypeQueryExpression(projectionType))
       return buildResult.results.map {
@@ -463,6 +465,7 @@ class LocalProjectionProvider : ProjectionProvider {
             emittedResult.type.qualifiedName.shortDisplayName,
             "Project",
             QueryEngineSpanEventSource.QUERY_ENGINE_RESOURCE,
+            direction = TraceEventDirection.NONE
          )
       }
    }

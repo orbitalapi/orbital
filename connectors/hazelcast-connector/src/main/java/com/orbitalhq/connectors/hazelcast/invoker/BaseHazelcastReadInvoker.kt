@@ -24,6 +24,7 @@ import com.orbitalhq.query.tracing.CacheRequest
 import com.orbitalhq.query.tracing.CacheResponse
 import com.orbitalhq.query.tracing.OperationTraceSpan
 import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schemas.Field
 import com.orbitalhq.schemas.OperationInvocationException
@@ -247,7 +248,8 @@ abstract class BaseHazelcastReadInvoker {
          spanState = SpanState.ACTIVE,
          payloadType = operation.returnType,
          exchangeMetadata = CacheRequest(mapName, CacheOperationVerb.QUERY, hazelcastConnectionConfig.connectionName) { filterCriteria.asTaxi()},
-         verb = "Query"
+         verb = "Query",
+         direction = TraceEventDirection.OUTBOUND
       )
 
       val (rawResults, resultSize) = buildFlowOfCriteriaSearch(
@@ -263,7 +265,8 @@ abstract class BaseHazelcastReadInvoker {
          SpanState.COMPLETE,
          operation.returnType,
          CacheResponse(resultSize) { "Retrieved $resultSize records from map $mapName with predicate $predicate" },
-         "Query response"
+         "Query response",
+         direction = TraceEventDirection.INBOUND
       )
 
       val isSuccessful = resultSize > 0
@@ -325,7 +328,8 @@ abstract class BaseHazelcastReadInvoker {
          spanState = SpanState.ACTIVE,
          payloadType = operation.returnType,
          exchangeMetadata = CacheRequest(mapName, CacheOperationVerb.GET, hazelcastConnectionConfig.connectionName) { "Key = $idLookupValue" },
-         verb = "Get"
+         verb = "Get",
+         direction = TraceEventDirection.OUTBOUND
       )
 
       val (rawResultFlow, recordCount) = buildFlowById(taxiQlQueryString, idLookupValue, map, operation)
@@ -337,7 +341,8 @@ abstract class BaseHazelcastReadInvoker {
          SpanState.COMPLETE,
          operation.returnType,
          CacheResponse(recordCount) { "Retrieved $recordCount record from map $mapName with key $idLookupValue" },
-         "Get response"
+         "Get response",
+         direction = TraceEventDirection.INBOUND
       )
 
       val isSuccess = recordCount > 0
@@ -393,7 +398,8 @@ abstract class BaseHazelcastReadInvoker {
          spanState = SpanState.ACTIVE,
          payloadType = operation.returnType,
          exchangeMetadata = CacheRequest(mapName, CacheOperationVerb.GET_ALL, hazelcastConnectionConfig.connectionName) { "Find all"},
-         verb = "GetAll"
+         verb = "GetAll",
+         direction = TraceEventDirection.OUTBOUND
       )
 
       val (rawResultsFlow, resultSize) = buildFlowOfFullMap(map, operation, taxiQlQueryString)
@@ -414,7 +420,8 @@ abstract class BaseHazelcastReadInvoker {
          SpanState.COMPLETE,
          operation.returnType,
          CacheResponse(resultSize) { "Retrieved all $resultSize records from map $mapName" },
-         "GetAll response"
+         "GetAll response",
+         direction = TraceEventDirection.INBOUND
       )
 
       val result = buildOperationResult(

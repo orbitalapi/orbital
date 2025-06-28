@@ -9,6 +9,7 @@ import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.tracing.ObjectStoreRequest
 import com.orbitalhq.query.tracing.ObjectStoreResponse
 import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
@@ -57,7 +58,8 @@ class S3WriteInvoker : BaseS3Invoker() {
          spanState = SpanState.ACTIVE,
          payloadType = body.type,
          exchangeMetadata = ObjectStoreRequest(awsConnection.connectionName, bucketName) { filename },
-         verb = "Write"
+         verb = "Write",
+         TraceEventDirection.OUTBOUND
       )
 
       return S3Connection(awsConnection, bucketName)
@@ -68,7 +70,8 @@ class S3WriteInvoker : BaseS3Invoker() {
                SpanState.COMPLETE,
                operation.returnType,
                ObjectStoreResponse(null, size = -1) { info.toString() },
-               "Write response"
+               "Write response",
+               TraceEventDirection.INBOUND
             )
             Either.Right(body)
          }
@@ -79,7 +82,8 @@ class S3WriteInvoker : BaseS3Invoker() {
                SpanState.COMPLETE,
                null,
                ObjectStoreResponse(errorMessage, -1, { null }),
-               "Write error"
+               "Write error",
+               TraceEventDirection.INBOUND
             )
             error
          }

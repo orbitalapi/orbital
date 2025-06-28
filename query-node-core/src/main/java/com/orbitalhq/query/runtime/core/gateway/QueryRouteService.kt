@@ -1,12 +1,25 @@
 package com.orbitalhq.query.runtime.core.gateway
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.google.common.base.Throwables
 import com.orbitalhq.auth.EmptyAuthenticationToken
 import com.orbitalhq.metrics.QueryMetricsReporter
+import com.orbitalhq.query.HistoryEventConsumerProvider
 import com.orbitalhq.query.MetricTags
 import com.orbitalhq.query.tagsOf
+import com.orbitalhq.query.tracing.HttpRequest
+import com.orbitalhq.query.tracing.HttpResponse
+import com.orbitalhq.query.tracing.NoopTracingEventSink
+import com.orbitalhq.query.tracing.SpanEventSource
+import com.orbitalhq.query.tracing.SpanState
+import com.orbitalhq.query.tracing.TraceEventDirection
+import com.orbitalhq.query.tracing.TracingEvent
+import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.consumer.SchemaStore
+import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.spring.http.HttpStatusException
+import com.orbitalhq.spring.invokers.asVyneHeadersMap
 import lang.taxi.query.QueryMode
 import lang.taxi.query.TaxiQlQuery
 import mu.KotlinLogging
@@ -20,11 +33,14 @@ import org.springframework.web.reactive.function.server.RouterFunctions
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.ServerResponse.status
+import org.springframework.web.reactive.function.server.awaitBody
+import org.springframework.web.reactive.function.server.bodyToMono
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
 import java.security.Principal
 import java.time.Instant
+import kotlin.jvm.Throws
 
 /**
  * The handler / service which receives HTTP invocations
@@ -40,6 +56,8 @@ class QueryRouteService(
    private val executor: RoutedQueryExecutor?,
    private val queryPrefix: String = "/api/q/",
    private val metricsReporter: QueryMetricsReporter,
+   private val objectMapper: ObjectMapper,
+   private val eventConsumerProvider: HistoryEventConsumerProvider
 ) : HandlerFunction<ServerResponse> {
 
    private var queryRouter: QueryRouter = QueryRouter.build(emptyList())
@@ -101,24 +119,25 @@ class QueryRouteService(
       return principal
          .defaultIfEmpty(EmptyAuthenticationToken)
          .flatMap { principal ->
-            val queryResultPublisher = executor.handleRoutedQuery(query, EmptyAuthenticationToken.nullIfEmpty(principal))
-               .let {
-                  metricsReporter.observeQueryResult(
-                     it.publisher,
-                     Instant.now(),
-                     getMetricsTags(query),
-                     logDurationsOfIndividualMessages
-                  ) to it.responseHeaders
-               }
+            val queryResultPublisher =
+               executor.handleRoutedQuery(query, EmptyAuthenticationToken.nullIfEmpty(principal))
+                  .let {
+                     metricsReporter.observeQueryResult(
+                        it.publisher,
+                        Instant.now(),
+                        getMetricsTags(query),
+                        logDurationsOfIndividualMessages
+                     ) to it.responseHeaders
+                  }
 
             val responseStream = queryResultPublisher.first
             val responseHeaders = queryResultPublisher.second
             val returnServerSentEvents = request.headers().accept().contains(MediaType.TEXT_EVENT_STREAM)
             if (returnServerSentEvents && responseStream is Flux<*>) {
                DeferredServerResponsePublisher.wrapEventStreamFlux(responseStream, responseHeaders)
-                  } else if (responseStream is Flux<*>){
+            } else if (responseStream is Flux<*>) {
                DeferredServerResponsePublisher.wrapFlux(responseStream as Flux<out Any>, responseHeaders)
-            } else if (responseStream is Mono<*>){
+            } else if (responseStream is Mono<*>) {
                DeferredServerResponsePublisher.wrapMono(responseStream as Mono<Any>, responseHeaders)
             } else {
                error("Unexpected type of publisher: ${responseStream::class.simpleName}")
@@ -133,6 +152,7 @@ class QueryRouteService(
 
    override fun handle(request: ServerRequest): Mono<ServerResponse> {
       val query = request.attributes()[MATCHED_QUERY] as? TaxiQlQuery
+      val spanId = TracingEvent.newSpanId()
       return if (query == null) {
          logger.warn { "Request $request did not match a query, which is unexpected - did the schema just change?" }
          status(HttpStatus.NOT_FOUND).build()
@@ -140,7 +160,97 @@ class QueryRouteService(
          val querySource = query.compilationUnits.single().source.content
          RoutedQuery.build(query, querySource, request)
             .flatMap { routedQuery ->
+               val queryOptions = QueryOptions.fromQuery(query)
+               val eventSink = try {
+                  eventConsumerProvider.createTraceEventSink(
+                     routedQuery.clientQueryId, routedQuery.rootTraceId, schemaStore.schema(),
+                     queryOptions
+                  )
+               } catch (e: Throwable) {
+                  val rootCause = Throwables.getRootCause(e)
+                  logger.warn(rootCause) { "Failed to create a trace event sink - events will be dropped for this phase of the query " }
+                  NoopTracingEventSink
+               }
+
+               request.bodyToMono<String>()
+                  .doOnNext {
+
+                  }
+               eventSink.emitEvent(
+                  QueryRouterSpanEventSource(queryOptions, routedQuery), TracingEvent(
+                     routedQuery.clientQueryId,
+                     routedQuery.rootTraceId,
+                     spanId,
+                     routedQuery.rootTraceId,
+                     TracingEventKind.OK,
+                     TraceEventDirection.INBOUND,
+                     SpanState.ACTIVE,
+                     HttpRequest(
+                        request.uri().toASCIIString(),
+                        request.method().name(),
+                        { "Body not captured yet"},
+                        0,
+                        request.headers().asHttpHeaders().asVyneHeadersMap()
+                     ),
+                     request.method().name(),
+                     "Router",
+                     "Router",
+                     null
+                  )
+               )
+
                handleQuery(request, routedQuery)
+                  .doOnNext { response ->
+                     val eventKind = if (response.statusCode().isError) {
+                        TracingEventKind.ERROR
+                     } else {
+                        TracingEventKind.OK
+                     }
+                     eventSink.emitEvent(
+                        QueryRouterSpanEventSource(queryOptions, routedQuery), TracingEvent(
+                           routedQuery.clientQueryId,
+                           routedQuery.rootTraceId,
+                           spanId,
+                           routedQuery.rootTraceId,
+                           eventKind,
+                           TraceEventDirection.OUTBOUND,
+                           SpanState.COMPLETE,
+                           HttpResponse(
+                              response.statusCode().value(),
+                              { "Responses not captured" },
+                              -1,
+                              response.headers().asVyneHeadersMap()
+                           ),
+                           request.method().name(),
+                           "Router",
+                           "Router",
+                           null
+                        )
+                     )
+                  }
+                  .doOnError { error ->
+                     eventSink.emitEvent(
+                        QueryRouterSpanEventSource(queryOptions, routedQuery), TracingEvent(
+                           routedQuery.clientQueryId,
+                           routedQuery.rootTraceId,
+                           spanId,
+                           routedQuery.rootTraceId,
+                           TracingEventKind.ERROR,
+                           TraceEventDirection.OUTBOUND,
+                           SpanState.COMPLETE,
+                           HttpResponse(
+                              -1,
+                              { Throwables.getRootCause(error).message },
+                              -1,
+                              emptyMap()
+                           ),
+                           request.method().name(),
+                           "Router",
+                           "Router",
+                           null
+                        )
+                     )
+                  }
             }
             .onErrorResume { e ->
                when (e) {
@@ -153,3 +263,8 @@ class QueryRouteService(
    }
 }
 
+
+data class QueryRouterSpanEventSource(
+   val queryOptions: QueryOptions,
+   val routedQuery: RoutedQuery
+) : SpanEventSource

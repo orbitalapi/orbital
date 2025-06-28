@@ -1,5 +1,6 @@
 package com.orbitalhq.query.runtime.core.gateway
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.hazelcast.test.TestHazelcastInstanceFactory
 import com.jayway.awaitility.Awaitility
 import com.nhaarman.mockito_kotlin.*
@@ -14,6 +15,7 @@ import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.query.Fact
 import com.orbitalhq.query.HistoryEventConsumerProvider
+import com.orbitalhq.query.NoOpHistoryEventConsumerProvider
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.QueryEvent
 import com.orbitalhq.query.QueryEventConsumer
@@ -395,7 +397,7 @@ class QueryRequestHandlerTest {
          queryExecutor: RoutedQueryExecutor,
          metricsReporter: QueryMetricsReporter
       ): QueryRouteService {
-         return QueryRouteService(schemaStore, queryExecutor, metricsReporter = metricsReporter)
+         return QueryRouteService(schemaStore, queryExecutor, metricsReporter = metricsReporter, objectMapper = jacksonObjectMapper(), eventConsumerProvider = NoOpHistoryEventConsumerProvider)
       }
 
       @Bean

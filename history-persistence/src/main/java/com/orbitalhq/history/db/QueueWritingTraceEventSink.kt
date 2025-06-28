@@ -13,6 +13,10 @@ import com.orbitalhq.query.tracing.TracingEventExchangeMetadata
 import com.orbitalhq.query.tracing.TracingEventSink
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.Schema
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import mu.KotlinLogging
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.stereotype.Component
@@ -31,7 +35,7 @@ class ContextAwareEventMetadataMapper(
    private val analyticsConfig: QueryAnalyticsConfig,
    private val schema: Schema
 ) {
-   fun eventMetadataToJson(eventExchangeMetadata: TracingEventExchangeMetadata, source: SpanEventSource): String {
+  suspend fun eventMetadataToJson(eventExchangeMetadata: TracingEventExchangeMetadata, source: SpanEventSource): String {
       val metadataAsMap = objectMapper.convertValue<Map<String, Any?>>(eventExchangeMetadata)
          .toMutableMap()
       // TODO : Apply filtering.
@@ -45,26 +49,33 @@ class ContextAwareEventMetadataMapper(
 
 class QueueWritingTraceEventSink(
    private val persistenceQueue: HistoryPersistenceQueue,
-   private val metadataMapper: ContextAwareEventMetadataMapper
+   private val metadataMapper: ContextAwareEventMetadataMapper,
+   private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 ) : TracingEventSink {
    override fun emitEvent(source: SpanEventSource, event: TracingEvent) {
-      // TODO: Need to do some filtering of payloads and events based on metadata here.
-      val eventRow = TraceEventRow(
-         event.eventId,
-         event.queryId,
-         event.traceId,
-         event.spanId,
-         event.parentSpanId,
-         event.tracingEventKind,
-         event.spanState,
-         event.timestamp.atZone(ZoneId.of("UTC")),
-         metadataMapper.eventMetadataToJson(event.exchangeMetadata, source),
-         event.eventVerb,
-         event.eventResource,
-         event.eventSourceQualifiedName,
-         event.linkedEventId
-      )
-      persistenceQueue.storeTraceEvent(eventRow)
+      // This is a coroutine scope, because reading the body needs to support
+      // reactive approaches.
+      scope.launch {
+         // TODO: Need to do some filtering of payloads and events based on metadata here.
+         val eventRow = TraceEventRow(
+            event.eventId,
+            event.queryId,
+            event.traceId,
+            event.spanId,
+            event.parentSpanId,
+            event.tracingEventKind,
+            event.spanState,
+            event.timestamp.atZone(ZoneId.of("UTC")),
+            metadataMapper.eventMetadataToJson(event.exchangeMetadata, source),
+            event.eventVerb,
+            event.eventResource,
+            event.eventSourceQualifiedName,
+            event.linkedEventId,
+            event.direction
+         )
+         persistenceQueue.storeTraceEvent(eventRow)
+      }
+
    }
 }
 

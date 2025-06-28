@@ -37,6 +37,7 @@ import com.orbitalhq.query.tracing.EmptyTraceMetadata
 import com.orbitalhq.query.tracing.QueryEngineSpanEventSource
 import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.query.tracing.TraceContext
+import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEvent
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.query.tracing.TracingEventSink
@@ -168,7 +169,8 @@ class QueryService(
       return if (queryResult.responseType!!.isCollection) {
          contentType to flow.asFlux()
       } else {
-         contentType to flow.asFlux().single()
+         contentType to flow.asFlux().singleOrEmpty()
+            .switchIfEmpty(Mono.error(QueryFailedException("Query was supposed to produce a ${queryResult.responseType?.longDisplayName} but nothing was emitted.")))
       }
    }
 
@@ -298,6 +300,9 @@ class QueryService(
             query,
             user,
             clientQueryId = clientQueryId,
+            // If we ever change the logic to not pass the clientQueryId as the queryId here,
+            // then we need to consider how to populate the queryId onto the trace events that are upstream
+            // of this point
             queryId = clientQueryId ?: UUID.randomUUID().toString(),
             arguments = arguments
          )
@@ -538,9 +543,22 @@ class QueryService(
          val traceEventSink = historyWriterProvider.createTraceEventSink(queryId, traceId, schema, queryOptions)
          val response = try {
             val eventDispatcherForQuery =
-               activeQueryMonitor.eventDispatcherForQuery(queryId, TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan, listOf(historyWriterEventConsumer))
+               activeQueryMonitor.eventDispatcherForQuery(
+                  queryId,
+                  TraceContext.forTraceId(traceId, queryId, traceEventSink).rootSpan,
+                  listOf(historyWriterEventConsumer)
+               )
             // Emit a start event. Without this, the root is never captured, and the traces look odd.
-            eventDispatcherForQuery.traceSpan.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, EmptyTraceMetadata, QueryEngineSpanEventSource, QueryEngineSpanEventSource.QUERY_ENGINE_RESOURCE, "Start", "")
+            eventDispatcherForQuery.traceSpan.emitEvent(
+               TracingEventKind.OK,
+               SpanState.ACTIVE,
+               EmptyTraceMetadata,
+               QueryEngineSpanEventSource,
+               QueryEngineSpanEventSource.QUERY_ENGINE_RESOURCE,
+               "Start",
+               "",
+               direction = TraceEventDirection.NONE
+            )
             vyne.query(
                taxiQlQuery,
                queryId = queryId,
