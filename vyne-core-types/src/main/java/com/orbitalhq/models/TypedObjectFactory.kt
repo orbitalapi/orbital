@@ -217,6 +217,11 @@ class TypedObjectFactory(
       nullable: Boolean,
       allowContextQuerying: Boolean
    ): TypedInstance {
+      // MP: 30-Jun-25 Projecting null to anything always returns null
+      // Added this as we were finding projecting null -> T[] was producing an array of T[], where everything was null.
+      if (valueToProject is TypedNull) {
+         return TypedNull.create(targetType, FailedEvaluatedExpression("Projecting ${valueToProject.type.name.shortDisplayName} to ${targetType.name.shortDisplayName}", inputs = listOf(valueToProject), "Source was null"))
+      }
       val projectedFieldValue = if (valueToProject is TypedCollection && targetType.isCollection) {
          // Project each member of the collection seperately
          valueToProject
@@ -486,7 +491,14 @@ class TypedObjectFactory(
       }.toMap()
 
       val decorated = xtimed("apply decorator") { decorator(mappedAttributes) }
-      return TypedObject(type, decorated, source, metadata)
+
+      // MP: 30-Jun -- don't return an object from a projection requesting a collection.
+      return if (decorated.isEmpty() && type.isCollection) {
+         TypedCollection.empty(type)
+      } else {
+         TypedObject(type, decorated, source, metadata)
+      }
+
    }
 
    /**

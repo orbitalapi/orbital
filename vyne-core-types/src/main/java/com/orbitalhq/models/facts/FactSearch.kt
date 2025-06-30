@@ -317,7 +317,11 @@ enum class FactDiscoveryStrategy {
 
       override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): Either<TypedNull, TypedInstance> {
          return when {
-            matches.isEmpty() -> TypedNull.create(search.targetType, ValueLookupReturnedNull("No instances present", search.targetType.name)).left()
+            matches.isEmpty() -> TypedNull.create(
+               search.targetType,
+               ValueLookupReturnedNull("No instances present", search.targetType.name)
+            ).left()
+
             else -> TypedCollection.flatten(matches, MixedSources.singleSourceOrMixedSources(matches)).right()
          }
       }
@@ -329,7 +333,7 @@ enum class FactDiscoveryStrategy {
       search: FactSearch
    ): Either<TypedNull, TypedInstance>
 
-   abstract fun applyToResults(matches: List<TypedInstance>, search: FactSearch): Either<TypedNull,TypedInstance>
+   abstract fun applyToResults(matches: List<TypedInstance>, search: FactSearch): Either<TypedNull, TypedInstance>
 
 
 }
@@ -342,10 +346,10 @@ enum class FactDiscoveryStrategy {
  */
 fun toCollectionIfRequested(singleInstance: TypedInstance, targetType: Type): TypedInstance {
    return if (targetType.isCollection) {
-      if (singleInstance is TypedCollection) {
-         return singleInstance
-      } else {
-         return TypedCollection.from(listOf(singleInstance))
+      when (singleInstance) {
+         is TypedCollection -> return singleInstance
+         is TypedNull -> TypedCollection.empty(targetType)
+         else -> return TypedCollection.from(listOf(singleInstance))
       }
    } else {
       singleInstance
@@ -353,12 +357,12 @@ fun toCollectionIfRequested(singleInstance: TypedInstance, targetType: Type): Ty
 }
 
 
-fun Collection<TypedInstance>.singleOrFailForAmbiguous(search: FactSearch):Either<TypedNull, TypedInstance> {
+fun Collection<TypedInstance>.singleOrFailForAmbiguous(search: FactSearch): Either<TypedNull, TypedInstance> {
    val requestedType = search.targetType
    return when (this.size) {
       0 -> TypedNull.noInstancesPresent(requestedType).left()
       1 -> this.single().right()
-      else ->  TypedNull.ambiguousResult(search, this.size).left()
+      else -> TypedNull.ambiguousResult(search, this.size).left()
    }
 }
 

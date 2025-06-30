@@ -37,7 +37,9 @@ data class TypedObject(
       get() = combinedValues
 
    init {
-//      require(!Arrays.isArray(type.taxiType)) { "It is illegal to construct a TypedObject with an array type (found ${type.qualifiedName.shortDisplayName})"}
+//      require(!Arrays.isArray(type.taxiType)) {
+//         "It is illegal to construct a TypedObject with an array type (found ${type.qualifiedName.shortDisplayName})"
+//      }
    }
 
    companion object {

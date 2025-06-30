@@ -462,8 +462,13 @@ class ChainedProjectionsTest {
       )
          .firstRawObject()
 
+      // MP: 30-Jun-25:
+      // This used to say:
       // cast is an empty map, as not really sure what else it could be.
-      result.shouldBe(mapOf("id" to 123, "cast" to emptyMap<String, Any>()))
+      // Now, it's
+      // cast is an empty list
+      // We can't return an empty object, when the requested type is T[]
+      result.shouldBe(mapOf("id" to 123, "cast" to emptyList<Map<String,Any>>()))
    }
 
    @Test
