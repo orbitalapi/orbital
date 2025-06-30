@@ -1,5 +1,6 @@
 package com.orbitalhq.pipelines.jet.sink.http
 
+import com.hazelcast.instance.impl.TestUtil.terminateInstance
 import com.winterbe.expekt.should
 import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.pipelines.jet.BaseJetIntegrationTest

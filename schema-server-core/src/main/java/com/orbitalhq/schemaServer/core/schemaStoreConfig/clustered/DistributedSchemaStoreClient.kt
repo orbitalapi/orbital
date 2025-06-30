@@ -34,7 +34,7 @@ class DistributedSchemaStoreClient(hazelcast: HazelcastInstance,
       schemaSetHolder = ConcurrentHashMap(),
       packagesById = packagesByIdMap) {
 
-   private val generationCounter = hazelcast.cpSubsystem.getAtomicLong("schemaGenerationCounter")
+   private val generationCounter = hazelcast.getPNCounter("schemaGenerationCounter")
    override fun incrementGenerationCounterAndGet(): Int {
       return generationCounter.incrementAndGet().toInt()
    }
