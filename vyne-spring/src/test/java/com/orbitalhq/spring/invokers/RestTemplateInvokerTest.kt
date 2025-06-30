@@ -11,6 +11,7 @@ import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.expectTypedInstance
 import com.orbitalhq.expectTypedObject
 import com.orbitalhq.expectTypedObjectFromEither
+import com.orbitalhq.firstRawObject
 import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.http.respondWith
 import com.orbitalhq.http.response
@@ -739,6 +740,51 @@ namespace vyne {
         """
    }
 
+   // ORB-981
+   @Test
+   fun `omit nulls defined in a parent parameter object is inherited onto children`(): Unit = runBlocking {
+      val (vyne, stub) = com.orbitalhq.testVyne(
+         """
+
+//         @com.orbitalhq.models.OmitNulls
+         model AccountBlock {
+            clientRef: ClientRef inherits String
+            primaryClientRef: PrimaryClientRef inherits String
+            additionalData: AdditionalData inherits String
+         }
+
+         @com.orbitalhq.models.OmitNulls
+         parameter model OnboardingRequest {
+            accounts: AccountBlock[]
+         }
+
+         service OnboardingApi {
+            write operation doOnboarding(OnboardingRequest):OnboardingRequest
+         }
+      """.trimIndent()
+      )
+      stub.addResponseReturningInputs("doOnboarding")
+      val response = vyne.query(
+         """
+         import AccountBlock
+         given { ClientRef = 'client1'}
+         find { AccountBlock}
+         call OnboardingApi::doOnboarding
+      """.trimIndent()
+      )
+         .firstRawObject()
+      val requestObject = stub.calls["doOnboarding"].single().single()
+         .toRawObject()
+      requestObject
+         .shouldBe(
+            mapOf(
+               "accounts" to listOf(
+                  mapOf("clientRef" to "client1") // primaryclientRef and additionalData are omitted
+               )
+            )
+         )
+   }
+
    private fun paramAndType(
       typeName: String,
       value: Any,
@@ -1343,7 +1389,7 @@ namespace vyne {
       """, invoker = Invoker.RestTemplate
       )
 
-      val (eventBroker,eventSink) = QueryContextEventBroker.withTestTraceSpan()
+      val (eventBroker, eventSink) = QueryContextEventBroker.withTestTraceSpan()
       assertThrows<OperationInvocationException> {
          vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""", eventBroker = eventBroker)
             .rawObjects()
@@ -1407,10 +1453,10 @@ namespace vyne {
       eventSink.collectedEvents[5].tracingEventKind.shouldBe(TracingEventKind.OK)
    }
 
-      @Test
-      fun `instances from HTTP requests are linked to source events`():Unit = runBlocking {
-         val vyne = testVyne(
-            """
+   @Test
+   fun `instances from HTTP requests are linked to source events`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
          type ApiKey inherits String
          model Person {
             name : Name inherits String
@@ -1420,23 +1466,24 @@ namespace vyne {
             operation listPeople(apiKey:ApiKey):Person[]
           }
       """, invoker = Invoker.RestTemplate
-         )
-         server.prepareResponse { response ->
-            response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
-               .setBody("""[ { "name" : "Jimmy" },  { "name" : "Jack" }]""")
-         }
-         val (eventBroker,_) = QueryContextEventBroker.withTestTraceSpan()
-         val typedInstances = vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""", eventBroker = eventBroker)
+      )
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" },  { "name" : "Jack" }]""")
+      }
+      val (eventBroker, _) = QueryContextEventBroker.withTestTraceSpan()
+      val typedInstances =
+         vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""", eventBroker = eventBroker)
             .typedInstances()
 
-         // Verify that the instances, when emitted, were linked back to their source events
-         typedInstances[0].source
-            .shouldBeInstanceOf<OperationResultReference>()
-            .sourceEventId.shouldNotBeNull()
-         typedInstances[1].source
-            .shouldBeInstanceOf<OperationResultReference>()
-            .sourceEventId.shouldNotBeNull()
-      }
+      // Verify that the instances, when emitted, were linked back to their source events
+      typedInstances[0].source
+         .shouldBeInstanceOf<OperationResultReference>()
+         .sourceEventId.shouldNotBeNull()
+      typedInstances[1].source
+         .shouldBeInstanceOf<OperationResultReference>()
+         .sourceEventId.shouldNotBeNull()
+   }
 
    @Test
    fun `can use exponential retry policy`(): Unit = runBlocking {
@@ -1643,8 +1690,19 @@ namespace vyne {
          val serviceCapture = argumentCaptor<Service>()
          val operationCapture = argumentCaptor<RemoteOperation>()
          val resourceNameCapture = argumentCaptor<String>()
-         on { createOperationTraceSpan(serviceCapture.capture(), operationCapture.capture(), resourceNameCapture.capture())} doAnswer {
-            OperationTraceSpan(TraceContext.noOp().rootSpan, serviceCapture.lastValue, operationCapture.lastValue, resourceNameCapture.lastValue)
+         on {
+            createOperationTraceSpan(
+               serviceCapture.capture(),
+               operationCapture.capture(),
+               resourceNameCapture.capture()
+            )
+         } doAnswer {
+            OperationTraceSpan(
+               TraceContext.noOp().rootSpan,
+               serviceCapture.lastValue,
+               operationCapture.lastValue,
+               resourceNameCapture.lastValue
+            )
          }
          on { reportRemoteOperationInvoked(capture.capture(), com.nhaarman.mockito_kotlin.any()) } doAnswer {
             operationResults.add(capture.lastValue)

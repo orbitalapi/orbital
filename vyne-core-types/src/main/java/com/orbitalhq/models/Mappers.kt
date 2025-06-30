@@ -226,11 +226,17 @@ class DataSourceMutatingMapper(val dataSource: DataSource) : TypedInstanceMapper
 }
 
 data class TypeInstanceConverterConfig(
-   val ignoreNulls: Boolean = false
+   val ignoreNulls: Boolean = false,
+
+   /**
+    * Indicates if this config is applied to the current node only,
+    * or inherited down into child nodes
+    */
+   val configIsInherited: Boolean = false
 ) {
    companion object {
       val DEFAULT_CONFIG = TypeInstanceConverterConfig()
-      val IGNORE_NULLS_CONFIG = TypeInstanceConverterConfig(ignoreNulls = true)
+      val IGNORE_NULLS_CONFIG = TypeInstanceConverterConfig(ignoreNulls = true, configIsInherited = true)
    }
 }
 
@@ -240,11 +246,12 @@ class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
       valueMap: Map<String, Any>,
       config: TypeInstanceConverterConfig,
       collectDataSourcesTo: MutableList<Pair<TypedInstance, DataSource>>? = null,
-      metadata: Map<String, Any>? = null
+      metadata: Map<String, Any>? = null,
+      inheritedConfig: TypeInstanceConverterConfig? = null
    ): Map<String, Any?> {
       val unwrapped = valueMap.map { (entryKey, entryValue) ->
          val converted = when (entryValue) {
-            is TypedInstance -> entryKey to convertAndCollectDataSources(entryValue, collectDataSourcesTo)
+            is TypedInstance -> entryKey to convertAndCollectDataSources(entryValue, collectDataSourcesTo, inheritedConfig)
             else -> entryKey to entryValue
          }
          converted
@@ -268,11 +275,12 @@ class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
 
    private fun unwrapCollection(
       valueCollection: Collection<*>,
-      collectDataSourcesTo: MutableList<Pair<TypedInstance, DataSource>>? = null
+      collectDataSourcesTo: MutableList<Pair<TypedInstance, DataSource>>? = null,
+      inheritedConfig: TypeInstanceConverterConfig? = null
    ): List<Any?> {
       return valueCollection.map { collectionMember ->
          when (collectionMember) {
-            is TypedInstance -> convertAndCollectDataSources(collectionMember, collectDataSourcesTo)
+            is TypedInstance -> convertAndCollectDataSources(collectionMember, collectDataSourcesTo, inheritedConfig = inheritedConfig)
             else -> collectionMember
          }
       }
@@ -299,18 +307,23 @@ class TypedInstanceConverter(private val mapper: TypedInstanceMapper) {
 
    private fun convertAndCollectDataSources(
       typedInstance: TypedInstance,
-      collectDataSourcesTo: MutableList<Pair<TypedInstance, DataSource>>?
+      collectDataSourcesTo: MutableList<Pair<TypedInstance, DataSource>>?,
+      inheritedConfig: TypeInstanceConverterConfig? = null
    ): Any? {
       val value = typedInstance.value
-      val typedInstanceMapperConfig = typedInstance.type.taxiType.annotation(OmitNullsType.NAME)?.let { TypeInstanceConverterConfig.IGNORE_NULLS_CONFIG } ?: TypeInstanceConverterConfig.DEFAULT_CONFIG
+      val typedInstanceMapperConfig = typedInstance.type.taxiType.annotation(OmitNullsType.NAME)?.let { TypeInstanceConverterConfig.IGNORE_NULLS_CONFIG } ?: inheritedConfig ?: TypeInstanceConverterConfig.DEFAULT_CONFIG
+      val configToPassDown = if (typedInstanceMapperConfig.configIsInherited) {
+         typedInstanceMapperConfig
+      } else null
       val converted = when {
          typedInstance is Map<*, *> -> {
-            val unwrapped = unwrapMap(value as Map<String, Any>, typedInstanceMapperConfig, collectDataSourcesTo)
+
+            val unwrapped = unwrapMap(value as Map<String, Any>, typedInstanceMapperConfig, collectDataSourcesTo, inheritedConfig = configToPassDown)
             mapper.handleUnwrapped(typedInstance, unwrapped)
          }
 
          typedInstance is Collection<*> -> {
-            val unwrapped = unwrapCollection(value as Collection<*>, collectDataSourcesTo)
+            val unwrapped = unwrapCollection(value as Collection<*>, collectDataSourcesTo, inheritedConfig = configToPassDown)
             collectDataSourcesTo?.add(typedInstance to typedInstance.source)
             mapper.handleUnwrappedCollection(typedInstance, unwrapped)
          }
