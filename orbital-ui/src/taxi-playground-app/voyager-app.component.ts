@@ -26,7 +26,7 @@ import {TuiAlertService, TuiDialogService} from '@taiga-ui/core';
 import {ShareDialogComponent} from 'src/app/voyager/share-dialog/share-dialog.component';
 import {PolymorpheusComponent} from '@taiga-ui/polymorpheus';
 import {ActivatedRoute, NavigationEnd, Params, Router} from '@angular/router';
-import {emptyQueryMessage, StubQueryMessage} from "../app/services/query.service";
+import { emptyQueryMessage, OperationStub, StubQueryMessage } from "../app/services/query.service";
 import {isNullOrUndefined} from "../app/utils/utils";
 import {Clipboard} from '@angular/cdk/clipboard';
 import * as pako from 'pako';
@@ -513,7 +513,7 @@ export const example: StubQueryMessageWithSlug = ${exampleAsJs}`
     this.updateRouteAndPersistTolocalStorage()
   }
 
-  onStubsChanged($event: any) {
+  onStubsChanged($event: OperationStub[]) {
     this.queryMessage.stubs = $event;
     this.updateRouteAndPersistTolocalStorage()
   }

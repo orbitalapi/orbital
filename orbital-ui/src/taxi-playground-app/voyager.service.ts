@@ -48,7 +48,13 @@ export class VoyagerService {
   }
 
   runQuery(message: StubQueryMessage): Observable<QueryResponseWrapper> {
-    return this.httpClient.post(`${environment.serverUrl}/api/query`, message, {observe: 'response', responseType: 'text'})
+    const sanitizedQueryMessage: StubQueryMessage = {
+      ...message,
+      // It's possible to accidentally configure a stub, but not select anything from the drop-down.
+      // This causes deserialization issues on the server, so filter them out here
+      stubs: message.stubs.filter(stub => stub.operationName !== null)
+    }
+    return this.httpClient.post(`${environment.serverUrl}/api/query`, sanitizedQueryMessage, {observe: 'response', responseType: 'text'})
       .pipe(
         map(response => {
           console.log('hello?')
