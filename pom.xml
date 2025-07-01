@@ -62,7 +62,8 @@
 
       <logbook.version>3.12.0</logbook.version>
 
-      <jgit.version>6.9.0.202403050737-r</jgit.version>
+      <!-- CVE-2025-4949 fixed in 6.10.1.202505221210-r -->
+      <jgit.version>6.10.1.202505221210-r</jgit.version>
       <!--      <netty.version>4.1.75.Final</netty.version>-->
       <!-- CVE-2022-31692  -->
       <!--      <spring-security.version>5.7.5</spring-security.version>-->
@@ -88,6 +89,8 @@ Transitive dependency in wire-compiler and calcite-core
 
       <bouncycastle.version>1.78</bouncycastle.version>
 
+      <!-- CVE 2025-27817 fixed in 3.9.1 -->
+      <kafka.version>3.9.1</kafka.version>
 
    </properties>
 
