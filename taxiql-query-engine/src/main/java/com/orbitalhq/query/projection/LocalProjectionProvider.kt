@@ -2,6 +2,7 @@ package com.orbitalhq.query.projection
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.orbitalhq.models.DataSourceWithLinkedTraceEvent
+import com.orbitalhq.models.FailedEvaluatedExpression
 import com.orbitalhq.models.ProjectionFunctionScopeEvaluator
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
@@ -35,6 +36,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapMerge
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.onCompletion
@@ -425,6 +427,7 @@ class LocalProjectionProvider : ProjectionProvider {
       projectionType: Type,
       startTime: Instant
    ): Flow<TypedInstanceWithMetadata> {
+
       // If the projection scope was explicitly defined,
       // add the thing we're projecting as a specific scoped fact.
       // This makes it available for both type-based-searches (standard),
@@ -439,6 +442,16 @@ class LocalProjectionProvider : ProjectionProvider {
          context.only(globalFacts.rootFacts(), scopedFacts = scopedFacts + context.scopedFacts)
             .withChildTraceSpan()
       }
+
+      /// MP: 1-Jul-25: Don't project null.
+      // This was creating issues where an error from a service is getting projected
+      if (emittedResult is TypedNull) {
+         return flowOf(TypedNull.create(projectionType, FailedEvaluatedExpression(projectionType.paramaterizedName, listOf(emittedResult), "Cannot project null"))
+            .withProcessingMetadata(asOf = startTime, processingTraceSpan = projectionContext.traceSpan)
+         )
+      }
+
+
       val linkedEventId = if (emittedResult.source is DataSourceWithLinkedTraceEvent) {
          (emittedResult.source as  DataSourceWithLinkedTraceEvent).sourceEventId?.eventId
       } else null
