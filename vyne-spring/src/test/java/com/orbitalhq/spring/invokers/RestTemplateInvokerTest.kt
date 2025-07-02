@@ -12,6 +12,8 @@ import com.orbitalhq.expectTypedInstance
 import com.orbitalhq.expectTypedObject
 import com.orbitalhq.expectTypedObjectFromEither
 import com.orbitalhq.firstRawObject
+import com.orbitalhq.firstTypedInstace
+import com.orbitalhq.firstTypedObject
 import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.http.respondWith
 import com.orbitalhq.http.response
@@ -156,6 +158,64 @@ namespace vyne {
       } catch (ex: InterruptedException) {
          throw IllegalStateException(ex)
       }
+   }
+
+   @Test
+   fun `returns null when projecting a failed mutation call fails`():Unit = runBlocking {
+      val (vyne,stub) = testVyneWithStub(
+         """
+closed model Actor {
+   name : Name inherits String
+}
+closed model CastList {
+   cast : Actor[]
+}
+service FilmApi {
+   @HttpOperation(method = "POST",url = "http://localhost:${server.port}/cast")
+   write operation getCast():CastList
+}
+            """.trimIndent(),
+         Invoker.RestTemplate
+      )
+      val invokedPaths: ConcurrentHashMap<String, Int> = ConcurrentHashMap()
+      server.prepareResponse(
+         invokedPaths,
+         "/cast" to response("", 503),
+      )
+      val result = vyne.query("""call FilmApi::getCast as {
+         | actors : Actor[]
+         |}""".trimMargin())
+         .firstTypedInstace()
+      result.shouldBeInstanceOf<TypedNull>()
+   }
+
+   @Test
+   fun `returns null when projecting and a discovery call reutrns null`():Unit = runBlocking {
+      val (vyne,stub) = testVyneWithStub(
+         """
+closed model Actor {
+   name : Name inherits String
+}
+closed model CastList {
+   cast : Actor[]
+}
+service FilmApi {
+   @HttpOperation(method = "POST",url = "http://localhost:${server.port}/cast")
+   write operation getCast():CastList
+}
+            """.trimIndent(),
+         Invoker.RestTemplate
+      )
+      val invokedPaths: ConcurrentHashMap<String, Int> = ConcurrentHashMap()
+      server.prepareResponse(
+         invokedPaths,
+         "/cast" to response("", 200),
+      )
+      val result = vyne.query("""call FilmApi::getCast as {
+         | actors : Actor[]
+         |}""".trimMargin())
+         .firstTypedInstace()
+      result.shouldBeInstanceOf<TypedNull>()
    }
 
    @Test

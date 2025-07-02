@@ -300,6 +300,9 @@ interface TypedInstance {
             value is TypedInstance && value.type.taxiType.isAssignableTo(type.taxiType) -> value
             value == null -> TypedNull.create(type)
             value is NullValue -> TypedNull.create(type)
+            // MP: 1-Jul-25
+            // Treat empty strings on objects as nulls
+            value == "" && !type.isScalar -> TypedNull.create(type)
             value is java.sql.Array -> {
                val list = (value.array as Array<Any>).toList()
                from(
