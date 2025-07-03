@@ -349,7 +349,8 @@ class KafkaStreamManager(
             logger.error(rootCause) { "Error in Kafka subscription for kafka connection ${request.connectionName}" }
             // see the error handling notes for SharedFlow:
             // https://github.com/Kotlin/kotlinx.coroutines/issues/2034
-            val errorMessageText = "Error in Kafka connection: ${request.connectionName}, details: ${rootCause.message}"
+            val detailMessage = "${rootCause::class.simpleName} - ${rootCause.message ?: "No further details available"}"
+            val errorMessageText = "Error in Kafka connection: ${request.connectionName}, details: $detailMessage"
             val errorEvent = MessageStreamErrorEvent(0, errorMessageText, PayloadEncoding.STRING, { null })
             val streamErrorMessage = StreamErrorMessage(
                timestamp = Instant.now(),
