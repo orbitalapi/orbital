@@ -120,7 +120,7 @@ abstract class BaseKafkaContainerTest {
       admin.createTopics(singleton(newTopic))
    }
 
-   fun sendMessage(message: ByteArray, topic: String = "movies", key:String = UUID.randomUUID().toString(), headers: List<Header> = emptyList()): RecordMetadata {
+   fun sendMessage(message: ByteArray?, topic: String = "movies", key:String = UUID.randomUUID().toString(), headers: List<Header> = emptyList()): RecordMetadata {
       logger.info { "Sending message to topic $topic" }
       val metadata = kafkaProducer.send(ProducerRecord(
          topic,
