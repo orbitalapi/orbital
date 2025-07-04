@@ -157,7 +157,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
             .collect {
                it.shouldBeInstanceOf<QueryErrorEvent>()
                   .error
-                  .payload.shouldBe("Error in Kafka connection: invalidConnection, details: JAAS config entry not terminated by semi-colon")
+                  .payload.shouldBe("Error in Kafka connection: invalidConnection, details: IllegalArgumentException - JAAS config entry not terminated by semi-colon")
             }
       } catch (e: Exception) {
       }
