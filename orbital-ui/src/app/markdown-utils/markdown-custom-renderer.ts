@@ -51,8 +51,8 @@ export class CustomMarkdownRenderer {
     if (delegateCodeFunction === this.code) {
       return;
     }
-    markdownService.renderer.code =(code: string, language: string, escaped: boolean): string => {
-      return this.code(code,language,escaped,delegateCodeFunction)
+    markdownService.renderer.code = (code: string, language: string, escaped: boolean): string => {
+      return this.code(code, language, escaped, delegateCodeFunction)
     }
   }
 }

@@ -108,9 +108,9 @@ mat-button-toggle {
 }
 
 
-$light-grey-1: mat.get-color-from-palette($vyne-grey-blue-palette, 50);
-$light-grey-2: mat.get-color-from-palette($vyne-grey-blue-palette, 100);
-$light-grey-3: mat.get-color-from-palette($vyne-grey-blue-palette, 200);
+$light-grey-1: map-get($vyne-grey-blue-palette, 50);
+$light-grey-2: map-get($vyne-grey-blue-palette, 100);
+$light-grey-3: map-get($vyne-grey-blue-palette, 200);
 
 $border-dark: $light-grey-2;
 $borer-light: $light-purple-grey-300;

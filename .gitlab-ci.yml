@@ -102,7 +102,7 @@ stages:
 
 .build-ui:
    stage: build
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:18.18
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:22-alpine
    before_script:
       - npm config set cache .npm/cache --global
       - npm --global cache verify
@@ -453,7 +453,7 @@ scan-orbital:
 
 validate-license-compliance:
    stage: verify
-   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:18.18
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:22-alpine
    script:
       - node processLicenses.js
 

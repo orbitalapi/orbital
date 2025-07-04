@@ -96,10 +96,10 @@ body {
   font-family: $font-sans;
 }
 
-$custom-typography: mat.define-typography-config(
+$custom-typography: mat.m2-define-typography-config(
   $font-family: $font-sans,
-  $headline-5: mat.define-typography-level(32px, 48px, 700),
-  $body-2: mat.define-typography-level(16px, 24px, 500)
+  $headline-5: mat.m2-define-typography-level(32px, 48px, 700),
+  $body-2: mat.m2-define-typography-level(16px, 24px, 500)
 );
 
 // Include the common styles for Angular Material. We include this here so that you only
@@ -119,14 +119,14 @@ $custom-typography: mat.define-typography-config(
 // Define the palettes for your theme using the Material Design palettes available in palette.scss
 // (imported above). For each palette, you can optionally specify a default, lighter, and darker
 // hue. Available color palettes: https://material.io/design/color/
-$vyne-app-primary: mat.define-palette($vyne-grey-blue-palette, A400, A100, A700);
-$vyne-app-accent: mat.define-palette($vyne-grey-blue-palette, A400, A100, A700);
+$vyne-app-primary: mat.m2-define-palette($vyne-grey-blue-palette, A400, A100, A700);
+$vyne-app-accent: mat.m2-define-palette($vyne-grey-blue-palette, A400, A100, A700);
 
 // The warn palette is optional (defaults to red).
-$vyne-app-warn: mat.define-palette(mat.$red-palette);
+$vyne-app-warn: mat.m2-define-palette(mat.$m2-red-palette);
 
 // Create the theme object (a Sass map containing all of the palettes).
-$vyne-app-theme: mat.define-light-theme((
+$vyne-app-theme: mat.m2-define-light-theme((
   color: (
     primary: $vyne-app-primary,
     accent: $vyne-app-accent,
