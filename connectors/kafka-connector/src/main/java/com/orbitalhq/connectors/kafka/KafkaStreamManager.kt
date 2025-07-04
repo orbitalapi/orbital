@@ -281,42 +281,18 @@ class KafkaStreamManager(
             getCounter(request).incrementAndGet()
 
             logger.debug { "Received message on topic ${record.topic()} with offset ${record.offset()}" }
-            val messageValue = if (encoding == MessageEncodingType.BYTE_ARRAY) {
-               record.value()!!
-            } else {
-               String(record.value())
+            val messageValue = when {
+               record.value() == null -> null
+               encoding == MessageEncodingType.BYTE_ARRAY -> record.value()
+               else -> String(record.value())
             }
-            val (messageEncoding, messageValueAsString) = if (messageValue is ByteArray) {
-               PayloadEncoding.BASE64_BYTEARRAY to { Base64.getEncoder().encodeToString(messageValue) }
-            } else PayloadEncoding.STRING to { messageValue as String }
+            val (messageEncoding, messageValueAsString) = when (messageValue) {
+               null -> PayloadEncoding.STRING to { null }
+               is ByteArray -> PayloadEncoding.BASE64_BYTEARRAY to { Base64.getEncoder().encodeToString(messageValue) }
+               else -> PayloadEncoding.STRING to { messageValue as String }
+            }
 
-            val typedInstanceOrError = try {
-               Either.Right(
-                  MessageStreamEventReceived(
-                     record.serializedValueSize().toLong(),
-                     messageEncoding,
-                     messageValueAsString
-                  ) to TypedInstance.from(
-                     messageType,
-                     messageValue,
-                     // Note: Don't store a reference here, as the schema may change over the course
-                     // of a subscription.
-                     // Calls to schemaProvider.schema() should be cheap.
-                     schemaProvider.schema(),
-                     formatSpecs = formatRegistry.formats,
-                     source = dataSource,
-                     valueSuppliers = listOf(KafkaValueSupplier(record))
-                  )
-               )
-            } catch (e: Exception) {
-               val errorMessage = StreamErrorMessage(
-                  timestamp = Instant.now(),
-                  exception = e,
-                  message = e.message ?: e::class.simpleName!!,
-                  typeName = messageType.paramaterizedName,
-                  payload = messageValue
-               )
-
+            fun incrementErrorCounter() {
                meterRegistry.counter(
                   "orbital.connections.kafka.messageErrors",
                   listOf(
@@ -326,6 +302,56 @@ class KafkaStreamManager(
                   )
                )
                   .increment()
+            }
+
+
+            val typedInstanceOrError = try {
+               if ((messageValue as Any?) == null) {
+                  val errorMessage = StreamErrorMessage(
+                     timestamp = Instant.now(),
+                     exception = InvalidPayloadException,
+                     message = "A message without a payload was received on topic ${request.topicName}",
+                     typeName = messageType.paramaterizedName,
+                     payload = ""
+                  )
+                  Either.Left(
+                     MessageStreamErrorEvent(
+                        0,
+                        errorMessage.message,
+                        messageEncoding,
+                        messageValueAsString
+                     ) to errorMessage
+                  )
+               } else {
+                  Either.Right(
+                     MessageStreamEventReceived(
+                        record.serializedValueSize().toLong(),
+                        messageEncoding,
+                        messageValueAsString
+                     ) to TypedInstance.from(
+                        messageType,
+                        messageValue,
+                        // Note: Don't store a reference here, as the schema may change over the course
+                        // of a subscription.
+                        // Calls to schemaProvider.schema() should be cheap.
+                        schemaProvider.schema(),
+                        formatSpecs = formatRegistry.formats,
+                        source = dataSource,
+                        valueSuppliers = listOf(KafkaValueSupplier(record))
+                     )
+                  )
+               }
+
+            } catch (e: Exception) {
+               val errorMessage = StreamErrorMessage(
+                  timestamp = Instant.now(),
+                  exception = e,
+                  message = e.message ?: e::class.simpleName!!,
+                  typeName = messageType.paramaterizedName,
+                  payload = messageValue ?: ""
+               )
+
+               incrementErrorCounter()
                logger.info { "Failed to parse TypedInstance from kafka data for type => ${messageType.longDisplayName}  - error: ${errorMessage.message}" }
                Either.Left(
                   MessageStreamErrorEvent(
@@ -410,3 +436,6 @@ class KafkaStreamManager(
 
 }
 
+
+
+object InvalidPayloadException : RuntimeException("An invalid payload was received")

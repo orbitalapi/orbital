@@ -8,7 +8,6 @@ import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.right
 import com.orbitalhq.protobuf.wire.RepoBuilder
 import com.orbitalhq.query.QueryErrorEvent
-import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.winterbe.expekt.should
 import io.kotest.assertions.timing.eventually
@@ -40,9 +39,11 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.context.annotation.Configuration
 import org.springframework.test.context.junit4.SpringRunner
+import reactor.core.scheduler.Schedulers
 import reactor.test.StepVerifier
 import java.math.BigInteger
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -422,6 +423,63 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
             "senderName" to "jimmy"
          )
       )
+   }
+
+   @Test
+   fun `does not fail with empty byte-array based message`() {
+      val protoSchema = RepoBuilder()
+         .add(
+            "hello.proto", """
+            syntax = "proto3";
+
+            message HelloWorld {
+              string content = 1;
+              string senderName = 2;
+           }
+         """.trimIndent()
+         )
+         .schema()
+      val geeratedTaxi = TaxiGenerator(FakeFileSystem())
+         .generate(protobufSchema = protoSchema)
+      val serviceTaxi = """
+         ${KafkaConnectorTaxi.Annotations.imports}
+
+          @KafkaService( connectionName = "moviesConnection" )
+         service HelloService {
+            @KafkaOperation( topic = "hello-worlds", offset = "earliest" )
+            operation streamGoodThings():Stream<HelloWorld>
+         }
+      """.trimIndent()
+      val schema = TaxiSchema.fromStrings(geeratedTaxi.taxi + serviceTaxi + KafkaConnectorTaxi.schema)
+      val (vyne, _) = vyneWithKafkaInvoker(schema)
+
+      val resultsFromQuery1 = mutableListOf<TypedInstance>()
+      val query1 = runBlocking { vyne.query("""stream { HelloWorld }""") }
+      collectQueryResults(query1, resultsFromQuery1)
+
+      val collectedErrors = mutableListOf<QueryErrorEvent>()
+      query1.errors.subscribeOn(Schedulers.boundedElastic())
+         .subscribe { collectedErrors.add(it) }
+
+      // First send an empty message
+//      sendMessage(ByteArray(0), topic = "hello-worlds")
+      sendMessage(null, topic = "hello-worlds")
+      // Now send a real message
+      val protoMessage = protoSchema.protoAdapter("HelloWorld", false)
+         .encode(
+            mapOf(
+               "content" to "Hello, world",
+               "senderName" to "jimmy"
+            )
+         )
+
+      sendMessage(protoMessage, topic = "hello-worlds")
+
+      // The error came first, so if we got a result, that means we stayed subscribed
+      await().atMost(60, SECONDS).until<Boolean> { resultsFromQuery1.size == 1 }
+      await().atMost(10, SECONDS).until<Boolean> { collectedErrors.size == 1 }
+
+      collectedErrors.single().error.message.shouldBe("A message without a payload was received on topic hello-worlds")
    }
 
    @Test
@@ -898,8 +956,6 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
          .expectComplete()
          .verify()
       result.should.have.size(1)
-
-
    }
 
 
