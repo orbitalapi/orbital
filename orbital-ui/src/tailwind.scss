@@ -1,0 +1,10 @@
+// This file simply imports the tailwind stuff.
+// However, it lives in a seperate file, as the order this gets
+// included is important, when resolving conflicts between
+// tailwind and taiga
+// Taiga needs to take precedence.
+// Therefore, in the angular.json file, this scss is imported early, so that Taiga can override it
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

@@ -65,6 +65,7 @@
             "styles": [
               "src/github-markdown.css",
               "node_modules/prismjs/themes/prism.min.css",
+              "src/tailwind.scss",
               "node_modules/@taiga-ui/core/styles/taiga-ui-theme.less",
               "node_modules/@taiga-ui/core/styles/taiga-ui-fonts.less",
               "node_modules/@taiga-ui/styles/taiga-ui-global.less",
