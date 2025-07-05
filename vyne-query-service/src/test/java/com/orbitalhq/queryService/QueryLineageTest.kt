@@ -1,14 +1,18 @@
 package com.orbitalhq.queryService
 
 import com.jayway.awaitility.Awaitility
-import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.Vyne
 import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
-import com.orbitalhq.copilot.OpenAiChatService
+import com.orbitalhq.copilot.CopilotConversationApi
 import com.orbitalhq.history.QueryAnalyticsConfig
-import com.orbitalhq.history.db.*
-import com.orbitalhq.licensing.LicenseManager
+import com.orbitalhq.history.db.LineageRecordRepository
+import com.orbitalhq.history.db.QueryErrorEventRowRepository
+import com.orbitalhq.history.db.QueryHistoryDbWriter
+import com.orbitalhq.history.db.QueryHistoryRecordRepository
+import com.orbitalhq.history.db.QueryResultRowRepository
+import com.orbitalhq.history.db.QuerySankeyChartRowRepository
+import com.orbitalhq.history.db.RemoteCallResponseRepository
 import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.parseKeyValuePair
@@ -21,12 +25,12 @@ import com.orbitalhq.schemaServer.core.packages.PackageService
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
+import com.orbitalhq.stubbing.StubService
 import com.orbitalhq.testVyne
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldHaveSize
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
@@ -114,7 +118,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
 
 
    @MockBean
-   lateinit var chatService: OpenAiChatService
+   lateinit var chatService: CopilotConversationApi
 
 
    @TempDir

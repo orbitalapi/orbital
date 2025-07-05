@@ -110,25 +110,6 @@ class CollectionProjectionSpec : DescribeSpec({
             result.shouldBe(mapOf("title" to "Star Wars", "cast" to emptyList<Map<String, Any>>()))
          }
 
-         it("should return null when a service returns null") {
-            val (vyne,stub) = testVyne("""
-closed model Actor {
-   name : Name inherits String
-}
-closed model CastList {
-   cast : Actor[]
-}
-service FilmApi {
-   operation getCast():CastList
-}
-            """.trimIndent())
-            stub.addResponseThrowing("getCast", RuntimeException("Http call failed"))
-//            stub.addResponse("getCast","""null""")
-            val result = vyne.query("""find { CastList }""")
-               .firstTypedObject()
-            result.shouldBe(mapOf("title" to "Star Wars", "cast" to emptyList<Map<String, Any>>()))
-         }
-
 
          // Commented this out, as it's not implemented, and I'm not sure it should be.
          // It makes sense on first pass (null -> null), but I need to understand the

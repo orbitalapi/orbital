@@ -4,7 +4,7 @@ import app.cash.turbine.testIn
 import com.jayway.awaitility.Awaitility
 import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
-import com.orbitalhq.copilot.OpenAiChatService
+import com.orbitalhq.copilot.CopilotConversationApi
 import com.winterbe.expekt.should
 import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.history.db.QueryHistoryRecordRepository
@@ -69,7 +69,7 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
 
    }
    @MockBean
-   lateinit var chatService: OpenAiChatService
+   lateinit var chatService: CopilotConversationApi
 
    @MockBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider

@@ -30,6 +30,11 @@
       </dependency>
       <dependency>
          <groupId>com.orbitalhq</groupId>
+         <artifactId>copilot-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
          <artifactId>copilot</artifactId>
          <version>${project.version}</version>
       </dependency>

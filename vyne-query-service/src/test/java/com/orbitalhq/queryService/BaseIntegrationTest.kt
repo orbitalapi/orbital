@@ -1,15 +1,11 @@
 package com.orbitalhq.queryService
 
-import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.cockpit.core.content.DefaultContentRepository
-import com.orbitalhq.copilot.OpenAiChatService
-import com.orbitalhq.licensing.LicenseManager
+import com.orbitalhq.copilot.CopilotConversationApi
 import com.orbitalhq.licensing.OrbitalLicenseManager
-import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.pipelines.jet.streams.HazelcastStreamResultObserver
-import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.schemaServer.core.editor.SchemaEditorService
 import com.orbitalhq.schemaServer.core.packages.PackageService
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
@@ -51,7 +47,7 @@ abstract class BaseIntegrationTest {
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
    @MockBean
-   lateinit var chatService: OpenAiChatService
+   lateinit var chatService: CopilotConversationApi
 
    @MockBean
    lateinit var packagesService: PackageService

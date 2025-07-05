@@ -7,7 +7,7 @@ import com.orbitalhq.auth.schemes.MutualTls
 import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.cockpit.core.security.AuthTokenConfigurationService
-import com.orbitalhq.copilot.OpenAiChatService
+import com.orbitalhq.copilot.CopilotConversationApi
 import com.orbitalhq.licensing.LicenseManager
 import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
@@ -176,7 +176,7 @@ class OperationAuthenticationMtlsTest : DatabaseTest() {
    lateinit var schemaEditorService: SchemaEditorService
 
    @MockBean
-   lateinit var chatService: OpenAiChatService
+   lateinit var chatService: CopilotConversationApi
 
    @Bean
    fun schemaStore(): SchemaStore = LocalValidatingSchemaStoreClient()

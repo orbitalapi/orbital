@@ -10,8 +10,7 @@ import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.cockpit.core.security.authorisation.VyneSamlConfig
-import com.orbitalhq.copilot.OpenAiChatService
-import com.orbitalhq.licensing.LicenseManager
+import com.orbitalhq.copilot.CopilotConversationApi
 import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
@@ -85,7 +84,7 @@ class VyneQuerySamlIntegrationTest {
       private const val orbitalSpId = "http://foo.orbitalhq.io"
 
       @MockBean
-      lateinit var chatService: OpenAiChatService
+      lateinit var chatService: CopilotConversationApi
 
       @JvmStatic
       @TempDir
