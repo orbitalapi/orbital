@@ -2,6 +2,10 @@
 @import "../common";
 @import "../orbital-theme";
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 $body-bg: #eeeeee;
 :root {
 
