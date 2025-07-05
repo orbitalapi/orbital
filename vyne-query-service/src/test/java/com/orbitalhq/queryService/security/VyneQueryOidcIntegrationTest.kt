@@ -10,7 +10,7 @@ import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvi
 import com.orbitalhq.cockpit.core.content.DefaultContentRepository
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
-import com.orbitalhq.copilot.OpenAiChatService
+import com.orbitalhq.copilot.CopilotConversationApi
 import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.query.runtime.StreamResultStreamProvider
@@ -134,7 +134,7 @@ class VyneQueryOidcIntegrationTest {
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
    @MockBean
-   lateinit var chatService: OpenAiChatService
+   lateinit var chatService: CopilotConversationApi
 
    @MockBean
    lateinit var packagesService: PackageService

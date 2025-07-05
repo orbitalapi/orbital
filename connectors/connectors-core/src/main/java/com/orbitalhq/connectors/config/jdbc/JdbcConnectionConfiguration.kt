@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.orbitalhq.connectors.ConnectionParameterName
 import com.orbitalhq.connectors.IConnectionParameter
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
-import com.orbitalhq.connectors.registry.ConnectorType
+import com.orbitalhq.connectors.registry.ConnectorCategory
 import com.orbitalhq.utils.obfuscateKeys
 import kotlinx.serialization.Serializable
 
@@ -68,8 +68,8 @@ interface JdbcConnectionConfiguration : ConnectorConfiguration {
 
    override val driverName: DatabaseDriverName
       get() = jdbcDriver
-   override val type: ConnectorType
-      get() = ConnectorType.JDBC
+   override val type: ConnectorCategory
+      get() = ConnectorCategory.JDBC
 
    fun getConnectionParameter(parameter: IConnectionParameter):String
    fun getConnectionParameterOrNull(parameter: IConnectionParameter):String?

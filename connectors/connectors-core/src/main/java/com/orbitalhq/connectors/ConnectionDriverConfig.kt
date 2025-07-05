@@ -1,6 +1,6 @@
 package com.orbitalhq.connectors
 
-import com.orbitalhq.connectors.registry.ConnectorType
+import com.orbitalhq.connectors.registry.ConnectorCategory
 
 
 /**
@@ -13,7 +13,7 @@ data class ConnectionDriverOptions(
     */
    val driverName: String,
    val displayName: String,
-   val connectorType: ConnectorType,
+   val connectorType: ConnectorCategory,
    val parameters: List<ConnectionDriverParam>
 )
 

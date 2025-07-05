@@ -5,7 +5,7 @@ import com.orbitalhq.connectors.ConnectionDriverParam
 import com.orbitalhq.connectors.IConnectionParameter
 import com.orbitalhq.connectors.SimpleDataType
 import com.orbitalhq.connectors.connectionParams
-import com.orbitalhq.connectors.registry.ConnectorType
+import com.orbitalhq.connectors.registry.ConnectorCategory
 
 object ServiceBusConnection {
     enum class Parameters(override val param: ConnectionDriverParam) : IConnectionParameter {
@@ -18,6 +18,6 @@ object ServiceBusConnection {
 
     val parameters: List<ConnectionDriverParam> = Parameters.values().connectionParams()
     val driverOptions = ConnectionDriverOptions(
-        DRIVER_NAME, "Azure Service Bus", ConnectorType.AZURE_SERVICE_BUS, parameters
+        DRIVER_NAME, "Azure Service Bus", ConnectorCategory.AZURE_SERVICE_BUS, parameters
     )
 }

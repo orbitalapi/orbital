@@ -7,14 +7,14 @@ import com.orbitalhq.connectors.hazelcast.HazelcastInstanceProvider
 import com.orbitalhq.connectors.hazelcast.doHealthCheck
 import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
-import com.orbitalhq.connectors.registry.ConnectorType
+import com.orbitalhq.connectors.registry.ConnectorCategory
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 
 @Component
 class HazelcastHealthCheckProvider(private val hazelcastInstanceProvider: HazelcastInstanceProvider): ConnectionHealthProvider {
    override fun canProvideFor(config: ConnectorConfiguration): Boolean {
-      return config.type == ConnectorType.CACHE && config.driverName == HazelcastConnection.DRIVER_NAME
+      return config.type == ConnectorCategory.CACHE && config.driverName == HazelcastConnection.DRIVER_NAME
    }
 
    override fun provide(config: ConnectorConfiguration): Mono<ConnectionStatus> {

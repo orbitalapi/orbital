@@ -7,7 +7,7 @@ import com.orbitalhq.connectors.IConnectionParameter
 import com.orbitalhq.connectors.SimpleDataType
 import com.orbitalhq.connectors.connectionParams
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
-import com.orbitalhq.connectors.registry.ConnectorType
+import com.orbitalhq.connectors.registry.ConnectorCategory
 import java.io.Serializable
 
 object AwsConnection {
@@ -90,7 +90,7 @@ object AwsConnection {
 
    val parameters: List<ConnectionDriverParam> = Parameters.values().connectionParams()
    val driverOptions = ConnectionDriverOptions(
-      DRIVER_NAME, "AWS", ConnectorType.AWS, parameters
+      DRIVER_NAME, "AWS", ConnectorCategory.AWS, parameters
    )
 }
 
@@ -109,7 +109,7 @@ data class AwsConnectionConfiguration(
    val endPointOverride: String? = null,
    val connectionParameters: Map<ConnectionParameterName, String>? = null
 ) : ConnectorConfiguration, Serializable {
-   override val type: ConnectorType = ConnectorType.AWS
+   override val type: ConnectorCategory = ConnectorCategory.AWS
    override fun getUiDisplayProperties(): Map<String, Any> {
       val result = mapOf(
          "region" to region

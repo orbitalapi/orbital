@@ -31,6 +31,12 @@ spring:
    sql:
       init:
          mode: never
+   webflux:
+      multipart:
+         max-in-memory-size: 10MB
+         max-headers-size: 10MB
+         max-disk-usage-per-part: 10MB
+         max-parts: 100
    application:
       name: orbital-station
    flyway:

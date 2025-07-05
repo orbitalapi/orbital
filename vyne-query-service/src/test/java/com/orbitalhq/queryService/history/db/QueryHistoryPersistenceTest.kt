@@ -9,7 +9,7 @@ import com.jayway.awaitility.Duration
 import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.cockpit.core.content.DefaultContentRepository
-import com.orbitalhq.copilot.OpenAiChatService
+import com.orbitalhq.copilot.CopilotConversationApi
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldNotBeEmpty
 import com.orbitalhq.history.db.LineageRecordRepository
@@ -133,7 +133,7 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
    @MockBean
-   lateinit var chatService: OpenAiChatService
+   lateinit var chatService: CopilotConversationApi
 
    @MockBean
    lateinit var cmsService: DefaultContentRepository

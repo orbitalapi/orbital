@@ -8,7 +8,7 @@ import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.kafka.registry.test
 import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
-import com.orbitalhq.connectors.registry.ConnectorType
+import com.orbitalhq.connectors.registry.ConnectorCategory
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 
@@ -21,7 +21,7 @@ class KafkaHealthCheckProvider(
    //
 
    override fun canProvideFor(config: ConnectorConfiguration): Boolean {
-      return config.type == ConnectorType.MESSAGE_BROKER && config.driverName == KafkaConnection.DRIVER_NAME
+      return config.type == ConnectorCategory.MESSAGE_BROKER && config.driverName == KafkaConnection.DRIVER_NAME
    }
 
    override fun provide(config: ConnectorConfiguration): Mono<ConnectionStatus> {

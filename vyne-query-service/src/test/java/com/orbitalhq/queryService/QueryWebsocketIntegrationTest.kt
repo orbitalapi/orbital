@@ -10,7 +10,7 @@ import com.orbitalhq.cockpit.core.ConfigService
 import com.orbitalhq.cockpit.core.WebSocketConfig
 import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvider
 import com.orbitalhq.cockpit.core.pipelines.StreamResultsWebsocketPublisher
-import com.orbitalhq.copilot.OpenAiChatService
+import com.orbitalhq.copilot.CopilotConversationApi
 import com.orbitalhq.licensing.OrbitalLicenseManager
 import com.orbitalhq.metrics.NoOpMetricsReporter
 import com.orbitalhq.metrics.QueryMetricsReporter
@@ -71,7 +71,7 @@ import reactor.kotlin.test.test
 class QueryWebsocketIntegrationTest : DatabaseTest() {
 
    @MockBean
-   lateinit var chatService: OpenAiChatService
+   lateinit var chatService: CopilotConversationApi
 
    @MockBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
