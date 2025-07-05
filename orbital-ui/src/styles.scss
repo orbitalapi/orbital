@@ -4,6 +4,10 @@
 @import "~node_modules/ag-grid-community/styles/ag-grid.css";
 @import "~node_modules/ag-grid-community/styles/ag-theme-alpine.css";
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 // my other global styles
 :root {
   --tui-duration: 150ms;
