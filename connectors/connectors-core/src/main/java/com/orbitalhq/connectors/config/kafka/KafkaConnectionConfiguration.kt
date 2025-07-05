@@ -2,7 +2,7 @@ package com.orbitalhq.connectors.config.kafka
 
 import com.orbitalhq.connectors.ConnectionParameterName
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
-import com.orbitalhq.connectors.registry.ConnectorType
+import com.orbitalhq.connectors.registry.ConnectorCategory
 import com.orbitalhq.utils.obfuscateKeys
 import kotlinx.serialization.Serializable
 
@@ -18,7 +18,7 @@ data class KafkaConnectionConfiguration(
    // an Any.  If this causes issues, we'll need to wrap the deserialization to coerce numbers from strings.
    val connectionParameters: Map<ConnectionParameterName, String>,
 ) : ConnectorConfiguration {
-   override val type: ConnectorType = ConnectorType.MESSAGE_BROKER
+   override val type: ConnectorCategory = ConnectorCategory.MESSAGE_BROKER
    override fun getUiDisplayProperties(): Map<String, Any> {
       return connectionParameters
          .obfuscateKeys(

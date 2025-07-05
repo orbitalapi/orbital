@@ -5,14 +5,14 @@ import com.orbitalhq.cockpit.core.connectors.ConnectionHealthProvider
 import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
-import com.orbitalhq.connectors.registry.ConnectorType
+import com.orbitalhq.connectors.registry.ConnectorCategory
 import io.vyne.connectors.aws.core.registry.test
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 
 @Component
 class AwsConnectionHealthProvider: ConnectionHealthProvider {
-    override fun canProvideFor(config: ConnectorConfiguration): Boolean  = config.type == ConnectorType.AWS
+    override fun canProvideFor(config: ConnectorConfiguration): Boolean  = config.type == ConnectorCategory.AWS
 
     override fun provide(config: ConnectorConfiguration): Mono<ConnectionStatus> {
         require(config is AwsConnectionConfiguration) { "Expected to receive a ${AwsConnectionConfiguration::class.simpleName}, but got ${config::class.simpleName}"}

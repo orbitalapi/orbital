@@ -1,7 +1,7 @@
 package com.orbitalhq.connectors.config.kafka
 
 import com.orbitalhq.connectors.*
-import com.orbitalhq.connectors.registry.ConnectorType
+import com.orbitalhq.connectors.registry.ConnectorCategory
 import mu.KotlinLogging
 import java.util.*
 
@@ -26,7 +26,7 @@ object KafkaConnection {
 
    val parameters: List<ConnectionDriverParam> = Parameters.values().connectionParams()
    val driverOptions = ConnectionDriverOptions(
-      "KAFKA", "Kafka", ConnectorType.MESSAGE_BROKER, parameters
+      "KAFKA", "Kafka", ConnectorCategory.MESSAGE_BROKER, parameters
    )
 }
 

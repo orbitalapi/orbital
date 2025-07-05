@@ -8,13 +8,13 @@ import com.orbitalhq.connectors.jdbc.SimpleJdbcConnectionFactory
 import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.jdbc.drivers.DatabaseDriverRegistry
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
-import com.orbitalhq.connectors.registry.ConnectorType
+import com.orbitalhq.connectors.registry.ConnectorCategory
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 
 @Component
 class JdbcHealthCheckProvider(private val driverRegistry: DatabaseDriverRegistry) : ConnectionHealthProvider {
-   override fun canProvideFor(config: ConnectorConfiguration): Boolean = config.type == ConnectorType.JDBC
+   override fun canProvideFor(config: ConnectorConfiguration): Boolean = config.type == ConnectorCategory.JDBC
 
    override fun provide(config: ConnectorConfiguration): Mono<ConnectionStatus> {
       require(config is JdbcConnectionConfiguration) { "Expected to receive a ${JdbcConnectionConfiguration::class.simpleName}, but got ${config::class.simpleName}" }

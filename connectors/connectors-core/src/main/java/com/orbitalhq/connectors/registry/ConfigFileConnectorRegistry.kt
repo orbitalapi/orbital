@@ -85,7 +85,7 @@ abstract class ConfigFileConnectorRegistry<TMapType : ConnectionConfigMap, TConf
 interface ConnectorConfiguration {
    val connectionName: String
    val driverName: String
-   val type: ConnectorType
+   val type: ConnectorCategory
 
    /**
     * Returns properties for display in the UI.
@@ -136,15 +136,33 @@ class ConfigurationFilePathCustomType: CustomType {
    }
 }
 
-enum class ConnectorType {
+// TODO : Should rename this to "category" - it's a broader grouping
+// and remove things like AZURE_STORAE down to ConnectorVendorType
+enum class ConnectorCategory {
    JDBC,
    MESSAGE_BROKER,
    AWS,
-   AWS_S3,
    AZURE_STORAGE,
    CACHE,
    NO_SQL,
    AZURE_SERVICE_BUS
+}
+
+enum class VendorConnectionType(val connectorType: ConnectorCategory) {
+   POSTGRES(ConnectorCategory.JDBC),
+   MYSQL(ConnectorCategory.JDBC),
+   MSSQL(ConnectorCategory.JDBC),
+
+   S3(ConnectorCategory.AWS),
+   LAMBDA(ConnectorCategory.AWS),
+
+   KAFKA(ConnectorCategory.MESSAGE_BROKER),
+
+   HAZELCAST(ConnectorCategory.CACHE),
+
+   MONGO_DB(ConnectorCategory.NO_SQL),
+
+   // TODO : Mgirate AZURE_STORAGE, AZURE_SERVICE_BUS down here
 }
 
 /**
@@ -163,7 +181,7 @@ data class ConnectorConfigDetail(
  */
 data class ConnectorConfigurationSummary(
    val connectionName: String,
-   val connectionType: ConnectorType,
+   val connectionType: ConnectorCategory,
    val driverName: String,
    val properties: Map<String, Any>,
    val packageIdentifier: PackageIdentifier,

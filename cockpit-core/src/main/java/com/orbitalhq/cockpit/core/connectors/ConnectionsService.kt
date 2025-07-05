@@ -12,7 +12,7 @@ import com.orbitalhq.connectors.config.mongodb.MongoConnection
 import com.orbitalhq.connectors.registry.ConnectorConfigDetail
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import com.orbitalhq.connectors.registry.ConnectorConfigurationSummary
-import com.orbitalhq.connectors.registry.ConnectorType
+import com.orbitalhq.connectors.registry.ConnectorCategory
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.NotFoundException
@@ -107,7 +107,7 @@ class ConnectionsService(
    @GetMapping("/api/connections/jdbc")
    fun listDatabaseConnections(): Mono<List<ConnectorConfigurationSummary>> {
       return listConnections().map { connections ->
-         connections.connections.filter { it.connectionType == ConnectorType.JDBC }
+         connections.connections.filter { it.connectionType == ConnectorCategory.JDBC }
       }
    }
 

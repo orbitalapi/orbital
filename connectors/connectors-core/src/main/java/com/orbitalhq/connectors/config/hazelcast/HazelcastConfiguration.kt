@@ -11,7 +11,7 @@ import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection.VIRIDIAN_KE
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConnection.VIRIDIAN_TRUST_STORE_PASSWORD
 import com.orbitalhq.connectors.registry.ConfigurationFilePath
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
-import com.orbitalhq.connectors.registry.ConnectorType
+import com.orbitalhq.connectors.registry.ConnectorCategory
 import com.orbitalhq.utils.obfuscateKeys
 import kotlinx.serialization.Serializable
 import java.util.Properties
@@ -34,7 +34,7 @@ data class HazelcastConfiguration(
 ) : ConnectorConfiguration {
 
    override val driverName: String = HazelcastConnection.DRIVER_NAME
-   override val type: ConnectorType = ConnectorType.CACHE
+   override val type: ConnectorCategory = ConnectorCategory.CACHE
 
    // Can't use ImmutableEquality here, as not Serializable
    override fun hashCode(): Int {

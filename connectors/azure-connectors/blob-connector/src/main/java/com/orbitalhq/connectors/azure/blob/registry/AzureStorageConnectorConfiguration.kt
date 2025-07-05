@@ -2,12 +2,12 @@ package com.orbitalhq.connectors.azure.blob.registry
 
 import com.orbitalhq.connectors.*
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
-import com.orbitalhq.connectors.registry.ConnectorType
+import com.orbitalhq.connectors.registry.ConnectorCategory
 
 data class AzureStorageConnectorConfiguration(
    override val connectionName: String, val connectionParameters: Map<ConnectionParameterName, String>) : ConnectorConfiguration {
-   override val type: ConnectorType
-      get() = ConnectorType.AZURE_STORAGE
+   override val type: ConnectorCategory
+      get() = ConnectorCategory.AZURE_STORAGE
 
    override fun getUiDisplayProperties(): Map<String, Any> = emptyMap() // TODO
 
@@ -38,7 +38,7 @@ object AzureStorageConnection {
 
    val parameters: List<ConnectionDriverParam> = Parameters.values().connectionParams()
    val driverOptions = ConnectionDriverOptions(
-      DRIVER_NAME, "Azure Storage", ConnectorType.AZURE_STORAGE, parameters
+      DRIVER_NAME, "Azure Storage", ConnectorCategory.AZURE_STORAGE, parameters
    )
 
 }
