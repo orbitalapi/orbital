@@ -116,7 +116,13 @@ class LocalProjectionProvider : ProjectionProvider {
       projection: Projection,
       context: QueryContext,
       globalFacts: FactBag,
-      inputStartTime: Instant? = null
+      inputStartTime: Instant? = null,
+      /**
+       * The type the emittedResult should be projected to.
+       * When performing an iterating projection (A[] -> B[]), this should be B, not B[],
+       * For other types of projections, it's the type defined on the projection itself
+       */
+      typeToProjectTo: Type = projection.type
    ): Deferred<Flow<TypedInstanceWithMetadata>> {
       logger.trace { "Starting to project instance of ${emittedResult.type.qualifiedName.shortDisplayName} (index $index) to instance of ${projection.type.qualifiedName.shortDisplayName}" }
       return projectingScope.async {
@@ -135,7 +141,11 @@ class LocalProjectionProvider : ProjectionProvider {
             context,
             globalFacts,
             emittedResult,
-            projection.type,
+            // MP:Passing projection.type here seems wrong
+            // If we're inside an iterating projection (A[] -> B[]), then emitted result is
+            // A, not A[].
+            // Therefore, we should be projection to B, not B[].
+            typeToProjectTo,
             startTime
          )
       }
@@ -225,7 +235,8 @@ class LocalProjectionProvider : ProjectionProvider {
                   emittedResult.value,
                   projection,
                   context,
-                  globalFacts
+                  globalFacts,
+                  typeToProjectTo = projection.type.collectionType ?: projection.type
                )
          }
          .buffer(threadPoolSize).map {
