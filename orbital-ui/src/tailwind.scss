@@ -5,6 +5,12 @@
 // Taiga needs to take precedence.
 // Therefore, in the angular.json file, this scss is imported early, so that Taiga can override it
 
+
+// Update: 15-Jul-25
+// Removed tailwind from angular.json, as there were a number of small, but annoying
+// regressions
+// eg: The image sizing and bounding-boxes have changed, causing
+// the gutter (containing history, saved queries etc) in the code editor to disappear
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
