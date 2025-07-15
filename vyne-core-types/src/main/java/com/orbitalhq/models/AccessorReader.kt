@@ -1319,7 +1319,7 @@ class AccessorReader(
    }
 
    private fun evaluateTypeExpression(expression: TypeExpression, schema: Schema): TypedInstance {
-      return objectFactory.getValue(expression.type.qualifiedName.fqn(), queryIfNotFound = true)
+      return objectFactory.getValue(expression.type.toVyneQualifiedName(), queryIfNotFound = true)
    }
 
    private fun evaluateOperatorExpression(
@@ -1333,15 +1333,19 @@ class AccessorReader(
    ): TypedInstance {
       val lhsReturnType = getReturnTypeFromExpression(expression.lhs, schema)
       val rhsReturnType = getReturnTypeFromExpression(expression.rhs, schema)
-      val lhs = evaluate(
-         value,
-         lhsReturnType,
-         expression.lhs,
-         schema,
-         nullValues,
-         dataSource,
-         format
-      )
+      val lhs = try {
+         evaluate(
+            value,
+            lhsReturnType,
+            expression.lhs,
+            schema,
+            nullValues,
+            dataSource,
+            format
+         )
+      } catch (e:Throwable) {
+         throw e
+      }
 
       /**
        * Optimisation to evaluate expression like
