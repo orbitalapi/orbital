@@ -459,7 +459,12 @@ class RestTemplateInvoker(
          MediaType.TEXT_EVENT_STREAM -> return operation.returnType.collectionType ?: operation.returnType
          MediaType.APPLICATION_JSON -> return operation.returnType
       }
-      return operation.returnType.collectionType ?: operation.returnType
+
+      // MP: 11-Jul-25:
+      // Why were we unwrapping collection types here?
+      // This causes parsing issues when returning null from a 204 response (with no content type)
+      // where we should be returning TypedNull(T[]), but instead end up with TypedNull(T)
+      return /* operation.returnType.collectionType ?: */ operation.returnType
    }
 }
 

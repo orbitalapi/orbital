@@ -12,9 +12,11 @@ import com.orbitalhq.expectTypedInstance
 import com.orbitalhq.expectTypedObject
 import com.orbitalhq.expectTypedObjectFromEither
 import com.orbitalhq.firstRawObject
+import com.orbitalhq.firstTypedCollection
 import com.orbitalhq.firstTypedInstace
 import com.orbitalhq.firstTypedObject
 import com.orbitalhq.http.MockWebServerRule
+import com.orbitalhq.http.emptyResponse
 import com.orbitalhq.http.respondWith
 import com.orbitalhq.http.response
 import com.orbitalhq.models.OperationResult
@@ -161,8 +163,8 @@ namespace vyne {
    }
 
    @Test
-   fun `returns null when projecting a failed mutation call fails`():Unit = runBlocking {
-      val (vyne,stub) = testVyneWithStub(
+   fun `returns null when projecting a failed mutation call fails`(): Unit = runBlocking {
+      val (vyne, stub) = testVyneWithStub(
          """
 closed model Actor {
    name : Name inherits String
@@ -182,16 +184,18 @@ service FilmApi {
          invokedPaths,
          "/cast" to response("", 503),
       )
-      val result = vyne.query("""call FilmApi::getCast as {
+      val result = vyne.query(
+         """call FilmApi::getCast as {
          | actors : Actor[]
-         |}""".trimMargin())
+         |}""".trimMargin()
+      )
          .firstTypedInstace()
       result.shouldBeInstanceOf<TypedNull>()
    }
 
    @Test
-   fun `returns null when projecting and a discovery call reutrns null`():Unit = runBlocking {
-      val (vyne,stub) = testVyneWithStub(
+   fun `returns null when projecting and a discovery call reutrns null`(): Unit = runBlocking {
+      val (vyne, stub) = testVyneWithStub(
          """
 closed model Actor {
    name : Name inherits String
@@ -211,9 +215,11 @@ service FilmApi {
          invokedPaths,
          "/cast" to response("", 200),
       )
-      val result = vyne.query("""call FilmApi::getCast as {
+      val result = vyne.query(
+         """call FilmApi::getCast as {
          | actors : Actor[]
-         |}""".trimMargin())
+         |}""".trimMargin()
+      )
          .firstTypedInstace()
       result.shouldBeInstanceOf<TypedNull>()
    }
@@ -798,6 +804,123 @@ service FilmApi {
             write operation patchFilmWithPartial(FilmUpdate):FilmUpdate
          }
         """
+   }
+
+   @Test
+   fun `can project a 204 with empty body using a coalesce function`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+            type BorrowerId inherits String
+
+            model CompanyMemberData {
+                contactId : ContactId inherits String
+                fullName : ContactName inherits String
+            }
+
+            service CompanyApi {
+                @HttpOperation(method = "POST",url = "http://localhost:${server.port}/company/")
+                operation getCompany(BorrowerId):CompanyMemberData
+            }
+         """.trimIndent(), Invoker.RestTemplate
+      )
+
+      val invokedPaths = ConcurrentHashMap<String, Int>()
+      server.prepareResponse(
+         invokedPaths,
+         "/company" to emptyResponse()
+      )
+
+      val result = vyne.query(
+         """given { accountId: BorrowerId = "626442000008369109" }
+find { CompanyMemberData ?: {} } as {
+    id : ContactId
+    fullName: ContactName
+}
+         """.trimMargin()
+      )
+         .typedInstances()
+      result.shouldHaveSize(1)
+      result.map { it.toRawObject() }
+         .shouldBe(listOf(mapOf("id" to null, "fullName" to null)))
+   }
+
+   @Test
+   fun `can project a coalesced 204 with empty body where the function declares an array return type`(): Unit =
+      runBlocking {
+         val vyne = testVyne(
+            """
+            type BorrowerId inherits String
+
+            model CompanyMemberData {
+                contactId : ContactId inherits String
+                fullName : ContactName inherits String
+            }
+
+            service CompanyApi {
+                @HttpOperation(method = "POST",url = "http://localhost:${server.port}/company/")
+                operation getCompany(BorrowerId):CompanyMemberData[]
+            }
+         """.trimIndent(), Invoker.RestTemplate
+         )
+
+         val invokedPaths = ConcurrentHashMap<String, Int>()
+         server.prepareResponse(
+            invokedPaths,
+            "/company" to emptyResponse()
+         )
+
+         val result = vyne.query(
+            """given { accountId: BorrowerId = "24601" }
+find { CompanyMemberData[] ?:  [{}] } as {
+    id : ContactId
+    fullName: ContactName
+}[]
+         """.trimMargin()
+         )
+            .typedInstances()
+         result.shouldHaveSize(1)
+         result.map { it.toRawObject() }
+            .shouldBe(listOf(mapOf("id" to null, "fullName" to null)))
+      }
+
+   @Test
+   fun `can project a collection from http`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+            type BorrowerId inherits String
+
+            model CompanyMemberData {
+                contactId : ContactId inherits String
+                fullName : ContactName inherits String
+            }
+
+            service CompanyApi {
+                @HttpOperation(method = "POST",url = "http://localhost:${server.port}/company")
+                operation getCompany(BorrowerId):CompanyMemberData[]
+            }
+         """.trimIndent(), Invoker.RestTemplate
+      )
+
+      val invokedPaths = ConcurrentHashMap<String, Int>()
+      server.prepareResponse(
+         invokedPaths,
+         "/company" to response(
+            """[
+            |{ "contactId" : "123" , "fullName" : "Jimmy" },
+            |{ "contactId" : "456" , "fullName" : "Jane" }
+            | ]""".trimMargin()
+         )
+      )
+
+      val result = vyne.query(
+         """given { accountId: BorrowerId = "626442000008369109" }
+find { CompanyMemberData[] } as {
+    name: ContactName
+}[]
+         """.trimMargin()
+      )
+         .typedInstances()
+      result
    }
 
    // ORB-981

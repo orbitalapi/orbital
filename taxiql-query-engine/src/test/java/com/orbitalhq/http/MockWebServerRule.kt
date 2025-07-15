@@ -156,7 +156,10 @@ fun respondWith(
    }
 }
 
-fun emptyResponse(responseCode: Int = 204, contentType: MediaType = MediaType.APPLICATION_JSON): (String) -> MockResponse {
+fun emptyResponse(
+   responseCode: Int = 204,
+   contentType: MediaType = MediaType.APPLICATION_JSON
+): (String) -> MockResponse {
    return { _ ->
       MockResponse()
          .setResponseCode(responseCode)
