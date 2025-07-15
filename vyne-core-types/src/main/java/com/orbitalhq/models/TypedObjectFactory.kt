@@ -686,6 +686,9 @@ class TypedObjectFactory(
                   )
 
                   resultsFromSearch.size == 1 && !requestedType.isCollection -> resultsFromSearch.first()
+
+                  // MP: 15-Jul-25: A search for T[] that produced null, hits here with a single TypedNull<T[]> -- don't wrap that into a collection
+                  resultsFromSearch.size == 1 && requestedType.isCollection && resultsFromSearch.single() is TypedNull && resultsFromSearch.single().type.isCollection -> resultsFromSearch.single()
                   resultsFromSearch.size >= 1 && requestedType.isCollection -> TypedCollection.from(
                      resultsFromSearch,
                      MixedSources.singleSourceOrMixedSources(resultsFromSearch)
