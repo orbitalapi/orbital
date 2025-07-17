@@ -13,7 +13,7 @@ import java.util.concurrent.ConcurrentHashMap
 class ProjectionsWithNullsTest {
 
    @Test
-   fun `should not fail if a nullable property is not present on discovered data`():Unit = runBlocking {
+   fun `should not fail if a nullable property is not present on discovered data`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
             model JobError {
@@ -34,21 +34,26 @@ class ProjectionsWithNullsTest {
          """.trimIndent()
       )
       stub.addResponse("getJobs", vyne.parseJson("JobList", """{ "ids" : [123] } """))
-      stub.addResponse("getJobStatus", vyne.parseJson("JobStatus", """{ "id" : 123, "status" : "Success" , "error" : null }"""))
+      stub.addResponse(
+         "getJobStatus",
+         vyne.parseJson("JobStatus", """{ "id" : 123, "status" : "Success" , "error" : null }""")
+      )
 
-      vyne.query("""
+      vyne.query(
+         """
          find { JobList } as {
             jobs : JobId[] as (JobStatus) -> {
                state: Status
             }[]
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
          .firstRawObject()
          .shouldBe(mapOf("jobs" to listOf(mapOf("state" to "Success"))))
    }
 
    @Test
-   fun `can coalesce and project a service that returns null`() : Unit = runBlocking {
+   fun `can coalesce and project a service that returns null`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
             type BorrowerId inherits String
@@ -80,7 +85,7 @@ find { CompanyMemberData ?:  {} } as {
    }
 
    @Test
-   fun `projecting a service that returns null array results in null`() : Unit = runBlocking {
+   fun `projecting a service that returns null array results in null`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
             type BorrowerId inherits String
@@ -112,7 +117,7 @@ find { CompanyMemberData[] } as {
 
    // ORB-986
    @Test
-   fun `projecting a coalesced service that returns a value array results in the value array`() : Unit = runBlocking {
+   fun `projecting a coalesced service that returns a value array results in the value array`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
             type BorrowerId inherits String
@@ -127,11 +132,13 @@ find { CompanyMemberData[] } as {
             }
          """.trimIndent()
       )
-      stub.addResponse("getCompany", """
+      stub.addResponse(
+         "getCompany", """
          [ { "contactId" : "123", "fullName" : "Jimmy" },
          { "contactId" : "456", "fullName" : "Jack" }
          ]
-      """.trimIndent())
+      """.trimIndent()
+      )
 
       val result = vyne.query(
          """given { accountId: BorrowerId = "24601" }
@@ -145,15 +152,17 @@ find { CompanyMemberData[] ?: [{}] } as {
          .typedInstances()
       result.shouldHaveSize(2)
       result.map { it.toRawObject() }
-         .shouldBe(listOf(
-            mapOf("id" to "123", "fullName" to "Jimmy"),
-            mapOf("id" to "456", "fullName" to "Jack"),
-            ))
+         .shouldBe(
+            listOf(
+               mapOf("id" to "123", "fullName" to "Jimmy"),
+               mapOf("id" to "456", "fullName" to "Jack"),
+            )
+         )
    }
 
    // ORB-986
    @Test
-   fun `projecting a coalesced service that returns a value results in the value`() : Unit = runBlocking {
+   fun `projecting a coalesced service that returns a value results in the value`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
             type BorrowerId inherits String
@@ -168,9 +177,11 @@ find { CompanyMemberData[] ?: [{}] } as {
             }
          """.trimIndent()
       )
-      stub.addResponse("getCompany", """
+      stub.addResponse(
+         "getCompany", """
          { "contactId" : "123", "fullName" : "Jimmy" }
-      """.trimIndent())
+      """.trimIndent()
+      )
 
       val result = vyne.query(
          """given { accountId: BorrowerId = "24601" }
@@ -184,8 +195,36 @@ find { CompanyMemberData ?: {} } as {
          .rawObjects()
       result.shouldHaveSize(1)
       result
-         .shouldBe(listOf(
-            mapOf("id" to "123", "fullName" to "Jimmy")
-         ))
+         .shouldBe(
+            listOf(
+               mapOf("id" to "123", "fullName" to "Jimmy")
+            )
+         )
+   }
+
+   @Test // ORB-980
+   fun `should coalesce a null array`(): Unit = runBlocking {
+      val (vyne, _) = testVyne(
+         """
+   type Surname inherits String
+   type GivenName inherits String
+   model Person {
+     givenNames: GivenName[]
+     surname: Surname
+   }
+""".trimIndent()
+      )
+      val result = vyne.query("""
+         given { p: Person = {
+             givenNames: null,
+             surname : null
+         }}
+         find { Person } as {
+             givens : GivenName[] ?: ['Jimmy']
+             surname : Surname ?: 'Schmitt'
+         }
+      """.trimIndent())
+         .firstTypedInstace()
+      result
    }
 }
