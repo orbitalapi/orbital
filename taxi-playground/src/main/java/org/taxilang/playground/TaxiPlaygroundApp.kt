@@ -132,6 +132,7 @@ class WebConfiguration : WebFluxConfigurer {
             "https://taxilang.org",
             "https://docs.taxilang.org",
          )
+         .exposedHeaders("x-query-id")
    }
 }
 
