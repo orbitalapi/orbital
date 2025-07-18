@@ -7,6 +7,7 @@ object MathsFunctions {
       Sum,
       Max,
       Min,
-      Round
+      Round,
+      Average
    )
 }
