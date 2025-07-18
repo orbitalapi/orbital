@@ -317,10 +317,12 @@ enum class FactDiscoveryStrategy {
 
       override fun applyToResults(matches: List<TypedInstance>, search: FactSearch): Either<TypedNull, TypedInstance> {
          return when {
-            matches.isEmpty() -> TypedNull.create(
+            // Return null if the matches are empty, or are all typed nulls
+            matches.none { it !is TypedNull } -> TypedNull.create(
                search.targetType,
                ValueLookupReturnedNull("No instances present", search.targetType.name)
             ).left()
+
 
             else -> TypedCollection.flatten(matches, MixedSources.singleSourceOrMixedSources(matches)).right()
          }
@@ -348,7 +350,15 @@ fun toCollectionIfRequested(singleInstance: TypedInstance, targetType: Type): Ty
    return if (targetType.isCollection) {
       when (singleInstance) {
          is TypedCollection -> return singleInstance
-         is TypedNull -> TypedCollection.empty(targetType)
+
+         // MP 17-Jul-25:
+         // We used to return an empty collection here.
+         // However, that breaks expectations of treating null as null
+         // and removes the ability to use coalescing functions when the value genuinely is null.
+         // While it may be "nicer" in certain scenarios to serve an empty collection,
+         // it's also less predicatable, which leads to unexpected edge cases (see ORB-980)
+         // Therefore, since we have a colaesce, if the input is null, return null.
+         is TypedNull -> singleInstance //TypedCollection.empty(targetType)
          else -> return TypedCollection.from(listOf(singleInstance))
       }
    } else {
