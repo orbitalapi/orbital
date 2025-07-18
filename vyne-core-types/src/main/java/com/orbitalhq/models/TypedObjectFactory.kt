@@ -995,6 +995,17 @@ class TypedObjectFactory(
             attributeName
          ) -> readWithValueReader(attributeName, fieldType, field.format)
 
+         // MP: 17-Jul-25
+         // Fixing bug where on nested structures, expressions were overwriting values in the source
+         // The rule is that expressions should only be evaluated if the data isn't present. (ie., expressions are a "default")
+         // However, we also have legacy quirks around order-of-precedence of things like `by jsonPath(...)`
+         // and parsing from FieldAndFactBag
+         // This combination seems to thread the needle of not breaking existing behaviour, but fixing the bug
+         // by reading from the map if present.
+         value is Map<*,*> && value !is FieldAndFactBag && field.accessor !is JsonPathAccessor && valueReader.contains(value,attributeName) -> {
+            readWithValueReader(attributeName, fieldType, field.format)
+         }
+
          considerAccessor -> {
             readAccessor(field.resolveType(schema), field.accessor!!, field.format)
          }
