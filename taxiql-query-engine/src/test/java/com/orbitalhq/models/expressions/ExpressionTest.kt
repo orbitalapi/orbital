@@ -68,6 +68,45 @@ class ExpressionTest {
       )
    }
 
+   // ORB-987
+   @Test
+   fun `when default values on nested objects are provided they are not used if actual value provided`() {
+      val schema = TaxiSchema.from(
+         """
+            model Person {
+               contactDetails : {
+                  name : Name inherits String = "Jimmy"
+               }
+               friends: Friend[] = listOf(Friend)
+            }
+            model Friend {
+               name : Name
+            }
+        """
+      )
+
+
+      val person = TypedInstance.from(
+         schema.type("Person"), """{
+            | "contactDetails" : {
+            |     "name" : "Jack"
+            | },
+            | "friends" : [
+            |  { "name" : "John" }
+            | ]
+            | }
+            |""".trimMargin(), schema
+      )
+      val raw = person.toRawObject()
+      raw.shouldBe(
+         mapOf(
+            "contactDetails" to mapOf("name" to "Jack"),
+            "friends" to listOf(mapOf("name" to "John"))
+         )
+      )
+   }
+
+
    @Test
    fun `when default values are provided they are not used if actual value provided`() {
       val schema = TaxiSchema.from(
@@ -726,8 +765,9 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
    }
 
    @Test
-   fun `can project to an inline type with an expression`():Unit = runBlocking {
-      val (vyne, stub) = testVyne("""
+   fun `can project to an inline type with an expression`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
          model Person {
             first : FirstName inherits String
             last : LastName inherits String
@@ -745,11 +785,16 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
          }
       """.trimIndent()
       )
-      stub.addResponse("findPerson", vyne.parseJson("Person", """{ "first" : "Jimmy", "last" : "Schmitt" , "city" : "London" } """))
+      stub.addResponse(
+         "findPerson",
+         vyne.parseJson("Person", """{ "first" : "Jimmy", "last" : "Schmitt" , "city" : "London" } """)
+      )
       stub.addResponseReturningInputs("doUpdate")
-      val result = vyne.query("""find { Person }
+      val result = vyne.query(
+         """find { Person }
          call PersonService::doUpdate
-      """).firstRawObject()
+      """
+      ).firstRawObject()
 
       result.shouldBe(mapOf("name" to "Jimmy Schmitt"))
    }
@@ -814,10 +859,10 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
       negativeResult["filmIds"].should.be.`null`
    }
 
-    @Test
-    fun `can evaluate an object expression consists of literal and type expressions`(): Unit = runBlocking {
-        val (vyne,stub) = testVyne(
-            """
+   @Test
+   fun `can evaluate an object expression consists of literal and type expressions`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
          model FilmDistribution {
             filmId: FilmId inherits String
             filmTitle: FilmTitle inherits String
@@ -825,9 +870,10 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
          }
 
          """.trimIndent()
-        )
+      )
 
-        val result = vyne.query("""
+      val result = vyne.query(
+         """
          given { name: FilmTitle = "Star Wars" }
          find {
                 when(taxi.stdlib.upperCase(FilmTitle)) {
@@ -840,24 +886,27 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
            }
           }
 
-      """.trimIndent())
-            .firstRawObject()
-        result.shouldBe(mapOf(
+      """.trimIndent()
+      )
+         .firstRawObject()
+      result.shouldBe(
+         mapOf(
             "filmId" to "123",
             "filmTitle" to "Star Wars",
             "studioName" to "Twentieth Century-Fox"
-        ))
-    }
+         )
+      )
+   }
 
-    @Test
-    fun `can evaluate an object expression consists of literal and function expressions`(): Unit = runBlocking {
-        val functionRegistry = FunctionRegistry.default.add(
-            functionOf("lookupStudio") { inputValues, _, returnType, _ ->
-                TypedValue.from(returnType, "Twentieth Century-Fox", source = Provided)
-            }
-        )
-        val (vyne,stub) = testVyne(
-            """
+   @Test
+   fun `can evaluate an object expression consists of literal and function expressions`(): Unit = runBlocking {
+      val functionRegistry = FunctionRegistry.default.add(
+         functionOf("lookupStudio") { inputValues, _, returnType, _ ->
+            TypedValue.from(returnType, "Twentieth Century-Fox", source = Provided)
+         }
+      )
+      val (vyne, stub) = testVyne(
+         """
          declare function lookupStudio(String):String
          model FilmDistribution {
             filmId: FilmId inherits String
@@ -866,10 +915,11 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
          }
 
          """.trimIndent(),
-            functionRegistry
-        )
+         functionRegistry
+      )
 
-        val result = vyne.query("""
+      val result = vyne.query(
+         """
          given { name: FilmTitle = "Star Wars" }
          find {
                 when(taxi.stdlib.upperCase(FilmTitle)) {
@@ -882,35 +932,44 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
            }
           }
 
-      """.trimIndent())
-            .firstRawObject()
-        result.shouldBe(mapOf(
+      """.trimIndent()
+      )
+         .firstRawObject()
+      result.shouldBe(
+         mapOf(
             "filmId" to "123",
             "filmTitle" to "Star Wars",
             "studioName" to "Twentieth Century-Fox"
-        ))
-    }
+         )
+      )
+   }
 
    @Test
-   fun `can use dot property access`() :Unit = runBlocking {
-      val (vyne,stub) = testVyne("""
+   fun `can use dot property access`(): Unit = runBlocking {
+      val (vyne, stub) = testVyne(
+         """
          model Person {
             names : {
                first : FirstName inherits String
                last : LastName inherits String
             }
           }
-      """)
-      vyne.query("""given { p: Person = { names: { first : "Jimmy" , last : "Schmitt" } } }
+      """
+      )
+      vyne.query(
+         """given { p: Person = { names: { first : "Jimmy" , last : "Schmitt" } } }
          |find { p.names.first }
-      """.trimMargin())
+      """.trimMargin()
+      )
          .firstTypedInstace()
          .toRawObject()
          .shouldBe("Jimmy")
    }
+
    @Test
    fun `can use dot property access after function`(): Unit = runBlocking {
-      val (vyne,stub) = testVyne("""
+      val (vyne, stub) = testVyne(
+         """
          model Person {
             names : {
                first : FirstName inherits String
@@ -918,26 +977,31 @@ Type Width was null - No attribute with type Width is present on type Rectangle"
             }
           }
           function person():Person -> { names: { first : "Jimmy" , last : "Schmitt" } }
-      """)
-      vyne.query("""given { p: Person = { names: { first : "Jimmy" , last : "Schmitt" } } }
+      """
+      )
+      vyne.query(
+         """given { p: Person = { names: { first : "Jimmy" , last : "Schmitt" } } }
          |find { p.names.first }
-      """.trimMargin())
+      """.trimMargin()
+      )
          .firstTypedInstace()
          .toRawObject()
          .shouldBe("Jimmy")
    }
+
    @Test
-   fun `can find simple array`():Unit = runBlocking {
-      val (vyne ) = testVyne("")
+   fun `can find simple array`(): Unit = runBlocking {
+      val (vyne) = testVyne("")
       val result = vyne.query("""find { [1,2,3] }""")
          .typedInstances()
          .map { it.toRawObject() }
-      result.shouldBe(listOf(1,2,3))
+      result.shouldBe(listOf(1, 2, 3))
    }
 
    @Test //ORB-941
-   fun `when nulls are present in context can still perform lookups`():Unit = runBlocking {
-      val (vyne,_) = testVyne("""
+   fun `when nulls are present in context can still perform lookups`(): Unit = runBlocking {
+      val (vyne, _) = testVyne(
+         """
 model Person {
   name: Name inherits String
   isPrimary: IsPrimary inherits Boolean
@@ -954,8 +1018,10 @@ model Case {
 }
 
 extension function secondary(ppl:Person[]):Person -> ppl.single((p:IsPrimary) -> p == false)
-      """.trimIndent())
-      val result = vyne.query("""
+      """.trimIndent()
+      )
+      val result = vyne.query(
+         """
 given {
     Case = {
         address: { street: 'Charles'},
@@ -971,7 +1037,8 @@ find { Case } as (secondary:Person[].secondary()) -> {
     street: PropertyAddress::StreetName
     // s: secondary::Name
 }
-      """.trimIndent())
+      """.trimIndent()
+      )
          .firstRawObject()
       result.shouldBe(mapOf("street" to "Charles"))
    }
