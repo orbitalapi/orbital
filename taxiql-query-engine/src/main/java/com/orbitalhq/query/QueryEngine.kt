@@ -267,9 +267,23 @@ class StatefulQueryEngine(
       queryOptions: QueryOptions
    ): QueryContext {
       val facts = this.factSets.retainFactsFromFactSet(factSetIds).values().toSet()
+      // Passing "facts" and "additionalFacts" are a throw-back to pre-TaxiQL era, when
+      // were manually constructed, rather than declared using TaxiQL statements.
+      // Facts whihc are scoped (which should be all facts), shouldn't be duplicated into the context.
+      // However, need to understand the use-case for unscoped facts here, as I'm not sure it makes sense...
+      // At the time of writing (Jul-25), this appears to only happen when manually constructred using unit tests
+      val unscopedFacts = (facts + additionalFacts).filterNot { fact ->
+         // Exclude facts which are also present as scoped facts.
+         // Intentionally using instance equality here, as we care about duplicate instances of facts,
+         // not facts that have the same value.
+         scopedFacts.any { it.fact === fact }
+      }
+      if (unscopedFacts.isNotEmpty()) {
+         logger.debug { "${unscopedFacts.size} unscoped facts are present in the query context - investigate" }
+      }
       return QueryContext.from(
          schema,
-         facts + additionalFacts,
+         unscopedFacts.toSet(),
          this,
          profiler,
          queryId = queryId,
@@ -395,7 +409,8 @@ class StatefulQueryEngine(
       // TODO : Work out how to pass context (like facts from given clauses etc) into this.
       val mutatingContext = context.withChildTraceSpan()
       val (resultFlow, searchContext) = doMutate(mutation, context, inputValue)
-      val resultFlowWithProcessingTime = resultFlow.map { it.withProcessingMetadata(asOf = startTime, processingTraceSpan = mutatingContext.traceSpan) }
+      val resultFlowWithProcessingTime =
+         resultFlow.map { it.withProcessingMetadata(asOf = startTime, processingTraceSpan = mutatingContext.traceSpan) }
       val resultsWithProjections = performMutationProjection(
          context,
          resultFlowWithProcessingTime,
@@ -879,7 +894,10 @@ class StatefulQueryEngine(
             if (isStreamingQuery) {
                it.withProcessingMetadata(processingTraceSpan = context.withChildTraceSpan().traceSpan)
             } else {
-               it.withProcessingMetadata(asOf = queryStartTime, processingTraceSpan = context.withChildTraceSpan().traceSpan)
+               it.withProcessingMetadata(
+                  asOf = queryStartTime,
+                  processingTraceSpan = context.withChildTraceSpan().traceSpan
+               )
             }
          }
 
@@ -965,10 +983,20 @@ class StatefulQueryEngine(
          // We've had to wait for all the items to complete, so it makes sense at this point that the
          // next phase is it's own span.
          val collectionProcessingSpan = context.traceSpan.createChild()
-         projectionProvider.process(flowOf(typedCollection.withProcessingMetadata(asOf = Instant.now(), processingTraceSpan = collectionProcessingSpan)), context) {
+         projectionProvider.process(
+            flowOf(
+               typedCollection.withProcessingMetadata(
+                  asOf = Instant.now(),
+                  processingTraceSpan = collectionProcessingSpan
+               )
+            ), context
+         ) {
             doMutate(target.mutation!!, context.attachToTraceSpan(collectionProcessingSpan), it.instance).first
                .map { typedInstance ->
-                  typedInstance.withProcessingMetadata(asOf = it.processingStart, processingTraceSpan = collectionProcessingSpan)
+                  typedInstance.withProcessingMetadata(
+                     asOf = it.processingStart,
+                     processingTraceSpan = collectionProcessingSpan
+                  )
                }
          }
       } else {
@@ -981,9 +1009,16 @@ class StatefulQueryEngine(
                .process(projectedResults, context)
                { flowOf(it) }
                .flatMapMerge(concurrency = Int.MAX_VALUE) { typedInstanceWithMetadata ->
-                  doMutate(target.mutation!!, context.attachToTraceSpan(typedInstanceWithMetadata.processingTraceSpan), typedInstanceWithMetadata.instance).first
+                  doMutate(
+                     target.mutation!!,
+                     context.attachToTraceSpan(typedInstanceWithMetadata.processingTraceSpan),
+                     typedInstanceWithMetadata.instance
+                  ).first
                      .map { typedInstance ->
-                        typedInstance.withProcessingMetadata(asOf = typedInstanceWithMetadata.processingStart, processingTraceSpan = typedInstanceWithMetadata.processingTraceSpan)
+                        typedInstance.withProcessingMetadata(
+                           asOf = typedInstanceWithMetadata.processingStart,
+                           processingTraceSpan = typedInstanceWithMetadata.processingTraceSpan
+                        )
                      }
                }
          } else {
@@ -993,9 +1028,16 @@ class StatefulQueryEngine(
              */
             projectedResults
                .flatMapMerge(concurrency = Int.MAX_VALUE) { queryResult ->
-                  doMutate(target.mutation!!, context.attachToTraceSpan(queryResult.processingTraceSpan), queryResult.instance).first
+                  doMutate(
+                     target.mutation!!,
+                     context.attachToTraceSpan(queryResult.processingTraceSpan),
+                     queryResult.instance
+                  ).first
                      .map { typedInstance ->
-                        typedInstance.withProcessingMetadata(asOf = queryResult.processingStart, processingTraceSpan = queryResult.processingTraceSpan)
+                        typedInstance.withProcessingMetadata(
+                           asOf = queryResult.processingStart,
+                           processingTraceSpan = queryResult.processingTraceSpan
+                        )
                      }
                }
          }
@@ -1110,7 +1152,10 @@ data class TypedInstanceWithMetadata(
    val processingTraceSpan: TraceSpan
 )
 
-fun TypedInstance.withProcessingMetadata(processingTraceSpan: TraceSpan, asOf: Instant = Instant.now()): TypedInstanceWithMetadata {
+fun TypedInstance.withProcessingMetadata(
+   processingTraceSpan: TraceSpan,
+   asOf: Instant = Instant.now()
+): TypedInstanceWithMetadata {
    return TypedInstanceWithMetadata(
       processingStart = asOf,
       processingTraceSpan = processingTraceSpan,

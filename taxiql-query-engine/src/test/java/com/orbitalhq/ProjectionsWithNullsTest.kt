@@ -214,7 +214,8 @@ find { CompanyMemberData ?: {} } as {
    }
 """.trimIndent()
       )
-      val result = vyne.query("""
+      val result = vyne.query(
+         """
          given { p: Person = {
              givenNames: null,
              surname : null
@@ -223,8 +224,14 @@ find { CompanyMemberData ?: {} } as {
              givens : GivenName[] ?: ['Jimmy']
              surname : Surname ?: 'Schmitt'
          }
-      """.trimIndent())
-         .firstTypedInstace()
-      result
+      """.trimIndent()
+      )
+         .firstRawObject()
+         .shouldBe(
+            mapOf(
+               "givens" to listOf("Jimmy"),
+               "surname" to "Schmitt"
+            )
+         )
    }
 }

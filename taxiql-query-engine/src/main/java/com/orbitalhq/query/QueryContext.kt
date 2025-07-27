@@ -19,6 +19,8 @@ import com.orbitalhq.models.facts.CopyOnWriteFactBag
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.facts.ScopedFact
+import com.orbitalhq.models.facts.mergeScopedFacts
+import com.orbitalhq.models.facts.scopedFactsNotPresentIn
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.query.graph.ServiceAnnotations
 import com.orbitalhq.query.graph.ServiceParams
@@ -420,7 +422,9 @@ data class QueryContext(
     * The current queryContext is not affected by mutations in the new queryContext
     */
    override fun withAdditionalFacts(facts: List<TypedInstance>, scopedFacts: List<ScopedFact>): QueryContext {
-      val additionalFacts = CopyOnWriteFactBag(CopyOnWriteArrayList(facts), scopedFacts, schema)
+//      // Don't duplicate scoped
+      val newScopedFacts = scopedFacts.scopedFactsNotPresentIn(this.scopedFacts)
+      val additionalFacts = CopyOnWriteFactBag(CopyOnWriteArrayList(facts), newScopedFacts, schema)
       val copied = this.newSearchContext().copy(
          facts = CascadingFactBag(additionalFacts, this.facts),
          parent = this,
