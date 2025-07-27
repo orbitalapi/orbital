@@ -52,4 +52,18 @@ class CastExpressionTest {
       result
          .shouldBe(mapOf("id" to BigInteger.valueOf(123L)))
    }
+
+   @Test
+   fun `can cast a type alias`():Unit = runBlocking {
+      val (vyne,stub) = testVyne("""
+         type PersonName inherits String
+         type Name inherits String
+         type alias HumanName as PersonName
+      """.trimIndent())
+      vyne.query("""given { HumanName = 'Jimmy'}
+find {
+   name : (Name) PersonName
+}""").firstRawObject()
+         .shouldBe(mapOf("name" to "Jimmy"))
+   }
 }
