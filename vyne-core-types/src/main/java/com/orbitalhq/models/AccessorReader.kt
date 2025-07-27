@@ -1,5 +1,6 @@
 package com.orbitalhq.models
 
+import arrow.core.const
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.PathNotFoundException
@@ -19,7 +20,6 @@ import com.orbitalhq.models.xml.XmlTypedInstanceParser
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
-import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.schemas.taxi.toVyneType
 import com.orbitalhq.schemas.toVyneQualifiedName
@@ -45,6 +45,7 @@ import lang.taxi.expressions.LambdaExpression
 import lang.taxi.expressions.LiteralArray
 import lang.taxi.expressions.LiteralExpression
 import lang.taxi.expressions.MemberAccessExpression
+import lang.taxi.expressions.NegatedExpression
 import lang.taxi.expressions.ObjectLiteralExpression
 import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.ProjectingExpression
@@ -62,6 +63,7 @@ import lang.taxi.types.MemberTypeReferenceExpression
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.TypeReference
 import lang.taxi.types.TypeReferenceSelector
+import lang.taxi.types.TypedValue
 import lang.taxi.types.WhenExpression
 import lang.taxi.utils.takeHead
 import org.apache.commons.csv.CSVRecord
@@ -396,9 +398,49 @@ class AccessorReader(
             )
          }
 
+         is NegatedExpression -> {
+            evaluateNegatedExpression(
+               value,
+               schema.type(accessor.returnType),
+               accessor,
+               schema,
+               nullValues,
+               source,
+               format,
+               functionResultCache
+            )
+         }
+
          else -> {
             TODO("Support for accessor not implemented with type $accessor")
          }
+      }
+   }
+
+   private fun evaluateNegatedExpression(
+      value: Any,
+      type: Type,
+      accessor: NegatedExpression,
+      schema: Schema,
+      nullValues: Set<String>,
+      source: DataSource,
+      format: FormatsAndZoneOffset?,
+      functionResultCache: MutableMap<FunctionResultCacheKey, Any>
+   ): TypedInstance {
+      val original = evaluate(
+         value,
+         type,
+         accessor.expression,
+         schema,
+         nullValues,
+         source,
+         format,
+         functionResultCache
+      )
+      return when {
+         original is TypedNull -> original
+         original.value !is Boolean -> TypedNull.create(type, FailedEvaluatedExpression(accessor.asTaxi(), listOf(original), "Could not negate provided value, as was not boolean"))
+         else -> TypedInstance.from(schema.type(accessor.returnType), !(original.value as Boolean), schema, source = EvaluatedExpression(accessor.asTaxi(), listOf(original)))
       }
    }
 
@@ -1233,6 +1275,18 @@ class AccessorReader(
                dataSource,
                format,
                resultCache
+            )
+         }
+
+         is NegatedExpression -> {
+            evaluateNegatedExpression(
+               value,
+               returnType,
+               expression,
+               schema,
+               nullValues,
+               dataSource,
+               format, functionResultCache
             )
          }
 
