@@ -189,7 +189,7 @@ abstract class BaseOperationInvocationStrategy(
          if (mostSpecificOperations.size == 1) {
             mostSpecificOperations.single()
          } else {
-            val providedFacts = facts.rootFacts().joinToString { it.type.name.shortDisplayName }
+            val providedFacts = facts.rootAndScopedFacts().joinToString { it.type.name.shortDisplayName }
               throw QueryFailedException("Ambiguous query searching for ${queryNode.type.name.shortDisplayName} - multiple operations were matched based on the provided inputs ($providedFacts), with the same specificity: ${mostSpecificOperations.joinToString { it.name }}")
          }
       }

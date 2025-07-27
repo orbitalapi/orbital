@@ -13,6 +13,7 @@ import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.recoverWith
 import lang.taxi.accessors.Argument
 import lang.taxi.utils.flatMapLeft
+import mu.KotlinLogging
 
 /**
  * Allows for segreated searches of facts.
@@ -34,6 +35,21 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
       primary,
       CopyOnWriteFactBag(secondary, schema)
    )
+
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
+
+   init {
+//      if (primary.scopedFacts.isNotEmpty() && secondary.scopedFacts.isNotEmpty()) {
+//         val primaryScopes = primary.scopedFacts.map { it.scope }
+//         val secondaryScopes = secondary.scopedFacts.map { it.scope }
+//         val duplicatedScopes = primaryScopes.filter { secondaryScopes.contains(it) }
+//         if (duplicatedScopes.isNotEmpty()) {
+//            logger.warn { "Cascading fact bag created with duplicated scopes: ${duplicatedScopes.joinToString { it.name }}" }
+//         }
+//      }
+   }
 
    enum class CascadeApproach {
       /**
@@ -150,7 +166,7 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
       return when (cascadingApproach(type, strategy)) {
          CascadeApproach.CombineCollections -> {
             combineCollections(
-               primary.getFactOrTypedNull(type, strategy, spec) ,
+               primary.getFactOrTypedNull(type, strategy, spec),
                secondary.getFactOrTypedNull(type, strategy, spec),
                type,
                permitNull = false
@@ -183,15 +199,16 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
             return TypedCollection.empty(type)
          }
       }
-      val populatedList = (a?.value ?: emptyList<TypedInstance>()) + (b?.value ?: emptyList<TypedInstance>())
+      val populatedList = (a?.value ?: emptyList()) + (b?.value ?: emptyList())
       return TypedCollection.from(populatedList)
    }
+
    private fun combineCollections(
-      a: Either<TypedNull,TypedInstance>,
-      b: Either<TypedNull,TypedInstance>,
+      a: Either<TypedNull, TypedInstance>,
+      b: Either<TypedNull, TypedInstance>,
       type: Type,
       permitNull: Boolean
-   ): Either<TypedNull,TypedCollection> {
+   ): Either<TypedNull, TypedCollection> {
       if (a.isLeft() && b.isLeft()) {
          if (permitNull) {
             return TypedNull.noInstancesPresent(type).left()
@@ -202,10 +219,10 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
       // Note: The original implementation assumed these were TypedCollections or Nulls
       // I'm not sure that's correct, but I'm turning the assumption into an assertion.
       // If the assertion fails, understand why.
-      fun typedInstances(either: Either<TypedNull,TypedInstance>):List<TypedInstance> {
+      fun typedInstances(either: Either<TypedNull, TypedInstance>): List<TypedInstance> {
          return if (either.isLeft()) emptyList() else {
             val value = either.getOrNull()
-            require(value is TypedCollection) { "Expected a typed collection, but found ${value!!::class.simpleName}"}
+            require(value is TypedCollection) { "Expected a typed collection, but found ${value!!::class.simpleName}" }
             value.value
          }
       }
@@ -262,7 +279,10 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
       }
    }
 
-   private fun combineIfPossible(primaryFact: Either<TypedNull,TypedInstance>, secondaryFact: Either<TypedNull,TypedInstance>): Either<TypedNull,TypedInstance> {
+   private fun combineIfPossible(
+      primaryFact: Either<TypedNull, TypedInstance>,
+      secondaryFact: Either<TypedNull, TypedInstance>
+   ): Either<TypedNull, TypedInstance> {
       return when {
          primaryFact.isLeft() && secondaryFact.isLeft() -> primaryFact
          primaryFact.isRight() -> primaryFact
@@ -270,6 +290,7 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
          else -> combineIfPossible(primaryFact.getOrNull(), secondaryFact.getOrNull())!!.right()
       }
    }
+
    private fun combineIfPossible(primaryFact: TypedInstance?, secondaryFact: TypedInstance?): TypedInstance? {
       when {
          primaryFact == null && secondaryFact == null -> return null

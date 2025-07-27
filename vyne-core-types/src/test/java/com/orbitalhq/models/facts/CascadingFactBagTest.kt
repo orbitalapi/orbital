@@ -1,9 +1,11 @@
 package com.orbitalhq.models.facts
 
+import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.types.shouldBeInstanceOf
 import lang.taxi.accessors.ProjectionFunctionScope
 import org.junit.jupiter.api.Disabled
@@ -107,6 +109,48 @@ class CascadingFactBagTest {
       searchResult.shouldBeInstanceOf<TypedNull>()
    }
 
+
+   // ORB-995
+   @Test
+   fun `cannot have same scoped fact in fact bag multiple times`() {
+      // ORB-995 was raised because the query engine combines fact bags, and it was duplicating
+      // scoped facts.
+      // Hard to test that specific scenario here, but this test asserts that
+      // scoped facts are not duplicated.
+      val schema = TaxiSchema.from(
+         """
+         model Person {
+            name : PersonName inherits String
+         }
+      """.trimIndent()
+      )
+      val personType = schema.type("Person")
+      val person = TypedInstance.from(personType, """{ "name" : "Jimmy" }""", schema) as TypedObject
+      val primaryFactBag = CopyOnWriteFactBag(emptyList(), schema, listOf(scopedFact(person, "person")))
+         .withAdditionalScopedFacts(
+            // Cannot re-add person scope
+            listOf(
+               scopedFact(person, "person"),
+            ), schema
+         )
+
+      val presentFacts = primaryFactBag.getFactOrTypedNull(FactSearch.findType(personType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY))
+      presentFacts.getOrNull().shouldBeInstanceOf<TypedCollection>()
+         .shouldHaveSize(1)
+
+
+      // Try to create a cascading fact bag with the scoped fact present twice.
+      val factBag = CascadingFactBag(primaryFactBag, CopyOnWriteFactBag(emptyList(), schema, listOf(scopedFact(person, "Person"))))
+      val searchResult = factBag.getFactOrNull(personType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
+      searchResult.shouldBeInstanceOf<TypedCollection>()
+         .shouldHaveSize(1)
+
+    // Look for an attribute of the duplicated fact - PersonName
+      val attributeSearchResult = factBag.getFactOrNull(schema.type("PersonName"), FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY)
+      attributeSearchResult.shouldBeInstanceOf<TypedCollection>()
+         .shouldHaveSize(1)
+
+   }
 
 }
 

@@ -27,16 +27,17 @@ import java.util.concurrent.atomic.AtomicReference
 import java.util.stream.Collectors
 
 private val logger = KotlinLogging.logger {}
+
 open class CopyOnWriteFactBag(
    private val facts: CopyOnWriteArrayList<TypedInstance>,
    override val scopedFacts: List<ScopedFact>,
    private val schema: Schema
 ) : FactBag {
    companion object {
-      internal val useExperimentalFactSearch: Boolean = false // System.getProperty("ORBITAL_FAST_SEARCH_ENABLED") == "true"
+      internal val useExperimentalFactSearch: Boolean =
+         false // System.getProperty("ORBITAL_FAST_SEARCH_ENABLED") == "true"
       private val factSearcher: PathTraversingFactSearcher = PathTraversingFactSearcher(GlobalSchemaFactSearchCache)
    }
-
 
 
    constructor(facts: Collection<TypedInstance>, schema: Schema, scopedFacts: List<ScopedFact> = emptyList()) : this(
@@ -203,7 +204,7 @@ open class CopyOnWriteFactBag(
       type: Type,
       strategy: FactDiscoveryStrategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY,
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec
-   ): Either<TypedNull,TypedInstance> {
+   ): Either<TypedNull, TypedInstance> {
       return getFactOrNullFast(type, strategy, spec)
          ?: error("Failed to resolve type ${type.name.shortDisplayName} using strategy $strategy")
    }
@@ -232,10 +233,10 @@ open class CopyOnWriteFactBag(
    private fun fromFactCache(key: GetFactOrNullCacheKey): Either<TypedNull, TypedInstance> {
       return factSearchCache.getOrPut(key) {
          val result = timeBucket("FactBag search for ${key.search.name}") {
-               key.search.strategy.getFact(
-                  this,
-                  key.search
-               )
+            key.search.strategy.getFact(
+               this,
+               key.search
+            )
          }
          result
       }
@@ -247,8 +248,8 @@ open class CopyOnWriteFactBag(
       strategy: FactDiscoveryStrategy,
       spec: TypedInstanceValidPredicate
    ): TypedInstance? {
-     return getFactOrTypedNull(type,strategy,spec)
-        .getOrNull()
+      return getFactOrTypedNull(type, strategy, spec)
+         .getOrNull()
    }
 
    override fun getFactOrTypedNull(
@@ -256,7 +257,7 @@ open class CopyOnWriteFactBag(
       strategy: FactDiscoveryStrategy,
       spec: TypedInstanceValidPredicate
    ): Either<TypedNull, TypedInstance> {
-      val f =  if (useExperimentalFactSearch) {
+      val f = if (useExperimentalFactSearch) {
          getFactOrNullFast(type, strategy, spec)
       } else {
          val search = FactSearch.findType(type, strategy, spec)
@@ -276,7 +277,7 @@ open class CopyOnWriteFactBag(
       type: Type,
       strategy: FactDiscoveryStrategy,
       spec: TypedInstanceValidPredicate
-   ): Either<TypedNull,TypedInstance> {
+   ): Either<TypedNull, TypedInstance> {
       // TODO : This searcher is not implemeneted
       return factSearcher.getFact(this.rootAndScopedFacts(), type, this.schema, strategy, spec)
    }
@@ -317,6 +318,7 @@ open class CopyOnWriteFactBag(
                fromFactCache(GetFactOrNullCacheKey(search))
             }
          }
+
          FactSearch.SearchAlgorithm.TreeSearch -> {
             fromFactCache(GetFactOrNullCacheKey(search))
          }
@@ -332,7 +334,7 @@ open class CopyOnWriteFactBag(
 
    override fun withAdditionalScopedFacts(otherFacts: List<ScopedFact>, schema: Schema): FactBag {
       return CopyOnWriteFactBag(
-         facts, schema, scopedFacts + otherFacts
+         facts, schema, mergeScopedFacts(scopedFacts, otherFacts)
       )
    }
 
@@ -342,6 +344,17 @@ open class CopyOnWriteFactBag(
       )
    }
 
+}
+
+fun mergeScopedFacts(a: List<ScopedFact>, b: List<ScopedFact>): List<ScopedFact> {
+   if (a.isEmpty() && b.isNotEmpty()) return b
+   if (b.isEmpty()) return a
+
+   return a + b.scopedFactsNotPresentIn(a)
+}
+
+fun List<ScopedFact>.scopedFactsNotPresentIn(other: List<ScopedFact>): List<ScopedFact> {
+   return this.filter { newScopedFact -> other.none { existingScopedFact -> existingScopedFact.scope == newScopedFact.scope } }
 }
 
 private class TreeNavigator(val shouldGoDeeperPredicate: (TypedInstance) -> TreeNavigationInstruction) {
@@ -422,14 +435,17 @@ private object TypedInstanceTree {
                      // This call may not be correct. We don't hit this in any unit tests.
                      navigationInstruction.returnNulls(instance)
                   }
+
                   is EvaluateSpecificFields -> {
                      navigationInstruction.returnNulls(instance)
                   }
+
                   else -> emptyList()
                }
             }
 
          }
+
          else -> throw IllegalStateException("TypedInstance of type ${instance.javaClass.simpleName} is not handled")
       }
    }
