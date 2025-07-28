@@ -827,14 +827,6 @@ Transitive dependency in wire-compiler and calcite-core
          </snapshots>
       </repository>
       <repository>
-         <!-- for taxi snapshots -->
-         <id>maven-central-snapshots</id>
-         <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
-         <snapshots>
-            <enabled>true</enabled>
-         </snapshots>
-      </repository>
-      <repository>
          <id>vyne</id>
          <url>https://repo.orbitalhq.com/release</url>
          <snapshots>
