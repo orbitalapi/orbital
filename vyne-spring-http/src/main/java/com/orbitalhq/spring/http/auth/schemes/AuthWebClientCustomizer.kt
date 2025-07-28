@@ -129,7 +129,9 @@ class AuthWebClientCustomizer(
             .pendingAcquireTimeout(Duration.ofMillis(20.toLong()))
             .build()
       )
-         .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 100)
+         // 30 seconds as the default timeout, which is the spring boot default.
+         // See ORB-997
+         .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 30_000)
          .keepAlive(true)
          .compress(true)
 
