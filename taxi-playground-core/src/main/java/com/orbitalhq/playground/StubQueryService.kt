@@ -255,7 +255,10 @@ class StubQueryService(
             val conditionInputsMatch = params.all { (parameter, value) ->
                val conditionParam =
                   response.inputs.firstOrNull { it.name == parameter.name } ?: return@all false
-               conditionParam.value == value.toRawObject()
+               // Using .toString() here, as when the conditionParam is parsed from JSON, we don't know
+               // it's type, so it gets parsed as a String.
+               // If the actual type is an Int, then the comparison fails.
+               conditionParam.value.toString() == value.toRawObject().toString()
             }
             conditionInputsMatch
          }
