@@ -74,9 +74,9 @@ class CollectionFilteringTest {
          }
          find {
             // Names of seniors (over 70)
-            seniorFriends: Friend[] = friends.filter((friend:Friend) -> friend.age > 70) as Name[]
+            seniorFriends: Name[] = friends.filter((friend:Friend) -> friend.age > 70) as Name[]
             // Names of young adults (under 30)
-            youngFriends: Friend[] = friends.filter((friend:Friend) -> friend.age < 30) as Name[]
+            youngFriends: Name[] = friends.filter((friend:Friend) -> friend.age < 30) as Name[]
          }
       """.trimIndent())
          .firstRawObject()
