@@ -33,6 +33,28 @@ class CastExpressionTest {
    }
 
    @Test
+   fun `can use cast with attribute selector`():Unit = runBlocking {
+      val (vyne) = testVyne("""
+         type EntityId inherits String = (Film) -> (EntityId) Film::FilmId
+         type FilmId inherits String
+
+         model Film {
+            filmId : FilmId
+         }
+
+         model Entity {
+           entityId : EntityId
+         }
+      """.trimIndent())
+      vyne.query("""
+         given { film : Film = { filmId : "foo" } }
+         find { Entity }
+      """.trimIndent())
+         .firstRawObject()
+         .shouldBe(mapOf("entityId" to "foo"))
+   }
+
+   @Test
    fun `can cast using a plain type expression`():Unit = runBlocking {
       val (vyne,stub) = testVyne("""
          model Person {
