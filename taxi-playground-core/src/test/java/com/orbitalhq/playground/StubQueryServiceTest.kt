@@ -22,7 +22,7 @@ class StubQueryServiceTest {
    @Test
    fun `can submit simple query`() {
       val query = StubQueryMessage("", "find { 1 + 2 }")
-      val result = queryService.submitQuery(query, addDelayToStreams =  false)
+      val result = queryService.submitQuery(query, addDelayToStreams = false)
          .first
          .asA<Mono<Any>>()
          .block()!!
@@ -51,6 +51,72 @@ class StubQueryServiceTest {
          .collectList()
          .block()!!
       result.shouldBe(listOf(mapOf("name" to "Mark")))
+   }
+
+   @Test
+   fun `can submit query with stub with args with int inputs`() {
+      val query = StubQueryMessage(
+         """
+         model Actor {
+            id : ActorId inherits Int
+            name : PersonName inherits String
+         }
+         service ActorService {
+            operation getActor(actorId:ActorId):Actor(...)
+         }
+      """.trimIndent(),
+         "find { Actor(ActorId == 25) }",
+         stubs = listOf(
+            OperationStub(
+               "getActor", "",
+               conditionalResponses = listOf(
+                  ResponseCondition(
+                     // Note: value is passed as a string, because that's how it arrives from JSON.
+                     // We need to handle the matching in the stubber
+                     listOf(ParameterValue("actorId", "25")),
+                     StubbedResponse("""{ "id" : 25, "name" : "Mark" }""")
+                  )
+               )
+            )
+         )
+      )
+      val result = queryService.submitQuery(query)
+         .first
+         .asA<Mono<Any>>()
+         .block()!!
+      result.shouldBe(mapOf("name" to "Mark", "id" to 25))
+   }
+
+   @Test
+   fun `can submit query with stub with args with string inputs`() {
+      val query = StubQueryMessage(
+         """
+         model Actor {
+            id : ActorId inherits String
+            name : PersonName inherits String
+         }
+         service ActorService {
+            operation getActor(actorId:ActorId):Actor(...)
+         }
+      """.trimIndent(),
+         """find { Actor(ActorId == "act-1") }""",
+         stubs = listOf(
+            OperationStub(
+               "getActor", "",
+               conditionalResponses = listOf(
+                  ResponseCondition(
+                     listOf(ParameterValue("actorId", "act-1")),
+                     StubbedResponse("""{ "id" : "act-1", "name" : "Mark" }""")
+                  )
+               )
+            )
+         )
+      )
+      val result = queryService.submitQuery(query)
+         .first
+         .asA<Mono<Any>>()
+         .block()!!
+      result.shouldBe(mapOf("name" to "Mark", "id" to "act-1"))
    }
 
    @Test
