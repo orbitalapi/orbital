@@ -9,13 +9,16 @@ import com.orbitalhq.toVynePackageIdentifier
 import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiProjectLoader
 import mu.KotlinLogging
+import org.taxilang.packagemanager.DependencyFetcherProvider
+import org.taxilang.packagemanager.NoOpDependencyFetcherProvider
 import reactor.core.publisher.Mono
 import java.nio.file.Path
 import kotlin.io.path.exists
 import kotlin.io.path.toPath
 
 class TaxiSchemaSourcesAdaptor(
-   private val transpiler: TaxiSourceTranspiler = TaxiSourceTranspiler()
+   private val transpiler: TaxiSourceTranspiler = TaxiSourceTranspiler(),
+   private val dependencyFetcherProvider: DependencyFetcherProvider = NoOpDependencyFetcherProvider
 ) : SchemaSourcesAdaptor {
    private val logger = KotlinLogging.logger {}
 
@@ -62,7 +65,7 @@ class TaxiSchemaSourcesAdaptor(
       require(packageMetadata is FileBasedPackageMetadata) { "TaxiSchemaSourcesAdaptor expects a FileBasedPackageMetadata" }
       return Mono.create { sink ->
          try {
-            val sourcePackage = FileSchemaSourceProvider(packageMetadata.rootPath).packages.single()
+            val sourcePackage = FileSchemaSourceProvider(packageMetadata.rootPath, dependencyFetcherProvider).packages.single()
 
             // If the taxi project declares transpiling sources
             // (eg., an OpenAPI spec, Avro Spec, etc),

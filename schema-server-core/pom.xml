@@ -143,6 +143,13 @@
          <classifier>tests</classifier>
          <scope>test</scope>
       </dependency>
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>package-manager</artifactId>
+         <version>${taxi.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
+      </dependency>
    </dependencies>
 
    <build>

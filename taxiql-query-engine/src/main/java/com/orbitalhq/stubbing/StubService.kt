@@ -2,6 +2,7 @@ package com.orbitalhq.stubbing
 
 import arrow.core.Either
 import arrow.core.flatMap
+import arrow.core.left
 import arrow.core.right
 import com.google.common.collect.MultimapBuilder
 import com.orbitalhq.Vyne
@@ -37,8 +38,10 @@ import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
+import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.orElse
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -392,7 +395,9 @@ class StubService(
          }
 
 
-         flowHandlers.containsKey(stubResponseKey) -> flowHandlers[stubResponseKey]!!.invoke(operation, parameters)
+         flowHandlers.containsKey(stubResponseKey) -> {
+            flowHandlers[stubResponseKey]!!.invoke(operation, parameters)
+         }
          wildcardHandler != null -> invokeWildcardHandler(operation, parameters)
          else -> error("No handler found for $stubResponseKey")
       }
@@ -709,6 +714,20 @@ class StubService(
       }
    }
 
+   fun addResponseEmitter(stubOperationKey: String): ResponseEmitter {
+      val operation = schema!!.streamOperations.firstOrNull { it.name == stubOperationKey }
+         ?: schema.operations.firstOrNull { it.name == stubOperationKey }
+         ?: error("Cannot stub $stubOperationKey as it's not a valid operation")
+      val type = if (operation.returnType.isStream) {
+         operation.returnType.typeParameters[0]
+      } else {
+         operation.returnType
+      }
+      val responseEmitter = ResponseEmitter(schema, type)
+      addResponseFlow(stubOperationKey) { _, _ -> responseEmitter.flow }
+      return responseEmitter
+   }
+
    /**
     * Adds a JSON-based response for an operation.
     *
@@ -1014,4 +1033,37 @@ class StubService(
 
 object DefaultStubbedOperationPlanner : OperationInvocationPlanner {
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean = true
+}
+
+
+/**
+ * Class which allows convenient emitting of results for stubbed
+ * stream operations
+ */
+class ResponseEmitter(private val schema: Schema, val resultType: Type) {
+   val flow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>(replay = 1000)
+
+   fun next(json: String): Boolean {
+      val typedInstance = parseJson(schema, resultType.paramaterizedName, json)
+      return flow.tryEmit(typedInstance.right())
+   }
+
+   fun next(typedInstance: TypedInstance): Boolean {
+      return flow.tryEmit(typedInstance.right())
+   }
+
+   fun error(message: String): Boolean {
+      val error = StreamErrorMessage(
+         Instant.now(),
+         RuntimeException(message),
+         message,
+         resultType.paramaterizedName,
+         "",
+      )
+      return flow.tryEmit(error.left())
+   }
+
+   fun error(error: StreamErrorMessage): Boolean {
+      return flow.tryEmit(error.left())
+   }
 }

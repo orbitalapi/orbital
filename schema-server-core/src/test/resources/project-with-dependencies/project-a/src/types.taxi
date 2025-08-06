@@ -1,0 +1,5 @@
+import com.foo.Name
+
+namespace com.foo.bar
+
+type FirstName inherits Name

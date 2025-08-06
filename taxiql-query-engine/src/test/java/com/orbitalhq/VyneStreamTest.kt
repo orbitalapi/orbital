@@ -9,6 +9,7 @@ import com.orbitalhq.models.json.right
 import com.orbitalhq.models.json.tryParseJson
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldHaveSize
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asFlow
@@ -17,8 +18,37 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Ignore
 import org.junit.Test
+import kotlin.time.Duration.Companion.seconds
 
 class VyneStreamTest {
+
+   @Test
+   fun `can test a stream`() = runBlocking() {
+      val (vyne, stub) = testVyne(
+         """    model PersonClickedEvent {
+       id : PersonId inherits String
+    }
+    parameter model Person {
+        personId : PersonId
+    }
+    service PersonApi {
+        operation clickEvents() : Stream<PersonClickedEvent>
+        write operation upsertPerson(Person):Person
+    }
+    """
+      )
+      val eventEmitter = stub.addResponseEmitter("clickEvents")
+      stub.addResponseReturningInputs("upsertPerson")
+      vyne.query("""        stream { PersonClickedEvent }
+        call PersonApi::upsertPerson""")
+         .results
+         .test(5.seconds) {
+            eventEmitter.next("""{ "id" : "hi-1" }""")
+            val next = expectMap()
+            next.shouldBe(mapOf("personId" to "hi-1"))
+         }
+   }
+
    @Test
    fun `will enrich a stream against a rest api`() = runBlocking {
       val (vyne, stub) = testVyne(

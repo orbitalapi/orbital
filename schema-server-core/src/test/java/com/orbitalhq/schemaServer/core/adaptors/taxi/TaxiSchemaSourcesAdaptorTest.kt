@@ -9,6 +9,7 @@ import com.orbitalhq.SourcePackage
 import com.orbitalhq.schemaServer.core.adaptors.avro.AvroTaxiSourceGenerator
 import com.orbitalhq.schemaServer.core.adaptors.openapi.OpenApiSourceGenerator
 import com.orbitalhq.schemaServer.core.file.FileProjectSpec
+import com.orbitalhq.schemaServer.core.file.deployProject
 import com.orbitalhq.schemaServer.core.file.packages.FileSystemPackageLoader
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
@@ -21,11 +22,28 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import lang.taxi.errors
 import lang.taxi.packages.SourcesTypes
-import org.junit.Test
+import lang.taxi.packages.TaxiPackageProject
+import lang.taxi.packages.TaxiProjectLoader
+import org.apache.commons.io.FileUtils
+import org.taxilang.packagemanager.DependencyFetcherProvider
+import org.taxilang.packagemanager.NoOpDependencyFetcherProvider
+import org.taxilang.packagemanger.buildPackageManager
 import reactor.core.publisher.Sinks
 import kotlin.io.path.toPath
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.io.File
 
 class TaxiSchemaSourcesAdaptorTest {
+   @field:TempDir
+   lateinit var cacheDir: File
+
+   @field:TempDir
+   lateinit var remoteRepoDir: File
+
+   @field:TempDir
+   lateinit var projectFolder: File
+
 
    @Test
    fun `can load taxi project with avro additional sources`() {
@@ -62,6 +80,18 @@ class TaxiSchemaSourcesAdaptorTest {
       httpMetadata.params["url"]!!.shouldBe("https://pets.com/pets")
    }
 
+   @Test
+   fun `can load taxi project with dependencies`() {
+      projectFolder.deployProject("project-with-dependencies/project-b")
+      val projectB = TaxiProjectLoader(projectFolder.toPath().resolve("taxi.conf"))
+         .load()
+      val packageManager = buildPackageManager(remoteRepoDir, cacheDir, registerRemoteRepository = true)
+      packageManager.bundleAndInstall(projectFolder.toPath(), projectB)
+      val source = loadSourcePackage("project-with-dependencies/project-a", { packageManager })
+      val schema = TaxiSchema.from(source)
+      schema.hasType("com.foo.bar.FirstName")
+         .shouldBeTrue()
+   }
 
    @Test
    fun `can load taxi project with multiple Avro and OpenAPI sources`() {
@@ -135,9 +165,9 @@ class TaxiSchemaSourcesAdaptorTest {
 //         .type.shouldBe("foo.EmailAddress".fqn())
 //   }
 
-   private fun loadSourcePackage(path: String): SourcePackage {
+   private fun loadSourcePackage(path: String, dependencyFetcherProvider: DependencyFetcherProvider = NoOpDependencyFetcherProvider): SourcePackage {
       val loader = loader(path)
-      val converter = TaxiSchemaSourcesAdaptor()
+      val converter = TaxiSchemaSourcesAdaptor(dependencyFetcherProvider = dependencyFetcherProvider)
       val metadata = converter.buildMetadata(loader)
          .block()!!
       val source = converter.convert(metadata, loader).block()
