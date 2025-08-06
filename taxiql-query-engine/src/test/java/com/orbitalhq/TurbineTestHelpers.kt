@@ -4,9 +4,13 @@ import app.cash.turbine.ReceiveTurbine
 import arrow.core.Either
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.query.StreamErrorMessage
 import com.winterbe.expekt.should
+import io.kotest.assertions.fail
+import io.kotest.assertions.withClue
+import io.kotest.matchers.types.shouldBeInstanceOf
 
 suspend inline fun <reified O> ReceiveTurbine<*>.expectAs(): O {
    return awaitItem() as O
@@ -16,8 +20,26 @@ suspend inline fun ReceiveTurbine<*>.expectTypedObject(): TypedObject {
    return awaitItem() as TypedObject
 }
 
+suspend inline fun ReceiveTurbine<*>.expectMap(): Map<String, Any> {
+   val result = awaitItem()
+   failWithMessageIfTypedNull(result)
+   if (result !is TypedObject) {
+      fail("Expected a stream to emit an object, but got ${result!!::class.simpleName}")
+   }
+   return result.toRawObject() as Map<String,Any>
+}
+
+/**
+ * Fails with a helpful error message if the value is a TypedNull
+ */
+fun failWithMessageIfTypedNull(result: Any?) {
+   if (result is TypedNull) {
+      fail("Expected a value, but got a TypedNull - ${result.source}")
+   }
+}
+
 suspend inline fun ReceiveTurbine<*>.expectTypedObjectFromEither(): TypedObject {
-   val either =  awaitItem() as Either<StreamErrorMessage, TypedInstance>
+   val either = awaitItem() as Either<StreamErrorMessage, TypedInstance>
    return either.getOrNull()!! as TypedObject
 }
 
@@ -39,9 +61,9 @@ suspend inline fun ReceiveTurbine<*>.expectTypedObjects(count: Int): List<TypedO
 }
 
 suspend inline fun ReceiveTurbine<*>.expectRawMap(): Map<String, Any?> {
-   val item =  awaitItem()
+   val item = awaitItem()
    @Suppress("UNCHECKED_CAST")
-   return item  as Map<String, Any>
+   return item as Map<String, Any>
 }
 
 suspend inline fun ReceiveTurbine<*>.expectListOfRawMap(): List<Map<String, Any?>> {

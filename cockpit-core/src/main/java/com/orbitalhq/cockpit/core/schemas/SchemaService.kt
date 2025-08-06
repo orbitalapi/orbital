@@ -43,6 +43,14 @@ class SchemaService(
       return schemaProvider.sourceContent.joinToString("\n")
    }
 
+   // Use this for exporting schemas to tools like copilot
+   @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
+   @GetMapping(path = ["/api/schemas/sources"], produces = ["application/json"])
+   suspend fun getRawSchemaList(): List<String> {
+      return schemaProvider.sourceContent
+   }
+
+
    @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping("/api/schemas/summary")
    suspend fun getSchemaStateSummary(): SchemaUpdatedNotification {
@@ -64,6 +72,7 @@ class SchemaService(
          emptyList()
       }
    }
+
 
    @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
    @GetMapping("/api/schemas/queries")
