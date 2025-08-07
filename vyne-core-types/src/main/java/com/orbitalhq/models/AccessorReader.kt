@@ -1,6 +1,5 @@
 package com.orbitalhq.models
 
-import arrow.core.const
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.jayway.jsonpath.JsonPath
 import com.jayway.jsonpath.PathNotFoundException
@@ -60,10 +59,10 @@ import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.FormulaOperator
 import lang.taxi.types.LambdaExpressionType
 import lang.taxi.types.MemberTypeReferenceExpression
+import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.TypeReference
 import lang.taxi.types.TypeReferenceSelector
-import lang.taxi.types.TypedValue
 import lang.taxi.types.WhenExpression
 import lang.taxi.utils.takeHead
 import org.apache.commons.csv.CSVRecord
@@ -300,7 +299,7 @@ class AccessorReader(
             allowContextQuerying
          )
 
-         is TypeExpression -> readTypeExpression(accessor, allowContextQuerying, targetType)
+         is TypeExpression -> readTypeExpression(accessor, allowContextQuerying, targetType, value)
          is MemberTypeReferenceExpression -> xtimed("read model Attribute ${accessor.asTaxi()}") {
             readModelAttributeSelector(
                accessor,
@@ -439,8 +438,21 @@ class AccessorReader(
       )
       return when {
          original is TypedNull -> original
-         original.value !is Boolean -> TypedNull.create(type, FailedEvaluatedExpression(accessor.asTaxi(), listOf(original), "Could not negate provided value, as was not boolean"))
-         else -> TypedInstance.from(schema.type(accessor.returnType), !(original.value as Boolean), schema, source = EvaluatedExpression(accessor.asTaxi(), listOf(original)))
+         original.value !is Boolean -> TypedNull.create(
+            type,
+            FailedEvaluatedExpression(
+               accessor.asTaxi(),
+               listOf(original),
+               "Could not negate provided value, as was not boolean"
+            )
+         )
+
+         else -> TypedInstance.from(
+            schema.type(accessor.returnType),
+            !(original.value as Boolean),
+            schema,
+            source = EvaluatedExpression(accessor.asTaxi(), listOf(original))
+         )
       }
    }
 
@@ -583,8 +595,7 @@ class AccessorReader(
       // If so, evaluate it against the source
       return if (requestedType.expression != null) {
          // To evaluate the expression, we need to create a new scope containing our source
-         (objectFactory as TypedObjectFactory).newFactory(requestedType, source, scopedArguments = emptyList())
-            .evaluateExpression(requestedType.expression!!)
+         evaluateExpressionType(requestedType, source)
       } else {
          TypedNull.create(
             requestedType,
@@ -597,6 +608,20 @@ class AccessorReader(
       }
    }
 
+   /**
+    * Evaluates a type that contains an expression.
+    * For clarity of naming:
+    *  - A TypeExpression:  Foo (requesting a type)
+    *  - An ExpressionType: Foo = Thing + 2 (A type that has an expression)
+    */
+   private fun evaluateExpressionType(
+      requestedType: Type,
+      source: Any
+   ): TypedInstance {
+      return (objectFactory as TypedObjectFactory).newFactory(requestedType, source, scopedArguments = emptyList())
+         .evaluateExpression(requestedType.expression!!)
+   }
+
 
    /**
     * Reads a type expression (eg., a token where a type has been used as an input).
@@ -607,17 +632,30 @@ class AccessorReader(
    private fun readTypeExpression(
       accessor: TypeExpression,
       allowContextQuerying: Boolean,
-      targetType: Type
+      targetType: Type,
+      source: Any
    ): TypedInstance {
-      val result = if (TypeReference.isTypeReference(targetType.paramaterizedName)) {
-         val typeReference = targetType.typeParameters[0]
-         TypeReferenceInstance.from(typeReference)
-      } else {
-         objectFactory.getValue(
-            accessor.type.toVyneQualifiedName(),
-            queryIfNotFound = allowContextQuerying,
-            constraints = accessor.constraints
-         )
+      val result = when {
+         TypeReference.isTypeReference(targetType.paramaterizedName) -> {
+            val typeReference = targetType.typeParameters[0]
+            TypeReferenceInstance.from(typeReference)
+         }
+
+         // MP: Why this, here?
+         // We MUST be evaluating expression types elsehwere, surely...
+         accessor.type is ObjectType && (accessor.type as ObjectType).expression != null -> {
+            val vyneType = schema.type(accessor.type)
+            val evaluationResult = evaluateExpressionType(vyneType, source)
+            evaluationResult
+         }
+
+         else -> {
+            objectFactory.getValue(
+               accessor.type.toVyneQualifiedName(),
+               queryIfNotFound = allowContextQuerying,
+               constraints = accessor.constraints
+            )
+         }
       }
 
       return result
@@ -628,7 +666,7 @@ class AccessorReader(
       val scopedInstance = if (value is FactBag) {
          value.getScopedFactOrNull(accessor.scope)?.fact
             ?: objectFactory.getScopedFactOrNull(accessor.scope)
-            ?: error("Failed to resolve scope argument ${accessor.scope.name}")
+            ?: error("Failed to resolve scope argument '${accessor.scope.name}' (${accessor.scope.type.toVyneQualifiedName().shortDisplayName})")
 
       } else {
          objectFactory.getScopedFactOrNull(accessor.scope)
@@ -737,6 +775,64 @@ class AccessorReader(
 //         error("Function ${function.qualifiedName} expects ${function.parameters.size} arguments, but only ${accessor.inputs.size} were provided")
 //      }
 
+      val declaredInputs: List<ScopedFact> =
+         collateInputsForAccessor(accessor, function, schema, value, nullValues, source, format)
+      val (varArgsParam, varArgsValue) = if (function.parameters.isNotEmpty() && function.parameters.last().isVarArg) {
+         val varargFrom = function.parameters.size - 1
+         val varargParam = function.parameters.last()
+         val varargType = schema.type(varargParam.type)
+         val inputs = accessor.inputs.subList(varargFrom, accessor.inputs.size)
+         val varArgsValue = inputs.map { varargInputAccessor ->
+            read(
+               value,
+               TypeUtils.mostSpecificType(varargType, schema.type(varargInputAccessor.returnType)),
+               varargInputAccessor,
+               schema,
+               nullValues,
+               source,
+               format = format,
+               allowContextQuerying = true
+            )
+         }
+         varargParam to varArgsValue
+      } else null to emptyList()
+
+      // The inputs as typed instances.
+      // Used if we're calling to an invoker.
+      val allInputValues = declaredInputs.map { it.fact } + varArgsValue
+
+
+      val evaluationValueSupplier = if (value is FactBag) {
+         objectFactory.withAdditionalScopedFacts(value.scopedFacts) as EvaluationValueSupplier
+      } else objectFactory
+
+      val functionResult = if (function.hasBody) {
+         invokeFunctionBody(varArgsParam, varArgsValue, declaredInputs, function, schema, objectFactory, source, format)
+      } else {
+         functionRegistry.invoke(
+            function,
+            allInputValues,
+            schema,
+            targetType,
+            accessor,
+            evaluationValueSupplier,
+            format,
+            value,
+            resultCache
+         )
+      }
+      return functionResult
+   }
+
+   private fun collateInputsForAccessor(
+      accessor: FunctionAccessor,
+      function: Function,
+      schema: Schema,
+      value: Any,
+      nullValues: Set<String>,
+      source: DataSource,
+      format: FormatsAndZoneOffset?
+   ): List<ScopedFact> {
       val declaredInputs = timeBucket("lookup inputs for function ${accessor.function.qualifiedName}") {
          val scopedFacts = mutableListOf<ScopedFact>()
          function.parameters.filter { !it.isVarArg }.mapIndexedTo(scopedFacts) { index, parameter ->
@@ -748,7 +844,7 @@ class AccessorReader(
             }
             val targetParameterType = if (parameter.type is LambdaExpressionType) {
                schema.typeCreateIfRequired((parameter.type as LambdaExpressionType).returnType)
-//               schema.type((parameter.type as LambdaExpressionType).returnType)
+               //               schema.type((parameter.type as LambdaExpressionType).returnType)
             } else {
                schema.typeCreateIfRequired(parameter.type)
             }
@@ -758,14 +854,14 @@ class AccessorReader(
             // Here, we're saying "if the thing we're trying to build is actually the input into the function, then it's ok to search".
             // No real logic behind that, other than it's what I need to make my test pass.
 
-//         val queryIfNotFound = if (targetType.hasExpression && targetType.expression!! is LambdaExpression) {
-//            val lambdaExpression = targetType.expression as LambdaExpression
-//            lambdaExpression.inputs.contains(parameterInputAccessor.returnType)
-//         } else if (targetType.hasExpression) {
-//            false
-//         } else {
-//            false
-//         }
+            //         val queryIfNotFound = if (targetType.hasExpression && targetType.expression!! is LambdaExpression) {
+            //            val lambdaExpression = targetType.expression as LambdaExpression
+            //            lambdaExpression.inputs.contains(parameterInputAccessor.returnType)
+            //         } else if (targetType.hasExpression) {
+            //            false
+            //         } else {
+            //            false
+            //         }
 
             // MP, 2-Nov-21: Modifying the rules here where types that are inputs to an expression can be
             // searched for, regardless.  I suspect this will break some stuff.
@@ -816,57 +912,13 @@ class AccessorReader(
             ScopedFact(parameter, parameterValue)
          }
       }
-      val (varArgsParam, varArgsValue) = if (function.parameters.isNotEmpty() && function.parameters.last().isVarArg) {
-         val varargFrom = function.parameters.size - 1
-         val varargParam = function.parameters.last()
-         val varargType = schema.type(varargParam.type)
-         val inputs = accessor.inputs.subList(varargFrom, accessor.inputs.size)
-         val varArgsValue = inputs.map { varargInputAccessor ->
-            read(
-               value,
-               TypeUtils.mostSpecificType(varargType, schema.type(varargInputAccessor.returnType)),
-               varargInputAccessor,
-               schema,
-               nullValues,
-               source,
-               format = format,
-               allowContextQuerying = true
-            )
-         }
-         varargParam to varArgsValue
-      } else null to emptyList()
-
-      // The inputs as typed instances.
-      // Used if we're calling to an invoker.
-      val allInputValues = declaredInputs.map { it.fact } + varArgsValue
-
-
-      val evaluationValueSupplier = if (value is FactBag) {
-         objectFactory.withAdditionalScopedFacts(value.scopedFacts) as EvaluationValueSupplier
-      } else objectFactory
-
-      val functionResult = if (function.hasBody) {
-         invokeFunctionBody(varArgsParam, varArgsValue, declaredInputs, function, schema, objectFactory, source, format)
-      } else {
-         functionRegistry.invoke(
-            function,
-            allInputValues,
-            schema,
-            targetType,
-            accessor,
-            evaluationValueSupplier,
-            format,
-            value,
-            resultCache
-         )
-      }
-      return functionResult
+      return declaredInputs
    }
 
    private fun invokeFunctionBody(
       varArgsParam: Parameter?,
       varArgsValue: List<TypedInstance>,
-      declaredInputs: MutableList<ScopedFact>,
+      declaredInputs: List<ScopedFact>,
       function: Function,
       schema: Schema,
       objectFactory: EvaluationValueSupplier,
@@ -1397,7 +1449,7 @@ class AccessorReader(
             dataSource,
             format
          )
-      } catch (e:Throwable) {
+      } catch (e: Throwable) {
          throw e
       }
 

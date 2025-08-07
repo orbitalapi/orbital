@@ -128,6 +128,147 @@ class FunctionEvaluatingAccessorReaderTest {
       result.shouldBe(listOf("a", "b", "hello"))
    }
 
+   @Test
+   fun `will evaluate a model selector expression as input`():Unit = runBlocking {
+      val (vyne) = testVyne("""
+         model Person {
+            contactDetails: ContactDetails
+         }
+         model ContactDetails {
+            address : Address
+         }
+         model Address {
+            streetName : StreetName inherits String
+         }
+
+         model Thing {
+            person : Person
+            upperStreet: String = upperCase(this.person::ContactDetails::Address::StreetName)
+         }
+      """.trimIndent())
+      val result = vyne.query("""
+         given {
+            person: Person = {
+               contactDetails: {
+                  address: {
+                     streetName: "Oxford St"
+                  }
+               }
+            }
+         }
+         find {
+            street: String = upperCase(person::ContactDetails::Address::StreetName)
+         }
+      """.trimIndent())
+         .firstRawObject()
+      result.shouldBe(mapOf("street" to "OXFORD ST"))
+   }
+
+   @Test
+   fun `will evaluate a model selector on a nested function expression as input`():Unit = runBlocking {
+      val (vyne) = testVyne("""
+         model Person {
+            contactDetails: ContactDetails
+         }
+         model ContactDetails {
+            address : Address
+         }
+         model Address {
+            streetName : StreetName inherits String
+         }
+
+         model Thing {
+            upperStreet: String
+         }
+
+         function upperCaseStreet(person:Person):Thing -> {
+            upperStreet : upperCase(person::ContactDetails::Address::StreetName)
+          }
+      """.trimIndent())
+      val result = vyne.query("""
+         given {
+            person: Person = {
+               contactDetails: {
+                  address: {
+                     streetName: "Oxford St"
+                  }
+               }
+            }
+         }
+         find {
+            thing: Thing = upperCaseStreet(person)
+         }
+      """.trimIndent())
+         .firstRawObject()
+      result.shouldBe(mapOf("thing" to mapOf("upperStreet" to "OXFORD ST")))
+   }
+
+   @Test
+   fun `will evaluate a model selector containing an expression type on a nested function expression as input`():Unit = runBlocking {
+      val (vyne) = testVyne("""
+         model Person {
+            contactDetails: ContactDetails
+         }
+         model ContactDetails {
+            addresses : Address[]
+         }
+         model Address {
+            streetName : StreetName inherits String
+            isPrimary : IsPrimaryAddress inherits Boolean
+         }
+
+         type PrimaryAddress inherits Address = Address[].single((IsPrimaryAddress) -> IsPrimaryAddress)
+
+         model Thing {
+            upperStreet: UpperStreet inherits String
+         }
+
+         function upperCaseStreet(person:Person):Thing -> {
+            upperStreet : upperCase(person::ContactDetails::PrimaryAddress::StreetName)
+          }
+      """.trimIndent())
+      val result = vyne.query("""
+         given {
+            person: Person = {
+               contactDetails: {
+                  addresses: [
+                     { streetName: "Oxford St", isPrimary: true },
+                     { streetName: "Regent St", isPrimary: false }
+                  ]
+               }
+            }
+         }
+         find {
+            thing: Thing = upperCaseStreet(person)
+         }
+      """.trimIndent())
+         .firstRawObject()
+      result.shouldBe(mapOf("thing" to mapOf("upperStreet" to "OXFORD ST")))
+   }
+
+   // ORB-1003
+   @Test
+   fun `can pass named arguments into a map function`():Unit = runBlocking {
+      val (vyne) = testVyne("""
+         model Person {
+             name : Name inherits String
+         }
+         model Company {
+             employees: Person[]
+         }
+         function upperCaseName(person:Person):Name -> person::Name.upperCase()
+      """.trimIndent())
+      vyne.query("""
+         given { Company = {
+             employees: [ { name: "Jimmy"}]
+         }}
+         find { Company } as {
+             people: Name[] = Person[].map((p:Person) -> upperCaseName(p))
+         }
+      """.trimIndent())
+         .firstRawObject()
+         .shouldBe(mapOf("people" to listOf("JIMMY")))
+   }
 }
 
 
