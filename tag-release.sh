@@ -89,10 +89,14 @@ mvn -q versions:set -DnewVersion="${VERSION}" -DgenerateBackupPoms=false
 echo "🔍 Checking for SNAPSHOT dependencies..."
 mvn -q org.apache.maven.plugins:maven-enforcer-plugin:3.5.0:enforce -Drules=requireReleaseDeps
 
-# Commit the version bump
-echo "📝 Committing version bump"
+# Stage & commit the version bump (only if something actually changed)
 git add -A
-git commit -m "chore(release): ${VERSION}"
+if ! git diff --cached --quiet; then
+  echo "📝 Committing version bump"
+  git commit -m "chore(release): ${VERSION}"
+else
+  echo "ℹ️ No changes to commit (version already ${VERSION})."
+fi
 
 # Create or move tag
 if [ "$FORCE" = true ]; then
