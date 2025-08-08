@@ -172,7 +172,9 @@ build-jvm-release:
 #      - master
       - tags
    extends: .build-jvm
-   needs: ["verify-version"]   # fail fast if version check fails
+   needs:
+      - job: "verify-version"   # fail fast if version check fails
+        optional: true # optional if it was skipped because we're not on a tag
    variables:
       MAVEN_GOALS: 'clean deploy'
       # We skip tests on develop and master, as the tests have already run on the branch
