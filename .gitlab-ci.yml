@@ -165,21 +165,6 @@ build-jvm-develop:
       MAVEN_EXTRA_ARGS: '-P snapshot-release -DskipTests'
 
 
-build-jvm-release:
-   stage: build
-   only:
-#      We've removed the concept of "master" - releases are done on tags now.
-#      - master
-      - tags
-   extends: .build-jvm
-   needs:
-      - job: "verify-version"   # fail fast if version check fails
-        optional: true # optional if it was skipped because we're not on a tag
-   variables:
-      MAVEN_GOALS: 'clean deploy'
-      # We skip tests on develop and master, as the tests have already run on the branch
-      MAVEN_EXTRA_ARGS: '-P release -DskipTests'
-
 verify-version:
    stage: verify
    image: maven:3.9-eclipse-temurin-21
@@ -207,7 +192,21 @@ verify-version:
           echo "✅ Versions match.";
         fi
 
-
+build-jvm-release:
+   stage: build
+   only:
+      #      We've removed the concept of "master" - releases are done on tags now.
+      #      - master
+      - tags
+   extends: .build-jvm
+   needs:
+      - job: "verify-version"   # fail fast if version check fails
+        optional: true # optional if it was skipped because we're not on a tag
+   variables:
+      MAVEN_GOALS: 'clean deploy'
+      # We skip tests on develop and master, as the tests have already run on the branch
+      MAVEN_EXTRA_ARGS: '-P release -DskipTests'
+      
 release-major:
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.9.6-eclipse-temurin-21
    variables:
