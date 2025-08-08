@@ -185,11 +185,11 @@ verify-version:
       - if: '$CI_COMMIT_TAG'        # run only on tag pipelines
       - when: never
    script:
-      - echo "Tag is: $CI_COMMIT_TAG"
+      - 'echo "Tag is: $CI_COMMIT_TAG"'
       - TAG_NO_V="${CI_COMMIT_TAG#v}"
       # Read Maven project.version (works for single or multi-module at the root)
       - MVN_VER=$(mvn -q -DforceStdout -Dexpression=project.version help:evaluate | tail -n 1)
-      - echo "Maven project.version is: $MVN_VER"
+      - 'echo "Maven project.version is: $MVN_VER"'
       # Optional: forbid -SNAPSHOT on tags
       - >
         if [[ "$MVN_VER" == *-SNAPSHOT ]]; then
