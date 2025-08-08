@@ -191,19 +191,19 @@ verify-version:
       - MVN_VER=$(mvn -q -DforceStdout -Dexpression=project.version help:evaluate | tail -n 1)
       - echo "Maven project.version is: $MVN_VER"
       # Optional: forbid -SNAPSHOT on tags
-      - |
-         if [[ "$MVN_VER" == *-SNAPSHOT ]]; then
-           echo "❌ project.version ends with -SNAPSHOT, but this is a tag build."
-           exit 1
-         fi
+      - >
+        if [[ "$MVN_VER" == *-SNAPSHOT ]]; then
+          echo "❌ project.version ends with -SNAPSHOT, but this is a tag build.";
+          exit 1;
+        fi
       # Compare
-      - |
-         if [[ "$MVN_VER" != "$TAG_NO_V" ]]; then
-           echo "❌ Version mismatch: tag '$CI_COMMIT_TAG' implies '$TAG_NO_V' but project.version is '$MVN_VER'."
-           exit 1
-         else
-           echo "✅ Versions match."
-         fi
+      - >
+        if [[ "$MVN_VER" != "$TAG_NO_V" ]]; then
+          echo "❌ Version mismatch: tag '$CI_COMMIT_TAG' implies '$TAG_NO_V' but project.version is '$MVN_VER'.";
+          exit 1;
+        else
+          echo "✅ Versions match.";
+        fi
 
 
 release-major:
