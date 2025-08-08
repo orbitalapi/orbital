@@ -165,16 +165,46 @@ build-jvm-develop:
       MAVEN_EXTRA_ARGS: '-P snapshot-release -DskipTests'
 
 
-build-jvm-master:
+build-jvm-release:
    stage: build
    only:
-      - master
+#      We've removed the concept of "master" - releases are done on tags now.
+#      - master
       - tags
    extends: .build-jvm
+   needs: ["verify-version"]   # fail fast if version check fails
    variables:
       MAVEN_GOALS: 'clean deploy'
       # We skip tests on develop and master, as the tests have already run on the branch
       MAVEN_EXTRA_ARGS: '-P release -DskipTests'
+
+verify-version:
+   stage: verify
+   image: maven:3.9-eclipse-temurin-21
+   rules:
+      - if: '$CI_COMMIT_TAG'        # run only on tag pipelines
+      - when: never
+   script:
+      - echo "Tag is: $CI_COMMIT_TAG"
+      - TAG_NO_V="${CI_COMMIT_TAG#v}"
+      # Read Maven project.version (works for single or multi-module at the root)
+      - MVN_VER=$(mvn -q -DforceStdout -Dexpression=project.version help:evaluate | tail -n 1)
+      - echo "Maven project.version is: $MVN_VER"
+      # Optional: forbid -SNAPSHOT on tags
+      - |
+         if [[ "$MVN_VER" == *-SNAPSHOT ]]; then
+           echo "❌ project.version ends with -SNAPSHOT, but this is a tag build."
+           exit 1
+         fi
+      # Compare
+      - |
+         if [[ "$MVN_VER" != "$TAG_NO_V" ]]; then
+           echo "❌ Version mismatch: tag '$CI_COMMIT_TAG' implies '$TAG_NO_V' but project.version is '$MVN_VER'."
+           exit 1
+         else
+           echo "✅ Versions match."
+         fi
+
 
 release-major:
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.9.6-eclipse-temurin-21

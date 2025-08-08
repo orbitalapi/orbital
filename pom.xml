@@ -850,6 +850,25 @@ Transitive dependency in wire-compiler and calcite-core
          <activation>
             <activeByDefault>false</activeByDefault>
          </activation>
+         <build>
+            <plugins>
+               <!-- on releases, ensure no snapshot dependencies exist. -->
+               <plugin>
+                  <groupId>org.codehaus.mojo</groupId>
+                  <artifactId>versions-maven-plugin</artifactId>
+                  <version>2.18.0</version>
+                  <executions>
+                     <execution>
+                        <id>no-snapshots</id>
+                        <goals>
+                           <goal>enforce-no-snapshots</goal>
+                        </goals>
+                        <phase>validate</phase>
+                     </execution>
+                  </executions>
+               </plugin>
+            </plugins>
+         </build>
       </profile>
    </profiles>
 </project>
