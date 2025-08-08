@@ -10,7 +10,10 @@ import com.orbitalhq.VersionedSource
 import com.orbitalhq.from
 import com.orbitalhq.query.VyneQlGrammar
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldBeEmpty
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import lang.taxi.errors
+import lang.taxi.shouldContainMessage
 import org.junit.Ignore
 import org.junit.Test
 
@@ -190,6 +193,77 @@ class TaxiSchemaTest {
    }
 
    @Test
+   fun `env variables can be resolved from env dot conf`() {
+      val packageA = SourcePackage(
+         packageMetadata = PackageMetadata.from("com.foo", "test-1", "0.1.0"),
+         sources = listOf(
+            VersionedSource.sourceOnly("""
+                  annotation KafkaOperation {
+                     topic : String
+                  }
+
+                  model StockPrice {
+                     ticker: Ticker inherits String
+                  }
+                  service QuotesService {
+                     @KafkaOperation(topic = '${"$"}{STOCK_PRICE_TOPIC}')
+                     stream quotes : Stream<StockPrice>
+                  }
+                     """.trimIndent()
+            )
+         ),
+         additionalSources = mapOf(
+            "@orbital/config" to listOf(
+               VersionedSource.unversioned("env.conf", """
+STOCK_PRICE_TOPIC="prod.stock-quotes"
+               """.trimIndent())
+            )
+         )
+      )
+      val schema = TaxiSchema.from(listOf(packageA))
+      schema.compilerMessages.errors().shouldBeEmpty()
+      val metadata = schema.service("QuotesService")
+         .streamOperations.first { it.name == "quotes" }
+         .firstMetadata("KafkaOperation")
+      metadata.params["topic"].shouldBe("prod.stock-quotes")
+   }
+
+   @Test
+   fun `when loading env variables from an invalid env dot conf then parsing errors are reported as compilation errors`() {
+      val packageA = SourcePackage(
+         packageMetadata = PackageMetadata.from("com.foo", "test-1", "0.1.0"),
+         sources = listOf(
+            VersionedSource.sourceOnly("""
+                  annotation KafkaOperation {
+                     topic : String
+                  }
+
+                  model StockPrice {
+                     ticker: Ticker inherits String
+                  }
+                  service QuotesService {
+                     @KafkaOperation(topic = '${"$"}{STOCK_PRICE_TOPIC}')
+                     stream quotes : Stream<StockPrice>
+                  }
+                     """.trimIndent()
+            )
+         ),
+         // Invalid config
+         additionalSources = mapOf(
+            "@orbital/config" to listOf(
+               VersionedSource.unversioned("env.conf", """
+foo = bar!
+               """.trimIndent())
+            )
+         )
+      )
+      val schema = TaxiSchema.from(listOf(packageA))
+      schema.compilerMessages.errors().shouldNotBeEmpty()
+      schema.compilerMessages.shouldContainMessage("Failed to parse configuration file: String: 1: Expecting end of input or a comma, got '!' (Reserved character '!' is not allowed outside quotes) (if you intended '!' (Reserved character '!' is not allowed outside quotes) to be part of a key or string value, try enclosing the key or value in double quotes, or you may be able to rename the file .properties rather than .conf)")
+      schema.compilerMessages.shouldContainMessage("Annotation KafkaOperation specifies env variable STOCK_PRICE_TOPIC which is not defined")
+   }
+
+   @Test
    @Ignore // Sum types are now registered in the schema, so shouldn't appear as anonymous.
    fun `sum types of queries are present as anonymous types`() {
       val schema = TaxiSchema.from(
@@ -227,5 +301,6 @@ model Person {
          .type)
       type
    }
+
 
 }

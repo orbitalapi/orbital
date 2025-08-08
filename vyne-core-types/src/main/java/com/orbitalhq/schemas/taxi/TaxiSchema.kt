@@ -2,16 +2,20 @@ package com.orbitalhq.schemas.taxi
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.common.base.Stopwatch
+import com.google.common.base.Throwables
 import com.orbitalhq.*
 import com.orbitalhq.models.functions.FunctionRegistry
 import com.orbitalhq.schemas.*
 import com.orbitalhq.schemas.readers.SourceConverterLoadResult
 import com.orbitalhq.schemas.readers.SourceToTaxiConverter
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
+import com.typesafe.config.Config
+import com.typesafe.config.ConfigFactory
 import lang.taxi.*
 import lang.taxi.annotations.HttpOperation
 import lang.taxi.annotations.WebsocketOperation
 import lang.taxi.messages.Severity
+import lang.taxi.packages.SourcesTypes
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.policies.Policy
 import lang.taxi.query.TaxiQLQueryString
@@ -26,6 +30,7 @@ import lang.taxi.types.TypeReference
 import lang.taxi.utils.log
 import mu.KotlinLogging
 import java.nio.file.Path
+import java.nio.file.Paths
 
 private val logger = KotlinLogging.logger {}
 
@@ -34,7 +39,7 @@ class TaxiSchema(
    @get:JsonIgnore override val packages: List<SourcePackage>,
    override val functionRegistry: FunctionRegistry = FunctionRegistry.default,
    private val queryCacheSize: Long = 100,
-   private val environmentVariables: Map<String, String> = System.getenv(),
+   environmentVariables: Map<String, String> = System.getenv(),
    compilerMessages: List<CompilationMessage> = emptyList()
 //   override val additionalSources: Map<SourcesType, List<SourcePackage>> = emptyMap()
 ) : Schema {
@@ -83,6 +88,8 @@ class TaxiSchema(
    override val metadataTypes: List<QualifiedName> = document.annotations
       .mapNotNull { it.type?.toVyneQualifiedName() }
 
+   private val systemAndLoadedEnvVariables = computeSystemAndLoadedEnvVariables(environmentVariables)
+
    init {
       val stopwatch = Stopwatch.createStarted()
       try {
@@ -96,6 +103,48 @@ class TaxiSchema(
          throw e
       }
       logger.debug { "Parsing TaxiSchema took ${stopwatch.elapsed().toMillis()}ms" }
+   }
+
+
+   /**
+    * Returns the env variables that come from both:
+    *  - The environmentVariables property passed in to the constructor (typically System.getEnv()
+    *  - env.conf in the packages
+    *
+    *  If parsing using the env.conf fails, then we fallback to ONLY the provided environmentVariables
+    */
+   private fun computeSystemAndLoadedEnvVariables(environmentVariables: Map<String, String>): Map<String, String> {
+      val providedConfig = ConfigFactory.parseMap(environmentVariables)
+      val envConfConfigs = this.packages.flatMap { sourcePackage ->
+         (sourcePackage.additionalSources[SourcesTypes.ORBITAL_CONFIG].orEmpty())
+            .filter { source -> Paths.get(source.name).fileName.toString() == "env.conf" }
+            .mapNotNull { source ->
+               try {
+                  ConfigFactory.parseString(source.content)
+               } catch (e: Exception) {
+                  val rootCause = Throwables.getRootCause(e)
+                  _compilerMessages.add(
+                     CompilationMessage(
+                        CompilationUnit.Companion.generatedFor(source.name),
+                        "Failed to parse configuration file: ${rootCause.message ?: "A ${rootCause::class.simpleName} was thrown without a message"}"
+                     )
+                  )
+                  null
+               }
+            }
+      }
+      val configMap = try {
+         val allConfigs = listOf(providedConfig) + envConfConfigs
+         val config = allConfigs.reduceRight(Config::withFallback)
+         config.root().unwrapped()
+            .mapValues { (_, value) -> value.toString() }
+      } catch (e:Exception) {
+         val rootCause = Throwables.getRootCause(e)
+         _compilerMessages.add(CompilationError(CompilationUnit.unspecified(), "Failed to resolve env.conf variables - ${rootCause.message}"))
+         // Just fall back to the env variables we were provided
+         environmentVariables
+      }
+      return configMap
    }
 
    @get:JsonIgnore
@@ -127,7 +176,10 @@ class TaxiSchema(
                QueryOperation(
                   parameters = queryOperation.parameters.map { taxiParam -> parseOperationParameter(taxiParam) },
                   qualifiedName = OperationNames.qualifiedName(taxiService.qualifiedName, queryOperation.name),
-                  metadata = parseAnnotationsToMetadata(queryOperation.annotations, queryOperation.compilationUnits.firstOrNull()),
+                  metadata = parseAnnotationsToMetadata(
+                     queryOperation.annotations,
+                     queryOperation.compilationUnits.firstOrNull()
+                  ),
                   grammar = queryOperation.grammar,
                   returnType = returnType,
                   capabilities = queryOperation.capabilities,
@@ -251,24 +303,26 @@ class TaxiSchema(
       paramValue: Any?,
       annotation: Annotation,
       compilationUnit: CompilationUnit?
-   ) = if (paramValue is String && Metadata.getVariableName(paramValue) != null) {
-      val variableName = Metadata.getVariableName(paramValue)!!
-      if (environmentVariables.containsKey(variableName)) {
-         environmentVariables.get(variableName)!!
-      } else {
-         val messageText =
-            "Annotation ${annotation.name} specifies env variable $variableName which is not defined"
-         val compilerMessage = if (compilationUnit != null) {
-            CompilationMessage(
-               compilationUnit, messageText
-            )
+   ): Any? {
+      return if (paramValue is String && Metadata.getVariableName(paramValue) != null) {
+         val variableName = Metadata.getVariableName(paramValue)!!
+         if (systemAndLoadedEnvVariables.containsKey(variableName)) {
+            systemAndLoadedEnvVariables[variableName]!!
          } else {
-            CompilationMessage(CompilationUnit.unspecified(), messageText)
+            val messageText =
+               "Annotation ${annotation.name} specifies env variable $variableName which is not defined"
+            val compilerMessage = if (compilationUnit != null) {
+               CompilationMessage(
+                  compilationUnit, messageText
+               )
+            } else {
+               CompilationMessage(CompilationUnit.unspecified(), messageText)
+            }
+            _compilerMessages.add(compilerMessage)
          }
-         _compilerMessages.add(compilerMessage)
+      } else {
+         paramValue
       }
-   } else {
-      paramValue
    }
 
    private fun parseTypes(document: TaxiDocument): Pair<TypeCache, Set<Type>> {
