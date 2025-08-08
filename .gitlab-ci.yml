@@ -166,7 +166,7 @@ build-jvm-develop:
 
 
 verify-version:
-   stage: verify
+   stage: build
    image: maven:3.9-eclipse-temurin-21
    rules:
       - if: '$CI_COMMIT_TAG'        # run only on tag pipelines
@@ -206,7 +206,7 @@ build-jvm-release:
       MAVEN_GOALS: 'clean deploy'
       # We skip tests on develop and master, as the tests have already run on the branch
       MAVEN_EXTRA_ARGS: '-P release -DskipTests'
-      
+
 release-major:
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.9.6-eclipse-temurin-21
    variables:
