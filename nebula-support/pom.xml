@@ -16,13 +16,14 @@
       <maven.compiler.target>21</maven.compiler.target>
       <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
       <ktor.version>2.3.12</ktor.version>
+      <nebula.version>1.0.0-M1</nebula.version>
    </properties>
 
    <dependencies>
       <dependency>
          <groupId>com.orbitalhq.nebula</groupId>
          <artifactId>nebula-api</artifactId>
-         <version>1.0-SNAPSHOT</version>
+         <version>${nebula.version}</version>
       </dependency>
       <dependency>
          <groupId>io.rsocket.kotlin</groupId>
