@@ -8,6 +8,7 @@ import com.orbitalhq.connectors.jdbc.*
 import com.orbitalhq.connectors.jdbc.registry.InMemoryJdbcConnectionRegistry
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
@@ -269,6 +270,209 @@ class JdbcQueryTest {
       result.should.have.size(1)
       result.first().toRawObject()
          .should.equal(mapOf("title" to "A New Hope", "releaseDate" to "1979-05-10"))
+   }
+
+   @Test
+   fun `can query using in operator`(): Unit = runBlocking {
+      movieRepository.deleteAll()
+      movieRepository.save(Movie("1", "Star Wars"))
+      movieRepository.save(Movie("2", "The Empire Strikes Back"))
+      movieRepository.save(Movie("3", "Return of the Jedi"))
+      movieRepository.save(Movie("4", "The Phantom Menace"))
+
+      val vyne = testVyne(
+         listOf(
+            JdbcConnectorTaxi.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            """
+         ${JdbcConnectorTaxi.Annotations.imports}
+         import ${VyneQlGrammar.QUERY_TYPE_NAME}
+         type MovieId inherits Int
+         type MovieTitle inherits String
+
+         @Table(connection = "movies", schema = "public", table = "MOVIE")
+         model Movie {
+            ID : MovieId
+            TITLE : MovieTitle
+         }
+
+         @DatabaseService( connection = "movies" )
+         service MovieDb {
+            table movie : Movie[]
+         }
+      """
+         )
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+
+      val result = vyne.query("""find { Movie[](MovieId in [1,2,3]) } """)
+         .rawObjects()
+      result.should.have.size(3)
+
+      val titles = result.map { it["TITLE"] }
+      titles.should.contain("Star Wars")
+      titles.should.contain("The Empire Strikes Back")
+      titles.should.contain("Return of the Jedi")
+   }
+
+   @Test
+   fun `can query using not in operator`(): Unit = runBlocking {
+      movieRepository.deleteAll()
+      movieRepository.save(Movie("1", "Star Wars"))
+      movieRepository.save(Movie("2", "The Empire Strikes Back"))
+      movieRepository.save(Movie("3", "Return of the Jedi"))
+      movieRepository.save(Movie("4", "The Phantom Menace"))
+
+      val vyne = testVyne(
+         listOf(
+            JdbcConnectorTaxi.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            """
+         ${JdbcConnectorTaxi.Annotations.imports}
+         import ${VyneQlGrammar.QUERY_TYPE_NAME}
+         type MovieId inherits Int
+         type MovieTitle inherits String
+
+         @Table(connection = "movies", schema = "public", table = "MOVIE")
+         model Movie {
+            ID : MovieId
+            TITLE : MovieTitle
+         }
+
+         @DatabaseService( connection = "movies" )
+         service MovieDb {
+            table movie : Movie[]
+         }
+      """
+         )
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+
+      val result = vyne.query("""find { Movie[](MovieId not in [1,2]) } """)
+         .rawObjects()
+      result.should.have.size(2)
+
+      val titles = result.map { it["TITLE"] }
+      titles.should.contain("Return of the Jedi")
+      titles.should.contain("The Phantom Menace")
+   }
+
+   @Test
+   fun `can query using in operator with integer IDs`(): Unit = runBlocking {
+      movieRepository.deleteAll()
+      movieRepository.save(Movie("1", "Star Wars"))
+      movieRepository.save(Movie("2", "The Empire Strikes Back"))
+      movieRepository.save(Movie("3", "Return of the Jedi"))
+      movieRepository.save(Movie("4", "The Phantom Menace"))
+      movieRepository.save(Movie("5", "Attack of the Clones"))
+
+      val vyne = testVyne(
+         listOf(
+            JdbcConnectorTaxi.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            """
+         ${JdbcConnectorTaxi.Annotations.imports}
+         import ${VyneQlGrammar.QUERY_TYPE_NAME}
+         type MovieId inherits Int
+         type MovieTitle inherits String
+
+         @Table(connection = "movies", schema = "public", table = "MOVIE")
+         model Movie {
+            ID : MovieId
+            TITLE : MovieTitle
+         }
+
+         @DatabaseService( connection = "movies" )
+         service MovieDb {
+            table movie : Movie[]
+         }
+      """
+         )
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+
+      val result = vyne.query("""find { Movie[](MovieId in [2,4,5]) } """)
+         .rawObjects()
+      result.should.have.size(3)
+
+      val titles = result.map { it["TITLE"] }
+      titles.should.contain("The Empire Strikes Back")
+      titles.should.contain("The Phantom Menace")
+      titles.should.contain("Attack of the Clones")
+   }
+
+   @Test
+   fun `can query using not in operator with integer IDs`(): Unit = runBlocking {
+      movieRepository.deleteAll()
+      movieRepository.save(Movie("1", "Star Wars"))
+      movieRepository.save(Movie("2", "The Empire Strikes Back"))
+      movieRepository.save(Movie("3", "Return of the Jedi"))
+      movieRepository.save(Movie("4", "The Phantom Menace"))
+
+      val vyne = testVyne(
+         listOf(
+            JdbcConnectorTaxi.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            """
+         ${JdbcConnectorTaxi.Annotations.imports}
+         import ${VyneQlGrammar.QUERY_TYPE_NAME}
+         type MovieId inherits Int
+         type MovieTitle inherits String
+
+         @Table(connection = "movies", schema = "public", table = "MOVIE")
+         model Movie {
+            ID : MovieId
+            TITLE : MovieTitle
+         }
+
+         @DatabaseService( connection = "movies" )
+         service MovieDb {
+            table movie : Movie[]
+         }
+      """
+         )
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+
+      val result = vyne.query("""find { Movie[](MovieId not in [2,4]) } """)
+         .rawObjects()
+      result.should.have.size(2)
+
+      val titles = result.map { it["TITLE"] }
+      titles.should.contain("Star Wars")
+      titles.should.contain("Return of the Jedi")
+   }
+
+   @Test
+   fun `can query using in operator with single integer ID`(): Unit = runBlocking {
+      movieRepository.save(Movie("1", "Star Wars"))
+      movieRepository.save(Movie("2", "The Empire Strikes Back"))
+
+      val vyne = testVyne(
+         listOf(
+            JdbcConnectorTaxi.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            """
+         ${JdbcConnectorTaxi.Annotations.imports}
+         import ${VyneQlGrammar.QUERY_TYPE_NAME}
+         type MovieId inherits Int
+         type MovieTitle inherits String
+
+         @Table(connection = "movies", schema = "public", table = "MOVIE")
+         model Movie {
+            ID : MovieId
+            TITLE : MovieTitle
+         }
+
+         @DatabaseService( connection = "movies" )
+         service MovieDb {
+            table movie : Movie[]
+         }
+      """
+         )
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+
+      val result = vyne.query("""find { Movie[](MovieId in [1]) } """)
+         .rawObjects()
+      result.should.have.size(1)
+
+      result.first()["TITLE"].should.equal("Star Wars")
    }
 }
 

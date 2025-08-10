@@ -8,6 +8,7 @@ import com.orbitalhq.connectors.jdbc.sql.dml.SelectStatementGenerator
 import com.orbitalhq.connectors.jdbc.sql.dml.SqlTemplateParameter
 import com.orbitalhq.connectors.jdbc.sqlBuilder
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.testVyne
 import lang.taxi.Compiler
 import lang.taxi.TaxiDocument
 import lang.taxi.query.TaxiQlQuery
@@ -111,6 +112,58 @@ class SelectStatementGeneratorTest : DescribeSpec({
          it("generates a select for multiple number params") {
             val query = generator.selectSqlWithNamedParams("find { Person[]( Age >= 21 && Age < 40 ) }".query(taxi), dsl)
             query.shouldBeQueryWithParams("""select * from "Person" as "t0" where ("t0"."age" >= :age0 and "t0"."age" < :age1)""", listOf(21, 40))
+         }
+         it("generates a select for IN operator with integer array") {
+            val query = generator.selectSqlWithNamedParams("find { Person[]( Age in [21, 25, 30] ) }".query(taxi), dsl)
+            query.shouldBeQueryWithParams("""select * from "Person" as "t0" where "t0"."age" in (:age0, :age1, :age2)""", listOf(21, 25, 30))
+         }
+         it("generates a select for NOT IN operator with integer array") {
+            val query = generator.selectSqlWithNamedParams("find { Person[]( Age not in [21, 25] ) }".query(taxi), dsl)
+            query.shouldBeQueryWithParams("""select * from "Person" as "t0" where "t0"."age" not in (:age0, :age1)""", listOf(21, 25))
+         }
+      }
+
+      describe("IN and NOT IN with string types") {
+         val schema = TaxiSchema.from("""
+            model Movie {
+               title : MovieTitle inherits String
+            }
+         """.trimIndent())
+         val taxi = schema.taxi
+         val generator = SelectStatementGenerator(schema)
+         val dsl = connectionDetails.sqlBuilder()
+         it("generates a select for IN operator with string array") {
+            val query = generator.selectSqlWithNamedParams("""find { Movie[]( MovieTitle in ["Star Wars", "Empire", "Jedi"] ) }""".query(taxi), dsl)
+            query.shouldBeQueryWithParams("""select * from "Movie" as "t0" where "t0"."title" in (:title0, :title1, :title2)""", listOf("Star Wars", "Empire", "Jedi"))
+         }
+         it("generates a select for NOT IN operator with string array") {
+            val query = generator.selectSqlWithNamedParams("""find { Movie[]( MovieTitle not in ["Phantom Menace", "Attack of Clones"] ) }""".query(taxi), dsl)
+            query.shouldBeQueryWithParams("""select * from "Movie" as "t0" where "t0"."title" not in (:title0, :title1)""", listOf("Phantom Menace", "Attack of Clones"))
+         }
+      }
+
+      describe("IN and NOT IN with ID types") {
+         val schema = TaxiSchema.from("""
+            model Product {
+               id : ProductId inherits Int
+               categoryId : CategoryId inherits Int
+               name : ProductName inherits String
+            }
+         """.trimIndent())
+         val taxi = schema.taxi
+         val generator = SelectStatementGenerator(schema)
+         val dsl = connectionDetails.sqlBuilder()
+         it("generates a select for IN operator with ProductId array") {
+            val query = generator.selectSqlWithNamedParams("find { Product[]( ProductId in [100, 200, 300] ) }".query(taxi), dsl)
+            query.shouldBeQueryWithParams("""select * from "Product" as "t0" where "t0"."id" in (:id0, :id1, :id2)""", listOf(100, 200, 300))
+         }
+         it("generates a select for NOT IN operator with CategoryId array") {
+            val query = generator.selectSqlWithNamedParams("find { Product[]( CategoryId not in [1, 5, 9] ) }".query(taxi), dsl)
+            query.shouldBeQueryWithParams("""select * from "Product" as "t0" where "t0"."categoryId" not in (:categoryId0, :categoryId1, :categoryId2)""", listOf(1, 5, 9))
+         }
+         it("generates a select for IN operator with single ID value") {
+            val query = generator.selectSqlWithNamedParams("find { Product[]( ProductId in [42] ) }".query(taxi), dsl)
+            query.shouldBeQueryWithParams("""select * from "Product" as "t0" where "t0"."id" in (:id0)""", listOf(42))
          }
       }
    }
