@@ -2,6 +2,7 @@ package com.orbitalhq.query.queryBuilders
 
 import com.google.common.annotations.VisibleForTesting
 import com.orbitalhq.models.ConversionService
+import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedValue
 import com.orbitalhq.query.ConstructedQueryDataSource
@@ -13,11 +14,15 @@ import com.orbitalhq.schemas.QueryOperation
 import com.orbitalhq.schemas.Schema
 import lang.taxi.accessors.LiteralAccessor
 import lang.taxi.expressions.Expression
+import lang.taxi.expressions.ExtensionFunctionExpression
+import lang.taxi.expressions.LiteralArray
 import lang.taxi.expressions.LiteralExpression
 import lang.taxi.expressions.OperatorExpression
+import lang.taxi.expressions.TypeExpression
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.services.operations.constraints.ExpressionConstraint
 import lang.taxi.types.ArgumentSelector
+import lang.taxi.types.CompilationUnit
 import lang.taxi.types.MemberTypeReferenceExpression
 import mu.KotlinLogging
 
@@ -77,36 +82,99 @@ class TaxiQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
       }
    }
 
-   private fun buildExpressionConstraint(constraint: ExpressionConstraint, context: QueryContext): Pair<String,List<TypedInstance>> {
+   private fun buildExpressionConstraint(
+      constraint: ExpressionConstraint,
+      context: QueryContext
+   ): Pair<String, List<TypedInstance>> {
       val (resolvedExpression, typedInstances) = constraint.expression.resolveVariablesUsing(context)
       return resolvedExpression.asTaxi() to typedInstances
    }
 }
 
 
+private fun typedInstanceToLiteralExpressionAndValues(
+   value: TypedInstance,
+   compilationUnits: List<CompilationUnit>
+): Pair<Expression, List<TypedInstance>> {
+   val result = when (value) {
+      is TypedCollection -> {
+         val members = value.map {
+            LiteralExpression(
+               LiteralAccessor(it.value ?: "null", it.type.taxiType),
+               compilationUnits
+            )
+         }
+         // When we return an expression of the LiteralArray,
+         // it must use a compilationUnit with the values resolved against their literal values,
+         // not their originating expressions,
+         // eg: [1,2,3], not Foo::Bar
+         // This compilationUnit is what's ultimately used to generate a TaxiQL statement
+         val literalMembers = members.joinToString(prefix = "[", postfix = "]", separator = ",") { it.asTaxi() }
+         val updatedCompilationUnits = compilationUnits.map {
+            it.copy(source = it.source.copy(content = literalMembers))
+         }
+         LiteralArray(value.type.taxiType, members, updatedCompilationUnits) to value.value
+      }
+
+      else ->
+         LiteralExpression(LiteralAccessor(value.value!!, value.type.taxiType), compilationUnits) to listOf(
+            value
+         )
+   }
+   return result
+}
+
 /**
  * Resolves variables against the query context where possible,
  * returning a new expression where things like ArgumentSelectors have been replaced
  * with Literals
  */
-fun Expression.resolveVariablesUsing(context:QueryContext):Pair<Expression,List<TypedInstance>> {
-   return when(this) {
+fun Expression.resolveVariablesUsing(context: QueryContext): Pair<Expression, List<TypedInstance>> {
+   return when (this) {
       is OperatorExpression -> {
-         val (lhs,lhsInstances) = lhs.resolveVariablesUsing(context)
-         val (rhs,rhsInstances) = rhs.resolveVariablesUsing(context)
+         val (lhs, lhsInstances) = lhs.resolveVariablesUsing(context)
+         val (rhs, rhsInstances) = rhs.resolveVariablesUsing(context)
          OperatorExpression(lhs, operator, rhs, compilationUnits) to lhsInstances + rhsInstances
       }
+
       is LiteralExpression -> {
          this to listOf(context.evaluate(this))
       }
-      is ArgumentSelector -> {
-         val value = context.evaluate(this)
-         LiteralExpression(LiteralAccessor(value.value!!, value.type.taxiType), this.compilationUnits) to listOf(value)
+
+      is LiteralArray -> {
+         val resolved = this.members.map {
+            it.resolveVariablesUsing(context)
+         }
+         val resolvedList = resolved.flatMap { it.second }
+
+         // The returned LiteralArray must have the resolved actual values in the compilation units,
+         // as that's how this will ultimately be converted back into a TaxiQL statement.
+         this to resolvedList
       }
-      is MemberTypeReferenceExpression -> {
-         val value = context.evaluate(this)
-         LiteralExpression(LiteralAccessor(value.value!!, value.type.taxiType), this.compilationUnits) to listOf(value)
+
+      // TODO : ORB-1009
+      // This exists because the way we construct our criteria is broken.
+      // We'll say something like:
+      // Film(FilmId == 123)
+      // Which infers "The filmId of the FIlm is 123)"
+      // However, there's nothing in that statement that links FilmId to Film
+      // It should probably be:
+      // Film((Film) -> Film::FilmId == 123) <--- ❌ Don't do this, too much boilerplate
+      // or:
+      // Film(it::FilmId == 123)  <--- ✔️ do this one
+      // ie., we need to qualify the FilmId part
+      // Otherwise, consider a statament like:
+      // given { targetFilmId:FilmId = 123 }
+      // find { Film(FilmId = FilmId) }
+      // That statement can't work, as there's no way to know which FilmId is resolving from
+      // context vs the db
+      is TypeExpression -> {
+         this to emptyList()
       }
-       else -> this to emptyList()
+
+      else -> {
+         val value = context.evaluate(this)
+         typedInstanceToLiteralExpressionAndValues(value, this.compilationUnits)
+      }
    }
 }

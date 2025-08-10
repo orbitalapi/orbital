@@ -3,6 +3,7 @@ package com.orbitalhq.connectors.nosql.mongodb
 import com.orbitalhq.connectors.config.mongodb.MongoConnection
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.nosql.mongodb.registry.InMemoryMongoConnectionRegistry
+import com.orbitalhq.firstRawObject
 import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.VyneQlGrammar
@@ -15,6 +16,7 @@ import com.orbitalhq.testVyne
 import com.orbitalhq.testVyneWithStub
 import com.orbitalhq.typedObjects
 import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldContainKey
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -427,7 +429,265 @@ class MongoReadOnlyQueryInvokerTest : MongoDbTestcontainer() {
       completionEvent.spanState.shouldBe(SpanState.COMPLETE)
       completionEvent.exchangeMetadata.shouldBeInstanceOf<DatabaseResponseComplete>()
          .recordCount.shouldBe(1)
+   }
 
+   @Test
+   fun `can load from mongo using in operator`(): Unit = runBlocking {
+      val schema = """
+         @Collection(connection = "usersMongo", collection = "peeps4")
+         model Person {
+            @Id
+            id : PersonId inherits Int
+            name : Name inherits String
+         }
+         @MongoService( connection = "usersMongo" )
+         service UsersDb {
+            table people : Person[]
+            @UpsertOperation
+            write operation upsertPerson(Person):Person
+         }
+
+      """.trimIndent()
+      val (vyne, stub) = testVyneWithStub(
+         listOf(
+            MongoConnector.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            schema
+         )
+      ) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
+      // Insert some data
+      val insertedValues = listOf(
+         """{ Person = { id: 1 , name: "Jimmy" } }""",
+         """{ Person = { id: 2 , name: "Mark" } }""",
+         """{ Person = { id: 3 , name: "Luke" } }""",
+         """{ Person = { id: 4 , name: "Jan" } }""",
+      ).map { personObject ->
+         vyne.query(
+            """
+         given $personObject
+         call UsersDb::upsertPerson
+      """.trimIndent()
+         ).firstRawObject()
+      }
+      insertedValues.shouldHaveSize(4)
+
+      // Now find some back
+      val people = vyne.query(
+         """
+         find { Person(PersonId in [1,2,3]) }
+      """.trimIndent()
+      )
+         .rawObjects()
+      people.shouldHaveSize(3)
+
+      people.shouldContainAll(
+         mapOf("id" to 1, "name" to "Jimmy"),
+         mapOf("id" to 2, "name" to "Mark"),
+         mapOf("id" to 3, "name" to "Luke")
+      )
+
+   }
+
+
+   @Test
+   fun `can load from mongo using not in operator`(): Unit = runBlocking {
+      val schema = """
+         @Collection(connection = "usersMongo", collection = "peeps3")
+         model Person {
+            @Id
+            id : PersonId inherits Int
+            name : Name inherits String
+         }
+         @MongoService( connection = "usersMongo" )
+         service UsersDb {
+            table people : Person[]
+            @UpsertOperation
+            write operation upsertPerson(Person):Person
+         }
+
+      """.trimIndent()
+      val (vyne, stub) = testVyneWithStub(
+         listOf(
+            MongoConnector.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            schema
+         )
+      ) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
+      // Insert some data
+      val insertedValues = listOf(
+         """{ Person = { id: 1 , name: "Jimmy" } }""",
+         """{ Person = { id: 2 , name: "Mark" } }""",
+         """{ Person = { id: 3 , name: "Luke" } }""",
+         """{ Person = { id: 4 , name: "Jan" } }""",
+      ).map { personObject ->
+         vyne.query(
+            """
+         given $personObject
+         call UsersDb::upsertPerson
+      """.trimIndent()
+         ).firstRawObject()
+      }
+      insertedValues.shouldHaveSize(4)
+
+      // Now find some back
+      val people = vyne.query(
+         """
+         find { Person[](PersonId not in [1,2]) }
+      """.trimIndent()
+      )
+         .rawObjects()
+      people.shouldHaveSize(2)
+
+      people.shouldContainAll(
+         mapOf("id" to 3, "name" to "Luke"),
+         mapOf("id" to 4, "name" to "Jan")
+      )
+   }
+
+   @Test
+   fun `can load from mongo using in operator where ids to load are an array of values returned from a service`(): Unit = runBlocking {
+      val schema = """
+
+         model Family {
+            id : FamilyId inherits Int
+            members : PersonId[]
+         }
+
+         service FamilyApi {
+            operation getFamily(FamilyId):Family
+         }
+
+         @Collection(connection = "usersMongo", collection = "peeps2")
+         model Person {
+            @Id
+            id : PersonId inherits Int
+            name : Name inherits String
+         }
+         @MongoService( connection = "usersMongo" )
+         service UsersDb {
+            table people : Person[]
+            @UpsertOperation
+            write operation upsertPerson(Person):Person
+         }
+
+      """.trimIndent()
+      val (vyne, stub) = testVyneWithStub(
+         listOf(
+            MongoConnector.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            schema
+         )
+      ) { schema ->
+         listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()))
+      }
+      stub.addResponse("getFamily", """{ "id" : 1, "members" : [ 1 , 2 , 3 ] }""")
+      // Insert some data
+      val insertedValues = listOf(
+         """{ Person = { id: 1 , name: "Jimmy" } }""",
+         """{ Person = { id: 2 , name: "Mark" } }""",
+         """{ Person = { id: 3 , name: "Luke" } }""",
+         """{ Person = { id: 4 , name: "Jan" } }""",
+      ).map { personObject ->
+         vyne.query(
+            """
+         given $personObject
+         call UsersDb::upsertPerson
+      """.trimIndent()
+         ).firstRawObject()
+      }
+      insertedValues.shouldHaveSize(4)
+
+      // Now find some back
+      val people = vyne.query(
+         """
+         given {
+            FamilyId = 1
+         }
+         find { Person[]( PersonId in Family::PersonId[] ) }
+      """.trimIndent()
+      )
+         .rawObjects()
+      people.shouldHaveSize(3)
+
+      people.shouldContainAll(
+         mapOf("id" to 1, "name" to "Jimmy"),
+         mapOf("id" to 2, "name" to "Mark"),
+         mapOf("id" to 3, "name" to "Luke"),
+      )
+   }
+
+   @Test
+   fun `can load from mongo using in operator where ids to mapped from a result returned from a service`(): Unit = runBlocking {
+      val schema = """
+
+         model Family {
+            id : FamilyId inherits Int
+            members : FamilyMember[]
+         }
+         model FamilyMember {
+            id : PersonId
+         }
+
+         service FamilyApi {
+            operation getFamily(FamilyId):Family
+         }
+
+         @Collection(connection = "usersMongo", collection = "peeps1")
+         model Person {
+            @Id
+            id : PersonId inherits Int
+            name : Name inherits String
+         }
+         @MongoService( connection = "usersMongo" )
+         service UsersDb {
+            table people : Person[]
+            @UpsertOperation
+            write operation upsertPerson(Person):Person
+         }
+
+      """.trimIndent()
+      val (vyne, stub) = testVyneWithStub(
+         listOf(
+            MongoConnector.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            schema
+         )
+      ) { schema ->
+         listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()))
+      }
+      stub.addResponse("getFamily", """{ "id" : 1, "members" : [ { "id" : 1  },{ "id" :  2 } ] }""")
+      // Insert some data
+      val insertedValues = listOf(
+         """{ Person = { id: 1 , name: "Jimmy" } }""",
+         """{ Person = { id: 2 , name: "Mark" } }""",
+         """{ Person = { id: 3 , name: "Luke" } }""",
+         """{ Person = { id: 4 , name: "Jan" } }""",
+      ).map { personObject ->
+         vyne.query(
+            """
+         given $personObject
+         call UsersDb::upsertPerson
+      """.trimIndent()
+         ).firstRawObject()
+      }
+      insertedValues.shouldHaveSize(4)
+
+      // Now find some back
+      val people = vyne.query(
+         """
+         given {
+            FamilyId = 1
+         }
+         find { Person[]( PersonId in Family::FamilyMember[].map( (FamilyMember) -> PersonId ) ) }
+      """.trimIndent()
+      )
+         .rawObjects()
+      people.shouldHaveSize(2)
+
+      people.shouldContainAll(
+         mapOf("id" to 1, "name" to "Jimmy"),
+         mapOf("id" to 2, "name" to "Mark"),
+      )
    }
 
    @Test
