@@ -8,6 +8,7 @@ import com.orbitalhq.schemas.AttributeName
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.fqn
 import lang.taxi.TaxiDocument
+import lang.taxi.expressions.LiteralArray
 import lang.taxi.expressions.LiteralExpression
 import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.TypeExpression
@@ -93,7 +94,16 @@ class MongoCriteriaGenerator(private val taxiSchema: TaxiDocument) {
                 )
             }
 
-            expression.lhs is OperatorExpression && expression.rhs is OperatorExpression -> {
+           expression.lhs is TypeExpression && expression.rhs is LiteralArray -> {
+              buildTypeToLiteralArray(
+                 expression.lhs as TypeExpression,
+                 expression.rhs as LiteralArray,
+                 expression.operator,
+                 type
+              )
+           }
+
+           expression.lhs is OperatorExpression && expression.rhs is OperatorExpression -> {
                 buildCompoundExpression(
                     expression.lhs as OperatorExpression,
                     expression.rhs as OperatorExpression,
@@ -102,7 +112,11 @@ class MongoCriteriaGenerator(private val taxiSchema: TaxiDocument) {
                 )
             }
 
-            else -> error("Sql generation not implemented for operation expression ${expression.lhs::class.simpleName} and ${expression.rhs::class.simpleName}")
+           // NOte: By this point, expressions should have been resolved to literals.
+           // Don't add logic here to resolve other types of expressions - that needs to be handled upstream,
+           // so it's implemented consistently for all query generators.
+
+            else -> error("Mongo criteria generation not supported  for operation expression ${expression.asTaxi()} - between ${expression.lhs::class.simpleName} and ${expression.rhs::class.simpleName}")
         }
     }
 
@@ -127,7 +141,24 @@ class MongoCriteriaGenerator(private val taxiSchema: TaxiDocument) {
         }
     }
 
-    private fun buildTypeToLiteralExpression(
+   private fun buildTypeToLiteralArray(
+      lhs: TypeExpression,
+      rhs: LiteralArray,
+      operator: FormulaOperator,
+      type: ObjectType
+   ): Criteria {
+      val fieldReference = getSingleField(type, lhs.type)
+      val fieldName = if (fieldReference.path.single().IdField()) MongoIdField else  fieldReference.path.single().name
+      val condition = when (operator) {
+         FormulaOperator.In -> Criteria.where(fieldName).`in`(rhs.toListOfValues())
+         FormulaOperator.NotIn -> Criteria.where(fieldName).not().`in`(rhs.toListOfValues())
+         else -> error("$operator is not supported against array of values")
+      }
+      return condition
+   }
+
+
+   private fun buildTypeToLiteralExpression(
         lhs: TypeExpression,
         rhs: LiteralExpression,
         operator: FormulaOperator,
