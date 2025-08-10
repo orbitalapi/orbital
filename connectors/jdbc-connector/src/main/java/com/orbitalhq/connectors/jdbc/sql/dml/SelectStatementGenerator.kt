@@ -6,6 +6,7 @@ import com.orbitalhq.connectors.jdbc.SqlUtils
 import com.orbitalhq.connectors.utils.getSingleField
 import com.orbitalhq.schemas.Schema
 import lang.taxi.TaxiDocument
+import lang.taxi.expressions.LiteralArray
 import lang.taxi.expressions.LiteralExpression
 import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.TypeExpression
@@ -209,6 +210,17 @@ class SelectStatementGenerator(
             )
          }
 
+         expression.lhs is TypeExpression && expression.rhs is LiteralArray -> {
+            buildTypeToLiteralArray(
+               expression.lhs as TypeExpression,
+               expression.rhs as LiteralArray,
+               expression.operator,
+               type,
+               sqlTable,
+               constraintCounter
+            )
+         }
+
          expression.lhs is OperatorExpression && expression.rhs is OperatorExpression -> {
             buildCompoundExpression(
                expression.lhs as OperatorExpression,
@@ -251,6 +263,19 @@ class SelectStatementGenerator(
 
    }
 
+   private fun resolveFieldInfo(
+      lhs: TypeExpression,
+      type: ObjectType,
+      sqlTable: Table<Record>
+   ): Triple<FieldReference, String, Field<Any>> {
+      val fieldReference = getSingleField(type, lhs.type)
+      val fieldName = fieldReference.path.single().name
+      val taxiField = fieldReference.baseType.field(fieldName)
+      val primitiveType = SqlTypes.getSqlType(taxiField.type.basePrimitive!!)
+      val field = field(DSL.name(sqlTable.name, fieldName), primitiveType)
+      return Triple(fieldReference, fieldName, field)
+   }
+
    private fun buildTypeToLiteralExpression(
       lhs: TypeExpression,
       rhs: LiteralExpression,
@@ -259,11 +284,8 @@ class SelectStatementGenerator(
       sqlTable: Table<Record>,
       constraintCounter: AtomicInteger
    ): Pair<Condition, List<SqlTemplateParameter>> {
-      val fieldReference = getSingleField(type, lhs.type)
-      val fieldName = fieldReference.path.single().name
-      val taxiField = fieldReference.baseType.field(fieldName)
-      val primitiveType = SqlTypes.getSqlType(taxiField.type.basePrimitive!!)
-      val field = field(DSL.name(sqlTable.name, fieldName), primitiveType)
+      val (_, _, field) = resolveFieldInfo(lhs, type, sqlTable)
+      val primitiveType = field.dataType
 
       val sqlParameterName = "${field.name}${constraintCounter.getAndIncrement()}"
       val sqlParam = SqlTemplateParameter(sqlParameterName, SqlTypes.convertToSqlValue(rhs.value))
@@ -279,6 +301,39 @@ class SelectStatementGenerator(
       }
 
       return condition to listOf(sqlParam)
+   }
+
+   private fun buildTypeToLiteralArray(
+      lhs: TypeExpression,
+      rhs: LiteralArray,
+      operator: FormulaOperator,
+      type: ObjectType,
+      sqlTable: Table<Record>,
+      constraintCounter: AtomicInteger
+   ): Pair<Condition, List<SqlTemplateParameter>> {
+      val (_, _, field) = resolveFieldInfo(lhs, type, sqlTable)
+      val primitiveType = field.dataType
+
+      // Create SQL parameters for each array value to avoid SQL injection
+      val params = rhs.members.mapIndexed { index, member ->
+         when (member) {
+            is LiteralExpression -> {
+               val sqlParameterName = "${field.name}${constraintCounter.getAndIncrement()}"
+               SqlTemplateParameter(sqlParameterName, SqlTypes.convertToSqlValue(member.value))
+            }
+            else -> error("Array member must be a literal value, but found ${member::class.simpleName}")
+         }
+      }
+
+      val paramFields = params.map { param -> DSL.param(param.nameUsedInTemplate, primitiveType) }
+
+      val condition = when (operator) {
+         FormulaOperator.In -> field.`in`(paramFields)
+         FormulaOperator.NotIn -> field.notIn(paramFields)
+         else -> error("$operator is not supported against array of values")
+      }
+
+      return condition to params
    }
 
 
