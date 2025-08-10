@@ -12,6 +12,7 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.log
 import lang.taxi.expressions.Expression
+import lang.taxi.expressions.LiteralArray
 import lang.taxi.expressions.LiteralExpression
 import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.TypeExpression
@@ -145,15 +146,14 @@ class QueryOperationInvocationStrategy(
       return components.all { expressionPart ->
          when (expressionPart) {
             is LiteralExpression -> true
+            is LiteralArray -> true
             is ArgumentSelector -> true
             is OperatorExpression -> canFilterForExpression(expressionPart, schema, operationReturnType)
+            // These can probably all be simplified down do canFilterOnPropertyType(expression.returnType)
             is MemberTypeReferenceExpression -> canFilterOnPropertyType(schema, schema.type(expressionPart.targetType), operationReturnType)
             is TypeExpression -> canFilterOnPropertyType(schema, schema.type(expressionPart.type), operationReturnType)
+            else -> canFilterOnPropertyType(schema, schema.type(expressionPart.returnType), operationReturnType)
 
-            else -> {
-               logger.warn { "Not implemented - detecting if a Query operation can perform a filter satisfying an expression of kind ${expressionPart::class.simpleName} - ${expressionPart.asTaxi()}" }
-               false
-            }
          }
       }
    }
@@ -163,12 +163,16 @@ class QueryOperationInvocationStrategy(
       propertyType: Type,
       operationReturnType: Type
    ): Boolean {
+      // We support in and not in, so if the property type is T[], we should consider if filtering on T is allowed
+      val unwrappedArrayPropertyType = propertyType.collectionType ?: propertyType
+
       val operationReturnParameterisedType =
          if (operationReturnType.isCollection) operationReturnType.typeParameters[0] else operationReturnType
-      return operationReturnParameterisedType.attributes.values.any { field ->
+      val canFilter = operationReturnParameterisedType.attributes.values.any { field ->
          val fieldVyneType = field.resolveType(schema)
-         fieldVyneType.isAssignableFrom(propertyType)
+         fieldVyneType.isAssignableFrom(unwrappedArrayPropertyType)
       }
+      return canFilter
    }
 
 
