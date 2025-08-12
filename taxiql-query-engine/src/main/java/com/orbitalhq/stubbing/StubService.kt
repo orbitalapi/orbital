@@ -817,10 +817,22 @@ class StubService(
     * @throws NoSuchElementException if no table operation exists for the given table name
     */
    fun addTableFindManyResponse(tableName: String, json: String) {
-      val operation = schema!!.tableOperations.first { it.name == tableName }
-      val response = parseJson(schema!!, operation.returnType.paramaterizedName, json)
+      val operation = schema!!.tableOperations.firstOrNull { it.name == tableName }
+         ?: error("No table operation exists for table $tableName")
+      val response = parseJson(schema, operation.returnType.paramaterizedName, json)
       // people_findManyPerson
       val operationName = "${tableName}_findMany${operation.returnType.collectionTypeName}"
+      addResponse(operationName, response)
+   }
+
+   fun addTableFindOneResponse(tableName: String, json: String) {
+      val operation = schema!!.tableOperations.firstOrNull { it.name == tableName }
+         ?: error("No table operation exists for table $tableName")
+      val singleResponseType = operation.returnType.collectionType?.qualifiedName
+         ?: error("Expected table operation $tableName to return an array, but it returns ${operation.returnType.qualifiedName.shortDisplayName}")
+      val response = parseJson(schema, singleResponseType.parameterizedName, json)
+      // people_findOnePerson
+      val operationName = "${tableName}_findOne${operation.returnType.collectionTypeName}"
       addResponse(operationName, response)
    }
 

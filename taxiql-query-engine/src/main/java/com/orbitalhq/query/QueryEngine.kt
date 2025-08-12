@@ -475,19 +475,19 @@ class StatefulQueryEngine(
          setOfNotNull(inputValue),
          searchContext,
          paramValues
-      ).catch {
+      ).catch { exception ->
          context.eventBroker.queryErrorPublisher.onError(
             context.queryId,
-            StreamErrorMessage.fromThrowable(it, operation.returnType.paramaterizedName)
+            StreamErrorMessage.fromThrowable(exception, operation.returnType.paramaterizedName)
          )
-         val dataSource = when (it) {
-            is OperationInvocationException -> OperationResult.from(it.parameters, it.remoteCall)
+         val dataSource = when (exception) {
+            is OperationInvocationException -> OperationResult.from(exception.parameters, exception.remoteCall)
                .asOperationReferenceDataSource()
 
-            else -> FailedEvaluation("An error occurred when invoking operation ${operation.qualifiedName.longDisplayName}: ${it.message} ")
+            else -> FailedEvaluation("An error occurred when invoking operation ${operation.qualifiedName.longDisplayName}: ${exception.message} ")
          }
 
-         logger.warn { "Operation ${operation.qualifiedName} failed with exception ${it.message}. " }
+         logger.warn { "Operation ${operation.qualifiedName} failed with exception ${exception.message}. " }
          emit(TypedNull.create(operation.returnType, dataSource))
       }
       return resultFlow to searchContext

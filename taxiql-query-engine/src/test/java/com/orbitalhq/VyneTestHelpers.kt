@@ -56,7 +56,8 @@ suspend fun QueryResult.expectReturnsNull(): TypedNull {
 }
 
 suspend fun QueryResult.firstRawObject(): Map<String, Any?> {
-   return this.rawObjects().first()
+   return this.rawObjects().firstOrNull()
+      ?: error("Query didn't return any results")
 }
 
 suspend fun QueryResult.shouldEmitError(timeout: Duration = Duration.ofSeconds(5)):QueryErrorEvent {
