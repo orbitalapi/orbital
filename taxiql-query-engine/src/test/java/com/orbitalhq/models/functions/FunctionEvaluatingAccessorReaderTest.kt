@@ -3,10 +3,12 @@ package com.orbitalhq.models.functions
 import com.orbitalhq.firstRawObject
 import com.orbitalhq.firstRawValue
 import com.orbitalhq.firstTypedInstace
+import com.orbitalhq.firstTypedObject
 import com.winterbe.expekt.should
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
+import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.testVyne
 import com.orbitalhq.typedInstances
 import io.kotest.matchers.nulls.shouldNotBeNull
@@ -268,6 +270,42 @@ class FunctionEvaluatingAccessorReaderTest {
       """.trimIndent())
          .firstRawObject()
          .shouldBe(mapOf("people" to listOf("JIMMY")))
+   }
+
+   @Test
+   fun `will invoke a table operation to load data for inputs to a function`():Unit = runBlocking {
+      val (vyne,stub) = testVyne(
+         VyneQlGrammar.QUERY_TYPE_TAXI,
+         """
+         closed model Param {
+            domain  : Domain inherits String
+            serviceName : ServiceName inherits String
+            paramName : ParamName inherits String
+            paramValue : ParamValue inherits String
+         }
+         service ParamsDb {
+            table params : Param[]
+         }
+
+         type ApplicationType inherits ParamValue = (ApplicationType) paramValue('Payments', 'PaymentsApi', 'ApplicationType')
+
+         function paramValue(domain: Domain, serviceName:ServiceName, paramName:ParamName):ParamValue -> Param[](ServiceName == serviceName && Domain == domain)
+            .filter((Param) -> Param::ParamName == paramName)
+            .exactlyOne() as ParamValue
+      """.trimIndent())
+      stub.addTableFindManyResponse("params", """
+         [
+            { "domain" : "Payments" , "serviceName" : "PaymentsApi", "paramName" : "ApplicationType", "paramValue" : "CoreBanking" },
+            { "domain" : "Payments" , "serviceName" : "PaymentsApi", "paramName" : "Importance", "paramValue" : "High" }
+         ]
+      """.trimIndent())
+      val result = vyne.query("""
+         find {
+            applicationType : ApplicationType
+         }
+      """.trimIndent())
+         .firstTypedObject()
+      result.toRawObject().shouldBe(mapOf("applicationType" to "CoreBanking"))
    }
 }
 
