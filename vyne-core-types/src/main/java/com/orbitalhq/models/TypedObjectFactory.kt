@@ -682,7 +682,7 @@ class TypedObjectFactory(
                }
                when {
                   resultsFromSearch.isEmpty() -> createTypedNull(
-                     "No attribute with type ${requestedType.name.parameterizedName} is present on type ${type.name.parameterizedName} and attempts to discover a value from the query engine failed"
+                     "No attribute with type ${requestedType.name.parameterizedName} is present on type ${type.name.parameterizedName} and attempts to discover a value from the query engine did not find any approaches that produced a result"
                   )
 
                   resultsFromSearch.size == 1 && !requestedType.isCollection -> resultsFromSearch.first()
