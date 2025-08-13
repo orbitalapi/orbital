@@ -38,6 +38,7 @@ import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
+import com.orbitalhq.schemas.TableOperation
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.orElse
 import kotlinx.coroutines.flow.Flow
@@ -819,9 +820,10 @@ class StubService(
    fun addTableFindManyResponse(tableName: String, json: String) {
       val operation = schema!!.tableOperations.firstOrNull { it.name == tableName }
          ?: error("No table operation exists for table $tableName")
+      val operationName = TableOperation.findManyOperationName(operation.name, operation.returnType.collectionTypeName ?: error("Operation ${operation.name} should return an array"))
       val response = parseJson(schema, operation.returnType.paramaterizedName, json)
       // people_findManyPerson
-      val operationName = "${tableName}_findMany${operation.returnType.collectionTypeName}"
+//      val operationName = "${tableName}_findMany${operation.returnType.collectionTypeName}"
       addResponse(operationName, response)
    }
 
@@ -832,7 +834,7 @@ class StubService(
          ?: error("Expected table operation $tableName to return an array, but it returns ${operation.returnType.qualifiedName.shortDisplayName}")
       val response = parseJson(schema, singleResponseType.parameterizedName, json)
       // people_findOnePerson
-      val operationName = "${tableName}_findOne${operation.returnType.collectionTypeName}"
+      val operationName = TableOperation.findOneOperationName(operation.name, singleResponseType)
       addResponse(operationName, response)
    }
 

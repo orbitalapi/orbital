@@ -7,6 +7,9 @@ class StubServiceSpec : DescribeSpec({
   describe("stub service") {
      it("can stub table operations") {
         val (vyne,stub) = testVyne("""
+
+          namespace com.foo.test
+
           model Person {
              id : PersonId inherits String
           }
