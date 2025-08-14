@@ -1,6 +1,7 @@
 package com.orbitalhq.query.runtime.core.gateway
 
 import com.orbitalhq.errors.OrbitalQueryException
+import com.orbitalhq.query.QueryFailedException
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
@@ -79,27 +80,31 @@ object DeferredServerResponsePublisher {
    }
 
 
-
    private fun handleError(error: Throwable): Mono<out ServerResponse> =
-      when (error) {
+      when {
          // Handle OrbitalQueryException with custom status
-         is OrbitalQueryException -> {
-            val (statusCode, errorBody, responseHeaders) = HttpErrorResponse.getErrorCodeAndPayload(error)
-            ServerResponse.status(statusCode)
-               .headers { headersConsumer ->
-                  responseHeaders.forEach { (name, values) ->
-                     values.forEach { value ->
-                        headersConsumer.add(name, value)
-                     }
-                  }
-               }
-               .bodyValue(errorBody)
+         error is OrbitalQueryException -> handleOrbitalQueryException(error)
+         error is QueryFailedException && error.cause is OrbitalQueryException -> {
+            handleOrbitalQueryException(error.cause as OrbitalQueryException)
          }
          // Handle other exceptions as internal server errors
          else -> ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR.value())
             .contentType(MediaType.TEXT_PLAIN)
             .bodyValue(error.message ?: "A ${error::class.simpleName} was thrown")
       }
+
+   private fun handleOrbitalQueryException(error: OrbitalQueryException): Mono<ServerResponse> {
+      val (statusCode, errorBody, responseHeaders) = HttpErrorResponse.getErrorCodeAndPayload(error)
+      return ServerResponse.status(statusCode)
+         .headers { headersConsumer ->
+            responseHeaders.forEach { (name, values) ->
+               values.forEach { value ->
+                  headersConsumer.add(name, value)
+               }
+            }
+         }
+         .bodyValue(errorBody)
+   }
 
    fun wrapMono(mono: Mono<Any>, responseHeaders: Map<String, List<String>>): Mono<out ServerResponse> {
       return mono.flatMap { value ->

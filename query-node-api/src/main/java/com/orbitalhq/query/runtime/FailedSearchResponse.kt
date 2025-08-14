@@ -24,7 +24,9 @@ data class FailedSearchResponse(
    @field:JsonIgnore
    override val responseType: Type? = null,
    @field:JsonIgnore
-   override val responseHeaders: Map<String, List<String>>? = null
+   override val responseHeaders: Map<String, List<String>>? = null,
+
+   val exception: Exception? = null
 
 
 ) : FailedQueryResponse {

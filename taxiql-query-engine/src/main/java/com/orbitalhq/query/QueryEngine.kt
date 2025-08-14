@@ -1128,7 +1128,7 @@ class StatefulQueryEngine(
 class QueryCancelledException(message: String = "Query has been cancelled") : Exception(message)
 
 
-class QueryFailedException(message: String) : Exception(message)
+class QueryFailedException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 
 /**
