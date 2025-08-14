@@ -1,10 +1,14 @@
 package org.taxilang.playground
 
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import com.orbitalhq.cockpit.core.query.QueryInsightUtils
+import com.orbitalhq.errors.OrbitalQueryException
 import com.orbitalhq.playground.StubQueryMessage
 import com.orbitalhq.playground.StubQueryService
 import com.orbitalhq.query.QueryParseMetadata
 import com.orbitalhq.query.QueryProfileData
+import com.orbitalhq.query.runtime.core.gateway.HttpErrorResponse
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.http.NotFoundException
 import com.orbitalhq.utils.Ids
@@ -51,11 +55,30 @@ class PlaygroundQueryService(private val stubQueryService: StubQueryService) {
    @PostMapping("/api/query")
    fun query(@RequestBody queryMessage: StubQueryMessage): Mono<ResponseEntity<Publisher<Any>>> {
       val queryId: String = Ids.id(prefix = "query-", size = 12)
-      val (queryResult, contentType) = stubQueryService.submitQuery(
-         queryMessage,
-         addDelayToStreams = false,
-         queryId = queryId
-      )
+      val (queryResult, contentType) = try {
+         stubQueryService.submitQuery(
+            queryMessage,
+            addDelayToStreams = false,
+            queryId = queryId
+         )
+      } catch (error: OrbitalQueryException) {
+         // Errors caught here are exceptions thrown in the query setup phase
+         val (statusCode, errorBody, responseHeaders) = HttpErrorResponse.getErrorCodeAndPayload(error)
+
+         // The error body is generally a JSON string -- but returning that gets json escaped.
+         // SO, try to parse it back to a map.
+         val errorBodyAsMap = try {
+            if (errorBody is String) {
+               jacksonObjectMapper().readValue<Any>(errorBody as String)
+            } else errorBody
+         } catch (e:Exception) {
+            errorBody
+         }
+         return Mono.just(
+            ResponseEntity.status(statusCode.value())
+               .body(Mono.just(errorBodyAsMap))
+         )
+      }
       val publisher =
          when (queryResult) {
             is Mono<*> -> queryResult.onErrorMap { ResponseStatusException(HttpStatus.BAD_REQUEST, it.message) }
