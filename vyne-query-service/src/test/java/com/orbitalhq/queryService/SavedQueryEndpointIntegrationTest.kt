@@ -547,7 +547,14 @@ class SimpleVyneAndStubFactory(private val schemaStore: SchemaStore) : VyneProvi
       schema: Schema,
       queryOptions: QueryOptions
    ): Vyne {
+      if (vyne == null) {
+         buildVyneFromSchemaStore()
+      }
       return this.vyne!!
+//      val (vyne,stub) = testVyne(schema.asTaxiSchema())
+//      this.vyne = vyne
+//      this.stub = stub
+//      return this.vyne!!
    }
 
 }

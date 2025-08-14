@@ -13,6 +13,7 @@ import com.orbitalhq.auth.authentication.VyneUser
 import com.orbitalhq.auth.authentication.toVyneUser
 import com.orbitalhq.auth.getAuthClaimsAsFacts
 import com.orbitalhq.errors.ErrorType
+import com.orbitalhq.errors.OrbitalQueryException
 import com.orbitalhq.logging.MDCContextKeys.QueryName
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
@@ -161,7 +162,7 @@ class QueryService(
       )
       if (queryResult is FailedSearchResponse) {
          // I don't think this Mono actually gets used, but we need to satisfy the API contract
-         return contentType to Mono.error(QueryFailedException(queryResult.message))
+         return contentType to Mono.error(QueryFailedException(queryResult.message, cause = queryResult.exception))
       }
       if (queryResult.responseType == null) {
          TODO("How to handle this when responseType == null?")
@@ -518,7 +519,7 @@ class QueryService(
       traceId: String = TracingEvent.newTraceId(),
       arguments: Map<String, Any?> = emptyMap()
    ): Pair<QueryResponse, QueryOptions> {
-      logger.info { "[$queryId] $query" }
+      logger.debug { "[$queryId] $query" }
       val schema = schemaProvider.schema
       val (taxiQlQuery, queryOptions, querySchema) = schema.parseQuery(query)
       MDC.put(QueryName, taxiQlQuery.name.parameterizedName)
@@ -602,6 +603,13 @@ class QueryService(
             FailedSearchResponse(e.message!!, null, queryId = queryId)
          } catch (e: QueryCancelledException) {
             FailedSearchResponse(e.message!!, null, queryId = queryId)
+         } catch (e: OrbitalQueryException) {
+            // We encountered an error before the query started.
+            // This is a pattern we use like throw() in a given block as a way of doing
+            // validations with custom control over the resonses.
+            // Wrap the exception in a FailedSearchResponse, which is then later handled to use the error type to render
+            // the correct error back to the user
+            FailedSearchResponse(e.message!!, null, queryId = queryId, exception = e)
          } catch (e: Exception) {
             FailedSearchResponse(e.message!!, null, queryId = queryId)
          }
