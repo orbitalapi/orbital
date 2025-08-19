@@ -1391,6 +1391,113 @@ find { CompanyMemberData[] } as {
    }
 
    @Test
+   fun `matches path variables based on annotation name`():Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            id : PersonId inherits String
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people/{personId}")
+            operation listPeople(@PathVariable(value = "personId") thePersonId:PersonId):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+      )
+   }
+   @Test
+   fun `matches path variables based on annotation name when operation doesnt have a variable name`():Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            id : PersonId inherits String
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people/{personId}")
+            // Note that the PersonId param isn't named
+            operation listPeople(@PathVariable(value = "personId") PersonId):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+      )
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+      }
+      vyne.query("""given { id: PersonId = "123" } find { Person[] }""")
+         .rawObjects()
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/people/123", request.path)
+         assertEquals(HttpMethod.GET.name(), request.method)
+      }
+   }
+
+   @Test
+   fun `when query variables are optional then it is valid not to supply them`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people")
+            operation listPeople(@taxi.http.QueryVariable(value = "apiKey") apiKey:ApiKey?):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+      )
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+      }
+      vyne.query("""find { Person[] }""")
+         .rawObjects()
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/people", request.path)
+         assertEquals(HttpMethod.GET.name(), request.method)
+      }
+   }
+
+   @Test
+   fun `when query variables are optional and supplied then they are populated`(): Unit = runBlocking {
+      val vyne = testVyne(
+         """
+         type ApiKey inherits String
+         model Person {
+            name : Name inherits String
+         }
+         service PersonService {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/people")
+            // THIS IS THE TEST: Note that ApiKey is optional
+            operation listPeople(@taxi.http.QueryVariable("apiKey") apiKey:ApiKey?):Person[]
+          }
+      """, invoker = Invoker.RestTemplate
+      )
+
+      server.prepareResponse { response ->
+         response.setHeader("Content-Type", MediaType.APPLICATION_JSON)
+            .setBody("""[ { "name" : "Jimmy" }]""")
+      }
+      vyne.query("""given { key : ApiKey = "hello" } find { Person[] }""")
+         .rawObjects()
+
+      expectRequestCount(1)
+      expectRequest { request ->
+         assertEquals("/people?apiKey=hello", request.path)
+         assertEquals(HttpMethod.GET.name(), request.method)
+      }
+   }
+
+
+   @Test
    fun `does not use primitives to populate query params`() = runBlocking {
       val vyne = testVyne(
          """
