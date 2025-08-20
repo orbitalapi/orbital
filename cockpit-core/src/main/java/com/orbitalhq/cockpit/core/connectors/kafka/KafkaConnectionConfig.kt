@@ -34,7 +34,6 @@ class KafkaConnectionConfig {
       formatRegistry: FormatRegistry,
       meterRegistry: MeterRegistry,
       gaugeRegistry: GaugeRegistry,
-      @Value("\${vyne.streams.emitKafkaConsumerGroupInfo:true}") emitKafkaConsumerGroupInfo: Boolean
    ): KafkaStreamManager {
       val consumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(
          gaugeRegistry = gaugeRegistry
@@ -44,7 +43,6 @@ class KafkaConnectionConfig {
          schemaStore,
          formatRegistry = formatRegistry,
          meterRegistry = meterRegistry,
-         emitConsumerInfoMessages = emitKafkaConsumerGroupInfo,
          kafkaConsumerStatsFlowBuilder = consumerStatsFlowBuilder
       )
    }

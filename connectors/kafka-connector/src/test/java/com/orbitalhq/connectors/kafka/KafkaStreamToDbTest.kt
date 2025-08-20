@@ -122,7 +122,6 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
                SimpleSchemaStore.forSchema(testSchema),
                formatRegistry = formatRegistry,
                meterRegistry = SimpleMeterRegistry(),
-               emitConsumerInfoMessages = false,
                kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(GaugeRegistry.simple())
             )
          listOf(
@@ -218,7 +217,6 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
                SimpleSchemaStore.forSchema(testSchema),
                formatRegistry = formatRegistry,
                meterRegistry = SimpleMeterRegistry(),
-               emitConsumerInfoMessages = false,
                kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(GaugeRegistry.simple())
             )
          listOf(
