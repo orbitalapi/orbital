@@ -30,7 +30,7 @@
        Saves us duplicating
        -->
       <owasp-exclusions-file>../whitelisted-cvss-list.xml</owasp-exclusions-file>
-      <taxi.version>1.67.0-SNAPSHOT</taxi.version>
+      <taxi.version>1.68.0-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>
@@ -62,6 +62,9 @@
 
       <logbook.version>3.12.0</logbook.version>
 
+      <!-- CVE-2025-7962, resolved in 2.0.4 -->
+      <angus-mail.version>2.0.3</angus-mail.version>
+
       <!-- CVE-2025-4949 fixed in 6.10.1.202505221210-r -->
       <jgit.version>6.10.1.202505221210-r</jgit.version>
       <!--      <netty.version>4.1.75.Final</netty.version>-->
@@ -75,8 +78,8 @@
       <aws.s3.sdk.version>1.12.778</aws.s3.sdk.version>
       <aws.dynamo.sdk.version>1.12.701</aws.dynamo.sdk.version>
 
-      <!-- CVE-2025-24970 can probably remove after spring boot > 3.4.2 -->
-      <netty.version>4.1.118.Final</netty.version>
+      <!-- CVE-2025-55163 can probably remove after spring boot > 3.3.13 -->
+      <netty.version>4.1.124.Final</netty.version>
 
       <!-- Set protobuf-java to 3.25.5 because of vulnerabilities:
 CVE-2024-7254
@@ -348,6 +351,13 @@ Transitive dependency in wire-compiler and calcite-core
             <groupId>com.rabbitmq</groupId>
             <artifactId>amqp-client</artifactId>
             <version>5.18.0</version>
+         </dependency>
+
+         <dependency>
+            <!-- CVE-2025-7962, resolved in 2.0.4 -->
+            <groupId>org.eclipse.angus</groupId>
+            <artifactId>angus-mail</artifactId>
+            <version>2.0.4</version>
          </dependency>
 
          <!--
