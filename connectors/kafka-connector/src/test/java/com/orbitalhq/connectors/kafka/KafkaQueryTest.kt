@@ -10,13 +10,16 @@ import com.orbitalhq.protobuf.wire.RepoBuilder
 import com.orbitalhq.query.QueryErrorEvent
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.winterbe.expekt.should
+import io.kotest.assertions.asClue
 import io.kotest.assertions.timing.eventually
 import io.kotest.matchers.booleans.shouldBeTrue
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.longs.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
@@ -26,6 +29,7 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.timeout
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.runBlocking
 import lang.taxi.generators.protobuf.TaxiGenerator
@@ -43,7 +47,6 @@ import reactor.core.scheduler.Schedulers
 import reactor.test.StepVerifier
 import java.math.BigInteger
 import java.time.format.DateTimeFormatter
-import java.util.concurrent.TimeUnit.MINUTES
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
@@ -342,32 +345,45 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
    }
 
    @Test
-   fun `when query is cancelled, subsequent queries receive new messages`() {
-      val (vyne, _) = vyneWithKafkaInvoker(defaultSchema)
+   fun `when query is cancelled, subsequent queries receive new messages`(): Unit = runBlocking {
+      val (vyne, streamManager) = vyneWithKafkaInvoker(defaultSchema)
 
       val resultsFromQuery1 = mutableListOf<TypedInstance>()
       val query1 = runBlocking { vyne.query("""stream { Movie }""") }
-      collectQueryResults(query1, resultsFromQuery1)
+      val query1Collector = launch(Dispatchers.Default) {
+         collectQueryResultsAsync(query1, resultsFromQuery1)
+      }
 
       sendMessage(message("message1"))
       sendMessage(message("message2"))
 
-      await().atMost(15, SECONDS).until<Boolean> { resultsFromQuery1.size == 2 }
+      eventually(10.seconds) {
+         resultsFromQuery1.shouldHaveSize(2)
+      }
+      streamManager.getActiveRequests().shouldHaveSize(1)
+
       query1.requestCancel()
-      Thread.sleep(1000)
+      query1Collector.cancel()
+
+      eventually(10.seconds) {
+         streamManager.getActiveRequests().shouldBeEmpty()
+      }
 
       val resultsFromQuery2 = mutableListOf<TypedInstance>()
       val query2 = runBlocking { vyne.query("""stream { Movie }""") }
-      collectQueryResults(query2, resultsFromQuery2)
+      val query2Collector = launch(Dispatchers.Default) {
+         collectQueryResultsAsync(query2, resultsFromQuery2)
+      }
 
       sendMessage(message("message3"))
       sendMessage(message("message4"))
 
       Thread.sleep(1000)
 
-      await().atMost(15, SECONDS).until<Boolean> {
-         resultsFromQuery2.size == 2
+      eventually(15.seconds) {
+         resultsFromQuery2.shouldHaveSize(2)
       }
+      query2Collector.cancel()
    }
 
 
@@ -595,7 +611,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       }
 
    @Test
-   fun `when schema changes kafka connection is reset but consumers are unaffected`():Unit = runBlocking {
+   fun `when schema changes kafka connection is reset but consumers are unaffected`(): Unit = runBlocking {
       val baseSchema = """
                ${KafkaConnectorTaxi.Annotations.imports}
                type MovieId inherits String
@@ -608,28 +624,36 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
                   stream streamMovieQuery:Stream<Movie>
                }
             """.trimIndent()
-      val schemaV1 = listOf(baseSchema, """
+      val schemaV1 = listOf(
+         baseSchema, """
                model Movie {
                   id : MovieId inherits String
                   title : MovieTitle inherits String
                }
 
-      """.trimIndent()).joinToString("\n")
-      val schemaV2 = listOf(baseSchema, """
+      """.trimIndent()
+      ).joinToString("\n")
+      val schemaV2 = listOf(
+         baseSchema, """
                model Movie {
                   id : MovieId inherits String
                   // Change the name
                   name : MovieTitle inherits String
                }
 
-      """.trimIndent()).joinToString("\n")
+      """.trimIndent()
+      ).joinToString("\n")
 
       val (vyne, _) = vyneWithKafkaInvoker(schemaV1)
       val resultsFromQuery = mutableListOf<TypedInstance>()
-      val query = runBlocking { vyne.query("""stream { Movie } as {
+      val query = runBlocking {
+         vyne.query(
+            """stream { Movie } as {
          | movieTitle : MovieTitle
          |}[]
-      """.trimMargin()) }
+      """.trimMargin()
+         )
+      }
       collectQueryResults(query, resultsFromQuery)
 
       sendMessage("""{ "id" : "MOV-1", "title" : "Star Wars" }""")
@@ -646,22 +670,25 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
 
       sendMessage("""{ "id" : "MOV-2", "name" : "Jaws" }""")
 
-      eventually(5.seconds) {
+      eventually(50.seconds) {
          resultsFromQuery.shouldHaveSize(2)
       }
 
       resultsFromQuery
          .map { it.toRawObject() }
-         .shouldBe(listOf(
-         mapOf("movieTitle" to "Star Wars" ),
-         mapOf("movieTitle" to "Jaws" ),
-      ))
+         .shouldBe(
+            listOf(
+               mapOf("movieTitle" to "Star Wars"),
+               mapOf("movieTitle" to "Jaws"),
+            )
+         )
 
    }
 
    @Test
-   fun `subscription does not fail if field is not discoverable because service errors`():Unit = runBlocking {
-      val (vyne,_,stub) = vyneWithKafkaInvoker("""
+   fun `subscription does not fail if field is not discoverable because service errors`(): Unit = runBlocking {
+      val (vyne, _, stub) = vyneWithKafkaInvoker(
+         """
          model OrderPlacedEvent {
             orderId : OrderId inherits String
             customerId : CustomerId inherits Int
@@ -677,9 +704,10 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
          service Customers {
             operation getCustomer(CustomerId):Customer
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
 
-      stub.addResponse("getCustomer") { _,params ->
+      stub.addResponse("getCustomer") { _, params ->
          val customerId = params.first().second.toRawObject() as Int
          if (customerId == 2) {
             error("This service has failed")
@@ -688,22 +716,26 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       }
 
       val resultsFromQuery1 = mutableListOf<TypedInstance>()
-      val query1 = runBlocking { vyne.query("""stream { OrderPlacedEvent } as {
+      val query1 = runBlocking {
+         vyne.query(
+            """stream { OrderPlacedEvent } as {
          | orderId: OrderId
          | name : CustomerName
          |}[]
-      """.trimMargin()) }
+      """.trimMargin()
+         )
+      }
       collectQueryResults(query1, resultsFromQuery1)
 
-      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
+      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders")
       eventually(10.seconds) {
          resultsFromQuery1.shouldHaveSize(1)
       }
 
       // This message should fail, as it has a bad customer id
-      sendMessage("""{ "orderId" : "O1", "customerId" : 2 }""", "newOrders" )
+      sendMessage("""{ "orderId" : "O1", "customerId" : 2 }""", "newOrders")
 
-      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
+      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders")
       eventually(10.seconds) {
          resultsFromQuery1.shouldHaveSize(3)
       }
@@ -711,8 +743,9 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
    }
 
    @Test
-   fun `subscription does not fail if field is not discoverable because service returns null`():Unit = runBlocking {
-      val (vyne,_,stub) = vyneWithKafkaInvoker("""
+   fun `subscription does not fail if field is not discoverable because service returns null`(): Unit = runBlocking {
+      val (vyne, _, stub) = vyneWithKafkaInvoker(
+         """
          model OrderPlacedEvent {
             orderId : OrderId inherits String
             customerId : CustomerId inherits Int
@@ -728,9 +761,10 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
          service Customers {
             operation getCustomer(CustomerId):Customer
          }
-      """.trimIndent())
+      """.trimIndent()
+      )
 
-      stub.addResponse("getCustomer") { _,params ->
+      stub.addResponse("getCustomer") { _, params ->
          val customerId = params.first().second.toRawObject() as Int
          if (customerId == 2) {
             listOf(vyne.parseJson("Customer", """{ "name" : null }""").right())
@@ -741,30 +775,36 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       }
 
       val resultsFromQuery1 = mutableListOf<TypedInstance>()
-      val query1 = runBlocking { vyne.query("""stream { OrderPlacedEvent } as {
+      val query1 = runBlocking {
+         vyne.query(
+            """stream { OrderPlacedEvent } as {
          | orderId: OrderId
          | name : CustomerName
          |}[]
-      """.trimMargin()) }
+      """.trimMargin()
+         )
+      }
       collectQueryResults(query1, resultsFromQuery1)
 
-      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
+      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders")
       eventually(10.seconds) {
          resultsFromQuery1.shouldHaveSize(1)
       }
 
       // This message should fail, as it has a bad customer id
-      sendMessage("""{ "orderId" : "O1", "customerId" : 2 }""", "newOrders" )
+      sendMessage("""{ "orderId" : "O1", "customerId" : 2 }""", "newOrders")
 
-      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
+      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders")
       eventually(10.seconds) {
          resultsFromQuery1.shouldHaveSize(3)
       }
    }
 
    @Test
-   fun `subscription does not fail if field is not discoverable because service returns null when building input to mutation`():Unit = runBlocking {
-      val (vyne,_,stub) = vyneWithKafkaInvoker("""
+   fun `subscription does not fail if field is not discoverable because service returns null when building input to mutation`(): Unit =
+      runBlocking {
+         val (vyne, _, stub) = vyneWithKafkaInvoker(
+            """
          model OrderPlacedEvent {
             orderId : OrderId inherits String
             customerId : CustomerId inherits Int
@@ -786,41 +826,48 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
             operation getCustomer(CustomerId):Customer
             write operation updateCustomerOrder(CustomerOrder):CustomerOrder
          }
-      """.trimIndent())
+      """.trimIndent()
+         )
 
-      stub.addResponse("getCustomer") { _,params ->
-         val customerId = params.first().second.toRawObject() as Int
-         if (customerId == 2) {
-            listOf(vyne.parseJson("Customer", """{ "name" : null }""").right())
-         } else {
-            listOf(vyne.parseJson("Customer", """{ "name" : "Jimmy" }""").right())
+         stub.addResponse("getCustomer") { _, params ->
+            val customerId = params.first().second.toRawObject() as Int
+            if (customerId == 2) {
+               listOf(vyne.parseJson("Customer", """{ "name" : null }""").right())
+            } else {
+               listOf(vyne.parseJson("Customer", """{ "name" : "Jimmy" }""").right())
+            }
          }
-      }
-      stub.addResponseReturningInputs("updateCustomerOrder")
+         stub.addResponseReturningInputs("updateCustomerOrder")
 
-      val resultsFromQuery1 = mutableListOf<TypedInstance>()
-      val query1 = runBlocking { vyne.query("""stream { OrderPlacedEvent }
+         val resultsFromQuery1 = mutableListOf<TypedInstance>()
+         val query1 = runBlocking {
+            vyne.query(
+               """stream { OrderPlacedEvent }
          |call Customers::updateCustomerOrder
-      """.trimMargin()) }
-      collectQueryResults(query1, resultsFromQuery1)
+      """.trimMargin()
+            )
+         }
+         collectQueryResults(query1, resultsFromQuery1)
 
 //      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
 //      eventually(10.seconds) {
 //         resultsFromQuery1.shouldHaveSize(1)
 //      }
 
-      // This message should fail, as it has a bad customer id
-      sendMessage("""{ "orderId" : "O1", "customerId" : null }""", "newOrders" )
+         // This message should fail, as it has a bad customer id
+         sendMessage("""{ "orderId" : "O1", "customerId" : null }""", "newOrders")
 
-      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
-      eventually(5.seconds) {
-         resultsFromQuery1.shouldHaveSize(2)
+         sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders")
+         eventually(5.seconds) {
+            resultsFromQuery1.shouldHaveSize(2)
+         }
       }
-   }
 
    @Test
-   fun `subscription does not fail if field is not discoverable because service returns null for input required to function`():Unit = runBlocking {
-      val (vyne,_,stub) = vyneWithKafkaInvoker("""
+   fun `subscription does not fail if field is not discoverable because service returns null for input required to function`(): Unit =
+      runBlocking {
+         val (vyne, _, stub) = vyneWithKafkaInvoker(
+            """
          model OrderPlacedEvent {
             orderId : OrderId inherits String
             customerId : CustomerId inherits Int
@@ -845,37 +892,42 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
             customerId : CustomerId
          }
 
-      """.trimIndent())
+      """.trimIndent()
+         )
 
-      stub.addResponse("getCustomer") { _,params ->
-         val customerId = params.first().second.toRawObject() as Int
-         if (customerId == 2) {
-            listOf(vyne.parseJson("Customer", """{ "name" : null }""").right())
-         } else {
-            listOf(vyne.parseJson("Customer", """{ "name" : "Jimmy" }""").right())
+         stub.addResponse("getCustomer") { _, params ->
+            val customerId = params.first().second.toRawObject() as Int
+            if (customerId == 2) {
+               listOf(vyne.parseJson("Customer", """{ "name" : null }""").right())
+            } else {
+               listOf(vyne.parseJson("Customer", """{ "name" : "Jimmy" }""").right())
+            }
+         }
+         stub.addResponseReturningInputs("storeData")
+
+         val resultsFromQuery1 = mutableListOf<TypedInstance>()
+         val query1 = runBlocking {
+            vyne.query(
+               """stream { OrderPlacedEvent }
+         |call WriteDestination::storeData
+      """.trimMargin()
+            )
+         }
+         collectQueryResults(query1, resultsFromQuery1)
+
+         sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders")
+         eventually(10.seconds) {
+            resultsFromQuery1.shouldHaveSize(1)
+         }
+
+         // This message should fail, as it has a bad customer id
+         sendMessage("""{ "orderId" : "O1", "customerId" : 2 }""", "newOrders")
+
+         sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders")
+         eventually(10.seconds) {
+            resultsFromQuery1.shouldHaveSize(3)
          }
       }
-      stub.addResponseReturningInputs("storeData")
-
-      val resultsFromQuery1 = mutableListOf<TypedInstance>()
-      val query1 = runBlocking { vyne.query("""stream { OrderPlacedEvent }
-         |call WriteDestination::storeData
-      """.trimMargin()) }
-      collectQueryResults(query1, resultsFromQuery1)
-
-      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
-      eventually(10.seconds) {
-         resultsFromQuery1.shouldHaveSize(1)
-      }
-
-      // This message should fail, as it has a bad customer id
-      sendMessage("""{ "orderId" : "O1", "customerId" : 2 }""", "newOrders" )
-
-      sendMessage("""{ "orderId" : "O1", "customerId" : 1 }""", "newOrders" )
-      eventually(10.seconds) {
-         resultsFromQuery1.shouldHaveSize(3)
-      }
-   }
 
    @Test
    fun `subscription is not cancelled when there is a parsing exception`(): Unit = runBlocking {

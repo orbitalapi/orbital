@@ -15,7 +15,6 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.format.DefaultFormatRegistry
 import com.orbitalhq.protobuf.ProtobufFormatSpec
 import com.orbitalhq.query.QueryResult
-import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schema.consumer.SimpleSchemaStore
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.stubbing.StubService
@@ -99,9 +98,11 @@ abstract class BaseKafkaContainerTest {
          "invalidConnection",
          kafkaContainer.bootstrapServers,
          "VyneTest-" + Random.nextInt(),
-         mapOf("security.protocol" to "SASL_PLAINTEXT",
+         mapOf(
+            "security.protocol" to "SASL_PLAINTEXT",
             "sasl.mechanism" to "PLAIN",
-            "sasl.jaas.config" to "org.apache.kafka.common.security.plain.PlainLoginModule required username='myKafkaUser' password='asdas'")
+            "sasl.jaas.config" to "org.apache.kafka.common.security.plain.PlainLoginModule required username='myKafkaUser' password='asdas'"
+         )
       )
 
       connectionRegistry.register(connection)
@@ -120,15 +121,22 @@ abstract class BaseKafkaContainerTest {
       admin.createTopics(singleton(newTopic))
    }
 
-   fun sendMessage(message: ByteArray?, topic: String = "movies", key:String = UUID.randomUUID().toString(), headers: List<Header> = emptyList()): RecordMetadata {
+   fun sendMessage(
+      message: ByteArray?,
+      topic: String = "movies",
+      key: String = UUID.randomUUID().toString(),
+      headers: List<Header> = emptyList()
+   ): RecordMetadata {
       logger.info { "Sending message to topic $topic" }
-      val metadata = kafkaProducer.send(ProducerRecord(
-         topic,
-         null, // partition
-         key,
-         message,
-         headers
-      ))
+      val metadata = kafkaProducer.send(
+         ProducerRecord(
+            topic,
+            null, // partition
+            key,
+            message,
+            headers
+         )
+      )
          .get()
       logger.info { "message sent to topic $topic with offset ${metadata.offset()}" }
       return metadata
@@ -175,7 +183,6 @@ abstract class BaseKafkaContainerTest {
          schemaStore,
          formatRegistry = formatRegistry,
          meterRegistry = SimpleMeterRegistry(),
-         emitConsumerInfoMessages = false,
          kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(GaugeRegistry.simple())
       )
       val invokers = listOf(
@@ -185,17 +192,26 @@ abstract class BaseKafkaContainerTest {
       return KafkaTestSetUp(vyne, kafkaStreamManager, stub)
    }
 
-   fun collectQueryResults(query: QueryResult, resultsFromQuery1: MutableList<TypedInstance>) {
+   /**
+    * Collects the query results, using a global scope.
+    * Probably fine for tests.
+    *
+    * Otherwise, use launch { collectQueryResults(...) }
+    */
+   fun collectQueryResults(query: QueryResult, targetCollection: MutableList<TypedInstance>) {
       GlobalScope.async {
-         logger.info { "Collecting..." }
-         query.results
-            .collect {
-               resultsFromQuery1.add(it)
-               logger.info { "received event - have now captured ${resultsFromQuery1.size} events in result handler" }
-            }
+         collectQueryResultsAsync(query, targetCollection)
       }
    }
 
+   suspend fun collectQueryResultsAsync(query: QueryResult, targetCollection: MutableList<TypedInstance>) {
+      logger.info { "Collecting..." }
+      query.results
+         .collect {
+            targetCollection.add(it)
+            logger.info { "received event - have now captured ${targetCollection.size} events in result handler" }
+         }
+   }
 }
 
 data class KafkaTestSetUp(

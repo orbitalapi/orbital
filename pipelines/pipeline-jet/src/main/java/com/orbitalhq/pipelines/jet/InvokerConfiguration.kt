@@ -82,7 +82,6 @@ class InvokerConfiguration {
       formatRegistry = formatRegistry,
       meterRegistry = meterRegistry,
       kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(gaugeRegistry),
-      emitConsumerInfoMessages = false
    )
 
    @Bean
