@@ -166,7 +166,7 @@ class QueryBufferingPipelineContext(
             .subscribe {
                val wasQueued = queue.offer(it)
                if (!wasQueued) {
-                  logger.warning("Failed to append query result to the result queue.  Is the buffer full? Current size is ${queue.size}")
+                  logger.warning("Failed to append query result to the result queue. This message has already been processed, but may not be displayed in to observers like the Web UI or a websocket observer.  Is the buffer full? Current size is ${queue.size}")
                }
             }
 

@@ -69,10 +69,14 @@ object QueryOptionParameterKeys {
    fun streamConsumerId(query: TaxiQlQuery): String? {
       val streamConsumer = query.annotation(StreamingQueryAnnotations.StreamConsumerAnnotationName)
       return streamConsumer?.let { annotation ->
-         when {
-            annotation.parameter("id") != null -> annotation.parameter("id")!! as String
-            else -> null
-         }
+         annotation.parameter("id") as String?
+      }
+   }
+
+   fun streamConsumerOffset(query: TaxiQlQuery): String? {
+      val streamConsumer = query.annotation(StreamingQueryAnnotations.StreamConsumerAnnotationName)
+      return streamConsumer?.let { annotation ->
+         annotation.parameter("offset") as String?
       }
    }
 
@@ -111,6 +115,12 @@ data class QueryOptions(
     */
    val streamConsumerId: String? = null,
 
+   /**
+    * Allows overriding the offset setting for streaming consumers (ie., Kafka), otherwise defaults to what's defined on
+    * the operation's annotation
+    */
+   val streamConsumerOffset: String? = null,
+
    val responseHeaders: List<Parameter> = emptyList()
 ) {
 
@@ -122,6 +132,7 @@ data class QueryOptions(
    fun newObjectMapper(): ObjectMapper {
       return configure(Jackson.newObjectMapperWithDefaults())
    }
+
    companion object {
       fun default() = QueryOptions()
 
@@ -129,12 +140,14 @@ data class QueryOptions(
          val cachingStrategy: CachingStrategy = QueryOptionParameterKeys.cacheStrategy(query)
          val (useStateStore, stateStoreConfig) = QueryOptionParameterKeys.parseStateStoreConfig(query)
          val streamConsumerId = QueryOptionParameterKeys.streamConsumerId(query)
+         val streamConsumerOffset = QueryOptionParameterKeys.streamConsumerOffset(query)
          val responseHeaders = QueryOptionParameterKeys.httpResponseParameters(query)
          return QueryOptions(
             cachingStrategy = cachingStrategy,
             stateStoreConfig = stateStoreConfig,
             useStateStore = useStateStore,
             streamConsumerId = streamConsumerId,
+            streamConsumerOffset = streamConsumerOffset,
             responseHeaders = responseHeaders
          )
       }
