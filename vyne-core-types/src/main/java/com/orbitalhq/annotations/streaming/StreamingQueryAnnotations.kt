@@ -8,14 +8,14 @@ object StreamingQueryAnnotations {
    val ParallelAnnotationName = "$namespace.Parallel"
    val schema = """
 namespace $namespace {
-   [[ Allows consumers to customize the id used when
-   connecting to a message broker.
-   ]]
+   [[ Allows consumers to customize the id used when connecting to a message broker.    ]]
    annotation StreamConsumer {
       [[ An id to use to identify this consumer to the message broker.
       For Kafka, this becomes the ConsumerGroupId
       ]]
       id : String
+
+      offset: String?
    }
 
    [[ Indicates that a streaming query should be distributed

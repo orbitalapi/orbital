@@ -8,6 +8,8 @@ import com.orbitalhq.models.json.parseJson
 import com.orbitalhq.models.json.right
 import com.orbitalhq.protobuf.wire.RepoBuilder
 import com.orbitalhq.query.QueryErrorEvent
+import com.orbitalhq.schemas.QueryOptions
+import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.winterbe.expekt.should
 import io.kotest.assertions.asClue
@@ -16,6 +18,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.longs.shouldBeGreaterThan
+import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlinx.coroutines.Deferred
@@ -66,6 +69,7 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       kafkaProducer = producer
       connectionRegistry = registry
    }
+
 
 
    @Test
@@ -1028,7 +1032,6 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
                   @KafkaOperation( topic = "movies", offset = "earliest" )
                   stream streamMovieQuery:Stream<Movie>
                }
-
             """.trimIndent()
 
 

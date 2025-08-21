@@ -17,6 +17,7 @@ import com.orbitalhq.query.tracing.MessageStreamDisconnection
 import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEventKind
+import com.orbitalhq.schemas.Operation
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
@@ -39,6 +40,40 @@ class KafkaInvoker(
       init {
          KafkaConnectorTaxi.registerMetadataUsage()
       }
+      fun createConsumerRequest(
+         connectionName: String,
+         kafkaOperation: KafkaConnectorTaxi.Annotations.KafkaOperation,
+         service: Service,
+         operation: RemoteOperation,
+         queryOptions: QueryOptions
+      ) = KafkaConsumerRequest(
+         connectionName,
+         kafkaOperation.topic,
+         kafkaOperation.offset,
+         service,
+         operation,
+         streamSourceId = queryOptions.streamConsumerId
+      )
+      fun createConsumerRequest(
+         service: Service,
+         operation: RemoteOperation,
+         queryOptions: QueryOptions
+      ): KafkaConsumerRequest {
+         val connectionName = service.connectionName()
+         val annotation = operation.kafkaAnnotation()
+         val overriddenOffset =
+            queryOptions.streamConsumerOffset?.let {
+               KafkaConnectorTaxi.Annotations.KafkaOperation.Offset.valueOf(it.uppercase())
+            }
+         return KafkaConsumerRequest(
+            connectionName,
+            annotation.topic,
+            overriddenOffset ?: annotation.offset,
+            service,
+            operation,
+            streamSourceId = queryOptions.streamConsumerId
+         )
+      }
    }
 
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
@@ -60,17 +95,14 @@ class KafkaInvoker(
       queryOptions: QueryOptions
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
 
-      val connectionName =
-         service.firstMetadata("${VyneTypes.NAMESPACE}.kafka.KafkaService").params["connectionName"] as String
-      val kafkaOperation = operation.firstMetadata(KafkaConnectorTaxi.Annotations.KafkaOperation.NAME)
-         .let { KafkaConnectorTaxi.Annotations.KafkaOperation.from(it) }
+      val connectionName = service.connectionName()
+      val kafkaOperation = operation.kafkaAnnotation()
 
       return if (operation.operationType == OperationScope.MUTATION) {
          publishToTopic(connectionName, kafkaOperation, service, operation, eventDispatcher, queryId, parameters)
       } else {
          subscribeToTopic(connectionName, kafkaOperation, service, operation, eventDispatcher, queryId, queryOptions)
       }
-
    }
 
    private fun publishToTopic(
@@ -107,14 +139,7 @@ class KafkaInvoker(
       val span = eventDispatcher.createOperationTraceSpan(service, operation, kafkaOperation.topic)
 
       val (eventMetadata, rawStream) = streamManager.getStream(
-         KafkaConsumerRequest(
-            connectionName,
-            kafkaOperation.topic,
-            kafkaOperation.offset,
-            service,
-            operation,
-            streamSourceId = queryOptions.streamConsumerId
-         )
+         createConsumerRequest(connectionName, kafkaOperation, service, operation, queryOptions)
       )
       span.emitEvent(TracingEventKind.OK, SpanState.ACTIVE, null, eventMetadata, "Subscribe", direction = TraceEventDirection.OUTBOUND)
       val stream = rawStream.mapNotNull { errorOrInstance ->
@@ -142,4 +167,12 @@ class KafkaInvoker(
       }
       return stream
    }
+}
+
+private fun RemoteOperation.kafkaAnnotation():KafkaConnectorTaxi.Annotations.KafkaOperation {
+   return this.firstMetadata(KafkaConnectorTaxi.Annotations.KafkaOperation.NAME)
+      .let { KafkaConnectorTaxi.Annotations.KafkaOperation.from(it) }
+}
+private fun Service.connectionName(): String {
+   return this.firstMetadata("${VyneTypes.NAMESPACE}.kafka.KafkaService").params["connectionName"] as String
 }
