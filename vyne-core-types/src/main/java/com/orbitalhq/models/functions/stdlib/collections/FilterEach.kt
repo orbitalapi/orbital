@@ -14,16 +14,16 @@ import lang.taxi.functions.FunctionAccessor
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
 
-object FilterEach : NamedFunctionInvoker, CollectionFilteringFunction() {
+object FilterEach : CollectionFilteringFunction() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.FilterEach.name
-   override fun invoke(
+   override fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier,
-      returnTypeFormat: FormatsAndZoneOffset?,
       rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val inputValue = inputValues[0]
@@ -35,7 +35,7 @@ object FilterEach : NamedFunctionInvoker, CollectionFilteringFunction() {
       val filterResult = evaluatePredicateAgainstMember(
          inputValue,
          schema,
-         objectFactory,
+         thisScopeValueSupplier,
          predicate,
          dataSource,
          returnType,

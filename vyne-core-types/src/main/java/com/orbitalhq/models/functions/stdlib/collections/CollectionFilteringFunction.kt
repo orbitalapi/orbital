@@ -4,12 +4,13 @@ import arrow.core.Either
 import arrow.core.left
 import arrow.core.right
 import com.orbitalhq.models.*
+import com.orbitalhq.models.functions.NullSafeInvoker
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.types.PrimitiveType
 
-open class CollectionFilteringFunction {
+abstract class CollectionFilteringFunction : NullSafeInvoker() {
    protected fun failed(
       returnType: Type,
       function: FunctionAccessor,
