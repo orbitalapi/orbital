@@ -1,5 +1,6 @@
 package com.orbitalhq.pipelines.jet.source.query
 
+import com.google.common.base.Throwables
 import com.hazelcast.jet.pipeline.BatchSource
 import com.hazelcast.jet.pipeline.SourceBuilder
 import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer
@@ -10,14 +11,19 @@ import com.orbitalhq.VyneProvider
 import com.orbitalhq.auth.EmptyAuthenticationToken
 import com.orbitalhq.auth.authentication.ExecutionPrincipalAuthenticationService
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.pipelines.jet.api.JobStatus
+import com.orbitalhq.pipelines.jet.api.streams.StreamJobStateEvent
+import com.orbitalhq.pipelines.jet.api.streams.StreamStatus
 import com.orbitalhq.pipelines.jet.api.transport.MessageContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.MessageSourceWithGroupId
 import com.orbitalhq.pipelines.jet.api.transport.PipelineSpec
 import com.orbitalhq.pipelines.jet.api.transport.TypedInstanceContentProvider
 import com.orbitalhq.pipelines.jet.api.transport.query.PollingQueryInputSpec
 import com.orbitalhq.pipelines.jet.api.transport.query.TaxiQlQueryPipelineTransportSpec
+import com.orbitalhq.pipelines.jet.pipelines.PipelineManager
 import com.orbitalhq.pipelines.jet.source.PipelineSourceBuilder
 import com.orbitalhq.pipelines.jet.source.PipelineSourceType
+import com.orbitalhq.pipelines.jet.streams.StreamStateManager
 import com.orbitalhq.query
 import com.orbitalhq.query.EmitMetrics
 import com.orbitalhq.query.tagsOf
@@ -39,7 +45,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.authentication.AnonymousAuthenticationToken
 import org.springframework.stereotype.Component
 import reactor.core.Disposable
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import reactor.util.retry.Retry
+import java.security.Principal
+import java.time.Duration
 import java.util.Optional
 import java.util.concurrent.ArrayBlockingQueue
 import java.util.concurrent.BlockingQueue
@@ -127,30 +137,13 @@ class QueryBufferingPipelineContext(
 
       queryJob = scope.launch {
 
-         // When running a distributed query, we can receive the query via Jet before we receive
-         // the schema required to compile it. (ie., the job was compiled and started on another node).
-         // We need to protect against that, as if a compilation error is thrown when we're launching
-         // the query, the job fails.
-         // ORB-927 has been raised to refactor this to use QueryMessage, which is self-contained
-         // and eliminates the race condition
-         while (!queryIsValid()) {
-            logger.info("Waiting 5 seconds and will try again")
-            delay(5.seconds)
-         }
          val principalOrEmpty = if (executionPrincipalAuthenticationService.isPresent) {
             executionPrincipalAuthenticationService.get().loadPrincipal()
          } else {
             Mono.just(EmptyAuthenticationToken)
          }.awaitSingle()
          val principal = EmptyAuthenticationToken.nullIfEmpty(principalOrEmpty)
-         querySubscription = vyneClient.query<TypedInstance>(
-            pipelineSpec.input.query,
-            tagsOf().queryStream(pipelineSpec.name).tags(),
-            principal,
-            // We capture the errors here.
-            // This is not ideal ... as we have different approaches for capturing errors and results
-            EmitMetrics.ErrorCounts
-         )
+         querySubscription = buildRetryingQuery(principal)
             .map {
                TypedInstanceContentProvider(
                   it,
@@ -174,6 +167,40 @@ class QueryBufferingPipelineContext(
       }
    }
 
+   private fun buildRetryingQuery(principal: Principal?): Flux<TypedInstance> {
+      return Flux.defer {
+         vyneClient.query<TypedInstance>(
+            pipelineSpec.input.query,
+            tagsOf().queryStream(pipelineSpec.name).tags(),
+            principal,
+            // We capture the errors here.
+            // This is not ideal ... as we have different approaches for capturing errors and results
+            EmitMetrics.ErrorCounts
+         )
+      }.retryWhen(
+         // When running a distributed query, we can receive the query via Jet before we receive
+         // the schema required to compile it. (ie., the job was compiled and started on another node).
+         // We need to protect against that, as if a compilation error is thrown when we're launching
+         // the query, the job fails.
+         // ORB-927 has been raised to refactor this to use QueryMessage, which is self-contained
+         // and eliminates the race condition
+         Retry.fixedDelay(20,Duration.ofSeconds(5))
+            .doBeforeRetry { e ->
+               val rootCause = Throwables.getRootCause(e.failure())
+               val message = "${rootCause::class.simpleName} -  ${rootCause.message} - Total retries: ${e.totalRetries()} - will retry again"
+               logger.warning("Job $jobId failed for reason $message")
+               pipelineManager.sendJobStatusEvent(jobId, StreamJobStateEvent.JobStatus.WAITING_TO_RESTART, message)
+            }
+            .doAfterRetry {
+               pipelineManager.sendJobStatusEvent(jobId, StreamJobStateEvent.JobStatus.RUNNING)
+            }
+      )
+
+
+
+
+   }
+
    fun terminate() {
       runBlocking {
          logger.info("Terminating running TaxlQL query")
@@ -181,6 +208,10 @@ class QueryBufferingPipelineContext(
          queryJob.cancelAndJoin()
       }
    }
+
+   @Resource
+   lateinit var pipelineManager: PipelineManager
+
 
    @Resource
    lateinit var executionPrincipalAuthenticationService: Optional<ExecutionPrincipalAuthenticationService>

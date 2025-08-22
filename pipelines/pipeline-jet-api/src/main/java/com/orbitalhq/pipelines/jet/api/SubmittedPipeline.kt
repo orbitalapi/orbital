@@ -28,6 +28,12 @@ enum class JobStatus {
    RUNNING,
 
    /**
+    * NOTE: This is an Orbital specific state
+    * Indicates that the stream had failed, and will restart shortly.
+    */
+   WAITING_TO_RESTART,
+
+   /**
     * The job is suspended and it can be manually resumed.
     */
    SUSPENDED,

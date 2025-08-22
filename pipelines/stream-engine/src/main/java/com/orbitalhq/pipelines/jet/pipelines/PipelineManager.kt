@@ -68,7 +68,7 @@ class PipelineManager(
     *
     * Note: A separate cleanup job exists for catching dropped events (StreamJobStatusMonitor)
     */
-   private val jobStatusEventsSink = Sinks.many().replay().limit<Pair<Job,StreamJobStateEvent>>(Duration.ofSeconds(5))
+   private val jobStatusEventsSink = Sinks.many().replay().limit<Pair<Job, StreamJobStateEvent>>(Duration.ofSeconds(5))
    val jobStatusEvents: Flux<Pair<Job, StreamJobStateEvent>> = jobStatusEventsSink.asFlux()
 
    /**
@@ -116,7 +116,8 @@ class PipelineManager(
          val job = hazelcastInstance.jet.newJob(pipeline, jobConfig)
          // See jobStatusEventsSink for why we register this here.
          job.addStatusListener { event ->
-            val currentJob = hazelcastInstance.jet.getJob(event.jobId) ?: error("Received a job status event ${event.newStatus} on job ${event.jobId} which is not known to the cluster")
+            val currentJob = hazelcastInstance.jet.getJob(event.jobId)
+               ?: error("Received a job status event ${event.newStatus} on job ${event.jobId} which is not known to the cluster")
             val streamStateAndDescription = StreamServerStatusService.streamJobStatusFromJetJob(currentJob)
             jobStatusEventsSink.emitNext(job to streamStateAndDescription) { _, failure ->
                logger.warn { "Failed to emit Jet Job status event: $event - failed with: $failure" }
@@ -438,6 +439,27 @@ class PipelineManager(
       pendingPipelines.put(name.parameterizedName, pipeline)
       logger.info { "terminating the pipeline ${pipeline.id}" }
       terminatePipeline(pipeline.id, true)
+   }
+
+   fun sendJobStatusEvent(jobId: Long, status: StreamJobStateEvent.JobStatus, description: String? = null) {
+      val currentJob = hazelcastInstance.jet.getJob(jobId)
+      if (currentJob == null) {
+         logger.warn { "Attempted to set status of jobId $jobId to $status but unrecognized job id. No event is broadcast" }
+         return
+      }
+      val result = jobStatusEventsSink.tryEmitNext(
+         currentJob to StreamJobStateEvent(
+            currentJob.idString,
+            // This shouldn't happen...
+            currentJob.name ?: "Unknown job name",
+            status = status,
+            description = description
+         )
+      )
+      if (result.isFailure) {
+         logger.warn { "Attempted to send status update that jobId $jobId is now in state $status but emission failed with reason ${result.name}" }
+      }
+
    }
 
 }

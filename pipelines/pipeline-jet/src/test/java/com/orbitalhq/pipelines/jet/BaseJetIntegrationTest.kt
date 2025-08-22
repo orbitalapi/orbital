@@ -7,6 +7,7 @@ import com.hazelcast.jet.core.JetTestSupport
 import com.hazelcast.jet.core.JobStatus
 import com.hazelcast.spring.context.SpringManagedContext
 import com.mercateo.test.clock.TestClock
+import com.nhaarman.mockito_kotlin.mock
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import com.orbitalhq.*
@@ -45,6 +46,7 @@ import org.awaitility.Awaitility
 import org.springframework.context.ApplicationContext
 import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.context.support.GenericApplicationContext
+import org.springframework.context.support.registerBean
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.Duration
 import java.util.*
@@ -115,7 +117,7 @@ abstract class BaseJetIntegrationTest : JetTestSupport() {
          StreamSinkTargetContainer::class.java,
          "Hello"
       )
-
+      springApplicationContext.registerBean(PipelineManager::class.java, Supplier { mock() })
       contextConfig.invoke(springApplicationContext)
       springApplicationContext.refresh()
 
