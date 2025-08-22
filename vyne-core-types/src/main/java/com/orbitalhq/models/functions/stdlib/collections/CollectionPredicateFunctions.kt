@@ -30,15 +30,15 @@ enum class CollectionOperationType(
 
 abstract class BaseCollectionPredicateInvoker(val operationType: CollectionOperationType) :
    CollectionFilteringFunction(), NamedFunctionInvoker {
-   override fun invoke(
+   override fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier,
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
       returnTypeFormat: FormatsAndZoneOffset?,
-      rawMessageBeingParsed: kotlin.Any?,
-      resultCache: MutableMap<FunctionResultCacheKey, kotlin.Any>
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       return extractAndValidateInputs(inputValues, schema, returnType, function)
          .map { (collection, deferredExpression, dataSource) ->
@@ -46,7 +46,7 @@ abstract class BaseCollectionPredicateInvoker(val operationType: CollectionOpera
                val eval = evaluatePredicateAgainstMember(
                   instance,
                   schema,
-                  objectFactory,
+                  thisScopeValueSupplier,
                   deferredExpression,
                   dataSource,
                   returnType,

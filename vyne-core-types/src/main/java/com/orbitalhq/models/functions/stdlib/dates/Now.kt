@@ -5,6 +5,7 @@ import com.orbitalhq.models.EvaluationValueSupplier
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.functions.NamedFunctionInvoker
+import com.orbitalhq.models.functions.NullSafeInvoker
 import com.orbitalhq.models.functions.functionFailed
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
@@ -22,15 +23,15 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.temporal.Temporal
 
-abstract class BaseCurrentTimeInvoker(private val valueProvider: () -> Temporal) : NamedFunctionInvoker {
-   override fun invoke(
+abstract class BaseCurrentTimeInvoker(private val valueProvider: () -> Temporal) : NullSafeInvoker() {
+   override fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier,
-      returnTypeFormat: FormatsAndZoneOffset?,
       rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val now = valueProvider()

@@ -1,5 +1,6 @@
 package com.orbitalhq.models.functions.stdlib
 
+import com.fasterxml.jackson.databind.ser.std.NullSerializer
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.EvaluatedExpression
 import com.orbitalhq.models.EvaluationValueSupplier
@@ -331,19 +332,18 @@ object Coalesce : NamedFunctionInvoker {
    }
 }
 
-object Replace : NamedFunctionInvoker {
+object Replace : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Replace.name
-   override fun invoke(
+   override fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier,
-      returnTypeFormat: FormatsAndZoneOffset?,
       rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
-
       val input: String = inputValues[0].valueAs()
       val replace: String = inputValues[1].valueAs()
       val with: String = inputValues[2].valueAs()

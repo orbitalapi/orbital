@@ -11,6 +11,7 @@ import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.TypedValue
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.functions.NamedFunctionInvoker
+import com.orbitalhq.models.functions.NullSafeInvoker
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import lang.taxi.functions.FunctionAccessor
@@ -18,17 +19,16 @@ import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
 
-object ToRawType : NamedFunctionInvoker {
+object ToRawType : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.ToRawType.name
-
-   override fun invoke(
+   override fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier,
-      returnTypeFormat: FormatsAndZoneOffset?,
       rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val input = inputValues.first()

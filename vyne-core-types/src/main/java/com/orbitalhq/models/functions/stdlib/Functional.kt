@@ -13,6 +13,7 @@ import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.functions.NamedFunctionInvoker
+import com.orbitalhq.models.functions.NullSafeInvoker
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.TypeMatchingStrategy
@@ -71,19 +72,19 @@ object Fold : NamedFunctionInvoker {
    }
 }
 
-object MapFunction : NamedFunctionInvoker {
+object MapFunction : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Map.name
 
    private val logger = KotlinLogging.logger {}
 
-   override fun invoke(
+   override fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier,
-      returnTypeFormat: FormatsAndZoneOffset?,
       rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val sourceCollection = inputValues[0] as TypedCollection
@@ -94,8 +95,8 @@ object MapFunction : NamedFunctionInvoker {
          function.asTaxi(),
          inputValues
       )
-      if (objectFactory !is TypedObjectFactory) {
-         error("Cannot evaluate expression ${function.asTaxi()} as the Mapper has been constructed without a TypedObjectFactory (instead, it has a ${objectFactory::class.simpleName}, preventing resolving values)")
+      if (thisScopeValueSupplier !is TypedObjectFactory) {
+         error("Cannot evaluate expression ${function.asTaxi()} as the Mapper has been constructed without a TypedObjectFactory (instead, it has a ${thisScopeValueSupplier::class.simpleName}, preventing resolving values)")
       }
       if (lambdaExpression.inputs.size != 1) {
          error("Cannot evaluate expression ${function.asTaxi()} as the function declares multiple inputs. This should've been detected by the compiler")
@@ -126,7 +127,7 @@ object MapFunction : NamedFunctionInvoker {
          // (which is annoying)...
          val evaluated = if (lambdaExpression.expression is TypeExpression) {
             // If the expression is in the form of T1[].map((T1) -> T2), then we should build T2 from T1
-            objectFactory.newFactory(
+            thisScopeValueSupplier.newFactory(
                schema.type(lambdaExpression.expression.returnType), typedInstance, emptySet(),
                emptyList()
             )
@@ -135,7 +136,7 @@ object MapFunction : NamedFunctionInvoker {
             // If the expression is in the form of T1[].map((T1) -> T1.someOtherExpression()), then we should evaluate the
             // expression against the scope of T1
             val factBag = FactBag.of(emptyList(), schema).withAdditionalScopedFacts(listOf(scopedFact), schema)
-            objectFactory.newFactoryWithOnly(expressionReturnType, factBag)
+            thisScopeValueSupplier.newFactoryWithOnly(expressionReturnType, factBag)
                .evaluateExpression(lambdaExpression)
          }
          evaluated

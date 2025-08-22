@@ -16,23 +16,21 @@ import mu.KotlinLogging
 object Single : NamedFunctionInvoker, CollectionFilteringFunction() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Single.name
 private val logger = KotlinLogging.logger {}
-   override fun invoke(
+   override fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      objectFactory: EvaluationValueSupplier,
-      returnTypeFormat: FormatsAndZoneOffset?,
       rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val stopwatch = Stopwatch.createStarted()
 
       // TODO : does it always make sense to cache this?  Is there a heuristic we can use to consider
       // when it's not appropriate?
-
-
-      val result = applyFilter(inputValues, schema, returnType, function, objectFactory, rawMessageBeingParsed)
+      val result = applyFilter(inputValues, schema, returnType, function, thisScopeValueSupplier, rawMessageBeingParsed)
          .map { filtered ->
             when {
                filtered.isEmpty() -> failed(
