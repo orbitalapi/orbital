@@ -90,6 +90,11 @@ data class StreamJobStateEvent(
       STARTING,
       RUNNING,
       SUSPENDED,
+      /**
+       * NOTE: This is an Orbital specific state
+       * Indicates that the stream had failed, and will restart shortly.
+       */
+      WAITING_TO_RESTART,
       SUSPENDED_EXPORTING_SNAPSHOT, // Shouldn't occur
       FAILED,
       COMPLETED // Shouldn't occur
