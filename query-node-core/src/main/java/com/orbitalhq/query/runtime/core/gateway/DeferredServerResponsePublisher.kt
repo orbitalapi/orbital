@@ -2,6 +2,7 @@ package com.orbitalhq.query.runtime.core.gateway
 
 import com.orbitalhq.errors.OrbitalQueryException
 import com.orbitalhq.query.QueryFailedException
+import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
@@ -18,6 +19,7 @@ import java.time.Duration
  * Tested via SavedQueryWithAuthPolicyIntegrationTest
  */
 object DeferredServerResponsePublisher {
+   private val logger = KotlinLogging.logger {}
    /**
     * Wraps a Flux of Any type and ensures that it emits at least one item
     * before sending a ServerResponse.
@@ -88,9 +90,13 @@ object DeferredServerResponsePublisher {
             handleOrbitalQueryException(error.cause as OrbitalQueryException)
          }
          // Handle other exceptions as internal server errors
-         else -> ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR.value())
-            .contentType(MediaType.TEXT_PLAIN)
-            .bodyValue(error.message ?: "A ${error::class.simpleName} was thrown")
+         else -> {
+            val message = error.message ?: "A ${error::class.simpleName} was thrown"
+            logger.error(error) { message }
+            ServerResponse.status(HttpStatus.INTERNAL_SERVER_ERROR.value())
+               .contentType(MediaType.TEXT_PLAIN)
+               .bodyValue(error.message ?: "A ${error::class.simpleName} was thrown")
+         }
       }
 
    private fun handleOrbitalQueryException(error: OrbitalQueryException): Mono<ServerResponse> {
