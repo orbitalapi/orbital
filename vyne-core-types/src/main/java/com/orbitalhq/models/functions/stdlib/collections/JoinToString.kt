@@ -6,29 +6,31 @@ import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.functions.NamedFunctionInvoker
-import com.orbitalhq.models.functions.NullSafeInvoker
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
 
-object JoinToString : NullSafeInvoker() {
+object JoinToString : NamedFunctionInvoker {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.JoinToString.name
-   override fun doInvoke(
+   override fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
       function: FunctionAccessor,
-      rawMessageBeingParsed: Any?,
-      thisScopeValueSupplier: EvaluationValueSupplier,
+      objectFactory: EvaluationValueSupplier,
       returnTypeFormat: FormatsAndZoneOffset?,
-      resultCache: MutableMap<FunctionResultCacheKey, Any>
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>,
    ): TypedInstance {
-      val sourceCollection = inputValues[0] as TypedCollection
+      val sourceCollection = inputValues[0]
+      if (sourceCollection !is TypedCollection) {
+         return createFailureWithTypedNull("Expected a collection, but got a ${sourceCollection::class.simpleName}", returnType, function, inputValues)
+      }
       val seperator = inputValues[1].toRawObject()?.toString() ?: ","
       val prefix = inputValues[2].toRawObject()?.toString() ?: ""
-      val postfix = inputValues[3]?.toRawObject()?.toString() ?: ""
+      val postfix = inputValues[3].toRawObject()?.toString() ?: ""
 
       val sourceStrings = sourceCollection.mapNotNull { it.toRawObject()?.toString() }
       val result = sourceStrings.joinToString(seperator, prefix, postfix)
