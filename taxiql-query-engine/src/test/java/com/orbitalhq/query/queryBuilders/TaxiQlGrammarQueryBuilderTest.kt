@@ -61,6 +61,31 @@ class TaxiQlGrammarQueryBuilderTest {
    }
 
    @Test
+   fun `generates from null`() {
+      val generatedQuery = generateQuery(
+         getQuerySpecNode("""given { age: Age = null } find { Actor( Age == age ) }""", schema)
+      )
+      generatedQuery.withoutWhitespace().shouldBe("""find { Actor( Age == null ) }""".withoutWhitespace())
+   }
+
+   @Test
+   fun `generates from array of string argument`() {
+      val generatedQuery = generateQuery(
+         getQuerySpecNode("""given { names : ActorName[] = ["Jimmy", "Jack"] } find { Actor( ActorName in names ) }""", schema)
+      )
+      generatedQuery.withoutWhitespace().shouldBe("""find { Actor( ActorName in ["Jimmy","Jack"] ) }""".withoutWhitespace())
+   }
+
+   @Test
+   fun `generates from array of string with null value argument`() {
+      val generatedQuery = generateQuery(
+         getQuerySpecNode("""given { names : ActorName[] = ["Jimmy", null, "Jack"] } find { Actor( ActorName in names ) }""", schema)
+      )
+      generatedQuery.withoutWhitespace().shouldBe("""find { Actor( ActorName in ["Jimmy",null, "Jack"] ) }""".withoutWhitespace())
+   }
+
+
+   @Test
    fun `generates from string argument`() {
       val generatedQuery = generateQuery(
          getQuerySpecNode("""given { name : ActorName = "Jimmy" } find { Actor( ActorName == name ) }""", schema)

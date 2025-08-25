@@ -1,8 +1,10 @@
 package com.orbitalhq.connectors.jdbc
 
 import arrow.core.Either
+import arrow.core.getOrElse
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Stopwatch
+import com.orbitalhq.connectors.TaxiQlInvokerUtils
 import com.orbitalhq.connectors.getTaxiQlQuery
 import com.orbitalhq.connectors.jdbc.sql.dml.SelectStatementGenerator
 import com.orbitalhq.models.TypedInstance
@@ -42,7 +44,8 @@ class JdbcQueryInvoker(
       val schema = schemaProvider.schema
       val taxiSchema = schema.taxi
       val (taxiQuery, constructedQueryDataSource) = parameters.getTaxiQlQuery()
-      val (query, _) = schema.parseQuery(taxiQuery)
+      val query = TaxiQlInvokerUtils.queryOrErrorFlow(schema, taxiQuery)
+         .getOrElse { errorFlow -> return errorFlow }
 //      val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
       val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query, connectionConfig.sqlBuilder())
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }

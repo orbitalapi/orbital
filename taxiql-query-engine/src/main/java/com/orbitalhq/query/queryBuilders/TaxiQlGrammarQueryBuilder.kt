@@ -4,6 +4,7 @@ import com.google.common.annotations.VisibleForTesting
 import com.orbitalhq.models.ConversionService
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedValue
 import com.orbitalhq.query.ConstructedQueryDataSource
 import com.orbitalhq.query.QueryContext
@@ -13,6 +14,7 @@ import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOperation
 import com.orbitalhq.schemas.Schema
 import lang.taxi.accessors.LiteralAccessor
+import lang.taxi.accessors.NullValue
 import lang.taxi.expressions.Expression
 import lang.taxi.expressions.ExtensionFunctionExpression
 import lang.taxi.expressions.LiteralArray
@@ -26,6 +28,8 @@ import lang.taxi.types.CompilationUnit
 import lang.taxi.types.MemberTypeReferenceExpression
 import mu.KotlinLogging
 
+private val logger = KotlinLogging.logger {}
+
 /**
  * Responsible for taking a QuerySpecNode and turning it into a TaxiQL query.
  * Generally, this is used generating subqueries from the main query, to hand off
@@ -34,10 +38,6 @@ import mu.KotlinLogging
  * Later, this TaxiQL query gets turned into the actual query language (eg. SQL)
  */
 class TaxiQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
-   companion object {
-      private val logger = KotlinLogging.logger {}
-   }
-
    override val supportedGrammars: List<String> = listOf(VyneQlGrammar.GRAMMAR_NAME)
    override fun buildQuery(
       spec: QuerySpecTypeNode,
@@ -100,7 +100,7 @@ private fun typedInstanceToLiteralExpressionAndValues(
       is TypedCollection -> {
          val members = value.map {
             LiteralExpression(
-               LiteralAccessor(it.value ?: "null", it.type.taxiType),
+               LiteralAccessor(it.value ?: NullValue, it.type.taxiType),
                compilationUnits
             )
          }
@@ -116,10 +116,16 @@ private fun typedInstanceToLiteralExpressionAndValues(
          LiteralArray(value.type.taxiType, members, updatedCompilationUnits) to value.value
       }
 
-      else ->
-         LiteralExpression(LiteralAccessor(value.value!!, value.type.taxiType), compilationUnits) to listOf(
+      else -> {
+         val literalValue = if (value.value == null) {
+            logger.warn { "Encountered null whilst converting an input for a TaxiQL query. ${value.type.qualifiedName.shortDisplayName} - Source: ${value.source}" }
+            NullValue
+         } else value.value!!
+         LiteralExpression(LiteralAccessor(literalValue, value.type.taxiType), compilationUnits) to listOf(
             value
          )
+      }
+
    }
    return result
 }
