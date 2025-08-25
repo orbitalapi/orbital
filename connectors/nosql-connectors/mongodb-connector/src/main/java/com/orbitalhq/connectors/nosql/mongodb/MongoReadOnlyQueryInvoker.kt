@@ -1,13 +1,17 @@
 package com.orbitalhq.connectors.nosql.mongodb
 
 import arrow.core.Either
+import arrow.core.getOrElse
+import arrow.core.left
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Stopwatch
+import com.orbitalhq.connectors.TaxiQlInvokerUtils
 import com.orbitalhq.connectors.getTypesToFind
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.ConstructedQueryDataSource
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.StreamErrorMessage
+import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.query.tracing.DatabaseRequest
 import com.orbitalhq.query.tracing.DatabaseResponse
 import com.orbitalhq.query.tracing.SpanState
@@ -19,6 +23,8 @@ import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import lang.taxi.CompilationException
 import mu.KotlinLogging
 import org.springframework.data.mongodb.core.query.Query
 
@@ -42,7 +48,10 @@ class MongoReadOnlyQueryInvoker(
       val schema = schemaProvider.schema
       val taxiSchema = schema.taxi
       val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
-      val (query, _) = schema.parseQuery(taxiQuery)
+      val query = TaxiQlInvokerUtils.queryOrErrorFlow(schema, taxiQuery)
+         .getOrElse { errorFlow ->
+            return errorFlow
+         }
       val typesToFind = getTypesToFind(query, taxiSchema)
       val typesToCollectionNames = MongoQueryHelpers.getCollectionNames(typesToFind)
       val criterias = MongoCriteriaGenerator(schema).crtieriaFor(query)
