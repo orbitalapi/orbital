@@ -12,6 +12,7 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.log
 import lang.taxi.expressions.Expression
+import lang.taxi.expressions.FunctionExpression
 import lang.taxi.expressions.LiteralArray
 import lang.taxi.expressions.LiteralExpression
 import lang.taxi.expressions.OperatorExpression
@@ -148,6 +149,7 @@ class QueryOperationInvocationStrategy(
             is LiteralExpression -> true
             is LiteralArray -> true
             is ArgumentSelector -> true
+            is FunctionExpression -> true
             is OperatorExpression -> canFilterForExpression(expressionPart, schema, operationReturnType)
             // These can probably all be simplified down do canFilterOnPropertyType(expression.returnType)
             is MemberTypeReferenceExpression -> canFilterOnPropertyType(schema, schema.type(expressionPart.targetType), operationReturnType)
