@@ -5,6 +5,7 @@ import arrow.core.right
 import com.orbitalhq.connectors.config.mongodb.MongoConnection
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
 import com.orbitalhq.connectors.nosql.mongodb.registry.InMemoryMongoConnectionRegistry
+import com.orbitalhq.firstRawObject
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.VyneQlGrammar
@@ -102,6 +103,12 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
       connectionRegistry = InMemoryMongoConnectionRegistry(listOf(mongo1ConnectionConfig))
       connectionFactory = MongoConnectionFactory(connectionRegistry, SimpleMeterRegistry())
    }
+
+   @Test
+   fun `can batch updates into mongo using @UniqueIndex`() {
+
+   }
+
 
    @Test
    fun `can stream batches into Mongo`(): Unit = runBlocking {
@@ -259,10 +266,96 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
 
       val memoryAfter = Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()
       println("Memory increase : ${(memoryAfter - memoryBefore).formatAsFileSize}")
-
-
    }
 
+
+   @Test
+   fun `can stream batches with projection into Mongo using UniqueIndex`(): Unit = runBlocking {
+      val schemaSrc = listOf(
+         MongoConnector.schema,
+         VyneQlGrammar.QUERY_TYPE_TAXI,
+         """
+         ${MongoConnector.Annotations.imports}
+          model StockPrice {
+            symbol : Symbol inherits String
+            price : Price inherits Decimal
+         }
+         @Collection(connection = "testMongo", collection = "prices")
+         parameter model MongoStockPrice {
+            @UniqueIndex
+            ticker : Symbol
+            realPrice : Price
+            retailPrice : RetailPrice inherits Decimal
+         }
+         service PriceStream {
+            stream prices : Stream<StockPrice>
+         }
+         @MongoService( connection = "testMongo" )
+         service MongoService {
+             table stockPrices: MongoStockPrice[]
+            // Small batch size, long duration - should write when the batch is filled
+            @UpsertOperation(batchSize = 2, batchDuration = 1000)
+            write operation insertStockPrice(MongoStockPrice):MongoStockPrice
+         }
+         """
+      )
+      val (vyne, stub) = testVyneWithStub(schemaSrc) { schema ->
+         listOf(
+            MongoDbInvoker(
+               connectionFactory,
+               SimpleSchemaProvider(schema), SimpleMeterRegistry()
+            )
+         )
+      }
+
+      val prices = listOf(100, 101, 102)
+         .map { it.toBigDecimal() }
+
+      val pricesFlow = MutableSharedFlow<Either<StreamErrorMessage, TypedInstance>>(replay = prices.size)
+      stub.addResponseFlow("prices") { _, _ -> pricesFlow }
+
+      val resultFlow = vyne.query(
+         """stream { StockPrice } as {
+               ticker: Symbol
+               cost : Price
+               retailPrice : RetailPrice = Price + 1
+            }[]
+         call MongoService::insertStockPrice
+      """.trimMargin()
+      )
+         .results
+      val collectedResults = AtomicInteger(0)
+
+      val thread = launch {
+         resultFlow.onEach {
+            collectedResults.incrementAndGet()
+         }
+            .collect()
+      }
+
+
+      prices.forEach { price ->
+         val item = mapOf("symbol" to "AAPL", "price" to price)
+         val typedInstance = TypedInstance.from(vyne.schema.type("StockPrice"), item, vyne.schema)
+         pricesFlow.emit(typedInstance.right())
+      }
+
+      // Make sure this is less than the batch write timeout, to assert that
+      // writes are triggered by batch size, not timeout
+      eventually(60.seconds) {
+         collectedResults.get() shouldBe prices.size
+      }
+      thread.cancelAndJoin()
+      val mongo = connectionFactory.reactiveMongoTemplate(connectionFactory.config("testMongo"))
+      val count = mongo.getCollection("prices")
+         .flatMap { it ->
+            it.countDocuments().toMono()
+         }.block()!!
+
+      val resultFromDb = vyne.query("""find { MongoStockPrice(Symbol == "AAPL") }""")
+         .firstRawObject()
+      resultFromDb["realPrice"].shouldBe(prices.last())
+   }
 
    @Test
    fun `Can Insert Into Mongo Collection`(): Unit = runBlocking {
