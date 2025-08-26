@@ -9,6 +9,7 @@ import com.orbitalhq.connectors.kafka.registry.test
 import com.orbitalhq.connections.ConnectionStatus
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import com.orbitalhq.connectors.registry.ConnectorCategory
+import mu.KotlinLogging
 import org.springframework.stereotype.Component
 import reactor.core.publisher.Mono
 
@@ -19,7 +20,9 @@ class KafkaHealthCheckProvider(
    // To reduce the noise of logging (but not remove it completely), we hold a hashmap of
    // endpoints that are healthy, and the last time that we logged about it.
    //
-
+   companion object {
+      private val logger = KotlinLogging.logger {}
+   }
    override fun canProvideFor(config: ConnectorConfiguration): Boolean {
       return config.type == ConnectorCategory.MESSAGE_BROKER && config.driverName == KafkaConnection.DRIVER_NAME
    }
@@ -32,7 +35,10 @@ class KafkaHealthCheckProvider(
                .map { ConnectionStatus.healthy() }
                .getOrElse { ConnectionStatus.error(it) }
          } catch (e:Exception) {
-            ConnectionStatus.error(e.message ?: e::class.simpleName!!)
+            val message = e.message ?: e::class.simpleName!!
+            // Log this, but don't include params in the connection status, as can be sensitive
+            logger.warn { "Kafka connection ${config.connectionName} is unhealthy - $message - using pararms: ${config.connectionParameters}" }
+            ConnectionStatus.error(message)
          }
          logHelper.logHealthStatus(config, result)
          sink.success(result)
