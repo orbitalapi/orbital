@@ -23,18 +23,22 @@ class KafkaHealthCheckProvider(
    companion object {
       private val logger = KotlinLogging.logger {}
    }
+
    override fun canProvideFor(config: ConnectorConfiguration): Boolean {
       return config.type == ConnectorCategory.MESSAGE_BROKER && config.driverName == KafkaConnection.DRIVER_NAME
    }
 
    override fun provide(config: ConnectorConfiguration): Mono<ConnectionStatus> {
-      require(config is KafkaConnectionConfiguration) { "Expected to receive a ${KafkaConnectionConfig::class.simpleName}, but got ${config::class.simpleName}"}
+      require(config is KafkaConnectionConfiguration) { "Expected to receive a ${KafkaConnectionConfig::class.simpleName}, but got ${config::class.simpleName}" }
       return Mono.create { sink ->
          val result = try {
             KafkaConnection.test(config)
                .map { ConnectionStatus.healthy() }
-               .getOrElse { ConnectionStatus.error(it) }
-         } catch (e:Exception) {
+               .getOrElse { error ->
+                  logger.warn { "Kafka connection ${config.connectionName} is unhealthy - $error - using params: ${config.connectionParameters}" }
+                  ConnectionStatus.error(error)
+               }
+         } catch (e: Exception) {
             val message = e.message ?: e::class.simpleName!!
             // Log this, but don't include params in the connection status, as can be sensitive
             logger.warn { "Kafka connection ${config.connectionName} is unhealthy - $message - using params: ${config.connectionParameters}" }
