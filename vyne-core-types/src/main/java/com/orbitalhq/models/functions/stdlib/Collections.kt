@@ -12,6 +12,7 @@ import com.orbitalhq.models.functions.stdlib.collections.Append
 import com.orbitalhq.models.functions.stdlib.collections.IfEmpty
 import com.orbitalhq.models.functions.stdlib.collections.JoinToString
 import com.orbitalhq.models.functions.stdlib.collections.ListOf
+import com.orbitalhq.models.functions.stdlib.collections.OrEmpty
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import lang.taxi.functions.FunctionAccessor
@@ -28,6 +29,7 @@ object Collections {
       ListOf,
       JoinToString,
       IfEmpty,
+      OrEmpty,
       Append
    )
 }
