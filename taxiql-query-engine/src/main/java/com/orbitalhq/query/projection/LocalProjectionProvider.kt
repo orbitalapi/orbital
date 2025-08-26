@@ -260,7 +260,7 @@ class LocalProjectionProvider : ProjectionProvider {
          val collectedResult =  source.toList()
          val sourceType = context.schema.type(projection.projectingExpression.projection.sourceType)
          val sourceValue = when {
-            Arrays.isArray(projection.projectingExpression.projection.sourceType) -> TypedCollection.from(collectedResult)
+            Arrays.isArray(projection.projectingExpression.projection.sourceType) -> TypedCollection(context.schema.type(projection.projectingExpression.projection.sourceType), collectedResult)
             collectedResult.size == 1 -> collectedResult.single()
             collectedResult.size == 0 -> {
                // this is an error, as we should've at least received a TypedNull
