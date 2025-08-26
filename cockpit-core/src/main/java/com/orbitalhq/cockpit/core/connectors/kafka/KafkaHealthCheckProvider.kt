@@ -37,7 +37,7 @@ class KafkaHealthCheckProvider(
          } catch (e:Exception) {
             val message = e.message ?: e::class.simpleName!!
             // Log this, but don't include params in the connection status, as can be sensitive
-            logger.warn { "Kafka connection ${config.connectionName} is unhealthy - $message - using pararms: ${config.connectionParameters}" }
+            logger.warn { "Kafka connection ${config.connectionName} is unhealthy - $message - using params: ${config.connectionParameters}" }
             ConnectionStatus.error(message)
          }
          logHelper.logHealthStatus(config, result)
