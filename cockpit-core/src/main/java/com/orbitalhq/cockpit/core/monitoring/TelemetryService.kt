@@ -104,7 +104,7 @@ class TelemetryService(
          )
             .map { spec to it }
       }
-      return buildMetricsDataFromResults(httpRequests)
+      return buildMetricsDataFromResults(httpRequests, metricsSpecs)
    }
 
    private fun buildStreamMetrics(
@@ -120,10 +120,13 @@ class TelemetryService(
             .map { spec to it }
       }
 
-      return buildMetricsDataFromResults(httpRequests)
+      return buildMetricsDataFromResults(httpRequests, metricsSpecs)
    }
 
-   private fun buildMetricsDataFromResults(httpRequests: List<Mono<Pair<PrometheusMetricSpec, Result<RawSeriesData>>>>): Mono<StreamMetricsData> {
+   private fun buildMetricsDataFromResults(
+      httpRequests: List<Mono<Pair<PrometheusMetricSpec, Result<RawSeriesData>>>>,
+      metricsSpecs: List<PrometheusMetricSpec>
+   ): Mono<StreamMetricsData> {
       return Flux.merge(httpRequests)
          .collectList()
          .map { specsAndResults: List<Pair<PrometheusMetricSpec, Result<RawSeriesData>>> ->
@@ -138,8 +141,10 @@ class TelemetryService(
                StreamMetricsData.unavailable(errorMessage)
             } else {
                val dataSeries = loadedMetrics
-                  .sortedBy { (spec, _) -> aggregateMetricSpecs.indexOf(spec) }
-                  .map { (spec, data) ->
+                  .sortedBy { (spec, _) ->
+                     metricsSpecs.indexOf(spec)
+                  }
+                  .mapIndexed { index, (spec, data) ->
                      DataSeries(spec.title, spec.unitLabel, spec.yAxisUnit, data.series)
                   }
                val tags = loadedMetrics.firstOrNull()?.second?.tags ?: emptyMap()
