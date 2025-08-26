@@ -13,7 +13,9 @@ export function isFailedSearchResponse(message: StreamingQueryMessage): message 
 }
 
 export function isValueWithTypeName(message: any): message is ValueWithTypeName {
-  return !isNullOrUndefined(message) && !isNullOrUndefined(message['value']) &&
+  return !isNullOrUndefined(message) &&
+    // message[value] can be null - it depnds on the query being run
+    message['value'] !== undefined &&
     !isNullOrUndefined(message['anonymousTypes']) && // always present, often [],
     !isNullOrUndefined(message['queryId']); // always present.
 }
