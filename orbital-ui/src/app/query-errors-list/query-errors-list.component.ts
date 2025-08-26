@@ -13,11 +13,12 @@ import {StreamErrorMessage, StreamQueryErrorEvent} from "../services/query.servi
 import {AgGridModule} from "ag-grid-angular";
 import {ColDef} from "ag-grid-community";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
+import {TextWithCopyCellRendererComponent} from "../shared/cell-renderers/text-with-copy-cell-renderer.component";
 
 @Component({
   selector: 'app-query-errors-list',
   standalone: true,
-  imports: [CommonModule, AgGridModule],
+  imports: [CommonModule, AgGridModule, TextWithCopyCellRendererComponent],
   template: `
     <ag-grid-angular
       style="width: 100%; height: 100%;"
@@ -70,9 +71,21 @@ export class QueryErrorsListComponent {
       resizable: true,
       valueFormatter: params => formatDate(params.value, 'medium', this.locale)
     },
-    {field: 'message', sortable: true, filter: true, resizable: true},
+    {
+      field: 'message', 
+      sortable: true, 
+      filter: true, 
+      resizable: true,
+      cellRenderer: TextWithCopyCellRendererComponent
+    },
     {field: 'typeName', sortable: true, filter: true, resizable: true},
-    {field: 'payload', sortable: true, filter: true, resizable: true},
+    {
+      field: 'payload', 
+      sortable: true, 
+      filter: true, 
+      resizable: true,
+      cellRenderer: TextWithCopyCellRendererComponent
+    },
   ];
 
   public rowData: StreamErrorMessage[] = [];

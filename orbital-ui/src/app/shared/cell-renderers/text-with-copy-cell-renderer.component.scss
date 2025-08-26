@@ -1,0 +1,31 @@
+@import "src/common";
+
+.cell-container {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 0.5rem;
+}
+
+.cell-text {
+  flex: 1;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.copy-button {
+  flex-shrink: 0;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.cell-container:hover .copy-button {
+  opacity: 1;
+}
+
+.copy-button img {
+  width: 0.75rem;
+  height: 0.75rem;
+}
