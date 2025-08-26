@@ -16,6 +16,7 @@ import com.orbitalhq.testVyne
 import com.orbitalhq.testVyneWithStub
 import com.orbitalhq.typedObjects
 import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainAll
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.maps.shouldContainKey
@@ -688,6 +689,61 @@ class MongoReadOnlyQueryInvokerTest : MongoDbTestcontainer() {
          mapOf("id" to 1, "name" to "Jimmy"),
          mapOf("id" to 2, "name" to "Mark"),
       )
+   }
+
+   @Test
+   fun `can load from mongo using in operator where ids are an empty array because of a failed call to a remote services`(): Unit = runBlocking {
+      val schema = """
+
+         model Family {
+            id : FamilyId inherits Int
+            members : FamilyMember[]
+         }
+         model FamilyMember {
+            id : PersonId
+         }
+
+         service FamilyApi {
+            operation getFamily(FamilyId):Family
+         }
+
+         @Collection(connection = "usersMongo", collection = "peeps1")
+         model Person {
+            @Id
+            id : PersonId inherits Int
+            name : Name inherits String
+         }
+         @MongoService( connection = "usersMongo" )
+         service UsersDb {
+            table people : Person[]
+            @UpsertOperation
+            write operation upsertPerson(Person):Person
+         }
+
+      """.trimIndent()
+      val (vyne, stub) = testVyneWithStub(
+         listOf(
+            MongoConnector.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            schema
+         )
+      ) { schema ->
+         listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()))
+      }
+      stub.addResponse("getFamily", """{ "id" : 1 }""") // <----- note that members is not provided.
+      // Insert some data
+
+      // Now find some back
+      val people = vyne.query(
+         """
+         given {
+            FamilyId = 1
+         }
+         find { Person[]( PersonId in (Family::FamilyMember[].map( (FamilyMember) -> PersonId ).orEmpty() )  ) }
+      """.trimIndent()
+      )
+         .rawObjects()
+      people.shouldBeEmpty()
    }
 
    @Test
