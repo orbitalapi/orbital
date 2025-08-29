@@ -1,6 +1,7 @@
 package com.orbitalhq.models.functions.stdlib
 
 import arrow.core.Either
+import arrow.core.getOrElse
 import arrow.core.getOrHandle
 import arrow.core.left
 import arrow.core.right
@@ -13,6 +14,7 @@ import com.orbitalhq.models.functions.stdlib.collections.IfEmpty
 import com.orbitalhq.models.functions.stdlib.collections.JoinToString
 import com.orbitalhq.models.functions.stdlib.collections.ListOf
 import com.orbitalhq.models.functions.stdlib.collections.OrEmpty
+import com.orbitalhq.models.functions.stdlib.collections.createFailureWithTypedNull
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import lang.taxi.functions.FunctionAccessor
@@ -30,11 +32,12 @@ object Collections {
       JoinToString,
       IfEmpty,
       OrEmpty,
-      Append
+      Append,
+      Size,
+      IsNullOrEmpty
    )
 }
 
-private val logger = KotlinLogging.logger {}
 
 object AnyOf :
    BooleanPredicateEvaluator(lang.taxi.functions.stdlib.AnyOf.name, { inputs: List<Boolean> -> inputs.any { it } })
@@ -44,7 +47,6 @@ object AllOf :
 
 object NoneOf :
    BooleanPredicateEvaluator(lang.taxi.functions.stdlib.NoneOf.name, { inputs: List<Boolean> -> inputs.none { it } })
-
 
 abstract class BooleanPredicateEvaluator(
    override val functionName: QualifiedName,
@@ -120,6 +122,54 @@ object Contains : NullSafeInvoker() {
       val result = collection.any { it.valueEquals(searchTarget) }
       val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
       return TypedInstance.from(returnType, result, schema, source = dataSource)
+   }
+
+}
+
+
+object Size : NullSafeInvoker() {
+   override fun doInvoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      rawMessageBeingParsed: Any?,
+      thisScopeValueSupplier: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
+   ): TypedInstance {
+      val collection = inputValues.argumentAsTypedInstanceOrError<TypedCollection>(0, returnType, function)
+         .getOrElse { return it }
+      return TypedValue.from(returnType, collection.size, source = EvaluatedExpression(function.asTaxi(), inputValues))
+   }
+
+   override val functionName: QualifiedName  = lang.taxi.functions.stdlib.Size.name
+}
+
+
+// Intentionally not nullSafeInvoker
+object IsNullOrEmpty : NamedFunctionInvoker {
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.IsNullOrEmpty.name
+
+   override fun invoke(
+      inputValues: List<TypedInstance>,
+      schema: Schema,
+      returnType: Type,
+      function: FunctionAccessor,
+      objectFactory: EvaluationValueSupplier,
+      returnTypeFormat: FormatsAndZoneOffset?,
+      rawMessageBeingParsed: Any?,
+      resultCache: MutableMap<FunctionResultCacheKey, Any>
+   ): TypedInstance {
+      val collection = inputValues.nullableArgumentAsTypedInstanceOrError<TypedCollection>(0, returnType, function)
+         .getOrElse { return it }
+      val result = when {
+         collection is TypedNull -> true
+         collection is TypedCollection -> collection.isEmpty()
+         // This shouldn't happen...
+         else -> return createFailureWithTypedNull("Unhandled branch - isNullOrEmpty expected either null or a typed collection", returnType, function, inputValues)
+      }
+      return TypedValue.from(returnType, result, source = EvaluatedExpression(function.asTaxi(), inputValues))
    }
 
 }
