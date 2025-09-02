@@ -29,6 +29,7 @@ class TaxiQlGrammarQueryBuilderTest {
       model Actor {
          name : ActorName inherits String
          age : Age inherits Int
+         lastUpdated: LastUpdated inherits Instant
       }
       service DbService {
          table actors : Actor[]
@@ -71,17 +72,25 @@ class TaxiQlGrammarQueryBuilderTest {
    @Test
    fun `generates from array of string argument`() {
       val generatedQuery = generateQuery(
-         getQuerySpecNode("""given { names : ActorName[] = ["Jimmy", "Jack"] } find { Actor( ActorName in names ) }""", schema)
+         getQuerySpecNode(
+            """given { names : ActorName[] = ["Jimmy", "Jack"] } find { Actor( ActorName in names ) }""",
+            schema
+         )
       )
-      generatedQuery.withoutWhitespace().shouldBe("""find { Actor( ActorName in ["Jimmy","Jack"] ) }""".withoutWhitespace())
+      generatedQuery.withoutWhitespace()
+         .shouldBe("""find { Actor( ActorName in ["Jimmy","Jack"] ) }""".withoutWhitespace())
    }
 
    @Test
    fun `generates from array of string with null value argument`() {
       val generatedQuery = generateQuery(
-         getQuerySpecNode("""given { names : ActorName[] = ["Jimmy", null, "Jack"] } find { Actor( ActorName in names ) }""", schema)
+         getQuerySpecNode(
+            """given { names : ActorName[] = ["Jimmy", null, "Jack"] } find { Actor( ActorName in names ) }""",
+            schema
+         )
       )
-      generatedQuery.withoutWhitespace().shouldBe("""find { Actor( ActorName in ["Jimmy",null, "Jack"] ) }""".withoutWhitespace())
+      generatedQuery.withoutWhitespace()
+         .shouldBe("""find { Actor( ActorName in ["Jimmy",null, "Jack"] ) }""".withoutWhitespace())
    }
 
 
@@ -96,20 +105,36 @@ class TaxiQlGrammarQueryBuilderTest {
    @Test
    fun `generates from model reference`() {
       val generatedQuery = generateQuery(
-         getQuerySpecNode("""given {
+         getQuerySpecNode(
+            """given {
             |  castMember : CastMember = {
             |     characterName : 'Floppy',
             |     actor : 'Jimmy'
             |  }
             |}
-            |find { Actor( ActorName == castMember::ActorName ) }""".trimMargin(), schema)
+            |find { Actor( ActorName == castMember::ActorName ) }""".trimMargin(), schema
+         )
       )
       generatedQuery.withoutWhitespace().shouldBe("""find { Actor( ActorName == "Jimmy" ) }""".withoutWhitespace())
    }
 
+   @Test
+   fun `generates from instant argument`() {
+      val generatedQuery = generateQuery(
+         getQuerySpecNode(
+            """given { lastUpdated: LastUpdated = parseDate('2025-05-10T09:30:00Z') }
+            | find { Actor( LastUpdated >= lastUpdated ) }""".trimMargin(), schema
+         )
+      )
+      generatedQuery.withoutWhitespace().shouldBe("""find { Actor(
+LastUpdated >= "2025-05-10T09:30:00Z"
+) }""".withoutWhitespace())
+   }
+
    private fun generateQuery(querySpecNode: Pair<QueryContext, QuerySpecTypeNode>): String {
       val (context, spec) = querySpecNode
-      val generated = queryBuilder.buildQuery(spec, schema.tableOperations.first().queryOperations.first(), schema, context)
+      val generated =
+         queryBuilder.buildQuery(spec, schema.tableOperations.first().queryOperations.first(), schema, context)
       return generated.entries.single().value.toRawObject() as String
    }
 }
