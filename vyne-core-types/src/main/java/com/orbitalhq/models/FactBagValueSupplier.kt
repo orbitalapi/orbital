@@ -4,6 +4,7 @@ import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.facts.FactSearch
 import com.orbitalhq.models.facts.ScopedFact
+import com.orbitalhq.models.facts.SearchableDataContext
 import com.orbitalhq.schemas.*
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.Argument
@@ -46,6 +47,8 @@ class FactBagValueSupplier(
       }
    }
 
+   override val hasDataContext: Boolean = true
+   override val dataContext: SearchableDataContext = facts
    override fun withAdditionalScopedFacts(scopedFacts: List<ScopedFact>): FactBagValueSupplier {
 
       return FactBagValueSupplier(

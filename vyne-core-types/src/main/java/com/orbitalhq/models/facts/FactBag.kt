@@ -9,12 +9,38 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import lang.taxi.accessors.Argument
 
+
+/**
+ * A subset of read-only search operations from a FactBag
+ */
+interface SearchableDataContext {
+   /**
+    * Returns the fact if present, or a typed null
+    * explaining why the search failed if not.
+    *
+    * Provides a clean way of signalling type-not-present vs ambiguous search result.
+    */
+   fun getFactOrTypedNull(
+      search: FactSearch
+   ): Either<TypedNull, TypedInstance>
+
+   fun getFactOrTypedNull(
+      type: Type,
+      strategy: FactDiscoveryStrategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY,
+      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
+   ): Either<TypedNull, TypedInstance>
+
+   fun hasFact(
+      search: FactSearch
+   ): Boolean
+}
+
 /**
  * A FactBag is a collection of Facts (ie., TypedInstances) for search purposes.
  * It's responsible for providing rich search capability, and caching searches for facts
  * to optimize search time.
  */
-interface FactBag : Collection<TypedInstance> {
+interface FactBag : SearchableDataContext, Collection<TypedInstance> {
    companion object {
 
       fun of(facts: List<TypedInstance>, schema: Schema): FactBag {
@@ -134,25 +160,7 @@ interface FactBag : Collection<TypedInstance> {
       search: FactSearch,
    ): TypedInstance?
 
-   /**
-    * Returns the fact if present, or a typed null
-    * explaining why the search failed if not.
-    *
-    * Provides a clean way of signalling type-not-present vs ambiguous search result.
-    */
-   fun getFactOrTypedNull(
-      search: FactSearch
-   ): Either<TypedNull, TypedInstance>
 
-   fun getFactOrTypedNull(
-      type: Type,
-      strategy: FactDiscoveryStrategy = FactDiscoveryStrategy.TOP_LEVEL_ONLY,
-      spec: TypedInstanceValidPredicate = AlwaysGoodSpec
-   ): Either<TypedNull, TypedInstance>
-
-   fun hasFact(
-      search: FactSearch
-   ): Boolean
 
    /**
     * Returns a new factbag, with additional scoped facts.
