@@ -1,5 +1,6 @@
 package com.orbitalhq.queryService
 
+import arrow.core.getOrElse
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -56,6 +57,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.reactor.asFlux
 import org.junit.Test
 import org.junit.jupiter.api.assertThrows
+import org.junit.jupiter.api.fail
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -259,7 +261,7 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
       val result = client.get().uri("/api/q/films")
          .retrieve()
          .bodyToMono<List<Map<String, Any>>>()
-         .block()
+         .block()!!
       result.shouldHaveSize(3)
    }
 
@@ -387,7 +389,7 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
                }
          })
          .bodyToMono(T::class.java)
-         .block()
+         .block()!!
    }
 
    @Test
@@ -408,6 +410,99 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
       exception.getResponseBodyAsString(Charsets.UTF_8)
          .shouldBe("Parameter 'person' needs an annotation to specify how it should be resolved from the request. Consider adding one of taxi.http.HttpHeader, taxi.http.RequestBody, taxi.http.QueryVariable, taxi.http.PathVariable. (Check imports if annotation seems present but isn't recognized).")
    }
+
+   @Test
+   fun `can serve csv from endpoint based on annotation`() {
+      val schema = """
+         model Person {
+            name :  PersonName inherits String
+         }
+         service PersonApi {
+            operation getAll():Person[]
+         }
+         @com.orbitalhq.formats.Csv
+         model PersonCsv {
+            called : PersonName
+            also: String = "another value"
+         }
+         @HttpOperation(url = "/api/q/person", method = "GET")
+         query FindPeople {
+            find { Person[] } as PersonCsv[]
+         }
+      """.trimIndent()
+      val stub = submitSchemaAndFetchStub(schema, routeToWaitFor = "/api/q/person" to HttpMethod.GET)
+      stub.addResponse("getAll", """[ { "name" : "Jimmy"}, { "name" : "Jack" } ]""")
+      val response = sendToApi<String>("/api/q/person", HttpMethod.GET, "")
+      val CR = "\r"
+      val expected = """called,also$CR
+Jimmy,another value$CR
+Jack,another value$CR
+"""
+      response.shouldBe(expected)
+   }
+
+   @Test
+   fun `can serve csv from endpoint based on inline annotation`() {
+      val schema = """
+         model Person {
+            name :  PersonName inherits String
+         }
+         service PersonApi {
+            operation getAll():Person[]
+         }
+
+         @HttpOperation(url = "/api/q/person", method = "GET")
+         query FindPeople {
+            find { Person[] } as
+            @com.orbitalhq.formats.Csv
+            {
+               called : PersonName
+               also: String = "another value"
+            }[]
+         }
+      """.trimIndent()
+      val stub = submitSchemaAndFetchStub(schema, routeToWaitFor = "/api/q/person" to HttpMethod.GET)
+      stub.addResponse("getAll", """[ { "name" : "Jimmy"}, { "name" : "Jack" } ]""")
+      val response = sendToApi<String>("/api/q/person", HttpMethod.GET, "")
+      val CR = "\r"
+      val expected = """called,also$CR
+Jimmy,another value$CR
+Jack,another value$CR
+"""
+      response.shouldBe(expected)
+   }
+
+   @Test
+   fun `can serve csv from endpoint based on inheritence with annotation`() {
+      val schema = """
+         model Person {
+            name :  PersonName inherits String
+         }
+         service PersonApi {
+            operation getAll():Person[]
+         }
+
+         @com.orbitalhq.formats.Csv
+         model CsvPerson inherits Person {
+            also: String = "another value"
+         }
+
+         @HttpOperation(url = "/api/q/person", method = "GET")
+         query FindPeople {
+            find { Person[] } as CsvPerson[]
+         }
+      """.trimIndent()
+      val stub = submitSchemaAndFetchStub(schema, routeToWaitFor = "/api/q/person" to HttpMethod.GET)
+      stub.addResponse("getAll", """[ { "name" : "Jimmy"}, { "name" : "Jack" } ]""")
+      val response = sendToApi<String>("/api/q/person", HttpMethod.GET, "")
+      val CR = "\r"
+      val expected = """name,also$CR
+Jimmy,another value$CR
+Jack,another value$CR
+"""
+      response.shouldBe(expected)
+   }
+
 
    @Test
    fun `can call map to invoke multiple mutations and return result`() {
@@ -470,6 +565,9 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
          PackageMetadata.from("com.orbital", "test"),
          listOf(VersionedSource.sourceOnly(schema))
       )
+      submissionResult.getOrElse { exception ->
+         fail("There were schema compilation errors", exception)
+      }
 
       runBlocking {
          eventually(Duration.parse("10s")) {

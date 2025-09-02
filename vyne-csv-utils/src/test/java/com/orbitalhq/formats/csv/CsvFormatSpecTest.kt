@@ -8,6 +8,7 @@ import com.orbitalhq.models.TypedObject
 import com.orbitalhq.models.format.FormatDetector
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.winterbe.expekt.should
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import org.junit.Test
@@ -51,6 +52,31 @@ jimmy|smitts|NULL"""
             mapOf("firstName" to "jimmy", "lastName" to "smitts", "age" to null),
          )
       )
+   }
+
+   @Test
+   fun `writes inherited properties`() {
+      val schema = TaxiSchema.from("""
+         model Person {
+            id : Id inherits Int
+            name : Name inherits String
+         }
+         @com.orbitalhq.formats.Csv
+         model CsvPerson inherits Person
+      """.trimIndent())
+      val csv = """id,name
+         |1,jack
+         |2,jimmy""".trimMargin()
+      val records = TypedInstance.from(
+         schema.type("CsvPerson[]"),
+         csv,
+         schema,
+         formatSpecs = listOf(CsvFormatSpec)
+      ) as TypedCollection
+      records.shouldHaveSize(2)
+      (records[0] as TypedObject).get("name").toRawObject().shouldBe("jack")
+      val back = records.toRawObject()
+      back
    }
 
 
