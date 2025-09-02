@@ -14,7 +14,13 @@ import stormpot.Timeout
 import java.math.BigDecimal
 import java.text.DecimalFormat
 import java.text.NumberFormat
-import java.time.*
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeFormatterBuilder
 import java.time.temporal.ChronoField
@@ -64,10 +70,11 @@ private class SpringConverterWrapper : ConversionService {
 
    private fun buildSpringConversionService(): DefaultConversionService {
       val service = DefaultConversionService()
-      // TODO :  we need to be much richer about date handling.
+
+      // Register all the spring date converters by default.
+      Jsr310Converters.convertersToRegister.forEach { service.addConverter(it) }
       service.addConverter(String::class.java, LocalDate::class.java) { s -> LocalDate.parse(s) }
       service.addConverter(java.lang.Long::class.java, Instant::class.java) { s -> Instant.ofEpochMilli(s.toLong()) }
-      // TODO Check this as it is a quick addition for the demo!
       service.addConverter(java.lang.Long::class.java, LocalDate::class.java) { s ->
          Instant.ofEpochMilli(s.toLong()).atZone(ZoneId.of("UTC")).toLocalDate()
       }
