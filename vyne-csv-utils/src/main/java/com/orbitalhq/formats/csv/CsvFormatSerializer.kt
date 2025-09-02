@@ -90,7 +90,7 @@ object CsvFormatSerializer : ModelFormatSerializer {
       val memberType = type.collectionType ?: type
       // Use the fields as it's a list, rather than a map - this makes
       // the ordering consistent
-      return (memberType.taxiType as ObjectType).fields
+      return (memberType.taxiType as ObjectType).allFields
          .map { field -> field.name to field.name }
    }
 
@@ -98,7 +98,7 @@ object CsvFormatSerializer : ModelFormatSerializer {
       val memberType = type.collectionType ?: type
       // Use the fields as it's a list, rather than a map - this makes
       // the ordering consistent
-      return (memberType.taxiType as ObjectType).fields
+      return (memberType.taxiType as ObjectType).allFields
          .filter { field -> field.accessor != null && field.accessor is ColumnAccessor }
          .map { field -> field.name to (field.accessor as ColumnAccessor).path.unquoted() }
    }

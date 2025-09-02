@@ -33,14 +33,12 @@ import org.springframework.web.reactive.function.server.RouterFunctions
 import org.springframework.web.reactive.function.server.ServerRequest
 import org.springframework.web.reactive.function.server.ServerResponse
 import org.springframework.web.reactive.function.server.ServerResponse.status
-import org.springframework.web.reactive.function.server.awaitBody
 import org.springframework.web.reactive.function.server.bodyToMono
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.kotlin.core.publisher.toFlux
 import java.security.Principal
 import java.time.Instant
-import kotlin.jvm.Throws
 
 /**
  * The handler / service which receives HTTP invocations
@@ -136,9 +134,9 @@ class QueryRouteService(
             if (returnServerSentEvents && responseStream is Flux<*>) {
                DeferredServerResponsePublisher.wrapEventStreamFlux(responseStream, responseHeaders)
             } else if (responseStream is Flux<*>) {
-               DeferredServerResponsePublisher.wrapFlux(responseStream as Flux<out Any>, responseHeaders)
+               DeferredServerResponsePublisher.wrapFlux(responseStream as Flux<out Any>, responseHeaders, objectMapper)
             } else if (responseStream is Mono<*>) {
-               DeferredServerResponsePublisher.wrapMono(responseStream as Mono<Any>, responseHeaders)
+               DeferredServerResponsePublisher.wrapMono(responseStream as Mono<Any>, responseHeaders, objectMapper)
             } else {
                error("Unexpected type of publisher: ${responseStream::class.simpleName}")
             }
