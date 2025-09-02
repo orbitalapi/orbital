@@ -6,9 +6,16 @@ import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import io.kotest.matchers.shouldBe
 import org.junit.Before
 import org.junit.Test
+import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
+import java.time.LocalTime
+import java.time.ZoneId
+import java.time.ZoneOffset
+import java.util.Date
 
 class VyneConversionServiceTest {
 
@@ -142,6 +149,85 @@ class VyneConversionServiceTest {
       val instance =
          TypedInstance.from(schema.type("Foo"), """{ "age": 1.609 } """, schema, source = Provided) as TypedObject
       instance["age"].value.should.equal(1.609.toBigDecimal())
+   }
+
+   @Test
+   fun `parse java date to LocalDAte`() {
+      val schema = TaxiSchema.from("""
+         model Person {
+            dob: DateOfBirth inherits Date
+         }
+      """.trimIndent())
+      val localDate = LocalDate.of(2024, 3, 2)
+      val instance = TypedInstance.from(
+         schema.type("Person"),
+         mapOf("dob" to  Date.from(localDate.atStartOfDay(ZoneOffset.UTC).toInstant())),
+         schema
+      ) as TypedObject
+      instance["dob"].value.shouldBe(localDate)
+   }
+   @Test
+   fun `parse java date to LocalTime`() {
+      val schema = TaxiSchema.from("""
+      model Meeting {
+         startTime: StartTime inherits Time
+      }
+   """.trimIndent())
+
+      val localTime = LocalTime.of(13, 45, 30)
+      val date = Date.from(
+         localTime.atDate(LocalDate.of(1970, 1, 1))
+            .atZone(ZoneId.systemDefault())
+            .toInstant()
+      )
+
+      val instance = TypedInstance.from(
+         schema.type("Meeting"),
+         mapOf("startTime" to date),
+         schema
+      ) as TypedObject
+
+      instance["startTime"].value.shouldBe(localTime)
+   }
+
+   @Test
+   fun `parse java date to LocalDateTime`() {
+      val schema = TaxiSchema.from("""
+      model Event {
+         timestamp: Timestamp inherits DateTime
+      }
+   """.trimIndent())
+
+      val localDateTime = LocalDateTime.of(2024, 3, 2, 14, 30, 15, 123_000_000)
+      val date = Date.from(localDateTime.toInstant(ZoneOffset.UTC))
+
+      val instance = TypedInstance.from(
+         schema.type("Event"),
+         mapOf("timestamp" to date),
+         schema
+      ) as TypedObject
+
+      instance["timestamp"].value.shouldBe(localDateTime)
+   }
+
+   @Test
+   fun `parse java date to Instant`() {
+      val schema = TaxiSchema.from("""
+      model LogEntry {
+         createdAt: CreatedAt inherits Instant
+      }
+   """.trimIndent())
+
+      val instant = Instant.parse("2024-03-02T14:30:15.123Z")
+      val date = Date.from(instant)
+
+      val instance = TypedInstance.from(
+         schema.type("LogEntry"),
+         mapOf("createdAt" to date),
+         schema
+      ) as TypedObject
+
+      instance["createdAt"].value.shouldBe(instant)
    }
 
 }

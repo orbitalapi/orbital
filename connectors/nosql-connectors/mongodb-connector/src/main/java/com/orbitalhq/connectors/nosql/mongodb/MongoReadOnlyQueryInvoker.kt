@@ -2,7 +2,6 @@ package com.orbitalhq.connectors.nosql.mongodb
 
 import arrow.core.Either
 import arrow.core.getOrElse
-import arrow.core.left
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Stopwatch
 import com.orbitalhq.connectors.TaxiQlInvokerUtils
@@ -11,7 +10,6 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.ConstructedQueryDataSource
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.StreamErrorMessage
-import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.query.tracing.DatabaseRequest
 import com.orbitalhq.query.tracing.DatabaseResponse
 import com.orbitalhq.query.tracing.SpanState
@@ -23,9 +21,10 @@ import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
-import lang.taxi.CompilationException
 import mu.KotlinLogging
+import org.bson.json.JsonMode
+import org.bson.json.JsonWriterSettings
+import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 
 
@@ -36,6 +35,10 @@ class MongoReadOnlyQueryInvoker(
    schemaProvider: SchemaProvider,
    private val objectMapper: ObjectMapper
 ) : MongoBaseInvoker(connectionFactory, schemaProvider, objectMapper) {
+   companion object {
+      val jsonWriterSettings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build()
+   }
+
    suspend fun invoke(
       service: Service,
       operation: RemoteOperation,
@@ -54,13 +57,13 @@ class MongoReadOnlyQueryInvoker(
          }
       val typesToFind = getTypesToFind(query, taxiSchema)
       val typesToCollectionNames = MongoQueryHelpers.getCollectionNames(typesToFind)
-      val criterias = MongoCriteriaGenerator(schema).crtieriaFor(query)
+      val criterias: List<Criteria> = MongoCriteriaGenerator(schema).crtieriaFor(query)
       if (typesToCollectionNames.size > 1) {
          error("Mongo Joins are not yet supported - can only select from a single collection")
       }
       val collectionName = typesToCollectionNames.values.first()
       val traceSpan = eventDispatcher.createOperationTraceSpan(service, operation, collectionName)
-      val criteriaJson = if (criterias.isEmpty()) SelectAllCriteria else criterias.first().criteriaObject.toJson()
+      val criteriaJson = if (criterias.isEmpty()) SelectAllCriteria else criterias.first().criteriaObject.toJson(MongoConverters.encoder)
 
 
       logger.debug { "Starting Mongo Query" }
