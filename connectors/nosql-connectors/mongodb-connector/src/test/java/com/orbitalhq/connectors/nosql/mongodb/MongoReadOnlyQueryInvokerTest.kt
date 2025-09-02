@@ -27,6 +27,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import org.springframework.data.mongodb.core.convert.MongoCustomConversions
 
 class MongoReadOnlyQueryInvokerTest : MongoDbTestcontainer() {
 
@@ -125,6 +126,7 @@ class MongoReadOnlyQueryInvokerTest : MongoDbTestcontainer() {
 
    @BeforeEach
    fun setup() {
+
       val connectionParams = mapOf(MongoConnection.Parameters.CONNECTION_STRING.templateParamName to connectionString)
       val mongo1ConnectionConfig = MongoConnectionConfiguration("usersMongo", connectionParams)
       connectionRegistry = InMemoryMongoConnectionRegistry(listOf(mongo1ConnectionConfig))
@@ -804,5 +806,85 @@ class MongoReadOnlyQueryInvokerTest : MongoDbTestcontainer() {
             mapOf("filmId" to 2, "film" to mapOf("id" to 2, "name" to "Death in Venice")),
          )
       )
+   }
+
+
+   @Test
+   fun `can query based on date and instant types`(): Unit = runBlocking {
+      val filmsSchema = """
+         type FirstName inherits String
+         type LastName inherits String
+         type NickName inherits String
+
+         @Collection(connection = "usersMongo", collection = "films2203")
+         closed parameter model FilmRecord {
+            @Id
+            id: FilmId inherits Int
+            name: FilmName inherits String
+            @com.orbitalhq.mongo.SetOnInsert
+            insertedAt: InsertedAt inherits Instant = now()
+            releaseDate : ReleaseDate inherits Date
+         }
+
+         closed model Film {
+            id: FilmId
+            name : FilmName
+            releaseDate: ReleaseDate
+         }
+
+         service FilmsApi {
+            operation loadFilms():Film[]
+         }
+
+         @MongoService( connection = "usersMongo" )
+         service FilmsDb {
+            table films : FilmRecord[]
+            @UpsertOperation
+            write operation upsertFilm(FilmRecord):FilmRecord
+         }
+      """.trimIndent()
+      val (vyne, stub) = testVyneWithStub(
+         listOf(
+            MongoConnector.schema,
+            VyneQlGrammar.QUERY_TYPE_TAXI,
+            filmsSchema
+         )
+      ) { schema -> listOf(MongoDbInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
+
+      stub.addResponse(
+         "loadFilms", """[
+         | { "id" : 1003, "name" : "Star Wars", "releaseDate" : "1979-05-10" },
+         | { "id" : 1002, "name" : "Jaws", "releaseDate" : "1983-05-10" }
+         |]
+      """.trimMargin()
+      )
+      // insert some date from our API
+      val insertResults = vyne.query(
+         """
+            find { Film[] }
+            call FilmsDb::upsertFilm
+      """.trimIndent()
+      ).rawObjects()
+      insertResults.shouldHaveSize(2)
+
+      val readAllResult = vyne.query("""
+         find { FilmRecord[] }
+      """.trimIndent())
+         .rawObjects()
+      readAllResult.shouldHaveSize(2)
+      // now find by instant - this should return everything
+      val readResultWithInstant = vyne.query("""
+         find { FilmRecord[]( InsertedAt <= now() ) }
+      """.trimIndent())
+         .rawObjects()
+      readResultWithInstant.shouldHaveSize(2)
+
+      // now find by instant - this should return everything
+      val readResultWithDate = vyne.query("""
+         find { FilmRecord[]( ReleaseDate <= '1980-01-01' ) }
+      """.trimIndent())
+         .rawObjects()
+      readResultWithDate.shouldHaveSize(1)
+      readAllResult
    }
 }
