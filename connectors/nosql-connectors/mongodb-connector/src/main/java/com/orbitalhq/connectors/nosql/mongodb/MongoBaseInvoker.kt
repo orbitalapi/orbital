@@ -37,6 +37,7 @@ import lang.taxi.query.TaxiQlQuery
 import org.bson.types.Decimal128
 import org.bson.types.ObjectId
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
+import org.springframework.data.mongodb.core.aggregation.Aggregation
 import reactor.core.publisher.Flux
 import java.math.BigDecimal
 import java.time.Duration
@@ -160,6 +161,15 @@ abstract class MongoBaseInvoker(
       val resultTypeName = query.resultType()
       val resultTaxiType = collectionTypeOrType(schema.taxi.type(resultTypeName))
       val vyneType = schema.type(resultTaxiType)
+      return convertToTypedInstances(resultList, vyneType, schema, datasource, traceSpan)
+   }
+   protected fun convertToTypedInstances(
+      resultList: Flux<Map<*, *>>,
+      vyneType: Type,
+      schema: Schema,
+      datasource: OperationResultReference,
+      traceSpan: OperationTraceSpan
+   ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val mapTransform: (Map<*, *>) -> Map<*, *> = objectIdFieldTransform(vyneType)
       val recordCount = AtomicInteger(0)
       val typedInstances = resultList
@@ -261,6 +271,7 @@ abstract class MongoBaseInvoker(
          mongoFieldName to mongoValue
       }.toMap()
    }
+
 
    companion object {
       const val MongoIdField = "_id"

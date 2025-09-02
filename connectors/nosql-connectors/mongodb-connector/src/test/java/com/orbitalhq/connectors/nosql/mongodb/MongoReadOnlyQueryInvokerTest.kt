@@ -15,6 +15,7 @@ import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.testVyne
 import com.orbitalhq.testVyneWithStub
 import com.orbitalhq.typedObjects
+import com.orbitalhq.utils.withoutWhitespace
 import com.winterbe.expekt.should
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainAll
@@ -422,7 +423,7 @@ class MongoReadOnlyQueryInvokerTest : MongoDbTestcontainer() {
       requestEvent.eventResource.shouldBe("films")
       requestEvent.eventVerb.shouldBe("Select")
       val requestPayload = requestMetadata.payload()
-      requestPayload.shouldBe("""[{"_id":1}]""")
+      requestPayload!!.withoutWhitespace().shouldBe("""[{"_id":1}]""")
       result.forEach {
          it.source.shouldBeInstanceOf<OperationResultReference>()
             .sourceEventId.shouldNotBeNull()

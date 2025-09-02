@@ -41,6 +41,9 @@ class MongoDbInvoker(
    private val upsertInvoker = MongoMutatingQueryInvoker(connectionFactory, schemaProvider, meterRegistry, objectMapper)
    private val bulkUpsertInvoker =
       MongoBulkMutatingQueryInvoker(connectionFactory, schemaProvider, batchWriteCacheProvider, meterRegistry, objectMapper)
+   private val aggregateInvoker = MongoNativeAggregateQueryInvoker(
+      connectionFactory, schemaProvider, meterRegistry, objectMapper
+   )
 
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(MongoConnector.Annotations.MongoOperation.NAME)
@@ -55,7 +58,16 @@ class MongoDbInvoker(
       queryOptions: QueryOptions
    ): Flow<Either<StreamErrorMessage, TypedInstance>>  {
       return when {
-         operation.operationType == OperationScope.READ_ONLY -> readOnlyInvoker.invoke(
+         operation.operationType == OperationScope.READ_ONLY && operation.hasMetadata(MongoConnector.Annotations.MongoAggregateName.parameterizedName) ->  aggregateInvoker.invoke(
+            service,
+            operation,
+            parameters,
+            eventDispatcher,
+            queryId,
+            queryOptions
+         )
+
+         operation.operationType == OperationScope.READ_ONLY ->  readOnlyInvoker.invoke(
             service,
             operation,
             parameters,
