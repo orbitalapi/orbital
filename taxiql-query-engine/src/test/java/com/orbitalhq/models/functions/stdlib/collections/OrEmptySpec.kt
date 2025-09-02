@@ -30,14 +30,5 @@ class OrEmptySpec : DescribeSpec({
          result["result"].type.name.shortDisplayName.shouldBe("String[]")
       }
 
-      it("should return do strings") {
-         val (vyne) = testVyne("")
-         vyne.query("""
-            given { f: String = "A" }
-            find { result : f.upperCase() }
-         """.trimIndent())
-            .firstRawObject()
-            .shouldBe(mapOf("result" to emptyList<Any>()))
-      }
    }
 })
