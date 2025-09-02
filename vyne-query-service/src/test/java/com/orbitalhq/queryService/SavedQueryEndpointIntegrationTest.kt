@@ -442,6 +442,35 @@ Jack,another value$CR
    }
 
    @Test
+   fun `can serve single csv from endpoint based on annotation`() {
+      val schema = """
+         model Person {
+            name :  PersonName inherits String
+         }
+         service PersonApi {
+            operation getAll():Person
+         }
+         @com.orbitalhq.formats.Csv
+         model PersonCsv {
+            called : PersonName
+            also: String = "another value"
+         }
+         @HttpOperation(url = "/api/q/person", method = "GET")
+         query FindPeople {
+            find { Person } as PersonCsv
+         }
+      """.trimIndent()
+      val stub = submitSchemaAndFetchStub(schema, routeToWaitFor = "/api/q/person" to HttpMethod.GET)
+      stub.addResponse("getAll", """{ "name" : "Jimmy"}""")
+      val response = sendToApi<String>("/api/q/person", HttpMethod.GET, "")
+      val CR = "\r"
+      val expected = """called,also$CR
+Jimmy,another value$CR
+"""
+      response.shouldBe(expected)
+   }
+
+   @Test
    fun `can serve csv from endpoint based on inline annotation`() {
       val schema = """
          model Person {
