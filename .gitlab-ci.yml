@@ -287,7 +287,7 @@ regression-test:
            versionTag="$PROJECT_VERSION"
          elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
             tag="next"
-            versionTag="$PROJECT_VERSION-BETA-$CI_PIPELINE_ID"
+            versionTag="next-$CI_PIPELINE_ID"
          elif [[ "$CI_COMMIT_BRANCH" =~ ^release\/ ]]; then
             stripped_branch=${CI_COMMIT_BRANCH#release/}
             tag="$stripped_branch-next"
