@@ -25,6 +25,10 @@
          <artifactId>micrometer-core</artifactId>
       </dependency>
       <dependency>
+         <groupId>io.projectreactor</groupId>
+         <artifactId>reactor-core-micrometer</artifactId>
+      </dependency>
+      <dependency>
          <groupId>com.orbitalhq</groupId>
          <artifactId>metrics-utils</artifactId>
          <version>${project.version}</version>

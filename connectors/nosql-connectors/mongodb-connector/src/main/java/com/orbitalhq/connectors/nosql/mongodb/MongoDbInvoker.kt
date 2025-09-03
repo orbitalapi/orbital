@@ -37,7 +37,7 @@ class MongoDbInvoker(
    }
 
    private val batchWriteCacheProvider = BatchWriteCacheProvider<TypedInstance, OperationResultReference>()
-   private val readOnlyInvoker = MongoReadOnlyQueryInvoker(connectionFactory, schemaProvider, objectMapper)
+   private val readOnlyInvoker = MongoReadOnlyQueryInvoker(connectionFactory, schemaProvider, meterRegistry, objectMapper)
    private val upsertInvoker = MongoMutatingQueryInvoker(connectionFactory, schemaProvider, meterRegistry, objectMapper)
    private val bulkUpsertInvoker =
       MongoBulkMutatingQueryInvoker(connectionFactory, schemaProvider, batchWriteCacheProvider, meterRegistry, objectMapper)

@@ -6,6 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.google.common.base.Stopwatch
 import com.orbitalhq.connectors.TaxiQlInvokerUtils
 import com.orbitalhq.connectors.getTypesToFind
+import com.orbitalhq.connectors.metrics.captureMetrics
+import com.orbitalhq.metrics.MetricTags
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.ConstructedQueryDataSource
 import com.orbitalhq.query.QueryContextEventDispatcher
@@ -20,6 +22,7 @@ import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
+import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.flow.Flow
 import mu.KotlinLogging
 import org.bson.json.JsonMode
@@ -27,12 +30,12 @@ import org.bson.json.JsonWriterSettings
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 
-
 private val logger = KotlinLogging.logger { }
 
 class MongoReadOnlyQueryInvoker(
    connectionFactory: MongoConnectionFactory,
    schemaProvider: SchemaProvider,
+   private val meterRegistry: MeterRegistry,
    private val objectMapper: ObjectMapper
 ) : MongoBaseInvoker(connectionFactory, schemaProvider, objectMapper) {
    companion object {
@@ -57,6 +60,11 @@ class MongoReadOnlyQueryInvoker(
          }
       val typesToFind = getTypesToFind(query, taxiSchema)
       val typesToCollectionNames = MongoQueryHelpers.getCollectionNames(typesToFind)
+      val tags = listOf(
+         MetricTags.ConnectionName.of(mongoConnectionConfig.connectionName),
+         MetricTags.Operation.of(operation.name)
+      )
+
       val criterias: List<Criteria> = MongoCriteriaGenerator(schema).crtieriaFor(query)
       if (typesToCollectionNames.size > 1) {
          error("Mongo Joins are not yet supported - can only select from a single collection")
@@ -78,6 +86,7 @@ class MongoReadOnlyQueryInvoker(
             Map::class.java,
             collectionName
          )
+            .captureMetrics(tags, meterRegistry)
             .doOnSubscribe {
                traceSpan.emitEvent(
                   TracingEventKind.OK,
