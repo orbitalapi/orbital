@@ -6,6 +6,7 @@ import com.orbitalhq.connections.ConnectionUsageMetadataRegistry
 import com.orbitalhq.connections.ConnectionUsageRegistration
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnector.Annotations.BatchDurationAttribute
 import com.orbitalhq.connectors.nosql.mongodb.MongoConnector.Annotations.BatchSizeAttribute
+import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.fqn
 import lang.taxi.TaxiDocument
 import lang.taxi.types.Annotation
@@ -61,9 +62,6 @@ object MongoConnector {
                   connectionName = annotation.parameters["connection"] as String
                )
             }
-
-
-
          }
 
          override fun asAnnotation(schema: TaxiDocument): Annotation {
@@ -76,8 +74,32 @@ object MongoConnector {
             )
          }
       }
+
+      data class MongoAggregate(val pipeline: List<String>, val collection: String) : AnnotationWrapper {
+         companion object {
+            val NAME = "$namespace.MongoAggregate"
+
+            fun from(annotation: Metadata): MongoAggregate {
+               require(annotation.name.parameterizedName == NAME) { "Annotation name should be $NAME" }
+               val pipeline = annotation.params["pipeline"] as List<String>
+               val collection = annotation.params["collection"] as String
+               return MongoAggregate(pipeline, collection)
+            }
+         }
+
+         override fun asAnnotation(schema: TaxiDocument): Annotation {
+            return Annotation(
+               type = schema.annotation(NAME),
+               parameters = mapOf(
+                  "pipeline" to pipeline
+               )
+            )
+         }
+      }
       val mongoOperationName = QualifiedName.from(MongoOperation.NAME)
       val collectionName = QualifiedName.from(Collection.NAME)
+
+      val MongoAggregateName = QualifiedName.from(MongoAggregate.NAME)
 
       val imports: String = listOf(MongoOperation.NAME,
          Collection.NAME,
@@ -96,7 +118,7 @@ namespace ${Annotations.namespace} {
    annotation ${Annotations.mongoOperationName.typeName} {
       connection : ConnectionName
    }
-   
+
    annotation UpsertOperation {
         batchSize: $BatchSizeAttribute?
         batchDuration: $BatchDurationAttribute?
@@ -104,10 +126,17 @@ namespace ${Annotations.namespace} {
    annotation ObjectId {}
    annotation UniqueIndex {}
    annotation SetOnInsert {}
-  
+
    annotation ${Annotations.collectionName.typeName} {
       connection : ConnectionName
       collection : CollectionName inherits String
+   }
+
+   [[ Allows for defining a native Mongo query as an aggregate pipeline
+   ]]
+   annotation ${Annotations.MongoAggregateName.typeName} {
+      collection: String
+      pipeline : String[]
    }
 }
    """

@@ -29,6 +29,7 @@ import org.bson.json.JsonMode
 import org.bson.json.JsonWriterSettings
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
+import java.time.Duration
 
 private val logger = KotlinLogging.logger { }
 
@@ -38,9 +39,6 @@ class MongoReadOnlyQueryInvoker(
    private val meterRegistry: MeterRegistry,
    private val objectMapper: ObjectMapper
 ) : MongoBaseInvoker(connectionFactory, schemaProvider, objectMapper) {
-   companion object {
-      val jsonWriterSettings = JsonWriterSettings.builder().outputMode(JsonMode.RELAXED).build()
-   }
 
    suspend fun invoke(
       service: Service,
@@ -104,7 +102,7 @@ class MongoReadOnlyQueryInvoker(
                   spanState = SpanState.COMPLETE,
                   operation.returnType,
                   DatabaseResponse(-1) { error.message },
-                  "Select error",
+                  "Mongo error",
                   TraceEventDirection.INBOUND)
                mapError(
                   error,
@@ -120,14 +118,14 @@ class MongoReadOnlyQueryInvoker(
             }
       }
       val elapsed = stopwatch.elapsed()
-      logger.debug { "Mongo Query completed in $elapsed" }
+      logger.debug { "Mongo Query completed in $elapsed (Wall time, not processing time)" }
       val operationResult = buildOperationResult(
          service,
          operation,
          constructedQueryDataSource.inputs,
          criteriaJson,
          mongoConnectionConfig.connectionString.hosts.joinToString(),
-         elapsed,
+         elapsed = Duration.ZERO, // Happens reactive, so duration makes no sense here
          recordCount = -1
       )
 
