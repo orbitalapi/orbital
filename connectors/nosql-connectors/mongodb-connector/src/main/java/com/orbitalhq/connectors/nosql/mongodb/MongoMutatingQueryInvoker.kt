@@ -2,14 +2,15 @@ package com.orbitalhq.connectors.nosql.mongodb
 
 import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
+import com.orbitalhq.connectors.metrics.captureMetrics
 import com.orbitalhq.metrics.MetricTags
 import com.orbitalhq.models.DataSourceUpdater
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.StreamErrorMessage
-import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.query.tracing.DatabaseRequest
 import com.orbitalhq.query.tracing.DatabaseResponse
+import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schema.api.SchemaProvider
@@ -43,7 +44,6 @@ class MongoMutatingQueryInvoker(
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val schema = schemaProvider.schema
 
-
       require(operation.parameters.size == 1) { "Operations annotated with ${MongoConnector.Annotations.UpsertOperationAnnotationName} should accept exactly one type" }
       val inputType = operation.parameters.single().type.let { type -> type.collectionType ?: type }
 
@@ -60,9 +60,10 @@ class MongoMutatingQueryInvoker(
       val upsertDefinition = MongoCriteriaGenerator.upsertFor(recordToWrite, documentMap)
       val tags = listOf(
          MetricTags.ConnectionName.of(connectionConfig.connectionName),
-         MetricTags.TableName.of(collectionName)
+         MetricTags.TableName.of(collectionName),
+         MetricTags.Operation.of(operation.name)
       )
-      var updateCounter: Counter? = null
+      val updateCounter: Counter =  meterRegistry.counter("orbital.connections.mongo.updates", tags)
       var verb: String? = null
       var traceRequestMetadata: DatabaseRequest? = null
       val upsertMono = if (upsertDefinition == null) {
@@ -74,11 +75,9 @@ class MongoMutatingQueryInvoker(
          ) { objectMapper.writeValueAsString(documentMap) }
          val result = reactiveMongoTemplate.save(documentMap, collectionName)
             .map { 1L /* update count */ to it }
-         updateCounter = meterRegistry.counter("orbital.connections.mongo.updates", tags)
          result
       } else {
          verb = "upsert"
-         updateCounter = meterRegistry.counter("orbital.connections.mongo.updates", tags)
          traceRequestMetadata = DatabaseRequest(
             connectionConfig.connectionName,
             "upsert",
@@ -89,6 +88,7 @@ class MongoMutatingQueryInvoker(
             objectMapper.writeValueAsString(upsert)
          }
          reactiveMongoTemplate.upsert(upsertDefinition.first, upsertDefinition.second, collectionName)
+            .captureMetrics(tags, meterRegistry)
             .map { upsertResult ->
                // Looks like we get a 0 for modified count if this was an insert.
                // To verify, we report 1 if the upsertedId != null && modifiedCount == 0,
@@ -120,6 +120,7 @@ class MongoMutatingQueryInvoker(
 
       return upsertMono
          .elapsed()
+         .captureMetrics(tags, meterRegistry)
          .doOnSubscribe {
             traceContext.emitEvent(
                kind = TracingEventKind.OK,
