@@ -43,7 +43,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
                          size="m">{{ jobState(query).label | titlecase }}
               </tui-badge>
             </td>
-            <td>{{ query.queryKind }}</td>
+            <td>{{ queryKindLabel(query) }}</td>
             <td>
               <span *ngIf="query.httpEndpoint" class="url-parts">
                 <span class="mono-badge method">{{ query.httpEndpoint.method }}</span>
@@ -94,9 +94,7 @@ export class EndpointListComponent {
         switchMap(() => this.typeService.getQueries()
           .pipe(
             map(savedQueries => savedQueries.filter(savedQuery =>
-              savedQuery.httpEndpoint ||
-              savedQuery.websocketOperation ||
-              savedQuery.queryKind === 'Stream'
+              savedQuery.publications && savedQuery.publications.length > 0
             )),
             tap(savedQueries => {
               this.hasStreamingQueries = savedQueries.some(query => query.queryKind === 'Stream');
@@ -151,7 +149,13 @@ export class EndpointListComponent {
   }
 
 
-
+  queryKindLabel(query: SavedQuery): string {
+    if (query.publications.some(p => p.kind === 'Scheduled')) {
+      return 'Scheduled query'
+    } else {
+      return query.queryKind
+    }
+  }
 
   queryState(query: SavedQuery):StreamStateDisplayLabel {
     if (query.queryKind === "Query") return "Enabled"; // Can't suspend queries at the moment
@@ -178,6 +182,8 @@ export function streamStateToDisplayLabel(streamState: StreamRunningState): Stre
       return 'Unknown';
   }
 }
+
+
 
 
 export function jobStatusBadge(streamAndJobState: StreamStateWithJobStates):{ label: string, appearance: TuiAppearanceOptions["appearance"] } {

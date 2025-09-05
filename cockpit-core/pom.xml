@@ -561,6 +561,37 @@
          <artifactId>spring-boot-testcontainers</artifactId>
          <scope>test</scope>
       </dependency>
+
+      <!-- Spring Boot Quartz starter -->
+      <dependency>
+         <groupId>org.springframework.boot</groupId>
+         <artifactId>spring-boot-starter-quartz</artifactId>
+         <exclusions>
+            <exclusion>
+               <groupId>com.mchange</groupId>
+               <artifactId>c3p0</artifactId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+
+      <!-- Quartz itself (pulled in transitively, but you can pin a version if you want) -->
+      <dependency>
+         <groupId>org.quartz-scheduler</groupId>
+         <artifactId>quartz</artifactId>
+      </dependency>
+
+      <!-- Quartz JDBC job store uses c3p0 by default.
+           If you’re already on HikariCP (via Spring Boot), you can exclude c3p0. -->
+      <dependency>
+         <groupId>com.zaxxer</groupId>
+         <artifactId>HikariCP</artifactId>
+      </dependency>
+
+      <!-- Postgres driver (likely already in Orbital for Flyway + JPA) -->
+      <dependency>
+         <groupId>org.postgresql</groupId>
+         <artifactId>postgresql</artifactId>
+      </dependency>
    </dependencies>
 
 </project>

@@ -39,7 +39,7 @@ class RoutedQueryTest {
          .pathVariable("filmId", "123")
          .build()
 
-      val routedQuery = RoutedQuery.build(query, querySrc, request)
+      val routedQuery = RoutedQuery.build(query, request)
       routedQuery.block().arguments.entries.single().value.typedValue.value
          .shouldBe("123")
    }
@@ -60,7 +60,7 @@ class RoutedQueryTest {
             .queryParam("filmId", "123")
             .build()
 
-        val routedQuery = RoutedQuery.build(query, querySrc, request)
+        val routedQuery = RoutedQuery.build(query,  request)
         routedQuery.block().arguments.entries.single().value.typedValue.value
             .shouldBe("123")
     }
@@ -82,7 +82,7 @@ class RoutedQueryTest {
             .header("x-api-request-id", "request-365")
             .build()
 
-        val routedQuery = RoutedQuery.build(query, querySrc, request)
+        val routedQuery = RoutedQuery.build(query, request)
         routedQuery.block().arguments.entries.toList()[0].value.typedValue.value
             .shouldBe("123")
 
@@ -106,7 +106,7 @@ class RoutedQueryTest {
       val request = MockServerRequest.builder()
          .body(Mono.just(requestBody))
 
-      val routedQuery = RoutedQuery.build(query, querySrc, request)
+      val routedQuery = RoutedQuery.build(query, request)
       routedQuery.block().arguments.entries.single().value.typedValue.value
          .shouldBe(requestBody)
    }
@@ -125,7 +125,7 @@ class RoutedQueryTest {
       val request = MockServerRequest.builder()
          .body(Mono.empty<String>())
 
-      val routedQuery = RoutedQuery.build(query, querySrc, request)
+      val routedQuery = RoutedQuery.build(query, request)
       val exception = assertThrows<HttpStatusException> { routedQuery.block() }
       exception.status.shouldBe(HttpStatus.BAD_REQUEST)
       exception.message.shouldBe("Expected a request body, but none was provided")
@@ -145,7 +145,7 @@ class RoutedQueryTest {
       val request = MockServerRequest.builder()
          .body(Mono.empty<String>())
 
-      val routedQuery = RoutedQuery.build(query, querySrc, request)
+      val routedQuery = RoutedQuery.build(query, request)
       val exception = assertThrows<HttpStatusException> { routedQuery.block() }
       exception.status.shouldBe(HttpStatus.BAD_REQUEST)
       exception.message.shouldBe("""No path variable with name "filmId" available""")
@@ -165,7 +165,7 @@ class RoutedQueryTest {
       val request = MockServerRequest.builder()
          .body(Mono.empty<String>())
 
-      val routedQuery = RoutedQuery.build(query, querySrc, request)
+      val routedQuery = RoutedQuery.build(query, request)
       val exception = assertThrows<HttpStatusException> { routedQuery.block() }
       exception.status.shouldBe(HttpStatus.BAD_REQUEST)
       exception.message.shouldBe("""HTTP header "x-film-id" was not provided, and is required""")
@@ -184,7 +184,7 @@ class RoutedQueryTest {
       val request = MockServerRequest.builder()
          .body(Mono.empty<String>())
 
-      val routedQuery = RoutedQuery.build(query, querySrc, request)
+      val routedQuery = RoutedQuery.build(query, request)
       val exception = assertThrows<HttpStatusException> { routedQuery.block() }
       exception.status.shouldBe(HttpStatus.BAD_REQUEST)
       exception.message.shouldBe("""query variable "x-version" was not provided, and is required""")
@@ -203,7 +203,7 @@ class RoutedQueryTest {
       val request = MockServerRequest.builder()
          .body(Mono.empty<String>())
 
-      val routedQuery = RoutedQuery.build(query, querySrc, request).block()
+      val routedQuery = RoutedQuery.build(query, request).block()
       // Null is not provided as a value here, instead we treat the values as "not provided"
       routedQuery.argumentValues.shouldBeEmpty()
    }

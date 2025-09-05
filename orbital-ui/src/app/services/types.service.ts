@@ -1,10 +1,10 @@
-import {Inject, Injectable, InjectionToken, Injector} from '@angular/core';
-import {Observable, ReplaySubject, Subject} from 'rxjs';
+import { Inject, Injectable, InjectionToken, Injector } from "@angular/core";
+import { Observable, ReplaySubject, Subject } from "rxjs";
 
-import * as _ from 'lodash';
-import {HttpClient} from '@angular/common/http';
+import * as _ from "lodash";
+import { HttpClient } from "@angular/common/http";
 
-import {concatAll, map, shareReplay} from 'rxjs/operators';
+import { concatAll, map, shareReplay } from "rxjs/operators";
 import {
   collectAllServiceOperations,
   CompilationMessage,
@@ -25,29 +25,29 @@ import {
   TypedInstance,
   TypeKind,
   TypeNamedInstance,
-  VersionedSource,
-} from './schema';
-import {SchemaNotificationService, SchemaUpdatedNotification} from './schema-notification.service';
-import {ValueWithTypeName} from './models';
-import {ENVIRONMENT, Environment} from './environment';
-import {TuiDialogService} from '@taiga-ui/core';
-import {PackageIdentifier, PackageMetadata} from "../package-viewer/packages.service";
-import {HttpMethod, SchemaEditOperation} from '../project-import/schema-importer.service';
-import {NebulaStacksResponse} from "./stubs-api.service";
+  VersionedSource
+} from "./schema";
+import { SchemaNotificationService, SchemaUpdatedNotification } from "./schema-notification.service";
+import { ValueWithTypeName } from "./models";
+import { ENVIRONMENT, Environment } from "./environment";
+import { TuiDialogService } from "@taiga-ui/core";
+import { PackageIdentifier, PackageMetadata } from "../package-viewer/packages.service";
+import { HttpMethod, SchemaEditOperation } from "../project-import/schema-importer.service";
+import { NebulaStacksResponse } from "./stubs-api.service";
 
 
+export const SCHEMA_PROVIDER_TOKEN = new InjectionToken<SchemaProvider>("SchemaProvider");
 
-export const SCHEMA_PROVIDER_TOKEN = new InjectionToken<SchemaProvider>('SchemaProvider');
 /**
  * Simple interface to abstract away TypeService,
  * as in playground we don't interact with a server.
  */
 export interface SchemaProvider {
-  getSchema(): Observable<Schema>
+  getSchema(): Observable<Schema>;
 }
 
 @Injectable({
-  providedIn: 'root',
+  providedIn: "root"
 })
 export class TypesService implements SchemaProvider {
   private schema: Schema;
@@ -59,7 +59,7 @@ export class TypesService implements SchemaProvider {
     @Inject(TuiDialogService) private readonly dialogService: TuiDialogService,
     @Inject(Injector) private readonly injector: Injector,
     private http: HttpClient,
-    private schemaNotificationService: SchemaNotificationService,
+    private schemaNotificationService: SchemaNotificationService
   ) {
 
     this.getTypes().subscribe(schema => {
@@ -76,7 +76,7 @@ export class TypesService implements SchemaProvider {
   }
 
   getSchema(): Observable<Schema> {
-    return this.getTypes()
+    return this.getTypes();
   }
 
   validateSchema(schema: string): Observable<Type[]> {
@@ -108,22 +108,22 @@ export class TypesService implements SchemaProvider {
 
   getTypeLineage(typeName: string): Observable<SchemaGraph> {
     return this.http.get<SchemaGraph>(
-      `${this.environment.serverUrl}/api/types/${typeName}/lineage`,
+      `${this.environment.serverUrl}/api/types/${typeName}/lineage`
     );
   }
 
   getServiceLineage(serviceName: string): Observable<SchemaGraph> {
     return this.http.get<SchemaGraph>(
-      `${this.environment.serverUrl}/api/services/${serviceName}/lineage`,
+      `${this.environment.serverUrl}/api/services/${serviceName}/lineage`
     );
   }
 
   getPolicies(): Observable<Policy[]> {
-    return this.http.get<Policy[]>(`${this.environment.serverUrl}/api/policies`)
+    return this.http.get<Policy[]>(`${this.environment.serverUrl}/api/policies`);
   }
 
   getPolicy(policyName: string): Observable<Policy> {
-    return this.http.get<Policy>(`${this.environment.serverUrl}/api/policies/${policyName}`)
+    return this.http.get<Policy>(`${this.environment.serverUrl}/api/policies/${policyName}`);
   }
 
   getDiscoverableTypes(typeName: string): Observable<QualifiedName[]> {
@@ -159,9 +159,9 @@ export class TypesService implements SchemaProvider {
   }
 
   parseCsvToType(content: string, type: Type, csvOptions: CsvOptions): Observable<ParsedTypeInstance[]> {
-    const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
-    const ignoreContentParam = csvOptions.ignoreContentBefore ? '&ignoreContentBefore='
-      + encodeURIComponent(csvOptions.ignoreContentBefore) : '';
+    const nullValueParam = csvOptions.nullValueTag ? "&nullValue=" + csvOptions.nullValueTag : "";
+    const ignoreContentParam = csvOptions.ignoreContentBefore ? "&ignoreContentBefore="
+      + encodeURIComponent(csvOptions.ignoreContentBefore) : "";
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedTypeInstance[]>(
       // eslint-disable-next-line max-len
@@ -170,10 +170,10 @@ export class TypesService implements SchemaProvider {
   }
 
   parseCsv(content: string, csvOptions: CsvOptions): Observable<ParsedCsvContent> {
-    const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
+    const nullValueParam = csvOptions.nullValueTag ? "&nullValue=" + csvOptions.nullValueTag : "";
     const ignoreContentParam = csvOptions.ignoreContentBefore ?
-      '&ignoreContentBefore=' + encodeURIComponent(csvOptions.ignoreContentBefore)
-      : '';
+      "&ignoreContentBefore=" + encodeURIComponent(csvOptions.ignoreContentBefore)
+      : "";
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     return this.http.post<ParsedCsvContent>(
       // eslint-disable-next-line max-len
@@ -185,13 +185,13 @@ export class TypesService implements SchemaProvider {
                                      typeName: string,
                                      csvOptions: CsvOptions,
                                      schema: string): Observable<ContentWithSchemaParseResponse> {
-    const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
-    const ignoreContentParam = csvOptions.ignoreContentBefore ? '&ignoreContentBefore='
-      + encodeURIComponent(csvOptions.ignoreContentBefore) : '';
+    const nullValueParam = csvOptions.nullValueTag ? "&nullValue=" + csvOptions.nullValueTag : "";
+    const ignoreContentParam = csvOptions.ignoreContentBefore ? "&ignoreContentBefore="
+      + encodeURIComponent(csvOptions.ignoreContentBefore) : "";
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     const request: ContentWithSchemaParseRequest = {
       content: content,
-      schema: schema,
+      schema: schema
     };
     return this.http.post<ContentWithSchemaParseResponse>(
       // eslint-disable-next-line max-len
@@ -204,7 +204,7 @@ export class TypesService implements SchemaProvider {
                                          schema: string): Observable<ContentWithSchemaParseResponse> {
     const request: ContentWithSchemaParseRequest = {
       content: content,
-      schema: schema,
+      schema: schema
     };
     return this.http.post<ContentWithSchemaParseResponse>(
       // eslint-disable-next-line max-len
@@ -218,25 +218,25 @@ export class TypesService implements SchemaProvider {
                                               csvOptions: CsvOptions,
                                               schema: string,
                                               queryId: string): Observable<ValueWithTypeName> {
-    const nullValueParam = csvOptions.nullValueTag ? '&nullValue=' + csvOptions.nullValueTag : '';
-    const ignoreContentParam = csvOptions.ignoreContentBefore ? '&ignoreContentBefore='
-      + encodeURIComponent(csvOptions.ignoreContentBefore) : '';
+    const nullValueParam = csvOptions.nullValueTag ? "&nullValue=" + csvOptions.nullValueTag : "";
+    const ignoreContentParam = csvOptions.ignoreContentBefore ? "&ignoreContentBefore="
+      + encodeURIComponent(csvOptions.ignoreContentBefore) : "";
     const separator = encodeURIComponent(this.detectCsvDelimiter(content));
     const request: ContentWithSchemaParseRequest = {
       content: content,
-      schema: schema,
+      schema: schema
     };
     return this.http.post<ValueWithTypeName[]>(
       // eslint-disable-next-line max-len
       `${this.environment.serverUrl}/api/csvAndSchema/project?type=${parseType}&targetType=${projectionType}&clientQueryId=${queryId}&delimiter=${separator}&firstRecordAsHeader=${csvOptions.firstRecordAsHeader}${ignoreContentParam}${nullValueParam}`,
-      request,
+      request
     ).pipe(
       // the legaacy (blocking) endpoint returns a ValueWithTypeName[].
       // however, we want to unpack that to multiple emitted items on our observable
       // therefore, concatAll() seems to do this.
       // https://stackoverflow.com/questions/42482705/best-way-to-flatten-an-array-inside-an-rxjs-observable
       concatAll(),
-      shareReplay({bufferSize: 500, refCount: false}),
+      shareReplay({ bufferSize: 500, refCount: false })
     );
 
   }
@@ -252,13 +252,13 @@ export class TypesService implements SchemaProvider {
   }
 
   private detectCsvDelimiter = (input: string) => {
-    const separators = [',', ';', '|', '\t'];
+    const separators = [",", ";", "|", "\t"];
     const idx = separators
       .map((separator) => input.indexOf(separator))
       .reduce((prev, cur) =>
-        prev === -1 || (cur !== -1 && cur < prev) ? cur : prev,
+        prev === -1 || (cur !== -1 && cur < prev) ? cur : prev
       );
-    return (input[idx] || ',');
+    return (input[idx] || ",");
   };
 
   getTypes(refresh: boolean = false): Observable<Schema> {
@@ -268,12 +268,12 @@ export class TypesService implements SchemaProvider {
         .pipe(
           map(schema => {
               return prepareSchema(schema);
-            },
-          ),
+            }
+          )
         );
       this.schemaRequest.subscribe(
         result => this.schemaSubject.next(result),
-        err => this.schemaSubject.next(err),
+        err => this.schemaSubject.next(err)
       );
     }
     return this.schemaSubject.asObservable();
@@ -282,11 +282,11 @@ export class TypesService implements SchemaProvider {
   createExtensionSchemaFromTaxi(typeName: QualifiedName, schemaNameSuffix: string, schemaText: string): Observable<VersionedSource> {
     const spec: SchemaSpec = {
       name: `${typeName.fullyQualifiedName}.${typeName.name}${schemaNameSuffix}`,
-      version: 'next-minor',
-      defaultNamespace: typeName.namespace,
+      version: "next-minor",
+      defaultNamespace: typeName.namespace
     };
     const request = new SchemaImportRequest(
-      spec, 'taxi', schemaText,
+      spec, "taxi", schemaText
     );
 
     return this.submitSchema(request);
@@ -296,7 +296,7 @@ export class TypesService implements SchemaProvider {
   createSchemaPreview(request: SchemaPreviewRequest): Observable<SchemaPreview> {
     return this.http.post<SchemaPreview>(
       `${this.environment.serverUrl}/api/schemas/preview`,
-      request,
+      request
     );
   }
 
@@ -307,18 +307,21 @@ export class TypesService implements SchemaProvider {
   submitSchema(request: SchemaImportRequest): Observable<VersionedSource> {
     return this.http.post<VersionedSource>(
       `${this.environment.serverUrl}/api/schemas`,
-      request,
+      request
     );
   }
 
   getQueries(): Observable<SavedQuery[]> {
-    return this.http.get<SavedQuery[]>(`${this.environment.serverUrl}/api/schemas/queries`,)
+    return this.http.get<SavedQuery[]>(`${this.environment.serverUrl}/api/schemas/queries`);
   }
 
   getQuery(qualifiedName: string): Observable<SavedQuery> {
-    return this.http.get<SavedQuery>(`${this.environment.serverUrl}/api/schemas/queries/${qualifiedName}`,)
+    return this.http.get<SavedQuery>(`${this.environment.serverUrl}/api/schemas/queries/${qualifiedName}`);
   }
 
+  getQuerySchedule(qualifiedName: String):Observable<ScheduledQueryConfigWithSchedule> {
+    return this.http.get<ScheduledQueryConfigWithSchedule>(`${this.environment.serverUrl}/api/schemas/queries/${qualifiedName}/schedule`);
+  }
 
   getAllMetadata(): Observable<QualifiedName[]> {
     return this.http.get<QualifiedName[]>(`${this.environment.serverUrl}/api/schema/annotations`);
@@ -385,7 +388,7 @@ export interface ParsedCsvContent {
 }
 
 export class CsvOptions {
-  constructor(public firstRecordAsHeader: boolean = true, public separator: string = ',', public nullValueTag: string | null = null,
+  constructor(public firstRecordAsHeader: boolean = true, public separator: string = ",", public nullValueTag: string | null = null,
               public ignoreContentBefore: string | null = null,
               public containsTrailingDelimiters: boolean = false) {
   }
@@ -395,11 +398,11 @@ export class CsvOptions {
       return false;
     }
     switch (fileExtension.toLowerCase()) {
-      case 'csv' :
+      case "csv" :
         return true;
-      case 'psv' :
+      case "psv" :
         return true;
-      case 'txt' :
+      case "txt" :
         return true;
       default:
         return false;
@@ -423,7 +426,7 @@ export function prepareSchema(schema: Schema): Schema {
 
 
 export function combineAndCloneWithPartialSchema(schemaToClone: Schema, partialSchema: PartialSchema): Schema {
-  let clonedSchema: Schema = JSON.parse(JSON.stringify(schemaToClone || {types: [], services: []}));
+  let clonedSchema: Schema = JSON.parse(JSON.stringify(schemaToClone || { types: [], services: [] }));
   clonedSchema.types = [...clonedSchema.types, ...partialSchema.types];
   clonedSchema.services = [...clonedSchema.services, ...partialSchema.services];
   clonedSchema.hash = clonedSchema.hash ?? new Date().getTime();
@@ -440,7 +443,7 @@ export class XmlIngestionParameters {
       return false;
     }
     switch (fileExtension) {
-      case 'xml' :
+      case "xml" :
         return true;
       default:
         return false;
@@ -460,14 +463,14 @@ export interface ContentWithSchemaParseResponse {
 
 export interface SchemaSubmissionResult<T = SchemaEditOperation> extends PartialSchema, ResultWithMessage {
   compilationMessages: CompilationMessage[];
-  sourcePackage: SourcePackage
-  pendingEdits: T[]
+  sourcePackage: SourcePackage;
+  pendingEdits: T[];
 }
 
 export interface SourcePackage {
-  packageMetadata: PackageMetadata
-  sources: VersionedSource[]
-  identifier: PackageIdentifier
+  packageMetadata: PackageMetadata;
+  sources: VersionedSource[];
+  identifier: PackageIdentifier;
 }
 
 export interface OperationQueryResult {
@@ -479,7 +482,7 @@ export interface OperationQueryResultItem {
   serviceName: QualifiedName;
   operationDisplayName: string | null;
   operationName: QualifiedName | null;
-  role: 'Input' | 'Output';
+  role: "Input" | "Output";
 }
 
 export interface UpdateDataOwnerRequest {
@@ -505,7 +508,51 @@ export interface SavedQuery {
   queryKind: QueryKind;
   httpEndpoint: HttpOperation;
   websocketOperation: WebsocketOperation;
+  publications: QueryPublication[];
+  schedule: ScheduleConfiguration;
 }
+
+export interface ScheduledQueryConfigWithSchedule {
+  scheduleConfiguration: ScheduleConfiguration
+  triggers: ScheduledTrigger[]
+}
+
+interface ScheduledTrigger {
+  description: string;
+  lastTriggerDate: Date;
+  nextTriggerDate: Date;
+}
+
+export type QueryPublication = HttpEndpointPublication | WebsocketPublication | BackgroundStreamPublication | ScheduledQueryPublication;
+
+export interface HttpEndpointPublication {
+  kind: "HttpEndpoint";
+  httpOperation: HttpOperation;
+}
+
+export interface WebsocketPublication {
+  kind: "Websocket";
+  websocketOperation: WebsocketOperation;
+}
+
+export interface BackgroundStreamPublication {
+  kind: "BackgroundStream";
+}
+
+export interface ScheduledQueryPublication {
+  kind: "Scheduled";
+  config: ScheduleConfiguration;
+}
+
+export interface ScheduleConfiguration {
+  cron: string | null;
+  fixedRate: string | null;
+  repeatCount: number;
+  misfirePolicy: MisfirePolicy;
+  priority: number;
+}
+
+export type MisfirePolicy = "Default" | "FireImmediately" | "Skip"
 
 export interface Policy {
   name: QualifiedName;
@@ -515,7 +562,7 @@ export interface Policy {
   sourceFile: VersionedSource;
 }
 
-export type QueryKind = 'Stream' | 'Query';
+export type QueryKind = "Stream" | "Query";
 
 interface HttpOperation {
   method: HttpMethod;
