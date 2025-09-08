@@ -37,10 +37,19 @@ class LanguageServerWebsocketController(
    override fun handle(session: WebSocketSession): Mono<Void> {
       val languageServer = WebsocketSessionLanguageServer(sourceServiceFactory, schemaProvider.schema)
       session.receive()
-         .subscribe { message -> languageServer.consume(message.payloadAsText) }
+         .onErrorResume { error ->
+            log().info("Language server disconnected: ${error.message}")
+            Mono.empty()
+         }
+         .subscribe(
+            { message -> languageServer.consume(message.payloadAsText) },
+            { error -> log().info("Language server error: ${error.message}") }
+         )
+
       languageServerCache.put(session, languageServer)
-      return session.send(languageServer.messages
-         .map { message -> session.textMessage(message) })
+      return session.send(
+         languageServer.messages
+            .map { message -> session.textMessage(message) })
 
    }
 

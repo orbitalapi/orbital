@@ -83,13 +83,6 @@ class OrbitalStationApp {
           */
          Hooks.enableAutomaticContextPropagation()
 
-         Hooks.onErrorDropped { e ->
-            println("Dropped error: ${e.message}")
-            e.printStackTrace()
-         }
-
-         Hooks.onOperatorDebug()
-
          ContextRegistry.getInstance()
             .registerThreadLocalAccessor(ClientQueryId,
                { MDC.get(ClientQueryId) },
