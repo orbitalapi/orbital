@@ -128,6 +128,20 @@ class TypedObjectFactory(
     * */
    private var accessorEvaluationSupressed: Boolean = false
 
+   override val hasDataContext: Boolean
+      get() {
+         return this.value is FactBag
+      }
+
+   override val dataContext: SearchableDataContext
+      get() {
+         return if (this.value is FactBag) {
+            this.value
+         } else {
+            error("Cannot provide a data context, as value is a ${this.value::class.simpleName}")
+         }
+      }
+
 
    private val attributesToMap = type.attributes
 
@@ -220,7 +234,14 @@ class TypedObjectFactory(
       // MP: 30-Jun-25 Projecting null to anything always returns null
       // Added this as we were finding projecting null -> T[] was producing an array of T[], where everything was null.
       if (valueToProject is TypedNull) {
-         return TypedNull.create(targetType, FailedEvaluatedExpression("Projecting ${valueToProject.type.name.shortDisplayName} to ${targetType.name.shortDisplayName}", inputs = listOf(valueToProject), "Source was null"))
+         return TypedNull.create(
+            targetType,
+            FailedEvaluatedExpression(
+               "Projecting ${valueToProject.type.name.shortDisplayName} to ${targetType.name.shortDisplayName}",
+               inputs = listOf(valueToProject),
+               "Source was null"
+            )
+         )
       }
       val projectedFieldValue = if (valueToProject is TypedCollection && targetType.isCollection) {
          // Project each member of the collection seperately
@@ -1002,7 +1023,10 @@ class TypedObjectFactory(
          // and parsing from FieldAndFactBag
          // This combination seems to thread the needle of not breaking existing behaviour, but fixing the bug
          // by reading from the map if present.
-         value is Map<*,*> && value !is FieldAndFactBag && field.accessor !is JsonPathAccessor && valueReader.contains(value,attributeName) -> {
+         value is Map<*, *> && value !is FieldAndFactBag && field.accessor !is JsonPathAccessor && valueReader.contains(
+            value,
+            attributeName
+         ) -> {
             readWithValueReader(attributeName, fieldType, field.format)
          }
 

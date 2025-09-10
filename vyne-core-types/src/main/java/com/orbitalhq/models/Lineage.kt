@@ -92,9 +92,9 @@ object UndefinedSource : StaticDataSource {
 }
 
 data class FailedEvaluation(
-   val message: String, override val id: String = UUID.randomUUID().toString(),
+   override val message: String, override val id: String = UUID.randomUUID().toString(),
    override val failedAttempts: List<DataSource> = emptyList()
-) : DataSource {
+) : DataSource, DataSourceWithErrorMessage {
    override val name: String = "Failed evaluation"
 }
 
@@ -112,7 +112,9 @@ data class FailedParsingSource(
    override val id: String = UUID.randomUUID().toString(),
    override val failedAttempts: List<DataSource> = emptyList(),
    override val name: String = "Failed parsing"
-) : DataSource
+) : DataSource, DataSourceWithErrorMessage {
+   override val message: String = error
+}
 
 /**
  * A lightweight version of OperationResult.
@@ -305,11 +307,13 @@ data class FailedEvaluatedExpression(
    val cause: DataSource? = null,
    override val id: String = UUID.randomUUID().toString(),
    override val failedAttempts: List<DataSource> = emptyList()
-) : DataSource, DatasourceWithInputs {
+) : DataSource, DatasourceWithInputs, DataSourceWithErrorMessage {
    override val name: String = "Failed evaluated expression"
    override fun toString(): String {
       return "FailedEvaluatedExpression: Expression $expressionTaxi failed with message $errorMessage"
    }
+
+   override val message: String = errorMessage
 
    /**
     * Returns the unresolvedInputs provided to this expression,
@@ -331,11 +335,11 @@ data class FailedEvaluatedExpression(
 }
 
 data class ValueLookupReturnedNull(
-   val message: String,
+   override val message: String,
    val requestedTypeName: QualifiedName,
    override val id: String = Ids.fastUuid(),
    override val failedAttempts: List<DataSource> = emptyList()
-) : DataSource {
+) : DataSource, DataSourceWithErrorMessage {
    override val name: String = "Failed lookup"
 }
 
@@ -351,4 +355,8 @@ data class AmbiguousResult(
 data class FailedSearch(val message: String, override val failedAttempts: List<DataSource> = emptyList()) : DataSource {
    override val name: String = "FailedSearch"
    override val id: String = Ids.fastUuid()
+}
+
+interface DataSourceWithErrorMessage {
+   val message: String
 }

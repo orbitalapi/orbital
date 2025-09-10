@@ -24,6 +24,10 @@ data class Field(
    val typeDisplayName: String = type.longDisplayName,
    val metadata: List<Metadata> = emptyList(),
    val sourcedBy: FieldSource? = null,
+
+   // TODO:MP - We have fieldProjection and we have an accessor
+   // which has a projecting expression. We should remove this attribute,
+   // and be consistent.
    @get:JsonIgnore
    val fieldProjection: FieldProjection? = null,
    val format: FormatsAndZoneOffset?,
