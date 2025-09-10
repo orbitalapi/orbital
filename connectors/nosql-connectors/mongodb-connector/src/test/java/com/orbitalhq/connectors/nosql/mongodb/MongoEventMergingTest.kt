@@ -110,7 +110,7 @@ class MongoEventMergingTest : MongoDbTestcontainer() {
     * and mark enrichments as merged. Runs both pipelines in one Mongo
     * transaction to avoid race conditions.
     */
-   @AggregateTransaction(
+   @MultiAggregation(
       transactional = false,
       pipelines = [
          {

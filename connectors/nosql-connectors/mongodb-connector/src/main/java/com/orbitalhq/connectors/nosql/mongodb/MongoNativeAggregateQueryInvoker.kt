@@ -4,7 +4,6 @@ import arrow.core.Either
 import arrow.core.getOrElse
 import arrow.core.left
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.google.common.base.Stopwatch
 import com.google.common.base.Throwables
 import com.mongodb.ClientSessionOptions
 import com.mongodb.reactivestreams.client.ClientSession
@@ -138,13 +137,13 @@ class MongoNativeAggregateQueryInvoker(
       queryId: String,
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
 
-      val aggregateTransaction =
-         MongoConnector.Annotations.AggregateTransaction.from(
-            operation.firstMetadata(MongoConnector.Annotations.AggregateTransactionName.parameterizedName)
+      val multiAggregation =
+         MongoConnector.Annotations.MultiAggregation.from(
+            operation.firstMetadata(MongoConnector.Annotations.MultiAggregationName.parameterizedName)
          )
 
       // Short-circuit: no pipelines, nothing to do
-      if (aggregateTransaction.pipelines.isEmpty()) {
+      if (multiAggregation.pipelines.isEmpty()) {
          logger.debug { "No pipelines defined for AggregateTransaction on ${operation.qualifiedName}, returning empty flow" }
          return emptyFlow()
       }
@@ -156,8 +155,8 @@ class MongoNativeAggregateQueryInvoker(
          .flatMapMany { session ->
             val mongoOperations = reactiveMongoTemplate.withSession(session)
 
-            if (aggregateTransaction.transactional) {
-               logger.info { "Starting Mongo transaction for ${aggregateTransaction.pipelines.size} pipelines (operation=${operation.qualifiedName}, queryId=$queryId)" }
+            if (multiAggregation.transactional) {
+               logger.info { "Starting Mongo transaction for ${multiAggregation.pipelines.size} pipelines (operation=${operation.qualifiedName}, queryId=$queryId)" }
                session.startTransaction()
             } else {
                logger.info { "Starting Mongo pipeline collection for operation ${operation.qualifiedName}, queryId=$queryId) without transaction, as it's configued to be non-transactional" }
@@ -165,7 +164,7 @@ class MongoNativeAggregateQueryInvoker(
 
 
             // Execute all but last pipeline for side-effects only
-            val pipelineResults = aggregateTransaction.pipelines
+            val pipelineResults = multiAggregation.pipelines
                .dropLast(1)
                .fold(Mono.empty<Void>()) { chain, pipeline ->
                   chain.then(
@@ -183,7 +182,7 @@ class MongoNativeAggregateQueryInvoker(
                }
 
             // Run the final pipeline and return its results
-            val lastPipeline = aggregateTransaction.pipelines.last()
+            val lastPipeline = multiAggregation.pipelines.last()
             val lastResults = executePipeline(
                service,
                operation,
@@ -196,8 +195,8 @@ class MongoNativeAggregateQueryInvoker(
             )
 
             pipelineResults.thenMany(lastResults)
-               .concatWith(commitTransaction(session, operation, queryId, aggregateTransaction.transactional))
-               .onErrorResume { error -> abortTransaction(session, operation, queryId, error, aggregateTransaction.transactional) }
+               .concatWith(commitTransaction(session, operation, queryId, multiAggregation.transactional))
+               .onErrorResume { error -> abortTransaction(session, operation, queryId, error, multiAggregation.transactional) }
          }
          .asFlow()
 

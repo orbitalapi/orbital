@@ -89,11 +89,11 @@ object MongoConnector {
       }
 
 
-      data class AggregateTransaction(val pipelines: List<AggregationPipeline>, val transactional: Boolean) {
+      data class MultiAggregation(val pipelines: List<AggregationPipeline>, val transactional: Boolean) {
          companion object {
-            val NAME = "$namespace.AggregateTransaction"
+            val NAME = "$namespace.MultiAggregation"
 
-            fun from(annotation: Metadata): AggregateTransaction {
+            fun from(annotation: Metadata): MultiAggregation {
                require(annotation.name.parameterizedName == NAME) { "Annotation name should be $NAME" }
                val pipelinesCollectionParams = annotation.params["pipelines"] as List<Map<String, Any?>>
                val pipelines = pipelinesCollectionParams.map { pipelineParams ->
@@ -101,7 +101,7 @@ object MongoConnector {
                }
                val transactional = annotation.params["transactional"] as Boolean
 
-               return AggregateTransaction(pipelines, transactional)
+               return MultiAggregation(pipelines, transactional)
             }
          }
       }
@@ -162,7 +162,7 @@ object MongoConnector {
       val mongoOperationName = QualifiedName.from(MongoOperation.NAME)
       val collectionName = QualifiedName.from(Collection.NAME)
       val CollectionAggregationName = QualifiedName.from(CollectionAggregation.NAME)
-      val AggregateTransactionName = QualifiedName.from(AggregateTransaction.NAME)
+      val MultiAggregationName = QualifiedName.from(MultiAggregation.NAME)
       val DeleteOperationName = QualifiedName.from(DeleteOperation.NAME)
       val DeleteByQueryName = QualifiedName.from(DeleteByQuery.NAME)
 
@@ -174,7 +174,7 @@ object MongoConnector {
          SetOnInsertAnnotationName,
          CollectionAggregation.NAME,
          DeleteOperation.NAME,
-         AggregateTransactionName,
+         MultiAggregationName,
          DeleteByQuery.NAME
       ).joinToString("\n") { "import $it" }
 
@@ -223,7 +223,7 @@ namespace ${Annotations.namespace} {
    [[ Defines a collection of aggregation pipelines, which execute
    within a single transaction
    ]]
-   annotation ${Annotations.AggregateTransactionName.typeName} {
+   annotation ${Annotations.MultiAggregationName.typeName} {
       pipelines: AggregationPipeline[]
 
       [[ Indicates if the entire pipeline should be wrapped in a transaction.
