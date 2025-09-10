@@ -72,7 +72,7 @@ class MongoDbInvoker(
             eventDispatcher,
             queryId
          )
-         /* operation.operationType == OperationScope.READ_ONLY && */ operation.hasMetadata(MongoConnector.Annotations.AggregateTransactionName.parameterizedName) ->  aggregateInvoker.invokeForMultiplePipelinesTransactionally(
+         /* operation.operationType == OperationScope.READ_ONLY && */ operation.hasMetadata(MongoConnector.Annotations.MultiAggregationName.parameterizedName) ->  aggregateInvoker.invokeForMultiplePipelinesTransactionally(
             service,
             operation,
             parameters,
