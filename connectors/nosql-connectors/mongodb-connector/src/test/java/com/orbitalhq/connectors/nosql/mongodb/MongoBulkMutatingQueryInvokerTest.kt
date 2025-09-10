@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import lang.taxi.utils.log
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import reactor.kotlin.core.publisher.toMono
@@ -117,7 +118,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
          VyneQlGrammar.QUERY_TYPE_TAXI,
          """
          ${MongoConnector.Annotations.imports}
-          @Collection(connection = "testMongo", collection = "prices")
+          @Collection(connection = "testMongo", collection = "prices_23")
           parameter model StockPrice {
             symbol : Symbol inherits String
             price : Price inherits Decimal
@@ -187,7 +188,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
             symbol : Symbol inherits String
             price : Price inherits Decimal
          }
-         @Collection(connection = "testMongo", collection = "prices")
+         @Collection(connection = "testMongo", collection = "prices_24")
          parameter model MongoStockPrice {
             ticker : Symbol
             realPrice : Price
@@ -242,11 +243,16 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
             .collect()
       }
 
+      log().info("Starting to emit $recordsToEmit records")
       (0..recordsToEmit).mapIndexed { index, i ->
          val item = mapOf("symbol" to "AAPL", "price" to Random.nextDouble(1.000005, 5.500000).toBigDecimal())
          val typedInstance = TypedInstance.from(vyne.schema.type("StockPrice"), item, vyne.schema)
          pricesFlow.emit(typedInstance.right())
+         if (index % 2500 == 0) {
+            log().info("Emitted $index of $recordsToEmit records")
+         }
       }
+      log().info("Emission of records completed")
 
       // Make sure this is less than the batch write timeout, to assert that
       // writes are triggered by batch size, not timeout
@@ -255,7 +261,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
       }
       thread.cancelAndJoin()
       val mongo = connectionFactory.reactiveMongoTemplate(connectionFactory.config("testMongo"))
-      val count = mongo.getCollection("prices")
+      val count = mongo.getCollection("prices_24")
          .flatMap { it ->
             it.countDocuments().toMono()
          }.block()!!
@@ -280,7 +286,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
             symbol : Symbol inherits String
             price : Price inherits Decimal
          }
-         @Collection(connection = "testMongo", collection = "prices")
+         @Collection(connection = "testMongo", collection = "prices_25")
          parameter model MongoStockPrice {
             @UniqueIndex
             ticker : Symbol
@@ -342,7 +348,7 @@ class MongoBulkMutatingQueryInvokerTest : MongoDbTestcontainer() {
 
       // Make sure this is less than the batch write timeout, to assert that
       // writes are triggered by batch size, not timeout
-      eventually(60.seconds) {
+      eventually(20.seconds) {
          collectedResults.get() shouldBe prices.size
       }
       thread.cancelAndJoin()

@@ -21,20 +21,9 @@ class MalformedAggregationException(
 ) : Exception(message, cause)
 
 class MongoAggregateBuilder(
-   objectMapper: ObjectMapper = jacksonObjectMapper()
+   private val objectMapper: ObjectMapper = jacksonObjectMapper()
 ) {
 
-   private val objectMapper = objectMapper.registerModule(MongoDocumentModule)
-   companion object {
-      // Validate known stage operators (allow unknown for forward compatibility)
-      private val knownStages = setOf(
-         "match", "group", "sort", "limit", "skip", "project",
-         "unwind", "lookup", "addFields", "count", "facet",
-         "sample", "out", "merge", "replaceWith", "replaceRoot",
-         "addToSet", "push", "sum", "avg", "first", "last"
-      ).map { "\$" + it } // Mongo stages all start with a $ symbol (eg: $match)
-
-   }
 
    /**
     * Returns the actual aggregation (for executing with Mongo), and the
@@ -43,7 +32,7 @@ class MongoAggregateBuilder(
    fun buildAggregation(
       steps: List<String>,
       parameters: Map<String, Any?>
-   ): Either<MalformedAggregationException, Pair<Aggregation, List<Document>>> {
+   ): Either<MalformedAggregationException, Aggregation> {
 
       if (steps.isEmpty()) {
          return MalformedAggregationException(
@@ -54,29 +43,28 @@ class MongoAggregateBuilder(
       }
 
       val operations = mutableListOf<AggregationOperation>()
-      val documents = mutableListOf<Document>()
       steps.forEachIndexed { index, step ->
          when (val result = buildAggregationOperation(step, parameters, index)) {
             is Either.Left -> return result
             is Either.Right -> {
-               val (operation, document) = result.value
+               val operation = result.value
                operations.add(operation)
-               documents.add(document)
             }
          }
       }
 
-      return (Aggregation.newAggregation(operations) to documents).right()
+      return Aggregation.newAggregation(operations)
+         .right()
    }
 
    private fun buildAggregationOperation(
       step: String,
       parameters: Map<String, Any?>,
       stepIndex: Int
-   ): Either<MalformedAggregationException, Pair<AggregationOperation,Document>> {
+   ): Either<MalformedAggregationException, AggregationOperation> {
 
       // SECURITY: Replace parameters safely using JSON serialization (no string concatenation)
-      val processedStep = replaceParametersSafely(step, parameters, stepIndex)
+      val processedStep = BuilderUtils.replaceParametersSafely(step, parameters, stepIndex, objectMapper)
          .fold(
             { error -> return error.left() },
             { processed -> processed }
@@ -102,71 +90,9 @@ class MongoAggregateBuilder(
       // Create the aggregation operation
       val operation = AggregationOperation { document }
 
-      return (operation to document).right()
+      return operation.right()
    }
 
-   /**
-    * SECURITY-CRITICAL: Safely replace parameters using JSON serialization
-    * This prevents injection by never doing string concatenation of user input
-    */
-   private fun replaceParametersSafely(
-      step: String,
-      parameters: Map<String, Any?>,
-      stepIndex: Int
-   ): Either<MalformedAggregationException, String> {
-
-      val parameterPattern = Regex(":([a-zA-Z_][a-zA-Z0-9_]*)")
-      val foundParameters = parameterPattern.findAll(step).map { it.groupValues[1] }.toSet()
-
-      // Check for missing parameters
-      val missingParams = foundParameters - parameters.keys
-      if (missingParams.isNotEmpty()) {
-         return MalformedAggregationException(
-            step = step,
-            stepIndex = stepIndex,
-            message = "Missing parameters: ${missingParams.joinToString(", ")}"
-         ).left()
-      }
-
-      // SECURITY: Build a map of safe replacements using JSON serialization
-      val safeReplacements = foundParameters.associateWith { paramName ->
-         val paramValue = parameters[paramName]
-         try {
-            // Use Jackson to properly escape/serialize the value
-            when (paramValue) {
-               null -> "null"
-               is String -> objectMapper.writeValueAsString(paramValue) // Properly escapes quotes, etc.
-               is Number, is Boolean -> paramValue.toString() // Safe primitive types
-               else -> objectMapper.writeValueAsString(paramValue) // Complex objects as JSON
-            }
-         } catch (e: Exception) {
-            return MalformedAggregationException(
-               step = step,
-               stepIndex = stepIndex,
-               message = "Failed to serialize parameter '$paramName': ${e.message}",
-               cause = e
-            ).left()
-         }
-      }
-
-      // Replace parameters with safe serialized values
-      var result = step
-      safeReplacements.forEach { (paramName, safeValue) ->
-         result = result.replace(":$paramName", safeValue)
-      }
-
-      // SECURITY: Verify no parameters remain unreplaced (defense in depth)
-      if (parameterPattern.containsMatchIn(result)) {
-         val remaining = parameterPattern.findAll(result).map { it.groupValues[1] }.toSet()
-         return MalformedAggregationException(
-            step = step,
-            stepIndex = stepIndex,
-            message = "Internal error: Parameters not fully replaced: ${remaining.joinToString(", ")}"
-         ).left()
-      }
-
-      return result.right()
-   }
 
    private fun validateAggregationStage(
       document: Document,
@@ -200,31 +126,3 @@ class MongoAggregateBuilder(
 }
 
 
-
-/**
- * Jackson module for MongoDB Document serialization/deserialization.
- * Serialization defers to Document.toJson() for proper BSON handling.
- */
-private object MongoDocumentModule : SimpleModule("MongoDocumentModule") {
-
-   init {
-      addSerializer(Document::class.java, DocumentSerializer())
-   }
-}
-
-/**
- * Serializer that delegates to Document.toJson() for proper BSON type handling
- */
-private class DocumentSerializer : JsonSerializer<Document>() {
-
-   override fun serialize(document: Document?, gen: JsonGenerator, serializers: SerializerProvider) {
-      if (document == null) {
-         gen.writeNull()
-         return
-      }
-
-      // Use Document.toJson() which properly handles BSON types like ObjectId, Date, etc.
-      val json = document.toJson()
-      gen.writeRawValue(json)
-   }
-}

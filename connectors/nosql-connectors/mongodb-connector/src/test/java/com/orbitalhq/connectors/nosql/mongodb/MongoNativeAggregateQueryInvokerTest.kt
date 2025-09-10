@@ -117,12 +117,15 @@ class MongoNativeAggregateQueryInvokerTest : MongoDbTestcontainer() {
          model ProductByCategory inherits Product
          @MongoService(connection = "testMongo")
          service ProductService {
-            @MongoAggregate(
-               collection = "products",
-               pipeline = [
-                  '{ ${'$'}match: { categoryId: :categoryId } }',
-                  '{ ${'$'}sort: { price: -1 } }'
-               ]
+            @CollectionAggregation(
+               pipeline = {
+                  collection: "products",
+                  stages: [
+                     '{ ${'$'}match: { categoryId: :categoryId } }',
+                     '{ ${'$'}sort: { price: -1 } }'
+                  ]
+               }
+
             )
             operation getProductsByCategory(categoryId: CategoryId): ProductByCategory[](...)
          }
@@ -174,13 +177,16 @@ class MongoNativeAggregateQueryInvokerTest : MongoDbTestcontainer() {
 
       @MongoService(connection = "testMongo")
       service AnalyticsService {
-         @MongoAggregate(
-            collection = "products",
-            pipeline = [
-               '{ ${'$'}addFields: { categoryName:  { ${'$'}switch: { branches: [ { case: { ${'$'}eq: ["${'$'}categoryId", "electronics"] }, then: "Electronics" }, { case: { ${'$'}eq: ["${'$'}categoryId", "books"] }, then: "Books" } ], default: "Other" } } } }',
-               '{ ${'$'}group: { _id: "${'$'}categoryId", categoryName: { ${'$'}first: "${'$'}categoryName" }, count: { ${'$'}sum: 1 } } }',
-               '{ ${'$'}project: { categoryId: "${'$'}_id", categoryName: 1, productCount: "${'$'}count", _id: 0 } }'
-            ]
+         @CollectionAggregation(
+            pipeline = {
+               collection: "products",
+               stages: [
+                  '{ ${'$'}addFields: { categoryName:  { ${'$'}switch: { branches: [ { case: { ${'$'}eq: ["${'$'}categoryId", "electronics"] }, then: "Electronics" }, { case: { ${'$'}eq: ["${'$'}categoryId", "books"] }, then: "Books" } ], default: "Other" } } } }',
+                  '{ ${'$'}group: { _id: "${'$'}categoryId", categoryName: { ${'$'}first: "${'$'}categoryName" }, count: { ${'$'}sum: 1 } } }',
+                  '{ ${'$'}project: { categoryId: "${'$'}_id", categoryName: 1, productCount: "${'$'}count", _id: 0 } }'
+               ]
+            }
+
          )
          operation getCategorySummary(): CategorySummary[]
       }
@@ -237,31 +243,33 @@ class MongoNativeAggregateQueryInvokerTest : MongoDbTestcontainer() {
 
       @MongoService(connection = "testMongo")
       service ProductService {
-         @MongoAggregate(
-            collection = "products",
-            pipeline = [
-               '{ ${'$'}sort: { price: -1 } }',
-               $TRIPLE_QUOTE{ ${'$'}facet: {
-                  "results": [
-                     { ${'$'}skip: :offset },
-                     { ${'$'}limit: :pageSize }
-                  ],
-                  "metadata": [
-                     { ${'$'}count: "totalRecords" }
-                  ]
-               } }$TRIPLE_QUOTE,
-               $TRIPLE_QUOTE{ ${'$'}addFields: {
-                  "meta": {
-                     "totalRecords": { ${'$'}arrayElemAt: ["${'$'}metadata.totalRecords", 0] },
-                     "page": { ${'$'}add: [{ ${'$'}divide: [:offset, :pageSize] }, 1] },
-                     "totalPages": { ${'$'}ceil: { ${'$'}divide: [{ ${'$'}arrayElemAt: ["${'$'}metadata.totalRecords", 0] }, :pageSize] } }
-                  }
-               } }$TRIPLE_QUOTE,
-               $TRIPLE_QUOTE{ ${'$'}project: {
-                  "results": 1,
-                  "meta": 1
-               } }$TRIPLE_QUOTE
-            ]
+         @CollectionAggregation(
+            pipeline = {
+               collection: "products",
+               stages: [
+                  '{ ${'$'}sort: { price: -1 } }',
+                  $TRIPLE_QUOTE{ ${'$'}facet: {
+                     "results": [
+                        { ${'$'}skip: :offset },
+                        { ${'$'}limit: :pageSize }
+                     ],
+                     "metadata": [
+                        { ${'$'}count: "totalRecords" }
+                     ]
+                  } }$TRIPLE_QUOTE,
+                  $TRIPLE_QUOTE{ ${'$'}addFields: {
+                     "meta": {
+                        "totalRecords": { ${'$'}arrayElemAt: ["${'$'}metadata.totalRecords", 0] },
+                        "page": { ${'$'}add: [{ ${'$'}divide: [:offset, :pageSize] }, 1] },
+                        "totalPages": { ${'$'}ceil: { ${'$'}divide: [{ ${'$'}arrayElemAt: ["${'$'}metadata.totalRecords", 0] }, :pageSize] } }
+                     }
+                  } }$TRIPLE_QUOTE,
+                  $TRIPLE_QUOTE{ ${'$'}project: {
+                     "results": 1,
+                     "meta": 1
+                  } }$TRIPLE_QUOTE
+               ]
+            }
          )
          operation getProductsWithPagination(
             offset: Offset,
@@ -360,11 +368,14 @@ class MongoNativeAggregateQueryInvokerTest : MongoDbTestcontainer() {
 
       @MongoService(connection = "testMongo")
       service ProductService {
-         @MongoAggregate(
-            collection = "products",
-            pipeline = [
-               '{ ${'$'}match: { categoryId: :categoryId } }'
-            ]
+         @CollectionAggregation(
+            pipeline = {
+               collection: "products",
+               stages: [
+                  '{ ${'$'}match: { categoryId: :categoryId } }'
+               ]
+            }
+
          )
          operation getProductsByCategory(categoryId: CategoryId): ProductByNonexistentCategory[](...)
       }
@@ -424,22 +435,24 @@ class MongoNativeAggregateQueryInvokerTest : MongoDbTestcontainer() {
 
       @MongoService(connection = "testMongo")
       service OrderService {
-         @MongoAggregate(
-            collection = "orders",
-            pipeline = [
-               $TRIPLE_QUOTE{ ${'$'}lookup: {
-                  from: "customers",
-                  localField: "customerId",
-                  foreignField: "_id",
-                  as: "customer"
-               } }$TRIPLE_QUOTE,
-               '{ ${'$'}unwind: "${'$'}customer" }',
-               $TRIPLE_QUOTE{ ${'$'}project: {
-                  orderId: "${'$'}_id",
-                  customerName: "${'$'}customer.name",
-                  total: 1
-               } }$TRIPLE_QUOTE
-            ]
+         @CollectionAggregation(
+            pipeline = {
+               collection: "orders",
+               stages: [
+                  $TRIPLE_QUOTE{ ${'$'}lookup: {
+                     from: "customers",
+                     localField: "customerId",
+                     foreignField: "_id",
+                     as: "customer"
+                  } }$TRIPLE_QUOTE,
+                  '{ ${'$'}unwind: "${'$'}customer" }',
+                  $TRIPLE_QUOTE{ ${'$'}project: {
+                     orderId: "${'$'}_id",
+                     customerName: "${'$'}customer.name",
+                     total: 1
+                  } }$TRIPLE_QUOTE
+               ]
+            }
          )
          operation getOrdersWithCustomerDetails(): OrderWithCustomer[]
       }
