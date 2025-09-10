@@ -273,6 +273,7 @@ abstract class MongoBaseInvoker(
    }
 
 
+
    companion object {
       const val MongoIdField = "_id"
       const val SelectAllCriteria = "{}"

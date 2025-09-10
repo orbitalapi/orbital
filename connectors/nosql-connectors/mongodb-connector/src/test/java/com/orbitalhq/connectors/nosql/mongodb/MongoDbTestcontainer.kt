@@ -16,6 +16,7 @@ abstract class MongoDbTestcontainer {
       @Container
       val mongoDbContainer: MongoDbContainer = MongoDbContainer()
          .withExposedPorts(27017)
+//         .withCommand("--replSet", "rs0", "--bind_ip_all")  // <-- run in replica set mode, to allow transactions
          .withLogConsumer {
             Slf4jLogConsumer(logger)
          }
@@ -23,6 +24,16 @@ abstract class MongoDbTestcontainer {
             MountableFile.forClasspathResource("./init-schema.js"),
             "/docker-entrypoint-initdb.d/init-script.js"
          ).apply { start() }
+//         .also { container ->
+//            // Initialize replica set once container is up
+//            // Required to allow transactions
+//            val result = container.execInContainer(
+//               "mongosh", "--eval", "rs.initiate()"
+//            )
+//            if (result.exitCode != 0) {
+//               error("Failed to initiate replica set: ${result.stderr}")
+//            }
+//         }
 
       val connectionString: String
          get() {

@@ -1,17 +1,22 @@
 package com.orbitalhq
 
+import com.jayway.awaitility.Awaitility
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedNull
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.query.QueryContext
-import com.orbitalhq.query.QueryResult
 import com.orbitalhq.query.QueryErrorEvent
+import com.orbitalhq.query.QueryResult
+import io.kotest.assertions.timing.eventually
+import io.kotest.framework.concurrency.eventually
+import io.kotest.matchers.collections.shouldNotBeEmpty
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.reactive.awaitFirst
 import org.junit.jupiter.api.fail
 import java.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 suspend fun QueryContext.findBlocking(typeName: String): List<TypedInstance> {
    return this.find(typeName)
@@ -60,6 +65,7 @@ suspend fun QueryResult.firstRawObject(): Map<String, Any?> {
       ?: error("Query didn't return any results")
 }
 
+
 suspend fun QueryResult.shouldEmitError(timeout: Duration = Duration.ofSeconds(5)):QueryErrorEvent {
    try {
       val error = this.firstError(timeout)
@@ -69,6 +75,7 @@ suspend fun QueryResult.shouldEmitError(timeout: Duration = Duration.ofSeconds(5
    }
 }
 suspend fun QueryResult.firstError(timeout: Duration = Duration.ofSeconds(5)): QueryErrorEvent {
+   this.typedInstances()
    return this.errors.take(1).timeout(timeout).collectList().awaitFirst()
       .single()
 
@@ -77,3 +84,4 @@ suspend fun QueryResult.firstError(timeout: Duration = Duration.ofSeconds(5)): Q
 suspend fun QueryResult.firstTypedCollection(): TypedCollection {
    return return this.results?.first() as TypedCollection
 }
+

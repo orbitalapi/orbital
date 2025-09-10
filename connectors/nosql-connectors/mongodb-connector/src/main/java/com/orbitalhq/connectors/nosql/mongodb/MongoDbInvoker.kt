@@ -44,6 +44,12 @@ class MongoDbInvoker(
    private val aggregateInvoker = MongoNativeAggregateQueryInvoker(
       connectionFactory, schemaProvider, meterRegistry, objectMapper
    )
+   private val deleteQueryInvoker = MongoDeleteQueryInvoker(
+      connectionFactory, schemaProvider, meterRegistry, objectMapper
+   )
+   private val nativeDeleteInvoker = MongoDeleteByQueryInvoker(
+      connectionFactory, schemaProvider, meterRegistry, objectMapper
+   )
 
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(MongoConnector.Annotations.MongoOperation.NAME)
@@ -58,13 +64,20 @@ class MongoDbInvoker(
       queryOptions: QueryOptions
    ): Flow<Either<StreamErrorMessage, TypedInstance>>  {
       return when {
-         operation.operationType == OperationScope.READ_ONLY && operation.hasMetadata(MongoConnector.Annotations.MongoAggregateName.parameterizedName) ->  aggregateInvoker.invoke(
+         // Aggregate pipelines can be read OR write.
+         /* operation.operationType == OperationScope.READ_ONLY && */ operation.hasMetadata(MongoConnector.Annotations.CollectionAggregationName.parameterizedName) ->  aggregateInvoker.invokeForSinglePipeline(
             service,
             operation,
             parameters,
             eventDispatcher,
-            queryId,
-            queryOptions
+            queryId
+         )
+         /* operation.operationType == OperationScope.READ_ONLY && */ operation.hasMetadata(MongoConnector.Annotations.AggregateTransactionName.parameterizedName) ->  aggregateInvoker.invokeForMultiplePipelinesTransactionally(
+            service,
+            operation,
+            parameters,
+            eventDispatcher,
+            queryId
          )
 
          operation.operationType == OperationScope.READ_ONLY ->  readOnlyInvoker.invoke(
@@ -75,6 +88,12 @@ class MongoDbInvoker(
             queryId,
             queryOptions
          )
+
+         operation.operationType == OperationScope.MUTATION && operation.hasMetadata(MongoConnector.Annotations.DeleteOperationName.parameterizedName) ->
+            deleteQueryInvoker.invoke(service, operation, parameters, eventDispatcher, queryId, queryOptions)
+
+         operation.operationType == OperationScope.MUTATION && operation.hasMetadata(MongoConnector.Annotations.DeleteByQueryName.parameterizedName) ->
+            nativeDeleteInvoker.invoke(service, operation, parameters, eventDispatcher, queryId, queryOptions)
 
          operation.operationType == OperationScope.MUTATION && operation.hasMetadata(MongoConnector.Annotations.UpsertOperationAnnotationName.parameterizedName) && isBatchUpsert(
             operation

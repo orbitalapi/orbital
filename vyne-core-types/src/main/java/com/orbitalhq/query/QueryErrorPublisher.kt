@@ -44,6 +44,9 @@ data class StreamErrorMessage(
    val isTerminal: Boolean = false
 ) {
    companion object {
+      fun illegalArgument(message: String, typeName: String): StreamErrorMessage {
+         return fromException(IllegalArgumentException(message), typeName)
+      }
       fun fromException(ex: Exception, typeName: String): StreamErrorMessage {
          val rootCause = Throwables.getRootCause(ex)
          val rootCauseMessage = "A ${rootCause::class.simpleName} exception was thrown - ${rootCause.message ?: "No message provided"}."
