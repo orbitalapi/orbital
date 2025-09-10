@@ -7,6 +7,7 @@ import com.orbitalhq.schema.api.ParsedSourceProvider
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schemas.QualifiedName
+import com.orbitalhq.schemas.QueryPublications
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.SavedQuery
 import com.orbitalhq.schemas.Schema
@@ -17,8 +18,6 @@ import com.orbitalhq.schemas.taxi.toVyneSources
 import com.orbitalhq.schemas.toVyneQualifiedName
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.http.NotFoundException
-import lang.taxi.annotations.HttpOperation
-import lang.taxi.annotations.WebsocketOperation
 import lang.taxi.generators.SourceFormatter
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.prepost.PreAuthorize
@@ -83,8 +82,7 @@ class SchemaService(
                query.name.toVyneQualifiedName(),
                query.compilationUnits.toVyneSources(),
                SavedQuery.QueryKind.forQueryMode(query.queryMode),
-               HttpOperation.fromQuery(query),
-               WebsocketOperation.fromQuery(query)
+               QueryPublications.fromQuery(query)
             )
          }
    }

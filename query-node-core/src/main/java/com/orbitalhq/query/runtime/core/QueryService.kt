@@ -511,7 +511,7 @@ class QueryService(
 
    }
 
-   private suspend fun vyneQLQuery(
+   suspend fun vyneQLQuery(
       query: TaxiQLQueryString,
       vyneUser: VyneUser? = null,
       clientQueryId: String?,

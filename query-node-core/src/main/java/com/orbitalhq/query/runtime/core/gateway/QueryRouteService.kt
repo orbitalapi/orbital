@@ -155,8 +155,7 @@ class QueryRouteService(
          logger.warn { "Request $request did not match a query, which is unexpected - did the schema just change?" }
          status(HttpStatus.NOT_FOUND).build()
       } else {
-         val querySource = query.compilationUnits.single().source.content
-         RoutedQuery.build(query, querySource, request)
+         RoutedQuery.build(query, request)
             .flatMap { routedQuery ->
                val queryOptions = QueryOptions.fromQuery(query)
                val eventSink = try {

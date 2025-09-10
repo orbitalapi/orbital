@@ -28,12 +28,12 @@ import java.util.*
  */
 data class RoutedQuery(
    val query: TaxiQlQuery,
-   val querySrc: TaxiQLQueryString,
    val arguments: Map<Parameter, FactValue>,
    val rootTraceId: String,
    val clientQueryId: String = Ids.id("routed-query-")
 ) {
 
+   val querySrc:TaxiQLQueryString = query.source
    val argumentValues: Map<String, Any?> = arguments.map { (param, value) ->
       param.name to value.typedValue.value
    }.toMap()
@@ -45,7 +45,7 @@ data class RoutedQuery(
          "uber-trace-id" // Jaeger
       )
 
-      fun build(query: TaxiQlQuery, querySrc: TaxiQLQueryString, request: ServerRequest): Mono<RoutedQuery> {
+      fun build(query: TaxiQlQuery, request: ServerRequest): Mono<RoutedQuery> {
          return Flux.fromIterable(query.parameters)
             .flatMap { parameter ->
                extractParameterValueFromRequest(parameter, request)
@@ -54,7 +54,7 @@ data class RoutedQuery(
             .collectList()
             .map { v ->
                val traceId = getTraceId(request)
-               RoutedQuery(query, querySrc, v.toMap(), traceId)
+               RoutedQuery(query, v.toMap(), traceId)
             }
       }
 

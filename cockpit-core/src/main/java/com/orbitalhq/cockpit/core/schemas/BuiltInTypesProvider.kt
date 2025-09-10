@@ -27,6 +27,7 @@ import com.orbitalhq.formats.xml.XmlAnnotationSpec
 import com.orbitalhq.query.VyneQlGrammar
 import com.orbitalhq.query.caching.CacheAnnotation
 import com.orbitalhq.query.caching.StateStoreAnnotation
+import com.orbitalhq.scheduler.ScheduledAnnotation
 import com.orbitalhq.schema.publisher.SchemaPublisherService
 import com.orbitalhq.schemas.taxi.toMessage
 import lang.taxi.annotations.HttpService
@@ -163,6 +164,11 @@ object BuiltInTypesProvider {
             "0.1.0",
             ServiceBusTaxi.schema
          ),
+         VersionedSource(
+            "Scheduler",
+            "0.1.0",
+            ScheduledAnnotation.taxi
+         )
       ),
       emptyMap()
    )

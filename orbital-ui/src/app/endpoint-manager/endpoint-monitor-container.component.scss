@@ -1,5 +1,22 @@
 @import "src/common";
 
+.row {
+  display: flex;
+  align-items: center;
+}
+
+.schedule {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+  gap: 0.25rem;
+
+  .label {
+    font-weight: 600;
+    margin-right: 0.25rem;
+  }
+}
+
 :host app-header-component-layout {
   tui-toggle {
     margin-right: 1rem;
@@ -9,6 +26,7 @@
     ::ng-deep {
       [tuiWrapper][data-appearance='secondary'] {
         background-color: $slate-300;
+
         &:hover {
           background-color: $slate-400;
         }

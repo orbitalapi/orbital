@@ -59,6 +59,15 @@ management:
          exposure:
             include: prometheus,metrics,info,health,logfile,loggers
          base-path: /api/actuator
+   quartz:
+      job-store-type: jdbc
+      jdbc:
+         initialize-schema: never   # Flyway manages the schema
+      properties:
+         org.quartz.jobStore.driverDelegateClass: org.quartz.impl.jdbcjobstore.PostgreSQLDelegate
+         org.quartz.jobStore.tablePrefix: QRTZ_
+         org.quartz.jobStore.isClustered: true
+
 vyne:
    db:
       enabled: true

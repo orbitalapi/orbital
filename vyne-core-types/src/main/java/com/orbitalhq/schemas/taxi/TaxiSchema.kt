@@ -680,8 +680,7 @@ fun TaxiQlQuery.asSavedQuery(packageIdentifier: PackageIdentifier? = null): Save
       this.name.toVyneQualifiedName(),
       this.compilationUnits.toVyneSources(packageIdentifier),
       SavedQuery.QueryKind.forQueryMode(this.queryMode),
-      HttpOperation.fromQuery(this),
-      WebsocketOperation.fromQuery(this)
+      QueryPublications.fromQuery(this)
    )
 }
 

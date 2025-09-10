@@ -23,7 +23,7 @@ import {
 import {
   PublishedEndpointInfoComponent
 } from '../query-panel/query-editor/query-editor-toolbar/published-endpoint-info.component';
-import {SavedQuery} from '../services/types.service';
+import { SavedQuery, ScheduledQueryConfigWithSchedule } from "../services/types.service";
 import {TypesService} from '../services/types.service';
 import {EndpointMonitorComponent} from './endpoint-monitor.component';
 import {QueryParseMetadata, QueryService} from "../services/query.service";
@@ -33,6 +33,7 @@ import {RequiresAuthorityDirective} from "../requires-authority.directive";
 import {jobStatusBadge, streamStateToDisplayLabel} from "./endpoint-list.component";
 import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
 import {SvgIconComponent} from "../svg-icon/svg-icon.component";
+import { MomentModule } from "ngx-moment";
 
 @Component({
   selector: 'app-endpoint-monitor-container',
@@ -45,11 +46,11 @@ import {SvgIconComponent} from "../svg-icon/svg-icon.component";
     >
       <ng-container ngProjectAs="header-components">
         <app-published-endpoint-info [savedQuery]="query" [showTitle]="false"></app-published-endpoint-info>
-        <div *ngIf="query.queryKind === 'Stream'" class="row stream-status-and-toggle">
+        <div *ngIf="query.queryKind === 'Stream'" class="stream-status-and-toggle">
           <input
             tuiSwitch
             type="checkbox" *appRequiresAuthority="['EditPipelines']" [ngModel]="streamIsEnabled"
-            (click)="handleToggleClick($event)" size="m"/>
+            (click)="handleToggleClick($event)" size="m" />
           <tui-badge tuiStatus
                      [appearance]="streamStatusBadge.appearance">{{ streamStatusBadge.label | titlecase }}
           </tui-badge>
@@ -64,6 +65,20 @@ import {SvgIconComponent} from "../svg-icon/svg-icon.component";
             </button>
           </ng-container>
 
+        </div>
+        <div *ngIf="query.schedule" class="row">
+          <ng-container *ngFor="let trigger of (schedule$ | async)?.triggers">
+            <div class="schedule">
+              <app-svg-icon tabler="clock" [width]="24" [strokeWidth]="1.5"></app-svg-icon>
+              <span class="label">Last trigger:</span>
+              <span>{{ trigger.lastTriggerDate |  amCalendar:calendarFormats }}</span>
+            </div>
+            <div class="schedule">
+              <app-svg-icon tabler="clock" [width]="24" [strokeWidth]="1.5"></app-svg-icon>
+              <span class="label">Next trigger:</span>
+              <span>{{ trigger.nextTriggerDate |  amCalendar:calendarFormats }}</span>
+            </div>
+          </ng-container>
         </div>
         <tui-notification
           *ngIf="streamAndJobState?.streamStatus?.state == 'RUNNING' && streamAndJobState?.jobState?.status !== 'RUNNING'"
@@ -98,17 +113,26 @@ import {SvgIconComponent} from "../svg-icon/svg-icon.component";
     TuiLineClamp,
     TuiButton,
     SvgIconComponent,
+    MomentModule
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class EndpointMonitorContainerComponent {
-
+  calendarFormats = {
+    sameDay: '[Today at] HH:mm:ss',
+    lastDay: '[Yesterday at] HH:mm:ss',
+    lastWeek: '[Last] dddd [at] HH:mm:ss',
+    nextDay: '[Tomorrow at] HH:mm:ss',
+    nextWeek: 'dddd [at] HH:mm:ss',
+    sameElse: 'DD/MM/YYYY HH:mm:ss'
+  };
   query$: Observable<SavedQuery>
   endpointName$: Observable<string>
   streamLoadingError: string
   parsedQuery$: Observable<QueryParseMetadata>
 
   streamAndJobState: StreamStateWithJobStates
+  schedule$: Observable<ScheduledQueryConfigWithSchedule>;
 
   get streamStatusBadge(): { label: string, appearance: TuiAppearanceOptions["appearance"] } {
     let appearance: string
@@ -157,6 +181,9 @@ export class EndpointMonitorContainerComponent {
           .pipe(
             tap(savedQuery => {
               this.parsedQuery$ = queryService.compileQuery(savedQuery.sources[0].content)
+              if (savedQuery.schedule) {
+                this.schedule$ = typeService.getQuerySchedule(endpoint)
+              }
             })
           )
       })
