@@ -51,14 +51,14 @@
 
       <dependency>
          <groupId>io.github.hakky54</groupId>
-         <artifactId>sslcontext-kickstart</artifactId>
-         <version>8.3.2</version>
+         <artifactId>ayza</artifactId>
+         <version>10.0.0</version>
       </dependency>
 
       <dependency>
          <groupId>io.github.hakky54</groupId>
-         <artifactId>sslcontext-kickstart-for-netty</artifactId>
-         <version>8.3.2</version>
+         <artifactId>ayza-for-netty</artifactId>
+         <version>10.0.0</version>
       </dependency>
       <!-- https://github.com/wiremock/wiremock/issues/2395
       Have to use wiremock-standalone with spring boot 12 -->
