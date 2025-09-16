@@ -151,10 +151,11 @@ class FixedOpenApiSpecProvider(private val spec: OpenApiPackageLoaderSpec) : Ope
 class FileLoadingOpenApiSpecProvider() : OpenApiSpecProvider {
    override fun provide(source: VersionedSource, packageMetadata: PackageMetadata): OpenApiPackageLoaderSpec {
       require(source.path != null) { "Cannot load OpenAPI spec for ${source.name} as no path was provided" }
-      val uri = URI.create(source.path)
+      val sourceFile = Paths.get(source.path)
+      val uri = sourceFile.toUri()
       val isFile = (uri.scheme == "file" || uri.scheme == null)
       require(isFile) { "Reading OpenAPI specs in taxi projects is only supported on file-based URIs - found ${uri.toASCIIString()}" }
-      val sourceFile = Paths.get(source.path)
+
       val configFileName = "${sourceFile.toFile().nameWithoutExtension}.taxi.conf"
       val configFilePath = sourceFile.parent.resolve(configFileName)
       return if (Files.exists(configFilePath)) {
