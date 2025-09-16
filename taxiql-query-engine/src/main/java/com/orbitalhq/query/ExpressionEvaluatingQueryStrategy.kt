@@ -21,7 +21,8 @@ class ExpressionEvaluatingQueryStrategy : QueryStrategy {
          return QueryStrategyResult.searchFailed()
       }
       val node = target.single()
-      val expression = node.projection?.projectingExpression?.expression ?: node.expression ?: return QueryStrategyResult.searchFailed()
+      val expression = node.projection?.projectingExpression?.expression ?: node.expression
+      ?: return QueryStrategyResult.searchFailed()
       if (expression is TypeExpression) {
          // leave this to other strategies
          return QueryStrategyResult.searchFailed()
@@ -45,7 +46,7 @@ class ExpressionEvaluatingQueryStrategy : QueryStrategy {
          // individually.
          // So, we need to collect the array, as the downstream function is expecting to operate on it.
          val flowToExecuteFunctionOn = if (Arrays.isArray(expression.receiverValue.returnType)) {
-            flowOf(TypedCollection.from(resultFlow.toList()))
+            flowOf(TypedCollection(context.schema.type(expression.receiverValue.returnType), resultFlow.toList()))
          } else {
             resultFlow
          }
