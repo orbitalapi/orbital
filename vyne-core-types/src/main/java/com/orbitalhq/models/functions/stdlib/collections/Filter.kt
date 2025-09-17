@@ -38,7 +38,7 @@ object Filter : CollectionFilteringFunction() {
       val result = applyFilter(inputValues, schema, returnType, function, thisScopeValueSupplier, rawMessageBeingParsed)
          .map {
             if (it.isEmpty()) {
-               TypedCollection.empty(returnType)
+               TypedCollection.empty(returnType, source = EvaluatedExpression(function.asTaxi(), inputValues))
             } else {
                TypedCollection.from(it, source = EvaluatedExpression(function.asTaxi(), inputValues))
             }
