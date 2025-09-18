@@ -2,6 +2,7 @@ package com.orbitalhq.schemaServer.core.adaptors.taxi
 
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
+import com.orbitalhq.functions.loaders.CustomFunctionSourceGenerator
 import com.orbitalhq.schema.publisher.loaders.SourceGenerator
 import com.orbitalhq.schemaServer.core.adaptors.avro.AvroTaxiSourceGenerator
 import com.orbitalhq.schemaServer.core.adaptors.openapi.FileLoadingOpenApiSpecProvider
@@ -20,7 +21,9 @@ class TaxiSourceTranspiler(
       val DEFAULT_SOURCE_GENERATORS = listOf(
          AvroTaxiSourceGenerator(),
          OpenApiSourceGenerator(FileLoadingOpenApiSpecProvider()),
-         ProtobufTaxiSourceGenerator()
+         ProtobufTaxiSourceGenerator(),
+         CustomFunctionSourceGenerator.jarFileSourceGenerator(),
+         CustomFunctionSourceGenerator.kotlinScriptSourceGenerator()
       )
    }
 
@@ -47,9 +50,11 @@ class TaxiSourceTranspiler(
       return otherSourcePackages.fold(primarySourcePackage) { a,b ->
          val mergedSources = a.sources + b.sources
          val mergedAdditionalSources = a.additionalSources.mergeLists(b.additionalSources)
+         val mergedHandlers = a.functionHandlers + b.functionHandlers
          a.copy(
             sources = mergedSources,
-            additionalSources = mergedAdditionalSources
+            additionalSources = mergedAdditionalSources,
+            functionHandlers = mergedHandlers
          )
       }
    }

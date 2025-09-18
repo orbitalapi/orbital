@@ -3,6 +3,7 @@ package com.orbitalhq
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
+import com.orbitalhq.models.functions.NamedFunctionInvoker
 import com.orbitalhq.models.serde.InstantSerializer
 import com.orbitalhq.schemas.toVersionedSource
 import com.orbitalhq.utils.shaHash
@@ -48,7 +49,11 @@ data class SourcePackage(
     */
    val additionalSources: Map<SourcesType, List<VersionedSource>> = emptyMap(),
 
-   val readme: VersionedSource? = null
+   val readme: VersionedSource? = null,
+
+   @Transient
+   @get:JsonIgnore
+   val functionHandlers: List<NamedFunctionInvoker> = emptyList()
 ) : Serializable {
    val identifier = packageMetadata.identifier
 
@@ -87,7 +92,7 @@ data class SourcePackage(
             packageMetadata = originalPackage.packageMetadata,
             sources = generatedTaxiSources,
             additionalSources = additionalSources,
-            readme = null
+            readme = null,
          )
       }
       fun asTranspiledPackage(packageMetadata: PackageMetadata, originalSources: List<VersionedSource>, generatedTaxiSources: List<VersionedSource>, sourceMap: SourceMap = SourceMap.EMPTY):SourcePackage {
@@ -299,6 +304,7 @@ data class DefaultPackageMetadata(
     * the "latest" wins - using this data to determine latest.
     */
    @kotlinx.serialization.Serializable(with = InstantSerializer::class)
+   @kotlinx.serialization.EncodeDefault
    override val submissionDate: Instant = Instant.now(),
    override val dependencies: List<PackageIdentifier> = emptyList()
 ) : PackageMetadata

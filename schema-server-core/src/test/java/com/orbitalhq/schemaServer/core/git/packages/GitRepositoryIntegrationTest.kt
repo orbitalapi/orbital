@@ -269,10 +269,9 @@ type FilmTitle inherits String
 
       await().atMost(30, TimeUnit.SECONDS)
          .until<Boolean> {
-            val filmType = schemaClient.schema()
-               .type("movies.Film")
-            // we removed this attribute, so should not be present
-            filmType.hasAttribute("title")
+            val schema = schemaClient.schema()
+            schema.hasType("movies.Film") && schema.type("movies.Film")
+               .hasAttribute("title")
          }
    }
 

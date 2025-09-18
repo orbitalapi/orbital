@@ -4,8 +4,10 @@ import com.google.common.base.Stopwatch
 import com.orbitalhq.models.EvaluationValueSupplier
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.functions.stdlib.StdLib
+import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
+import com.orbitalhq.schemas.toTaxiQualifiedName
 import lang.taxi.functions.Function
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.types.FormatsAndZoneOffset
@@ -13,10 +15,6 @@ import mu.KotlinLogging
 
 class FunctionRegistry(private val invokers: List<NamedFunctionInvoker>) {
    private val invokersByName = invokers.associateBy { it.functionName }
-   private val logger = KotlinLogging.logger {}
-   val taxiDeclaration = invokers
-      .filterIsInstance<SelfDescribingFunction>()
-      .joinToString("\n") { it.taxiDeclaration }
 
    fun invoke(
       function: Function,
@@ -40,7 +38,6 @@ class FunctionRegistry(private val invokers: List<NamedFunctionInvoker>) {
        */
       resultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
    ): TypedInstance {
-      val sw = Stopwatch.createStarted()
       val invoker = invokersByName[function.toQualifiedName()]
          ?: error("No invoker provided for function ${function.qualifiedName}")
       val result = invoker.invoke(
@@ -53,7 +50,6 @@ class FunctionRegistry(private val invokers: List<NamedFunctionInvoker>) {
          rawMessageBeingParsed,
          resultCache
       )
-//      logger.debug { "Function ${function.qualifiedName} completed in ${sw.elapsed().toMillis()}ms" }
       return result
    }
 
@@ -73,6 +69,10 @@ class FunctionRegistry(private val invokers: List<NamedFunctionInvoker>) {
       return FunctionRegistry(
          (this.invokers + functionRegistry.invokers).distinctBy { it.functionName }
       )
+   }
+
+   fun containsFunction(name: QualifiedName): Boolean {
+      return this.invokersByName.containsKey(name.toTaxiQualifiedName())
    }
 }
 

@@ -155,6 +155,7 @@ Transitive dependency in wire-compiler and calcite-core
       <module>persistence-utils</module>
       <module>copilot-api</module>
       <module>metrics-utils</module>
+      <module>function-loading</module>
    </modules>
    <scm>
       <developerConnection>scm:git:git@gitlab.com:vyne/vyne.git</developerConnection>
@@ -755,7 +756,7 @@ Transitive dependency in wire-compiler and calcite-core
                      </licenseMerge>
                      <licenseMerge>Common Public License 1.0|CPL</licenseMerge>
                      <licenseMerge>GNU Library General Public License v2 only|GNU Library General Public License v2.1 or
-                        later
+                        later|GNU LESSER GENERAL PUBLIC LICENSE 2.1
                      </licenseMerge>
                      <licenseMerge>BSD-2-Clause|The (New) BSD License|BSD 2-Clause License|The New BSD License|The BSD
                         License|Revised BSD|The BSD 2-Clause License|The BSD License
