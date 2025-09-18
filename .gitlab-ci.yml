@@ -84,14 +84,11 @@ stages:
          # Be careful!  The each of these jar files can get big.
          # If the total size of all jar files being stored in artifacts
          # exceeds 1GB then builds can fail.
-         #         - "cask/target/cask.jar"
-#         - "schema-server/target/schema-server.jar"
-#         - "vyne-analytics-server/target/vyne-analytics-server.jar"
          - "query-node-native/target/query-node-native.jar"
-#         - "vyne-query-service/target/vyne.zip"
          - "station/target/orbital.zip"
-         - "orbital-taxi-publisher/target/packagePublisher.zip"
-#         - "test-cli/target/*.zip"
+         # Removed packagePublisher as an artefact, as we're going over the 1gb limit
+         # instead, build the publisher and publish the scripts all in the same phase
+         # - "orbital-taxi-publisher/target/packagePublisher.zip"
          - "taxi-playground/target/taxi-playground.jar"
       expire_in: 1 hours
       reports:
@@ -490,7 +487,7 @@ validate-license-compliance:
 
 publish-core-types:
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.9.6-eclipse-temurin-21
-   stage: deploy
+   stage: build
    only:
       - tags
       - develop
@@ -504,7 +501,15 @@ publish-core-types:
       - eval $(ssh-agent -s)
       - ssh-add ~/.ssh/id_rsa
    script:
+      #   Read the POM, grab the version, and set to an env variable
+      #   https://stackoverflow.com/a/52241594
+      # Run the actual command twice.  The first time ensures that any downloads are
+      # already completed, so that when we try to grep the output string, we get a tidy predictable output
+      - mvn --non-recursive help:evaluate -Dexpression=project.version
+      - mvn --non-recursive help:evaluate -Dexpression=project.version | grep -v '\[.*' > build-version.txt
       - PROJECT_VERSION=$(cat build-version.txt)
+      - 'mvn $MAVEN_CLI_OPTS -version'
+      - 'mvn $MAVEN_CLI_OPTS -DbuildNumber=$CI_PIPELINE_ID $MAVEN_EXTRA_ARGS install -pl orbital-taxi-publisher -am -DskipTests'
       - cd orbital-taxi-publisher/target
       - unzip packagePublisher.zip
       - cd packagePublisher
