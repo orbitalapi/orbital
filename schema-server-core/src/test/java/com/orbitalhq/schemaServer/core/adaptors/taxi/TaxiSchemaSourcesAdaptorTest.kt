@@ -22,17 +22,16 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import lang.taxi.errors
 import lang.taxi.packages.SourcesTypes
-import lang.taxi.packages.TaxiPackageProject
 import lang.taxi.packages.TaxiProjectLoader
-import org.apache.commons.io.FileUtils
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import org.taxilang.packagemanager.DependencyFetcherProvider
 import org.taxilang.packagemanager.NoOpDependencyFetcherProvider
 import org.taxilang.packagemanger.buildPackageManager
 import reactor.core.publisher.Sinks
-import kotlin.io.path.toPath
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.toPath
 
 class TaxiSchemaSourcesAdaptorTest {
    @field:TempDir
@@ -165,7 +164,10 @@ class TaxiSchemaSourcesAdaptorTest {
 //         .type.shouldBe("foo.EmailAddress".fqn())
 //   }
 
-   private fun loadSourcePackage(path: String, dependencyFetcherProvider: DependencyFetcherProvider = NoOpDependencyFetcherProvider): SourcePackage {
+   private fun loadSourcePackage(
+      path: String,
+      dependencyFetcherProvider: DependencyFetcherProvider = NoOpDependencyFetcherProvider
+   ): SourcePackage {
       val loader = loader(path)
       val converter = TaxiSchemaSourcesAdaptor(dependencyFetcherProvider = dependencyFetcherProvider)
       val metadata = converter.buildMetadata(loader)
@@ -174,19 +176,27 @@ class TaxiSchemaSourcesAdaptorTest {
       return source
    }
 
-   private fun loader(path: String): FileSystemPackageLoader {
-      val projectRoot = Resources.getResource(path)
-         .toURI()
-      val spec = FileProjectSpec(
-         path = projectRoot.toPath()
-      )
-      val fileMonitor: ReactiveFileSystemMonitor = mock { }
-      val fileSystemEventSink = Sinks.many().unicast().onBackpressureBuffer<List<FileSystemChangeEvent>>()
-      whenever(fileMonitor.startWatching()).thenReturn(fileSystemEventSink.asFlux())
-      val loader = FileSystemPackageLoader(
-         spec, TaxiSchemaSourcesAdaptor(),
-         fileMonitor
-      )
-      return loader
-   }
+
+}
+
+fun loader(path: Path): FileSystemPackageLoader {
+   val spec = FileProjectSpec(
+      path = path
+   )
+   val fileMonitor: ReactiveFileSystemMonitor = mock { }
+   val fileSystemEventSink = Sinks.many().unicast().onBackpressureBuffer<List<FileSystemChangeEvent>>()
+   whenever(fileMonitor.startWatching()).thenReturn(fileSystemEventSink.asFlux())
+   val loader = FileSystemPackageLoader(
+      spec, TaxiSchemaSourcesAdaptor(),
+      fileMonitor
+   )
+   return loader
+
+}
+
+fun loader(resourcePath: String): FileSystemPackageLoader {
+   val projectRoot = Resources.getResource(resourcePath)
+      .toURI()
+   return loader(projectRoot.toPath())
+
 }

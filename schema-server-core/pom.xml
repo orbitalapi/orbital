@@ -24,6 +24,11 @@
          <scope>test</scope>
       </dependency>
       <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>functions-binding</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
          <groupId>org.springframework.boot</groupId>
          <artifactId>spring-boot-starter-rsocket</artifactId>
       </dependency>
@@ -150,10 +155,41 @@
          <scope>test</scope>
          <type>test-jar</type>
       </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>test-java-project</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+      </dependency>
    </dependencies>
 
    <build>
       <plugins>
+         <!-- copy the test jar we need for testing that we can load custom functions from a jar -->
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-dependency-plugin</artifactId>
+            <executions>
+               <execution>
+                  <id>copy-test-java-project</id>
+                  <phase>test-compile</phase>
+                  <goals>
+                     <goal>copy</goal>
+                  </goals>
+                  <configuration>
+                     <artifactItems>
+                        <artifactItem>
+                           <groupId>com.orbitalhq</groupId>
+                           <artifactId>test-java-project</artifactId>
+                           <version>${project.version}</version>
+                           <outputDirectory>${project.build.directory}/dependency</outputDirectory>
+                           <destFileName>test-java-project.jar</destFileName>
+                        </artifactItem>
+                     </artifactItems>
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
          <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-jar-plugin</artifactId>

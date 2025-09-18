@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <parent>
+      <groupId>com.orbitalhq</groupId>
+      <artifactId>function-loading</artifactId>
+      <version>0.36.0-SNAPSHOT</version>
+   </parent>
+
+   <artifactId>functions-binding</artifactId>
+   <description>Provides all the setup for supporting custom user functions</description>
+
+   <dependencies>
+      <dependency>
+         <groupId>org.jetbrains.kotlin</groupId>
+         <artifactId>kotlin-reflect</artifactId>
+         <version>${kotlin.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxiql-query-engine</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+      </dependency>
+      <!-- Core scripting API -->
+      <dependency>
+         <groupId>org.jetbrains.kotlin</groupId>
+         <artifactId>kotlin-scripting-common</artifactId>
+         <version>${kotlin.version}</version>
+      </dependency>
+
+      <!-- JVM-specific API -->
+      <dependency>
+         <groupId>org.jetbrains.kotlin</groupId>
+         <artifactId>kotlin-scripting-jvm</artifactId>
+         <version>${kotlin.version}</version>
+      </dependency>
+
+      <!-- Host implementation (provides BasicJvmScriptingHost, eval, etc.) -->
+      <dependency>
+         <groupId>org.jetbrains.kotlin</groupId>
+         <artifactId>kotlin-scripting-jvm-host</artifactId>
+         <version>${kotlin.version}</version>
+      </dependency>
+
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>schema-publisher-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxiql-query-engine</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
+      </dependency>
+
+      <!-- We use varv to allow Java people to return Either.
+      This appears to be the most common Java Either impl.
+      -->
+      <dependency>
+         <groupId>io.vavr</groupId>
+         <artifactId>vavr</artifactId>
+         <version>0.10.7</version>
+      </dependency>
+
+      <dependency>
+         <groupId>org.taxilang</groupId>
+         <artifactId>taxi-jvm-common</artifactId>
+         <version>${taxi.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>functions-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>functions-kotlin-scripting-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+
+   </dependencies>
+</project>

@@ -12,8 +12,6 @@ import com.orbitalhq.schemas.readers.TaxiSourceConverter
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import lang.taxi.*
-import lang.taxi.annotations.HttpOperation
-import lang.taxi.annotations.WebsocketOperation
 import lang.taxi.messages.Severity
 import lang.taxi.packages.SourcesTypes
 import lang.taxi.packages.TaxiSourcesLoader
@@ -478,10 +476,13 @@ class TaxiSchema(
                logger.info { "Compiler provided the following messages: \n ${compilationErrors.toMessage()}" }
             }
          }
+
+         val composedFunctionRegistry = buildComposedFunctionRegistry(functionRegistry, sourcePackagesWithConvertedCode)
+
          val schema = TaxiSchema(
             doc,
             sourcePackagesWithConvertedCode,
-            functionRegistry,
+            composedFunctionRegistry,
             environmentVariables = environmentVariables,
             compilerMessages = compilationErrors
          )
@@ -491,6 +492,23 @@ class TaxiSchema(
          // So, we pass the compiler message into the schema, and then return the version
          // that comes back from the parser, so Orbital can inject it's own
          return schema.compilerMessages to schema
+      }
+
+      private fun buildComposedFunctionRegistry(
+         functionRegistry: FunctionRegistry,
+         sourcePackages: List<SourcePackage>
+      ): FunctionRegistry {
+         val sourcePackageHandlers = sourcePackages.flatMap {
+            it.functionHandlers
+         }
+         return if (sourcePackageHandlers.isEmpty()) {
+            logger.info { "Using default function registry, no cutsom handlers provided" }
+            functionRegistry
+         } else {
+            logger.info { "Building FunctionRegistry containing ${sourcePackageHandlers.size} custom functions" }
+            val customFunctionRegistry = FunctionRegistry(sourcePackageHandlers)
+            functionRegistry.merge(customFunctionRegistry)
+         }
       }
 
       /**
