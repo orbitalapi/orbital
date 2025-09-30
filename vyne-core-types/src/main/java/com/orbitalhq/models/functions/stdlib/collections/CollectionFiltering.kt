@@ -12,6 +12,7 @@ object CollectionFiltering {
       Last,
       ExactlyOne,
       GetAtIndex,
+      IndexOf,
       Intersection,
       AnyMatch,
       None,
