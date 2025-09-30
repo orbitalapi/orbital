@@ -1,6 +1,5 @@
 package com.orbitalhq.models.functions.stdlib
 
-import com.fasterxml.jackson.databind.ser.std.NullSerializer
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.EvaluatedExpression
 import com.orbitalhq.models.EvaluationValueSupplier
@@ -266,7 +265,7 @@ object Length : NullSafeInvoker() {
 }
 
 object Find : NullSafeInvoker() {
-   override val functionName: QualifiedName = lang.taxi.functions.stdlib.Find.name
+   override val functionName: QualifiedName = lang.taxi.functions.stdlib.IndexOf.name
 
    override fun doInvoke(
        inputValues: List<TypedInstance>,
