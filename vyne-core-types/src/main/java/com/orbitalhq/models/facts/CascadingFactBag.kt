@@ -200,7 +200,12 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
          }
       }
       val populatedList = (a?.value ?: emptyList()) + (b?.value ?: emptyList())
-      return TypedCollection.from(populatedList)
+
+      // NOTE: This MIGHT be wrong. We should consider using .distinctByReference - as this will remove
+      // genuine duplicate facts that are present in the source.
+      // However, I need so write some failing tests first...
+      val distinctItems = populatedList.distinct()
+      return TypedCollection.from(distinctItems)
    }
 
    private fun combineCollections(
