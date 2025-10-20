@@ -22,7 +22,8 @@ object AwsConnection {
             description = "Leave blank to use your AWS account’s default settings automatically.",
             defaultValue = null,
             required = false,
-            isConstructorParameter = true
+            isConstructorParameter = true,
+            sensitive = true
          )
       ),
       SECRET_KEY(
@@ -33,7 +34,8 @@ object AwsConnection {
             templateParamName = AwsConnectionConfiguration::secretKey.name,
             defaultValue = null,
             required = false,
-            isConstructorParameter = true
+            isConstructorParameter = true,
+            sensitive = true
          )
       ),
       AWS_REGION(
@@ -103,7 +105,7 @@ object AwsConnection {
 @kotlinx.serialization.Serializable
 data class AwsConnectionConfiguration(
    override val connectionName: String,
-   val region: String,
+   val region: String?,
    val accessKey: String?,
    val secretKey: String?,
    val endPointOverride: String? = null,
@@ -111,12 +113,14 @@ data class AwsConnectionConfiguration(
 ) : ConnectorConfiguration, Serializable {
    override val type: ConnectorCategory = ConnectorCategory.AWS
    override fun getUiDisplayProperties(): Map<String, Any> {
-      val result = mapOf(
-         "region" to region
-      )
+      val result = if (region != null) {
+         mapOf(
+            "region" to region
+         )
+      } else emptyMap()
 
       return when {
-         endPointOverride != null && connectionParameters != null ->   result + mapOf("endpointOverride" to endPointOverride)  + connectionParameters
+         endPointOverride != null && connectionParameters != null -> result + mapOf("endpointOverride" to endPointOverride) + connectionParameters
          endPointOverride != null -> result + mapOf("endpointOverride" to endPointOverride)
          connectionParameters != null -> result + connectionParameters
          else -> result
