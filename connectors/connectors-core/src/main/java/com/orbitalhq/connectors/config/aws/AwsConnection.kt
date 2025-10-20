@@ -19,7 +19,7 @@ object AwsConnection {
             "AWS access key",
             SimpleDataType.STRING,
             templateParamName = AwsConnectionConfiguration::accessKey.name,
-            description = "Description in here about why accessKey is optional",
+            description = "Leave blank to use your AWS account’s default settings automatically.",
             defaultValue = null,
             required = false,
             isConstructorParameter = true
@@ -29,7 +29,7 @@ object AwsConnection {
          ConnectionDriverParam(
             "AWS secret key",
             SimpleDataType.STRING,
-            description = "Description in here about why secretKey is optional",
+            description = "Leave blank to use your AWS account’s default settings automatically.",
             templateParamName = AwsConnectionConfiguration::secretKey.name,
             defaultValue = null,
             required = false,
@@ -40,7 +40,7 @@ object AwsConnection {
          ConnectionDriverParam(
             "AWS region",
             SimpleDataType.STRING,
-            description = "Description in here about why region is optional",
+            description = "Leave blank to use your AWS account’s default settings automatically.",
             defaultValue = null,
             required = false,
             templateParamName = AwsConnectionConfiguration::region.name,
