@@ -114,7 +114,7 @@ Transitive dependency in wire-compiler and calcite-core
       <module>schema-server</module>
       <module>pipelines</module>
       <!--      <module>cask-api</module>-->
-      <module>test-cli</module>
+<!--      <module>test-cli</module>-->
       <module>vyne-csv-utils</module>
       <!--      <module>regression-tests</module>-->
       <module>vyne-history-core</module>
