@@ -17,6 +17,7 @@ import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Test
@@ -89,7 +90,7 @@ class JdbcUpsertTest {
       """
          )
       ) { schema ->
-         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)))
+         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()))
       }
 
       val dbMetadataService = DatabaseMetadataService(jdbcTemplate, connectionFactory.config("movies"))
@@ -143,7 +144,7 @@ class JdbcUpsertTest {
          }
       """
          )
-      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
       val result = vyne.query(
          """
          given { movie : Film = { ID : null , TITLE : "A New Hope" } }
@@ -198,7 +199,7 @@ class JdbcUpsertTest {
          )
       ) { schema ->
          listOf(
-            JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)),
+            JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()),
          )
       }
       val (eventBroker, eventSink) = QueryContextEventBroker.withTestTraceSpan()
@@ -270,7 +271,7 @@ from final table (
          )
       ) { schema ->
          listOf(
-            JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)),
+            JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()),
          )
       }
       val result = vyne.query(

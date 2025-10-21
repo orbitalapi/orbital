@@ -26,7 +26,7 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import io.kotest.matchers.types.shouldNotBeInstanceOf
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
@@ -200,7 +200,7 @@ class JdbcQueryWithJoinsTest {
             schema
          )
       ) { taxiSchema ->
-         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(taxiSchema)))
+         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(taxiSchema), SimpleMeterRegistry()))
       }
 
       stub.addResponse(
@@ -250,7 +250,7 @@ class JdbcQueryWithJoinsTest {
             schema
          )
       ) { schema ->
-         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)))
+         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()))
       }
 
       val result = vyne.query(
@@ -296,7 +296,7 @@ class JdbcQueryWithJoinsTest {
             schema
          )
       ) { schema ->
-         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)))
+         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()))
       }
 
       val result = vyne.query(
@@ -342,7 +342,7 @@ class JdbcQueryWithJoinsTest {
             schema
          )
       ) { schema ->
-         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)))
+         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()))
       }
 
       val result = vyne.query(

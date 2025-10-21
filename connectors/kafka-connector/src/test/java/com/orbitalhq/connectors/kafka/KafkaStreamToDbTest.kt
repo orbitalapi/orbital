@@ -125,7 +125,7 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
                kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(GaugeRegistry.simple())
             )
          listOf(
-            JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(testSchema)),
+            JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(testSchema), SimpleMeterRegistry()),
             KafkaInvoker(kafkaStreamManager, mock { })
          )
       }
@@ -220,7 +220,7 @@ class KafkaStreamToDbTest : BaseKafkaContainerTest() {
                kafkaConsumerStatsFlowBuilder = KafkaConsumerStatsFlowBuilder(GaugeRegistry.simple())
             )
          listOf(
-            JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(testSchema)),
+            JdbcInvoker(jdbcConnectionFactory, SimpleSchemaProvider(testSchema), SimpleMeterRegistry()),
             KafkaInvoker(kafkaStreamManager, mock {})
          )
       }

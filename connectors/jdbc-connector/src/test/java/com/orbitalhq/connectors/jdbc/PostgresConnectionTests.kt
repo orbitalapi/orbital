@@ -14,6 +14,7 @@ import com.orbitalhq.utils.get
 import com.winterbe.expekt.should
 import com.zaxxer.hikari.HikariConfig
 import io.kotest.matchers.shouldBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.Before
 import org.junit.Rule
@@ -48,7 +49,6 @@ class PostgresConnectionTests {
       jdbcUrl = postgreSQLContainer.jdbcUrl
       username = postgreSQLContainer.username
       password = postgreSQLContainer.password
-
    }
 
    @Test
@@ -108,7 +108,7 @@ class PostgresConnectionTests {
         }
       """
          )
-      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry(), )) }
 
       stub.addResponse(
          "streamUpdatedDeals", vyne.parseJson(

@@ -15,6 +15,7 @@ import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
 import com.winterbe.expekt.should
 import com.zaxxer.hikari.HikariConfig
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
@@ -99,7 +100,7 @@ class MssqlQueryTest {
          }
       """
          )
-      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
       val result = vyne.query("""find { Movie[]( MovieTitle == "A New Hope" ) } """)
          .typedObjects()
       result.should.have.size(1)
@@ -146,7 +147,7 @@ class MssqlQueryTest {
             TypedInstance.from(schema.type("AvailableCopyCount"), 150, schema),
             modifyDataSource = true
          )
-         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)), stub)
+         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()), stub)
       }
       val result = vyne.query(
          """find { Movie[]( MovieTitle == "A New Hope" ) }
@@ -212,7 +213,7 @@ class MssqlQueryTest {
             ),
             modifyDataSource = true
          )
-         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)), stub)
+         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()), stub)
       }
       val result = vyne.query(
          """find { NewRelease[] }
@@ -278,7 +279,7 @@ class MssqlQueryTest {
             ),
             modifyDataSource = true
          )
-         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)), stub)
+         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()), stub)
       }
       val result = vyne.query(
          """find { NewRelease[] }

@@ -26,6 +26,9 @@ object JdbcConnectorTaxi {
       val InsertOperationAnnotationName = "$namespace.InsertOperation".fqn()
       val UpdateOperationAnnotationName = "$namespace.UpdateOperation".fqn()
 
+      val batchSizeParamName: String = "batchSize"
+      val batchDurationParamName: String = "batchDuration"
+
       const val GeneratedIdAnnotationName = "GeneratedId"
 
       data class DatabaseOperation(val connectionName: String) : AnnotationWrapper {
@@ -99,9 +102,18 @@ object JdbcConnectorTaxi {
    val schema = """
 namespace ${Annotations.namespace} {
    type ConnectionName inherits String
-   annotation UpsertOperation {}
-   annotation InsertOperation {}
-   annotation UpdateOperation {}
+   annotation UpsertOperation {
+        ${Annotations.batchSizeParamName}: Int?
+        ${Annotations.batchDurationParamName}: Int?
+   }
+   annotation InsertOperation {
+        ${Annotations.batchSizeParamName}: Int?
+        ${Annotations.batchDurationParamName}: Int?
+   }
+   annotation UpdateOperation {
+        ${Annotations.batchSizeParamName}: Int?
+        ${Annotations.batchDurationParamName}: Int?
+   }
    annotation ${Annotations.databaseOperationName.typeName} {
       connection : ConnectionName
    }

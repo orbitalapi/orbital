@@ -2,7 +2,8 @@ package com.orbitalhq.connectors.jdbc
 
 import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.orbitalhq.models.DataSource
+import com.orbitalhq.connectors.BatchWriteCacheProvider
+import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.query.QueryContextEventDispatcher
@@ -13,6 +14,7 @@ import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
+import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.flow.Flow
 import lang.taxi.services.OperationScope
 import mu.KotlinLogging
@@ -25,12 +27,15 @@ import mu.KotlinLogging
 class JdbcInvoker(
    connectionFactory: JdbcConnectionFactory,
    schemaProvider: SchemaProvider,
-   objectMapper: ObjectMapper = Jackson.defaultObjectMapper
+   meterRegistry: MeterRegistry,
+   objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
 ) :
    OperationInvoker {
 
+   private val batchWriteCacheProvider = BatchWriteCacheProvider<TypedInstance, OperationResultReference>()
    private val queryInvoker = JdbcQueryInvoker(connectionFactory, schemaProvider, objectMapper)
    private val upsertInvoker = JdbcUpsertInvoker(connectionFactory, schemaProvider)
+   private val batchUpsertInvoker = JdbcBatchInsertUpsertInvoker(connectionFactory, schemaProvider, objectMapper, meterRegistry, batchWriteCacheProvider)
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(JdbcConnectorTaxi.Annotations.DatabaseOperation.NAME)
    }
@@ -53,6 +58,7 @@ class JdbcInvoker(
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       return try {
          val updateVerb = UpsertVerb.forAnnotations(operation.metadata)
+         val batchParams = BatchParams.forOperation(operation)
          when {
             operation.operationType == OperationScope.READ_ONLY -> queryInvoker.invoke(
                service,
@@ -60,16 +66,24 @@ class JdbcInvoker(
                parameters,
                eventDispatcher,
                queryId,
-               null
             )
 
-            updateVerb != null -> upsertInvoker.invoke(
+            updateVerb != null && batchParams == null -> upsertInvoker.invoke(
                service,
                operation,
                parameters,
                eventDispatcher,
                queryId,
                updateVerb
+            )
+            updateVerb != null && batchParams != null -> batchUpsertInvoker.invoke(
+               service,
+               operation,
+               parameters,
+               eventDispatcher,
+               queryId,
+               updateVerb,
+               batchParams
             )
 
             else -> error("Unhandled JDBC Operation type: ${operation.qualifiedName.parameterizedName} - Consider adding one of the following annotations to indicate how to write: ${listOf(JdbcConnectorTaxi.Annotations.UpsertOperationAnnotationName, JdbcConnectorTaxi.Annotations.InsertOperationAnnotationName, JdbcConnectorTaxi.Annotations.UpdateOperationAnnotationName).joinToString { it.fullyQualifiedName }}")
@@ -78,16 +92,8 @@ class JdbcInvoker(
          logger.error(e) { "Exception thrown whilst invoking Jdbc operation" }
          throw e
       }
+
    }
 
-
 }
 
-class DatabaseQuerySource(
-   val connectionName: String,
-   val query: String,
-   override val failedAttempts: List<DataSource> = emptyList()
-) : DataSource {
-   override val name: String = "DatabaseQuery"
-   override val id: String = this.hashCode().toString()
-}

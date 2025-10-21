@@ -18,6 +18,7 @@ import com.winterbe.expekt.should
 import com.zaxxer.hikari.HikariConfig
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
@@ -101,7 +102,7 @@ class MssqlUpsertTest {
          }
       """
       )
-   ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+   ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
    @Test
    fun `can use a TaxiQL statement to insert a row`(): Unit = runBlocking {
       val result = vyne().query("""
