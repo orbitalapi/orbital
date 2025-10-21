@@ -1,0 +1,460 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - '**'
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - develop
+      - master
+
+env:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true -Dsurefire.rerunFailingTestsCount=2 -Denv.buildServer=true"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DdeployAtEnd=true -Denv.buildServer=true -U --settings .mvn/settings.xml"
+
+jobs:
+  verify-version:
+    name: Verify Version (Tags Only)
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+
+      - name: Verify tag matches Maven version
+        run: |
+          echo "Tag is: ${{ github.ref_name }}"
+          TAG_NO_V="${{ github.ref_name }}"
+          TAG_NO_V="${TAG_NO_V#v}"
+
+          # Read Maven project.version
+          MVN_VER=$(mvn -q -DforceStdout -Dexpression=project.version help:evaluate | tail -n 1)
+          echo "Maven project.version is: $MVN_VER"
+
+          # Forbid -SNAPSHOT on tags
+          if [[ "$MVN_VER" == *-SNAPSHOT ]]; then
+            echo "❌ project.version ends with -SNAPSHOT, but this is a tag build."
+            exit 1
+          fi
+
+          # Compare versions
+          if [[ "$MVN_VER" != "$TAG_NO_V" ]]; then
+            echo "❌ Version mismatch: tag '${{ github.ref_name }}' implies '$TAG_NO_V' but project.version is '$MVN_VER'."
+            exit 1
+          else
+            echo "✅ Versions match."
+          fi
+
+  build-jvm:
+    name: Build JVM
+    runs-on: ubuntu-latest
+    needs: verify-version
+    if: |
+      always() &&
+      (needs.verify-version.result == 'success' || needs.verify-version.result == 'skipped')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 10
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Configure Docker authentication
+        run: |
+          mkdir -p /home/runner/.docker/
+          cat > /home/runner/.docker/config.json << EOF
+          {
+              "auths": {
+                  "https://index.docker.io/v1/": {
+                      "username": "vynecd",
+                      "password": "${{ secrets.DOCKER_HUB_PASSWORD }}",
+                      "auth": "$(echo -n 'vynecd:${{ secrets.DOCKER_HUB_PASSWORD }}' | base64)"
+                  }
+              }
+          }
+          EOF
+
+      - name: Determine Maven goals
+        id: maven-config
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            echo "goals=clean deploy" >> $GITHUB_OUTPUT
+            echo "extra_args=-P release -DskipTests" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_name }}" == "develop" ]] || [[ "${{ github.ref_name }}" == release/* ]]; then
+            echo "goals=clean deploy" >> $GITHUB_OUTPUT
+            echo "extra_args=-P snapshot-release -DskipTests" >> $GITHUB_OUTPUT
+          else
+            echo "goals=clean install" >> $GITHUB_OUTPUT
+            echo "extra_args=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build with Maven
+        env:
+          DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
+        run: |
+          echo "Running Maven with goals: ${{ steps.maven-config.outputs.goals }}"
+          mvn $MAVEN_CLI_OPTS -DbuildNumber=${{ github.run_id }} ${{ steps.maven-config.outputs.extra_args }} ${{ steps.maven-config.outputs.goals }}
+
+      - name: Extract version from POM
+        run: |
+          mvn --non-recursive help:evaluate -Dexpression=project.version
+          mvn --non-recursive help:evaluate -Dexpression=project.version | grep -v '\[.*' > build-version.txt
+          echo "Build version: $(cat build-version.txt)"
+
+      - name: Generate third-party licenses
+        run: mvn license:aggregate-add-third-party
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: |
+            build-version.txt
+            target/generated-sources/license/THIRD-PARTY.txt
+            query-node-native/target/query-node-native.jar
+            station/target/orbital.zip
+            taxi-playground/target/taxi-playground.jar
+          retention-days: 1
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-jvm
+          path: '**/target/surefire-reports/TEST-*.xml'
+          retention-days: 7
+          if-no-files-found: ignore
+
+  build-orbital-ui:
+    name: Build Orbital UI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: orbital-ui/package-lock.json
+
+      - name: Configure npm cache
+        run: |
+          npm config set cache .npm/cache --global
+          npm --global cache verify
+
+      - name: Build UI
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+        run: |
+          cd orbital-ui
+          npm ci
+          npm run-script build-prod
+          npx license-checker --out ../licenses.csv --csv
+
+      - name: Upload UI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: orbital-ui
+          path: |
+            station/target/classes/static
+            licenses.csv
+          retention-days: 1
+
+  build-playground-ui:
+    name: Build Playground UI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: orbital-ui/package-lock.json
+
+      - name: Configure npm cache
+        run: |
+          npm config set cache .npm/cache --global
+          npm --global cache verify
+
+      - name: Build Playground UI
+        env:
+          NODE_OPTIONS: "--max-old-space-size=8192"
+        run: |
+          cd orbital-ui
+          npm ci
+          npm run-script build-prod-playground
+
+      - name: Upload Playground UI artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: playground-ui
+          path: taxi-playground/target/classes/static
+          retention-days: 1
+
+  publish-orbital:
+    name: Publish Orbital (Alpine)
+    runs-on: ubuntu-latest
+    needs: build-jvm
+    if: |
+      github.event_name == 'push' && (
+        github.ref == 'refs/heads/develop' ||
+        github.ref == 'refs/heads/master' ||
+        startsWith(github.ref, 'refs/tags/v') ||
+        startsWith(github.ref, 'refs/heads/release/')
+      )
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: vynecd
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Determine Docker tags
+        id: docker-tags
+        run: |
+          PROJECT_VERSION=$(cat build-version.txt)
+
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            tag="${{ github.ref_name }}"
+            versionTag="${{ github.ref_name }}"
+          elif [[ "${{ github.ref_name }}" == "master" ]]; then
+            tag="latest"
+            versionTag="$PROJECT_VERSION"
+          elif [[ "${{ github.ref_name }}" == "develop" ]]; then
+            tag="next"
+            versionTag="next-${{ github.run_id }}"
+          elif [[ "${{ github.ref_name }}" == release/* ]]; then
+            stripped_branch=$(echo "${{ github.ref_name }}" | sed 's/release\///')
+            tag="$stripped_branch-next"
+            versionTag="$PROJECT_VERSION-BETA-${{ github.run_id }}"
+          else
+            tag="${{ github.ref_name }}-next"
+            versionTag="$PROJECT_VERSION-BETA-${{ github.run_id }}"
+          fi
+
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+          echo "version_tag=$versionTag" >> $GITHUB_OUTPUT
+          echo "Running on branch '${{ github.ref_name }}': tag = $tag"
+          echo "Running on branch '${{ github.ref_name }}': version = $versionTag"
+
+      - name: Build and push Orbital Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./station
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            BASE_IMAGE_TAG=alpine
+          tags: |
+            orbitalhq/orbital:${{ steps.docker-tags.outputs.tag }}
+            orbitalhq/orbital:${{ steps.docker-tags.outputs.version_tag }}
+
+  publish-orbital-jammy:
+    name: Publish Orbital (Ubuntu Jammy)
+    runs-on: ubuntu-latest
+    needs: build-jvm
+    if: |
+      github.event_name == 'push' && (
+        github.ref == 'refs/heads/develop' ||
+        github.ref == 'refs/heads/master' ||
+        startsWith(github.ref, 'refs/tags/v') ||
+        startsWith(github.ref, 'refs/heads/release/')
+      )
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: vynecd
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Determine Docker tags
+        id: docker-tags
+        run: |
+          PROJECT_VERSION=$(cat build-version.txt)
+
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            tag="${{ github.ref_name }}-jammy"
+            versionTag="${{ github.ref_name }}-jammy"
+          elif [[ "${{ github.ref_name }}" == "master" ]]; then
+            tag="latest-jammy"
+            versionTag="$PROJECT_VERSION-jammy"
+          elif [[ "${{ github.ref_name }}" == "develop" ]]; then
+            tag="next-jammy"
+            versionTag="next-${{ github.run_id }}-jammy"
+          elif [[ "${{ github.ref_name }}" == release/* ]]; then
+            stripped_branch=$(echo "${{ github.ref_name }}" | sed 's/release\///')
+            tag="$stripped_branch-next-jammy"
+            versionTag="$PROJECT_VERSION-BETA-${{ github.run_id }}-jammy"
+          else
+            tag="${{ github.ref_name }}-next-jammy"
+            versionTag="$PROJECT_VERSION-BETA-${{ github.run_id }}-jammy"
+          fi
+
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+          echo "version_tag=$versionTag" >> $GITHUB_OUTPUT
+
+      - name: Build and push Orbital Docker image (Jammy)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./station
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            BASE_IMAGE_TAG=jammy
+          tags: |
+            orbitalhq/orbital:${{ steps.docker-tags.outputs.tag }}
+            orbitalhq/orbital:${{ steps.docker-tags.outputs.version_tag }}
+
+  publish-query-node:
+    name: Publish Query Node
+    runs-on: ubuntu-latest
+    needs: build-jvm
+    if: |
+      github.event_name == 'push' && (
+        github.ref == 'refs/heads/develop' ||
+        github.ref == 'refs/heads/master' ||
+        startsWith(github.ref, 'refs/tags/v') ||
+        startsWith(github.ref, 'refs/heads/release/')
+      )
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: vynecd
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Determine Docker tags
+        id: docker-tags
+        run: |
+          PROJECT_VERSION=$(cat build-version.txt)
+
+          if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            tag="${{ github.ref_name }}"
+            versionTag="${{ github.ref_name }}"
+          elif [[ "${{ github.ref_name }}" == "master" ]]; then
+            tag="latest"
+            versionTag="$PROJECT_VERSION"
+          elif [[ "${{ github.ref_name }}" == "develop" ]]; then
+            tag="next"
+            versionTag="next-${{ github.run_id }}"
+          elif [[ "${{ github.ref_name }}" == release/* ]]; then
+            stripped_branch=$(echo "${{ github.ref_name }}" | sed 's/release\///')
+            tag="$stripped_branch-next"
+            versionTag="$PROJECT_VERSION-BETA-${{ github.run_id }}"
+          else
+            tag="${{ github.ref_name }}-next"
+            versionTag="$PROJECT_VERSION-BETA-${{ github.run_id }}"
+          fi
+
+          echo "tag=$tag" >> $GITHUB_OUTPUT
+          echo "version_tag=$versionTag" >> $GITHUB_OUTPUT
+
+      - name: Build and push Query Node Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./query-node-native
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            orbitalhq/query-node:${{ steps.docker-tags.outputs.tag }}
+            orbitalhq/query-node:${{ steps.docker-tags.outputs.version_tag }}
+
+  tag-as-latest:
+    name: Tag Images as Latest
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - publish-orbital
+      - publish-orbital-jammy
+      - publish-query-node
+
+    steps:
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: vynecd
+          password: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+      - name: Tag Orbital images as latest
+        run: |
+          docker pull orbitalhq/orbital:${{ github.ref_name }}
+          docker tag orbitalhq/orbital:${{ github.ref_name }} orbitalhq/orbital:latest
+          docker push orbitalhq/orbital:latest
+
+          docker pull orbitalhq/orbital:${{ github.ref_name }}-jammy
+          docker tag orbitalhq/orbital:${{ github.ref_name }}-jammy orbitalhq/orbital:latest-jammy
+          docker push orbitalhq/orbital:latest-jammy
+
+      - name: Tag Query Node image as latest
+        run: |
+          docker pull orbitalhq/query-node:${{ github.ref_name }}
+          docker tag orbitalhq/query-node:${{ github.ref_name }} orbitalhq/query-node:latest
+          docker push orbitalhq/query-node:latest

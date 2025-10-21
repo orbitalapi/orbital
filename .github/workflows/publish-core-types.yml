@@ -1,0 +1,71 @@
+name: Publish Core Types
+
+on:
+  push:
+    branches:
+      - develop
+      - master
+    tags:
+      - 'v*'
+
+env:
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DdeployAtEnd=true -Denv.buildServer=true -U --settings .mvn/settings.xml"
+
+jobs:
+  publish-core-types:
+    name: Publish Core Types to GitHub
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: 'maven'
+
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.GITHUB_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          eval $(ssh-agent -s)
+          ssh-add ~/.ssh/id_rsa
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Extract project version
+        id: version
+        run: |
+          mvn --non-recursive help:evaluate -Dexpression=project.version
+          mvn --non-recursive help:evaluate -Dexpression=project.version | grep -v '\[.*' > build-version.txt
+          PROJECT_VERSION=$(cat build-version.txt)
+          echo "version=$PROJECT_VERSION" >> $GITHUB_OUTPUT
+          echo "Project version: $PROJECT_VERSION"
+
+      - name: Build orbital-taxi-publisher
+        run: |
+          mvn $MAVEN_CLI_OPTS -DbuildNumber=${{ github.run_id }} install -pl orbital-taxi-publisher -am -DskipTests
+
+      - name: Unzip and prepare publisher
+        run: |
+          cd orbital-taxi-publisher/target
+          unzip packagePublisher.zip
+          cd packagePublisher
+          mkdir -p schema
+
+      - name: Publish to GitHub
+        env:
+          SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+        run: |
+          eval $(ssh-agent -s)
+          ssh-add ~/.ssh/id_rsa
+          cd orbital-taxi-publisher/target/packagePublisher
+          ./bin/packagePublisher \
+            --output=./schema \
+            --version=${{ steps.version.outputs.version }} \
+            --remote-url=git@github.com:orbitalapi/orbital-core-taxi \
+            --ssh-key=$HOME/.ssh/id_rsa
