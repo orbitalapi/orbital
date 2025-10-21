@@ -153,7 +153,7 @@ class StandaloneVyneFactory(
          )
       }
 
-      return JdbcInvoker(jdbcConnectionFactory, schemaProvider)
+      return JdbcInvoker(jdbcConnectionFactory, schemaProvider, meterRegistry)
    }
 
 }

@@ -34,18 +34,19 @@ class JdbcConnectionConfig {
    fun jdbcConnectionFactory(
       connectionRegistry: JdbcConnectionRegistry,
       hikariConfig: HikariConfig,
-      meter: MeterRegistry
+      meterRegistry: MeterRegistry
    ): JdbcConnectionFactory {
-      return HikariJdbcConnectionFactory(connectionRegistry, hikariConfig, MicrometerMetricsTrackerFactory(meter))
+      return HikariJdbcConnectionFactory(connectionRegistry, hikariConfig, MicrometerMetricsTrackerFactory(meterRegistry))
    }
 
    @Bean
    fun jdbcInvoker(
       connectionFactory: JdbcConnectionFactory,
-      schemaProvider: SchemaProvider
+      schemaProvider: SchemaProvider,
+      meterRegistry: MeterRegistry
    ): JdbcInvoker {
       return JdbcInvoker(
-         connectionFactory, schemaProvider
+          connectionFactory, schemaProvider, meterRegistry
       )
    }
 }

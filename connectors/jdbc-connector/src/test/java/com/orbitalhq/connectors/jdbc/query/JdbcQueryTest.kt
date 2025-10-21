@@ -12,6 +12,7 @@ import com.orbitalhq.rawObjects
 import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.testVyne
 import com.orbitalhq.typedObjects
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import jakarta.persistence.Column
 import jakarta.persistence.Entity
 import jakarta.persistence.Id
@@ -77,7 +78,7 @@ class JdbcQueryTest {
          }
       """
          )
-      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
       val result = vyne.query("""find { Movie[]( MovieTitle == "A New Hope" || MovieTitle == "Foo Bar" ) } """)
          .typedObjects()
       result.should.have.size(1)
@@ -124,7 +125,7 @@ class JdbcQueryTest {
             TypedInstance.from(schema.type("AvailableCopyCount"), 150, schema),
             modifyDataSource = true
          )
-         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)), stub)
+         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()), stub)
       }
       val result = vyne.query(
          """find { Movie[]( MovieTitle == "A New Hope" ) }
@@ -190,7 +191,7 @@ class JdbcQueryTest {
             ),
             modifyDataSource = true
          )
-         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)), stub)
+         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()), stub)
       }
       val result = vyne.query(
          """find { NewRelease[] }
@@ -256,7 +257,7 @@ class JdbcQueryTest {
             ),
             modifyDataSource = true
          )
-         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema)), stub)
+         listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry()), stub)
       }
       val result = vyne.query(
          """find { NewRelease[] }
@@ -302,7 +303,7 @@ class JdbcQueryTest {
          }
       """
          )
-      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
 
       val result = vyne.query("""find { Movie[](MovieId in [1,2,3]) } """)
          .rawObjects()
@@ -344,7 +345,7 @@ class JdbcQueryTest {
          }
       """
          )
-      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
 
       val result = vyne.query("""find { Movie[](MovieId not in [1,2]) } """)
          .rawObjects()
@@ -386,7 +387,7 @@ class JdbcQueryTest {
          }
       """
          )
-      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
 
       val result = vyne.query("""find { Movie[](MovieId in [2,4,5]) } """)
          .rawObjects()
@@ -428,7 +429,7 @@ class JdbcQueryTest {
          }
       """
          )
-      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
 
       val result = vyne.query("""find { Movie[](MovieId not in [2,4]) } """)
          .rawObjects()
@@ -466,7 +467,7 @@ class JdbcQueryTest {
          }
       """
          )
-      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema))) }
+      ) { schema -> listOf(JdbcInvoker(connectionFactory, SimpleSchemaProvider(schema), SimpleMeterRegistry())) }
 
       val result = vyne.query("""find { Movie[](MovieId in [1]) } """)
          .rawObjects()

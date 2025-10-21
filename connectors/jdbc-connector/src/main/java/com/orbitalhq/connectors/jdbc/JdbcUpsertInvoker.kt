@@ -2,6 +2,8 @@ package com.orbitalhq.connectors.jdbc
 
 import arrow.core.Either
 import com.orbitalhq.connectors.config.jdbc.JdbcConnectionConfiguration
+import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi.Annotations.batchDurationParamName
+import com.orbitalhq.connectors.jdbc.JdbcConnectorTaxi.Annotations.batchSizeParamName
 import com.orbitalhq.connectors.jdbc.drivers.databaseSupport
 import com.orbitalhq.connectors.jdbc.sql.ddl.TableGenerator
 import com.orbitalhq.connectors.jdbc.sql.dml.InsertStatementGenerator
@@ -61,9 +63,37 @@ enum class UpsertVerb {
    }
 }
 
-class JdbcUpsertInvoker(
+data class BatchParams(val size: Int, val durationMs: Long) {
+   companion object {
+      private val MAX_TIMEOUT = Duration.ofMinutes(30L).toMillis()
+      fun forOperation(operation: RemoteOperation): BatchParams? {
+         return sequenceOf(
+            JdbcConnectorTaxi.Annotations.UpsertOperationAnnotationName.parameterizedName,
+            JdbcConnectorTaxi.Annotations.InsertOperationAnnotationName.parameterizedName,
+            JdbcConnectorTaxi.Annotations.UpdateOperationAnnotationName.parameterizedName,
+         ).map { operation.firstMetadataOrNull(it) }
+            .filterNotNull()
+            .map { metadata ->
+               if (metadata.params.containsKey(JdbcConnectorTaxi.Annotations.batchSizeParamName) || metadata.params.containsKey(
+                     JdbcConnectorTaxi.Annotations.batchDurationParamName
+                  )
+               ) {
+                  BatchParams(
+                     metadata.params[batchSizeParamName] as Int? ?: Int.MAX_VALUE,
+                     (metadata.params[batchDurationParamName] as Int?)?.toLong() ?: MAX_TIMEOUT,
+                  )
+               } else null
+            }
+            .filterNotNull()
+            .firstOrNull()
+
+      }
+   }
+}
+
+open class JdbcUpsertInvoker(
    connectionFactory: JdbcConnectionFactory,
-   private val schemaProvider: SchemaProvider,
+   protected val schemaProvider: SchemaProvider,
 ) : BaseJdbcOperationInvoker(connectionFactory) {
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -74,10 +104,10 @@ class JdbcUpsertInvoker(
     * We have single instance of JdbcUpsertInvoker instantiated by singleton JdbcInvoker bean. Therefore, we need a mechanism
     * to check to see whether we need to create the underlying relational table for different data connections.
     */
-   private val tableCheckAndExistsMap =
+   protected val tableCheckAndExistsMap =
       ConcurrentHashMap<JdbcConnectorTaxi.Annotations.Table, JdbcConnectorTaxi.Annotations.Table>()
 
-   override suspend fun invoke(
+   suspend fun invoke(
       service: Service,
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
@@ -103,16 +133,80 @@ class JdbcUpsertInvoker(
       // Create underlying table if required. The entire method invocation is performed atomically, so the function is applied at most once per key.
       // Some attempted update operations on this map by other threads may be blocked while computation is in progress,
       // so the computation should be short and simple, and must not attempt to update any other mappings of this map.
-      tableCheckAndExistsMap.computeIfAbsent(tableAnnotation) {
-         createTableIfNotPresent(operation, tableAnnotation, dsl, jdbcTemplate, connectionConfig)
-         tableAnnotation
-      }
+      createTableIfRequired(tableAnnotation, operation, dsl, jdbcTemplate, connectionConfig)
 
       val inputAsList = when (input) {
          is TypedCollection -> input
          is TypedObject -> listOf(input)
          else -> error("Expected either a TypedCollection or a TypedObject")
       }
+      val (dbResult: Result<Record>?, operationResult: OperationResultReference) = doInsertOrUpsert(
+         schema,
+         connectionConfig,
+         inputAsList,
+         dsl,
+         verb,
+         tableAnnotation,
+         eventDispatcher,
+         service,
+         operation,
+         parameters,
+         queryId,
+         inputType
+      )
+      val resultList = if (dbResult != null) {
+         val merged = mergeUpdatedValuesToSource(
+            inputAsList,
+            dbResult,
+            inputType,
+            schema,
+            operationResult
+         )
+         merged
+      } else {
+         inputAsList.map {
+            Either.Right(
+               DataSourceUpdater.update(
+                  it,
+                  operationResult
+               )
+            )
+         }
+      }
+      return resultList.asFlow()
+
+   }
+
+   // Create underlying table if required. The entire method invocation is performed atomically, so the function is applied at most once per key.
+   // Some attempted update operations on this map by other threads may be blocked while computation is in progress,
+   // so the computation should be short and simple, and must not attempt to update any other mappings of this map.
+   protected fun createTableIfRequired(
+      tableAnnotation: JdbcConnectorTaxi.Annotations.Table,
+      operation: RemoteOperation,
+      dsl: DSLContext,
+      jdbcTemplate: NamedParameterJdbcTemplate,
+      connectionConfig: JdbcConnectionConfiguration
+   ) {
+      tableCheckAndExistsMap.computeIfAbsent(tableAnnotation) {
+         createTableIfNotPresent(operation, tableAnnotation, dsl, jdbcTemplate, connectionConfig)
+         tableAnnotation
+      }
+   }
+
+   protected fun doInsertOrUpsert(
+      schema: Schema,
+      connectionConfig: JdbcConnectionConfiguration,
+      inputAsList: List<TypedInstance>,
+      dsl: DSLContext,
+      verb: UpsertVerb,
+      tableAnnotation: JdbcConnectorTaxi.Annotations.Table,
+      eventDispatcher: QueryContextEventDispatcher,
+      service: Service,
+      operation: RemoteOperation,
+      parameters: List<Pair<Parameter, TypedInstance>>,
+      queryId: String,
+      inputType: Type
+   ): Pair<Result<Record>?, OperationResultReference> {
       val sqlOperation = InsertStatementGenerator(
          schema,
          connectionConfig.databaseSupport
@@ -157,30 +251,19 @@ class JdbcUpsertInvoker(
          eventDispatcher.reportRemoteOperationInvoked(
             operationResult, queryId
          )
-
-         return if (insertedRecords != null) {
-            mergeUpdatedValuesToSource(
-               inputAsList,
-               insertedRecords,
-               inputType,
-               schema,
-               operationResult.asOperationReferenceDataSource()
-            ).asFlow()
-         } else {
-            inputAsList.map {
-               Either.Right(
-                  DataSourceUpdater.update(
-                     it,
-                     operationResult.asOperationReferenceDataSource()
-                  )
-               )
-            }
-               .asFlow()
-         }
+         val operationResultReference = operationResult.asOperationReferenceDataSource()
+         return insertedRecords to operationResultReference
       } catch (e: Exception) {
          val errorMessage = "Failed to insert into ${tableAnnotation.tableName} - ${e.message}"
          logger.error(e) { errorMessage }
-         span.emitEvent(TracingEventKind.ERROR, SpanState.COMPLETE, null, ConnectionError(errorMessage), "Error", direction = TraceEventDirection.INBOUND)
+         span.emitEvent(
+            TracingEventKind.ERROR,
+            SpanState.COMPLETE,
+            null,
+            ConnectionError(errorMessage),
+            "Error",
+            direction = TraceEventDirection.INBOUND
+         )
 
          val remoteCall =
             buildRemoteCall(service, connectionConfig, operation, sqlOperation.sql, startTime, errorMessage)

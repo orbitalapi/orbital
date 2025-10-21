@@ -40,15 +40,6 @@ abstract class BaseJdbcOperationInvoker(
       return connectionFactory.dsl(config)
    }
 
-   abstract suspend fun invoke(
-      service: Service,
-      operation: RemoteOperation,
-      parameters: List<Pair<Parameter, TypedInstance>>,
-      eventDispatcher: QueryContextEventDispatcher,
-      queryId: String,
-      verb: UpsertVerb?
-   ): Flow<Either<StreamErrorMessage, TypedInstance>>
-
    protected fun convertToTypedInstances(
       resultList: List<MutableMap<String, Any>>,
       query: TaxiQlQuery,

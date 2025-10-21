@@ -23,6 +23,7 @@ import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaStore
 import io.micrometer.core.instrument.MeterRegistry
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 
@@ -38,7 +39,7 @@ class InvokerConfiguration {
       schemaProvider: SchemaProvider
    ): JdbcInvoker {
       return JdbcInvoker(
-         connectionFactory, schemaProvider
+          connectionFactory, schemaProvider, SimpleMeterRegistry()
       )
    }
 

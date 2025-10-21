@@ -32,13 +32,12 @@ class JdbcQueryInvoker(
       private val logger = KotlinLogging.logger {}
    }
 
-   override suspend fun invoke(
+   suspend fun invoke(
       service: Service,
       operation: RemoteOperation,
       parameters: List<Pair<Parameter, TypedInstance>>,
       eventDispatcher: QueryContextEventDispatcher,
       queryId: String,
-      verb: UpsertVerb?
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val (connectionConfig, jdbcTemplate) = getConnectionConfigAndTemplate(service)
       val schema = schemaProvider.schema
