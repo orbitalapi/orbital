@@ -94,10 +94,6 @@ class WebConfig(private val objectMapper: ObjectMapper) : WebFluxConfigurer {
 @Configuration
 class JacksonConfig {
    @Bean
-   fun csvFormatSpec(): ModelFormatSpec = CsvFormatSpec
-
-
-   @Bean
    fun taxiJacksonModule() = TaxiJacksonModule
 
 

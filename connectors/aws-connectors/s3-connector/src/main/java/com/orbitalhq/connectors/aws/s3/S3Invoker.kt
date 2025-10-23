@@ -27,7 +27,6 @@ class S3Invoker(
    private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
    private val formatRegistry: FormatRegistry
 ) : OperationInvoker {
-   private val formatDetector = FormatDetector.get(listOf(CsvFormatSpec))
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
       return service.hasMetadata(S3ConnectorTaxi.Annotations.S3Service.NAME) &&
          operation.hasMetadata(S3ConnectorTaxi.Annotations.S3Operation.NAME)

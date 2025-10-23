@@ -96,9 +96,6 @@ class QueryServiceApp {
    }
 
    @Bean
-   fun csvFormatSpec(): ModelFormatSpec = CsvFormatSpec
-
-   @Bean
    fun taxiJacksonModule() = TaxiJacksonModule
 
    @Bean
