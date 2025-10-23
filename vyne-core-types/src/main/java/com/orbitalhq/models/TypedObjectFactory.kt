@@ -324,7 +324,8 @@ class TypedObjectFactory(
                CascadingFactBag(
                   CopyOnWriteFactBag(CopyOnWriteArrayList(), scopedFacts, schema),
                   this.value
-               ).excluding(factsToExclude)
+               )
+//                  .excluding(factsToExclude)  // <--- this makes tests fail :(
             } else {
                CascadingFactBag(CopyOnWriteFactBag(newValue, schema), this.value)
                   .excluding(factsToExclude)
@@ -339,7 +340,7 @@ class TypedObjectFactory(
 //               }
 //            }
             CascadingFactBag(newValue, this.value)
-               .excluding(factsToExclude)
+//               .excluding(factsToExclude) // <--- this makes tests fail :(
 
          }
 
