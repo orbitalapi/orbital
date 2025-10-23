@@ -109,7 +109,7 @@ class TaxiSchemaSourcesAdaptorTest {
       val source = loadSourcePackage("project-with-dependencies/project-a", { packageManager })
       val schema = TaxiSchema.from(source)
       schema.hasType("com.foo.bar.FirstName")
-         .shouldBeTrue()
+         .shouldBeTrue()\
    }
 
    @Test
