@@ -6,9 +6,12 @@ import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.test.utils.shouldEqualIgnoringWhitespace
 import com.winterbe.expekt.should
 import io.kotest.core.spec.style.DescribeSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlin.math.exp
 
@@ -53,7 +56,6 @@ class XmlFormatSerializerTest : DescribeSpec({
          xml.shouldBe(expected)
       }
       it("should serialize to xml") {
-
          val actual = mapOf(
             "actors" to listOf(
                mapOf(
@@ -165,6 +167,293 @@ class XmlFormatSerializerTest : DescribeSpec({
          ) as TypedObject
          fooWithIsin["identifierValue"].value.should.equal("ISIN-138443")
       }
+
+
+   }
+   describe("serializing to xml with namespaces") {
+      val schemaWithNamespaces = TaxiSchema.from(
+         """
+
+         // Type does not declare an Xml namespace
+         type DurationInMinutes inherits Int
+
+         @lang.taxi.xml.XmlNamespace(uri = "http://example.com/movies")
+         type MovieTitle inherits String
+
+         @lang.taxi.xml.XmlNamespace(uri = "http://example.com/movies")
+         @com.orbitalhq.formats.Xml
+         model Movie {
+             title : MovieTitle
+             duration : DurationInMinutes
+             director : Director
+         }
+
+         @lang.taxi.xml.XmlNamespace(uri = "http://example.com/people")
+         model Director {
+             name : DirectorName
+             age : Age
+         }
+
+         @lang.taxi.xml.XmlNamespace(uri = "http://example.com/people")
+         type DirectorName inherits String
+         @lang.taxi.xml.XmlNamespace(uri = "http://example.com/people")
+         type Age inherits Int
+
+         @lang.taxi.xml.XmlNamespace(uri = "http://example.com/movies")
+         model SimpleMovie {
+             title : MovieTitle
+             duration: DurationInMinutes
+         }
+      """.trimIndent()
+      )
+
+      it("should write object with namespace to xml") {
+         val typedInstance = TypedInstance.from(
+            schemaWithNamespaces.type("SimpleMovie"),
+            mapOf("title" to "Inception", "duration" to 180),
+
+            schemaWithNamespaces
+         )
+         val xml = XmlFormatSpec.serializer.write(typedInstance, mock {}, schemaWithNamespaces, -1) as String
+
+         xml.shouldEqualIgnoringWhitespace("""<?xml version='1.0' encoding='UTF-8'?>
+<ns0:SimpleMovie xmlns:ns0="http://example.com/movies">
+    <ns0:title>Inception</ns0:title>
+    <duration>180</duration>
+</ns0:SimpleMovie>""")
+      }
+
+      it("should write object with mixed namespaces to xml") {
+         val typedInstance = TypedInstance.from(
+            schemaWithNamespaces.type("Movie"),
+            mapOf(
+               "title" to "The Matrix",
+               "director" to mapOf(
+                  "name" to "Wachowski",
+                  "age" to 55
+               )
+            ),
+            schemaWithNamespaces
+         )
+         val xml = XmlFormatSpec.serializer.write(typedInstance, mock {}, schemaWithNamespaces, -1) as String
+
+         // Should have both namespace declarations
+         xml.shouldEqualIgnoringWhitespace("""<?xml version='1.0' encoding='UTF-8'?>
+<ns0:Movie xmlns:ns0="http://example.com/movies" xmlns:ns1="http://example.com/people">
+    <ns0:title>The Matrix</ns0:title>
+    <ns1:director>
+        <ns1:name>Wachowski</ns1:name>
+        <ns1:age>55</ns1:age>
+    </ns1:director>
+</ns0:Movie>
+""")
+      }
+
+      it("should handle objects without namespaces alongside namespaced objects") {
+         val mixedSchema = TaxiSchema.from(
+            """
+            @lang.taxi.xml.XmlNamespace(uri = "http://example.com/movies")
+            @com.orbitalhq.formats.Xml
+            model Movie {
+                title : MovieTitle inherits String
+                metadata : Metadata
+            }
+
+            model Metadata {
+                rating : Rating inherits String
+                year : Year inherits Int
+            }
+         """.trimIndent()
+         )
+
+         val typedInstance = TypedInstance.from(
+            mixedSchema.type("Movie"),
+            mapOf(
+               "title" to "Blade Runner",
+               "metadata" to mapOf(
+                  "rating" to "R",
+                  "year" to 1982
+               )
+            ),
+            mixedSchema
+         )
+         val xml = XmlFormatSpec.serializer.write(typedInstance, mock {}, mixedSchema, -1) as String
+
+         // Movie should have namespace, but metadata and title should not
+         xml.shouldEqualIgnoringWhitespace("""<?xml version='1.0' encoding='UTF-8'?>
+<ns0:Movie xmlns:ns0="http://example.com/movies">
+    <title>Blade Runner</title>
+    <metadata>
+        <rating>R</rating>
+        <year>1982</year>
+    </metadata>
+</ns0:Movie>""")
+
+      }
+
+      it("should write attributes with namespaced parent") {
+         val schemaWithAttributes = TaxiSchema.from(
+            """
+            @lang.taxi.xml.XmlNamespace(uri = "http://example.com/actors")
+            @com.orbitalhq.formats.Xml
+            model Actor {
+                @lang.taxi.xml.XmlAttribute
+                id : ActorId inherits Int
+                name : ActorName inherits String
+            }
+         """.trimIndent()
+         )
+
+         val typedInstance = TypedInstance.from(
+            schemaWithAttributes.type("Actor"),
+            mapOf("id" to 42, "name" to "Harrison Ford"),
+            schemaWithAttributes
+         )
+         val xml = XmlFormatSpec.serializer.write(typedInstance, mock {}, schemaWithAttributes, -1) as String
+xml.shouldEqualIgnoringWhitespace("""
+   <?xml version='1.0' encoding='UTF-8'?><ns0:Actor xmlns:ns0="http://example.com/actors" id="42"><name>Harrison Ford</name></ns0:Actor>
+""".trimIndent())
+      }
+
+      it("should write collections with namespaces") {
+         val schemaWithCollections = TaxiSchema.from(
+            """
+            @lang.taxi.xml.XmlNamespace(uri = "http://example.com/movies")
+            @com.orbitalhq.formats.Xml
+            model MovieList {
+                movies : Movie[]
+            }
+
+            @lang.taxi.xml.XmlNamespace(uri = "http://example.com/movies")
+            type MovieTitle inherits String
+
+            @lang.taxi.xml.XmlNamespace(uri = "http://example.com/movies")
+            model Movie {
+                title : MovieTitle
+            }
+         """.trimIndent()
+         )
+
+         val typedInstance = TypedInstance.from(
+            schemaWithCollections.type("MovieList"),
+            mapOf(
+               "movies" to listOf(
+                  mapOf("title" to "Star Wars"),
+                  mapOf("title" to "Jaws")
+               )
+            ),
+            schemaWithCollections
+         )
+         val xml = XmlFormatSpec.serializer.write(typedInstance, mock {}, schemaWithCollections, -1) as String
+         xml.shouldEqualIgnoringWhitespace("""<?xml version='1.0' encoding='UTF-8'?>
+<ns0:MovieList xmlns:ns0="http://example.com/movies">
+    <ns0:movies>
+        <ns0:title>Star Wars</ns0:title>
+    </ns0:movies>
+    <ns0:movies>
+        <ns0:title>Jaws</ns0:title>
+    </ns0:movies>
+</ns0:MovieList>""")
+      }
+
+      it("should handle deeply nested objects with different namespaces") {
+         val deepSchema = TaxiSchema.from(
+            """
+            @lang.taxi.xml.XmlNamespace(uri = "http://example.com/level1")
+            @com.orbitalhq.formats.Xml
+            model Level1 {
+                value : String
+                level2 : Level2
+            }
+
+            @lang.taxi.xml.XmlNamespace(uri = "http://example.com/level2")
+            model Level2 {
+                value : String
+                level3 : Level3
+            }
+
+            @lang.taxi.xml.XmlNamespace(uri = "http://example.com/level3")
+            model Level3 {
+                value : String
+            }
+         """.trimIndent()
+         )
+
+         val typedInstance = TypedInstance.from(
+            deepSchema.type("Level1"),
+            mapOf(
+               "value" to "L1",
+               "level2" to mapOf(
+                  "value" to "L2",
+                  "level3" to mapOf(
+                     "value" to "L3"
+                  )
+               )
+            ),
+            deepSchema
+         )
+         val xml = XmlFormatSpec.serializer.write(typedInstance, mock {}, deepSchema, -1) as String
+
+         xml.shouldEqualIgnoringWhitespace("""<?xml version='1.0' encoding='UTF-8'?>
+<ns0:Level1 xmlns:ns0="http://example.com/level1" xmlns:ns1="http://example.com/level2" xmlns:ns2="http://example.com/level3">
+    <value>L1</value>
+    <ns1:level2>
+        <value>L2</value>
+        <ns2:level3>
+            <value>L3</value>
+        </ns2:level3>
+    </ns1:level2>
+</ns0:Level1>
+""")
+
+      }
+
+      it("should reuse namespace prefixes for same namespace URI") {
+         val sameNsSchema = TaxiSchema.from(
+            """
+            @lang.taxi.xml.XmlNamespace(uri = "http://example.com/common")
+            @com.orbitalhq.formats.Xml
+            model Container {
+                item1 : Item1
+                item2 : Item2
+            }
+
+            @lang.taxi.xml.XmlNamespace(uri = "http://example.com/common")
+            model Item1 {
+                value : String
+            }
+
+            @lang.taxi.xml.XmlNamespace(uri = "http://example.com/common")
+            model Item2 {
+                value : String
+            }
+         """.trimIndent()
+         )
+
+         val typedInstance = TypedInstance.from(
+            sameNsSchema.type("Container"),
+            mapOf(
+               "item1" to mapOf("value" to "Value1"),
+               "item2" to mapOf("value" to "Value2")
+            ),
+            sameNsSchema
+         )
+         val xml = XmlFormatSpec.serializer.write(typedInstance, mock {}, sameNsSchema, -1) as String
+
+         // Should only declare ns0 once, and no ns1
+         xml.shouldEqualIgnoringWhitespace("""<?xml version='1.0' encoding='UTF-8'?>
+<ns0:Container xmlns:ns0="http://example.com/common">
+    <ns0:item1>
+        <value>Value1</value>
+    </ns0:item1>
+    <ns0:item2>
+        <value>Value2</value>
+    </ns0:item2>
+</ns0:Container>
+""")
+      }
    }
 
 })
+
+

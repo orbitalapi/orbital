@@ -7,6 +7,7 @@ import com.orbitalhq.models.format.ModelFormatSerializer
 import com.orbitalhq.models.format.ModelFormatSpec
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.fqn
+import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import lang.taxi.xsd.XsdAnnotations
 
 object XmlAnnotationSpec {
@@ -25,6 +26,6 @@ namespace ${NAME.namespace} {
 object XmlFormatSpec : ModelFormatSpec {
    override val serializer: ModelFormatSerializer = XmlFormatSerializer
    override val deserializer: ModelFormatDeserializer = XmlFormatDeserializer
-   override val annotations: List<QualifiedName> = listOf(XmlAnnotationSpec.NAME)
+   override val annotations: List<QualifiedName> = listOf(XmlAnnotationSpec.NAME, XsdAnnotations.XML_ROOT_TYPE.toVyneQualifiedName())
    override val mediaType: String = MediaType.APPLICATION_XML_UTF_8.toString()
 }

@@ -1,0 +1,6 @@
+namespace petstore
+
+type PetId inherits Int
+type Name inherits String
+type Tag inherits String
+

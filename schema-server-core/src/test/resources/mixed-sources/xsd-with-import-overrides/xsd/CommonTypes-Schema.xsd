@@ -1,0 +1,167 @@
+﻿   <!--  edited with XMLSpy v2005 U (http://www.xmlspy.com) by Clive Raven (LogicaCMG)  -->
+   <!--
+   ********************************************************************************
+   *
+   * Project Name : FSA Transaction Reporting System
+   * Reference    :
+   * Description  : Common Definitions For FSA Feeds
+   * Dependencies :
+   *
+   * Revision History
+   * Version  	Author       	Date        		Description
+   *  1.1     	 	FSA			  	07/04/2004		Published with early draft of SBD Schema's
+   *  1.2			FSA				22/11/2004		Published with final draft of all TRS Schema's
+   *
+   * Copyright Financial Services Authority 2004
+   ********************************************************************************
+    -->
+<xs:schema xmlns="http://www.fsa.gov.uk/XMLSchema/FSAFeedCommon-v1-2" xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.fsa.gov.uk/XMLSchema/FSAFeedCommon-v1-2" elementFormDefault="qualified" version="1.2" id="FSAFeedCommon-v1-2">
+   <!-- Common Types  -->
+   <xs:simpleType name="NonEmptyString">
+      <xs:annotation>
+         <xs:documentation>Defines a string type that may not be the empty string. Values of this type are also whitespace normalized meaning all-whitespace strings are also invalid.</xs:documentation>
+      </xs:annotation>
+      <xs:restriction base="xs:string">
+         <xs:whiteSpace value="collapse"/>
+         <xs:minLength value="1"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <xs:simpleType name="FSARefType">
+      <xs:annotation>
+         <xs:documentation>FSA Reference Number. Either a 6 or 7 digit number. Leading zeroes are not expected.</xs:documentation>
+      </xs:annotation>
+      <xs:restriction base="xs:string">
+         <xs:pattern value="[1-9]{1}[0-9]{5,6}"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <xs:simpleType name="PostCodeType">
+      <xs:annotation>
+         <xs:documentation>Full or abbreviated UK postcode.</xs:documentation>
+      </xs:annotation>
+      <xs:restriction base="xs:string">
+         <xs:maxLength value="8"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <xs:simpleType name="YNType">
+      <xs:annotation>
+         <xs:documentation>Y or N</xs:documentation>
+      </xs:annotation>
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="Y"/>
+         <xs:enumeration value="N"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- Common SBD Types  -->
+   <xs:simpleType name="HSFStdSterlingAmountType">
+      <xs:annotation>
+         <xs:documentation>Integer from 1 to 999999999. Representing sterling-equivalent amount.</xs:documentation>
+      </xs:annotation>
+      <xs:restriction base="xs:positiveInteger">
+         <xs:totalDigits value="9"/>
+      </xs:restriction>
+   </xs:simpleType>
+   <xs:simpleType name="PremiumPaymentMethodType">
+      <xs:annotation>
+         <xs:documentation>Method of Premium/Contribution payment. Single or Regular.</xs:documentation>
+      </xs:annotation>
+      <xs:restriction base="xs:string">
+         <xs:enumeration value="S">
+            <xs:annotation>
+               <xs:documentation>Single payment.</xs:documentation>
+            </xs:annotation>
+         </xs:enumeration>
+         <xs:enumeration value="R">
+            <xs:annotation>
+               <xs:documentation>Regular payment.</xs:documentation>
+            </xs:annotation>
+         </xs:enumeration>
+      </xs:restriction>
+   </xs:simpleType>
+   <!-- Common Structures  -->
+   <xs:element name="CoreItems">
+      <xs:annotation>
+         <xs:documentation>Defines the elements that are common to all transactions.</xs:documentation>
+      </xs:annotation>
+      <xs:complexType>
+         <xs:sequence>
+            <xs:element name="FirmFSARef" type="FSARefType">
+               <xs:annotation>
+                  <xs:documentation>The FSA code of the reporting firm for this transaction.</xs:documentation>
+               </xs:annotation>
+            </xs:element>
+            <xs:element name="TransRef">
+               <xs:annotation>
+                  <xs:documentation>The unique reference, internal to the reporting firm, that will enable the firm to provide the FSA with more information concerning the trade if required. This reference must be unique within each report file, with the exception that a reference can occur twice if one occurrence is a cancellation. </xs:documentation>
+               </xs:annotation>
+               <xs:simpleType>
+                  <xs:restriction base="NonEmptyString">
+                     <xs:maxLength value="25"/>
+                  </xs:restriction>
+               </xs:simpleType>
+            </xs:element>
+            <xs:element name="Cancellation" type="xs:boolean" minOccurs="0">
+               <xs:annotation>
+                  <xs:documentation>Indicates if the transaction is a cancellation. If ommitted this is logically the same as providing a value of 'false'.</xs:documentation>
+               </xs:annotation>
+            </xs:element>
+         </xs:sequence>
+      </xs:complexType>
+   </xs:element>
+   <xs:element name="FSAFeedHeader">
+      <xs:annotation>
+         <xs:documentation>Defines the report header, common to all reports.</xs:documentation>
+      </xs:annotation>
+      <xs:complexType>
+         <xs:sequence>
+            <xs:element name="FeedTargetSchemaVersion" type="xs:string">
+               <xs:annotation>
+                  <xs:documentation>Identifies the version of the business specific schema to which this report conforms.</xs:documentation>
+               </xs:annotation>
+            </xs:element>
+            <xs:element name="Submitter">
+               <xs:complexType>
+                  <xs:sequence>
+                     <xs:element name="SubmittingFirm" type="FSARefType">
+                        <xs:annotation>
+                           <xs:documentation>The FSA code of the firm submitting the report.</xs:documentation>
+                        </xs:annotation>
+                     </xs:element>
+                     <xs:element name="SubmittingDept" minOccurs="0">
+                        <xs:annotation>
+                           <xs:documentation>The identifier of the department within the submitting firm who created this report - optional.</xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleType>
+                           <xs:restriction base="NonEmptyString">
+                              <xs:maxLength value="20"/>
+                              <xs:pattern value="[a-zA-Z0-9]+"/>
+                           </xs:restriction>
+                        </xs:simpleType>
+                     </xs:element>
+                  </xs:sequence>
+               </xs:complexType>
+            </xs:element>
+            <xs:element name="ReportDetails">
+               <xs:complexType>
+                  <xs:sequence>
+                     <xs:element name="ReportCreationDate" type="xs:date">
+                        <xs:annotation>
+                           <xs:documentation>Report creation date.</xs:documentation>
+                        </xs:annotation>
+                     </xs:element>
+                     <xs:element name="ReportIdentifier">
+                        <xs:annotation>
+                           <xs:documentation>Unique identifier for the report (wthin the context of the submitter, submitting firm, submitting department and report creation date).</xs:documentation>
+                        </xs:annotation>
+                        <xs:simpleType>
+                           <xs:restriction base="NonEmptyString">
+                              <xs:maxLength value="25"/>
+                           </xs:restriction>
+                        </xs:simpleType>
+                     </xs:element>
+                  </xs:sequence>
+               </xs:complexType>
+            </xs:element>
+         </xs:sequence>
+      </xs:complexType>
+   </xs:element>
+</xs:schema>

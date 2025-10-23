@@ -8,6 +8,8 @@ import com.orbitalhq.schemaServer.core.adaptors.avro.AvroTaxiSourceGenerator
 import com.orbitalhq.schemaServer.core.adaptors.openapi.FileLoadingOpenApiSpecProvider
 import com.orbitalhq.schemaServer.core.adaptors.openapi.OpenApiSourceGenerator
 import com.orbitalhq.schemaServer.core.adaptors.protobuf.ProtobufTaxiSourceGenerator
+import com.orbitalhq.schemaServer.core.adaptors.xsd.FileLoadingXsdSourceConfigProvider
+import com.orbitalhq.schemaServer.core.adaptors.xsd.XsdSchemaSourceGenerator
 import com.orbitalhq.schemas.taxi.mergeLists
 
 /**
@@ -22,6 +24,7 @@ class TaxiSourceTranspiler(
          AvroTaxiSourceGenerator(),
          OpenApiSourceGenerator(FileLoadingOpenApiSpecProvider()),
          ProtobufTaxiSourceGenerator(),
+         XsdSchemaSourceGenerator(FileLoadingXsdSourceConfigProvider()),
          CustomFunctionSourceGenerator.jarFileSourceGenerator(),
          CustomFunctionSourceGenerator.kotlinScriptSourceGenerator()
       )
