@@ -128,7 +128,8 @@ object MapFunction : NullSafeInvoker() {
          val evaluated = if (lambdaExpression.expression is TypeExpression) {
             // If the expression is in the form of T1[].map((T1) -> T2), then we should build T2 from T1
             thisScopeValueSupplier.newFactory(
-               schema.type(lambdaExpression.expression.returnType), typedInstance, emptySet(),
+               schema.type(lambdaExpression.expression.returnType), typedInstance,
+               factsToExclude = setOf(sourceCollection),
                emptyList()
             )
                .build()
