@@ -80,9 +80,6 @@ class VyneConfig
 @Configuration
 class WebConfig {
    @Bean
-   fun csvFormatSpec(): ModelFormatSpec = CsvFormatSpec
-
-   @Bean
    fun taxiJacksonModule() = TaxiJacksonModule
 
    @Bean

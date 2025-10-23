@@ -1,0 +1,14 @@
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            xmlns:tns="http://petstore.example.com/schema" xmlns:taxi="http://taxilang.org/" targetNamespace="http://petstore.example.com/schema" elementFormDefault="qualified">
+   <!--  Pet complex type  -->
+   <xsd:complexType name="Pet">
+      <xsd:annotation>
+         <xsd:documentation>A pet in the pet store</xsd:documentation>
+      </xsd:annotation>
+      <xsd:sequence>
+         <xsd:element name="id" type="xsd:string" minOccurs="1" maxOccurs="1" taxi:type="petstore.PetId"/>
+         <xsd:element name="name" type="xsd:string" minOccurs="1" maxOccurs="1" taxi:type="petstore.Name"/>
+         <xsd:element name="tags" type="xsd:string" minOccurs="0" maxOccurs="unbounded" taxi:type="petstore.Tag"/>
+      </xsd:sequence>
+   </xsd:complexType>
+</xsd:schema>

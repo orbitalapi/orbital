@@ -80,6 +80,26 @@ class TaxiSchemaSourcesAdaptorTest {
    }
 
    @Test
+   fun `can load taxi project with xsd additional sources`() {
+      val source = loadSourcePackage("mixed-sources/xsd")
+      val schema = TaxiSchema.from(source)
+      // types and services should be in the configured default namespace
+      schema.hasType("com.example.petstore.Pet")
+         .shouldBeTrue()
+   }
+
+   @Test
+   fun `can load taxi project with xsd additional sources with namespace overrides`() {
+      val source = loadSourcePackage("mixed-sources/xsd-with-import-overrides")
+      val schema = TaxiSchema.from(source)
+      // types and services should be in the configured default namespace
+      schema.hasType("uk.gov.fsa.FSAHSFFeedHP")
+         .shouldBeTrue()
+   }
+
+
+
+   @Test
    fun `can load taxi project with dependencies`() {
       projectFolder.deployProject("project-with-dependencies/project-b")
       val projectB = TaxiProjectLoader(projectFolder.toPath().resolve("taxi.conf"))

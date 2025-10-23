@@ -146,7 +146,8 @@ class LocalProjectionProvider : ProjectionProvider {
             // A, not A[].
             // Therefore, we should be projection to B, not B[].
             typeToProjectTo,
-            startTime
+            startTime,
+            projection
          )
       }
    }
@@ -320,7 +321,8 @@ class LocalProjectionProvider : ProjectionProvider {
       globalFacts: FactBag,
       emittedResult: TypedInstance,
       projectionType: Type,
-      startTime: Instant
+      startTime: Instant,
+      projection: Projection
    ): Flow<TypedInstanceWithMetadata> {
 //      val primaryFact = when {
 //         scopedFacts.isEmpty() -> {
@@ -354,12 +356,28 @@ class LocalProjectionProvider : ProjectionProvider {
       return when {
          // We're working against an array that's being streamed. Common usecase for find { Movie[] } as { ... }[]
          declaredSourceType.isCollection && primaryFact.type.isAssignableTo(declaredSourceType.collectionType!!) && projectionType.isCollection -> {
-            doProjection(scopedFacts, context, globalFacts, emittedResult, projectionType.collectionType!!, startTime)
+            doProjection(
+               scopedFacts,
+               context,
+               globalFacts,
+               emittedResult,
+               projectionType.collectionType!!,
+               startTime,
+               projection
+            )
          }
          // Streams.
          // Note that streams are projected to arrays, so projectionType should be T[]
          declaredSourceType.isStream && primaryFact.type.isAssignableTo(declaredSourceType.typeParameters[0]!!) && (projectionType.isCollection || projectionType.isStream)-> {
-            doProjection(scopedFacts, context, globalFacts, emittedResult, projectionType.typeParameters[0], startTime)
+            doProjection(
+               scopedFacts,
+               context,
+               globalFacts,
+               emittedResult,
+               projectionType.typeParameters[0],
+               startTime,
+               projection
+            )
          }
          // Map A[] -> B[]. Use-case when mapping a full array that we already have. (eg: find { MovieSchedule } as (Movie[]) -> { .... }[]
          Arrays.isArray(projectionType.paramaterizedName) && Arrays.isArray(primaryFact.typeName) -> {
@@ -389,11 +407,12 @@ class LocalProjectionProvider : ProjectionProvider {
                projectionScopedFacts,
                emittedResult,
                projectionType,
-               startTime
+               startTime,
+               projection
             )
          }
 
-         else -> doProjection(scopedFacts, context, globalFacts, emittedResult, projectionType, startTime)
+         else -> doProjection(scopedFacts, context, globalFacts, emittedResult, projectionType, startTime, projection)
       }
 
 
@@ -409,7 +428,8 @@ class LocalProjectionProvider : ProjectionProvider {
       globalFacts: FactBag,
       emittedResult: TypedInstance,
       projectionType: Type,
-      startTime: Instant
+      startTime: Instant,
+      projection: Projection
    ): Flow<TypedInstanceWithMetadata> {
       if (scopedFact.fact is TypedNull) {
          return emptyFlow()
@@ -424,7 +444,8 @@ class LocalProjectionProvider : ProjectionProvider {
             globalFacts,
             emittedResult,
             projectionType.collectionType!!,
-            startTime
+            startTime,
+            projection
          )
       }
       return merge(*memberFlows.toTypedArray())
@@ -436,8 +457,23 @@ class LocalProjectionProvider : ProjectionProvider {
       globalFacts: FactBag,
       emittedResult: TypedInstance,
       projectionType: Type,
-      startTime: Instant
+      startTime: Instant,
+      projection: Projection
    ): Flow<TypedInstanceWithMetadata> {
+
+      // When we're iterating, the scoped facts must not include the collection we're iterating.
+      // This can happen in something like:
+      // query CsvToXml(@RequestBody reportRows:CsvReportRow[]) { <-- reportRows is a scoped fact
+      //   find { CsvReportRow[] } as  { <-- when we're here, we must not have reportRows in scope, or everything gets duplicated
+      val filteredScopeFacts = if (projection.projectionKind == ProjectionKind.Iteration) {
+         (scopedFacts + context.scopedFacts).filter { scopedFact: ScopedFact ->
+            if (scopedFact.fact is TypedCollection && (scopedFact.fact as TypedCollection).contains(emittedResult)) {
+               false // exclude this collection, because it's the collection that contains the item we're iterating.
+            } else {
+               true // Keep this fact
+            }
+         }
+      } else scopedFacts + context.scopedFacts
 
       // If the projection scope was explicitly defined,
       // add the thing we're projecting as a specific scoped fact.
@@ -447,10 +483,10 @@ class LocalProjectionProvider : ProjectionProvider {
       // Note: In time, we should probably refactor so that there's ALWAYS a root
       // scope, with a name of "this" if not otherwise specified.
       val projectionContext = if (scopedFacts.isEmpty()) {
-         context.only(globalFacts.rootFacts() + emittedResult, scopedFacts = context.scopedFacts)
+         context.only(globalFacts.rootFacts() + emittedResult, scopedFacts = filteredScopeFacts)
             .withChildTraceSpan()
       } else {
-         context.only(globalFacts.rootFacts(), scopedFacts = scopedFacts + context.scopedFacts)
+         context.only(globalFacts.rootFacts(), scopedFacts = filteredScopeFacts)
             .withChildTraceSpan()
       }
 

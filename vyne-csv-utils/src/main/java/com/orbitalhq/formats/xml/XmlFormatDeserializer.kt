@@ -25,7 +25,9 @@ import javax.xml.xpath.XPathFactory
 
 object XmlFormatDeserializer : ModelFormatDeserializer {
    private val deserializer = XmlDeserializer()
-   override fun canParse(value: Any, metadata: Metadata, type: Type): Boolean = true
+   override fun canParse(value: Any, metadata: Metadata, type: Type): Boolean {
+      return value is String
+   }
 
    override fun parse(value: Any, type: Type, metadata: Metadata, schema: Schema, source: DataSource): Any =
       deserializer.parse(value, type, metadata, schema, source) ?: error("Parsing XML from root returned null")

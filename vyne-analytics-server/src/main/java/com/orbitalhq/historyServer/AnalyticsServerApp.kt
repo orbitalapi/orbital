@@ -87,9 +87,6 @@ class AnalyticsServiceConfig {
    fun vyneHistoryRecordsSinks(): Sinks.Many<VyneHistoryRecord> = Sinks.many().multicast().directAllOrNothing()
 
    @Bean
-   fun csvFormatSpec(): ModelFormatSpec = CsvFormatSpec
-
-   @Bean
    fun formatSpecRegistry(): FormatSpecRegistry = FormatSpecRegistry.default()
 
    @Bean

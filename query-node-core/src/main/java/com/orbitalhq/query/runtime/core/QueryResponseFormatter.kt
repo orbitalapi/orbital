@@ -14,6 +14,7 @@ import com.orbitalhq.query.runtime.FailedSearchResponse
 import com.orbitalhq.query.runtime.core.csv.toCsv
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.Schema
+import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
@@ -29,7 +30,7 @@ import org.springframework.web.server.ResponseStatusException
 private val logger = KotlinLogging.logger {}
 
 @Component
-class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec>) {
+class QueryResponseFormatter(modelFormatSpecs: List<ModelFormatSpec> = FormatSpecRegistry.DEFAULT_SPECS) {
    private val formatDetector = FormatDetector(modelFormatSpecs)
    @FlowPreview
    fun convertToSerializedContent(

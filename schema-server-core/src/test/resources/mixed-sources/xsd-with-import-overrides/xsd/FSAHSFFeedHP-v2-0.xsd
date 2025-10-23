@@ -1,0 +1,456 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+********************************************************************************
+*
+* Schema for: Data Item PSD005 Product Sales Data - Home Purchase Plan
+*
+*
+* Dependencies : http://www.fsa.gov.uk/XMLSchema/FSAFeedCommon-v1-2.xsd
+*
+* Revision History
+* Version		Date		Description
+* 2.0           04/04/2012  Changed "Home Movers" from H to M
+*							Added minOccurs = 0 to PrincipalOrNetworkFSARef
+*
+* 1.0			21/06/2007	First published draft
+*
+*
+********************************************************************************
+-->
+<xs:schema xmlns="http://www.fsa.gov.uk/XMLSchema/FSAHSFFeedHP-v2-0"
+	xmlns:cmn="http://www.fsa.gov.uk/XMLSchema/FSAFeedCommon-v1-2"
+	xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:mer-meta="fsa-gov-uk:MER:Meta-Data:1"
+	targetNamespace="http://www.fsa.gov.uk/XMLSchema/FSAHSFFeedHP-v2-0"
+	elementFormDefault="qualified" version="1.0" id="FSAHSFFeedHP-v2-0">
+	<xs:annotation>
+		<xs:documentation>
+			<mer-meta:DataItemReference>FSAHSFFeedHP</mer-meta:DataItemReference>
+			<mer-meta:DataItemName>Home Purchase Plans Products</mer-meta:DataItemName>
+		</xs:documentation>
+	</xs:annotation>
+	<xs:import namespace="http://www.fsa.gov.uk/XMLSchema/FSAFeedCommon-v1-2"
+		schemaLocation="https://gabriel.fca.org.uk/specifications/MER/DRG/PSD-CommonTypes/v1.2/FSAFeedCommon-v1-2.xsd"/>
+	<!-- Element names prefixed with cmn: are in FSAFeedCommon-v1-2.xsd -->
+
+	<!--FSAHSFFeedHP-->
+	<xs:element name="FSAHSFFeedHP">
+		<xs:complexType>
+			<xs:sequence>
+				<!-- Header approach and content will change -->
+				<xs:element ref="cmn:FSAFeedHeader"/>
+				<xs:element name="FSAHSFFeedHPMsg" minOccurs="0" maxOccurs="unbounded">
+					<xs:annotation>
+						<xs:documentation>Defines the individual transactions</xs:documentation>
+					</xs:annotation>
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element ref="cmn:CoreItems"/>
+							<xs:element name="HomePurchase" type="HomePurchaseStructure">
+								<xs:annotation>
+									<xs:documentation>Defines the elements that are specific to a Home Purchase transaction.</xs:documentation>
+								</xs:annotation>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>`
+				</xs:element>
+			</xs:sequence>
+		</xs:complexType>
+	</xs:element>
+
+	<!--Structures used in FSAHSFFeedHP-->
+	<xs:complexType name="HomePurchaseStructure">
+		<xs:sequence>
+			<xs:element name="PrincipalOrNetworkFSARef" type="cmn:FSARefType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>This field only applies if the sale has been made by an intermediary who has a principal or is part of a network.	</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="HPPAcctOpenDate" type="xs:date">
+				<xs:annotation>
+					<xs:documentation>Date HPP account opened.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="AdvisedSale" type="cmn:YNType">
+				<xs:annotation>
+					<xs:documentation>This field is mandatory.  Y = Sale was Advised, N = Sale was non-Advised. For PSD reporting purposes non-Advised includes execution only and direct offer transactions.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="TypeRentRate" type="TypeOfRentalRateType">
+				<xs:annotation>
+					<xs:documentation>Rental rate type.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="HPPCharsList">
+				<xs:annotation>
+					<xs:documentation>HPP Characteristics. Only 1 code can be entered.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="HPPChar" type="HPPCharacteristicType"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="TypeHomeBuyer" type="TypeOfHomeBuyerType"/>
+			<xs:element name="HPPTerm">
+				<xs:annotation>
+					<xs:documentation>Term of HPP</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:positiveInteger">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="HPPAmountGranted" type="cmn:HSFStdSterlingAmountType">
+				<xs:annotation>
+					<xs:documentation>Amount granted to home buyer.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="PropertyValue" type="cmn:HSFStdSterlingAmountType">
+				<xs:annotation>
+					<xs:documentation>Value of property.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="IncomeBasis" type="IncomeBasisType">
+				<xs:annotation>
+					<xs:documentation>Income basis.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="MainDOB" type="xs:date">
+				<xs:annotation>
+					<xs:documentation>Date of birth of first-named home buyer. Must indicate age between 18 and 115 inclusive.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="MainEmpStatus" type="EmpStatusType">
+				<xs:annotation>
+					<xs:documentation>Employment status of first-named home buyer only.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="GrossIncome">
+				<xs:simpleType>
+					<xs:annotation>
+						<xs:documentation>Total gross income.</xs:documentation>
+					</xs:annotation>
+					<xs:restriction base="xs:nonNegativeInteger">
+						<xs:totalDigits value="8"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="IncomeVerification" type="cmn:YNType">
+				<xs:annotation>
+					<xs:documentation>Income has been verified (Y/N). Applies to loans based on one or more persons' income.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="MainHomeBuyerCCJValue" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Value of main home buyer's County Court Judgements (CCJs) Value.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:nonNegativeInteger">
+						<xs:totalDigits value="7"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="SecondHomeBuyerCCJValue" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Value of second home buyer's County Court Judgements (CCJs) Value.</xs:documentation>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:nonNegativeInteger">
+						<xs:totalDigits value="7"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="MainHomeBuyerImpCredHistList" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>List of up to 3 Impaired Credit History factors for first named home buyer.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="MainHomeBuyerImpCredHist" type="ImpairedCredHistType"
+							maxOccurs="3"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="SecondHomeBuyerImpCredHistList" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>List of up to 3 Impaired Credit History factors for second named buyer.</xs:documentation>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="SecondHomeBuyerImpCredHist" type="ImpairedCredHistType"
+							maxOccurs="3"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="InitialGrossRentRate" minOccurs="0">
+				<xs:simpleType>
+					<xs:annotation>
+						<xs:documentation>Initial Gross Rental Rate.
+											The amount of rent reported should be the initial gross nominal rate charged
+											under the plan and should take into account any discount being provided.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:restriction base="xs:decimal">
+						<xs:minInclusive value="0"/>
+						<xs:maxInclusive value="99.99"/>
+						<xs:fractionDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="DateIncentiveRateEnds" type="xs:date" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Date incentivised rate ends. Only applies where the customer is paying an incentivised rate for a set period. Must not exceed period of the plan.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="PurchasePrice" type="cmn:HSFStdSterlingAmountType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Purchase price of property, as stated on application form.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="TypeDwelling" type="TypeOfDwellingType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Type of dwelling.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="NumHabitableRooms" minOccurs="0">
+				<xs:simpleType>
+					<xs:annotation>
+						<xs:documentation>Number of habitable rooms (include kitchen but not bathroom/toilet).
+						</xs:documentation>
+					</xs:annotation>
+					<xs:restriction base="xs:nonNegativeInteger">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="NumBedrooms" minOccurs="0">
+				<xs:simpleType>
+					<xs:annotation>
+						<xs:documentation>Number of bedrooms.
+						</xs:documentation>
+					</xs:annotation>
+					<xs:restriction base="xs:nonNegativeInteger">
+						<xs:totalDigits value="2"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="NewDwelling" type="cmn:YNType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>New dwelling (Y/N). New refers to the period in which the main structure of the dwelling was completed and also means where a dwelling is being occupied for the first
+time. Does not therefore include new conversions of older dwellings.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="GarageInc" type="cmn:YNType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Garage included (Y/N).</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="HPProtectionPlanInc" type="cmn:YNType" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Payment protection insurance (PPI) being taken out with the plan (Y/N). Report 'yes' even where the policy was sold or provided free and irrespective of whether the premiums are collected by the lender or the insurer. PPI can be any of the following: full accident, sickness and employment insurance; accident and sickness only; unemployment only.</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+
+	<!--Types used in FSAHSFFeedHP-->
+	<xs:simpleType name="TypeOfRentalRateType">
+		<xs:annotation>
+			<xs:documentation>Type of Rental Rate.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="V">
+				<xs:annotation>
+					<xs:documentation>Variable</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="F">
+				<xs:annotation>
+					<xs:documentation>Fixed</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="O">
+				<xs:annotation>
+					<xs:documentation>Other</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="HPPCharacteristicType">
+		<xs:annotation>
+			<xs:documentation>HPP Characteristic.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="I">
+				<xs:annotation>
+					<xs:documentation>Ijara.</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="D">
+				<xs:annotation>
+					<xs:documentation>Diminishing Musharaka</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="O">
+				<xs:annotation>
+					<xs:documentation>Other</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TypeOfHomeBuyerType">
+		<xs:annotation>
+			<xs:documentation>Type of home buyer</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="F">
+				<xs:annotation>
+					<xs:documentation>First time buyer</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="M">
+				<xs:annotation>
+					<xs:documentation>Home mover</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="R">
+				<xs:annotation>
+					<xs:documentation>Re-finance</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="C">
+				<xs:annotation>
+					<xs:documentation>Council/Registered social landlord exercising their right to buy</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="O">
+				<xs:annotation>
+					<xs:documentation>Other</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="N">
+				<xs:annotation>
+					<xs:documentation>Not known</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="IncomeBasisType">
+		<xs:annotation>
+			<xs:documentation>Income basis.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="S">
+				<xs:annotation>
+					<xs:documentation>Single income</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="J">
+				<xs:annotation>
+					<xs:documentation>Joint income</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="EmpStatusType">
+		<xs:annotation>
+			<xs:documentation>Employment status.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="E">
+				<xs:annotation>
+					<xs:documentation>Employed</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="S">
+				<xs:annotation>
+					<xs:documentation>Self-employed</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="R">
+				<xs:annotation>
+					<xs:documentation>Retired</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="O">
+				<xs:annotation>
+					<xs:documentation>Other</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="ImpairedCredHistType">
+		<xs:annotation>
+			<xs:documentation>Impaired credit history factors.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="A">
+				<xs:annotation>
+					<xs:documentation>Applies to secured loans and unsecured loans where the Home Buyer(s) has arrears
+										on a previous (or current) plan or other secured loan within the last 2 years
+										where the cumulative amount overdue at any point reached three or more monthly payments.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="V">
+				<xs:annotation>
+					<xs:documentation>Applies where the Home Buyer(s) has been subject to an Individual Voluntary Arrangement (IVA)
+										at any time within the last 3 years.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="B">
+				<xs:annotation>
+					<xs:documentation>Applies where the Home Buyer(s) has been subject to a bankruptcy order
+										at any time within the last 3 years.
+					</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="TypeOfDwellingType">
+		<xs:annotation>
+			<xs:documentation>Type of dwelling.</xs:documentation>
+		</xs:annotation>
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="B">
+				<xs:annotation>
+					<xs:documentation>Bungalow</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="D">
+				<xs:annotation>
+					<xs:documentation>Detached house</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="S">
+				<xs:annotation>
+					<xs:documentation>Semi-detached house</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="T">
+				<xs:annotation>
+					<xs:documentation>Terraced house</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="F">
+				<xs:annotation>
+					<xs:documentation>Flat or maisonette in converted house</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="P">
+				<xs:annotation>
+					<xs:documentation>Purpose built flat or maisonette</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+			<xs:enumeration value="O">
+				<xs:annotation>
+					<xs:documentation>Other</xs:documentation>
+				</xs:annotation>
+			</xs:enumeration>
+		</xs:restriction>
+	</xs:simpleType>
+
+
+</xs:schema>
