@@ -1,6 +1,7 @@
 package com.orbitalhq.formats.xml
 
 import com.nhaarman.mockito_kotlin.mock
+import com.orbitalhq.from
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
@@ -450,6 +451,81 @@ xml.shouldEqualIgnoringWhitespace("""
         <value>Value2</value>
     </ns0:item2>
 </ns0:Container>
+""")
+      }
+
+      it("should set elements in the namespace of the object when underlying type comes from a different namespace") {
+         val complexSchema = TaxiSchema.from("""
+namespace com.example {
+   @lang.taxi.xml.Xml
+   @lang.taxi.xml.XmlNamespace(uri = "http://example.com/main")
+   closed model ItemType {
+      @lang.taxi.xml.XmlNamespace(uri = "http://example.com/main") IsActive : com.example.itemtype.IsActive
+      [[ Purchase price of property, as stated on application form. ]]
+      @lang.taxi.xml.XmlNamespace(uri = "http://example.com/main") PurchasePrice : com.example.itemtype.PurchasePrice?
+   }
+
+   [[ Y or N ]]
+   @lang.taxi.xml.XmlNamespace(uri = "http://example.com/common")
+   enum YNType {
+      `Y`,
+      `N`
+   }
+
+   type HSFStdSterlingAmountType inherits Int
+
+   @lang.taxi.xml.Xml
+   @lang.taxi.xml.XmlNamespace(uri = "http://example.com/main")
+   closed model Document {
+      [[ Common header element ]]
+      @lang.taxi.xml.XmlNamespace(uri = "http://example.com/common") Header : Header
+      @lang.taxi.xml.XmlNamespace(uri = "http://example.com/main") Item : com.example.document.Item
+   }
+
+   @lang.taxi.xml.Xml
+   @lang.taxi.xml.XmlNamespace(uri = "http://example.com/common")
+   closed model Header {
+      @lang.taxi.xml.XmlNamespace(uri = "http://example.com/common") Version : com.example.header.Version
+      @lang.taxi.xml.XmlNamespace(uri = "http://example.com/common") Timestamp : com.example.header.Timestamp
+   }
+
+
+}
+namespace com.example.itemtype {
+   enum IsActive inherits com.example.YNType
+   type PurchasePrice inherits com.example.HSFStdSterlingAmountType
+}
+namespace com.example.header {
+   type Version inherits String
+   type Timestamp inherits DateTime
+}
+namespace com.example.document {
+   type Item inherits com.example.ItemType
+}
+         """.trimIndent())
+         val testData = mapOf(
+            "Header" to mapOf(
+               "Version" to "1.0",
+               "Timestamp" to "2025-10-23T10:30:00"
+            ),
+            "Item" to mapOf(
+               "IsActive" to "Y",
+               "PurchasePrice" to 5000
+            )
+         )
+         val instance = TypedInstance.from(complexSchema.type("com.example.Document"), testData, complexSchema)
+         val xml = XmlFormatSpec.serializer.write(instance, mock {}, complexSchema, -1) as String
+         xml.shouldEqualIgnoringWhitespace("""<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<ns0:Document xmlns:ns0="http://example.com/main" xmlns:ns1="http://example.com/common">
+    <ns1:Header>
+        <ns1:Version>1.0</ns1:Version>
+        <ns1:Timestamp>2025-10-23T10:30</ns1:Timestamp>
+    </ns1:Header>
+    <ns0:Item>
+        <ns0:IsActive>Y</ns0:IsActive>
+        <ns0:PurchasePrice>5000</ns0:PurchasePrice>
+    </ns0:Item>
+</ns0:Document>
 """)
       }
    }
