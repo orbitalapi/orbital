@@ -583,9 +583,9 @@ Transitive dependency in wire-compiler and calcite-core
    <build>
       <extensions>
          <extension>
-            <groupId>com.github.seahen</groupId>
-            <artifactId>maven-s3-wagon</artifactId>
-            <version>1.3.3</version>
+            <groupId>io.github.michaelboyles</groupId>
+            <artifactId>s3-maven-extension</artifactId>
+            <version>0.6.0</version>
          </extension>
       </extensions>
       <finalName>${project.artifactId}</finalName>
