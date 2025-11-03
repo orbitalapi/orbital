@@ -1,10 +1,9 @@
 package com.orbitalhq.schemaServer.core.file.packages
 
-import com.nhaarman.mockitokotlin2.any
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.times
-import com.nhaarman.mockitokotlin2.verify
-import com.nhaarman.mockitokotlin2.whenever
+import com.nhaarman.mockito_kotlin.any
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.verify
+import com.nhaarman.mockito_kotlin.whenever
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.schema.publisher.loaders.SchemaSourcesAdaptor
@@ -13,6 +12,7 @@ import com.orbitalhq.utils.files.FileSystemChangeEvent
 import com.orbitalhq.utils.files.ReactiveFileSystemMonitor
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
+import org.mockito.Mockito.times
 import reactor.core.publisher.Mono
 import reactor.core.publisher.Sinks
 import java.nio.file.Path

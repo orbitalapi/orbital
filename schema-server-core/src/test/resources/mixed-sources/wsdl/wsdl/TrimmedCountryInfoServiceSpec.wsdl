@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns:taxi="http://taxilang.org/" xmlns:xs="http://www.w3.org/2001/XMLSchema"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:soap12="http://schemas.xmlsoap.org/wsdl/soap12/"
+             xmlns:tns="http://www.oorsprong.org/websamples.countryinfo"
+             xmlns="http://schemas.xmlsoap.org/wsdl/" name="CountryInfoService"
+             targetNamespace="http://www.oorsprong.org/websamples.countryinfo">
+   <types>
+      <xs:schema elementFormDefault="qualified" targetNamespace="http://www.oorsprong.org/websamples.countryinfo">
+
+         <xs:complexType name="tCountryInfo">
+            <xs:sequence>
+               <xs:element name="sISOCode" type="xs:string" taxi:createsType="com.test.IsoCountryCode"/>
+               <xs:element name="sName" type="xs:string" taxi:createsType="com.test.CountryName"/>
+               <xs:element name="sCapitalCity" type="xs:string" taxi:createsType="com.test.CapitalCityName"/>
+               <xs:element name="sPhoneCode" type="xs:string"/>
+               <xs:element name="sContinentCode" type="xs:string"/>
+               <xs:element name="sCurrencyISOCode" type="xs:string"/>
+               <xs:element name="sCountryFlag" type="xs:string"/>
+            </xs:sequence>
+         </xs:complexType>
+         <xs:element name="FullCountryInfo">
+            <xs:complexType>
+               <xs:sequence>
+                  <xs:element name="sCountryISOCode" type="xs:string" taxi:createsType="com.test.IsoCountryCode"/>
+               </xs:sequence>
+            </xs:complexType>
+         </xs:element>
+         <xs:element name="FullCountryInfoResponse">
+            <xs:complexType>
+               <xs:sequence>
+                  <xs:element name="FullCountryInfoResult" type="tns:tCountryInfo"/>
+               </xs:sequence>
+            </xs:complexType>
+         </xs:element>
+      </xs:schema>
+   </types>
+
+   <message name="FullCountryInfoSoapRequest">
+      <part name="parameters" element="tns:FullCountryInfo"/>
+   </message>
+   <message name="FullCountryInfoSoapResponse">
+      <part name="parameters" element="tns:FullCountryInfoResponse"/>
+   </message>
+
+   <portType name="CountryInfoServiceSoapType">
+      <operation name="FullCountryInfo">
+         <documentation>Returns a struct with all the stored country information. Pass the ISO country code
+         </documentation>
+         <input message="tns:FullCountryInfoSoapRequest"/>
+         <output message="tns:FullCountryInfoSoapResponse"/>
+      </operation>
+   </portType>
+   <binding name="CountryInfoServiceSoapBinding" type="tns:CountryInfoServiceSoapType">
+      <soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+      <operation name="FullCountryInfo">
+         <soap:operation soapAction="" style="document"/>
+         <input>
+            <soap:body use="literal"/>
+         </input>
+         <output>
+            <soap:body use="literal"/>
+         </output>
+      </operation>
+   </binding>
+   <binding name="CountryInfoServiceSoapBinding12" type="tns:CountryInfoServiceSoapType">
+      <soap12:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+
+      <operation name="FullCountryInfo">
+         <soap12:operation soapAction="" style="document"/>
+         <input>
+            <soap12:body use="literal"/>
+         </input>
+         <output>
+            <soap12:body use="literal"/>
+         </output>
+      </operation>
+
+   </binding>
+   <service name="CountryInfoService">
+      <documentation>This DataFlex Web Service opens up country information. 2 letter ISO codes are used for Country
+         code. There are functions to retrieve the used Currency, Language, Capital City, Continent and Telephone code.
+      </documentation>
+      <port name="CountryInfoServiceSoap" binding="tns:CountryInfoServiceSoapBinding">
+         <soap:address location="http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso"/>
+      </port>
+      <port name="CountryInfoServiceSoap12" binding="tns:CountryInfoServiceSoapBinding12">
+         <soap12:address location="http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso"/>
+      </port>
+   </service>
+</definitions>

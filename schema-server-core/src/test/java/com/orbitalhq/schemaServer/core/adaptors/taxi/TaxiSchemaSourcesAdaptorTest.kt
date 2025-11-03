@@ -3,8 +3,8 @@ package com.orbitalhq.schemaServer.core.adaptors.taxi
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.google.common.io.Resources
-import com.nhaarman.mockitokotlin2.mock
-import com.nhaarman.mockitokotlin2.whenever
+import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.whenever
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.schemaServer.core.adaptors.avro.AvroTaxiSourceGenerator
 import com.orbitalhq.schemaServer.core.adaptors.openapi.OpenApiSourceGenerator
@@ -97,7 +97,22 @@ class TaxiSchemaSourcesAdaptorTest {
          .shouldBeTrue()
    }
 
-
+   @Test
+   fun `can load taxi project with soap additional sources`() {
+      val source = loadSourcePackage("mixed-sources/wsdl")
+      val schema = TaxiSchema.from(source)
+      // types and services should be in the configured default namespace
+      schema.hasService("org.oorsprong.CountryInfoService")
+         .shouldBeTrue()
+   }
+   @Test
+   fun `can load taxi project with soap additional sources where soap wsdl imports additional XSDs`() {
+      val source = loadSourcePackage("mixed-sources/wsdl-with-imports")
+      val schema = TaxiSchema.from(source)
+      // types and services should be in the configured default namespace
+      schema.hasService("org.oorsprong.CountryInfoService")
+         .shouldBeTrue()
+   }
 
    @Test
    fun `can load taxi project with dependencies`() {
@@ -166,7 +181,7 @@ class TaxiSchemaSourcesAdaptorTest {
 //            "movies.ReleaseYear" to "avro/fillms.avsc",
 //            "movies.Genre" to "avro/fillms.avsc",
 //            "movies.Rating" to "avro/fillms.avsc"
-      )
+      ).mapValues { (_,value) -> listOf(value) }
       mappedTypes.shouldBe(expected)
 
    }
@@ -184,19 +199,18 @@ class TaxiSchemaSourcesAdaptorTest {
 //         .type.shouldBe("foo.EmailAddress".fqn())
 //   }
 
-   private fun loadSourcePackage(
-      path: String,
-      dependencyFetcherProvider: DependencyFetcherProvider = NoOpDependencyFetcherProvider
-   ): SourcePackage {
-      val loader = loader(path)
-      val converter = TaxiSchemaSourcesAdaptor(dependencyFetcherProvider = dependencyFetcherProvider)
-      val metadata = converter.buildMetadata(loader)
-         .block()!!
-      val source = converter.convert(metadata, loader).block()
-      return source
-   }
 
-
+}
+fun loadSourcePackage(
+   path: String,
+   dependencyFetcherProvider: DependencyFetcherProvider = NoOpDependencyFetcherProvider
+): SourcePackage {
+   val loader = loader(path)
+   val converter = TaxiSchemaSourcesAdaptor(dependencyFetcherProvider = dependencyFetcherProvider)
+   val metadata = converter.buildMetadata(loader)
+      .block()!!
+   val source = converter.convert(metadata, loader).block()
+   return source
 }
 
 fun loader(path: Path): FileSystemPackageLoader {
@@ -211,7 +225,6 @@ fun loader(path: Path): FileSystemPackageLoader {
       fileMonitor
    )
    return loader
-
 }
 
 fun loader(resourcePath: String): FileSystemPackageLoader {

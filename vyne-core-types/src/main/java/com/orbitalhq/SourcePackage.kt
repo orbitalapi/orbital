@@ -5,6 +5,8 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.orbitalhq.models.functions.NamedFunctionInvoker
 import com.orbitalhq.models.serde.InstantSerializer
+import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.sourceMapFromVersionedSource
 import com.orbitalhq.schemas.toVersionedSource
 import com.orbitalhq.utils.shaHash
 import lang.taxi.generators.SourceMap
@@ -76,6 +78,19 @@ data class SourcePackage(
    }
 
    companion object {
+      fun getSourceMaps(schema: Schema): List<Pair<SourcePackage, SourceMap>> {
+         return schema.packages.mapNotNull { sourcePackage ->
+            val sourceMapSources = sourcePackage.additionalSources[SourcesTypes.SOURCE_MAP] ?: emptyList()
+            val sourceMaps =  sourceMapSources.map { sourceMapFromVersionedSource(it) }
+            val sourceMap = sourceMaps.reduceOrNull(SourceMap::combine)
+            if (sourceMap != null) {
+               sourcePackage to sourceMap
+            } else {
+               null
+            }
+         }
+      }
+
       /**
        * Returns a source package that is the result of transpiling.
        * Sources in the original source package are moved to additional sources, tagged as OriginalSource,

@@ -65,20 +65,7 @@ private data class AvroSchemaCollection(
    companion object {
       private val logger = KotlinLogging.logger {}
    }
-   private val sourceMaps: List<Pair<SourcePackage, SourceMap>>
-
-   init {
-      sourceMaps = taxiSchema.packages.mapNotNull { sourcePackage ->
-         val sourceMapSources = sourcePackage.additionalSources[SourcesTypes.SOURCE_MAP] ?: emptyList()
-         val sourceMaps =  sourceMapSources.map { sourceMapFromVersionedSource(it) }
-         val sourceMap = sourceMaps.reduceOrNull(SourceMap::combine)
-         if (sourceMap != null) {
-            sourcePackage to sourceMap
-         } else {
-            null
-         }
-      }
-   }
+   private val sourceMaps: List<Pair<SourcePackage, SourceMap>> = SourcePackage.getSourceMaps(taxiSchema)
 
    private val createdSchemas = ConcurrentHashMap<ParameterizedName, org.apache.avro.Schema>()
    fun getOrBuild(type: Type):org.apache.avro.Schema {
@@ -93,7 +80,12 @@ private data class AvroSchemaCollection(
          val (sourcePackage, sourceMap) = sourceMaps.firstOrNull { (_, sourceMap) ->
             sourceMap.containsType(type.paramaterizedName)
          } ?: error("Cannot find original avro schema - no source map exists for type ${type.name.shortDisplayName}")
-         val schemaFileName = sourceMap.getSourceFileNameForType(type.name.parameterizedName)
+         val schemaFileNames = sourceMap.getSourceFileNameForType(type.name.parameterizedName)
+         val schemaFileName = if (schemaFileNames.size == 1) {
+            schemaFileNames.single()
+         } else {
+            error("Avro formats expect a single source file per type, but found ${schemaFileNames.size} for type ${type.name.parameterizedName} - ${schemaFileNames.joinToString()}")
+         }
          val originalSources = sourcePackage.additionalSources[SourcesTypes.ORIGINAL_SOURCE] ?: emptyList()
          val schemaFile = originalSources.firstOrNull { it.name == schemaFileName }
             ?: error("Cannot find the mapped source file ($schemaFileName) for type ${type.name.shortDisplayName} ")

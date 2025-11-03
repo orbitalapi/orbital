@@ -100,7 +100,7 @@ class TaxiSchema(
          logger.error(e) { "Exception occurred initializing the Taxi Schema" }
          throw e
       }
-      logger.debug { "Parsing TaxiSchema took ${stopwatch.elapsed().toMillis()}ms" }
+      logger.info { "Parsing TaxiSchema took ${stopwatch.elapsed().toMillis()}ms" }
    }
 
 
@@ -407,8 +407,13 @@ class TaxiSchema(
             .groupBy {
                when (it.languages.size) {
                   0 -> SourceCodeLanguages.TAXI // Default to Taxi if there's nothing there
-                  1 -> it.languages.single()
-                  else -> error("Package ${it.identifier} contains multiple languages, which is not currently supported")
+                  1 -> it.languages.first()
+                  else -> {
+                     it.languages.first()
+                     // We used to error here, but I don't think that matters - the real question is
+                     // "Is this taxi?"
+//                     error("Package ${it.identifier} contains multiple languages, which is not currently supported")
+                  }
                }
             }.toSortedMap { o1, o2 ->
                // Load Taxi first.

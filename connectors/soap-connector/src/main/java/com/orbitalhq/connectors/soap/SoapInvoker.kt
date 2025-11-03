@@ -2,7 +2,9 @@ package com.orbitalhq.connectors.soap
 
 import arrow.core.Either
 import com.fasterxml.jackson.module.kotlin.convertValue
+import com.google.common.base.Throwables
 import com.google.common.cache.CacheBuilder
+import com.orbitalhq.SourcePackage
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
@@ -30,20 +32,25 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import lang.taxi.generators.SourceMap
 import lang.taxi.generators.soap.SoapAnnotations
 import lang.taxi.generators.soap.SoapLanguage
+import lang.taxi.packages.SourcesTypes
 import mu.KotlinLogging
 import org.apache.cxf.endpoint.Client
 import org.apache.cxf.endpoint.dynamic.DynamicClientFactory
 import org.apache.cxf.interceptor.Fault
 import reactor.core.publisher.Flux
 import java.nio.file.Files
+import java.nio.file.Paths
 import java.time.Instant
+import kotlin.io.path.extension
 import kotlin.io.path.writeText
 import kotlin.time.Duration
 import kotlin.time.measureTimedValue
 
 private val logger = KotlinLogging.logger {}
+
 class SoapClientCache(
    private val inboundInterceptor: InboundPayloadCapturingInterceptor = InboundPayloadCapturingInterceptor(),
    private val outboundInterceptor: OutboundPayloadCapturingInterceptor = OutboundPayloadCapturingInterceptor(),
@@ -51,7 +58,7 @@ class SoapClientCache(
    schemaChangedEventProvider: SchemaChangedEventProvider? = null
 ) {
    private val cache = CacheBuilder.newBuilder()
-      .build<QualifiedName, Client>()
+      .build<String, Client>()
 
 
    init {
@@ -60,6 +67,7 @@ class SoapClientCache(
             .subscribe {
                logger.info { "Schema changed.  Invalidating soap clients" }
                cache.invalidateAll()
+               cache.cleanUp()
             }
          logger.info { "Soap client is listening for schema changes" }
       } else {
@@ -67,17 +75,41 @@ class SoapClientCache(
       }
    }
 
-   fun get(service: Service): Client {
-      return cache.get(service.name) {
-
+   fun get(schema: Schema, service: Service): Client {
+      return cache.get("${service.name.parameterizedName}--${service.hashCode()}") {
          // The only way to create a CXF dynamic client is by loading the WSDL from a URL.
          // So, we have to write the wsdl out to a temp file first.
-         val wsdlSource = service.sourceCode.singleOrNull { it.language == SoapLanguage.WSDL }
+
+         // First, grab the source map.
+         // This was generated in SoapSchemaSourceGenerator when the source was converted
+         // to Taxi.
+         val sourceMaps: List<Pair<SourcePackage, SourceMap>> = SourcePackage.getSourceMaps(schema)
+         val (sourcePackage, sourceMap) = sourceMaps.firstOrNull { (_, sourceMap) ->
+            sourceMap.containsService(service.fullyQualifiedName)
+         } ?: error("Service ${service.name} is expected to have WSDL source attached, but it was not found")
+
+         // At the same time as the source map was produced, the original sources (WSDL, and optionally XSD's)
+         // were attached to the pacakge as original sources
+         val originalSources = sourcePackage.additionalSources[SourcesTypes.ORIGINAL_SOURCE]?.toSet()
+            ?: emptySet()
+         val definingSourceFilenames = sourceMap.getSourceFileName(service.fullyQualifiedName)
+         val foundWsdlFilenames = definingSourceFilenames.filter { Paths.get(it).extension == "wsdl" }
+         if (foundWsdlFilenames.size != 1) error("Expected to find exactly 1 wsdl which defines service ${service.fullyQualifiedName}, but ${foundWsdlFilenames.size} were found - ${foundWsdlFilenames.joinToString()}")
+         val wsdlFilename = foundWsdlFilenames.single()
+
+         val wsdlSource = originalSources.singleOrNull { it.name.endsWith(wsdlFilename) }
             ?: error("Service ${service.name} is expected to have WSDL source attached, but it was not found")
+
 
          val tmpWsdlFile = Files.createTempFile("tmp-servicedef-${service.fullyQualifiedName}", "wsdl")
          tmpWsdlFile.writeText(wsdlSource.content)
          val tmpFileUrl = tmpWsdlFile.toUri().toURL()
+
+         val xsdSources = originalSources.filter { Paths.get(it.name).extension == "xsd" }
+         for (xsd in xsdSources) {
+            val name = xsd.name
+            Files.writeString(tmpWsdlFile.parent.resolve(name), xsd.content)
+         }
 
          val client = clientFactory.createClient(tmpFileUrl)
          client.inInterceptors.add(inboundInterceptor)
@@ -109,7 +141,7 @@ class SoapInvoker(
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
 
       val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, "")
-      val soapClient = clientCache.get(service)
+      val soapClient = clientCache.get(schemaProvider.schema, service)
       require(parameters.size <= 1) { "SOAP services expect 0 or 1 parameters, but got ${parameters.size}" }
       val parameterValues = paramToOrderedArray(parameters.singleOrNull())
       try {
@@ -119,13 +151,6 @@ class SoapInvoker(
 
          val timestamp = Instant.now()
          val (result: Any, duration: Duration) = measureTimedValue {
-            // Emit request event before invoking
-            val outboundPayload = if (parameterValues.isNotEmpty()) {
-               Jackson.defaultObjectMapper.writeValueAsString(parameterValues.first())
-            } else {
-               "{}"
-            }
-
             val resultList = soapClient.invoke(operation.name, *parameterValues)
             require(resultList.size == 1) {
                "Expected a single result, but got ${resultList.size}"
@@ -137,7 +162,13 @@ class SoapInvoker(
             kind = TracingEventKind.OK,
             spanState = SpanState.ACTIVE,
             payloadType = parameters.firstOrNull()?.first?.type,
-            exchangeMetadata = HttpRequest(outboundMessage.url, outboundMessage.method,{ outboundMessage.payload },outboundMessage.payload.length.toLong(),emptyMap()),
+            exchangeMetadata = HttpRequest(
+               outboundMessage.url,
+               outboundMessage.method,
+               { outboundMessage.payload },
+               outboundMessage.payload.length.toLong(),
+               emptyMap()
+            ),
             verb = outboundMessage.method,
             TraceEventDirection.OUTBOUND
          )
@@ -169,6 +200,7 @@ class SoapInvoker(
 
          return flowOf(resultTypedInstance)
       } catch (e: Exception) {
+         val rootCause = Throwables.getRootCause(e)
          val (message, responseCode) = when (e) {
             is Fault -> (e.cause?.message ?: e.message) to e.statusCode
             else -> e.message to -1
@@ -179,7 +211,7 @@ class SoapInvoker(
             SpanState.COMPLETE,
             null,
             HttpResponse(responseCode, { message ?: "Unknown error" }, (message?.length ?: 0).toLong(), emptyMap()),
-               "Invoke error",
+            "Invoke error",
             TraceEventDirection.INBOUND
          )
 
