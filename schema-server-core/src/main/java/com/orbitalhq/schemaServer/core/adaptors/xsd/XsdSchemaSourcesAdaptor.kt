@@ -21,7 +21,8 @@ import kotlin.io.path.toPath
 
 class XsdSchemaSourceGenerator(private val configProvider: XsdSchemaSourceConfigProvider = EmptyXsdSourceConfigProvider) : SourceGenerator {
    companion object {
-      val XSD_SOURCES_TYPE = "@orbital/xsd"
+      const val XSD_SOURCES_TYPE = "@orbital/xsd"
+      private val logger = KotlinLogging.logger {}
    }
 
    override fun supportsSources(sourcesType: SourcesType): Boolean {
@@ -34,9 +35,16 @@ class XsdSchemaSourceGenerator(private val configProvider: XsdSchemaSourceConfig
    ): SourcePackage {
       val taxiSource = sourceFiles.map { xsdSourceFile ->
          val config = configProvider.provide(xsdSourceFile, packageMetadata)
-         val generatedTaxiCode = TaxiGenerator(
-            config = config
-         ).generateAsStrings(xsdSourceFile.content.byteInputStream())
+         logger.info { "Parsing XSD file in project ${packageMetadata.identifier} at ${xsdSourceFile.pathOrName}" }
+         val generatedTaxiCode = try {
+            TaxiGenerator(
+               config = config
+            ).generateAsStrings(xsdSourceFile.content.byteInputStream())
+         } catch (e:Exception) {
+            logger.error(e) { "Failed to parse XSD file in project ${packageMetadata.identifier} at ${xsdSourceFile.pathOrName} - ${e.message}" }
+            throw e
+         }
+
          generatedTaxiCode.sourceMap to generatedTaxiCode.asVersionedSource(
             packageMetadata.identifier,
             "GeneratedFrom_${xsdSourceFile.name}"

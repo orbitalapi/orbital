@@ -1,7 +1,6 @@
 package com.orbitalhq.cockpit.core
 
 import com.orbitalhq.connectors.registry.RawConnectionsConnectorConfig
-import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
 import com.orbitalhq.metrics.GaugeRegistry
 import com.orbitalhq.nebula.NebulaSpringModule
 import com.orbitalhq.schemas.readers.SourceConverterRegistry
@@ -21,7 +20,7 @@ class CockpitCoreConfig {
    fun sourceConverterRegistry(): SourceConverterRegistry = SourceConverterRegistry(
       setOf(
          TaxiSourceConverter,
-         SoapWsdlSourceConverter,
+//         SoapWsdlSourceConverter,
       ),
       registerWithStaticRegistry = true
    )

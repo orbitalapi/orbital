@@ -1,14 +1,11 @@
 package com.orbitalhq.query.runtime.executor
 
 import com.fasterxml.jackson.databind.MapperFeature
-import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
-import com.orbitalhq.formats.csv.CsvFormatSpec
 import com.orbitalhq.history.AnalyticsConfig
-import com.orbitalhq.models.format.ModelFormatSpec
-import com.orbitalhq.serde.TaxiJacksonModule
 import com.orbitalhq.query.runtime.core.EnableVyneQueryNode
 import com.orbitalhq.schemas.readers.SourceConverterRegistry
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
+import com.orbitalhq.serde.TaxiJacksonModule
 import com.orbitalhq.spring.EnableVyne
 import com.orbitalhq.spring.VyneSchemaConsumer
 import com.orbitalhq.spring.config.DiscoveryClientConfig
@@ -40,7 +37,7 @@ import org.springframework.http.codec.ServerCodecConfigurer
 import org.springframework.http.codec.json.Jackson2JsonEncoder
 import org.springframework.http.codec.json.KotlinSerializationJsonEncoder
 import java.net.InetAddress
-import java.util.Collections
+import java.util.*
 
 @SpringBootApplication(
    exclude = [
@@ -95,7 +92,7 @@ class WebConfig {
    fun sourceConverterRegistry(): SourceConverterRegistry = SourceConverterRegistry(
       setOf(
          TaxiSourceConverter,
-         SoapWsdlSourceConverter,
+//         SoapWsdlSourceConverter,
       ),
       registerWithStaticRegistry = true
    )

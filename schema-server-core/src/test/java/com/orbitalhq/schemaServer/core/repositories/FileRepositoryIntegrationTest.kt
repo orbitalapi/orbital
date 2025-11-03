@@ -5,7 +5,6 @@ import com.google.common.io.Resources
 import com.jayway.awaitility.Awaitility
 import com.nhaarman.mockito_kotlin.mock
 import com.orbitalhq.PackageIdentifier
-import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
 import com.orbitalhq.schema.api.SchemaSet
 import com.orbitalhq.schema.rsocket.CBORJackson
 import com.orbitalhq.schemaServer.core.file.FileProjectSpec
@@ -27,12 +26,12 @@ import com.orbitalhq.test.utils.FlakeyOnBuildServer
 import com.winterbe.expekt.should
 import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.booleans.shouldBeTrue
-import io.kotest.matchers.collections.shouldHaveSingleElement
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.file.shouldExist
 import io.kotest.matchers.file.shouldNotBeEmpty
+import io.kotest.matchers.maps.shouldNotBeEmpty
 import io.kotest.matchers.shouldBe
-import lang.taxi.generators.soap.SoapLanguage
+import lang.taxi.packages.SourcesTypes
 import lang.taxi.packages.TaxiPackageLoader
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.Test
@@ -134,8 +133,11 @@ class FileRepositoryIntegrationTest {
             }
          val schema = schemaClient.schema()
          schema.services.shouldHaveSize(1)
-         val service = schema.services.single()
-         service.sourceCode.shouldHaveSingleElement { it.language == SoapLanguage.WSDL }
+         schema.additionalSources.shouldNotBeEmpty()
+         schema.additionalSources.containsKey(SourcesTypes.SOURCE_MAP)
+            .shouldBeTrue()
+         schema.additionalSources.containsKey(SourcesTypes.ORIGINAL_SOURCE)
+            .shouldBeTrue()
       }
    }
 
@@ -380,7 +382,6 @@ class FileRepositoryIntegrationTest {
             schemaValidator = TaxiSchemaValidator(
                listOf(
                   TaxiSourceConverter,
-                  SoapWsdlSourceConverter,
                )
             )
          )

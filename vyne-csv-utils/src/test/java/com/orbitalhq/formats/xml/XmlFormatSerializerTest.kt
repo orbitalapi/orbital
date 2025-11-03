@@ -515,7 +515,7 @@ namespace com.example.document {
          )
          val instance = TypedInstance.from(complexSchema.type("com.example.Document"), testData, complexSchema)
          val xml = XmlFormatSpec.serializer.write(instance, mock {}, complexSchema, -1) as String
-         xml.shouldEqualIgnoringWhitespace("""<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+         xml.shouldEqualIgnoringWhitespace("""<?xml version='1.0' encoding='UTF-8'?>
 <ns0:Document xmlns:ns0="http://example.com/main" xmlns:ns1="http://example.com/common">
     <ns1:Header>
         <ns1:Version>1.0</ns1:Version>

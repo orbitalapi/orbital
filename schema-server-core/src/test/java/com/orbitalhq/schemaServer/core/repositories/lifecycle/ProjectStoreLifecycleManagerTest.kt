@@ -2,7 +2,7 @@ package com.orbitalhq.schemaServer.core.repositories.lifecycle
 
 import com.jayway.awaitility.Awaitility
 import com.jayway.awaitility.Duration
-import com.nhaarman.mockitokotlin2.mock
+import com.nhaarman.mockito_kotlin.mock
 import io.kotest.matchers.shouldBe
 import org.junit.jupiter.api.Test
 import java.lang.Thread.sleep

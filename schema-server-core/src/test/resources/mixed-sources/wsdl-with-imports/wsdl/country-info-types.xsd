@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+   xmlns:xs="http://www.w3.org/2001/XMLSchema"
+   xmlns:taxi="http://taxilang.org/"
+   xmlns:tns="http://www.oorsprong.org/websamples.countryinfo"
+   targetNamespace="http://www.oorsprong.org/websamples.countryinfo"
+   elementFormDefault="qualified">
+
+   <xs:complexType name="tCountryInfo">
+      <xs:sequence>
+         <xs:element name="sISOCode" type="xs:string" taxi:createsType="com.test.IsoCountryCode"/>
+         <xs:element name="sName" type="xs:string" taxi:createsType="com.test.CountryName"/>
+         <xs:element name="sCapitalCity" type="xs:string" taxi:createsType="com.test.CapitalCityName"/>
+         <xs:element name="sPhoneCode" type="xs:string"/>
+         <xs:element name="sContinentCode" type="xs:string"/>
+         <xs:element name="sCurrencyISOCode" type="xs:string"/>
+         <xs:element name="sCountryFlag" type="xs:string"/>
+         <xs:element name="Languages" type="tns:ArrayOftLanguage"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="tLanguage">
+      <xs:sequence>
+         <xs:element name="sISOCode" type="xs:string"/>
+         <xs:element name="sName" type="xs:string"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:complexType name="ArrayOftLanguage">
+      <xs:sequence>
+         <xs:element name="tLanguage" type="tns:tLanguage" minOccurs="0" maxOccurs="unbounded" nillable="true"/>
+      </xs:sequence>
+   </xs:complexType>
+
+   <xs:element name="FullCountryInfo">
+      <xs:complexType>
+         <xs:sequence>
+            <xs:element name="sCountryISOCode" type="xs:string" taxi:createsType="com.test.IsoCountryCode"/>
+         </xs:sequence>
+      </xs:complexType>
+   </xs:element>
+
+   <xs:element name="FullCountryInfoResponse">
+      <xs:complexType>
+         <xs:sequence>
+            <xs:element name="FullCountryInfoResult" type="tns:tCountryInfo"/>
+         </xs:sequence>
+      </xs:complexType>
+   </xs:element>
+
+</xs:schema>

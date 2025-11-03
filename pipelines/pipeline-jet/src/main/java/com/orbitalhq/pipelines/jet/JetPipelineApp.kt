@@ -11,7 +11,6 @@ import com.hazelcast.spring.context.SpringManagedContext
 import com.orbitalhq.config.ConfigSourceLoader
 import com.orbitalhq.config.FileConfigSourceLoader
 import com.orbitalhq.connectors.VyneConnectionsConfig
-import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
 import com.orbitalhq.monitoring.EnableCloudMetrics
 import com.orbitalhq.pipelines.jet.api.transport.PipelineJacksonModule
 import com.orbitalhq.pipelines.jet.pipelines.PipelineConfigRepository
@@ -29,7 +28,10 @@ import com.orbitalhq.schemas.readers.SourceConverterRegistry
 import com.orbitalhq.schemas.readers.TaxiSourceConverter
 import com.orbitalhq.spring.EnableVyne
 import com.orbitalhq.spring.VyneSchemaConsumer
-import com.orbitalhq.spring.config.*
+import com.orbitalhq.spring.config.DiscoveryClientConfig
+import com.orbitalhq.spring.config.EnvVariablesConfig
+import com.orbitalhq.spring.config.VyneSpringCacheConfiguration
+import com.orbitalhq.spring.config.VyneSpringProjectionConfiguration
 import com.orbitalhq.spring.http.auth.HttpAuthConfig
 import com.orbitalhq.spring.http.websocket.WebSocketPingConfig
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
@@ -82,7 +84,6 @@ class JetPipelineApp {
    fun sourceConverterRegistry(): SourceConverterRegistry = SourceConverterRegistry(
       setOf(
          TaxiSourceConverter,
-         SoapWsdlSourceConverter,
       ),
       registerWithStaticRegistry = true
    )

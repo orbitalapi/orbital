@@ -12,7 +12,6 @@ import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
-import lang.taxi.types.ObjectType
 import lang.taxi.xsd.XsdAnnotations
 import org.codehaus.stax2.XMLOutputFactory2
 import java.io.ByteArrayOutputStream

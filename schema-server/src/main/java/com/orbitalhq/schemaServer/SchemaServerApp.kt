@@ -1,6 +1,5 @@
 package com.orbitalhq.schemaServer
 
-import com.orbitalhq.connectors.soap.SoapWsdlSourceConverter
 import com.orbitalhq.monitoring.EnableCloudMetrics
 import com.orbitalhq.schemaServer.core.VersionedSourceLoader
 import com.orbitalhq.schemaServer.core.config.WorkspaceSettings
@@ -42,7 +41,6 @@ class SchemaServerApp {
    fun sourceConverterRegistry(): SourceConverterRegistry = SourceConverterRegistry(
       setOf(
          TaxiSourceConverter,
-         SoapWsdlSourceConverter
       ),
       registerWithStaticRegistry = true
    )
