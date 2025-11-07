@@ -116,6 +116,8 @@ interface FactBag : SearchableDataContext, Collection<TypedInstance> {
     */
    fun excluding(facts: Set<TypedInstance>): FactBag
 
+   fun excluding(predicate: (TypedInstance) -> Boolean): FactBag
+
    //   fun firstOrNull(predicate: (TypedInstance) -> Boolean): TypedInstance?
 //   fun filter(predicate: (TypedInstance) -> Boolean): List<TypedInstance>
    fun breadthFirstFilter(

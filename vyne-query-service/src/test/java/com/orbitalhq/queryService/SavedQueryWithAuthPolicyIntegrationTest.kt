@@ -133,7 +133,10 @@ class SavedQueryWithAuthPolicyIntegrationTest : BaseIntegrationTest() {
                when {
                   userInfo.realm_access.roles.contains("Admin") -> Film
                   userInfo.realm_access.roles.contains("Viewer") -> throw( (NotAuthorizedError) { message: 'Not Authorized' })
-                  else -> Film as { ... except { title } }
+                  else -> Film as {
+                     title : Title = null
+                     ...
+                   }
                }
             }
          }

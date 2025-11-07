@@ -13,11 +13,13 @@ import com.orbitalhq.models.json.JsonParsedStructure
 import com.orbitalhq.models.json.isJson
 import com.orbitalhq.policies.ScopedPolicyEngine
 import com.orbitalhq.query.AlwaysGoodSpec
+import com.orbitalhq.query.OperationInvokerContainer
 import com.orbitalhq.query.TypedInstanceValidPredicate
 import com.orbitalhq.schemas.*
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.timeBucket
 import com.orbitalhq.utils.xtimed
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.*
@@ -81,7 +83,7 @@ class TypedObjectFactory(
    private val parsingOptions: ParsingOptions = ParsingOptions.DEFAULT
 
 
-) : EvaluationValueSupplier, ValueProjector {
+) : EvaluationValueSupplier, ValueProjector, OperationInvokerContainer {
 
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -165,15 +167,24 @@ class TypedObjectFactory(
 
             // Do not start a projection if the type we're projecting to is the same as the value we have.
             // This happens if the projection was processed internally already within the object construction
-            if (field.fieldProjection != null && !field.fieldProjection.projectedType.isAssignableTo(fieldValue.type.taxiType)) {
-//               val sw = Stopwatch.createStarted()
+            if (field.fieldProjection != null && !field.fieldProjection.projectedType.isAssignableTo(fieldValue.type.taxiType,
+                  // Structural compatability is useful when assigning a value, but not
+                  // when determining if we want to project.
+                  // At projection time, the goal is to create an object that looks exactly like the provided spec.
+                  // If the source value (ie., fieldValue) is a superset of the projectedType, that would pass structural
+                  // compatability, but isn't what we want.
+                  // eg:
+                  // model EnhancedPerson { Name, Age }
+                  // model Person { Name }
+                  // If we project EnhancedPerson to Person, we want the Age field dropped, even though
+                  // the two types match from a structuralCompatability perspective.
+                  permitStructurallyCompatible = false)) {
                val projection = xtimed("Project field $attributeName") {
                   projectField(
                      field,
                      fieldValue,
                   )
                }
-//               logger.debug { "Projection to ${projection.type.name.shortDisplayName} took ${sw.elapsed().toMillis()}ms" }
                projection
 
             } else {
@@ -263,6 +274,15 @@ class TypedObjectFactory(
          newFactory(targetType, valueToProject, scopedArguments = projection.projectionFunctionScope).build()
       }
       return projectedFieldValue
+   }
+
+   override suspend fun invokeOperation(
+      service: Service,
+      operation: RemoteOperation,
+      providedParamValues: List<Pair<Parameter, TypedInstance>>
+   ): Flow<TypedInstance> {
+      require(this.inPlaceQueryEngine != null && this.inPlaceQueryEngine is OperationInvokerContainer) { "Cannot invoke operation ${operation.name} as no query engine has been provided" }
+      return this.inPlaceQueryEngine.invokeOperation(service, operation, providedParamValues)
    }
 
 

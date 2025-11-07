@@ -356,6 +356,12 @@ data class AmbiguousResult(
 data class FailedSearch(val message: String, override val failedAttempts: List<DataSource> = emptyList()) : DataSource {
    override val name: String = "FailedSearch"
    override val id: String = Ids.fastUuid()
+
+    companion object {
+       fun isFailedSearch(value: TypedInstance): Boolean {
+          return value is TypedNull && value.source is FailedSearch
+       }
+    }
 }
 
 interface DataSourceWithErrorMessage {

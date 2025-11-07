@@ -23,6 +23,11 @@ class FieldAndFactBag(
       schema = schema
    ) {
 
+      init {
+          if (fields.containsKey("xfilm")) {
+             println()
+          }
+      }
    override fun merge(other: FactBag): FactBag {
       return if (other is FieldAndFactBag) {
          FieldAndFactBag(this.fields + other.fields, this.otherFacts + other.otherFacts, this.scopedFacts + other.scopedFacts, schema)
@@ -57,5 +62,12 @@ class FieldAndFactBag(
          scopedFacts,
          schema
       )
+   }
+
+   override fun excluding(predicate: (TypedInstance) -> Boolean): FactBag {
+      val factsToRemove = (
+         otherFacts.filter(predicate) + fields.filter { (_,value )-> predicate(value)}.map { it.value }
+         ).toSet()
+      return excluding(factsToRemove)
    }
 }

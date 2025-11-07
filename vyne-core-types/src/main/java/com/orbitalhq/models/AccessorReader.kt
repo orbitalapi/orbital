@@ -16,6 +16,8 @@ import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.models.json.JsonAttributeAccessorParser
 import com.orbitalhq.models.xml.XmlParsedStructure
 import com.orbitalhq.models.xml.XmlTypedInstanceParser
+import com.orbitalhq.query.OperationInvokerContainer
+import com.orbitalhq.schemas.OperationKind
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
@@ -25,6 +27,9 @@ import com.orbitalhq.schemas.toVyneQualifiedName
 import com.orbitalhq.utils.log
 import com.orbitalhq.utils.timeBucket
 import com.orbitalhq.utils.xtimed
+import kotlinx.coroutines.flow.toCollection
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.ColumnAccessor
 import lang.taxi.accessors.ConditionalAccessor
@@ -46,9 +51,11 @@ import lang.taxi.expressions.LiteralExpression
 import lang.taxi.expressions.MemberAccessExpression
 import lang.taxi.expressions.NegatedExpression
 import lang.taxi.expressions.ObjectLiteralExpression
+import lang.taxi.expressions.OperationInvocationExpression
 import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.ProjectingExpression
 import lang.taxi.expressions.TypeExpression
+import lang.taxi.functions.CallableInvocationExpression
 import lang.taxi.functions.Function
 import lang.taxi.functions.FunctionAccessor
 import lang.taxi.functions.FunctionExpressionAccessor
@@ -410,10 +417,61 @@ class AccessorReader(
             )
          }
 
+         is OperationInvocationExpression -> {
+            evaluateOperationExpression(
+               value,
+               schema.type(accessor.returnType),
+               accessor,
+               schema,
+               nullValues,
+               source,
+               format,
+               functionResultCache
+            )
+         }
+
          else -> {
             TODO("Support for accessor not implemented with type $accessor")
          }
       }
+   }
+
+   private fun evaluateOperationExpression(
+      value: Any,
+      type: Type,
+      accessor: OperationInvocationExpression,
+      schema: Schema,
+      nullValues: Set<String>,
+      source: DataSource,
+      format: FormatsAndZoneOffset?,
+      functionResultCache: MutableMap<FunctionResultCacheKey, Any>
+   ): TypedInstance {
+      val accessorTaxi = accessor.asTaxi()
+      require(objectFactory is OperationInvokerContainer) { "Internal error: Cannot evaluate expression ${accessorTaxi} as no operation invoker is available. " }
+      require(schema.hasService(accessor.service.qualifiedName)) { "Cannot invoke service ${accessor.service.qualifiedName} as it is not present in this schema" }
+      val service = schema.service(accessor.service.qualifiedName)
+      require(service.hasRemoteOperation(accessor.member.name)) { "Cannot invoke operation ${accessor.member.name} as no such member exists on service ${accessor.service.qualifiedName}" }
+      val operation = service.remoteOperation(accessor.member.name)
+      require(accessor.inputs.size == operation.parameters.size) { "Operation ${operation.name} defines ${operation.parameters.size} parameters, but ${accessor.inputs.size} were provided" }
+
+      val declaredInputs: List<ScopedFact> =
+         collateInputsForAccessor(accessor, schema, value, nullValues, source, format)
+      val parameters = declaredInputs.mapIndexed { index, scopedFact ->
+         val parameter = operation.parameters.get(index)
+         parameter to scopedFact.fact
+      }
+      require(operation.operationKind != OperationKind.Stream) { "Operation ${operation.name} returns a stream, which is not supported for in-place operation calls. Try querying with stream { ${operation.returnType.typeParameters[0].paramaterizedName} }"}
+      val result = runBlocking {
+         objectFactory.invokeOperation(service, operation, parameters)
+            .toList()
+      }
+      val accessorResult = when {
+         operation.returnType.isCollection -> TypedCollection.arrayOf(operation.returnType, result)
+         result.size == 1 -> result.single()
+         result.isEmpty() -> TypedNull.create(operation.returnType, FailedEvaluatedExpression(accessorTaxi, parameters.map { it.second }, "Operation was invoked, but nothing was returned"))
+         else -> error("Operation ${operation.name} was invoked and expected to return a single value, but returned ${result.size} values")
+      }
+      return accessorResult
    }
 
    private fun evaluateNegatedExpression(
@@ -776,7 +834,7 @@ class AccessorReader(
 //      }
 
       val declaredInputs: List<ScopedFact> =
-         collateInputsForAccessor(accessor, function, schema, value, nullValues, source, format)
+         collateInputsForAccessor(accessor, schema, value, nullValues, source, format)
       val (varArgsParam, varArgsValue) = if (function.parameters.isNotEmpty() && function.parameters.last().isVarArg) {
          val varargFrom = function.parameters.size - 1
          val varargParam = function.parameters.last()
@@ -825,15 +883,15 @@ class AccessorReader(
    }
 
    private fun collateInputsForAccessor(
-      accessor: FunctionAccessor,
-      function: Function,
+      accessor: CallableInvocationExpression,
       schema: Schema,
       value: Any,
       nullValues: Set<String>,
       source: DataSource,
       format: FormatsAndZoneOffset?
    ): List<ScopedFact> {
-      val declaredInputs = timeBucket("lookup inputs for function ${accessor.function.qualifiedName}") {
+      val function = accessor.callable
+      val declaredInputs = timeBucket("lookup inputs for function ${function.qualifiedName}") {
          val scopedFacts = mutableListOf<ScopedFact>()
          function.parameters.filter { !it.isVarArg }.mapIndexedTo(scopedFacts) { index, parameter ->
             val parameterInputAccessor = when {
@@ -880,7 +938,7 @@ class AccessorReader(
             // If we revert, document the reason.
             val queryIfNotFound = true
 
-            val parameterValue = timeBucket("read function accessor ${accessor.function.qualifiedName}") {
+            val parameterValue = timeBucket("read function accessor ${function.qualifiedName}") {
 
                // MP - 10-Oct-24:
                // As we evaluate previous parameters, we add them to the set of variables in scope
@@ -1332,6 +1390,18 @@ class AccessorReader(
 
          is NegatedExpression -> {
             evaluateNegatedExpression(
+               value,
+               returnType,
+               expression,
+               schema,
+               nullValues,
+               dataSource,
+               format, functionResultCache
+            )
+         }
+
+         is OperationInvocationExpression -> {
+            evaluateOperationExpression(
                value,
                returnType,
                expression,

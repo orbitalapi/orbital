@@ -4,9 +4,13 @@ import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.models.facts.SearchableDataContext
 import com.orbitalhq.schemas.AttributeName
+import com.orbitalhq.schemas.Operation
+import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.Type
+import kotlinx.coroutines.flow.Flow
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.Argument
 import lang.taxi.services.operations.constraints.Constraint
@@ -39,8 +43,9 @@ interface EvaluationValueSupplier : ScopedValueProvider {
       get() {
          return false
       }
-
 }
+
+
 
 interface ScopedValueProvider {
    fun getScopedFact(scope: Argument): TypedInstance

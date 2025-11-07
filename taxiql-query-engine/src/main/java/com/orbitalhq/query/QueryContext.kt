@@ -19,7 +19,6 @@ import com.orbitalhq.models.facts.CopyOnWriteFactBag
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.facts.ScopedFact
-import com.orbitalhq.models.facts.mergeScopedFacts
 import com.orbitalhq.models.facts.scopedFactsNotPresentIn
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.query.graph.ServiceAnnotations
@@ -118,7 +117,7 @@ data class QueryContext(
 
 
 ) : ProfilerOperation by profiler, FactBag by facts, QueryContextEventDispatcher by eventBroker, InPlaceQueryEngine,
-   QueryContextSchemaProvider {
+   QueryContextSchemaProvider, OperationInvokerContainer {
 
    private val logger = KotlinLogging.logger {}
    private val evaluatedEdges = mutableListOf<EvaluatedEdge>()
@@ -568,13 +567,21 @@ data class QueryContext(
 
    suspend fun invokeOperation(
       service: Service,
-      operation: Operation,
+      operation: RemoteOperation,
       preferredParams: Set<TypedInstance> = emptySet(),
       providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()
    ): Flow<TypedInstance> {
       return queryEngine.invokeOperation(
          service, operation, preferredParams, this, providedParamValues
       )
+   }
+
+   override suspend fun invokeOperation(
+      service: Service,
+      operation: RemoteOperation,
+      providedParamValues: List<Pair<Parameter, TypedInstance>>
+   ): Flow<TypedInstance> {
+      return this.invokeOperation(service, operation, emptySet(), providedParamValues)
    }
 
    /**

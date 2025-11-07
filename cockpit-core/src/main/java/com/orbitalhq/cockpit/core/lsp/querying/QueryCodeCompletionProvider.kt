@@ -1,8 +1,5 @@
 package com.orbitalhq.cockpit.core.lsp.querying
 
-import arrow.core.Either
-import arrow.core.getOrElse
-import arrow.core.right
 import com.orbitalhq.query.graph.Algorithms
 import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.RemoteOperation
@@ -11,7 +8,6 @@ import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.toTaxiQualifiedName
 import com.orbitalhq.schemas.toVyneQualifiedName
-import lang.taxi.CompilationError
 import lang.taxi.TaxiParser.ArrayMarkerContext
 import lang.taxi.TaxiParser.ExpressionGroupContext
 import lang.taxi.TaxiParser.FactDeclarationContext
@@ -30,7 +26,9 @@ import lang.taxi.TaxiParser.SingleNamespaceDocumentContext
 import lang.taxi.TaxiParser.ToplevelObjectContext
 import lang.taxi.TaxiParser.TypeReferenceContext
 import lang.taxi.TaxiParser.VariableNameContext
-import lang.taxi.expressions.ServiceExpression
+import lang.taxi.childrenOfType
+import lang.taxi.hasChildOfType
+import lang.taxi.ifSearchUpForRuleFindsMatch
 import lang.taxi.lsp.CompilationResult
 import lang.taxi.lsp.completion.CompletionDecorator
 import lang.taxi.lsp.completion.CompletionItemList
@@ -283,19 +281,41 @@ class QueryCodeCompletionProvider(
       if (lastSuccessfulCompilation == null) {
          return CompletionItemList.empty()
       }
-      val mutation = contextAtCursor.searchUpForRule<MutationContext>() ?: return CompletionItemList.empty()
-      val serviceStatement = mutation.typeReference() ?: return CompletionItemList.empty()
 
+      val mutationTypeReferenceContext = contextAtCursor.ifSearchUpForRuleFindsMatch<ExpressionGroupContext,TypeReferenceContext> { expressionGroupContext ->
+         if (expressionGroupContext.hasChildOfType<MemberReferenceContext>()) {
+            expressionGroupContext.childrenOfType<MemberReferenceContext>().first().typeReference()
+         } else null
+      }
+      val serviceName: String = when {
+         contextAtCursor.searchUpForRule<MutationContext>() != null -> {
+            val mutation = contextAtCursor.searchUpForRule<MutationContext>()!!
+            val serviceStatement = mutation.typeReference() ?: return CompletionItemList.empty()
+            serviceStatement.qualifiedName().text
+         }
+         // MP: 07-Nov-25:
+         // This is the way that the mutations are appearing post-refactor.
+         // Pretty gnarly. Change this ASAP.
+         mutationTypeReferenceContext != null -> {
+            val parentExpression = mutationTypeReferenceContext.searchUpForRule<ExpressionGroupContext>()
+               ?: return CompletionItemList.empty()
+            val serviceName = parentExpression.expressionGroup()?.get(0)?.expressionAtom()?.text
+               ?: return CompletionItemList.empty()
+            serviceName
+         }
+         else -> return CompletionItemList.empty()
+
+      }
       // MP : 13-May-25:
       // There was a comment here saying
       // > The LHS is an expression - compile it
       // However, the LHS isn't an expression (according to the grammar) - it's a typeReference.
       // Assuming that this is in the context of a mutation, whcih is the only place this method is called from.
 
-      if (!lastSuccessfulCompilation.documentOrEmpty.containsService(serviceStatement.qualifiedName().text))
+      if (!lastSuccessfulCompilation.documentOrEmpty.containsService(serviceName))
          return CompletionItemList.empty()
 
-      val service = lastSuccessfulCompilation.documentOrEmpty.service(serviceStatement.qualifiedName().text)
+      val service = lastSuccessfulCompilation.documentOrEmpty.service(serviceName)
       return service.members.map { member ->
          // Don't decorate members, as they're not importable on their own
          typeCompletionBuilder.buildCompletionItem(member, member.toQualifiedName(), emptyList())

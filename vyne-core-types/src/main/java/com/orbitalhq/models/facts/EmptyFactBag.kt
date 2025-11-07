@@ -72,4 +72,8 @@ class EmptyFactBag(private val list: List<TypedInstance> = emptyList()) : FactBa
    override fun excluding(facts: Set<TypedInstance>): FactBag {
       TODO("Not yet implemented")
    }
+
+   override fun excluding(predicate: (TypedInstance) -> Boolean): FactBag {
+      TODO("Not yet implemented")
+   }
 }

@@ -74,8 +74,8 @@ class ObjectBuilder(
       facts: FactBag = FactBag.empty(),
       constraints: List<Constraint> = emptyList()
    ): TypedInstance? {
-      val nullableFact = context.getFactOrNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY, spec)
-      if (nullableFact != null) {
+      val nullableFact = context.getFactOrTypedNull(targetType, FactDiscoveryStrategy.ANY_DEPTH_ALLOW_MANY, spec)
+         .map { nullableFact ->
          val instance = nullableFact as TypedCollection
          when  {
             instance.size == 0 && targetType.isCollection -> {
@@ -278,7 +278,7 @@ class ObjectBuilder(
       constraints: List<Constraint>
    ): TypedInstance {
       val result = searchForType(targetType, spec, facts, constraints)
-      val searchFailed = result == null || result is TypedNull && result.source is FailedSearch
+      val searchFailed = result == null || FailedSearch.isFailedSearch(result)
       return if (searchFailed) {
          if (!targetType.isClosed) {
             logger.debug { "Search for object ${targetType.qualifiedName.shortDisplayName} failed, so initiating building one" }
@@ -415,8 +415,11 @@ class ObjectBuilder(
                } else null
 
 
-
-               if (value != null) {
+               // MP: 4-Nov-25:
+               // Logically, I think we should not be adding the fact to the map of populated values if it's a failed search.
+               // (which is a TypedNull).
+               // However, adding this additional check makes oodles of tests fail. Need to investigate why.
+               if (value != null /* && FailedSearch.isFailedSearch(value) */) {
                   populatedValues[attributeName] = convertValue(value, targetAttributeType, field.format)
 //                  log().debug("Object builder ${this.id} populated attribute $attributeName : ${targetAttributeType.name.longDisplayName}.  Now contains keys: ${populatedValues.keys}")
                }
