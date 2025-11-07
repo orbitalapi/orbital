@@ -80,7 +80,11 @@ class PolicyEvaluationSpec : DescribeSpec({
          $baseSchema
 
          policy AllAccessFilms against Film {
-            read { Film as { ... except { yearReleased } } }
+            read { Film as {
+               yearReleased: YearReleased = null
+               ...
+               }
+            }
          }
          """
          )
@@ -99,7 +103,10 @@ class PolicyEvaluationSpec : DescribeSpec({
                read {
                   when {
                      userInfo.groups.contains( 'ADMIN' ) -> Film
-                     else -> Film as { ... except { yearReleased } }
+                     else -> Film as {
+                        yearReleased: YearReleased = null
+                        ...
+                     }
                   }
                }
             }"""
@@ -425,7 +432,10 @@ class PolicyEvaluationSpec : DescribeSpec({
                read {
                   when {
                      userInfo.groups.contains( 'ADMIN' ) -> Film
-                     else -> Film as { ... except { title } }
+                     else -> Film as {
+                        title: Title = null
+                        ...
+                     }
                   }
                }
             }"""
@@ -454,7 +464,10 @@ class PolicyEvaluationSpec : DescribeSpec({
             }
             policy SuppressTitle against Film {
                read {
-                  Film as { ... except { title } }
+                  Film as {
+                     title: Title = null
+                     ...
+                  }
                }
             }
          """.trimIndent()
@@ -482,7 +495,10 @@ class PolicyEvaluationSpec : DescribeSpec({
                read {
                   when {
                      firstSecurityGroup == 'ADMIN' && uppercaseUsername == 'JIMMY' -> Film
-                     else -> Film as { ... except { title } }
+                     else -> Film as {
+                        title: Title = null
+                        ...
+                     }
                   }
                }
             }
@@ -529,7 +545,10 @@ class PolicyEvaluationSpec : DescribeSpec({
                      // HasValidAcceptance can only be calculated using a single TermsAndConditionsAcceptance, which should
                       // resolve from the single TermsAndConditionsAcceptance that's in scope.
                      HasValidAcceptance -> Film
-                     else -> Film as { ... except { yearReleased } }
+                     else -> Film as {
+                        yearReleased: YearReleased = null
+                        ...
+                     }
                   }
                }
             }
@@ -568,7 +587,10 @@ class PolicyEvaluationSpec : DescribeSpec({
             }
             policy SuppressTitle against Film {
                read {
-                  Film as { ... except { title } }
+                  Film as {
+                        title: Title = null
+                        ...
+                     }
                }
             }
          """.trimIndent()

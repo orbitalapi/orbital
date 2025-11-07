@@ -97,6 +97,10 @@ class CascadingFactBag(private val primary: FactBag, private val secondary: Fact
       return CascadingFactBag(this.primary.excluding(facts), this.secondary.excluding(facts))
    }
 
+   override fun excluding(predicate: (TypedInstance) -> Boolean): FactBag {
+      return CascadingFactBag(this.primary.excluding(predicate), this.secondary.excluding(predicate))
+   }
+
    override fun breadthFirstFilter(
       strategy: FactDiscoveryStrategy,
       shouldGoDeeperPredicate: FactMapTraversalStrategy,

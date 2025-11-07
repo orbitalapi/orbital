@@ -75,6 +75,12 @@ open class CopyOnWriteFactBag(
       return copy
    }
 
+   override fun excluding(predicate: (TypedInstance) -> Boolean): FactBag {
+      val toRemove = facts.filter(predicate)
+         .toSet()
+      return excluding(toRemove)
+   }
+
    override val size: Int
       get() {
          return facts.size

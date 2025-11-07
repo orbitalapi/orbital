@@ -159,7 +159,7 @@ find {
                """
             given { errorResponse : String = 'BadRequest' }
             find {
-               error : Errors by Errors.enumForName(errorResponse) as (errorDetails: ErrorDetails) -> {
+               error : Any = Errors.enumForName(errorResponse) as (errorDetails: ErrorDetails) -> {
                   errorCode : ErrorCode
                   errorMessage : ErrorMessage
                }
@@ -181,7 +181,7 @@ find {
                """
             given { errorResponse : String = 'BadRequest' }
             find { "Hello" } as {
-               error : ErrorDetails by Errors.enumForName(errorResponse)  as (errorDetails: ErrorDetails) -> {
+               error : Any = Errors.enumForName(errorResponse) as (errorDetails: ErrorDetails) -> {
                   errorCode : ErrorCode
                   errorMessage : ErrorMessage
                }
@@ -202,7 +202,7 @@ find {
             val result = vyne.query(
                """
             find { "Hello" } as {
-               error : ErrorDetails by Errors.enumForName('BadRequest')  as (errorDetails: ErrorDetails) -> {
+               error : Any = Errors.enumForName('BadRequest')  as (errorDetails: ErrorDetails) -> {
                   theMessage : errorDetails.message
                }
             }

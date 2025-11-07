@@ -319,6 +319,7 @@ class StubService(
       )
    }
 
+   fun lastCall(name:String):List<TypedInstance> = calls[name].last()
    val calls = MultimapBuilder.hashKeys().arrayListValues().build<String, List<TypedInstance>>()
 
    /**

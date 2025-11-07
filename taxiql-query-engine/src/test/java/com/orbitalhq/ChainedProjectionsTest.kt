@@ -136,7 +136,8 @@ class ChainedProjectionsTest {
             "studioId" to 456,
             "film" to
                mapOf(
-                  "id" to 123, "cast" to listOf(
+                  "id" to 123,
+                  "cast" to listOf(
                      mapOf("personName" to "Jimmy"),
                      mapOf("personName" to "Jane"),
                   )

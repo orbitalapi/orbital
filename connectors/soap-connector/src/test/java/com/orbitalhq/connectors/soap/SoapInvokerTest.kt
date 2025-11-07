@@ -20,6 +20,7 @@ import com.orbitalhq.schema.api.SimpleSchemaProvider
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.testVyne
 import com.orbitalhq.utils.Ids
+import io.kotest.matchers.maps.shouldContainKeys
 import lang.taxi.generators.GeneratedTaxiCode
 import lang.taxi.generators.soap.TaxiGenerator
 import lang.taxi.sources.SourceCode
@@ -131,7 +132,32 @@ class SoapInvokerTest {
       )
          .firstRawObject()
       result.shouldNotBeNull()
+   }
 
+   @Test
+   fun `can directly invoke soap service`(): Unit = runBlocking {
+      val generator = TaxiGenerator()
+      val wsdlUrl = Resources.getResource("TrimmedCountryInfoServiceSpec.wsdl")
+      val generatedCodeAndSources = generator.wsdlToGeneratedSources(wsdlUrl.toURI())
+      val schema = sourcesToTaxiSchema(generatedCodeAndSources)
+
+      val vyne = testVyne(
+         schema, listOf(
+            SoapInvoker(
+               SimpleSchemaProvider(schema)
+            )
+         )
+      )
+      val result = vyne.query(
+         """
+         find { CountryInfo: tCountryInfo =  CountryInfoService::FullCountryInfo(
+            { sCountryISOCode: "NZ" }
+         ) }
+      """.trimIndent()
+      )
+         .firstRawObject()
+      result.shouldNotBeNull()
+      result.shouldContainKeys("CountryInfo")
 
    }
 }

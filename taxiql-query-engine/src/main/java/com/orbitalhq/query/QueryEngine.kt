@@ -185,7 +185,7 @@ interface QueryEngine {
    fun parse(queryExpression: QueryExpression): Set<QuerySpecTypeNode>
    suspend fun invokeOperation(
       service: Service,
-      operation: Operation,
+      operation: RemoteOperation,
       preferredParams: Set<TypedInstance>,
       context: QueryContext,
       providedParamValues: List<Pair<Parameter, TypedInstance>> = emptyList()
