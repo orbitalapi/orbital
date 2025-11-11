@@ -14,6 +14,7 @@ import com.orbitalhq.query.TaxiQlQueryExceptionEvent
 import com.orbitalhq.query.history.QuerySummary
 import com.orbitalhq.schemas.Schema
 import mu.KotlinLogging
+import reactor.core.Disposable
 import reactor.core.publisher.Sinks
 import reactor.core.scheduler.Schedulers
 import java.time.Duration
@@ -36,17 +37,19 @@ open class QuerySummaryPersister(private val queryHistoryDao: QueryHistoryDao, p
 
    private val throttledSankeyEventSink = Sinks.many().unicast().onBackpressureBuffer<Tick>()
 
-   init {
-      // Write sankey events to the db while the query is running.
-      // To avoid being too db chatty, we throttle these events.
-      throttledSankeyEventSink.asFlux()
-         .window(Duration.ofSeconds(5))
-         .publishOn(queryHistoryScheduler)
-         .filter { sankeyViewBuilder.isDirty }
-         .subscribe {
-            logger.info { "Persisting sankey chart for query $queryId" }
-            queryHistoryDao.persistSankeyChart(queryId, sankeyViewBuilder)
-         }
+   // Write sankey events to the db while the query is running.
+   // To avoid being too db chatty, we throttle these events.
+   private val eventSinkSubscriber: Disposable = throttledSankeyEventSink.asFlux()
+      .window(Duration.ofSeconds(5))
+      .publishOn(queryHistoryScheduler)
+      .filter { sankeyViewBuilder.isDirty }
+      .subscribe {
+         logger.info { "Persisting sankey chart for query $queryId" }
+         queryHistoryDao.persistSankeyChart(queryId, sankeyViewBuilder)
+      }
+
+   fun terminateSubscription() {
+      eventSinkSubscriber.dispose()
    }
 
 
