@@ -71,9 +71,9 @@ class PersistingQueryEventConsumer(
    /**
     * Shutdown subscription to query history queue and clear down the queue files
     */
-   fun shutDown() {
+   override fun shutdown() {
       logger.debug { "Query result handler shutting down - $queryId" }
-      queryHistoryDao.persistSankeyChart(queryId, sankeyViewBuilder)
+      super.terminateSubscription()
    }
 
    override fun handleEvent(event: QueryEvent) {
@@ -112,11 +112,19 @@ class PersistingQueryEventConsumer(
             is StreamingQueryCancelledEvent -> processStreamingQueryCancelledEvent(event)
             is QueryErrorStreamEvent -> persistEvent(event)
          }
+
+         if (event.isTerminalEvent) {
+            handleTerminalEvent(event)
+         }
       }
       if (logger.isTraceEnabled) {
          job.invokeOnCompletion { logger.trace { "coroutine for ${event.javaClass.name} is completed, ${scope.isActive}" } }
       }
       channel.trySend(job)
+   }
+
+   private fun handleTerminalEvent(event: QueryEvent) {
+      this.shutdown()
    }
 
    private fun persistEvent(event: QueryStartEvent) {

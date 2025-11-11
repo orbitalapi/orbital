@@ -10,7 +10,7 @@ interface QueryEventConsumer : RemoteCallOperationResultHandler {
    fun shutdown() {}
 }
 
-sealed class QueryEvent
+sealed class QueryEvent(val isTerminalEvent: Boolean)
 
 data class RestfulQueryResultEvent(
    val query: Query,
@@ -18,7 +18,7 @@ data class RestfulQueryResultEvent(
    override val clientQueryId: String?,
    override val typedInstance: TypedInstance,
    override val queryStartTime: Instant
-) : QueryResultEvent, QueryEvent() {
+) : QueryResultEvent, QueryEvent(isTerminalEvent = false) {
    override val anonymousTypes: Set<Type> = emptySet()
 }
 
@@ -26,7 +26,7 @@ data class QueryFailureEvent(
    val queryId: String,
    val clientQueryId: String?,
    val failure: FailedQueryResponse
-) : QueryEvent()
+) : QueryEvent(isTerminalEvent = true)
 
 /**
  * An event captured from the error stream of a query, wrapped for
@@ -36,7 +36,7 @@ data class QueryErrorStreamEvent(
    val queryId: String,
    val clientQueryId: String?,
    val event: QueryErrorEvent
-): QueryEvent()
+): QueryEvent(isTerminalEvent = false)
 
 data class TaxiQlQueryResultEvent(
    val query: TaxiQLQueryString,
@@ -45,7 +45,7 @@ data class TaxiQlQueryResultEvent(
    override val typedInstance: TypedInstance,
    override val anonymousTypes: Set<Type>,
    override val queryStartTime: Instant
-) : QueryResultEvent, QueryEvent()
+) : QueryResultEvent, QueryEvent(isTerminalEvent = false)
 
 interface QueryResultEvent {
    val queryId: String
@@ -65,7 +65,7 @@ data class QueryCompletedEvent(
    val clientQueryId: String?,
    val message: String,
    val recordCount: Int = 0
-) : QueryEvent()
+) : QueryEvent(isTerminalEvent = true)
 
 data class TaxiQlQueryExceptionEvent(
    val query: TaxiQLQueryString,
@@ -75,7 +75,7 @@ data class TaxiQlQueryExceptionEvent(
    val message: String,
    val queryStartTime: Instant,
    val recordCount: Int = 0
-) : QueryEvent()
+) : QueryEvent(isTerminalEvent = true)
 
 data class StreamingQueryCancelledEvent(val query: TaxiQLQueryString,
                                         val queryId: String,
@@ -84,7 +84,7 @@ data class StreamingQueryCancelledEvent(val query: TaxiQLQueryString,
                                         val message: String,
                                         val queryStartTime: Instant,
                                         val recordCount: Int = 0
-) : QueryEvent()
+) : QueryEvent(isTerminalEvent = true)
 
 data class RestfulQueryExceptionEvent(
    val query: Query,
@@ -94,7 +94,7 @@ data class RestfulQueryExceptionEvent(
    val message: String,
    val queryStartTime: Instant,
    val recordCount: Int = 0
-) : QueryEvent()
+) : QueryEvent(isTerminalEvent = true)
 
 data class QueryStartEvent(
    val queryId: String,
@@ -104,5 +104,5 @@ data class QueryStartEvent(
    val clientQueryId: String,
    val message: String,
    val anonymousTypes: Set<Type>
-) : QueryEvent()
+) : QueryEvent(isTerminalEvent = false)
 
