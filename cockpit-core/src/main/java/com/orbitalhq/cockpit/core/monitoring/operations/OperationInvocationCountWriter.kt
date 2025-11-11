@@ -50,7 +50,7 @@ class OperationInvocationCountWriter(
    // For testing purposes
    fun getCountedEvents() = countedEvents.get()
 
-   @Scheduled(fixedRateString = "\${vyne.operation-count.write-frequency:PT5M}")
+   @Scheduled(fixedRateString = "\${vyne.operation-count.write-frequency:PT1M}")
    fun writeNow() {
       val eventsByOperation = try {
          val drainTime = Instant.now()
