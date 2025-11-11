@@ -15,7 +15,7 @@ export const PolicyOnBaseType: StubQueryMessageWithSlug = {
 // consistently wherever the PII tag is used
 
 
-type PII
+type PII inherits String
 // Define some PII
 type FirstName inherits String, PII
 type LastName inherits String, PII

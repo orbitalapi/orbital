@@ -38,7 +38,8 @@ policy OnlyManagers against EmployeeInfo (userInfo : UserInfo) -> {
          userInfo.groups.contains('Manager') -> EmployeeInfo
          // Users can see everything except salary
          userInfo.groups.contains('User') -> EmployeeInfo as {
-            ... except { salary }
+            salary: Salary = null
+            ...
           }
          // Everyone else gets an error
          else -> throw((NotAuthorizedError) { message: 'Not Authorized' })

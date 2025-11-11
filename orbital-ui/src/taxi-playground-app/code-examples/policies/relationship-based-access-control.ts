@@ -71,7 +71,11 @@ policy FilterCustomerFromTrade against StockTradeEvent (
 
       // TIER 3: Standard access
       // Shows trade but hides sensitive fields
-      else -> StockTradeEvent as { ... except { tradingEntity, tradedQuantity } }
+      else -> StockTradeEvent as {
+        tradingEntity: CompanyName = null
+        tradedQuantity: TradedQuantity = null
+        ...
+      }
     }
   }
 }`,

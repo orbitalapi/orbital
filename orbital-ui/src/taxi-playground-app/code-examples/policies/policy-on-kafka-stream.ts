@@ -40,7 +40,11 @@ policy FilterCustomerFromTrade against StockTradeEvent (user: User) -> {
       // Managers see everything
       user.roles.contains('MANAGER') -> StockTradeEvent
       // Everyone else has customer and quantity hidden
-      else -> StockTradeEvent as { ... except { customer, tradedQuantity } }
+      else -> StockTradeEvent as {
+        customer: CustomerName = null
+        tradedQuantity: TradedQuantity = null
+        ...
+      }
     }
   }
 }
@@ -55,7 +59,9 @@ policy FilterCustomerFromTrade against StockTradeEvent (user: User) -> {
 // Note: The user info here is normally provided by
 // your authentication layer
 // But for now, we'll hard-code it.
-given { user: User = { roles : ['ADMIN']}}
+// Try changing the role to something other than MANAGER
+// and re-running the query
+given { user: User = { roles : ['MANAGER']}}
 stream { StockTradeEvent }
 `,
     "parameters": {}
