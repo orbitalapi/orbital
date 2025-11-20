@@ -374,12 +374,22 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
    }
 
 
-   private inline fun <reified T> sendToApi(path: String, method: HttpMethod, body: String): T {
+   private inline fun <reified T> sendToApi(
+      path: String,
+      method: HttpMethod,
+      body: String,
+      headers: Map<String, String> = emptyMap()
+   ): T {
       val client = WebClient.builder()
          .baseUrl("http://localhost:$randomServerPort")
          .build()
       return client.method(method)
          .uri(path)
+         .headers { h ->
+            headers.forEach { header, value ->
+               h.add(header, value)
+            }
+         }
          .bodyValue(body)
          .retrieve()
          .onStatus({ it.is5xxServerError }, { response ->
@@ -606,8 +616,29 @@ Jack,another value$CR
       }
       val (vyne, stub) = vyneProvider.buildVyneFromSchemaStore()
       return stub
+   }
 
+   @Test
+   fun `can pass http header value to query`() {
+      val schema = """
+         @HttpOperation(url = "/api/q/hello", method = "GET")
+         query UpdateTheCsvPeople(
+            @taxi.http.HttpHeader(name = "X-Request-Name") personName:String
+         ) {
+            find {
+               message : String = "Hello " + personName
+            }
+         }
 
+      """.trimIndent()
+      submitSchemaAndFetchStub(schema, routeToWaitFor = "/api/q/hello" to HttpMethod.GET)
+      val response = sendToApi<String>(
+         "/api/q/hello", HttpMethod.GET, "", headers = mapOf(
+            "X-Request-Name" to "Jimmy"
+         )
+      )
+      val responseMap = jacksonObjectMapper().readValue<Map<String, String>>(response)
+      responseMap["message"].shouldBe("Hello Jimmy")
    }
 
    @Test
