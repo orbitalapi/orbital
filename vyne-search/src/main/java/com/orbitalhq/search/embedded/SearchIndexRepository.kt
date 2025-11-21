@@ -45,13 +45,13 @@ class SearchIndexRepository(
       val field = SearchField.QUALIFIED_NAME
       queryBuilder.add(
          BoostQuery(
-            FuzzyQuery(Term(field.fieldName, "${annotationSearchTerm.toLowerCase()}*"), 2),
+            FuzzyQuery(Term(field.fieldName, "${annotationSearchTerm.lowercase()}*"), 2),
             field.boostFactor * 0.11F
          ), BooleanClause.Occur.SHOULD
       )
       queryBuilder.add(
          BoostQuery(
-            PrefixQuery(Term(field.fieldName, annotationSearchTerm.toLowerCase())),
+            PrefixQuery(Term(field.fieldName, annotationSearchTerm.lowercase())),
             field.boostFactor
          ), BooleanClause.Occur.SHOULD
       )
@@ -105,12 +105,12 @@ class SearchIndexRepository(
          // Decreasing the score of fuzzy search as it can produce a match for 'time' when we search for 'fixe'
          queryBuilder.add(
             BoostQuery(
-               FuzzyQuery(Term(field.fieldName, "${term.toLowerCase()}*"), 2),
+               FuzzyQuery(Term(field.fieldName, "${term.lowercase()}*"), 2),
                field.boostFactor * 0.11F
             ), BooleanClause.Occur.SHOULD
          )
          queryBuilder.add(
-            BoostQuery(PrefixQuery(Term(field.fieldName, term.toLowerCase())), field.boostFactor),
+            BoostQuery(PrefixQuery(Term(field.fieldName, term.lowercase())), field.boostFactor),
             BooleanClause.Occur.SHOULD
          )
       }
@@ -224,7 +224,7 @@ class SearchIndexRepository(
       // We use this approach (substring) over highlighting, as for String indexed fields (vs Text indexed fields)
       // with a prefix match, lucene's highlighter matches the entire result, which isn't what
       // the user wants to see.
-      if (!fieldContents.toLowerCase().contains(term.toLowerCase())) {
+      if (!fieldContents.lowercase().contains(term.lowercase())) {
          return null
       }
 

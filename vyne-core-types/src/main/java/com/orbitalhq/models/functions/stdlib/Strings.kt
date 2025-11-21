@@ -205,7 +205,7 @@ object Uppercase : NullSafeInvoker() {
        resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
-      val result = input.toUpperCase()
+      val result = input.uppercase()
       return TypedInstance.from(
          returnType, result, schema, source = EvaluatedExpression(
             function.asTaxi(),
@@ -230,7 +230,7 @@ object Lowercase : NullSafeInvoker() {
        resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val input: String = inputValues[0].valueAs<String>()
-      val result = input.toLowerCase()
+      val result = input.lowercase()
       return TypedInstance.from(
          returnType, result, schema, source = EvaluatedExpression(
             function.asTaxi(),

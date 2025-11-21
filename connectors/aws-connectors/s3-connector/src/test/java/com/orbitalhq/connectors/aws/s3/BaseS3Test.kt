@@ -63,7 +63,7 @@ abstract class BaseS3Test {
       s3Client.createBucket { b: CreateBucketRequest.Builder -> b.bucket(bucketName) }
    }
    fun createBucketWithRandomName(prefix: String): String {
-      val bucketName = "$prefix${Random.nextInt()}".toLowerCase()
+      val bucketName = "$prefix${Random.nextInt()}".lowercase()
       createBucket(bucketName)
       return bucketName
    }

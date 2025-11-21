@@ -13,7 +13,7 @@ class SingleVyneTypeCalciteSchema(
    private val schema: com.orbitalhq.schemas.Schema): AbstractSchema() {
    override fun getTableMap(): MutableMap<String, Table> {
       val parametrizedTypeName = type.collectionTypeName ?: type.qualifiedName
-      val tableName =parametrizedTypeName.shortDisplayName.toUpperCase()
+      val tableName =parametrizedTypeName.shortDisplayName.uppercase()
       val vyneTypeTable = TypeTable(schema.type(parametrizedTypeName), dataSource, schema)
       return mutableMapOf(tableName to vyneTypeTable)
    }

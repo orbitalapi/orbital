@@ -385,7 +385,7 @@ enum class OperationQueryResultItemRole {
 
 private fun Annotatable.hasAnnotationContaining(searchTerm: String): Boolean {
    return this.annotations.any {
-      it.qualifiedName.toLowerCase().contains(searchTerm.toLowerCase().removePrefix("@").removePrefix("#"))
+      it.qualifiedName.lowercase().contains(searchTerm.lowercase().removePrefix("@").removePrefix("#"))
    }
 }
 
