@@ -18,7 +18,7 @@ env:
 jobs:
   verify-version:
     name: Verify Version (Tags Only)
-    runs-on: [self-hosted, linux]
+    runs-on: self-hosted
     if: startsWith(github.ref, 'refs/tags/')
     steps:
       - name: Checkout code
