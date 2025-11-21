@@ -1,5 +1,4 @@
 name: CI/CD Pipeline
-runs-on: self-hosted
 
 on:
   push:
