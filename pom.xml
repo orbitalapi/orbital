@@ -42,11 +42,11 @@
       <maven.compiler.source>${java.version}</maven.compiler.source>
       <maven.compiler.target>${java.version}</maven.compiler.target>
 
-      <kotlin.version>1.9.24</kotlin.version>
+      <kotlin.version>2.2.21</kotlin.version>
       <!-- Coroutines 1.7.0-Beta is compatible with 1.8.10 as per https://github.com/Kotlin/kotlinx.coroutines -->
-      <kotlin.coroutines.version>1.9.0</kotlin.coroutines.version>
+      <kotlin.coroutines.version>1.10.2</kotlin.coroutines.version>
 
-      <kotlin.serialization.version>1.5.1</kotlin.serialization.version>
+      <kotlin.serialization.version>1.9.0</kotlin.serialization.version>
       <kotlin.dataframe.version>0.14.0</kotlin.dataframe.version>
 
       <spring.cloud.version>2023.0.1</spring.cloud.version>

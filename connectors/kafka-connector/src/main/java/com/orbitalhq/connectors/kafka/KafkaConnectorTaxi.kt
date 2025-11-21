@@ -69,7 +69,7 @@ object KafkaConnectorTaxi {
             private fun from(parameters: Map<String, Any?>): KafkaOperation {
                return KafkaOperation(
                   topic = parameters["topic"] as String,
-                  offset = (parameters["offset"] as String).let { offset -> Offset.valueOf(offset.toUpperCase()) }
+                  offset = (parameters["offset"] as String).let { offset -> Offset.valueOf(offset.uppercase()) }
                )
             }
          }
@@ -83,7 +83,7 @@ object KafkaConnectorTaxi {
 
          private val parameterMap: Map<String, Any> = mapOf(
             "topic" to topic,
-            "offset" to offset.name.toLowerCase()
+            "offset" to offset.name.lowercase()
          )
 
          override fun asAnnotation(schema: TaxiDocument): Annotation {

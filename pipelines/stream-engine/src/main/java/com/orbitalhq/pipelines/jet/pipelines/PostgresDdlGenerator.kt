@@ -21,6 +21,7 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
+import java.util.*
 
 data class InstanceAttributeSet(
    val type: VersionedType,
@@ -69,7 +70,7 @@ class PostgresDdlGenerator {
             "${typeName}_${versionedType.versionedNameHash}"
          }.takeLast(POSTGRES_MAX_NAME_LENGTH)
          require(tableName.length <= POSTGRES_MAX_NAME_LENGTH) { "Generated tableName $tableName exceeds Postgres max of 31 characters" }
-         return tableName.toLowerCase()
+         return tableName.lowercase(Locale.getDefault())
       }
       fun toColumnName(field: Field) = toColumnName(field.name)
       fun toColumnName(fieldName: String) = fieldName.quoted()
@@ -293,10 +294,10 @@ class PostgresDdlGenerator {
       // TODO We can not have a field declared as both a PK and a unique constraint. Perhaps we should handle that on taxi side too.
       val indexedColumns = fields.filter { col -> col.annotations.any { it.name == _indexed } && !col.annotations.any { it.name == _primaryKey} }
       indexedColumns.forEach {
-         result.appendln("""CREATE INDEX IF NOT EXISTS idx_${tableName}_${it.name} ON ${tableName}("${it.name}");""")
+         result.appendLine("""CREATE INDEX IF NOT EXISTS idx_${tableName}_${it.name} ON ${tableName}("${it.name}");""")
       }
       // Also index our internal fields
-      result.appendln("""CREATE INDEX IF NOT EXISTS idx_${tableName}_${MESSAGE_ID_COLUMN_NAME} on ${tableName}("$MESSAGE_ID_COLUMN_NAME");""")
+      result.appendLine("""CREATE INDEX IF NOT EXISTS idx_${tableName}_${MESSAGE_ID_COLUMN_NAME} on ${tableName}("$MESSAGE_ID_COLUMN_NAME");""")
       return result.toString()
    }
 

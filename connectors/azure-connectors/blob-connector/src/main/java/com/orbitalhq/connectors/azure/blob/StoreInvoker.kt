@@ -65,7 +65,7 @@ class StoreInvoker(
       val taxiSchema = schema.taxi
       val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
       val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
-      val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query) { type -> type.toQualifiedName().typeName.toUpperCase() }
+      val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query) { type -> type.toQualifiedName().typeName.uppercase() }
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
       val azureStoreConnection = fetchConnection(service)
       val containerName = fetchContainer(operation)
