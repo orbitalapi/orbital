@@ -56,7 +56,7 @@ jobs:
 
   build-jvm:
     name: Build JVM
-    runs-on: [self-hosted, linux]
+    runs-on: self-hosted
     needs: verify-version
     if: |
       always() &&
@@ -145,7 +145,7 @@ jobs:
 
   build-orbital-ui:
     name: Build Orbital UI
-    runs-on: [self-hosted, linux]
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code
@@ -183,7 +183,7 @@ jobs:
 
   build-playground-ui:
     name: Build Playground UI
-    runs-on: [self-hosted, linux]
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code

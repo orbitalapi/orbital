@@ -15,7 +15,7 @@ env:
 jobs:
   publish-core-types:
     name: Publish Core Types to GitHub
-    runs-on: [self-hosted, linux]
+    runs-on: self-hosted
 
     steps:
       - name: Checkout code
