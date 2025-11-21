@@ -54,6 +54,7 @@ jobs:
             echo "✅ Versions match."
           fi
 
+
   build-jvm:
     name: Build JVM
     runs-on: self-hosted
