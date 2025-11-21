@@ -10,7 +10,7 @@ on:
 
 env:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN -Dorg.slf4j.simpleLogger.showDateTime=true -Djava.awt.headless=true"
-  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DdeployAtEnd=true -Denv.buildServer=true -U --settings .mvn/settings.xml"
+  MAVEN_CLI_OPTS: "--batch-mode --errors --fail-at-end --show-version -DdeployAtEnd=true -Denv.buildServer=true -U --settings .mvn/settings.github.xml"
 
 jobs:
   publish-core-types:
