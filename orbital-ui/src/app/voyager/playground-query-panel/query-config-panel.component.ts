@@ -2,7 +2,7 @@ import { TuiButton } from "@taiga-ui/core";
 import {ChangeDetectionStrategy, Component, EventEmitter, Input, Output} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {StubPanelComponent} from "./stub-panel.component";
-import { TuiBadge, TuiTabs } from "@taiga-ui/kit";
+import { TuiBadge, TuiSegmented, TuiTabs } from "@taiga-ui/kit";
 import {Schema} from "../../services/schema";
 import {OperationStub} from "../../services/query.service";
 import {ExpandingPanelSetModule} from "../../expanding-panelset/expanding-panel-set.module";
@@ -12,8 +12,15 @@ import {ExpandablePanelComponent} from "../../expanding-panelset/expandable-pane
 @Component({
   selector: 'app-query-config-panel',
   standalone: true,
-  imports: [CommonModule, StubPanelComponent, TuiTabs, ExpandingPanelSetModule, TuiButton, QueryParmsPanelComponent, TuiBadge, ExpandablePanelComponent],
+  imports: [CommonModule, StubPanelComponent, TuiTabs, ExpandingPanelSetModule, TuiButton, QueryParmsPanelComponent, TuiBadge, ExpandablePanelComponent, TuiSegmented],
   template: `
+    <div class="tab-row">
+      <tui-segmented [(activeItemIndex)]="activeTabIndex">
+        <button type="button">Stubs</button>
+        <button type="button">Query parameters</button>
+      </tui-segmented>
+    </div>
+
     <app-stub-panel *ngIf="activeTabIndex === 0" [schema]="schema" [stubs]="stubs"
                     (stubsChange)="stubsChange.emit($event)"></app-stub-panel>
     <app-query-params-panel *ngIf="activeTabIndex === 1" [(parameters)]="parameters"></app-query-params-panel>

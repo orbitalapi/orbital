@@ -2,6 +2,7 @@
 
 :host {
   display: flex;
+  flex-direction: column;
   tui-tabs::ng-deep {
     button {
       font-family: $headings-font;
@@ -12,6 +13,13 @@
   }
 }
 
+.tab-row {
+  padding: 0.5rem 1rem;
+  background-color: $slate-100;
+}
+app-query-params-panel {
+  padding: 1rem;
+}
 .config-panels {
   display: flex;
   flex-direction: column;

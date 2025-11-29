@@ -9,6 +9,7 @@ import com.orbitalhq.metrics.QueryMetricsReporter
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.InPlaceQueryEngine
 import com.orbitalhq.models.OperationResult
+import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.PermittedQueryStrategies
 import com.orbitalhq.models.QueryFailureBehaviour
 import com.orbitalhq.models.TypedCollection
@@ -692,7 +693,10 @@ class QueryContextEventBroker(
          handlers.filterIsInstance<RemoteCallOperationResultHandler>()
             .forEach { it.recordResult(operation, queryId) }
       }
-
+   }
+   override fun reportCachedOperationWithUniquePathObserved(operation: OperationResultReference, queryId: String) {
+      handlers.filterIsInstance<RemoteCallOperationResultHandler>()
+         .forEach { it.reportCachedOperationWithUniquePathObserved(operation, queryId) }
    }
 
 }
@@ -725,4 +729,5 @@ object NoOpQueryContextEventDispatcher : QueryContextEventDispatcher {
 
 interface RemoteCallOperationResultHandler : QueryContextEventHandler {
    fun recordResult(operation: OperationResult, queryId: String)
+   fun reportCachedOperationWithUniquePathObserved(operation: OperationResultReference, queryId: String)  {}
 }

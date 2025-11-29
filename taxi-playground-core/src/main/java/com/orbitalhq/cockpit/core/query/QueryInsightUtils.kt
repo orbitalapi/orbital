@@ -1,5 +1,6 @@
 package com.orbitalhq.cockpit.core.query
 
+import arrow.core.flatMap
 import arrow.core.getOrElse
 import com.orbitalhq.Message
 import com.orbitalhq.query.QueryParseMetadata
@@ -24,6 +25,8 @@ class QueryInsightUtils(
    fun parseQuery(
       query: TaxiQLQueryString,
       schema: Schema,
+      generateNewQueryPlan: Boolean = false,
+      arguments: Map<String, Any>
    ): Mono<QueryParseMetadata> {
       require(query.isNotEmpty()) { "No query was provided" }
       return Mono.fromCallable {
@@ -36,7 +39,7 @@ class QueryInsightUtils(
                errors = e.errors,
             )
          }
-         val queryPlan = buildQueryPlan(query, querySchema)
+         val queryPlan = buildQueryPlan(query, querySchema, generateNewQueryPlan, arguments)
          QueryParseMetadata.fromQuery(
             compiledQuery,
             compilationMessages = emptyList(),
@@ -48,15 +51,20 @@ class QueryInsightUtils(
 
    private fun buildQueryPlan(
       query: TaxiQLQueryString,
-      querySchema: Schema
+      querySchema: Schema,
+      generateNewQueryPlan: Boolean,
+      arguments: Map<String, Any>
    ): QueryPlan {
       if (!this.visualizationEnabled) {
          return QueryPlan.empty()
       }
       val queryPlan = try {
-         visualizerService.visualizeQuery(query, querySchema)
-            .map { queryPlanSteps ->
-               QueryPlan(queryPlanSteps, emptyList())
+         visualizerService.visualizeQuery(query, querySchema, arguments)
+            .flatMap { querySankeyChartRows ->
+               visualizerService.generateQueryDiagram(query, querySchema, arguments)
+                  .map { diagramData ->
+                     QueryPlan(querySankeyChartRows, emptyList(), diagramData)
+                  }
             }
             .getOrElse { e ->
                QueryPlan(

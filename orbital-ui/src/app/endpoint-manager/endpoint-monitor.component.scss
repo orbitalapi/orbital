@@ -5,8 +5,8 @@
   position: relative;
 }
 
-app-query-lineage {
-  height: 300px;
+app-query-lineage, app-query-plan-diagram {
+  height: 400px;
   display: block;
   // compensate for internal margin
   margin: 0 -1rem;

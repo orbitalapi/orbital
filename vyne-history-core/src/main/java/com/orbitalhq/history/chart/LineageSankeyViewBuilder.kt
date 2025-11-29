@@ -5,6 +5,7 @@ import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.EvaluatedExpression
 import com.orbitalhq.models.FailedSearch
 import com.orbitalhq.models.OperationResult
+import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.Provided
 import com.orbitalhq.models.TypeNamedInstance
 import com.orbitalhq.models.TypedCollection
@@ -24,6 +25,20 @@ import mu.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
+
+/**
+ * A thing that captures data intended for building query visualisations.
+ * Part of migrating our diagrams from LineageSankeyViewBuilder to something new
+ */
+interface QueryVisualizationBuilder<T> {
+
+   fun append(instance: TypedInstance)
+   fun captureOperationResult(operationResult: OperationResult)
+
+   fun build(queryId: String): T
+   fun captureCachedOperationWithUniquePathObserved(operation: OperationResultReference, queryId: String) {}
+}
+
 /**
  * A SankeyGraph  is a visualization used to depict a flow from one set of values to another.
  * (see https://developers.google.com/chart/interactive/docs/gallery/sankey)
@@ -31,7 +46,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * Here, we generate data flows on between systems per attribute for a TypedInstance
  *
  */
-class LineageSankeyViewBuilder(private val schema: Schema) {
+class LineageSankeyViewBuilder(private val schema: Schema): QueryVisualizationBuilder<List<QuerySankeyChartRow>> {
    private val logger = KotlinLogging.logger {}
    private val operationNodeBuilder = LineageSankeyOperationNodeBuilder(schema)
 
@@ -48,7 +63,7 @@ class LineageSankeyViewBuilder(private val schema: Schema) {
          return _isDirty.get()
       }
 
-   fun append(instance: TypedInstance) {
+   override fun append(instance: TypedInstance) {
       when (instance) {
          is TypedObject -> buildForObject(instance)
          is TypedValue -> buildForForTypedValue(instance)
@@ -145,6 +160,10 @@ class LineageSankeyViewBuilder(private val schema: Schema) {
          asChartRows(queryId)
       }
    }
+
+   override fun build(queryId: String): List<QuerySankeyChartRow> {
+      return asChartRows(queryId)
+   }
    fun asChartRows(queryId: String): List<QuerySankeyChartRow> {
       return dataSourcePairsToWeights.map { (key, value) ->
          val (sourceNode, targetNode) = key
@@ -170,7 +189,7 @@ class LineageSankeyViewBuilder(private val schema: Schema) {
    }
 
 
-   fun captureOperationResult(operationResult: OperationResult) {
+   override fun captureOperationResult(operationResult: OperationResult) {
       // Asscoiate the operation to the data source.  This is a one-to-many relationship,
       // as the same operation will provide multiple values.
       val operationQualifiedName = operationResult.remoteCall.operationQualifiedName

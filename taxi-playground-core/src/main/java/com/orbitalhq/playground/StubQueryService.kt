@@ -24,6 +24,7 @@ import com.orbitalhq.query.QueryContextEventBroker
 import com.orbitalhq.query.QueryEventConsumer
 import com.orbitalhq.query.QueryProfileData
 import com.orbitalhq.query.VyneQlGrammar
+import com.orbitalhq.query.history.QuerySankeyChartRow
 import com.orbitalhq.query.history.RemoteCallResponse
 import com.orbitalhq.query.history.RemoteCallResponseDto
 import com.orbitalhq.query.history.toDto
@@ -158,7 +159,10 @@ class StubQueryService(
          0,
          remoteCalls = remoteCallCollector.events,
          operationStats = emptyList(),
-         queryLineageData = queryPlanEventHandler.sankeyViewBuilder.asChartRows(queryId)
+         // TODO : We're migrating away from QuerySankeyChartRow
+         // Update this once this migration is complete.
+         // Until then, cast.
+         queryLineageData = queryPlanEventHandler.diagramBuilder.build(queryId) as List<QuerySankeyChartRow>
       )
       this.queryProfileCache.put(queryId, profileData)
    }

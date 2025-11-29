@@ -1,6 +1,7 @@
 package com.orbitalhq.query
 
 import com.orbitalhq.Message
+import com.orbitalhq.query.history.QueryPlanDiagramData
 import com.orbitalhq.query.history.QuerySankeyChartRow
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.SavedQuery
@@ -75,7 +76,9 @@ data class QueryParseMetadata(
 
 data class QueryPlan(
    val steps: List<QuerySankeyChartRow>,
-   val queryExecutionMessages: List<Message>
+   val queryExecutionMessages: List<Message>,
+   val diagramData: QueryPlanDiagramData = QueryPlanDiagramData.EMPTY
+
 ) {
    companion object {
       fun empty(): QueryPlan = QueryPlan(emptyList(), emptyList())

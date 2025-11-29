@@ -12,7 +12,6 @@ import com.orbitalhq.query.runtime.core.gateway.HttpErrorResponse
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.http.NotFoundException
 import com.orbitalhq.utils.Ids
-import org.http4k.core.Headers
 import org.reactivestreams.Publisher
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
@@ -36,7 +35,7 @@ class PlaygroundQueryService(private val stubQueryService: StubQueryService) {
       if (query.query.isEmpty()) throw ResponseStatusException(HttpStatus.BAD_REQUEST, "No query was provided")
       return try {
          val schema = TaxiSchema.fromStrings(listOf(query.schema, StubQueryService.builtInTypes))
-         insightUtils.parseQuery(query.query, schema)
+         insightUtils.parseQuery(query.query, schema, generateNewQueryPlan = true, arguments = query.parameters)
             .onErrorResume { e ->
                Mono.error(ResponseStatusException(HttpStatus.BAD_REQUEST, e.message!!))
             }

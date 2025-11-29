@@ -2,7 +2,14 @@ package com.orbitalhq.query.connectors
 
 import arrow.core.Either
 import com.orbitalhq.logging.MDCContextKeys.QueryId
+import com.orbitalhq.models.DataSourceMutatingMapper
+import com.orbitalhq.models.OperationResult
+import com.orbitalhq.models.OperationResultReference
+import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.TypedInstanceConverter
+import com.orbitalhq.models.TypedObject
+import com.orbitalhq.models.ValueWithType
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.caching.CacheAnnotation
@@ -11,6 +18,7 @@ import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
+import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.abbreviate
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -23,7 +31,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactor.asFlux
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.slf4j.MDCContext
 import lang.taxi.services.OperationScope
 import lang.taxi.types.EnumMember
@@ -233,6 +240,78 @@ class DefaultCachingOperatorInvoker(
       return readCacheOrCallInvokerHandler.getCachedOrCallLoader(cacheKey, message, ttl) {
          logger.debug { "${cacheKey.abbreviate()} cache miss, loading from Operation Invoker" }
          invokeUnderlyingService(message)
+      }.map { errorOrResult ->
+         errorOrResult.map { result ->
+            // Even though we might be serving a cached response because the input
+            // values were the same, those input values may have come from different sources.
+            // When this happens, we still return the cached value, but we
+            // return a copy, with the data source updated to show the lineage of the actual inputs.
+            // This is important when doing lineage-related-activities, as without this
+            // we fail to trace _where_ inputs came from.
+
+            // Build a map of the inputs that were used for THIS invocation
+            val triggerDataSources = message.parameters.map { (param, value) -> param.name to value.source.id }
+
+            val cachedCallResultDataSource = result.source
+            val resultWithDataSourceInputsUpdated = if (cachedCallResultDataSource is OperationResultReference) {
+
+               // Build a map of the inputs that were used to trigger the actual call
+               val cachedCallInputDataSources = cachedCallResultDataSource.inputs.mapNotNull { param ->
+                  if (param.value is ValueWithType && param.value.dataSourceId != null) {
+                     param.parameterName to param.value.dataSourceId!!
+                  } else null
+               }
+
+               // Now check -- did the params we received in this trigger
+               // come from the same set of inputs as used to trigger the actual call?
+               val inputsMatch = triggerDataSources == cachedCallInputDataSources
+               if (!inputsMatch) {
+                  val params = OperationResult.buildParameters(message.parameters)
+                  val variationId =
+                     Ids.id("-DSVAR-") // datasource-variation ... uppercase to make it easier to spot if debugging...
+                  val updatedDataSource = cachedCallResultDataSource.copy(
+                     id = cachedCallResultDataSource.id + variationId,
+                     inputs = params
+                  )
+
+                  message.eventDispatcher.reportCachedOperationWithUniquePathObserved(
+                     updatedDataSource,
+                     message.queryId
+                  )
+
+                  // TODO: I'm not sure if we need to do any of the below now that we're emitting the event,
+                  // and this object copying business might be noisy / expensive
+                  result
+
+//                  if (result is TypedObject) {
+//                     result.copy(source = updatedDataSource)
+//                  }
+
+                  // Create an updated value set, with the new data source
+//                  val updatedResult =
+//                     TypedInstanceConverter(DataSourceMutatingMapper(updatedDataSource)).convert(result)
+//                  when {
+//                     updatedResult is Map<*, *> && result is TypedObject -> result.copy(
+//                        source = updatedDataSource,
+//                        suppliedValue = updatedResult as Map<String, TypedInstance>
+//                     )
+//
+//                     updatedResult is Collection<*> && result is TypedCollection -> result.copy(
+//                        source = updatedDataSource,
+//                        value = updatedResult as List<TypedInstance>
+//                     )
+//
+//                     else -> {
+//                        logger.info { "Received unexpected result from updating datasource on cached result. Expected a TypedInstance, but got a ${updatedResult?.javaClass?.name ?: "null"}" }
+//                        result
+//                     }
+//                  }
+               } else result
+
+            } else result
+            resultWithDataSourceInputsUpdated
+         }
+
       }
    }
 
@@ -274,7 +353,7 @@ class DefaultCachingOperatorInvoker(
                   }
                   .doOnComplete { sink.complete() }
                   .subscribe { sink.next(it) }
-            } catch (exception:Throwable) {
+            } catch (exception: Throwable) {
                logger.error(exception) { "An exception was thrown inside the invoker (${invoker::class.simpleName} calling ${operation.name})" }
                // This is an exception thrown in the invoke method, but not within the flux / flow.
                // ie., something has gone wrong internally, not in the service.

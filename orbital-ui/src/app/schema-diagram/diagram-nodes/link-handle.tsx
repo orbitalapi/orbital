@@ -7,7 +7,6 @@ export interface LinkHandleProps {
   node: Node<MemberWithLinks>,
   links: Link[],
   position: Position.Right | Position.Left,
-  handleId?: string,
   allowConnectionToFloat?: boolean
 }
 

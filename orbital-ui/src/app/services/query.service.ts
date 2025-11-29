@@ -509,7 +509,53 @@ export interface QueryParameter {
 
 export interface QueryPlan {
   steps: QuerySankeyChartRow[],
-  queryExecutionMessages: Message
+  queryExecutionMessages: Message[],
+  diagramData: QueryPlanDiagramData
+}
+
+export interface QueryPlanDiagramData {
+  queryId: string;
+  nodes: DiagramNode[];
+  links: DiagramLink[];
+}
+
+export type DiagramNodeKind =
+  | 'SERVICE'
+  | 'SCALAR_TYPE'
+  | 'MODEL'
+  | 'QUERY'
+  | 'OPERATION'
+  | 'CONSTANT'
+  | 'EXPRESSION'
+  | 'REQUEST_MODEL'
+  | 'RESPONSE_MODEL'
+  | 'REQUEST_RESPONSE_MODEL';
+
+export interface DiagramNodeMember {
+  handleId: string;
+  name: string;
+  typeName: string;
+}
+
+export interface DiagramNode {
+  id: string;
+  kind: DiagramNodeKind;
+  title: string;
+  icon: string | null;
+  badgeLabel: string | null;
+  qualifiedName: string | null;
+  members: DiagramNodeMember[];
+  // Pre-organized links for this node
+  inboundHeaderLinks: DiagramLink[];
+  outboundHeaderLinks: DiagramLink[];
+  memberLinks: { [handleId: string]: DiagramLink[] };
+}
+
+export interface DiagramLink {
+  sourceId: string;
+  sourceHandleId: string;
+  targetId: string;
+  targetHandleId: string;
 }
 
 export interface RemoteOperationPerformanceStats {

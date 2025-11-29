@@ -12,11 +12,11 @@ import kotlinx.serialization.Serializable
 @JsonInclude(JsonInclude.Include.ALWAYS)
 @Serializable
 data class TypeNamedInstance(
-   val typeName: String,
+   override val typeName: String,
    @Contextual
-   val value: Any?,
-   val dataSourceId: String?
-) {
+   override val value: Any?,
+   override val dataSourceId: String?
+) : ValueWithType {
    constructor(typeName: QualifiedName, value: Any?, source: DataSource? = null) : this(
        typeName.parameterizedName,
       value,

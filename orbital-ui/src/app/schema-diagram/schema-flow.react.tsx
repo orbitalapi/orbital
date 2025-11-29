@@ -29,11 +29,16 @@ import {Observable, Subject} from 'rxjs';
 import {EdgeParams, Link, LinkKind, MemberWithLinks} from 'src/app/schema-diagram/schema-chart-builder';
 import { applyElkLayout } from 'src/app/schema-diagram/elk-chart-layout';
 import FloatingEdge from 'src/app/schema-diagram/diagram-nodes/floating-edge';
-import { toPng } from 'html-to-image';
 import DownloadIcon from 'src/app/schema-diagram/icons/download-icon';
 import FullScreenIcon from 'src/app/schema-diagram/icons/fullscreen-icon';
 import MinimizeIcon from 'src/app/schema-diagram/icons/minimize-icon';
 import { colors } from './tailwind.colors';
+import {
+  useEscapeKey,
+  fitViewOptions,
+  downloadDiagramImage,
+  useFlowHoverHandlers
+} from './shared-flow-hooks';
 
 export type NodeType = 'Model' | 'Service';
 type ReactComponentFunction = ({ data }: { data: any }) => JSX.Element
@@ -65,22 +70,7 @@ export interface SchemaAndRequiredMembersProps {
   memberNamePositions?: Omit<SchemaDiagramSpec, 'showTypeToolbar'>
 }
 
-const fitViewOptions: FitViewOptions = { padding: 0.75, includeHiddenNodes: true, duration: 1000 };
 let previousDimensions: {width?: number, height?: number};
-
-const useEscapeKey = (onEscape) => {
-  useEffect(() => {
-    const handleEsc = (event) => {
-      if (event.keyCode === 27)
-        onEscape();
-    };
-    window.addEventListener('keydown', handleEsc);
-
-    return () => {
-      window.removeEventListener('keydown', handleEsc);
-    };
-  }, []);
-}
 
 function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   const store = useStoreApi();
@@ -240,20 +230,6 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
     await navigator.clipboard.writeText(textToCopy)
   }
 
-  function downloadImage() {
-    toPng(document.querySelector<HTMLElement>('.react-flow__viewport'), {
-      filter: (node) => {
-        // we don't want to add the minimap and the controls to the image
-        return !node?.classList?.contains('toolbar');
-      }
-    }).then((dataUrl) => {
-      const a = document.createElement('a');
-
-      a.setAttribute('download', 'orbital-microservices-diagram.png');
-      a.setAttribute('href', dataUrl);
-      a.click();
-    });
-  }
 
   const ToggleFullScreenButton = isFullScreen ? <MinimizeIcon /> : <FullScreenIcon />;
   const styleProps = isFullScreen ? {} : {
@@ -267,122 +243,17 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
   }
   previousDimensions = styleProps;
 
-  // Highlight edges and nodes that are linked to those edges emanating from the hovered node
-  const onNodeMouseEnter = useCallback(
-    (_, node: Node) => {
-      if (isShiftKeyPressed) return; // we don't want to change the appearance on screen as it's annoying for the user if they're trying to select multiple nodes
-      const { edges, nodes } = store.getState();
-      const id = node.id;
-      let hasChange = false;
-      const activeEdges = [];
-      const mappedEdges = edges.map((edge) => {
-        let targetOpacity = 1;
-        if (edge.source !== id && edge.target !== id) {
-          hasChange = true;
-          targetOpacity = 0.2;
-        } else {
-          activeEdges.push(edge);
-        }
-        return {
-          ...edge,
-          style: {
-            ...edge.style,
-            opacity: targetOpacity
-          }
-        };
-      });
-      if (hasChange) {
-        setEdges(mappedEdges);
-      }
+  useEscapeKey(() => {
+    setAwaitingRefit('immediate');
+    setIsFullScreen(false);
+  });
 
-      if (nodes.length <= 2) return;
-
-      // If the node doesn't interact with the edge, then make it opaque
-      hasChange = false;
-      const filteredNodes = nodes.map(node => {
-        let targetOpacity = 1;
-        if (!activeEdges.filter(edge => node.id === edge.source || node.id === edge.target).length && node.id !== id) {
-          hasChange = true;
-          targetOpacity = 0.2;
-        }
-        return {
-          ...node,
-          style: {
-            ...node.style,
-            opacity: targetOpacity
-          }
-        };
-      })
-      if (hasChange) setNodes(filteredNodes);
-    },
-    [setEdges, setNodes, store, isShiftKeyPressed]
+  const { onNodeMouseEnter, onEdgeMouseEnter, onEdgeOrNodeMouseLeave } = useFlowHoverHandlers(
+    store,
+    setNodes,
+    setEdges,
+    { skipOnCondition: isShiftKeyPressed }
   );
-
-  const onEdgeMouseEnter = useCallback(
-    (_, edge: Edge) => {
-      const { edges, nodes } = store.getState();
-      const id = edge.id;
-      let hasChange = false;
-
-      const mappedNodes = nodes.map(node => {
-        let targetOpacity = 1;
-        if (node.id !== edge.source && node.id !== edge.target) {
-          hasChange = true;
-          targetOpacity = 0.2;
-        }
-        return {
-          ...node,
-          style: {
-            ...node.style,
-            opacity: targetOpacity
-          }
-        };
-      })
-      if (hasChange) setNodes(mappedNodes);
-
-      hasChange = false;
-      const mappedEdges = edges.map((edge) => {
-        let targetOpacity = 1;
-        if (edge.id !== id) {
-          hasChange = true;
-          targetOpacity = 0.2;
-        }
-        return {
-          ...edge,
-          style: {
-            ...edge.style,
-            opacity: targetOpacity
-          }
-        };
-      });
-      if (hasChange) setEdges(mappedEdges);
-    },
-    [setEdges, setNodes, store]
-  );
-
-  const onEdgeOrNodeMouseLeave = useCallback((_, edge: Edge | Node) => {
-    const { edges, nodes } = store.getState();
-    const mappedNodes = nodes.map(node => {
-      return {
-        ...node,
-        style: {
-          ...node.style,
-          opacity: 1
-        }
-      };
-    });
-    const mappedEdges = edges.map(edge => {
-      return {
-        ...edge,
-        style: {
-          ...edge.style,
-          opacity: 1
-        },
-      };
-    });
-    setNodes(mappedNodes);
-    setEdges(mappedEdges);
-  }, [setEdges, setNodes, store]);
 
   const onNodeDragStart = useCallback((_, node: Node) => {
     const { edges } = store.getState();
@@ -450,7 +321,7 @@ function SchemaFlowDiagram(props: SchemaFlowDiagramProps) {
         <ControlButton onClick={copyAsMarkdown} title={"copy as markdown"}>
           <CopyAsMarkdownIcon />
         </ControlButton>
-        <ControlButton onClick={downloadImage} title={"download image"}>
+        <ControlButton onClick={() => downloadDiagramImage('orbital-microservices-diagram.png')} title={"download image"}>
           <DownloadIcon />
         </ControlButton>
         <ControlButton title={!isFullScreen ? 'maximise view' : 'minimise view'} onClick={() => {

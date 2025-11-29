@@ -25,7 +25,7 @@ class QueryParserService(
    ): Mono<QueryParseMetadata> {
       if (query.isEmpty()) throw BadRequestException("No query was provided")
       val schema = schemaStore.schema()
-      return insightUtils.parseQuery(query, schema)
+      return insightUtils.parseQuery(query, schema, generateNewQueryPlan = true, emptyMap())
    }
 }
 

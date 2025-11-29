@@ -94,6 +94,13 @@ progress {
   position: absolute;
 }
 
+
+app-query-plan-diagram {
+  display: flex;
+  height: 10px;
+  flex-grow: 1;
+}
+
 .rightside-controls-container {
   display: flex;
 
