@@ -28,6 +28,7 @@ import {LineageDisplayModule} from "../lineage-display/lineage-display.module";
 import {QueryPlan} from "../services/query.service";
 import {AppInfoService, FeatureToggles} from "../services/app-info.service";
 import {RequiresAuthorityDirective} from "../requires-authority.directive";
+import { QueryPlanDiagramComponent } from "src/app/query-plan-diagram/query-plan-diagram.component";
 
 type ChartConfig = {
   title: string;
@@ -53,9 +54,10 @@ type MetricsPeriodToDescription = {
   selector: 'app-endpoint-monitor',
   standalone: true,
   template: `
-    <ng-container *ngIf="queryPlan?.steps && featureToggles?.queryPlanModeEnabled">
+    <ng-container *ngIf="queryPlan?.diagramData">
       <app-panel-header title="Overview" [class.no-header]="onlyShowControlsInHeader"/>
-      <app-query-lineage [rows]="queryPlan?.steps"/>
+      <app-query-plan-diagram [queryPlan]="queryPlan" />
+<!--      <app-query-lineage [rows]="queryPlan?.steps"/>-->
     </ng-container>
 
     <app-panel-header title="Metrics" [class.no-header]="onlyShowControlsInHeader"
@@ -147,7 +149,8 @@ type MetricsPeriodToDescription = {
     TuiProgress,
     LineageDisplayModule,
     RequiresAuthorityDirective,
-    TuiCheckbox
+    TuiCheckbox,
+    QueryPlanDiagramComponent
   ],
   changeDetection: ChangeDetectionStrategy.OnPush
 })

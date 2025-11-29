@@ -1,8 +1,8 @@
 package com.orbitalhq.query
 
 import com.orbitalhq.models.OperationResult
+import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.query.tracing.OperationTraceSpan
-import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.query.tracing.TraceSpan
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
@@ -32,6 +32,14 @@ interface QueryContextEventDispatcher {
    fun requestCancel()
 
 
+   /**
+    * Called when an operation is not invoked because it's result is already cached,
+    * but the inputs that were provided came from different sources than the original cached operation.
+    *
+    * The net effect is that while the value that's returned is the same, the lineage
+    * for that value now has two paths - so lineage related tooling needs to capture this
+    */
+   fun reportCachedOperationWithUniquePathObserved(operation: OperationResultReference, queryId: String) {}
    fun reportRemoteOperationInvoked(operation: OperationResult, queryId: String)
 
    val queryErrorPublisher: StreamErrorPublisher

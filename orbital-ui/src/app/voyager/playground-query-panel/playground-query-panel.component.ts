@@ -2,43 +2,45 @@ import {
   AfterViewInit,
   ChangeDetectionStrategy,
   ChangeDetectorRef,
-  Component, DestroyRef,
-  ElementRef, EventEmitter,
-  Input, Output,
-  ViewChild,
-} from '@angular/core';
-import {CommonModule} from '@angular/common';
-import {BehaviorSubject, EMPTY, switchMap} from "rxjs";
-import {ExpandingPanelSetModule} from "../../expanding-panelset/expanding-panel-set.module";
-import { TuiAccordion, TuiBadge, TuiTabs, TuiChip } from "@taiga-ui/kit";
-import {TuiExpand, TuiButton, TuiNotification} from "@taiga-ui/core";
-import {AngularSplitModule, IOutputData} from "angular-split";
-import {CodeEditorModule} from "../../code-editor/code-editor.module";
-import {StubPanelComponent} from "./stub-panel.component";
-import {Schema} from "../../services/schema";
-import {HttpClientModule} from "@angular/common/http";
-import {VoyagerService} from "../../.././taxi-playground-app/voyager.service";
+  Component,
+  DestroyRef,
+  ElementRef,
+  EventEmitter,
+  Input,
+  Output,
+  ViewChild
+} from "@angular/core";
+import { CommonModule } from "@angular/common";
+import { BehaviorSubject, EMPTY, switchMap } from "rxjs";
+import { ExpandingPanelSetModule } from "../../expanding-panelset/expanding-panel-set.module";
+import { TuiBadge } from "@taiga-ui/kit";
+import { TuiButton, TuiExpand, TuiNotification } from "@taiga-ui/core";
+import { AngularSplitModule } from "angular-split";
+import { CodeEditorModule } from "../../code-editor/code-editor.module";
+import { Schema } from "../../services/schema";
+import { HttpClientModule } from "@angular/common/http";
+import { VoyagerService } from "../../.././taxi-playground-app/voyager.service";
 import {
   emptyQueryMessage,
   OperationStub,
   QueryParseMetadata,
   QueryProfileData,
-  StubQueryMessage,
-} from '../../services/query.service';
-import {JsonViewerModule} from "../../json-viewer/json-viewer.module";
-import {QueryConfigPanelComponent} from "./query-config-panel.component";
-import {catchError, debounceTime, filter, tap} from "rxjs/operators";
-import {ExpandablePanelComponent} from "../../expanding-panelset/expandable-panel/expandable-panel.component";
-import {QueryResultsPanelComponent} from "./query-results-panel.component";
-import {ResizeObservableService} from "../../services/resize-observable.service";
-import {LineageDisplayModule} from "../../lineage-display/lineage-display.module";
-import {isNullOrUndefined} from "../../utils/utils";
+  StubQueryMessage
+} from "../../services/query.service";
+import { JsonViewerModule } from "../../json-viewer/json-viewer.module";
+import { QueryConfigPanelComponent } from "./query-config-panel.component";
+import { catchError, debounceTime, filter, tap } from "rxjs/operators";
+import { QueryResultsPanelComponent } from "./query-results-panel.component";
+import { ResizeObservableService } from "../../services/resize-observable.service";
+import { LineageDisplayModule } from "../../lineage-display/lineage-display.module";
+import { isNullOrUndefined } from "../../utils/utils";
+import { QueryPlanDiagramComponent } from "src/app/query-plan-diagram/query-plan-diagram.component";
 
 @Component({
   selector: 'app-playground-query-panel',
   standalone: true,
   providers: [ResizeObservableService],
-  imports: [CommonModule, ExpandingPanelSetModule, TuiAccordion, TuiButton, AngularSplitModule, TuiTabs, CodeEditorModule, StubPanelComponent, HttpClientModule, JsonViewerModule, QueryConfigPanelComponent, ExpandablePanelComponent, QueryResultsPanelComponent, LineageDisplayModule, TuiBadge, TuiChip, TuiExpand, TuiNotification],
+  imports: [CommonModule, ExpandingPanelSetModule, TuiButton, AngularSplitModule, CodeEditorModule, HttpClientModule, JsonViewerModule, QueryConfigPanelComponent, QueryResultsPanelComponent, LineageDisplayModule, TuiBadge, TuiExpand, TuiNotification, QueryPlanDiagramComponent],
   template: `
     <as-split direction="vertical" unit="percent" gutterSize="1">
       <div class="thin-splitter" *asSplitGutter="let isDragged = isDragged" [class.dragged]="isDragged">
@@ -85,6 +87,15 @@ import {isNullOrUndefined} from "../../utils/utils";
                                   [parameters]="queryMessage.parameters"
                                   (parameterValuesChange)="updateQueryParameters($event)"
                                   [schema]="schema"></app-query-config-panel>
+        </tui-expand>
+        <app-panel-header  [collapsible]="true" [(expanded)]="queryPlanExpanded"
+                           [isSecondary]="true" title="Query Plan">
+
+        </app-panel-header>
+        <tui-expand [expanded]="queryPlanExpanded">
+            <app-query-plan-diagram [style.height]="expandedPanelHeight"
+                                    [compilationMessages]="parsedQuery?.compilationMessages"
+                                    [queryPlan]="parsedQuery?.queryPlan"></app-query-plan-diagram>
         </tui-expand>
         <app-query-results-panel
           [(expanded)]="queryResultsExpanded"

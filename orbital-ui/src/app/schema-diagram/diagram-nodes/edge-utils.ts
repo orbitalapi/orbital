@@ -46,7 +46,15 @@ function findHandle(node, handleId: string) {
 }
 
 function getHandleCoordsByPosition(node, handleId: string, handlePosition: Position.Left | Position.Right, canFloat: boolean) {
-  const handleIdWithPosition = canFloat ? HandleIds.appendPositionToHandleId(handleId, handlePosition) : handleId;
+  const handleIdHasPositionAlready = HandleIds.handleIdContainsPosition(handleId)
+  let handleIdWithPosition: string;
+  if (handleIdHasPositionAlready) {
+    handleIdWithPosition = handleId
+  } else {
+    handleIdWithPosition = canFloat ? HandleIds.appendPositionToHandleId(handleId, handlePosition) : handleId;
+  }
+
+
   const handle = node.internals.handleBounds.source.find(
     (h) => h.id === handleIdWithPosition
   );

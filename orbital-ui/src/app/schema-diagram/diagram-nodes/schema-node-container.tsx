@@ -6,6 +6,11 @@ export const modelColor = colors.lime['500'];
 export const typeColor = colors.purple['500'];
 export const serviceColor = colors.sky['400'];
 export const lineageDependencyColor = colors.yellow['500'];
+export const expressionColor = colors.amber['500'];
+export const constantColor = colors.emerald['500'];
+export const requestModelColor = colors.blue['500'];
+export const responseModelColor = colors.green['500'];
+export const requestResponseModelColor = colors.teal['500'];
 
 export const SchemaNodeContainer = styled.div`
   box-shadow: rgb(0 0 0 / 10%) 0 2px 5px 0;
@@ -69,6 +74,9 @@ export const SchemaNodeContainer = styled.div`
     align-self: center;
     text-transform: capitalize;
     border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
 
     &.model {
       // rgba doesn't work here, have to use actual RGB figures
@@ -86,9 +94,36 @@ export const SchemaNodeContainer = styled.div`
       // rgba doesn't work here, have to use actual RGB figures
       background-color: rgba(2, 132, 199, 0.1);
       color: rgba(2, 132, 199, 1);
-      display: flex;
-      align-items: center;
-      gap: 0.25rem;
+    }
+
+    &.operation {
+      background-color: rgba(2, 132, 199, 0.1);
+      color: rgba(2, 132, 199, 1);
+    }
+
+    &.expression {
+      background-color: rgba(245, 158, 11, 0.1);
+      color: rgba(245, 158, 11, 1);
+    }
+
+    &.constant, &.input {
+      background-color: rgba(16, 185, 129, 0.1);
+      color: rgba(16, 185, 129, 1);
+    }
+
+    &.request-model {
+      background-color: rgba(59, 130, 246, 0.1);
+      color: rgba(59, 130, 246, 1);
+    }
+
+    &.response-model {
+      background-color: rgba(34, 197, 94, 0.1);
+      color: rgba(34, 197, 94, 1);
+    }
+
+    &.request-response-model {
+      background-color: rgba(20, 184, 166, 0.1);
+      color: rgba(20, 184, 166, 1);
     }
   }
 
@@ -107,6 +142,11 @@ export const SchemaNodeContainer = styled.div`
       opacity: 1;
       border: 1px solid #CCC;
     }
+  }
+
+  .badge-icon {
+    width: 14px;
+    height: 14px;
   }
 
   .service-icon {
@@ -167,6 +207,26 @@ export const SchemaNodeContainer = styled.div`
 
     &.type {
       border-color: ${typeColor};
+    }
+
+    &.expression {
+      border-color: ${expressionColor};
+    }
+
+    &.constant {
+      border-color: ${constantColor};
+    }
+
+    &.request-model {
+      border-color: ${requestModelColor};
+    }
+
+    &.response-model {
+      border-color: ${responseModelColor};
+    }
+
+    &.request-response-model {
+      border-color: ${requestResponseModelColor};
     }
 
     td, th {
@@ -258,4 +318,27 @@ export const SchemaNodeContainer = styled.div`
       }
     }
   }
+
+  table.service .header {
+    color: color-mix(in srgb, ${serviceColor } 80%, black);
+  }
+  table.expression .header {
+    color: color-mix(in srgb, ${expressionColor } 80%, black);
+  }
+  table.constant .header {
+    color: color-mix(in srgb, ${constantColor } 80%, black);
+  }
+  table.request-model .header {
+    color: color-mix(in srgb, ${requestModelColor } 80%, black);
+  }
+  table.response-model .header {
+    color: color-mix(in srgb, ${responseModelColor } 80%, black);
+  }
+  table.type .header {
+    color: color-mix(in srgb, ${typeColor } 80%, black);
+  }
+  table.request-response-model .header {
+    color: color-mix(in srgb, ${requestResponseModelColor } 80%, black);
+  }
+
 `

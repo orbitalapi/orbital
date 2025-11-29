@@ -24,10 +24,20 @@ import lang.taxi.types.isMapType
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 
-interface TypedInstance {
+/**
+ * Provides an abstract way of operating with both TypedInstance and TypeNamedInstance (the lighterweight
+ * alternative)
+ */
+interface ValueWithType {
+   val value: Any?
+   val dataSourceId: String?
+   val typeName: String
+}
+
+interface TypedInstance : ValueWithType {
    @get:JsonIgnore
    val type: Type
-   val value: Any?
+   override val value: Any?
 
    @get:JsonView(DataSourceIncludedView::class)
    val source: DataSource
@@ -43,11 +53,14 @@ interface TypedInstance {
          return ImmutableEquality(this, TypedInstance::typeName, TypedInstance::value, TypedInstance::source).hash()
       }
 
-   val typeName: String
+   override val typeName: String
       get() {
          return type.name.parameterizedName
       }
 
+   @get:JsonIgnore
+   override val dataSourceId: String
+      get() = source.id
    val metadata: Map<String, Any>
 
    // It's up to instances of this to reconstruct themselves with their type

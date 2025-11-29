@@ -22,7 +22,7 @@ class QueryInsightUtilsTest {
       """.trimIndent())
       val service = QueryInsightUtils()
 
-      val parsed = service.parseQuery("""find { Film[] }""", schema)
+      val parsed = service.parseQuery("""find { Film[] }""", schema, arguments = emptyMap())
          .block()!!
       parsed.hasCompilationErrors.shouldBeFalse()
    }
@@ -37,7 +37,7 @@ class QueryInsightUtilsTest {
       """.trimIndent())
       val service = QueryInsightUtils()
 
-      val parsed = service.parseQuery("""find { Film[] }""", schema)
+      val parsed = service.parseQuery("""find { Film[] }""", schema, arguments = emptyMap())
          .block()!!
       parsed.hasQueryErrors.shouldBeTrue()
       parsed.queryPlan.queryExecutionMessages.single()
@@ -76,7 +76,7 @@ class QueryInsightUtilsTest {
 
       val service = QueryInsightUtils()
 
-      val parsed = service.parseQuery(query, schema)
+      val parsed = service.parseQuery(query, schema, arguments = emptyMap())
          .block()!!
 
       parsed.queryPlan.steps.shouldHaveSize(3)
@@ -92,7 +92,7 @@ class QueryInsightUtilsTest {
       """.trimIndent())
       val service = QueryInsightUtils()
 
-      val parsed = service.parseQuery("""find { Movie[] }""", schema)
+      val parsed = service.parseQuery("""find { Movie[] }""", schema, arguments = emptyMap())
          .block()!!
       parsed.hasCompilationErrors.shouldBeTrue()
    }
@@ -112,11 +112,13 @@ class QueryInsightUtilsTest {
       val schemaStore = SimpleSchemaStore.forSchema(schema)
       val service = QueryInsightUtils()
 
-      val parsed = service.parseQuery("""
-         query FindAllFilms {
-            find { "Hello, world" }
-         }
-      """, schema)
+      val parsed = service.parseQuery(
+          """
+             query FindAllFilms {
+                find { "Hello, world" }
+             }
+          """, schema, arguments = emptyMap()
+      )
          .block()!!
       parsed.hasCompilationErrors.shouldBeTrue()
    }

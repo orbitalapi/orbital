@@ -130,7 +130,8 @@ data class OperationResultReference(
    val inputs: List<OperationResult.OperationParam>,
    val operationName: QualifiedName,
    override val sourceEventId: TracingEventIdSet? = null,
-   override val failedAttempts: List<DataSource> = emptyList()
+   override val failedAttempts: List<DataSource> = emptyList(),
+   override val id: String = remoteCallId
 ) : DataSource, DataSourceWithLinkedTraceEvent {
    companion object {
       const val NAME: String = "Operation result"
@@ -141,7 +142,7 @@ data class OperationResultReference(
 
    override val name: String = NAME
 
-   override val id: String = remoteCallId
+
 
    override fun appendFailedAttempts(failedAttempts: List<DataSource>): DataSource {
       return copy(failedAttempts = this.failedAttempts + failedAttempts)
@@ -203,9 +204,13 @@ data class OperationResult(
          parameters: List<Pair<Parameter, TypedInstance>>,
          remoteCall: RemoteCall
       ): OperationResult {
-         return OperationResult(remoteCall, parameters.map { (param, instance) ->
+         return OperationResult(remoteCall, buildParameters(parameters))
+      }
+
+      fun buildParameters(parameters: List<Pair<Parameter, TypedInstance>>): List<OperationParam> {
+         return parameters.map { (param, instance) ->
             OperationParam(param.name.orElse("Unnamed"), instance.toTypeNamedInstance())
-         })
+         }
       }
 
       fun fromTypedInstances(

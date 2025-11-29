@@ -422,7 +422,7 @@ class StubService(
                      response = value,
                      exchange = HttpExchange(
                         url = "http://fakeurl",
-                        verb = "GET",
+                        verb = "STUB",
                         requestBody = """{ "stub" : "Not captured" }""",
                         responseCode = 200,
                         responseSize = 1000,
