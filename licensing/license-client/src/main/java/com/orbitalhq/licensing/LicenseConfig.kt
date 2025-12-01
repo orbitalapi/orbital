@@ -27,7 +27,7 @@ class LicenseConfig {
 
    private val logger = KotlinLogging.logger {}
 
-   private val fallbackLicensePath = Paths.get(".", "/fallback-license.json")
+
 
    // The default path to write to, which should be
    // relative to where we're running from, to minimize
@@ -63,14 +63,16 @@ class LicenseConfig {
     * If license validation fails, a fallback license is issued, which expires shortly.
     */
    @Bean
-   fun license(@Value("\${vyne.license.path:#{null}}") licensePath: Path?, validator: LicenseValidator): License {
+   fun license(@Value("\${vyne.license.path:#{null}}") licensePath: Path?,
+               @Value("\${vyne.license.tempLicensePath:\${vyne.app.data.path:.}/temp-license.json}") tempLicensePath: Path,
+               validator: LicenseValidator): License {
       val pathsToSearch = if (licensePath != null) {
          listOf(licensePath) + defaultLicenseSearchPaths
       } else {
          logger.info { "No license location found - will look in the default locations.  Modify this by passing --vyne.license.path on startup" }
          defaultLicenseSearchPaths
       }
-      val license = loadLicenseJson(pathsToSearch, validator)
+      val license = loadLicenseJson(pathsToSearch, validator, tempLicensePath)
       logger.info { license.toString() }
       return license
    }
@@ -103,7 +105,7 @@ class LicenseConfig {
    }
 
 
-   private fun loadLicenseJson(pathsToSearch: List<Path>, licenseValidator: LicenseValidator): License {
+   private fun loadLicenseJson(pathsToSearch: List<Path>, licenseValidator: LicenseValidator, fallbackLicensePath: Path): License {
       logger.info { "Looking for license file" }
       val loadedLicense = pathsToSearch
          .asSequence()
@@ -136,13 +138,13 @@ class LicenseConfig {
 
       return if (loadedLicense == null) {
          logger.warn { "No license found.  Will use a fallback license." }
-         getOrCreateFallbackLicense(licenseValidator)
+         getOrCreateFallbackLicense(licenseValidator, fallbackLicensePath)
       } else {
          loadedLicense
       }
    }
 
-   private fun getOrCreateFallbackLicense(licenseValidator: LicenseValidator): License {
+   private fun getOrCreateFallbackLicense(licenseValidator: LicenseValidator, fallbackLicensePath: Path): License {
       val name = Names.randomName(suffix = Ids.id("", 4))
       val license = licenseValidator.fallbackLicense(name)
       logger.info { "Creating new fallback license at $fallbackLicensePath" }

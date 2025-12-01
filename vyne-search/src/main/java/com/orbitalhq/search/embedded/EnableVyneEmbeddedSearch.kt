@@ -27,7 +27,7 @@ class VyneEmbeddedSearchConfiguration {
 
    @Bean
    @Throws(IOException::class)
-   fun indexWriter(@Value("\${vyne.search.directory:./search}") searchIndexPath: String, configFactory: ConfigFactory): IndexWriter {
+   fun indexWriter(@Value("\${vyne.search.directory:\${vyne.app.data.path:orbital_data}/search}") searchIndexPath: String, configFactory: ConfigFactory): IndexWriter {
       val directory = FSDirectory.open(Paths.get(searchIndexPath))
       val indexWriterConfig = IndexWriterConfig(configFactory().config().analyzer)
       val indexWriter = IndexWriter(directory, indexWriterConfig)

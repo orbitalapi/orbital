@@ -24,6 +24,9 @@ data class QueryAnalyticsConfig(
    val pageSize: Int = 20,
 
    // Mutable for testing
+   // Default is actually ${APP_DATA:orbital_data}/historyPersistenceQueue
+   // defined in application.yaml
+   // as we want the APP_DATA to be configurable
    var persistenceQueueStorePath: Path = Paths.get("./historyPersistenceQueue"),
 
    // Mutable for testing

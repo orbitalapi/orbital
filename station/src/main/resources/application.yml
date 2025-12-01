@@ -69,6 +69,7 @@ management:
          org.quartz.jobStore.isClustered: true
 
 vyne:
+   app.data.path: ./orbital_data/
    db:
       enabled: true
    schema:
@@ -77,6 +78,7 @@ vyne:
       publisher:
          method: local
    analytics:
+      persistenceQueueStorePath: ${vyne.app.data.path:orbital_data}/historyPersistenceQueue
       mode: Inprocess
 
 orbital:
