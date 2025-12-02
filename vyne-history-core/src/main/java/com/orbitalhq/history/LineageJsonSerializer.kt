@@ -9,6 +9,7 @@ import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.TypedCollection
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.schemas.Type
+import com.orbitalhq.serde.TaxiJacksonModule
 
 /**
  * Modifies a TypedCollection so that we serialize it's metadata, as well
@@ -47,6 +48,7 @@ object LineageJsonSerializer {
    )
    val objectMapper = jacksonObjectMapper()
       .registerModule(module)
+      .registerModules(TaxiJacksonModule)
       .findAndRegisterModules()
 }
 
