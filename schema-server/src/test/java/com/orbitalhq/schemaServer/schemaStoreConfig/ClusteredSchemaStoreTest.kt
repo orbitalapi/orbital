@@ -3,6 +3,7 @@ package com.orbitalhq.schemaServer.schemaStoreConfig
 import com.hazelcast.client.test.TestHazelcastFactory
 import com.hazelcast.core.HazelcastInstance
 import com.orbitalhq.schema.publisher.ExpiringSourcesStore
+import com.orbitalhq.schemaServer.core.config.ConfigHealthMonitor
 import com.orbitalhq.schemaServer.core.schemaStoreConfig.clustered.DistributedSchemaStoreClient
 import com.orbitalhq.schemaStore.ValidatingSchemaStoreClient
 import com.winterbe.expekt.should
@@ -11,6 +12,7 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
@@ -32,6 +34,9 @@ class ClusteredSchemaStoreTest {
 
    @Autowired
    private lateinit var expiringSourcesStore: ExpiringSourcesStore
+
+   @MockBean
+   private lateinit var healthMonitor: ConfigHealthMonitor
 
    companion object {
       @JvmStatic

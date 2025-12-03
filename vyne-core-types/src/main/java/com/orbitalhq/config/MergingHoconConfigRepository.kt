@@ -14,9 +14,11 @@ import com.typesafe.config.ConfigResolveOptions
 import com.typesafe.config.ConfigResolver
 import com.typesafe.config.ConfigValue
 import mu.KotlinLogging
+import reactor.core.publisher.Flux
 import reactor.core.publisher.Sinks
 import java.io.File
 
+typealias ConfigSourceErrorMessage = String
 /**
  * Models a Config as loaded from a Package,
  * which may or may not contain an error.
@@ -32,7 +34,7 @@ data class ConfigSource<T : Any>(
     * values may not have been loaded yet.
     */
    val typedConfig: T?,
-   val error: String?,
+   val error: ConfigSourceErrorMessage?,
    val configSourceName: String? = null
 ) {
    val hasError = error != null
@@ -62,7 +64,7 @@ abstract class MergingHoconConfigRepository<T : Any>(
    private val loaderTypeName: String = this::class.java.name
    private val configUpdatedSink = Sinks.many().multicast().directBestEffort<T>()
 
-   override val configUpdated = configUpdatedSink.asFlux()
+   override val configUpdated: Flux<T> = configUpdatedSink.asFlux()
 
 
    companion object {

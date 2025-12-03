@@ -15,6 +15,7 @@ import {CommonModule} from '@angular/common';
 import { PackageViewerModule } from '../package-viewer/package-viewer.module';
 import { RequiresAuthorityDirective } from '../requires-authority.directive';
 import { ExpandingPanelSetModule } from '../expanding-panelset/expanding-panel-set.module';
+import { map } from "rxjs/operators";
 
 @Directive()
 export class BaseProjectExplorerContainer {
@@ -42,7 +43,8 @@ export class BaseProjectExplorerContainer {
 
   private loadProjects() {
     this.packages = this.packagesService.listPackages()
-    this.unhealthyLoaders$ = this.packagesService.loadProjectLoadersWithErrors()
+    this.unhealthyLoaders$ = this.packagesService.loadUnhealthyProjects()
+      .pipe(map( e => e.unhealthyLoaders))
   }
 
   showProjectsWithProblems() {

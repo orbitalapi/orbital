@@ -6,12 +6,23 @@
 </div>
 <div class="tab-bar">
   <tui-tabs [(activeItemIndex)]="activeTabIndex">
-    <button *ngFor="let tab of tabs; let i = index"
+    <button *ngFor="let tab of visibleTabs; let i = index"
             tuiTab
             (click)="setActiveTab(i)"
     >
       <img [src]="tab.icon">
       {{tab.label}}
+    </button>
+    <button tuiTab (click)="setActiveTab(4)">
+      <img src="assets/img/tabler/exclamation-circle.svg">
+      Problems
+      <tui-badge
+        *ngIf="packageConfigErrorCount > 0"
+        appearance="negative"
+        size="s"
+      >
+        {{ packageConfigErrorCount }}
+      </tui-badge>
     </button>
   </tui-tabs>
 </div>
@@ -33,3 +44,4 @@
   sidebarMode="Visible"
 ></app-code-viewer>
 <app-project-settings *ngIf="activeTabIndex === 3" [packageDescription]="packageDescription"></app-project-settings>
+<app-project-problem-list *ngIf="activeTabIndex === 4" [packageDescription]="packageDescription"></app-project-problem-list>

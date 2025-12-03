@@ -14,8 +14,8 @@ export class PackagesService {
   constructor(private readonly httpClient: HttpClient) {
   }
 
-  loadProjectLoadersWithErrors():Observable<ProjectLoaderWithStatus[]> {
-    return this.httpClient.get<ProjectLoaderWithStatus[]>(`${environment.serverUrl}/api/projectLoaders/unhealthy`);
+  loadUnhealthyProjects():Observable<UnhealthyProjectsResponse> {
+    return this.httpClient.get<UnhealthyProjectsResponse>(`${environment.serverUrl}/api/projectLoaders/unhealthy`);
   }
 
   loadWorkspaceConfigStatus():Observable<LoaderStatus> {
@@ -78,6 +78,7 @@ export interface SourcePackageDescription {
   publisherType: PublisherType;
   submissionDate: Date;
   packageConfig: GitRepositoryConfig | FileSystemPackageSpec;
+  configurationFileErrors: Record<string, string>
 }
 
 export interface PublisherHealth {
@@ -108,4 +109,10 @@ export interface ProjectLoaderWithStatus {
 export interface LoaderStatus {
   state: 'OK' | 'ERROR' | 'STARTING'
   message: string | null;
+}
+
+interface UnhealthyProjectsResponse {
+  unhealthyLoaders: ProjectLoaderWithStatus[]
+  unhealthyPackages: Record<string, Record<string, string>>
+
 }

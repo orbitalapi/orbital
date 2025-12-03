@@ -3,6 +3,7 @@ package com.orbitalhq.schemaServer.packages
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.PackageMetadata
 import com.orbitalhq.ParsedPackage
+import com.orbitalhq.config.ConfigSourceErrorMessage
 import com.orbitalhq.schema.publisher.PublisherHealth
 import com.orbitalhq.schema.publisher.PublisherType
 import java.time.Instant
@@ -16,13 +17,10 @@ data class SourcePackageDescription(
    val publisherType: PublisherType,
    val editable: Boolean,
    val submissionDate: Instant,
-   val packageConfig: Any? // GitRepositoryConfig or  FileSystemPackageSpec
+   val packageConfig: Any?, // GitRepositoryConfig or  FileSystemPackageSpec
+   val configurationFileErrors: Map<String,ConfigSourceErrorMessage>
 ) {
    val uriPath: String = PackageIdentifier.toUriSafeId(identifier)
-
-   companion object {
-   }
-
 }
 
 data class PackageWithDescription(
@@ -48,7 +46,8 @@ data class PackageWithDescription(
                PublisherType.FileSystem,
                true,
                Instant.now(),
-               null
+               null,
+               emptyMap()
             )
          )
 

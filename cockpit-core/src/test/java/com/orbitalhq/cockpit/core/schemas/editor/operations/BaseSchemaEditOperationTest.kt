@@ -111,7 +111,8 @@ fun SourcePackage.withDescription(editable: Boolean = true): PackageWithDescript
          publisherType = PublisherType.FileSystem,
          editable = editable,
          submissionDate = Instant.now(),
-         packageConfig = null
+         packageConfig = null,
+         configurationFileErrors = emptyMap()
       )
    )
 }

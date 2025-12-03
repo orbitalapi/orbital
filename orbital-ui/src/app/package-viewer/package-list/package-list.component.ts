@@ -7,17 +7,17 @@ import {
   InputSignal,
   Output, signal,
   Signal, WritableSignal
-} from '@angular/core';
-import {TuiAppearanceOptions} from '@taiga-ui/core';
-import { UiCustomisations } from '../../../environments/ui-customisations';
-import {ProjectLoaderWithStatus, PublisherHealthStatus, SourcePackageDescription} from '../packages.service';
-import {TuiStatus} from "@taiga-ui/kit";
+} from "@angular/core";
+import { TuiAppearanceOptions } from "@taiga-ui/core";
+import { UiCustomisations } from "../../../environments/ui-customisations";
+import { ProjectLoaderWithStatus, PublisherHealthStatus, SourcePackageDescription } from "../packages.service";
+import { TuiStatus } from "@taiga-ui/kit";
 
-type SortOrder = 'A-Z' | 'Updated'
+type SortOrder = "A-Z" | "Updated"
 
 @Component({
-  selector: 'app-package-list',
-  styleUrls: ['./package-list.component.scss'],
+  selector: "app-package-list",
+  styleUrls: ["./package-list.component.scss"],
   template: `
     <div class="list-container">
       <div class="header">
@@ -26,7 +26,7 @@ type SortOrder = 'A-Z' | 'Updated'
             @for (so of sortOrders; track so) {
               <button tuiOption (click)="sortOrder.set(so); sortOrderDropdownOpen = false">
                 {{ so }}
-                <tui-icon  *ngIf="so === sortOrder()" icon="@tui.check"></tui-icon>
+                <tui-icon *ngIf="so === sortOrder()" icon="@tui.check"></tui-icon>
               </button>
             }
           </tui-data-list>
@@ -35,7 +35,8 @@ type SortOrder = 'A-Z' | 'Updated'
       <div *ngIf="projectsWithProblems?.length > 0" class="source-package-card error-state"
            (click)="showProjectsWithProblems.emit()">
         <img src="assets/img/tabler/exclamation-circle.svg">
-        <h3 class="package-title">{{ projectsWithProblems.length === 1 ? '1 of your projects has a configuration problem' : projectsWithProblems.length + ' of your projects have configuration problems' }}</h3>
+        <h3
+          class="package-title">{{ projectsWithProblems.length === 1 ? '1 of your projects has a configuration problem' : projectsWithProblems.length + ' of your projects have configuration problems' }}</h3>
       </div>
       <div
         *ngFor="let sourcePackage of sortedPackages()"
@@ -47,7 +48,8 @@ type SortOrder = 'A-Z' | 'Updated'
           {{ sourcePackage.identifier.name }}
           <tui-badge *ngIf="getPackageBadgeState(sourcePackage) === 'error'"
                      [appearance]="getPackageBadgeState(sourcePackage)" size="m"
-                    >{{ getPackageStateBadgeMessage(sourcePackage) }}</tui-badge>
+          >{{ getPackageStateBadgeMessage(sourcePackage) }}
+          </tui-badge>
         </h3>
         <div *ngIf="getPackageStateMessage(sourcePackage)" class="unhealthy-state">
           {{ getPackageStateMessage(sourcePackage) }}
@@ -80,82 +82,91 @@ type SortOrder = 'A-Z' | 'Updated'
 export class PackageListComponent {
 
   @Input()
-  projectsWithProblems: ProjectLoaderWithStatus[]
+  projectsWithProblems: ProjectLoaderWithStatus[];
 
   packages: InputSignal<SourcePackageDescription[]> = input<SourcePackageDescription[]>();
   sortedPackages: Signal<SourcePackageDescription[]> = computed(() => {
     return this.packages()?.sort((a, b) => {
-      if (this.sortOrder() === 'A-Z') {
-        return a.identifier.name.localeCompare(b.identifier.name)
-      } else if (this.sortOrder() === 'Updated') {
+      if (this.sortOrder() === "A-Z") {
+        return a.identifier.name.localeCompare(b.identifier.name);
+      } else if (this.sortOrder() === "Updated") {
         return new Date(b.submissionDate).valueOf() - new Date(a.submissionDate).valueOf();
       }
-    })
-  })
+    });
+  });
 
   @Input()
   packagesWithCompilationErrors: string[] = [];
 
   @Output()
-  showProjectsWithProblems = new EventEmitter()
+  showProjectsWithProblems = new EventEmitter();
 
   @Output()
-  packageClicked = new EventEmitter<SourcePackageDescription>()
+  packageClicked = new EventEmitter<SourcePackageDescription>();
 
-  sortOrders: SortOrder[] = ['A-Z', 'Updated']
-  sortOrder: WritableSignal<SortOrder> = signal('A-Z');
-  sortOrderDropdownOpen: boolean
+  sortOrders: SortOrder[] = ["A-Z", "Updated"];
+  sortOrder: WritableSignal<SortOrder> = signal("A-Z");
+  sortOrderDropdownOpen: boolean;
 
   getSourceDescription(sourcePackage: SourcePackageDescription): string {
     switch (sourcePackage.publisherType) {
-      case 'FileSystem':
-        return 'Read from disk'
-      case 'GitRepo':
-        return 'Git repo';
-      case 'Pushed':
+      case "FileSystem":
+        return "Read from disk";
+      case "GitRepo":
+        return "Git repo";
+      case "Pushed":
         return `Pushed to ${UiCustomisations.productName}`;
     }
   }
 
   getSourceIcon(sourcePackage: SourcePackageDescription) {
     switch (sourcePackage.publisherType) {
-      case 'FileSystem':
-        return 'assets/img/tabler/file.svg'
-      case 'GitRepo':
-        return 'assets/img/tabler/git-merge.svg'
-      case 'Pushed':
-        return 'assets/img/tabler/rss.svg'
+      case "FileSystem":
+        return "assets/img/tabler/file.svg";
+      case "GitRepo":
+        return "assets/img/tabler/git-merge.svg";
+      case "Pushed":
+        return "assets/img/tabler/rss.svg";
     }
   }
 
   getPackageStateBadgeMessage(sourcePackage: SourcePackageDescription): PublisherHealthStatus {
-    if (this.packagesWithCompilationErrors.includes(sourcePackage.identifier.id)) {
-      return "Unhealthy"
+    if (sourcePackage.errorCount > 0 || Object.keys(sourcePackage.configurationFileErrors).length > 0) {
+      return "Unhealthy";
     } else {
-      return sourcePackage.health.status
+      return sourcePackage.health.status;
     }
   }
 
   getPackageStateMessage(sourcePackage: SourcePackageDescription) {
     if (this.getPackageStateBadgeMessage(sourcePackage) !== "Unhealthy") {
-      return null
+      return null;
     }
-    if (this.packagesWithCompilationErrors.includes(sourcePackage.identifier.id)) {
-      return "Contains compilation errors"
-    } else return sourcePackage.health.message
+    const configErrorCount = Object.keys(sourcePackage.configurationFileErrors).length;
+    if (configErrorCount > 0 && sourcePackage.errorCount > 0) {
+      return "Contains compilation and configuration errors";
+    }
+    if (configErrorCount > 0) {
+      return "Contains configuration errors";
+    }
+    if (sourcePackage.errorCount > 0) {
+      return "Contains compilation errors";
+    }
+
+    return sourcePackage.health.message;
   }
 
   getPackageBadgeState(sourcePackage: SourcePackageDescription): TuiAppearanceOptions["appearance"] {
-    if (this.packagesWithCompilationErrors.includes(sourcePackage.identifier.id)) {
+    if (this.getPackageStateBadgeMessage(sourcePackage) === "Unhealthy") {
       return "error";
     } else {
       switch (sourcePackage.health.status) {
         case "Healthy":
-          return "success"
+          return "success";
         case "Unhealthy":
-          return "error"
+          return "error";
         case "Unknown":
-          return "neutral"
+          return "neutral";
       }
     }
   }

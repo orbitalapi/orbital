@@ -1,4 +1,4 @@
-import {TuiSkeleton, TuiTabs} from '@taiga-ui/kit';
+import { TuiBadge, TuiSkeleton, TuiTabs } from "@taiga-ui/kit";
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, OnInit} from '@angular/core';
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {ActivatedRoute, NavigationEnd, Router} from '@angular/router';
@@ -26,6 +26,9 @@ import { ChangelogModule } from '../changelog/changelog.module';
 import { SchemaMemberTypeExplorerModule } from '../schema-member-type-explorer/schema-member-type-explorer.module';
 import { SimpleBadgeListModule } from '../simple-badge-list/simple-badge-list.module';
 import {CommonModule} from '@angular/common';
+import {
+  ProjectProblemListComponent
+} from "src/app/project-explorer/project-problem-list/project-problem-list.component";
 
 @Component({
     selector: 'app-project-explorer',
@@ -43,17 +46,29 @@ import {CommonModule} from '@angular/common';
     CodeViewerModule,
     ProjectSettingsComponent,
     TuiSkeleton,
-  ],
+    ProjectProblemListComponent,
+    TuiBadge
+  ]
 })
 export class ProjectExplorerComponent implements OnInit {
 
   packageWithDescription: PackageWithDescription
   tabs = [
-    {label: 'Schema', icon: 'assets/img/tabler/table.svg', route: 'schema'},
-    {label: 'Changelog', icon: 'assets/img/tabler/git-pull-request.svg', route: 'changelog'},
-    {label: 'Source', icon: 'assets/img/tabler/code.svg', route: 'source'},
-    {label: 'Settings', icon: 'assets/img/tabler/settings.svg', route: 'settings'}
+    {label: 'Schema', icon: 'assets/img/tabler/table.svg', route: 'schema', visible: true},
+    {label: 'Changelog', icon: 'assets/img/tabler/git-pull-request.svg', route: 'changelog', visible: true},
+    {label: 'Source', icon: 'assets/img/tabler/code.svg', route: 'source', visible: true},
+    {label: 'Settings', icon: 'assets/img/tabler/settings.svg', route: 'settings', visible: true},
+    {label: 'Problems', icon: 'assets/img/tabler/settings.svg', route: 'problems', visible: false}, // this tab is manually rendered, as it has a badge
   ]
+
+  get visibleTabs() {
+    return this.tabs.filter(t => t.visible)
+  }
+
+  get packageConfigErrorCount(): number {
+    const errors = this.packageWithDescription?.description?.configurationFileErrors ?? {}
+    return Object.keys(errors).length
+  }
 
   get packageDescription(): SourcePackageDescription {
     return this.packageWithDescription?.description;

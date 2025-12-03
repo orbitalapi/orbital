@@ -373,7 +373,8 @@ class LocalSchemaEditingServiceTest {
          PublisherType.FileSystem,
          true,
          Instant.now(),
-         null
+         null,
+         emptyMap()
       )
    }
 }
@@ -397,7 +398,8 @@ fun SourcePackage.withDescription(editable: Boolean = true): PackageWithDescript
          PublisherType.FileSystem,
          editable,
          Instant.now(),
-         null
+         null,
+         emptyMap()
       )
    )
 }

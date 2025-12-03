@@ -117,7 +117,6 @@ export class AppComponent implements OnInit {
         }
         isFirstSchemaUpdate = false;
         this.updateProjectsWithErrorsNotifications();
-        this.updateDataSourcesWithErrorsNotifications();
       });
 
     this.updateProjectsWithErrorsNotifications();
@@ -142,38 +141,34 @@ export class AppComponent implements OnInit {
 
   }
 
-  private updateDataSourcesWithErrorsNotifications() {
-    this.dbService.getConnections(false)
-      .subscribe(connectionListResponse => {
-        if (connectionListResponse.definitionsWithErrors.length > 0) {
-          this.addAlertIfNotPresent({
-            id: 'connection-config-errors',
-            severity: "Error",
-            message: `Your data sources cannot be loaded`,
-            actionLabel: 'See details',
-            handler: () => {
-              this.router.navigate(["data-source-manager", "problems"]);
-            }
-          })
-        } else {
-          this.removeAlertById('connection-config-errors')
-        }
-      })
-  }
-
   private updateProjectsWithErrorsNotifications() {
     this.destroyLoadProjectLoadersWithErrors.next()
-    this.packagesService.loadProjectLoadersWithErrors()
+    this.packagesService.loadUnhealthyProjects()
       .pipe(takeUntil(this.destroyLoadProjectLoadersWithErrors))
-      .subscribe(projectsWithErrors => {
-        if (projectsWithErrors.length > 0) {
+      .subscribe(unhealthyPackagesResponse => {
+        if (unhealthyPackagesResponse.unhealthyLoaders.length > 0) {
           this.addAlertIfNotPresent({
-            id: 'project-config-errors',
+            id: 'project-loader-error',
             severity: "Error",
-            message: projectsWithErrors.length === 1 ? '1 of your projects has a configuration problem' : `${projectsWithErrors.length} of your projects have configuration problems`,
+            message: `${unhealthyPackagesResponse.unhealthyLoaders.length} of your projects cannot be loaded due to a configuration problem`,
             actionLabel: 'See details',
             handler: () => {
               this.router.navigate(['projects', 'problems'])
+            }
+          })
+        } else {
+          this.removeAlertById('project-loader-error')
+        }
+
+        if (Object.keys(unhealthyPackagesResponse.unhealthyPackages).length > 0) {
+          const errorCount = Object.keys(unhealthyPackagesResponse.unhealthyPackages).length
+          this.addAlertIfNotPresent({
+            id: 'project-config-errors',
+            severity: "Error",
+            message: `${errorCount} of your projects have an issue in their config files`,
+            actionLabel: 'See details',
+            handler: () => {
+              this.router.navigate(['projects'])
             }
           })
         } else {
