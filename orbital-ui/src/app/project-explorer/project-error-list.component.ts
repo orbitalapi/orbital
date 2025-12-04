@@ -3,6 +3,7 @@ import {PackagesService, ProjectLoaderWithStatus} from "../package-viewer/packag
 import {Observable} from "rxjs";
 import {AsyncPipe, CommonModule} from '@angular/common';
 import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
+import { map } from "rxjs/operators";
 
 @Component({
     selector: 'app-project-error-list',
@@ -43,7 +44,8 @@ export class ProjectErrorListComponent {
   readonly unhealthyLoaders$: Observable<ProjectLoaderWithStatus[]>;
 
   constructor(private packagesService: PackagesService,) {
-    this.unhealthyLoaders$ = this.packagesService.loadProjectLoadersWithErrors()
+    this.unhealthyLoaders$ = this.packagesService.loadUnhealthyProjects()
+      .pipe(map(e => e.unhealthyLoaders))
   }
 
 

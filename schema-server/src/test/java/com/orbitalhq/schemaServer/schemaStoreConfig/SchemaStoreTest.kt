@@ -4,6 +4,7 @@ import com.winterbe.expekt.should
 import com.orbitalhq.VersionedSource
 import com.orbitalhq.asPackage
 import com.orbitalhq.schema.publisher.SchemaPublisherTransport
+import com.orbitalhq.schemaServer.core.config.ConfigHealthMonitor
 import com.orbitalhq.schemaServer.core.config.SchemaUpdateNotifier
 import com.orbitalhq.schemaStore.LocalValidatingSchemaStoreClient
 import com.orbitalhq.schemaStore.ValidatingSchemaStoreClient
@@ -12,6 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.springframework.test.context.junit4.SpringRunner
@@ -44,6 +46,9 @@ class SchemaStoreTest {
 
    @Autowired
    private lateinit var schemaPublisher: SchemaPublisherTransport
+
+   @MockBean
+   private lateinit var healthMonitor: ConfigHealthMonitor
 
    companion object {
       @JvmStatic

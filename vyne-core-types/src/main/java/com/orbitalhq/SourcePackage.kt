@@ -186,6 +186,7 @@ object SourcePackageHasher {
 
 typealias UnversionedPackageIdentifier = String
 typealias UriSafePackageIdentifier = String
+typealias VersionedPackageIdentifier = String
 
 @kotlinx.serialization.Serializable
 data class PackageIdentifier(
@@ -202,7 +203,7 @@ data class PackageIdentifier(
    val unversionedId: UnversionedPackageIdentifier = "$organisation/$name"
 
    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-   val id: String = "$unversionedId/$version"
+   val id: VersionedPackageIdentifier = "$unversionedId/$version"
 
    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
    val uriSafeId = toUriSafeId(this)

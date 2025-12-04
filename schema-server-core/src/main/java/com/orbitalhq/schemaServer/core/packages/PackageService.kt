@@ -3,10 +3,13 @@ package com.orbitalhq.schemaServer.core.packages
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.ParsedPackage
 import com.orbitalhq.UriSafePackageIdentifier
+import com.orbitalhq.VersionedPackageIdentifier
+import com.orbitalhq.config.ConfigSourceErrorMessage
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.schema.publisher.ExpiringSourcesStore
 import com.orbitalhq.schema.publisher.PublisherType
 import com.orbitalhq.schema.publisher.loaders.SchemaPackageTransport
+import com.orbitalhq.schemaServer.core.config.ConfigHealthMonitor
 import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.git.GitProjectSpec
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
@@ -33,7 +36,8 @@ class PackageService(
    private val expiringSourcesStore: ExpiringSourcesStore,
    private val schemaStore: SchemaStore,
    private val repositoryManager: ReactiveProjectStoreManager,
-   private val configRepo: WorkspaceConfigLoader
+   private val configRepo: WorkspaceConfigLoader,
+   private val configHealthMonitor: ConfigHealthMonitor
 )  {
 
    companion object {
@@ -92,14 +96,18 @@ class PackageService(
          packageTransport.publisherType,
          packageTransport.isEditable(),
          Instant.now(),
-         packageTransport.config
+         packageTransport.config,
+         emptyMap()
       )
    }
 
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewLoaderStatus}')")
    @GetMapping("/api/projectLoaders/unhealthy")
-   suspend fun getUnhealthyProjectLoaders(): List<UnhealthyLoaderWithStatus> {
-      return this.repositoryManager.unhealthyLoaders
+   suspend fun getUnhealthyProjectLoaders(): UnhealthyPackagesResponse {
+      return UnhealthyPackagesResponse(
+         unhealthyLoaders = this.repositoryManager.unhealthyLoaders,
+         unhealthyPackages = configHealthMonitor.repositoriesWithErrors()
+      )
    }
 
    @PreAuthorize("hasAuthority('${VynePrivileges.BrowseSchema}')")
@@ -122,6 +130,7 @@ class PackageService(
       val loader = repositoryManager.getLoaderOrNull(parsedPackage.identifier)
       val publisherType = loader?.publisherType ?: PublisherType.Pushed
       val editable = loader?.isEditable() ?: false
+      val configErrors = configHealthMonitor.getConfigurationErrors(parsedPackage.identifier)
 
       return SourcePackageDescription(
          parsedPackage.identifier,
@@ -133,6 +142,7 @@ class PackageService(
          editable,
          parsedPackage.metadata.submissionDate,
          loader?.config,
+         configurationFileErrors = configErrors
       )
    }
 
@@ -158,3 +168,15 @@ class PackageService(
       )
    }
 }
+
+
+data class UnhealthyPackagesResponse(
+   /**
+    * Projects we were unable to load (ie., git pull failed)
+    */
+   val unhealthyLoaders: List<UnhealthyLoaderWithStatus>,
+   /**
+    * Projects we were able to load, but their config is invalid (generally a missing env var)
+    */
+   val unhealthyPackages: Map<VersionedPackageIdentifier, Map<String, ConfigSourceErrorMessage>>
+)

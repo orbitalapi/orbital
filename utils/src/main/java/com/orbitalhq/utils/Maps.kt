@@ -31,3 +31,13 @@ fun <K,V> Map<K,V>?.mergeToUnifiedMap(other:Map<K,V>):Map<K,V> {
    map.putAll(other)
    return map
 }
+
+/**
+ * Flattens out a list of map-with-list to a single map, with the inner lists merged
+ */
+fun <A, B> List<Map<A,List<B>>>.flattenMaps(): Map<A, List<B>> {
+   return this
+      .flatMap { it.entries } // Flatten all map entries into a single sequence
+      .groupBy({ it.key }, { it.value }) // Group by key, keeping the list values
+      .mapValues { (_, lists) -> lists.flatten() } // Flatten lists of lists
+}
