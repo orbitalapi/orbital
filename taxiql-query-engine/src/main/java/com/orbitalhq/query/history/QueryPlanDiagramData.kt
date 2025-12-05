@@ -1,8 +1,5 @@
 package com.orbitalhq.query.history
 
-import com.fasterxml.jackson.annotation.JsonIgnore
-import com.orbitalhq.models.OperationResult
-import com.orbitalhq.models.TypeUtils
 import com.orbitalhq.schemas.Field
 import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.Parameter
@@ -10,7 +7,10 @@ import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.SchemaMember
 import com.orbitalhq.schemas.SchemaMemberKind
+import com.orbitalhq.schemas.StreamOperation
+import com.orbitalhq.schemas.TableOperation
 import com.orbitalhq.schemas.Type
+import lang.taxi.services.Operation
 
 
 data class QueryPlanDiagramData(
@@ -105,14 +105,53 @@ enum class DiagramNodeKind(
    QUERY("Query", "help-hexagon"),
    OPERATION("Operation", "switch-horizontal"),
    CONSTANT("Constant", "square-letter-c"),
-   EXPRESSION("Expression", "file-lambda");
+   EXPRESSION("Expression", "file-lambda"),
+
+
+
+   // More specific operation kinds
+   KAFKA_TOPIC("Kafka topic", "Kafka"),
+   API_CALL("Api call", "switch-horizontal"),
+   DB_QUERY("SQL query", "file-type-sql"),
+   DB_TABLE("Db table", "table" ),
+   MONGO_DOCUMENT("Mongo document", "brand-mongodb"),
+   MONGO_QUERY("Mongo query", "brand-mongodb");
+
 
    companion object {
       fun forSchemaMember(member: SchemaMember): DiagramNodeKind {
          return when (member.schemaMemberKind) {
             SchemaMemberKind.QUERY -> QUERY
             SchemaMemberKind.SERVICE -> SERVICE
-            SchemaMemberKind.OPERATION -> OPERATION
+            SchemaMemberKind.OPERATION -> {
+               when (member) {
+                   is StreamOperation -> {
+                      when {
+                         member.hasMetadata("com.orbitalhq.kafka.KafkaOperation") -> DiagramNodeKind.KAFKA_TOPIC
+                         else -> OPERATION
+                      }
+                   }
+
+                  is TableOperation -> {
+                     val returnType = member.returnType.collectionType ?: member.returnType
+                     when {
+                        returnType.hasMetadata(" com.orbitalhq.jdbc.Table") -> DB_TABLE
+                        returnType.hasMetadata("com.orbitalhq.mongo.Collection") -> MONGO_DOCUMENT
+                        else -> OPERATION
+                     }
+                  }
+
+                  is com.orbitalhq.schemas.Operation -> {
+                     when {
+                        member.hasMetadata("taxi.http.HttpOperation") -> API_CALL
+                        else -> OPERATION
+                     }
+                  }
+
+                  else -> OPERATION
+               }
+            }
+
             SchemaMemberKind.TYPE -> {
                val type = member as Type
                when {

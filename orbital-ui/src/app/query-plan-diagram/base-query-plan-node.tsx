@@ -1,10 +1,14 @@
-import * as React from 'react';
-import { Node, Position } from '@xyflow/react';
-import { SchemaNodeContainer } from '../schema-diagram/diagram-nodes/schema-node-container';
-import { LinkHandle } from '../schema-diagram/diagram-nodes/link-handle';
-import { DiagramNode as DiagramNodeData, DiagramNodeKind } from '../services/query.service';
-import { Link } from '../schema-diagram/schema-chart-builder';
-import { NodeBadge } from './node-badge';
+import * as React from "react";
+import { Node, Position } from "@xyflow/react";
+import { SchemaNodeContainer } from "../schema-diagram/diagram-nodes/schema-node-container";
+import { LinkHandle } from "../schema-diagram/diagram-nodes/link-handle";
+import {
+  DiagramNode as DiagramNodeData,
+  diagramNodeIsTypeOfOperation,
+  DiagramNodeKind
+} from "../services/query.service";
+import { Link } from "../schema-diagram/schema-chart-builder";
+import { NodeBadge } from "./node-badge";
 
 export interface BaseQueryPlanNodeData extends Record<string, unknown> {
   node: DiagramNodeData;
@@ -34,7 +38,7 @@ export function BaseQueryPlanNode(
     tableClass,
     badgeClass,
     showLeftHandle = true,
-    showRightHandle = true,
+    showRightHandle = true
   } = config;
 
   // Use badgeLabel from server with fallback to kind
@@ -48,73 +52,73 @@ export function BaseQueryPlanNode(
     <SchemaNodeContainer>
       <table className={tableClass}>
         <thead>
-          <tr>
-            <th colSpan={2}>
-              <div className={'header handle-container'}>
-                {showLeftHandle && (
+        <tr>
+          <th colSpan={2}>
+            <div className={"header handle-container"}>
+              {showLeftHandle && (
+                <LinkHandle
+                  node={node as any}
+                  links={headerInboundLinks}
+                  position={Position.Left}
+                  allowConnectionToFloat
+                />
+              )}
+              <div className={"left-content"}>
+                <span className={"member-name"}>{diagramNode.title}</span>
+                <NodeBadge label={badgeLabel} cssClass={badgeClass} iconId={diagramNode.icon} />
+              </div>
+              {showRightHandle && (
+                <LinkHandle
+                  node={node as any}
+                  links={headerOutboundLinks}
+                  position={Position.Right}
+                  allowConnectionToFloat
+                />
+              )}
+            </div>
+          </th>
+        </tr>
+        </thead>
+        <tbody>
+        {diagramNode.members.map(member => {
+          const memberLinks = node.data.memberLinks[member.handleId] || [];
+          const handleClick = () => {
+            if (node.data.onMemberClick) {
+              node.data.onMemberClick(diagramNode.id, member.handleId);
+            }
+          };
+
+          return (
+            <tr
+              key={member.handleId}
+              onClick={handleClick}
+              style={{ cursor: node.data.onMemberClick ? "pointer" : "default" }}
+            >
+              <td>
+                <div className={"handle-container"}>
+                  {member.name}
                   <LinkHandle
                     node={node as any}
-                    links={headerInboundLinks}
+                    links={memberLinks}
                     position={Position.Left}
                     allowConnectionToFloat
                   />
-                )}
-                <div className={'left-content'}>
-                  <span className={'member-name'}>{diagramNode.title}</span>
-                  <NodeBadge label={badgeLabel} cssClass={badgeClass} iconId={diagramNode.icon} />
                 </div>
-                {showRightHandle && (
+              </td>
+              <td>
+                <div className={"handle-container"}>
+                  {member.typeName}
                   <LinkHandle
                     node={node as any}
-                    links={headerOutboundLinks}
+                    links={memberLinks}
                     position={Position.Right}
                     allowConnectionToFloat
                   />
-                )}
-              </div>
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {diagramNode.members.map(member => {
-            const memberLinks = node.data.memberLinks[member.handleId] || [];
-            const handleClick = () => {
-              if (node.data.onMemberClick) {
-                node.data.onMemberClick(diagramNode.id, member.handleId);
-              }
-            };
-
-            return (
-              <tr
-                key={member.handleId}
-                onClick={handleClick}
-                style={{ cursor: node.data.onMemberClick ? 'pointer' : 'default' }}
-              >
-                <td>
-                  <div className={'handle-container'}>
-                    {member.name}
-                    <LinkHandle
-                      node={node as any}
-                      links={memberLinks}
-                      position={Position.Left}
-                      allowConnectionToFloat
-                    />
-                  </div>
-                </td>
-                <td>
-                  <div className={'handle-container'}>
-                    {member.typeName}
-                    <LinkHandle
-                      node={node as any}
-                      links={memberLinks}
-                      position={Position.Right}
-                      allowConnectionToFloat
-                    />
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
+                </div>
+              </td>
+            </tr>
+          );
+        })}
         </tbody>
       </table>
     </SchemaNodeContainer>
@@ -125,26 +129,28 @@ export function BaseQueryPlanNode(
  * Helper to get CSS class for badge styling based on node kind.
  */
 export function getBadgeClass(kind: DiagramNodeKind): string {
+  if (diagramNodeIsTypeOfOperation(kind)) {
+    return "service";
+  }
   switch (kind) {
-    case 'MODEL':
-      return 'model';
-    case 'SCALAR_TYPE':
-      return 'type';
-    case 'REQUEST_MODEL':
-      return 'request-model';
-    case 'RESPONSE_MODEL':
-      return 'response-model';
-    case 'REQUEST_RESPONSE_MODEL':
-      return 'request-response-model';
-    case 'SERVICE':
-    case 'OPERATION':
-      return 'service';
-    case 'EXPRESSION':
-      return 'expression';
-    case 'CONSTANT':
-      return 'constant';
+    case "MODEL":
+      return "model";
+    case "SCALAR_TYPE":
+      return "type";
+    case "REQUEST_MODEL":
+      return "request-model";
+    case "RESPONSE_MODEL":
+      return "response-model";
+    case "REQUEST_RESPONSE_MODEL":
+      return "request-response-model";
+    case "SERVICE":
+      return "service";
+    case "EXPRESSION":
+      return "expression";
+    case "CONSTANT":
+      return "constant";
     default:
-      return 'model';
+      return "model";
   }
 }
 
@@ -152,25 +158,27 @@ export function getBadgeClass(kind: DiagramNodeKind): string {
  * Helper to get table CSS class for border styling based on node kind.
  */
 export function getTableClass(kind: DiagramNodeKind): string {
+  if (diagramNodeIsTypeOfOperation(kind)) {
+    return "service";
+  }
   switch (kind) {
-    case 'MODEL':
-      return '';  // Default model color
-    case 'SCALAR_TYPE':
-      return 'type';
-    case 'REQUEST_MODEL':
-      return 'request-model';
-    case 'RESPONSE_MODEL':
-      return 'response-model';
-    case 'REQUEST_RESPONSE_MODEL':
-      return 'request-response-model';
-    case 'SERVICE':
-    case 'OPERATION':
-      return 'service';
-    case 'EXPRESSION':
-      return 'expression';
-    case 'CONSTANT':
-      return 'constant';
+    case "MODEL":
+      return "";  // Default model color
+    case "SCALAR_TYPE":
+      return "type";
+    case "REQUEST_MODEL":
+      return "request-model";
+    case "RESPONSE_MODEL":
+      return "response-model";
+    case "REQUEST_RESPONSE_MODEL":
+      return "request-response-model";
+    case "SERVICE":
+      return "service";
+    case "EXPRESSION":
+      return "expression";
+    case "CONSTANT":
+      return "constant";
     default:
-      return '';
+      return "";
   }
 }

@@ -1,4 +1,4 @@
-import { QueryPlanDiagramData, DiagramLink } from '../services/query.service';
+import { QueryPlanDiagramData, DiagramLink, diagramNodeIsTypeOfOperation } from "../services/query.service";
 
 /**
  * Finds all nodes and edges that lead to a specific member (field) in the query plan.
@@ -52,7 +52,7 @@ export function findPathsToMember(
       // If this is an operation/service/expression node with no header links, check member parameters
       // Operations and expressions receive their inputs through member parameters, not the header
       if (node.inboundHeaderLinks.length === 0 &&
-          (node.kind === 'OPERATION' || node.kind === 'SERVICE' || node.kind === 'EXPRESSION')) {
+          (diagramNodeIsTypeOfOperation(node.kind) || node.kind === 'SERVICE' || node.kind === 'EXPRESSION')) {
         // Find all members that are parameters/inputs (have inbound links in their memberLinks)
         for (const member of node.members) {
           const memberLinks = node.memberLinks[member.handleId] || [];

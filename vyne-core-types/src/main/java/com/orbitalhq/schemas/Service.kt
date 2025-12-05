@@ -262,6 +262,8 @@ enum class ServiceKind : Serializable {
             !hasOperations && !hasStreams && hasTables -> Database
             !hasOperations && hasStreams && !hasTables -> Kafka
 
+            // See also: DiagramNodeKind, which is operation focussed...
+
             serviceMetadata.containsMetadata("${VyneTypes.NAMESPACE}.kafka.KafkaService") -> Kafka
             serviceMetadata.containsMetadata("${VyneTypes.NAMESPACE}.jdbc.DatabaseService") -> Database
             serviceMetadata.containsMetadata("${VyneTypes.NAMESPACE}.aws.dynamo.DynamoService") -> Database

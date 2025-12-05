@@ -529,7 +529,31 @@ export type DiagramNodeKind =
   | 'EXPRESSION'
   | 'REQUEST_MODEL'
   | 'RESPONSE_MODEL'
-  | 'REQUEST_RESPONSE_MODEL';
+  | 'REQUEST_RESPONSE_MODEL'
+
+  // Operation specific kinds:
+  | 'KAFKA_TOPIC'
+  | 'API_CALL'
+  | 'DB_QUERY'
+  | 'DB_TABLE'
+  | 'MONGO_DOCUMENT'
+  | 'MONGO_QUERY'
+  ;
+
+export function diagramNodeIsTypeOfOperation(kind: DiagramNodeKind):boolean {
+  switch (kind) {
+    case 'OPERATION':
+    case 'KAFKA_TOPIC':
+    case 'API_CALL':
+    case 'DB_QUERY':
+    case 'DB_TABLE':
+    case 'MONGO_DOCUMENT':
+    case 'MONGO_QUERY':
+      return true;
+    default:
+      return false;
+  }
+}
 
 export interface DiagramNodeMember {
   handleId: string;

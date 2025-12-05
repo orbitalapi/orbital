@@ -1,6 +1,6 @@
 import * as React from 'react';
 import { useCallback } from 'react';
-import {BaseEdge, useStore, getBezierPath, EdgeLabelRenderer} from '@xyflow/react';
+import { BaseEdge, useStore, getBezierPath, EdgeLabelRenderer, getSmoothStepPath } from "@xyflow/react";
 
 import { getEdgeCoords } from './edge-utils';
 
@@ -22,7 +22,7 @@ function SimpleFloatingEdge({ source, target, markerEnd, style, data, sourceHand
     targetPos
   } = getEdgeCoords(sourceNode, sourceHandleId, data.sourceCanFloat, targetNode, targetHandleId, data.targetCanFloat);
 
-  const [edgePath, labelX, labelY] = getBezierPath({
+  const [edgePath, labelX, labelY] = getSmoothStepPath({
     sourceX: sx,
     sourceY: sy,
     sourcePosition: sourcePos,
