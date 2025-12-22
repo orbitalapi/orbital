@@ -1,5 +1,6 @@
 import com.winterbe.expekt.should
 import com.orbitalhq.history.HistoryPersistenceQueue
+import com.orbitalhq.history.mb
 import com.orbitalhq.query.EmptyExchangeData
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.history.LineageRecord
@@ -16,6 +17,7 @@ import reactor.kotlin.test.test
 import java.nio.file.Paths
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.Executors
 
 private val logger = KotlinLogging.logger {}
 
@@ -250,6 +252,24 @@ class HistoryPersistenceQueueTest {
             largeString
          )
       )
+   }
+
+   @Test
+   fun `when record size exceeds maximum then record is dropped`() {
+      val queue = HistoryPersistenceQueue("queryId", tempDir.root.toPath(),
+         blockSize = 4.mb()) // Use a small block size.
+
+      val largeString = "a".repeat(2_000_000) // max size is 1/4th of the block size - so this should exceed, and be dropped
+      queue.storeLineageRecord(
+         LineageRecord(
+            dataSourceId = "dataSourceId",
+            queryId = "queryId",
+            dataSourceType = "foo.bar.Baz",
+            dataSourceJson = largeString
+         )
+      )
+
+      // if there was no error, then we're fine.
    }
 
    @Test

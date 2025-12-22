@@ -1,6 +1,7 @@
 package com.orbitalhq.history.chronicle;
 
 import com.orbitalhq.history.chronicle.replay.ReplayFlux;
+import net.openhft.chronicle.bytes.Bytes;
 import net.openhft.chronicle.bytes.BytesIn;
 import net.openhft.chronicle.queue.ExcerptAppender;
 import net.openhft.chronicle.queue.ExcerptTailer;
@@ -10,6 +11,7 @@ import net.openhft.chronicle.queue.impl.StoreFileListener;
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueue;
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueueBuilder;
 import net.openhft.chronicle.queue.impl.single.SingleChronicleQueueStore;
+import net.openhft.chronicle.wire.DocumentContext;
 import org.reactivestreams.Publisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,12 +37,14 @@ public abstract class AbstractChronicleStore<I, O> implements FluxStore<I, O> {
    private final SingleChronicleQueue queue;
    private final RollCycle rollCycle;
    private SingleChronicleQueueStore wireStore;
+   private final long blockSize;
 
    protected <S extends AbstractChronicleStore<I, O>, B extends AbstractChronicleStoreBuilder<B, S, I>> AbstractChronicleStore(
       AbstractChronicleStoreBuilder<B, S, I> builder) {
       serializer = builder.serializer;
       deserializer = builder.deserializer;
       rollCycle = builder.rollCycle;
+      blockSize = builder.blockSize;
       this.queue = createQueue(builder.path);
    }
 
@@ -48,6 +52,7 @@ public abstract class AbstractChronicleStore<I, O> implements FluxStore<I, O> {
    SingleChronicleQueue createQueue(String path) {
       return SingleChronicleQueueBuilder
          .binary(path)
+         .blockSize(blockSize)
          .rollCycle(rollCycle)
          .storeFileListener((cycle, file) -> {
             if (file != null) {
@@ -78,7 +83,13 @@ public abstract class AbstractChronicleStore<I, O> implements FluxStore<I, O> {
 
    private void storeValue(ExcerptAppender appender, I v) {
       byte[] bytesToStore = serializeValue(v);
-      appender.writeBytes(b -> b.writeInt(bytesToStore.length).write(bytesToStore));
+      long bytesRequired = Integer.SIZE + bytesToStore.length;
+      if (bytesRequired > queue.overlapSize()) {
+         LOGGER.warn("Message of type {} is dropped because it's size ({}) exceeds the maximum ({})", v.getClass().getName(), bytesRequired, queue.overlapSize());
+      } else {
+         appender.writeBytes(b -> b.writeInt(bytesToStore.length).write(bytesToStore));
+      }
+
    }
 
    protected byte[] serializeValue(I v) {
@@ -209,7 +220,8 @@ public abstract class AbstractChronicleStore<I, O> implements FluxStore<I, O> {
       private String path;
       private Function<T, byte[]> serializer;
       private Function<byte[], T> deserializer;
-      private RollCycle rollCycle = RollCycles.DAILY;
+      private RollCycle rollCycle = RollCycles.FAST_HOURLY;
+      private Long blockSize = (long) (256 << 20); // 256MB default. Was 64MB. Note the max size of a record is this value / 4.
 
       protected AbstractChronicleStoreBuilder() {
       }
@@ -221,6 +233,11 @@ public abstract class AbstractChronicleStore<I, O> implements FluxStore<I, O> {
        */
       public B path(String path) {
          this.path = path;
+         return getThis();
+      }
+
+      public B blockSize(Long value) {
+         this.blockSize = value;
          return getThis();
       }
 

@@ -68,7 +68,15 @@ fun Path.deleteRecursively() {
  *
  * Using CBOR seems to work well, and has small performance improvements over json
  */
-class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) : QueryObservabilityWriter {
+class HistoryPersistenceQueue(
+   val queryId: String,
+   val baseQueuePath: Path,
+   // The block size controls how large a message can be persisted.
+   // The max size is roughly 1/4 of the block size.
+   // (Which becomes the "roll Size" in Chronicle)
+   // This is not really intended to be configured, except for in tests
+   val blockSize: Long = 256.mb()
+) : QueryObservabilityWriter {
 
    val queryBasePath: String = baseQueuePath.resolve("$queryId/").toFile().canonicalPath
 
@@ -80,31 +88,41 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) : Qu
 
    init {
       queryResultRowStore =
-         ChronicleStore(baseQueuePath.resolve("$queryBasePath/results/").toFile().canonicalPath,
+         ChronicleStore(
+            baseQueuePath.resolve("$queryBasePath/results/").toFile().canonicalPath,
             { queryResultRow -> queryResultRowToByteArray(queryResultRow) },
-            { bytes -> queryResultRowFromByteArray(bytes) }
+            { bytes -> queryResultRowFromByteArray(bytes) },
+            blockSize
          )
 
       remoteCallResponseStore =
-         ChronicleStore(baseQueuePath.resolve("$queryBasePath/remote/").toFile().canonicalPath,
+         ChronicleStore(
+            baseQueuePath.resolve("$queryBasePath/remote/").toFile().canonicalPath,
             { remoteCallResponse -> remoteCallResponseToByteArray(remoteCallResponse) },
-            { bytes -> remoteCallResponseFromByteArray(bytes) }
+            { bytes -> remoteCallResponseFromByteArray(bytes) },
+            blockSize
          )
 
       lineageRecordStore =
-         ChronicleStore(baseQueuePath.resolve("$queryBasePath/lineage/").toFile().canonicalPath,
+         ChronicleStore(
+            baseQueuePath.resolve("$queryBasePath/lineage/").toFile().canonicalPath,
             { lineageRecord -> lineageRecordToByteArray(lineageRecord) },
-            { bytes -> lineageRecordFromByteArray(bytes) }
+            { bytes -> lineageRecordFromByteArray(bytes) },
+            blockSize
          )
       errorEventStore =
-         ChronicleStore(baseQueuePath.resolve("$queryBasePath/errors/").toFile().canonicalPath,
+         ChronicleStore(
+            baseQueuePath.resolve("$queryBasePath/errors/").toFile().canonicalPath,
             { errorEvent -> errorEventRowToByteArray(errorEvent) },
-            { bytes -> errorEventRowFromByteArray(bytes) }
+            { bytes -> errorEventRowFromByteArray(bytes) },
+            blockSize
          )
 
-      traceEventsStore = ChronicleStore(baseQueuePath.resolve("$queryBasePath/traceEvents/").toFile().canonicalPath,
+      traceEventsStore = ChronicleStore(
+         baseQueuePath.resolve("$queryBasePath/traceEvents/").toFile().canonicalPath,
          { tracingEvent -> traceEventToByteArray(tracingEvent) },
-         { bytes -> traceEventFromByteArray(bytes) }
+         { bytes -> traceEventFromByteArray(bytes) },
+         blockSize
       )
       logger.info { "History queue working in $queryBasePath" }
    }
@@ -123,6 +141,7 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) : Qu
       remoteCallResponseStore.store(remoteCallResponse)
    }
 
+
    override fun storeLineageRecord(lineageRecord: LineageRecord) {
       lineageRecordStore.store(lineageRecord)
    }
@@ -134,12 +153,15 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) : Qu
    override fun storeTraceEvent(event: TraceEventRow) {
       traceEventsStore.store(event)
    }
+
    private fun traceEventToByteArray(traceEvent: TraceEventRow): ByteArray {
       return Cbor.encodeToByteArray(traceEvent)
    }
+
    private fun traceEventFromByteArray(byteArray: ByteArray): TraceEventRow {
       return Cbor.decodeFromByteArray(byteArray)
    }
+
    private fun errorEventRowToByteArray(eventRow: QueryErrorEventRow): ByteArray {
       return Cbor.encodeToByteArray(eventRow)
    }
@@ -147,6 +169,7 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) : Qu
    private fun errorEventRowFromByteArray(byteArray: ByteArray): QueryErrorEventRow {
       return Cbor.decodeFromByteArray(byteArray)
    }
+
    private fun queryResultRowToByteArray(queryResultRow: QueryResultRow): ByteArray {
       return Cbor.encodeToByteArray(queryResultRow)
    }
@@ -181,4 +204,13 @@ class HistoryPersistenceQueue(val queryId: String, val baseQueuePath: Path) : Qu
          logger.warn(exception) { "Unable to delete queue directory for query $queryId - ${exception.message}" }
       }
    }
+}
+
+/**
+ * Returns the number as a number of bytes in a megabyte
+ *
+ * eg: 16.mb()
+ */
+fun Int.mb():Long {
+   return (this shl 20).toLong()
 }

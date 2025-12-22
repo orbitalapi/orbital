@@ -1,6 +1,7 @@
 package com.orbitalhq.history.chronicle;
 
 import net.openhft.chronicle.bytes.BytesIn;
+import net.openhft.chronicle.queue.RollCycle;
 
 import java.util.function.Function;
 
@@ -19,9 +20,11 @@ public class ChronicleStore<T> extends AbstractChronicleStore<T, T> {
     * @param deserializer data deserializer
     */
    public ChronicleStore(String path, Function<T, byte[]> serializer,
-                         Function<byte[], T> deserializer) {
+                         Function<byte[], T> deserializer,
+                         Long blockSize) {
       super(ChronicleStore.<T>newBuilder()
          .path(path)
+         .blockSize(blockSize)
          .serializer(serializer)
          .deserializer(deserializer));
    }
