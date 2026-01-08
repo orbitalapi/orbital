@@ -11,6 +11,7 @@ import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Rule
 import org.junit.Test
+import org.springframework.web.client.RestClient
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.kotlin.test.test
 import reactor.test.StepVerifier
@@ -42,7 +43,7 @@ class ExpiringSourcesStoreTest {
 
    @Test
    fun `registration should set last heartbeat`() {
-      val httpKeepALiveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(webClientBuilder = WebClient.builder())
+      val httpKeepALiveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(restClientBuilder = RestClient.builder())
       val store = ExpiringSourcesStore(keepAliveStrategyMonitors = listOf(httpKeepALiveStrategyMonitor))
       store.submitSources(sourcePackageSubmission)
       httpKeepALiveStrategyMonitor.lastPingTimes.size.should.equal(1)
@@ -62,7 +63,7 @@ class ExpiringSourcesStoreTest {
       }
 
       val httpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(
-         webClientBuilder = WebClient.builder(),
+         restClientBuilder = RestClient.builder(),
          httpRequestTimeout = Duration.ofSeconds(httpPollPeriodInSecsForRegistration)
       )
 

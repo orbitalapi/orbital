@@ -31,6 +31,7 @@
       <module>schema-spring</module>
       <module>schema-http-common</module>
       <module>schema-publisher-cli</module>
+       <module>schema-publisher-spring-boot-starter</module>
    </modules>
 
 </project>

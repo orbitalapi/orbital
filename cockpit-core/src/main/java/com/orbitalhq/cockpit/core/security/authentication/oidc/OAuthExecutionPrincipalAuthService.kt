@@ -56,7 +56,7 @@ class OAuthExecutionPrincipalAuthService(
       val issuerUrl =  securityConfig.oidcDiscoveryUrl ?: securityConfig.issuerUrl ?: throw IllegalArgumentException("Either oidcDiscoveryUrl or issuerUrl must be provided!")
       val issuer = Issuer(issuerUrl)
       logger.info { "Fetching the OpenId Configuration from => ${OIDCProviderMetadata.resolveURL(issuer)}" }
-      val retryTemplate = RetryConfig.simpleRetryWithBackoff(Duration.ofSeconds(15))
+      val retryTemplate = RetryConfig.simpleRetryWithBackoff(Duration.ofSeconds(15), "fetching-oidc-config")
       return retryTemplate.execute<String, Exception> {
          OIDCProviderMetadata.resolve(issuer).tokenEndpointURI.toString()
       }

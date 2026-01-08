@@ -23,6 +23,7 @@ import org.springframework.http.codec.cbor.Jackson2CborEncoder
 import org.springframework.http.codec.json.Jackson2JsonDecoder
 import org.springframework.messaging.rsocket.RSocketStrategies
 import org.springframework.messaging.rsocket.annotation.support.RSocketMessageHandler
+import org.springframework.web.client.RestClient
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.util.pattern.PathPatternRouteMatcher
 import java.time.Duration
@@ -83,10 +84,9 @@ class SchemaServerSourceProviderConfiguration {
    fun httpPollKeepAliveStrategyMonitor(
       @Value("\${vyne.schema.management.keepAlivePollFrequency:1s}") keepAlivePollFrequency: Duration,
       @Value("\${vyne.schema.management.httpRequestTimeout:30s}") httpRequestTimeout: Duration,
-      webClientBuilder: WebClient.Builder
    ): HttpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(
       pollFrequency = keepAlivePollFrequency,
-      webClientBuilder = webClientBuilder
+      restClientBuilder = RestClient.builder()
    )
 
    @Bean

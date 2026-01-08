@@ -4,17 +4,15 @@ import arrow.core.Either
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.schema.publisher.KeepAlivePackageSubmission
-import com.orbitalhq.schema.publisher.PublisherConfiguration
 import com.orbitalhq.schema.publisher.SchemaPublisherTransport
 import com.orbitalhq.schema.publisher.SourceSubmissionResponse
 import com.orbitalhq.schemas.Schema
 import lang.taxi.CompilationException
 import mu.KotlinLogging
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.retry.RetryCallback
 import org.springframework.retry.RetryContext
+import org.springframework.retry.RetryListener
 import org.springframework.retry.backoff.FixedBackOffPolicy
-import org.springframework.retry.listener.RetryListenerSupport
 import org.springframework.retry.policy.SimpleRetryPolicy
 import org.springframework.retry.support.RetryTemplate
 import java.time.Duration
@@ -23,10 +21,10 @@ private val logger = KotlinLogging.logger {}
 
 class HttpSchemaPublisher(
    private val httpSchemaSubmitter: HttpSchemaSubmitter,
-   @Value("\${vyne.schema.publishRetryInterval:3s}") private val publishRetryInterval: Duration
+   private val publishRetryInterval: Duration
 ) :
    SchemaPublisherTransport {
-   private val retryTemplate: RetryTemplate = RetryConfig.simpleRetryWithBackoff(publishRetryInterval)
+   private val retryTemplate: RetryTemplate = RetryConfig.simpleRetryWithBackoff(publishRetryInterval, "schema-publication")
 
    init {
       logger.info("Initializing client  vyne.schema.publishRetryInterval=${publishRetryInterval}")
@@ -56,8 +54,7 @@ class HttpSchemaPublisher(
 }
 
 object RetryConfig {
-   const val RETRYABLE_PROCESS_NAME = "processName"
-   fun simpleRetryWithBackoff(publishRetryInterval: Duration): RetryTemplate {
+   fun simpleRetryWithBackoff(publishRetryInterval: Duration, processName: String): RetryTemplate {
       val retryPolicy = SimpleRetryPolicy()
       retryPolicy.maxAttempts = Integer.MAX_VALUE
 
@@ -67,17 +64,14 @@ object RetryConfig {
       val template = RetryTemplate()
       template.setRetryPolicy(retryPolicy)
       template.setBackOffPolicy(backOffPolicy)
-      template.registerListener(object : RetryListenerSupport() {
+      template.registerListener(object : RetryListener {
          override fun <T, E : Throwable> onError(
             context: RetryContext?,
             callback: RetryCallback<T, E>?,
             throwable: Throwable?
          ) {
-            logger.warn(
-               "Operation {} failed with exception {}, will continue to retry", context!!.getAttribute(
-                  RETRYABLE_PROCESS_NAME
-               ), throwable!!.message
-            )
+            val message = throwable?.message ?: "An unknown error"
+            logger.warn { "Operation $processName failed with exception $message, will continue to retry" }
          }
       })
       return template

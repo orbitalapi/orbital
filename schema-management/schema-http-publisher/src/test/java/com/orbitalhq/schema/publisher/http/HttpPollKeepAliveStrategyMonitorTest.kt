@@ -13,6 +13,7 @@ import okhttp3.mockwebserver.RecordedRequest
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.springframework.web.client.RestClient
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.test.StepVerifier
 import java.time.Duration
@@ -31,7 +32,7 @@ class HttpPollKeepAliveStrategyMonitorTest {
       val invokedPaths = ConcurrentHashMap<String, Int>()
       server.prepareResponse(invokedPaths, "/ping" to response(jackson.writeValueAsString(mapOf("OK" to true))))
 
-      val httpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(webClientBuilder = WebClient.builder())
+      val httpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(restClientBuilder = RestClient.builder())
       val publisherWithHttpPoll = publisherConfig()
       httpPollKeepAliveStrategyMonitor.monitor(publisherWithHttpPoll)
 
@@ -48,7 +49,7 @@ class HttpPollKeepAliveStrategyMonitorTest {
    @Test
    fun `When a publisher responds with 204 then it is kept as active`() {
       server.prepareResponse { response -> response.setResponseCode(204) }
-      val httpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(webClientBuilder = WebClient.builder())
+      val httpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(restClientBuilder = RestClient.builder())
       val publisherWithHttpPoll = publisherConfig()
       httpPollKeepAliveStrategyMonitor.monitor(publisherWithHttpPoll)
 
@@ -68,7 +69,7 @@ class HttpPollKeepAliveStrategyMonitorTest {
             .setResponseCode(301)
       }
 
-      val httpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(webClientBuilder = WebClient.builder())
+      val httpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(restClientBuilder = RestClient.builder())
       val publisherWithHttpPoll = publisherConfig()
       httpPollKeepAliveStrategyMonitor.monitor(publisherWithHttpPoll)
 
@@ -96,7 +97,7 @@ class HttpPollKeepAliveStrategyMonitorTest {
       }
 
       val httpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(
-         webClientBuilder = WebClient.builder(),
+         restClientBuilder = RestClient.builder(),
          httpRequestTimeout = Duration.ofSeconds(5)
       )
       val publisherWithHttpPoll = publisherConfig()
