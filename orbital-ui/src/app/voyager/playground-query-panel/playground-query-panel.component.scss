@@ -43,6 +43,11 @@
   }
 }
 
+app-query-plan-diagram {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
 app-query-results-panel {
   display: flex;
   flex-direction: column;
