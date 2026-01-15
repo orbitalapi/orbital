@@ -77,7 +77,7 @@ export class SidenavComponent implements OnInit {
       requiredAuthority: VynePrivileges.ViewAuthenticationTokens
     },
     {
-      title: 'Designer',
+      title: 'Model designer',
       icon: 'assets/img/tabler/tools.svg',
       route: 'designer',
       testId: 'designer',
