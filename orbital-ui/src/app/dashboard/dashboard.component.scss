@@ -39,6 +39,11 @@
   }
 }
 
+.button-list {
+  display: flex;
+  gap: 1rem;
+}
+
 section {
   margin-top: 1.5rem;
   h3 {

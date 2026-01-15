@@ -2,27 +2,39 @@
   title="Welcome to {{ uiConfig.productName }}"
   description="View your data source health status, endpoint stats and recent changes made to schemas"
 >
-  <ng-container ngProjectAs="buttons" *appRequiresAuthority="['RunQuery']">
-    <button
-      tuiButton
-      size="m"
-      iconStart="@tui.pencil"
-      appearance="primary"
-      routerLink="/query/editor"
-    >
-      Create a query
-    </button>
-  </ng-container>
-  <tui-notification size="m" (close)="onHideNotification()" appearance="info" *ngIf="!hideLiveReloadNotification"><div>
-    <strong>Live reload</strong>
-    <div>The developer environment of {{ uiConfig.productName }} is configured with live reload, so any changes you make
-      in your taxi project are automatically picked up and detected inside of {{ uiConfig.productName }}
+  <ng-container ngProjectAs="buttons">
+    <div class="button-list">
+      <button
+        tuiButton
+        size="m"
+        iconStart="@tui.pencil"
+        appearance="primary"
+        routerLink="/query/editor"
+        *appRequiresAuthority="['RunQuery']"
+      >
+        Create a query
+      </button>
+      <button
+        tuiButton
+        size="m"
+        iconStart="assets/img/tabler/plug.svg"
+        appearance="primary"
+        routerLink="/data-source-manager/add"
+      >
+        Connect a data source
+      </button>
     </div>
-  </div> <button tuiIconButton iconStart="@tui.x"></button></tui-notification>
+  </ng-container>
+  <!--  <tui-notification size="m" (close)="onHideNotification()" appearance="info" *ngIf="!hideLiveReloadNotification"><div>-->
+  <!--    <strong>Live reload</strong>-->
+  <!--    <div>The developer environment of {{ uiConfig.productName }} is configured with live reload, so any changes you make-->
+  <!--      in your taxi project are automatically picked up and detected inside of {{ uiConfig.productName }}-->
+  <!--    </div>-->
+  <!--  </div> <button tuiIconButton iconStart="@tui.x"></button></tui-notification>-->
 
   <div class="grid-container grid-cols-2">
     <app-data-sources-card *appRequiresAuthority="['ViewConnections']"></app-data-sources-card>
-    <app-changelog-card  *appRequiresAuthority="['BrowseSchema']"></app-changelog-card>
+    <app-changelog-card *appRequiresAuthority="['BrowseSchema']"></app-changelog-card>
   </div>
 
   <section *ngIf="(contentCards$ | async)?.length > 0">
