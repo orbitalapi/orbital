@@ -158,7 +158,7 @@ export class DataSourcePanelComponent {
       icon: '/assets/img/data-source-icons/aws-icon.svg',
       externalLink: UiCustomisations.docsLinks.sqsConnection
     },
-    {label: 'JsonSchema', id: 'jsonSchema', icon: '/assets/img/data-source-icons/json-icon.svg', isDisabled: true},
+    // {label: 'JsonSchema', id: 'jsonSchema', icon: '/assets/img/data-source-icons/json-icon.svg', isDisabled: true},
     // { 'label' : 'XML Schema (xsd)', id: 'xsd'},
   ]
 
