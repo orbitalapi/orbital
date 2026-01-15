@@ -68,7 +68,7 @@ import { sanitiseNamespace } from '../../../utils/utils';
               </div>
               <div *ngSwitchCase="1" class="tab-panel">
                 <tui-input [(ngModel)]="swaggerOptions.url" (ngModelChange)="swaggerOptions.swagger = null;" name="url" required>
-                  Swagger / OpenAPI URL
+                  OpenAPI URL
                 </tui-input>
               </div>
             </div>

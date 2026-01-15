@@ -135,7 +135,7 @@ export class DataSourcePanelComponent {
 
   schemaTypes: SchemaType[] = [
     // { 'label' : 'Taxi', id: 'taxi'},
-    {label: 'Swagger / OpenAPI', id: 'swagger', icon: '/assets/img/data-source-icons/open-api-icon.svg'},
+    {label: 'OpenAPI', id: 'swagger', icon: '/assets/img/data-source-icons/open-api-icon.svg'},
     {label: 'Database table', id: 'databaseTable', icon: '/assets/img/tabler/database.svg'},
     {label: 'Kafka topic', id: 'kafkaTopic', icon: '/assets/img/data-source-icons/kafka-icon.svg'},
     {label: 'Protobuf', id: 'protobuf', icon: '/assets/img/data-source-icons/protobuf-icon.svg'},
