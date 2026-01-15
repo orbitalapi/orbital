@@ -62,7 +62,7 @@ This starter is currently scaffolded with placeholder implementations. The follo
    - Taxi files in classpath (META-INF/taxi/*.taxi)
    - Spring components converted via java2taxi
 3. **Schema Loading**: Load and parse discovered schemas
-4. **Publication**: Publish schemas using the SchemaPublisherService
+   4. **Publication**: Publish schemas using the SchemaPublisherService
 
 ## Architecture
 

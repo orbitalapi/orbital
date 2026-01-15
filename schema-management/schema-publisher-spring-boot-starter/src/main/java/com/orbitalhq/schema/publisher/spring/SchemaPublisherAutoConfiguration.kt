@@ -49,10 +49,10 @@ class SchemaPublisherAutoConfiguration {
    @Bean
    @ConditionalOnMissingBean(name = ["schemaPublisherRestClient"])
    fun schemaPublisherRestClient(properties: SchemaPublisherProperties): RestClient {
-      logger.debug { "Creating RestClient for schema server at: ${properties.url}" }
+      logger.debug { "Creating RestClient for schema server at: ${properties.orbitalUrl}" }
 
       return RestClient.builder()
-         .baseUrl(properties.url)
+         .baseUrl(properties.orbitalUrl)
          .build()
    }
 
