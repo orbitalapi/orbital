@@ -9,6 +9,7 @@ import com.orbitalhq.config.MergingHoconConfigRepository
 import com.orbitalhq.config.SimpleConfigSourceWriterProvider
 import com.orbitalhq.connectors.VyneConnectionsConfig
 import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
+import com.orbitalhq.connectors.config.redis.RedisConfiguration
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import io.github.config4k.extract
@@ -85,6 +86,19 @@ class SourceLoaderConnectorsRegistry(
 
    fun hazelcastConfigurationForConnectionName(connectionName: String): HazelcastConfiguration? {
       return load().hazelcast[connectionName]
+   }
+
+   fun defaultRedisConfiguration(): RedisConfiguration? {
+      val redisConnectors = load().redis
+      val defaultConnections = redisConnectors.values.filter { it.default }
+      if (defaultConnections.size > 1) {
+         throw IllegalArgumentException("Only one Redis connection can be defined as default - ${defaultConnections.joinToString { defaultConn -> defaultConn.connectionName }} marked as default!")
+      }
+      return defaultConnections.firstOrNull()
+   }
+
+   fun redisConfigurationForConnectionName(connectionName: String): RedisConfiguration? {
+      return load().redis[connectionName]
    }
 }
 

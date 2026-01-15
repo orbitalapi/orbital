@@ -6,6 +6,7 @@ import com.orbitalhq.connectors.config.hazelcast.HazelcastConfiguration
 import com.orbitalhq.connectors.config.jdbc.DefaultJdbcConnectionConfiguration
 import com.orbitalhq.connectors.config.kafka.KafkaConnectionConfiguration
 import com.orbitalhq.connectors.config.mongodb.MongoConnectionConfiguration
+import com.orbitalhq.connectors.config.redis.RedisConfiguration
 import com.orbitalhq.connectors.registry.ConnectorConfiguration
 import kotlinx.serialization.Serializable
 
@@ -28,9 +29,10 @@ data class ConnectionsConfig(
    val hazelcast: Map<String,HazelcastConfiguration> = emptyMap(),
    val mongo: Map<String, MongoConnectionConfiguration> = emptyMap(),
    val serviceBus: Map<String, ServiceBusConnectionConfiguration> = emptyMap(),
+   val redis: Map<String, RedisConfiguration> = emptyMap(),
 ) {
    fun listAll(): List<ConnectorConfiguration> {
-      return jdbc.values + kafka.values + aws.values + hazelcast.values + mongo.values + serviceBus.values
+      return jdbc.values + kafka.values + aws.values + hazelcast.values + mongo.values + serviceBus.values + redis.values
    }
 
    val jdbcConnectionsHash = jdbc.hashCode()

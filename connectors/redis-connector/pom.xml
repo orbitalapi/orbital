@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <parent>
+      <groupId>com.orbitalhq</groupId>
+      <artifactId>connectors</artifactId>
+      <version>0.37.0-SNAPSHOT</version>
+   </parent>
+
+   <artifactId>redis-connector</artifactId>
+
+   <properties>
+      <maven.compiler.source>17</maven.compiler.source>
+      <maven.compiler.target>17</maven.compiler.target>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+      <lettuce.version>6.3.1.RELEASE</lettuce.version>
+   </properties>
+
+   <dependencies>
+      <!-- Lettuce Redis client (reactive) -->
+      <dependency>
+         <groupId>io.lettuce</groupId>
+         <artifactId>lettuce-core</artifactId>
+         <version>${lettuce.version}</version>
+      </dependency>
+
+      <!-- Orbital dependencies -->
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>schema-consumer-api</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>connectors-core</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxiql-query-engine</artifactId>
+         <version>${project.version}</version>
+         <exclusions>
+            <exclusion>
+               <artifactId>log4j-to-slf4j</artifactId>
+               <groupId>org.apache.logging.log4j</groupId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+
+      <!-- Reactive support -->
+      <dependency>
+         <groupId>io.projectreactor.kotlin</groupId>
+         <artifactId>reactor-kotlin-extensions</artifactId>
+      </dependency>
+
+      <!-- Test dependencies -->
+      <dependency>
+         <groupId>app.cash.turbine</groupId>
+         <artifactId>turbine-jvm</artifactId>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>taxiql-query-engine</artifactId>
+         <version>${project.version}</version>
+         <type>test-jar</type>
+         <scope>test</scope>
+         <exclusions>
+            <exclusion>
+               <artifactId>log4j-to-slf4j</artifactId>
+               <groupId>org.apache.logging.log4j</groupId>
+            </exclusion>
+         </exclusions>
+      </dependency>
+      <dependency>
+         <groupId>com.orbitalhq</groupId>
+         <artifactId>vyne-core-types</artifactId>
+         <version>${project.version}</version>
+         <scope>test</scope>
+         <type>test-jar</type>
+      </dependency>
+
+      <!-- Testcontainers for Redis integration tests -->
+      <dependency>
+         <groupId>org.testcontainers</groupId>
+         <artifactId>testcontainers</artifactId>
+         <scope>test</scope>
+      </dependency>
+
+      <!-- Logging for tests -->
+      <dependency>
+         <groupId>ch.qos.logback</groupId>
+         <artifactId>logback-core</artifactId>
+         <version>1.4.12</version>
+         <scope>test</scope>
+      </dependency>
+      <dependency>
+         <groupId>ch.qos.logback</groupId>
+         <artifactId>logback-classic</artifactId>
+         <version>1.4.12</version>
+         <scope>test</scope>
+      </dependency>
+   </dependencies>
+</project>
