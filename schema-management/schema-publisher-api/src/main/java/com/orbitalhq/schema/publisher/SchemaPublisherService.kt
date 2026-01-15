@@ -21,7 +21,7 @@ import reactor.core.publisher.Sinks
  *
  */
 class SchemaPublisherService(
-   private val publisherId: String,
+   val publisherId: String,
    private val transport: SchemaPublisherTransport
 ) {
 
@@ -103,7 +103,7 @@ class SchemaPublisherService(
             transport.buildKeepAlivePackage(submission, publisherId)
          ).subscribe {
             responsesSink.emitNext(it) { signalType, emitResult ->
-               logger.warn { "Receved a source submission response, but failed to emit it on our internal responsesSink: $signalType $emitResult" }
+               logger.warn { "Received a source submission response, but failed to emit it on our internal responsesSink: $signalType $emitResult" }
                true
             }
          }

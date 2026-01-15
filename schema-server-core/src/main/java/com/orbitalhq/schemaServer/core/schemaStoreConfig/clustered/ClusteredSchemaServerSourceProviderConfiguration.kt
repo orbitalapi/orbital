@@ -15,6 +15,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.web.client.RestClient
 import org.springframework.web.reactive.function.client.WebClient
 import java.time.Duration
 
@@ -46,12 +47,11 @@ class ClusteredSchemaServerSourceProviderConfiguration {
    fun httpPollKeepAliveStrategyMonitor(
       @Value("\${vyne.schema.management.keepAlivePollFrequency:1s}") keepAlivePollFrequency: Duration,
       @Value("\${vyne.schema.management.httpRequestTimeout:30s}") httpRequestTimeout: Duration,
-      webClientBuilder: WebClient.Builder,
       hazelcastInstance: HazelcastInstance
    ): HttpPollKeepAliveStrategyMonitor = HttpPollKeepAliveStrategyMonitor(
       pollFrequency = keepAlivePollFrequency,
       httpRequestTimeout = httpRequestTimeout,
-      webClientBuilder = webClientBuilder,
+      restClientBuilder = RestClient.builder(),
       lastPingTimes = hazelcastInstance.getMap("httpPollKeepAliveStrategyMonitorPingMap")
    )
 

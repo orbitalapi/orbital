@@ -1,0 +1,39 @@
+{
+  "groups": [
+    {
+      "name": "orbital.schema.publisher",
+      "type": "com.orbitalhq.schema.publisher.spring.SchemaPublisherProperties",
+      "sourceType": "com.orbitalhq.schema.publisher.spring.SchemaPublisherProperties",
+      "description": "Configuration properties for Orbital Schema Publisher."
+    }
+  ],
+  "properties": [
+    {
+      "name": "orbital.schema.publisher.enabled",
+      "type": "java.lang.Boolean",
+      "sourceType": "com.orbitalhq.schema.publisher.spring.SchemaPublisherProperties",
+      "defaultValue": true,
+      "description": "Whether schema publishing is enabled."
+    },
+    {
+      "name": "orbital.schema.publisher.publisher-id",
+      "type": "java.lang.String",
+      "sourceType": "com.orbitalhq.schema.publisher.spring.SchemaPublisherProperties",
+      "description": "The unique identifier for this publisher. Defaults to spring.application.name if not specified."
+    },
+    {
+      "name": "orbital.schema.publisher.url",
+      "type": "java.lang.String",
+      "sourceType": "com.orbitalhq.schema.publisher.spring.SchemaPublisherProperties",
+      "defaultValue": "http://localhost:9022",
+      "description": "The URL of the schema server."
+    },
+    {
+      "name": "orbital.schema.publisher.connection-timeout",
+      "type": "java.lang.Long",
+      "sourceType": "com.orbitalhq.schema.publisher.spring.SchemaPublisherProperties",
+      "defaultValue": 5000,
+      "description": "Connection timeout in milliseconds."
+    }
+  ]
+}

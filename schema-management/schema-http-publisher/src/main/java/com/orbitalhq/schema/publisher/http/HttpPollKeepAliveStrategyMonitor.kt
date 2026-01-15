@@ -3,7 +3,8 @@ package com.orbitalhq.schema.publisher.http
 import com.orbitalhq.schema.publisher.*
 import com.orbitalhq.utils.RetryFailOnSerializeEmitHandler
 import mu.KotlinLogging
-import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.http.client.SimpleClientHttpRequestFactory
+import org.springframework.web.client.RestClient
 import reactor.core.publisher.*
 import reactor.core.scheduler.Scheduler
 import reactor.core.scheduler.Schedulers
@@ -25,12 +26,18 @@ class HttpPollKeepAliveStrategyMonitor(
    private val httpRequestTimeout: Duration = Duration.ofSeconds(30),
    scheduler: Scheduler = Schedulers.single(),
    internal val lastPingTimes: ConcurrentMap<PublisherConfiguration, Instant> = ConcurrentHashMap(),
-   private val webClientBuilder: WebClient.Builder
+   private val restClientBuilder: RestClient.Builder = RestClient.builder()
 ) : KeepAliveStrategyMonitor {
    private val sink = Sinks.many().multicast()
       .onBackpressureBuffer<PublisherHealthUpdateMessage>()
 
    override val healthUpdateMessages: Flux<PublisherHealthUpdateMessage> = sink.asFlux()
+   private val restClient = restClientBuilder.requestFactory(
+      SimpleClientHttpRequestFactory().apply {
+         setConnectTimeout(httpRequestTimeout)
+         setReadTimeout(httpRequestTimeout)
+      }
+   ).build()
 
    init {
       if (pollFrequency.isZero) {
@@ -44,72 +51,64 @@ class HttpPollKeepAliveStrategyMonitor(
                }
             }
             .flatMap { servicesToPing ->
-
                val pingResponses = servicesToPing.map { (publisherConfig, _) ->
-                  performKeepAliveCheck(publisherConfig)
+                  Mono.fromCallable {
+                     performKeepAliveCheck(publisherConfig)
+                  }
                }
                Flux.concat(pingResponses)
-//               lastPingTimes.forEach { (publisherConfig, lastTimeStamp) ->
-//                  val now = Instant.now()
-//                  (publisherConfig.keepAlive as HttpPollKeepAlive).run {
-//                     if (lastTimeStamp.isBefore(now.minus(this.pollFrequency)))
-//                     // set the lastUpdated time for the entry
-//                        lastPingTimes[publisherConfig] = Instant.MAX
-//                     logger.info { "Performing keep alive check for $publisherConfig" }
-//
-//                  }
-//               }
             }
             .subscribe()
       }
    }
-
-   private fun performKeepAliveCheck(publisherConfig: PublisherConfiguration): Mono<Pair<PublisherConfiguration, Boolean>> {
+   private fun performKeepAliveCheck(publisherConfig: PublisherConfiguration): Pair<PublisherConfiguration, Boolean> {
       val keepAlive = publisherConfig.keepAlive as HttpPollKeepAlive
-      return webClientBuilder
-         .build()
-         .get()
-         .uri(keepAlive.pollUrl)
-         .retrieve()
-         .toBodilessEntity()
-         .timeout(httpRequestTimeout)
-         .map { entity ->
-            if (!entity.statusCode.is2xxSuccessful) {
-               logger.warn { "Keep alive call for $publisherConfig returned ${entity.statusCode} so marking the publisher as unhealthy" }
-               lastPingTimes.remove(publisherConfig)?.let { _ ->
-                  sink.emitNext(
-                     PublisherHealthUpdateMessage(
-                     publisherConfig.publisherId,
-                     PublisherHealth(
-                        PublisherHealth.Status.Unhealthy,
-                        "Keep alive call returned ${entity.statusCode}"
-                     )
-                  ), RetryFailOnSerializeEmitHandler)
-               }
-               publisherConfig to false
-            } else {
-               lastPingTimes[publisherConfig] = Instant.now()
-               publisherConfig to true
-            }
-         }
-         .doOnError { error ->
-            logger.error(error) {
-               "Keep alive call for $publisherConfig returned Error so marking the publisher as unhealthy"
-            }
+
+      return try {
+         val response = restClient
+            .get()
+            .uri(keepAlive.pollUrl)
+            .retrieve()
+            .toBodilessEntity()
+
+         if (!response.statusCode.is2xxSuccessful) {
+            logger.warn { "Keep alive call for $publisherConfig returned ${response.statusCode} so marking the publisher as unhealthy" }
             lastPingTimes.remove(publisherConfig)?.let { _ ->
                sink.emitNext(
                   PublisherHealthUpdateMessage(
+                     publisherConfig.publisherId,
+                     PublisherHealth(
+                        PublisherHealth.Status.Unhealthy,
+                        "Keep alive call returned ${response.statusCode}"
+                     )
+                  ),
+                  RetryFailOnSerializeEmitHandler
+               )
+            }
+            publisherConfig to false
+         } else {
+            lastPingTimes[publisherConfig] = Instant.now()
+            publisherConfig to true
+         }
+      } catch (error: Exception) {
+         logger.error(error) {
+            "Keep alive call for $publisherConfig returned Error so marking the publisher as unhealthy"
+         }
+         lastPingTimes.remove(publisherConfig)?.let { _ ->
+            sink.emitNext(
+               PublisherHealthUpdateMessage(
                   publisherConfig.publisherId,
                   PublisherHealth(
                      PublisherHealth.Status.Unhealthy,
                      "Keep alive call returned error: ${error.message}"
                   )
-               ), RetryFailOnSerializeEmitHandler
-               )
-            }
+               ),
+               RetryFailOnSerializeEmitHandler
+            )
          }
+         publisherConfig to false
+      }
    }
-
    override fun appliesTo(keepAlive: KeepAliveStrategy) = keepAlive is HttpPollKeepAlive
 
    override fun monitor(publisherConfiguration: PublisherConfiguration) {
