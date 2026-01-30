@@ -1,6 +1,8 @@
 package com.orbitalhq.config
 
 import arrow.core.Either
+import arrow.core.left
+import arrow.core.right
 import com.google.common.base.Throwables
 import com.google.common.cache.CacheBuilder
 import com.google.common.cache.CacheLoader
@@ -19,6 +21,7 @@ import reactor.core.publisher.Sinks
 import java.io.File
 
 typealias ConfigSourceErrorMessage = String
+
 /**
  * Models a Config as loaded from a Package,
  * which may or may not contain an error.
@@ -74,8 +77,6 @@ abstract class MergingHoconConfigRepository<T : Any>(
    }
 
 
-
-
    override fun typedConfig(): T {
       return configCache[CacheKey]
    }
@@ -99,7 +100,7 @@ abstract class MergingHoconConfigRepository<T : Any>(
       .build(object : CacheLoader<CacheKey, T>() {
          override fun load(key: CacheKey): T {
             val loadedSources = configRepo.loadAll()
-            val config =  if (loadedSources.isEmpty()) {
+            val config = if (loadedSources.isEmpty()) {
                logger.info { "($loaderTypeName) - Loaders returned no config sources, so starting with an empty one." }
                emptyConfig()
             } else {
@@ -113,8 +114,9 @@ abstract class MergingHoconConfigRepository<T : Any>(
                      ConfigSource(sourcePackage.identifier, config, typedConfig, null)
                   } catch (e: Exception) {
                      val rootCauseMessage = Throwables.getRootCause(e).message
-                     val errorMessage = "Parsing the config from source package ${sourcePackage.packageMetadata.identifier.id} failed: $rootCauseMessage"
-                     logger.error(e) { "($loaderTypeName) -  $errorMessage"}
+                     val errorMessage =
+                        "Parsing the config from source package ${sourcePackage.packageMetadata.identifier.id} failed: $rootCauseMessage"
+                     logger.error(e) { "($loaderTypeName) -  $errorMessage" }
                      val sourceName = if (sourcePackage.sources.size == 1) sourcePackage.sources.first().name else null
                      ConfigSource(sourcePackage.identifier, null, null, errorMessage, sourceName)
                   }
@@ -134,18 +136,31 @@ abstract class MergingHoconConfigRepository<T : Any>(
                         config.withFallback(acc)
                      }.resolve() as Config
                      extract(mergedHealthyConfig)
-                  } catch (e:Exception) {
-                     val errorMessage = Throwables.getRootCause(e).message ?: "A ${e::class.simpleName} exception occurred"
+                  } catch (e: Exception) {
+                     val errorMessage =
+                        Throwables.getRootCause(e).message ?: "A ${e::class.simpleName} exception occurred"
                      if (e is ConfigException) {
-                        val matchedSourcePackage = loadedSources.firstOrNull { sourcePackage -> sourcePackage.sources
-                           .filter { it.path != null }
-                           .any { sourceFile -> sourceFile.path == e.origin().url()?.toURI()?.path } }
+                        val matchedSourcePackage = loadedSources.firstOrNull { sourcePackage ->
+                           sourcePackage.sources
+                              .filter { it.path != null }
+                              .any { sourceFile -> sourceFile.path == e.origin().url()?.toURI()?.path }
+                        }
                            ?.let { sourcePackage ->
-                              _configSources = _configSources + ConfigSource(sourcePackage.identifier, null, null, errorMessage, e.origin().url()?.toURI()?.path)
+                              _configSources = _configSources + ConfigSource(
+                                 sourcePackage.identifier,
+                                 null,
+                                 null,
+                                 errorMessage,
+                                 e.origin().url()?.toURI()?.path
+                              )
                               sourcePackage
                            }
                         if (matchedSourcePackage == null) {
-                           logger.error { "Could not find a source package for error reported in file ${e.origin().description()} - This error will not be displayed in the UI" }
+                           logger.error {
+                              "Could not find a source package for error reported in file ${
+                                 e.origin().description()
+                              } - This error will not be displayed in the UI"
+                           }
                         }
                      }
                      logger.error { "Failed to read hocon file: ${e.message}" }
@@ -174,38 +189,71 @@ abstract class MergingHoconConfigRepository<T : Any>(
 
    }
 
-   protected fun readRawHoconSource(sourcePackage: SourcePackage): Either<String, File> {
-      // This isn't a hard requirement, but it certainly makes life simpler.
-      // If this constraint is violated, let's explore the use-case
-      require(sourcePackage.sources.size == 1) { "Expected a single source within the source package" }
-      val rawConfig = sourcePackage.sources.single().content
-      return  if (sourcePackage.sources.single().path != null) {
-         Either.Right(File(sourcePackage.sources.single().path!!))
-      } else {
-         Either.Left(sourcePackage.sources.single().content)
+   protected fun readRawHoconSource(sourcePackage: SourcePackage): List<Either<String, File>> {
+      // Note: Normally, this is a single source.
+      // But, we've found when adding env-specific configs (eg., auth.prod.conf)
+      // that we can end up matching multiple here.
+      // It's probably safer to configure multiple, since globs are permitted.
+      return sourcePackage.sources.map { source ->
+         if (source.path != null) {
+            File(source.path).right()
+         } else {
+            source.content.left()
+         }
       }
    }
 
-   protected fun unresolvedConfig(rawConfig: Either<String, File>): Config {
-      return rawConfig.fold( { configFileContent ->
-         ConfigFactory.parseString(configFileContent, ConfigParseOptions.defaults())
-            .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
-      }, {configFile ->
-         ConfigFactory.parseFile(configFile, ConfigParseOptions.defaults())
-            .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
-      })
+   protected fun unresolvedConfig(rawConfigs: List<Either<String, File>>): Config {
 
+      val configs = rawConfigs.map { rawConfig ->
+         rawConfig.fold({ configFileContent ->
+            ConfigFactory.parseString(configFileContent, ConfigParseOptions.defaults())
+               .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
+         }, { configFile ->
+            ConfigFactory.parseFile(configFile, ConfigParseOptions.defaults())
+               .resolve(ConfigResolveOptions.defaults().setAllowUnresolved(true))
+         })
+      }
+      return configs.reduce { acc, config -> config.withFallback(acc) }
    }
 
-   protected open fun readConfig(rawConfig: Either<String, File>, fallback: Config): Config  {
-      return rawConfig.fold( { configFileContent ->
+   protected open fun readConfig(rawConfigs: List<Either<String, File>>, fallback: Config): Config {
+      // Before reading them, we need to sort them.
+      // Don't care about the order of Strings, but Files need to be sorted alphabetically, so that
+      // a.conf is processed before a.preprod.conf (allowing env-specific to override)
+      val sorted = rawConfigs.sortedWith(
+         compareBy<Either<String, File>> {
+            when (it) {
+               is Either.Right -> 0   // Files first
+               is Either.Left  -> 1   // Strings after
+            }
+         }.thenBy {
+            it.getOrNull()?.name   // Only applies to Files
+         }
+      )
+
+      return sorted.fold(fallback) { acc, rawConfig ->
+         readConfig(rawConfig, acc)
+      }
+   }
+
+   protected open fun readConfig(rawConfig: Either<String, File>, fallback: Config): Config {
+      return rawConfig.fold({ configFileContent ->
          ConfigFactory
             .parseString(configFileContent, ConfigParseOptions.defaults())
-            .resolveWith(fallback, ConfigResolveOptions.defaults().setAllowUnresolved(true))
+            .resolveWith(
+               fallback,
+               ConfigResolveOptions.defaults().setAllowUnresolved(true)
+            ) // Uses fallback to resolve placeholders
+            .withFallback(fallback) // merges fallback
       }, { configFile ->
          ConfigFactory
             .parseFile(configFile, ConfigParseOptions.defaults())
-            .resolveWith(fallback, ConfigResolveOptions.defaults().setAllowUnresolved(true))
+            .resolveWith(
+               fallback,
+               ConfigResolveOptions.defaults().setAllowUnresolved(true)
+            ) // Allow resolving using the previous iteration
+            .withFallback(fallback) // withFallback merges any values present on the previous
       })
    }
 

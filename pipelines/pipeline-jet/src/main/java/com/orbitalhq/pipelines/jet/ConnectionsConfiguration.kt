@@ -23,6 +23,7 @@ import com.orbitalhq.connectors.nosql.mongodb.registry.SourceLoaderMongoConnecti
 import com.orbitalhq.schema.consumer.SchemaConfigSourceLoader
 import com.orbitalhq.schema.consumer.SchemaStore
 import com.orbitalhq.spring.config.EnvVariablesConfig
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -35,18 +36,19 @@ class ConnectionsConfiguration {
    fun configFileConnectorsRegistry(
       config: VyneConnectionsConfig,
       schemaStore: SchemaStore,
-      envVariablesConfig: EnvVariablesConfig
+      envVariablesConfig: EnvVariablesConfig,
+      @Value("\${vyne.environment.name:#{null}}") environmentName: String?
    ): SourceLoaderConnectorsRegistry {
        return SourceLoaderConnectorsRegistry(
          listOf(
             FileConfigSourceLoader(envVariablesConfig.envVariablesPath, failIfNotFound = false, packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER),
-            SchemaConfigSourceLoader(schemaStore, "env.conf"),
+            SchemaConfigSourceLoader(schemaStore, "env.conf", environmentName = environmentName),
             FileConfigSourceLoader(
                config.configFile,
                packageIdentifier = VyneConnectionsConfig.PACKAGE_IDENTIFIER,
                failIfNotFound = false
             ),
-            SchemaConfigSourceLoader(schemaStore, "connections.conf")
+            SchemaConfigSourceLoader(schemaStore, "connections.conf", environmentName = environmentName)
          )
       )
    }

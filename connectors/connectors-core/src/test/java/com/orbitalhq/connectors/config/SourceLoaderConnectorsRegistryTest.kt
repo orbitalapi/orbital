@@ -11,9 +11,15 @@ import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.decodeFromByteArray
 import kotlinx.serialization.encodeToByteArray
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.io.path.copyTo
 
 class SourceLoaderConnectorsRegistryTest {
+
+   @TempDir
+   lateinit var tempDir: Path
 
    @OptIn(ExperimentalSerializationApi::class)
    @Test
@@ -22,10 +28,27 @@ class SourceLoaderConnectorsRegistryTest {
          Resources.getResource("mixed-connections.conf")
             .toURI()
       )
-       val config = SourceLoaderConnectorsRegistry.forPath(path).load()
+      val config = SourceLoaderConnectorsRegistry.forPath(path).load()
       val bytes = Cbor.encodeToByteArray(config)
       val fromBytes = Cbor.decodeFromByteArray<ConnectionsConfig>(bytes)
       fromBytes.shouldBe(config)
+   }
+
+   @Test
+   fun `will merge a sourcePackage with multiple configs`() {
+      listOf("mixed-connections.conf", "connections-2.conf").forEach {
+         Paths.get(
+            Resources.getResource(it).toURI()
+         ).copyTo(tempDir.resolve(it))
+      }
+      val config = SourceLoaderConnectorsRegistry(
+         listOf(
+            FileConfigSourceLoader(tempDir, glob = "*.conf", packageIdentifier = FileConfigSourceLoader.LOCAL_PACKAGE_IDENTIFIER),
+         ),
+         writerProviders = emptyList()
+      ).load()
+      config.jdbc.shouldHaveKeys("another-connection", "connection-2", "connection-3", "connection-4")
+      config.kafka.shouldHaveKeys("kafka-connection", "kafka-connection-2")
    }
 
    @Test
@@ -38,12 +61,12 @@ class SourceLoaderConnectorsRegistryTest {
          Resources.getResource("connections-2.conf")
             .toURI()
       )
-       val config = SourceLoaderConnectorsRegistry(
+      val config = SourceLoaderConnectorsRegistry(
          listOf(
             FileConfigSourceLoader(path1, packageIdentifier = FileConfigSourceLoader.LOCAL_PACKAGE_IDENTIFIER),
             FileConfigSourceLoader(path2, packageIdentifier = FileConfigSourceLoader.LOCAL_PACKAGE_IDENTIFIER),
          ),
-          writerProviders = emptyList()
+         writerProviders = emptyList()
       ).load()
       config.jdbc.shouldHaveKeys("another-connection", "connection-2", "connection-3", "connection-4")
       config.kafka.shouldHaveKeys("kafka-connection", "kafka-connection-2")
@@ -55,7 +78,7 @@ class SourceLoaderConnectorsRegistryTest {
          Resources.getResource("mixed-connections.conf")
             .toURI()
       )
-       val config = SourceLoaderConnectorsRegistry.forPath(path).load()
+      val config = SourceLoaderConnectorsRegistry.forPath(path).load()
       config.shouldBe(
          ConnectionsConfig(
             jdbc = mapOf(
