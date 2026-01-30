@@ -12,6 +12,7 @@ import com.orbitalhq.spring.http.auth.schemes.AuthWebClientCustomizer
 import com.orbitalhq.spring.http.auth.schemes.HoconAuthTokensRepository
 import com.orbitalhq.spring.http.auth.schemes.HoconOAuthClientRegistrationRepository
 import mu.KotlinLogging
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.context.properties.ConfigurationProperties
 import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean
@@ -45,6 +46,7 @@ class HttpAuthConfig {
       config: VyneHttpAuthConfig,
       eventProvider: SchemaChangedEventProvider,
       envVariablesConfig: EnvVariablesConfig,
+      @Value("\${vyne.environment.name:#{null}}") environmentName: String?,
    ): HoconAuthTokensRepository {
       logger.info { "Using auth config file at ${config.configFile.toFile().canonicalPath}" }
       return HoconAuthTokensRepository(
@@ -54,13 +56,13 @@ class HttpAuthConfig {
                failIfNotFound = false,
                packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER
             ),
-            SchemaConfigSourceLoader(eventProvider, "env.conf"),
+            SchemaConfigSourceLoader(eventProvider, "env.conf", environmentName = environmentName),
             FileConfigSourceLoader(
                config.configFile,
                packageIdentifier = VyneHttpAuthConfig.PACKAGE_IDENTIFIER,
                failIfNotFound = false
             ),
-            SchemaConfigSourceLoader(eventProvider, "auth.conf")
+            SchemaConfigSourceLoader(eventProvider, "auth.conf", environmentName = environmentName)
          ),
       )
    }

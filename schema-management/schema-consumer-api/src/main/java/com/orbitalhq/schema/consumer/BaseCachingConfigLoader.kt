@@ -17,6 +17,13 @@ abstract class BaseCachingConfigLoader(
     * loading multiple files
     */
    private val filePattern: String,
+   /**
+    * Optional environment name (eg., "preprod", "staging").
+    * If provided, will also attempt to load environment-specific versions of config files.
+    * For example, if filePattern is "auth.conf" and environmentName is "preprod",
+    * will also load "auth.preprod.conf" if present.
+    */
+   private val environmentName: String? = null,
 ):ConfigSourceLoader {
    private val sink = Sinks.many().multicast().directBestEffort<Class<out ConfigSourceLoader>>()
 
@@ -30,6 +37,22 @@ abstract class BaseCachingConfigLoader(
 
    override val contentUpdated: Flux<Class<out ConfigSourceLoader>>
       get() = sink.asFlux()
+
+   /**
+    * Generates an environment-specific file pattern.
+    * For example: "auth.conf" with environment "preprod" becomes "auth.preprod.conf"
+    *              "*.conf" with environment "preprod" becomes "*.preprod.conf"
+    */
+   private fun getEnvironmentSpecificPattern(pattern: String, env: String): String? {
+      val lastDotIndex = pattern.lastIndexOf('.')
+      return if (lastDotIndex > 0) {
+         val beforeExtension = pattern.substring(0, lastDotIndex)
+         val extension = pattern.substring(lastDotIndex)
+         "$beforeExtension.$env$extension"
+      } else {
+         null
+      }
+   }
 
    /**
     * Populates the cache.
@@ -53,11 +76,42 @@ abstract class BaseCachingConfigLoader(
          logger.error { "Cannot setup config loader ${this::class.simpleName} as the provided path $filePattern is invalid" }
          return emptyList()
       }
+
+      // Also create matcher for environment-specific files if environment is specified
+      val envPathMatcher = if (!environmentName.isNullOrEmpty()) {
+         val envSpecificPattern = getEnvironmentSpecificPattern(filePattern, environmentName)
+         if (envSpecificPattern != null) {
+            val envPathGlob = if (envSpecificPattern.startsWith("*")) {
+               "glob:*$envSpecificPattern"
+            } else {
+               "glob:**$envSpecificPattern"
+            }
+            try {
+               FileSystems.getDefault().getPathMatcher(envPathGlob)
+            } catch (e: InvalidPathException) {
+               logger.warn { "Cannot create environment-specific path matcher for pattern $envSpecificPattern" }
+               null
+            }
+         } else {
+            null
+         }
+      } else {
+         null
+      }
+
       val hoconSources = sources.map { sourcePackage ->
          val requestedSources = sourcePackage.sources
-            .filter { pathMatcher.matches(Paths.get(it.name)) }
+            .filter { source ->
+               val sourcePath = Paths.get(source.name)
+               pathMatcher.matches(sourcePath) || (envPathMatcher?.matches(sourcePath) ?: false)
+            }
          val filteredSourcePackage = sourcePackage.copy(sources = requestedSources)
-         logger.info { "Package ${sourcePackage.identifier.id} contains ${filteredSourcePackage.sources.size} sources for pattern $pathGlob" }
+         val matchInfo = if (envPathMatcher != null) {
+            "patterns $pathGlob and environment-specific file"
+         } else {
+            "pattern $pathGlob"
+         }
+         logger.info { "Package ${sourcePackage.identifier.id} contains ${filteredSourcePackage.sources.size} sources for $matchInfo" }
          filteredSourcePackage
       }
       contentCache[CacheKey] = hoconSources
