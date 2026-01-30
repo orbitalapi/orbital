@@ -113,7 +113,8 @@ class JetPipelineApp {
       config: PipelineConfig,
       mapper: ObjectMapper,
       schemaChangedEventProvider: SchemaChangedEventProvider,
-      envVariablesConfig: EnvVariablesConfig
+      envVariablesConfig: EnvVariablesConfig,
+      @Value("\${vyne.environment.name:#{null}}") environmentName: String?
    ): PipelineConfigRepository {
 
       val loaders = mutableListOf<ConfigSourceLoader>(
@@ -122,7 +123,7 @@ class JetPipelineApp {
             failIfNotFound = false,
             packageIdentifier = EnvVariablesConfig.PACKAGE_IDENTIFIER
          ),
-         SchemaConfigSourceLoader(schemaChangedEventProvider, "env.conf")
+         SchemaConfigSourceLoader(schemaChangedEventProvider, "env.conf", environmentName = environmentName)
       )
       if (config.pipelinePath != null) {
          if (!Files.exists(config.pipelinePath)) {
@@ -134,7 +135,7 @@ class JetPipelineApp {
 
          loaders.add(FileConfigSourceLoader(config.pipelinePath, packageIdentifier = PipelineConfig.PACKAGE_IDENTIFIER))
       }
-      loaders.add(SchemaConfigSourceLoader(schemaChangedEventProvider, "*.conf", sourceType = "@orbital/pipelines"))
+      loaders.add(SchemaConfigSourceLoader(schemaChangedEventProvider, "*.conf", sourceType = "@orbital/pipelines", environmentName = environmentName))
       return PipelineConfigRepository(loaders)
    }
 

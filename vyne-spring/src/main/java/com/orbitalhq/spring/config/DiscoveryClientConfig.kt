@@ -37,17 +37,20 @@ class DiscoveryClientConfig {
       schemaStore: SchemaStore,
       envVariablesConfig: EnvVariablesConfig,
       additionalLoaders: List<ConfigSourceLoader>?,
-      projectManager: ProjectLoaderManager
+      projectManager: ProjectLoaderManager,
+      @Value("\${vyne.environment.name:#{null}}") environmentName: String?
    ): SourceLoaderServicesRegistry {
       val projectManagerConfigSourceLoader = ProjectManagerConfigSourceLoader(
          schemaEventSource = schemaStore,
          projectManager = projectManager,
-         filePattern = "services.conf"
+         filePattern = "services.conf",
+         environmentName = environmentName
       )
       val projectManagerEnvSourceLoader = ProjectManagerConfigSourceLoader(
          schemaEventSource = schemaStore,
          projectManager = projectManager,
-         filePattern = "env.conf"
+         filePattern = "env.conf",
+         environmentName = environmentName
       )
       val builtinLoaders = listOf(
          FileConfigSourceLoader(

@@ -21,8 +21,15 @@ class SchemaConfigSourceLoader(
     * loading multiple files
     */
    private val filePattern: String,
-   private val sourceType: SourcesType = ConfigFileLocationConventions.OrbitalConfigKey
-) : BaseCachingConfigLoader(filePattern) {
+   private val sourceType: SourcesType = ConfigFileLocationConventions.OrbitalConfigKey,
+   /**
+    * Optional environment name (eg., "preprod", "staging").
+    * If provided, will also attempt to load environment-specific versions of config files.
+    * For example, if filePattern is "auth.conf" and environmentName is "preprod",
+    * will also load "auth.preprod.conf" if present.
+    */
+   environmentName: String? = null,
+) : BaseCachingConfigLoader(filePattern, environmentName) {
 
    companion object {
       private val logger = KotlinLogging.logger {}
