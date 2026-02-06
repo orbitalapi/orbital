@@ -190,7 +190,7 @@ service Broker1Service {
 
 
       stubService.addResponse(
-         "`findAll`",
+         "findAll",
          vyne.parseJsonModel(
             "Order[]", """
                [
@@ -286,7 +286,7 @@ service Broker1Service {
       )
 
       stubService.addResponse(
-         "`findAll`",
+         "findAll",
          vyne.parseJsonModel(
             "Order[]", """
                [
@@ -2282,7 +2282,7 @@ service Broker1Service {
       """.trimIndent()
          val (vyne, stubService) = testVyne(testSchema)
          stubService.addResponse(
-            "`findAll`", vyne.parseJsonCollection(
+            "findAll", vyne.parseJsonCollection(
                "Input[]", """
          [
             { userId : "userX",  tradeId: "InstrumentX" }
@@ -2354,7 +2354,7 @@ service Broker1Service {
 
          val (vyne, stubService) = testVyne(testSchema)
          stubService.addResponse(
-            "`findAll`", vyne.parseJsonCollection(
+            "findAll", vyne.parseJsonCollection(
                "Input[]", """
          [
             { orderId : "OrderX",  productId: "ProductX", assetClass: "AssetClassX" }
@@ -2429,7 +2429,7 @@ service Broker1Service {
       """.trimIndent()
          val (vyne, stubService) = testVyne(testSchema)
          stubService.addResponse(
-            "`findAll`", vyne.parseJsonCollection(
+            "findAll", vyne.parseJsonCollection(
                "Input[]", """
          [
             { userId : "userX",  tradeId1: "InstrumentX" },

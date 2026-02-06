@@ -802,9 +802,6 @@ Transitive dependency in wire-compiler and calcite-core
             <plugin>
                <groupId>org.springframework.boot</groupId>
                <artifactId>spring-boot-maven-plugin</artifactId>
-               <configuration>
-                  <executable>true</executable>
-               </configuration>
                <executions>
                   <execution>
                      <goals>

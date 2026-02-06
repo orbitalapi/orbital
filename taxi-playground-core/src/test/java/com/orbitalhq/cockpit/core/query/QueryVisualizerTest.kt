@@ -244,6 +244,35 @@ find { score : ReviewScore }
             "Review::score" to "Anon.Anon::score",
             "ReviewsLookup::filmId" to "Anon.Anon::id")
       }
+
+      it("should append links when manually adding types and services") {
+         val schema = TaxiSchema.from("""
+            model Person {
+               id : PersonId inherits String
+            }
+            service PersonApi {
+               operation getPerson(PersonId):Person
+            }
+         """.trimIndent())
+         // This test explores manually adding links, so use the builder directly
+         val builder = QueryPlanDiagramBuilder(schema)
+         builder.addType(schema.type("Person"))
+         builder.addService(schema.service("PersonApi"))
+         val data = builder.build("")
+         data.shouldHaveLinks(
+            "PersonApi::getPerson" to "Person"
+         )
+
+         // Re-do that, but add the links in a different order
+         val builder2 = QueryPlanDiagramBuilder(schema)
+         builder2.addService(schema.service("PersonApi"))
+         builder2.addType(schema.type("Person"))
+         val data2 = builder.build("")
+         data2.shouldHaveLinks(
+            "PersonApi::getPerson" to "Person"
+         )
+
+      }
    }
 
 })

@@ -31,7 +31,9 @@ import com.orbitalhq.query.history.toDto
 import com.orbitalhq.query.runtime.core.ModelFormatSpecSerializer
 import com.orbitalhq.query.runtime.core.RawResultsSerializer
 import com.orbitalhq.query.tracing.TraceContext
+import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.spring.query.formats.FormatSpecRegistry
 import com.orbitalhq.stubbing.StubService
@@ -43,6 +45,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.reactor.asFlux
 import kotlinx.coroutines.runBlocking
+import lang.taxi.TaxiDocument
 import lang.taxi.annotations.HttpService
 import lang.taxi.query.QueryMode
 import lang.taxi.types.Arrays
@@ -95,9 +98,42 @@ class StubQueryService(
       addDelayToStreams: Boolean = false
    ): Pair<Publisher<Any>, ContentTypeString> {
       val schema = TaxiSchema.fromStrings(query.schema, builtInTypes)
+      return submitQuery(query, queryId, addDelayToStreams, schema)
+   }
+
+
+   fun submitQuery(
+      query: StubQueryMessage,
+      queryId: String = Ids.id(prefix = "query", size = 12),
+
+      /**
+       * When query calls a stream, this will add a delay on each
+       * message, to simulate a 'streaming' response.
+       * If false, all data is returned instantly
+       */
+      addDelayToStreams: Boolean = false,
+      taxiDocument: TaxiDocument
+   ): Pair<Publisher<Any>, ContentTypeString> {
+      val schema = TaxiSchema(taxiDocument, emptyList())
+      return submitQuery(query, queryId, addDelayToStreams, schema)
+   }
+
+   fun submitQuery(
+      query: StubQueryMessage,
+      queryId: String = Ids.id(prefix = "query", size = 12),
+
+      /**
+       * When query calls a stream, this will add a delay on each
+       * message, to simulate a 'streaming' response.
+       * If false, all data is returned instantly
+       */
+      addDelayToStreams: Boolean = false,
+      schema: TaxiSchema
+   ): Pair<Publisher<Any>, ContentTypeString> {
       val (vyne, stub) = StubService.stubbedVyne(schema)
       return submitQuery(vyne, stub, query, queryId, addDelayToStreams)
    }
+
 
    fun submitQuery(
       vyne: Vyne,
@@ -214,16 +250,23 @@ class StubQueryService(
       addDelayToStreams: Boolean
    ) {
       query.stubs.forEach { operationStub ->
-         val operation = vyne.schema.services
-            .singleOrNull { it.hasRemoteOperation(operationStub.operationName) }
-            ?.remoteOperation(operationStub.operationName)
+         // VSCode plugin sends FQN (service@@operation), but web only sends operation name.
+         val (operation, operationName) = if (OperationNames.isName(operationStub.operationName)) {
+            val (_, operation) = vyne.schema.remoteOperation(operationStub.operationName.fqn())
+            operation to operation.name // StubService doesn't like fully qualified names - only the name of the operation
+         } else {
+            vyne.schema.services
+               .singleOrNull { it.hasRemoteOperation(operationStub.operationName) }
+               ?.remoteOperation(operationStub.operationName) to operationStub.operationName
+         }
+
 
          if (operation != null) {
             if (operation.returnType.isStream) {
                configureStubStream(operation, vyne, operationStub, stub, addDelayToStreams)
             } else {
                when {
-                  operationStub.echoInput -> stub.addResponseReturningInputs(operationStub.operationName)
+                  operationStub.echoInput -> stub.addResponseReturningInputs(operationName)
                   operationStub.conditionalResponses.isNotEmpty() -> {
                      configureConditionalResponses(stub, operationStub, vyne)
                   }
@@ -235,7 +278,7 @@ class StubQueryService(
                         vyne.schema,
                         formatSpecs = formatSpecs
                      )
-                     stub.addResponse(operationStub.operationName, parsedInstance, modifyDataSource = true)
+                     stub.addResponse(operationName, parsedInstance, modifyDataSource = true)
                   }
                }
 

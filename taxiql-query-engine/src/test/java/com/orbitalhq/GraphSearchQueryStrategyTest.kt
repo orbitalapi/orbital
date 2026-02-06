@@ -53,7 +53,7 @@ class GraphSearchQueryStrategyTest {
          """.trimIndent()
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse(
-         "`findAll`", vyne.parseJsonModel(
+         "findAll", vyne.parseJsonModel(
             "Input[]", """
          [
             {  "isin": "isin1"}
@@ -107,7 +107,7 @@ class GraphSearchQueryStrategyTest {
          """.trimIndent()
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse(
-         "`findAll`", vyne.parseJsonModel(
+         "findAll", vyne.parseJsonModel(
             "Input[]", """
          [
             {  "isin": "isin1"}
@@ -231,7 +231,7 @@ class GraphSearchQueryStrategyTest {
       """.trimIndent()
       val (vyne, stubService) = testVyne(schema)
       stubService.addResponse(
-         "`findAll`", vyne.parseJson(
+         "findAll", vyne.parseJson(
             "Input[]", """
       [
          {  "isin": "isin1", "strategyId": 1, "tradeId": "trade123"}
@@ -422,7 +422,7 @@ class GraphSearchQueryStrategyTest {
       """.trimIndent()
          val (vyne, stubService) = testVyne(schema)
          stubService.addResponse(
-            "`findAll`", vyne.parseJson(
+            "findAll", vyne.parseJson(
                "Input[]", """
       [
          {  "isin": "isin1", "strategyId": 1, "tradeId": "trade123"}

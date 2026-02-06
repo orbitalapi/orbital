@@ -28,6 +28,7 @@ import com.orbitalhq.query.history.HandleKind
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.SchemaMember
+import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.utils.abbreviate
@@ -49,6 +50,210 @@ class QueryPlanDiagramBuilder(private val schema: Schema) : QueryVisualizationBu
          is TypedValue -> buildForTypedValue(instance)
          else -> logger.debug { "No diagram build strategy for TypedInstance of type ${instance::class.simpleName}" }
       }
+   }
+
+   // These are methods for manually building a diagram (not a query plan)
+   // for things like vSCode plugin
+   fun addType(type: Type) {
+      val typeNode = getOrCreateType(type)
+      discoverLinksForType(type, typeNode)
+   }
+
+   // Manually adds a service. Used outside of query plans
+   fun addService(service: Service) {
+      val serviceNode = getOrCreateNode(service) { nodeId ->
+         service.remoteOperations.map { operation ->
+            DiagramNodeMember(
+               "$nodeId::${operation.name}",
+               operation.name,
+               operation.returnType.paramaterizedName,
+               emptySet()
+            )
+         }
+      }
+      discoverLinksForService(service, serviceNode)
+   }
+
+   /**
+    * Discovers links involving the given type node.
+    * This includes:
+    * 1. Links from this type's fields to other types
+    * 2. Links from other types' fields to this type
+    * 3. Links between this type and service operations
+    */
+   private fun discoverLinksForType(type: Type, typeNode: DiagramNode) {
+      // Discover links from this type's fields to other type nodes
+      discoverTypeFieldLinks(type, typeNode)
+
+      // Discover links from existing types that reference this type
+      discoverInboundTypeFieldLinks(type, typeNode)
+
+      // Discover links between this type and service operations
+      discoverServiceOperationLinks(type, typeNode)
+   }
+
+   /**
+    * Discovers links from this type's fields to other existing type nodes
+    */
+   private fun discoverTypeFieldLinks(type: Type, typeNode: DiagramNode) {
+      type.attributes.forEach { (fieldName, field) ->
+         val fieldType = field.resolveType(schema)
+         if (!fieldType.isScalar) {
+            val targetType = unwrapType(fieldType)
+            val targetNodeId = DiagramNode.id(targetType)
+
+            if (nodes.containsKey(targetNodeId)) {
+               val memberHandleId = "${typeNode.id}::$fieldName"
+               tryAddLink(typeNode.id, memberHandleId, targetNodeId, targetNodeId)
+            }
+         }
+      }
+   }
+
+   /**
+    * Discovers links from existing type nodes whose fields reference this type
+    */
+   private fun discoverInboundTypeFieldLinks(type: Type, typeNode: DiagramNode) {
+      nodes.values
+         .filter { it.kind == DiagramNodeKind.MODEL && it.id != typeNode.id }
+         .mapNotNull { existingNode ->
+            try {
+               existingNode to schema.type(existingNode.qualifiedName?.fqn() ?: return@mapNotNull null)
+            } catch (e: Exception) {
+               null
+            }
+         }
+         .forEach { (existingNode, existingType) ->
+            existingType.attributes.forEach { (fieldName, field) ->
+               val fieldType = field.resolveType(schema)
+               if (!fieldType.isScalar && unwrapType(fieldType) == type) {
+                  val memberHandleId = "${existingNode.id}::$fieldName"
+                  tryAddLink(existingNode.id, memberHandleId, typeNode.id, typeNode.id)
+               }
+            }
+         }
+   }
+
+   /**
+    * Discovers links between a type and service operations
+    */
+   private fun discoverServiceOperationLinks(type: Type, typeNode: DiagramNode) {
+      nodes.values
+         .filter { it.kind == DiagramNodeKind.SERVICE }
+         .mapNotNull { serviceNode ->
+            try {
+               if (serviceNode.qualifiedName == null) {
+                  return@mapNotNull null
+               } else {
+                  serviceNode to schema.service(serviceNode.qualifiedName!!)
+               }
+            } catch (e: Exception) {
+               null
+            }
+         }
+         .forEach { (serviceNode, service) ->
+            service.remoteOperations.forEach { operation ->
+               val operationHandleId = "${serviceNode.id}::${operation.name}"
+
+               // Link from operation to return type (RHS)
+               if (unwrapType(operation.returnType) == type) {
+                  tryAddLink(
+                     serviceNode.id, operationHandleId,
+                     typeNode.id, typeNode.id,
+                     sourceHandleKind = HandleKind.RHS,
+                     targetHandleKind = HandleKind.LHS
+                  )
+               }
+
+               // Link from input types to operation (LHS)
+               operation.parameters.forEach { param ->
+                  if (unwrapType(param.type) == type) {
+                     tryAddLink(
+                        typeNode.id, typeNode.id,
+                        serviceNode.id, operationHandleId,
+                        sourceHandleKind = HandleKind.RHS,
+                        targetHandleKind = HandleKind.LHS
+                     )
+                  }
+               }
+            }
+         }
+   }
+
+   /**
+    * Discovers links for a service node and its operations
+    */
+   private fun discoverLinksForService(service: Service, serviceNode: DiagramNode) {
+      service.remoteOperations.forEach { operation ->
+         val operationHandleId = "${serviceNode.id}::${operation.name}"
+
+         // Link from operation to return type (RHS)
+         val returnType = unwrapType(operation.returnType)
+         val returnTypeId = DiagramNode.id(returnType)
+         if (nodes.containsKey(returnTypeId)) {
+            tryAddLink(
+               serviceNode.id, operationHandleId,
+               returnTypeId, returnTypeId,
+               sourceHandleKind = HandleKind.RHS,
+               targetHandleKind = HandleKind.LHS
+            )
+         }
+
+         // Link from input types to operation (LHS)
+         operation.parameters.forEach { param ->
+            val paramType = unwrapType(param.type)
+            val paramTypeId = DiagramNode.id(paramType)
+            if (nodes.containsKey(paramTypeId)) {
+               tryAddLink(
+                  paramTypeId, paramTypeId,
+                  serviceNode.id, operationHandleId,
+                  sourceHandleKind = HandleKind.RHS,
+                  targetHandleKind = HandleKind.LHS
+               )
+            }
+         }
+      }
+   }
+
+   /**
+    * Unwraps collection and stream types to get the underlying type
+    */
+   private fun unwrapType(type: Type): Type {
+      return when {
+         type.isStream && type.typeParameters.isNotEmpty() -> unwrapType(type.typeParameters[0])
+         type.isCollection && type.typeParameters.isNotEmpty() -> unwrapType(type.typeParameters[0])
+         else -> type
+      }
+   }
+
+   /**
+    * Attempts to add a link, skipping if nodes don't exist or if it would be a self-reference.
+    * Uses Set semantics to automatically avoid duplicate links.
+    */
+   private fun tryAddLink(
+      sourceNodeId: String,
+      sourceHandleId: String,
+      targetNodeId: String,
+      targetHandleId: String,
+      sourceHandleKind: HandleKind = HandleKind.RHS,
+      targetHandleKind: HandleKind = HandleKind.LHS
+   ) {
+      // Skip self-references
+      if (sourceNodeId == targetNodeId && sourceHandleId == targetHandleId) {
+         return
+      }
+
+      // Skip if nodes don't exist
+      if (!(nodes.containsKey(sourceNodeId) && nodes.containsKey(targetNodeId))) {
+         return
+      }
+
+      val link = DiagramLink(
+         sourceNodeId, sourceHandleId,
+         targetNodeId, targetHandleId,
+         sourceHandleKind, targetHandleKind
+      )
+      links.add(link)
    }
 
    private fun buildForTypedValue(instance: TypedValue) {
@@ -230,7 +435,8 @@ class QueryPlanDiagramBuilder(private val schema: Schema) : QueryVisualizationBu
             val expression = source
             val handleId = handleIdForCase(index)
             expression.inputs.forEach { input ->
-               val inputSourceNode = getOrCreateDataSource(input.source, input, preferResponseObjectIfOperationResult = true)
+               val inputSourceNode =
+                  getOrCreateDataSource(input.source, input, preferResponseObjectIfOperationResult = true)
                if (inputSourceNode != null) {
                   val sourceHandleId = inputSourceNode.member(input.typeName)?.handleId ?: inputSourceNode.id
                   addLink(inputSourceNode.id, sourceHandleId, expressionNode.id, handleId)
@@ -248,7 +454,7 @@ class QueryPlanDiagramBuilder(private val schema: Schema) : QueryVisualizationBu
     * a consistent id for the taxi statement
     */
    private fun taxiToNodeId(taxi: String): String {
-      val withoutWhitespace =  taxi.replace("\\s+".toRegex(), "")
+      val withoutWhitespace = taxi.replace("\\s+".toRegex(), "")
       val hash = Hashing.murmur3_128()
          .hashBytes(withoutWhitespace.toByteArray())
          .toString()
@@ -303,15 +509,24 @@ class QueryPlanDiagramBuilder(private val schema: Schema) : QueryVisualizationBu
       }
    }
 
-   override fun captureCachedOperationWithUniquePathObserved(operationResultReference: OperationResultReference, queryId: String) {
+   override fun captureCachedOperationWithUniquePathObserved(
+      operationResultReference: OperationResultReference,
+      queryId: String
+   ) {
       val (_, remoteOperation) = schema.remoteOperation(operationResultReference.operationName)
       observeOperation(remoteOperation, operationResultReference.inputs, operationResultReference.id)
    }
+
    override fun captureOperationResult(operationResult: OperationResult) {
       val (_, operation) = schema.remoteOperation(operationResult.remoteCall.operationQualifiedName)
       observeOperation(operation, operationResult.inputs, operationResult.id)
    }
-   private fun observeOperation(operation: RemoteOperation, inputs: List<OperationResult.OperationParam>, dataSourceId: String) {
+
+   private fun observeOperation(
+      operation: RemoteOperation,
+      inputs: List<OperationResult.OperationParam>,
+      dataSourceId: String
+   ) {
       // nodeHandles: An operationResult has a LHS: operation -> operationResult(LHS)
       // An operationResult has a RHS operationResult(RHS) -> [somewhere where it's used as an input)
       val operationNode = getOrCreateNode(operation, nodeHandles = HandleKind.LHS_AND_RHS) { nodeId ->
