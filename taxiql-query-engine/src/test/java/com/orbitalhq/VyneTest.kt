@@ -289,7 +289,7 @@ class VyneTest {
          |}
       """.trimMargin()
 
-         stubs.addResponse("`findAll`", inputs)
+         stubs.addResponse("findAll", inputs)
 
          stubs.addResponse(
             "findByInstrumentId",
@@ -2024,7 +2024,7 @@ service ClientService {
          }
       """.trimIndent()
       )
-      stubs.addResponse("`findAll`") { _, _ ->
+      stubs.addResponse("findAll") { _, _ ->
          fail("should not call findAll")
       }
 

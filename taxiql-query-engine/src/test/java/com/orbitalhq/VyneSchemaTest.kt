@@ -175,7 +175,7 @@ service Test {
 type EmailAddress inherits String
       """.trimIndent()
       val schema = TaxiSchema.from(taxiDef)
-      val operation = schema.service("Test").operation("`find`")
+      val operation = schema.service("Test").operation("find")
       val returnType = operation.returnType
       val emailAddressType = schema.type("EmailAddress")
       expect(returnType.name.name).to.equal("Array")
