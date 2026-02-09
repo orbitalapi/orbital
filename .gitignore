@@ -245,3 +245,4 @@ station/.unikraft
 /prometheus_data/
 orbital_data/
 temp-license.json
+/copilot/src/main/resources/api-keys.properties
