@@ -20,9 +20,6 @@ import java.math.BigDecimal
 class InvoiceMarkupWithContractsTest {
    val taxiDef = """
 namespace vyne.creditInc {
-    type Client {
-        clientId : ClientId
-    }
     type ClientId inherits String
      type Invoice {
         clientId : ClientId
@@ -40,7 +37,6 @@ namespace vyne.creditInc {
         sicCode : isic.uk.SIC2008
     }
 
-    type ClientId inherits String
     type ClientName inherits String
 }
 
@@ -54,11 +50,8 @@ namespace io.osmosis.demos.creditInc.clientLookup {
 namespace vyne.creditInc {
     type Money {
         currency : Currency
-        amount : MoneyAmount
+        value : MoneyAmount inherits Decimal
     }
-
-    type Currency inherits String
-    type MoneyAmount inherits Decimal
 }
 
 namespace io.osmosis.demos.invictus.rates {
@@ -73,12 +66,7 @@ namespace vyne.creditInc {
         invoiceValue : Money(Currency == 'GBP')
         industryCode : isic.uk.SIC2003
     }
-     type Money {
-        currency : Currency
-        value : MoneyAmount
-    }
     type Currency inherits String
-    type MoneyAmount inherits Decimal
      type CreditCostResponse {
         cost : CreditRiskCost
     }

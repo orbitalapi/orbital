@@ -21,7 +21,7 @@ class CollectionFilteringSingleByTest {
          }
          // For our test, these are the subset of ids we want to match on
          model MatchingIds {
-            agencyId : AgencyId inherits String
+            agencyId : AgencyId
             unionIds : UnionId[]
          }
        model MovieAwardList {

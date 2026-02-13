@@ -25,8 +25,6 @@ import com.orbitalhq.schemas.Service
 import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.flow.Flow
 import mu.KotlinLogging
-import org.bson.json.JsonMode
-import org.bson.json.JsonWriterSettings
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import java.time.Duration

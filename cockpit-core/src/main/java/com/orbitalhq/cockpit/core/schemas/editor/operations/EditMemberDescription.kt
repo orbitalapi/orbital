@@ -51,7 +51,7 @@ data class EditMemberDescription(
 
    private fun getTypedocRangeForOperation(compiler: Compiler): Pair<CharacterPositionRange, SourceCode> {
       val (serviceName, operationName) = OperationNames.serviceAndOperation(symbol.parameterizedName)
-      val (_, compilerToken) = compiler.tokens.unparsedServices[serviceName]
+      val (_,_, compilerToken) = compiler.tokens.unparsedServices.singleOrNull {(name,_,_) -> name == serviceName }
          ?: error("Could not find service $serviceName in this source")
 
       val operationToken = compilerToken.serviceBody().serviceBodyMember().singleOrNull {
@@ -70,7 +70,7 @@ data class EditMemberDescription(
    }
 
    private fun getTypedocRangeForService(compiler: Compiler): Pair<CharacterPositionRange, SourceCode> {
-      val (_, compilerToken) = compiler.tokens.unparsedServices[symbol.parameterizedName]
+      val (_, _,compilerToken) = compiler.tokens.unparsedServices.singleOrNull { (name,_,_) -> name == symbol.parameterizedName }
          ?: error("Could not find service ${symbol.parameterizedName} in this source")
 
       return editRangeForTypedocOrBeforeElement(compilerToken.typeDoc(), compilerToken) to compilerToken.source()
@@ -79,7 +79,7 @@ data class EditMemberDescription(
    private fun getTypedocRangeForType(
       compiler: Compiler,
    ): Pair<CharacterPositionRange, SourceCode> {
-      val (_, compilerToken) = compiler.tokens.unparsedTypes[symbol.parameterizedName]
+      val (_, _,compilerToken) = compiler.tokens.unparsedTypes.singleOrNull { (name,_,_) -> name == symbol.parameterizedName }
          ?: error("Could not find type ${symbol.parameterizedName} in this source")
       val typeDefinition = compilerToken as TypeDeclarationContext
 

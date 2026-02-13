@@ -9,7 +9,7 @@ import lang.taxi.TaxiDocument
 import lang.taxi.TaxiParser
 import lang.taxi.source
 
-data class AddOrRemoveFieldAnnotation (
+data class AddOrRemoveFieldAnnotation(
    val symbol: QualifiedName,
    val annotationName: String,
    val operation: Operation,
@@ -27,14 +27,14 @@ data class AddOrRemoveFieldAnnotation (
    ): Either<CompilationException, SourceEditResult> {
 
       val compiler = buildCompiler(sourcePackage, taxiDocument)
-      val (_, typeDefinition) = compiler.tokens.unparsedTypes[symbol.fullyQualifiedName]
+      val (_,_, typeDefinition) = compiler.tokens.unparsedTypes.singleOrNull { (name, _, _) -> name == symbol.fullyQualifiedName }
          ?: error("Could not find type ${symbol.fullyQualifiedName} in this source")
 
       val fieldDefinition = (typeDefinition as TaxiParser.TypeDeclarationContext).typeBody().typeMemberDeclaration()
          .firstOrNull { memberDefinition -> memberDefinition.fieldDeclaration().identifier().text == fieldName }
          ?: error("Can not find a field named $fieldName in the definition of type ${symbol.fullyQualifiedName}")
 
-      val edit =  when (operation) {
+      val edit = when (operation) {
          Operation.Add -> addAnnotationToField(fieldDefinition)
          Operation.Remove -> removeAnnotationFromField(fieldDefinition)
       }
@@ -44,7 +44,7 @@ data class AddOrRemoveFieldAnnotation (
    private fun removeAnnotationFromField(fieldDefinition: TaxiParser.TypeMemberDeclarationContext): SourceEdit {
       val matchingAnnotation = fieldDefinition.annotation()
          .filter { it.qualifiedName().text == annotationName }
-      require (matchingAnnotation.size == 1) { "Expected a single annotation with name '$annotationName', but found ${matchingAnnotation.size}"}
+      require(matchingAnnotation.size == 1) { "Expected a single annotation with name '$annotationName', but found ${matchingAnnotation.size}" }
       val annotation = matchingAnnotation.single()
       return SourceEdit(
          sourceName = fieldDefinition.source().sourceName,

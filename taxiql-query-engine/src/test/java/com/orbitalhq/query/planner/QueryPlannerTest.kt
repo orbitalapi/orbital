@@ -15,7 +15,7 @@ class QueryPlannerTest : DescribeSpec({
                message : TweetMessage inherits String
             }
             model TweetAnalytics {
-               tweetId : TweetId inherits String
+               tweetId : TweetId
                viewCount : ViewCount inherits Int
             }
             type UserCountry inherits String
@@ -32,7 +32,7 @@ class QueryPlannerTest : DescribeSpec({
                     @Id id: OrderId
                     instrumentId: Isin inherits String
                 }
-               
+
                parameter model EnrichedOrder {
                    @Id id: OrderId
                    instrumentName: InstrumentName inherits String
@@ -88,7 +88,7 @@ class QueryPlannerTest : DescribeSpec({
             }
          """)
          val (query, _, querySchema) = schema.parseQuery("""
-            stream { Tweet } 
+            stream { Tweet }
             call  TweetService::saveTweet
          """.trimIndent())
          val (_, rewrittenQuery) = queryPlanner.buildQueryExpression(query, querySchema)

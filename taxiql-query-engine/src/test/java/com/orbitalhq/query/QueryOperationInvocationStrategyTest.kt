@@ -146,7 +146,7 @@ class QueryOperationInvocationStrategyTest {
          }
          model EmployeeDetails {
             @Id
-            id : PersonId inherits String
+            id : PersonId
             managerName : ManagerName inherits String
          }
          service ApiService {

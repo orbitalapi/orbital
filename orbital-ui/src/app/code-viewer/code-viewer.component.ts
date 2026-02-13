@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, ChangeDetectorRef, Component, DestroyRef, HostB
 import {ActivatedRoute, Router} from "@angular/router";
 import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {IOutputData} from 'angular-split';
-import {CompilationMessage, ParsedSource, VersionedSource} from '../services/schema';
+import {CompilationMessage, getVersionedSourceUri, ParsedSource, VersionedSource} from '../services/schema';
 import {FileTreeNode, isFileTreeNodeList, sourcesToFileTreeNode} from "./file-tree.component";
 import {isNullOrUndefined} from "util";
 
@@ -121,6 +121,13 @@ export class CodeViewerComponent {
     } else {
       return this.selectedSource.source.content;
     }
+  }
+
+  get sourceFileUri(): string | undefined {
+    if (!this.selectedSource) {
+      return undefined;
+    }
+    return getVersionedSourceUri(this.selectedSource.source);
   }
 
   private activateSelectedSource() {

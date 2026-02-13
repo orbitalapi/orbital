@@ -30,7 +30,7 @@
        Saves us duplicating
        -->
       <owasp-exclusions-file>../whitelisted-cvss-list.xml</owasp-exclusions-file>
-      <taxi.version>1.70.6</taxi.version>
+      <taxi.version>1.71.0-SNAPSHOT</taxi.version>
 
       <!-- Used in QueryService -->
       <elasticsearch.version>7.5.2</elasticsearch.version>

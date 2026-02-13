@@ -269,9 +269,9 @@ class QueryRequestHandlerTest {
 
               @taxi.http.ResponseBody
               model OrbitalUnexpectedError inherits OrbitalBaseError {
-               Code: OrbitalErrorCode inherits String
-               Id: OrbitalErrorId inherits String
-               Message: OrbitalErrorMessage inherits String
+               Code: OrbitalErrorCode
+               Id: OrbitalErrorId
+               Message: OrbitalErrorMessage
                Errors: ErrorEnum[]
              }
 

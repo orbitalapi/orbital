@@ -134,6 +134,10 @@ interface Schema {
       }.toSet()
    }
 
+   fun query(name: QualifiedName): TaxiQlQuery {
+      return taxi.query(name.parameterizedName)
+   }
+
    fun operationsWithReturnTypeAndWithSingleArgument(
       requiredReturnType: Type,
       requiredParameterType: Type,

@@ -29,6 +29,7 @@ import com.orbitalhq.query.caching.CacheAnnotation
 import com.orbitalhq.query.caching.StateStoreAnnotation
 import com.orbitalhq.scheduler.ScheduledAnnotation
 import com.orbitalhq.schema.publisher.SchemaPublisherService
+import com.orbitalhq.schemas.taxi.TaxiSchema
 import com.orbitalhq.schemas.taxi.toMessage
 import lang.taxi.annotations.HttpService
 import lang.taxi.generators.avro.AvroAnnotationSchema
@@ -174,7 +175,9 @@ object BuiltInTypesProvider {
    )
    val source = builtInSources.sources.joinToString("\n") { it.content }
    val sourcePackage = builtInSources
-
+   fun asTaxiSchema(): TaxiSchema {
+      return TaxiSchema.from(builtInSources)
+   }
 
    // TODO  :Add the others here
    private val builtInNamespaces = listOf(VyneTypes.NAMESPACE, "taxi.stdlib")

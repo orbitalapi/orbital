@@ -4,6 +4,7 @@ import com.orbitalhq.query.runtime.StreamResultStreamProvider
 import com.orbitalhq.query.runtime.core.QueryService
 import com.orbitalhq.query.runtime.core.dispatcher.StreamingQueryDispatcher
 import com.orbitalhq.query.runtime.core.dispatcher.local.LocalQueryDispatcher
+import com.orbitalhq.schemas.QueryCompiler
 import com.orbitalhq.utils.Ids
 import lang.taxi.query.QueryMode
 import mu.KotlinLogging
@@ -68,7 +69,7 @@ class RoutedQueryDispatcherAdaptor(
          ), emptyMap())
       } else {
          dispatcher.dispatchQuery(
-            query.querySrc,
+            QueryCompiler.asCompiledQueryReference(query.query),
             query.clientQueryId,
             MediaType.APPLICATION_JSON_VALUE,
             arguments = query.argumentValues,

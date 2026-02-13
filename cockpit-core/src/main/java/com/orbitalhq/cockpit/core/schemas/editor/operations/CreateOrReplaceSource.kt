@@ -35,7 +35,7 @@ abstract class BaseSourceCreatingEditOperation : SchemaEditOperation() {
       val services = tokens.unparsedServices.map { (name, _) ->
          SchemaMemberKind.SERVICE to name.fqn()
       }
-      val queries = tokens.namedQueries.map { (namespace, namedQueryContext) ->
+      val queries = tokens.namedQueries.map { (_,namespace, namedQueryContext) ->
          val queryName = namedQueryContext.queryName().identifier().text
          val queryFqn = QualifiedName.from(namespace, queryName)
          SchemaMemberKind.QUERY to queryFqn

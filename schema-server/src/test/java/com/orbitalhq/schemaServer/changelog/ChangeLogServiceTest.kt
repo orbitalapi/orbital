@@ -13,6 +13,7 @@ import com.orbitalhq.schemas.Metadata
 import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
+import io.kotest.matchers.shouldBe
 import lang.taxi.types.PrimitiveType
 import org.junit.Before
 import org.junit.Test
@@ -39,7 +40,8 @@ class ChangeLogServiceTest {
    @Test
    fun `verify changelog entry when new type added`() {
       val changeLogEntry = submitSource("type FirstName inherits String", "Names")!!
-      changeLogEntry.diffs.single().should.equal(
+      val firstNameDiff = changeLogEntry.diffs.single { it.displayName == "FirstName" }
+      firstNameDiff.should.equal(
          ChangeLogDiffEntry(
             displayName = "FirstName",
             kind = DiffKind.TypeAdded,
@@ -411,7 +413,7 @@ class ChangeLogServiceTest {
             |}
       """.trimMargin(), packageName = "Services"
       )!!
-      changeLogEntry.diffs.single().should.equal(
+      changeLogEntry.diffs.single().shouldBe(
          ChangeLogDiffEntry(
             "People",
             DiffKind.ServiceChanged,
@@ -462,7 +464,7 @@ class ChangeLogServiceTest {
             |}
       """.trimMargin(), packageName = "Services"
       )!!
-      changeLogEntry.diffs.single().should.equal(
+      changeLogEntry.diffs.single().shouldBe(
          ChangeLogDiffEntry(
             "People",
             DiffKind.ServiceChanged,
@@ -474,13 +476,13 @@ class ChangeLogServiceTest {
                   OperationNames.qualifiedName("People", "findPerson"),
                   oldDetails = listOf(
                      Metadata(
-                        name = "HttpOperation".fqn(),
+                        name = "taxi.http.HttpOperation".fqn(),
                         params = mapOf("url" to "http://localhost/foo", "method" to "POST")
                      )
                   ),
                   newDetails = listOf(
                      Metadata(
-                        name = "HttpOperation".fqn(),
+                        name = "taxi.http.HttpOperation".fqn(),
                         params = mapOf("url" to "http://localhost/bar", "method" to "GET")
                      )
                   )

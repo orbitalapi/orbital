@@ -24,7 +24,7 @@ data class ChangeInheritedType(
       taxiDocument: TaxiDocument
    ): Either<CompilationException, SourceEditResult> {
       val compiler = buildCompiler(sourcePackage, taxiDocument)
-      val (_, token) = compiler.tokens.unparsedTypes[symbol.fullyQualifiedName]
+      val (_,_, token) = compiler.tokens.unparsedTypes.singleOrNull { (name,_,_) -> name == symbol.fullyQualifiedName }
          ?: error("Could not find type ${symbol.fullyQualifiedName} in this source")
 
       val typeDeclarationContext = token as TypeDeclarationContext

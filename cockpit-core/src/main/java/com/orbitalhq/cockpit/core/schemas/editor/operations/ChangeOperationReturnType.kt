@@ -27,7 +27,7 @@ data class ChangeOperationReturnType(
    ): Either<CompilationException, SourceEditResult> {
       val compiler = buildCompiler(sourcePackage, taxiDocument)
       val (serviceName, operationName) = OperationNames.serviceAndOperation(symbol)
-      val (_, serviceDefinition) = compiler.tokens.unparsedServices[serviceName]
+      val (_,_, serviceDefinition) = compiler.tokens.unparsedServices.singleOrNull { (name,_,_) -> name == serviceName }
          ?: error("Could not find service $serviceName in this source")
 
       val operationDefinition = serviceDefinition.serviceBody().serviceBodyMember()

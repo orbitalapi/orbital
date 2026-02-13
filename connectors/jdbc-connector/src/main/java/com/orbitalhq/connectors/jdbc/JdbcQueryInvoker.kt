@@ -7,6 +7,7 @@ import com.google.common.base.Stopwatch
 import com.orbitalhq.connectors.TaxiQlInvokerUtils
 import com.orbitalhq.connectors.getTaxiQlQuery
 import com.orbitalhq.connectors.jdbc.sql.dml.SelectStatementGenerator
+import com.orbitalhq.connectors.jdbc.sql.dml.SelectStatementGenerator.SelectType
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.StreamErrorMessage
@@ -46,7 +47,7 @@ class JdbcQueryInvoker(
       val query = TaxiQlInvokerUtils.queryOrErrorFlow(schema, taxiQuery)
          .getOrElse { errorFlow -> return errorFlow }
 //      val query = Compiler(taxiQuery, importSources = listOf(taxiSchema)).queries().first()
-      val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query, connectionConfig.sqlBuilder())
+      val (sql, paramList) = SelectStatementGenerator(taxiSchema).toSql(query, connectionConfig.sqlBuilder(), selectType = SelectType.Records)
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
 
       logger.debug { "$queryId: Starting JDBC Query $sql" }

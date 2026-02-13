@@ -730,6 +730,32 @@ export interface VersionedSource {
   path?: string
 }
 
+/**
+ * Converts a VersionedSource to its proper file URI for use with the language server.
+ * Uses /web/sandbox/ prefix (Monaco's configured workspace root) to prevent file system
+ * write errors, while preserving the full path for language server identification.
+ */
+export function getVersionedSourceUri(source: VersionedSource): string {
+  // Prefer the full path if available
+  if (source.path) {
+    // Check if it's already a URI, use it as-is
+    if (source.path.startsWith('file://') || source.path.startsWith('/web/')) {
+      return source.path;
+    }
+    // Encode the full path under /web/sandbox/ to prevent Monaco file system access
+    // while preserving path information for the language server
+    if (source.path.startsWith('/')) {
+      // Remove leading slash since we're adding /web/sandbox/
+      return `/web/sandbox${source.path}`;
+    }
+    // Fallback for relative or other paths
+    return `/web/sandbox/${source.path}`;
+  }
+
+  // Fallback to name if no path available
+  return source.name;
+}
+
 
 export interface Message {
   message: string;

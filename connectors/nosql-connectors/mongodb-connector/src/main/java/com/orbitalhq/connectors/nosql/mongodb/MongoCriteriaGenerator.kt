@@ -149,7 +149,7 @@ class MongoCriteriaGenerator(private val taxiSchema: TaxiDocument) {
       type: ObjectType
    ): Criteria {
       val fieldReference = getSingleField(type, lhs.type)
-      val fieldName = if (fieldReference.path.single().IdField()) MongoIdField else fieldReference.path.single().name
+      val fieldName = if (fieldReference.path.single().isIdField) MongoIdField else fieldReference.path.single().name
       val condition = when (operator) {
          FormulaOperator.In -> Criteria.where(fieldName).`in`(rhs.toListOfValues())
          FormulaOperator.NotIn -> Criteria.where(fieldName).not().`in`(rhs.toListOfValues())
@@ -166,7 +166,7 @@ class MongoCriteriaGenerator(private val taxiSchema: TaxiDocument) {
       type: ObjectType
    ): Criteria {
       val fieldReference = getSingleField(type, lhs.type)
-      val fieldName = if (fieldReference.path.single().IdField()) MongoIdField else fieldReference.path.single().name
+      val fieldName = if (fieldReference.path.single().isIdField) MongoIdField else fieldReference.path.single().name
       val condition = when (operator) {
          FormulaOperator.Equal -> Criteria.where(fieldName).`is`(rhs.value)
          FormulaOperator.NotEqual -> Criteria.where(fieldName).ne(rhs.value)

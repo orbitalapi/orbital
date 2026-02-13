@@ -10,6 +10,7 @@ import com.orbitalhq.VersionedSource
 import com.orbitalhq.VyneProvider
 import com.orbitalhq.cockpit.core.WebSocketConfig
 import com.orbitalhq.cockpit.core.pipelines.StreamResultsWebsocketPublisher
+import com.orbitalhq.cockpit.core.schemas.BuiltInTypesProvider
 import com.orbitalhq.cockpit.core.security.authorisation.VyneAuthorisationConfig
 import com.orbitalhq.errors.ErrorType
 import com.orbitalhq.metrics.NoOpMetricsReporter
@@ -82,9 +83,7 @@ class SavedQueryWithAuthPolicyIntegrationTest : BaseIntegrationTest() {
 
    object TestSchema {
       val source = """
-         ${AuthClaimType.AuthClaimsTypeDefinition}
-         ${UserType.UsernameTypeDefinition}
-         ${ErrorType.ErrorTypeDefinition}
+      import com.orbitalhq.errors.NotAuthorizedError
       namespace com.petflix {
          model Film {
             filmId : FilmId inherits Int
@@ -143,11 +142,20 @@ class SavedQueryWithAuthPolicyIntegrationTest : BaseIntegrationTest() {
       }
       """.trimIndent()
 
-      val schema = TaxiSchema.from(source, "UserSchema", "0.1.0")
+      val schema = TaxiSchema.from(
+         source, "UserSchema", "0.1.0",
+         importSources = listOf(BuiltInTypesProvider.asTaxiSchema())
+      )
    }
 
    @TestConfiguration
-   @Import(TestDiscoveryClientConfig::class, WebSocketConfig::class, StreamResultsWebsocketPublisher::class, StreamResultsService::class, ResultStreamAuthorizationDecorator::class)
+   @Import(
+      TestDiscoveryClientConfig::class,
+      WebSocketConfig::class,
+      StreamResultsWebsocketPublisher::class,
+      StreamResultsService::class,
+      ResultStreamAuthorizationDecorator::class
+   )
    class SpringConfig {
 
       @Bean
@@ -164,6 +172,7 @@ class SavedQueryWithAuthPolicyIntegrationTest : BaseIntegrationTest() {
       @Bean
       fun schemaStore(): LocalValidatingSchemaStoreClient {
          val schemaStore = LocalValidatingSchemaStoreClient()
+         schemaStore.submitSchemas(BuiltInTypesProvider.sourcePackage.packageMetadata, BuiltInTypesProvider.sourcePackage.sources)
          schemaStore.submitSchemas(
             PackageMetadata.from("com.foo", "test", "1.0.0"),
             listOf(VersionedSource.sourceOnly(TestSchema.source))
@@ -174,7 +183,7 @@ class SavedQueryWithAuthPolicyIntegrationTest : BaseIntegrationTest() {
       @Bean
       @Primary
       fun vyneProvider(schemaStore: SchemaStore): VyneProvider {
-         val (vyne, stub) = testVyne(TestSchema.source)
+         val (vyne, stub) = testVyne(TestSchema.schema)
          stub.addResponse(
             "getFilms", vyne.parseJson(
                "com.petflix.Film[]", """
@@ -186,11 +195,13 @@ class SavedQueryWithAuthPolicyIntegrationTest : BaseIntegrationTest() {
          """.trimIndent()
             )
          )
-         stub.addResponse("getSingleFilm", vyne.parseJson(
-            "com.petflix.Film", """
+         stub.addResponse(
+            "getSingleFilm", vyne.parseJson(
+               "com.petflix.Film", """
                { "filmId": "1010", "title": "Star Wars" }
             """.trimIndent()
-         ))
+            )
+         )
          return SimpleVyneProvider(vyne)
       }
 
@@ -232,6 +243,7 @@ class SavedQueryWithAuthPolicyIntegrationTest : BaseIntegrationTest() {
          mapOf("filmId" to 1030, "title" to "Return of the Jedi"),
       )
    }
+
    @Test
    fun `requesting a saved request-response single-value query applies policy hiding value`() {
       val result = loadSingleValueUrlResponseForUser(platformManagerUser, "/api/q/films/123")
@@ -270,7 +282,7 @@ class SavedQueryWithAuthPolicyIntegrationTest : BaseIntegrationTest() {
 
    @Test
    fun `requesting a saved request-response query applies policy returning 401 Not Authorized`() {
-      val (status,body) = getUrlResponseSpecForUser(viewerUserName, "/api/q/films")
+      val (status, body) = getUrlResponseSpecForUser(viewerUserName, "/api/q/films")
          .statusCodeAndBody()
       status.value().shouldBe(401)
       body.shouldBe("Not Authorized")
@@ -278,7 +290,7 @@ class SavedQueryWithAuthPolicyIntegrationTest : BaseIntegrationTest() {
 
    @Test
    fun `requesting a saved request-response with single return value query applies policy returning 401 Not Authorized`() {
-      val (status,body) = getUrlResponseSpecForUser(viewerUserName, "/api/q/films/123")
+      val (status, body) = getUrlResponseSpecForUser(viewerUserName, "/api/q/films/123")
          .statusCodeAndBody()
       status.value().shouldBe(401)
       body.shouldBe("Not Authorized")
@@ -299,7 +311,7 @@ class SavedQueryWithAuthPolicyIntegrationTest : BaseIntegrationTest() {
 
       val result = getUrlStreamResponseSpecForUser(adminUserName, "/api/q/newReleases")
          .retrieve()
-         .bodyToFlux<Map<String,Any?>>()
+         .bodyToFlux<Map<String, Any?>>()
 
       result.test()
          .expectSubscription()
@@ -315,11 +327,11 @@ class SavedQueryWithAuthPolicyIntegrationTest : BaseIntegrationTest() {
    @Test
    fun `observe a persistent stream over SSE with a policy applied hiding a value`() {
       val sink = Sinks.many().unicast().onBackpressureBuffer<Any>()
-      whenever(hazelcastStreamObserver.getResultStream(any(),)).thenReturn(sink.asFlux())
+      whenever(hazelcastStreamObserver.getResultStream(any())).thenReturn(sink.asFlux())
 
       val result = getUrlStreamResponseSpecForUser(platformManagerUser, "/api/q/newReleases")
          .retrieve()
-         .bodyToFlux<Map<String,Any?>>()
+         .bodyToFlux<Map<String, Any?>>()
 
       result.test()
          .expectSubscription()

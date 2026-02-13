@@ -477,7 +477,7 @@ class ExpressionTest {
             }
             [[ Models the markup that is applied for each customer ]]
             model MarkupSchedule {
-               markup : ClientMarkupRate inherits Decimal
+               markup : ClientMarkupRate
             }
             model CommissionSchedule {
                commissionRate : AgentCommissionRate

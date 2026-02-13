@@ -370,7 +370,7 @@ class StreamJoiningTest : DescribeSpec({
             parameter model OrderEvent {
               @Id id: OrderId inherits Int
               timestamp: OrderTimestamp inherits Instant
-              customer_id: CustomerId inherits Int
+              customer_id: CustomerId
             }
             parameter model ShipmentEvent {
               id: ShipmentId inherits Int

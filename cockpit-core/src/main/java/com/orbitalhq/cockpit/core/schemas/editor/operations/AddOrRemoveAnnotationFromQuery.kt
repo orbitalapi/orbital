@@ -40,9 +40,9 @@ abstract class AddOrRemoveAnnotationFromQuery(override val editKind: EditKind) :
       val compiler = buildCompiler(sourcePackage, taxiDocument)
       val (tokens, errors) = compiler.parseResult
 
-      val matchingQueries = tokens.namedQueries.filter { it.second.queryName().identifier().text == queryQualifiedName.name }
+      val matchingQueries = tokens.namedQueries.filter { it.third.queryName().identifier().text == queryQualifiedName.name }
 
-      val (_, namedQueryToken) = when {
+      val (_, _,namedQueryToken) = when {
          matchingQueries.isEmpty() -> error("Could not find a query named $queryQualifiedName in the provided source")
          matchingQueries.size > 1 -> error("Found more than one query named $queryQualifiedName in the provided source")
          else -> matchingQueries.single()

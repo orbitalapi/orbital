@@ -107,13 +107,13 @@ class VyneQueryIntegrationTest : DatabaseTest() {
 
             @com.orbitalhq.models.OmitNulls
             model UserWithNulls {
-               userId : UserId inherits String
-               userName : Username inherits String
+               userId : UserId
+               userName : Username
             }
 
             type Empty {
                emptyId : EmptyId inherits String
-               userName : Username inherits String
+               userName : Username
             }
 
             service UserService {

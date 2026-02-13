@@ -2,6 +2,7 @@ package com.orbitalhq.connectors.aws.dynamodb
 
 import lang.taxi.types.Type
 
+
 fun getDynamoTableFromType(type: Type): DynamoConnectorTaxi.Annotations.Table {
     val annotation =
         type.annotations.firstOrNull { it.qualifiedName == DynamoConnectorTaxi.Annotations.Table.NAME }

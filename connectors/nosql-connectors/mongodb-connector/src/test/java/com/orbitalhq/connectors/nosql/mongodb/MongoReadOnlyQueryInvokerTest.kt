@@ -362,7 +362,7 @@ class MongoReadOnlyQueryInvokerTest : MongoDbTestcontainer() {
             table films : FilmsWithIntObjectId[]
          }
          model FilmWatchedEvent {
-            filmId : FilmId inherits Int
+            filmId : FilmId
          }
 
          service FilmEventApi {
@@ -768,7 +768,7 @@ class MongoReadOnlyQueryInvokerTest : MongoDbTestcontainer() {
             table films : FilmsWithIntObjectId[]
          }
          model FilmWatchedEvent {
-            filmId : FilmId inherits Int
+            filmId : FilmId
          }
 
          service FilmEventApi {

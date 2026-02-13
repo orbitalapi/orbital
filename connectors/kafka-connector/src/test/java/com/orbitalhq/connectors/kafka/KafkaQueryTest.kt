@@ -631,8 +631,8 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       val schemaV1 = listOf(
          baseSchema, """
                model Movie {
-                  id : MovieId inherits String
-                  title : MovieTitle inherits String
+                  id : MovieId
+                  title : MovieTitle
                }
 
       """.trimIndent()
@@ -640,9 +640,9 @@ class KafkaQueryTest : BaseKafkaContainerTest() {
       val schemaV2 = listOf(
          baseSchema, """
                model Movie {
-                  id : MovieId inherits String
+                  id : MovieId
                   // Change the name
-                  name : MovieTitle inherits String
+                  name : MovieTitle
                }
 
       """.trimIndent()
