@@ -10,6 +10,7 @@
         <as-split-area size="*">
           <app-code-editor class="code-editor"
                            [content]="sourceContent"
+                           [filename]="sourceFileUri"
                            [showCompilationProblemsPanel]="false"
                            [compilationMessages]="selectedSource?.errors"
                            [readOnly]="true"

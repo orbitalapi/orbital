@@ -36,7 +36,7 @@ class VyneServiceInvocationTest {
          }
          model Output {
             @FirstNotEmpty
-            settlementDate : SettlementDate inherits Date
+            settlementDate : SettlementDate
          }
          model Product {
             @Id

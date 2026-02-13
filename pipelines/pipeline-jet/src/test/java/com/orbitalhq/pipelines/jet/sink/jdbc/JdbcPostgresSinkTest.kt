@@ -407,7 +407,7 @@ class JdbcPostgresSinkTest : BaseJetIntegrationTest() {
          }
          model Target {
             @Id()
-            id : PersonId inherits String
+            id : PersonId 
             givenName : FirstName
          }
       """

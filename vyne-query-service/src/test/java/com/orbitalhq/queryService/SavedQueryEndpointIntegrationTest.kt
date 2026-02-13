@@ -223,10 +223,10 @@ class SavedQueryEndpointIntegrationTest : DatabaseTest() {
       @Bean
       fun schemaStore(): LocalValidatingSchemaStoreClient {
          val schemaStore = LocalValidatingSchemaStoreClient()
-         schemaStore.submitSchemas(
-            PackageMetadata.from("com.foo", "test", "1.0.0"),
-            listOf(VersionedSource.sourceOnly(TestSchema.source))
-         )
+//         schemaStore.submitSchemas(
+//            PackageMetadata.from("com.foo", "test", "1.0.0"),
+//            listOf(VersionedSource.sourceOnly(TestSchema.source))
+//         )
          return schemaStore
       }
 

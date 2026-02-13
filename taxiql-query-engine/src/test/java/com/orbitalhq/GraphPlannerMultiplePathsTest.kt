@@ -127,7 +127,7 @@ class GraphPlannerMultiplePathsTest {
             filmId : FilmId
          }
          model Revenue {
-            id : RevenueReportId inherits Int
+            id : RevenueReportId
             earnings : Earnings inherits Decimal
          }
          service FilmsApi {

@@ -8,7 +8,7 @@ import com.orbitalhq.connectors.jdbc.drivers.DatabaseSupport
 import com.zaxxer.hikari.HikariConfig
 
 // Has to be an extension function, because the interface lives in the parent package
-val JdbcConnectionConfiguration.address: String
+val JdbcConnectionConfiguration.address:  String
    get() {
       return this.buildUrlAndCredentials(this.urlBuilder).url
    }

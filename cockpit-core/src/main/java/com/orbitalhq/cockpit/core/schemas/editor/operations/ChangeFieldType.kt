@@ -27,7 +27,7 @@ data class ChangeFieldType(
 
 
       val compiler = buildCompiler(sourcePackage, taxiDocument)
-      val (_, typeDefinition) = compiler.tokens.unparsedTypes[symbol.fullyQualifiedName]
+      val (_, _, typeDefinition) = compiler.tokens.unparsedTypes.singleOrNull { (name,_,_) -> name == symbol.fullyQualifiedName }
          ?: error("Could not find type ${symbol.fullyQualifiedName} in this source")
 
       val fieldDefinition = (typeDefinition as TaxiParser.TypeDeclarationContext).typeBody().typeMemberDeclaration()

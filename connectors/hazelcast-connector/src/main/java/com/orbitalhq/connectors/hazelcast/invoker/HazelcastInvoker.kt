@@ -163,6 +163,7 @@ fun findKeyField(type: com.orbitalhq.schemas.Type): Pair<AttributeName, Field> {
    }
 }
 
+
 fun getMapName(type: com.orbitalhq.schemas.Type): String {
    if (!type.hasMetadata(HazelcastTaxi.Annotations.HazelcastMap)) {
       error("Cannot persist type ${type.qualifiedName.longDisplayName} to a Hazelcast map, as it does not have a @${HazelcastTaxi.Annotations.HazelcastMap.longDisplayName} annotation.")

@@ -107,33 +107,9 @@ namespace com.orbitalhq {
 
     type alias TraderJurisdiction as String
 
-    parameter type Money {
-        currency : Currency
-        value : MoneyAmount
-    }
-
-    type alias Currency as String
-
-    type alias MoneyAmount as Decimal
-
-    type alias RuleEvaluationStatus as RagStatus
-
     type alias TradeValue as Money
 
     type alias TraderMaxTradeValue as Money
-
-
-     enum RagStatus {
-        RED,
-        AMBER,
-        GREEN
-    }
-
-    type alias ClientId as String
-
-    type alias ClientJurisdiction as String
-
-    type alias Username as String
 
     type Client {
         id : ClientId

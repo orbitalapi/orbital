@@ -142,23 +142,23 @@ class QueryLineageTest : BaseQueryServiceTest() {
             traderId : ReutersTraderId inherits String
          }
          service BloombergOrders {
-            @HttpOperation(url = "https://fakeurl")
+            @HttpOperation(url = "https://fakeurl", method = "GET")
             operation findBbgOrders():BloombergOrder[]
          }
          service ReutersOrders {
-            @HttpOperation(url = "https://fakeurl")
+            @HttpOperation(url = "https://fakeurl", method = "GET")
             operation findReutersOrders():ReutersOrder[]
          }
          service BloombergTraderService {
-            @HttpOperation(url = "https://fakeurl")
+            @HttpOperation(url = "https://fakeurl", method = "GET")
             operation resolveBbgTraderId(BbgTraderId):InternalTraderId
          }
          service ReutersTraderService {
-            @HttpOperation(url = "https://fakeurl")
+            @HttpOperation(url = "https://fakeurl", method = "GET")
             operation resolveReutersTraderId(ReutersTraderId):InternalTraderId
          }
          service TraderService {
-            @HttpOperation(url = "https://fakeurl")
+            @HttpOperation(url = "https://fakeurl", method = "GET")
             operation lookupTrader(InternalTraderId):Trader
          }
       """
@@ -180,7 +180,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
             name : String by concat(this.firstName, ' ', this.lastName)
          }[]""",
          clientQueryId = clientQueryId
-      ).block().body!!.toList()
+      ).block()!!.body!!.toList()
       Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
          val historyRecord = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
          historyRecord!!.endTime != null
@@ -259,7 +259,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
             }
          }[]""",
          clientQueryId = clientQueryId
-      ).block().body!!.toList()
+      ).block()!!.body!!.toList()
       Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
          val historyRecord = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
          historyRecord!!.endTime != null
@@ -291,8 +291,8 @@ class QueryLineageTest : BaseQueryServiceTest() {
             noClaimsBonus : NoClaimsBonus inherits Decimal
          }
          model ClientData {
-            creditScore : CreditScore inherits String
-            noClaimsBonus : NoClaimsBonus inherits Decimal
+            creditScore : CreditScore
+            noClaimsBonus : NoClaimsBonus
          }
          type CustomerId inherits String
          service InsuranceQuotes {
@@ -314,7 +314,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
             find { Quote }
          """,
          clientQueryId = clientQueryId
-      ).block().body!!.single()
+      ).block()!!.body!!.single()
       Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
          val historyRecord = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
          historyRecord!!.endTime != null

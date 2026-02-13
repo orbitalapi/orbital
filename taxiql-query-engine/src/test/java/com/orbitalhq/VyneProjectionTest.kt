@@ -2621,8 +2621,8 @@ service Broker1Service {
             name : ActorName inherits String
          }
          model Movie {
-            @Id movieId : MovieId inherits String
-            title : MovieTitle inherits String
+            @Id movieId : MovieId
+            title : MovieTitle
             starring : ActorId
          }
          model OutputModel {

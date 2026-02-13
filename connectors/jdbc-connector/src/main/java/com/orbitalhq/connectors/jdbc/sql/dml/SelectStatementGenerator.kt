@@ -108,7 +108,8 @@ class SelectStatementGenerator(
    @Deprecated("use generateSelect(), as it provides richer support for different dialects")
    fun toSql(
       query: TaxiQlQuery,
-      sqlDsl: DSLContext, selectType: SelectType = SelectType.Records
+      sqlDsl: DSLContext,
+      selectType: SelectType = SelectType.Records
    ): Pair<String, List<SqlTemplateParameter>> {
       val (select, params) = generateSelect(query, sqlDsl, selectType)
       val sql = sqlDsl.renderNamedParams(select)

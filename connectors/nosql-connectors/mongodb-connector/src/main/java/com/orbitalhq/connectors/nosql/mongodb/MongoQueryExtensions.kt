@@ -29,13 +29,14 @@ fun ObjectType.IdFields(): List<Field> {
    return this.allFields.filter { it.annotations.any { annotation -> annotation.name == "Id" } }
 }
 
-fun Field.IdField(): Boolean{
-   return this.annotations.any { annotation -> annotation.name == "Id" }
-}
+val Field.isIdField: Boolean
+   get() {
+      return this.annotations.any { annotation -> annotation.name == "Id" }
+   }
 
 
 object MongoQueryHelpers {
-    fun getCollectionNames(
+   fun getCollectionNames(
       typesToFind: List<Pair<ObjectType, DiscoveryType>>,
    ): Map<Type, String> {
       val tableNames: Map<Type, String> = typesToFind.mapIndexed { index, (type, _) ->

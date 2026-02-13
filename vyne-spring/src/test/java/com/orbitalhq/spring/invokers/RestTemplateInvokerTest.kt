@@ -678,10 +678,9 @@ service FilmApi {
          namespace vyne {
              @com.orbitalhq.models.OmitNulls
              parameter model CreditScoreRequest {
-                 clientId : ClientId inherits String
+                 clientId : ClientId
                  clientName: ClientName? inherits String
              }
-
              type ClientId inherits String
 
               model CreditScoreResponse {

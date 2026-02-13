@@ -8,6 +8,7 @@ import {createConfiguredEditor, createModelReference, IReference, ITextFileEdito
 import '@codingame/monaco-vscode-theme-defaults-default-extension';
 import '@codingame/monaco-vscode-json-default-extension';
 import getConfigurationServiceOverride from '@codingame/monaco-vscode-configuration-service-override';
+import getFileServiceOverride from '@codingame/monaco-vscode-files-service-override';
 import {initServices, MonacoLanguageClient} from 'monaco-languageclient';
 import {CloseAction, Diagnostic, ErrorAction, MessageTransports} from 'vscode-languageclient';
 import {toSocket, WebSocketMessageReader, WebSocketMessageWriter} from 'vscode-ws-jsonrpc';
@@ -110,6 +111,7 @@ export const performInit = async (vscodeApiInit: boolean) => {
         // ...getThemeServiceOverride(),
         // ...getTextmateServiceOverride(),
         ...getConfigurationServiceOverride(Uri.file('/web/sandbox')),
+        ...getFileServiceOverride(),
 
         // When this was enabled, I found that keybindings for custom actions (eg: run query)
         // were enabled when the editor was created for the first time, but not subsequent creations
@@ -133,9 +135,13 @@ export const performInit = async (vscodeApiInit: boolean) => {
   }
 };
 
-export const createTaxiEditorModel = async (content: string): Promise<IReference<ITextFileEditorModel>> => {
+export const createTaxiEditorModel = async (content: string, filename?: string, readOnly: boolean = false): Promise<IReference<ITextFileEditorModel>> => {
 
-  const uri = Uri.parse(`/web/sandbox/query-${nanoid(8)}.taxi`);
+  // For read-only files with real paths, use random sandbox URIs to prevent file service errors
+  // The didOpen notification will use the real path, but Monaco won't try to write
+  const uri = (filename && !readOnly)
+    ? Uri.parse(filename)
+    : Uri.parse(`/web/sandbox/query-${nanoid(8)}.taxi`);
   const modelRef: IReference<ITextFileEditorModel> = await createModelReference(uri, content);
 
   modelRef.object.setLanguageId(TAXI_LANGUAGE_ID);

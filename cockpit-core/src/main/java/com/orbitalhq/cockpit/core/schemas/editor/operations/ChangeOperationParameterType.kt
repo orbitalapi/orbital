@@ -21,7 +21,7 @@ data class ChangeOperationParameterType(
    ): Either<CompilationException, SourceEditResult> {
       val compiler = buildCompiler(sourcePackage, taxiDocument)
       val (serviceName, operationName) = OperationNames.serviceAndOperation(symbol.fullyQualifiedName)
-      val (_, serviceDefinition) = compiler.tokens.unparsedServices[serviceName]
+      val (_,_, serviceDefinition) = compiler.tokens.unparsedServices.singleOrNull { (name,_,_) -> name == serviceName }
          ?: error("Could not find service ${symbol.fullyQualifiedName} in this source")
 
       val operation = serviceDefinition.serviceBody().serviceBodyMember()

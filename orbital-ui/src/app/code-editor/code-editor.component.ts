@@ -164,6 +164,15 @@ export class CodeEditorComponent implements OnInit, OnDestroy {
     }
   }
 
+  /**
+   * Optional filename/path for the file being edited.
+   * When provided, this will be used as the URI for the Monaco model,
+   * allowing the language server to recognize it as an existing project file.
+   * When not provided, a random sandbox filename will be generated.
+   */
+  @Input()
+  filename?: string;
+
   private modelChanged$ = new EventEmitter<IModelContentChangedEvent>();
 
   @Output()
@@ -247,9 +256,21 @@ export class CodeEditorComponent implements OnInit, OnDestroy {
     const {modelRef, model} = await this.createNewMonacoModel();
     this.monacoModel = model;
     const diagnosticsEvents = await this.languageServerService.getDiagnostics$();
+    const modelUri = model.textEditorModel.uri.toString();
     diagnosticsEvents.pipe(
       takeUntilDestroyed(this.destroyRef),
-      filter(event => event.uri === model.textEditorModel.uri.toString()),
+      filter(event => {
+        // For read-only files, match against the real filename (not the random sandbox URI)
+        // For editable files, match against the model URI
+        if (this.readOnly && this.filename) {
+          // Strip /web/sandbox prefix from filename if present for comparison
+          const realFilename = this.filename.replace(/^\/web\/sandbox/, '');
+          const eventUri = event.uri.replace(/^file:\/\//, '');
+          return eventUri === realFilename || event.uri === this.filename;
+        }
+        // For editable files, use model URI
+        return event.uri === modelUri;
+      }),
       debounceTime(100)
     ).subscribe(next => {
       this.compilationMessages = next.diagnostics.map(message => {
@@ -311,9 +332,15 @@ export class CodeEditorComponent implements OnInit, OnDestroy {
   }
 
   private async sendOpenNotification() {
+    const modelUri = this.monacoModel.resource.toString();
+    // Strip /web/sandbox prefix for the language server if present
+    // Monaco uses /web/sandbox/ to avoid file system writes, but the language server
+    // knows files by their real paths
+    const languageServerUri = modelUri.replace(/^file:\/\/\/web\/sandbox/, 'file://');
+
     this.languageClient.sendNotification(DidOpenTextDocumentNotification.type, {
       textDocument: {
-        uri: this.monacoModel.resource.toString(),
+        uri: languageServerUri,
         languageId: 'taxi',
         version: 0,
         text: this.content,
@@ -330,7 +357,7 @@ export class CodeEditorComponent implements OnInit, OnDestroy {
   }
 
   private async createNewMonacoModel() {
-    const modelRef = await createTaxiEditorModel(this.content);
+    const modelRef = await createTaxiEditorModel(this.content, this.filename, this.readOnly);
     const model: ITextFileEditorModel = modelRef.object;
     model.onDidChangeContent(() => this.modelChanged$.emit())
     return {modelRef, model};
