@@ -14,16 +14,16 @@ class AuthSchemeTest {
    fun `can read and write to HOCON`() {
       val tokens = AuthTokens(
          mapOf(
-            "com.foo.BasicService" to BasicAuth("jimmy", "password"),
-            "com.foo.HeaderService" to HttpHeader("header", "wine"),
-            "com.foo.QueryParamService" to QueryParam("auth", "wine"),
-            "com.bar.baz.OauthService" to OAuth2(
+            "com.foo.BasicService" to listOf(BasicAuth("jimmy", "password")),
+            "com.foo.HeaderService" to listOf(HttpHeader("header", "wine")),
+            "com.foo.QueryParamService" to listOf(QueryParam("auth", "wine")),
+            "com.bar.baz.OauthService" to listOf(OAuth2(
                "http://foo.com",
                "clientId",
                "secret",
                listOf("name", "photo"),
                OAuth2.AuthorizationGrantType.AuthorizationCode
-            )
+            ))
          )
       )
 

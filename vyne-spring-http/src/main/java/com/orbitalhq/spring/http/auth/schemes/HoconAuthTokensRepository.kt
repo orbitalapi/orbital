@@ -34,7 +34,7 @@ class HoconAuthTokensRepository(
    }
 
 
-   override fun getAll(): Map<ServiceName,AuthScheme> {
+   override fun getAll(): Map<ServiceName, List<AuthScheme>> {
       return typedConfig().authenticationTokens
    }
 
@@ -88,14 +88,13 @@ class HoconAuthTokensRepository(
       return getRegisteredKey(presentedKey, authTokens)
    }
 
-   override fun getAuthScheme(serviceName: ServiceName): AuthScheme? {
+   override fun getAuthSchemes(serviceName: ServiceName): List<AuthScheme> {
       return typedConfig().authenticationTokens[serviceName]
-         ?: getWildcardMatch(serviceName)
-
+         ?: getWildcardMatches(serviceName)
    }
 
-   private fun getWildcardMatch(serviceName: String): AuthScheme? {
-      return getWildcardMatch(serviceName, typedConfig())
+   private fun getWildcardMatches(serviceName: String): List<AuthScheme> {
+      return getWildcardMatches(serviceName, typedConfig())
    }
 
 

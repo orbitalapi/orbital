@@ -16,13 +16,13 @@ class HttpAuthConfigTest {
    @Test
    fun `oauth refresh tokens are registered in client registry`() {
       val authProvider = SimpleAuthSchemeProvider(AuthTokens(
-         mapOf("my-oauth-service" to OAuth2(
+         mapOf("my-oauth-service" to listOf(OAuth2(
             "https://token-api",
             "clientId",
             "clientSecret",
             grantType = OAuth2.AuthorizationGrantType.RefreshToken,
             refreshToken = "my-refresh-token"
-         ))
+         )))
       ))
       val (clientService,clientManager) = oauthAuthorizedClientManager(authProvider)
       val refreshTokenManager = OAuthRefreshTokenManager(clientService, authProvider)
@@ -36,12 +36,12 @@ class HttpAuthConfigTest {
    @Test
    fun `oauth client credentials tokens are not registered in client registry`() {
       val authProvider = SimpleAuthSchemeProvider(AuthTokens(
-         mapOf("my-oauth-service" to OAuth2(
+         mapOf("my-oauth-service" to listOf(OAuth2(
             "https://token-api",
             "clientId",
             "clientSecret",
             grantType = OAuth2.AuthorizationGrantType.ClientCredentials,
-         ))
+         )))
       ))
       val (clientService,b) = oauthAuthorizedClientManager(authProvider)
       val authorizedClient = clientService.loadAuthorizedClient<OAuth2AuthorizedClient>("my-oauth-service", OAuth2Utils.ANONYMOUS_USER )

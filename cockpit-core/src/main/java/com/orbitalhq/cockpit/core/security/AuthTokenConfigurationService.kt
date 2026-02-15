@@ -70,7 +70,7 @@ class AuthTokenConfigurationService(
 
    @GetMapping("/api/tokens")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewAuthenticationTokens}')")
-   fun listTokens(): Mono<Map<ServiceName, AuthScheme>> {
+   fun listTokens(): Mono<Map<ServiceName, List<AuthScheme>>> {
       return Mono.just(this.authSchemeRepository.listTokensWithoutCredentials())
    }
 }
