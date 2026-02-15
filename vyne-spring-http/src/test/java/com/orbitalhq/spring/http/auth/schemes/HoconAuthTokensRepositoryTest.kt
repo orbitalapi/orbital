@@ -26,6 +26,7 @@ class HoconAuthTokensRepositoryTest {
 
 
    @Test
+   @Suppress("DEPRECATION")
    fun `when a token is defined with a wildcard then it is returned`() {
       val loader = SimpleConfigSourceLoader(
          VersionedSource(
@@ -199,6 +200,7 @@ authenticationTokens {
    }
 
 
+   @Suppress("DEPRECATION")
    private fun configShouldMatch(config: String, auth: AuthScheme, serviceName: String = "com.foo.TestService") {
       val loader = SimpleConfigSourceLoader(
          VersionedSource(
@@ -218,6 +220,7 @@ authenticationTokens {
    }
 
    @Test
+   @Suppress("DEPRECATION")
    fun `when env vars are provided from another loader they are resolved`() {
       val loader = SimpleConfigSourceLoader(
          VersionedSource(
@@ -249,6 +252,7 @@ thePassword: hello
    }
 
    @Test
+   @Suppress("DEPRECATION")
    fun `can save a token`() {
       val packageIdentifier = PackageIdentifier.fromId("com.foo/test/1.0.0")
       val configFilePath = folder!!.resolve("auth.conf")
@@ -282,6 +286,7 @@ thePassword: hello
    }
 
    @Test
+   @Suppress("DEPRECATION")
    fun `when saving a token with an env variable the unresolved value is saved`() {
       val packageIdentifier = PackageIdentifier.fromId("com.foo/test/1.0.0")
       val configFilePath = folder!!.resolve("auth.conf")
@@ -331,6 +336,286 @@ thePassword: hello
       loadedToken.shouldBe(readToken)
    }
 
+   @Test
+   fun `can read multiple auth schemes in list format`() {
+      val loader = SimpleConfigSourceLoader(
+         VersionedSource(
+            "auth.conf",
+            "1.0.0",
+            """
+authenticationTokens {
+   "com.foo.TestService" : [
+      {
+         type: HttpHeader
+         value: token123
+         headerName: X-API-Token
+      },
+      {
+         type: QueryParam
+         parameterName: apiKey
+         value: key456
+      },
+      {
+         type: Cookie
+         cookieName: session
+         value: sessionValue
+      }
+   ]
+}
+            """.trimIndent()
+         )
+      )
+      val repo = HoconAuthTokensRepository(listOf(loader))
+      val schemes = repo.getAuthSchemes("com.foo.TestService")
+
+      schemes.size.shouldBe(3)
+      (schemes[0] as HttpHeader).value.shouldBe("token123")
+      (schemes[0] as HttpHeader).headerName.shouldBe("X-API-Token")
+      (schemes[1] as QueryParam).value.shouldBe("key456")
+      (schemes[1] as QueryParam).parameterName.shouldBe("apiKey")
+      (schemes[2] as Cookie).value.shouldBe("sessionValue")
+      (schemes[2] as Cookie).cookieName.shouldBe("session")
+   }
+
+   @Test
+   fun `single auth scheme in old format is wrapped in list`() {
+      val loader = SimpleConfigSourceLoader(
+         VersionedSource(
+            "auth.conf",
+            "1.0.0",
+            """
+authenticationTokens {
+   "com.foo.TestService" {
+      type: HttpHeader
+      value: token123
+   }
+}
+            """.trimIndent()
+         )
+      )
+      val repo = HoconAuthTokensRepository(listOf(loader))
+      val schemes = repo.getAuthSchemes("com.foo.TestService")
+
+      // Old format should be wrapped in a list
+      schemes.size.shouldBe(1)
+      (schemes[0] as HttpHeader).value.shouldBe("token123")
+   }
+
+   @Test
+   @Suppress("DEPRECATION")
+   fun `getAuthScheme deprecated method returns first scheme for backwards compatibility`() {
+      val loader = SimpleConfigSourceLoader(
+         VersionedSource(
+            "auth.conf",
+            "1.0.0",
+            """
+authenticationTokens {
+   "com.foo.TestService" : [
+      {
+         type: HttpHeader
+         value: token123
+      },
+      {
+         type: QueryParam
+         parameterName: apiKey
+         value: key456
+      }
+   ]
+}
+            """.trimIndent()
+         )
+      )
+      val repo = HoconAuthTokensRepository(listOf(loader))
+
+      val scheme = repo.getAuthScheme("com.foo.TestService")
+
+      scheme.shouldNotBeNull()
+      (scheme as HttpHeader).value.shouldBe("token123")
+   }
+
+   @Test
+   fun `wildcard matching works with multiple auth schemes`() {
+      val loader = SimpleConfigSourceLoader(
+         VersionedSource(
+            "auth.conf",
+            "1.0.0",
+            """
+authenticationTokens {
+   "com.foo.*" : [
+      {
+         type: HttpHeader
+         value: token123
+      },
+      {
+         type: QueryParam
+         parameterName: apiKey
+         value: key456
+      }
+   ]
+}
+            """.trimIndent()
+         )
+      )
+      val repo = HoconAuthTokensRepository(listOf(loader))
+
+      val schemes = repo.getAuthSchemes("com.foo.bar.MyService")
+      schemes.size.shouldBe(2)
+      (schemes[0] as HttpHeader).value.shouldBe("token123")
+      (schemes[1] as QueryParam).value.shouldBe("key456")
+   }
+
+   @Test
+   fun `empty list returned when no auth schemes configured for service`() {
+      val loader = SimpleConfigSourceLoader(
+         VersionedSource(
+            "auth.conf",
+            "1.0.0",
+            """
+authenticationTokens {
+   "com.foo.TestService" {
+      type: HttpHeader
+      value: token123
+   }
+}
+            """.trimIndent()
+         )
+      )
+      val repo = HoconAuthTokensRepository(listOf(loader))
+
+      val schemes = repo.getAuthSchemes("com.bar.OtherService")
+      schemes.size.shouldBe(0)
+   }
+
+   @Test
+   fun `listTokensWithoutCredentials returns sanitized single auth scheme`() {
+      val loader = SimpleConfigSourceLoader(
+         VersionedSource(
+            "auth.conf",
+            "1.0.0",
+            """
+authenticationTokens {
+   "com.foo.TestService" {
+      type: Basic
+      username: testuser
+      password: secretpassword
+   }
+   "com.bar.OtherService" {
+      type: HttpHeader
+      value: supersecrettoken
+      headerName: X-API-Key
+   }
+}
+            """.trimIndent()
+         )
+      )
+      val repo = HoconAuthTokensRepository(listOf(loader))
+
+      val tokensWithoutCreds = repo.listTokensWithoutCredentials()
+
+      tokensWithoutCreds.size.shouldBe(2)
+      tokensWithoutCreds["com.foo.TestService"].shouldNotBeNull()
+      tokensWithoutCreds["com.foo.TestService"]!!.size.shouldBe(1)
+
+      val basicAuth = tokensWithoutCreds["com.foo.TestService"]!![0] as BasicAuth
+      basicAuth.username.shouldBe("testuser")
+      basicAuth.password.shouldBe("**************") // Sanitized
+
+      val httpHeader = tokensWithoutCreds["com.bar.OtherService"]!![0] as HttpHeader
+      httpHeader.value.shouldBe("**************") // Sanitized
+   }
+
+   @Test
+   fun `listTokensWithoutCredentials returns sanitized multiple auth schemes`() {
+      val loader = SimpleConfigSourceLoader(
+         VersionedSource(
+            "auth.conf",
+            "1.0.0",
+            """
+authenticationTokens {
+   "com.foo.MultiAuthService" : [
+      {
+         type: Basic
+         username: user1
+         password: pass1
+      },
+      {
+         type: HttpHeader
+         value: token123
+         headerName: X-API-Token
+      },
+      {
+         type: QueryParam
+         parameterName: apiKey
+         value: secret456
+      }
+   ]
+}
+            """.trimIndent()
+         )
+      )
+      val repo = HoconAuthTokensRepository(listOf(loader))
+
+      val tokensWithoutCreds = repo.listTokensWithoutCredentials()
+
+      tokensWithoutCreds.size.shouldBe(1)
+      val schemes = tokensWithoutCreds["com.foo.MultiAuthService"]
+      schemes.shouldNotBeNull()
+      schemes!!.size.shouldBe(3)
+
+      // Verify all credentials are sanitized
+      val basicAuth = schemes[0] as BasicAuth
+      basicAuth.username.shouldBe("user1")
+      basicAuth.password.shouldBe("**************")
+
+      val httpHeader = schemes[1] as HttpHeader
+      httpHeader.value.shouldBe("**************")
+
+      val queryParam = schemes[2] as QueryParam
+      queryParam.value.shouldBe("**************")
+   }
+
+   @Test
+   fun `listTokensWithoutCredentials works with wildcard patterns`() {
+      val loader = SimpleConfigSourceLoader(
+         VersionedSource(
+            "auth.conf",
+            "1.0.0",
+            """
+authenticationTokens {
+   "com.foo.*" {
+      type: HttpHeader
+      value: wildcardtoken
+   }
+   "com.bar.SpecificService" : [
+      {
+         type: Basic
+         username: admin
+         password: adminpass
+      },
+      {
+         type: QueryParam
+         parameterName: key
+         value: value123
+      }
+   ]
+}
+            """.trimIndent()
+         )
+      )
+      val repo = HoconAuthTokensRepository(listOf(loader))
+
+      val tokensWithoutCreds = repo.listTokensWithoutCredentials()
+
+      tokensWithoutCreds.size.shouldBe(2)
+
+      // Wildcard should be included
+      tokensWithoutCreds["com.foo.*"].shouldNotBeNull()
+      tokensWithoutCreds["com.foo.*"]!!.size.shouldBe(1)
+
+      // Specific service with multiple schemes
+      tokensWithoutCreds["com.bar.SpecificService"].shouldNotBeNull()
+      tokensWithoutCreds["com.bar.SpecificService"]!!.size.shouldBe(2)
+   }
 
 
 }

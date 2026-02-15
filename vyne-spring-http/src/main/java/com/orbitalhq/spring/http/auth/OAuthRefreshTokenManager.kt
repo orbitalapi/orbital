@@ -46,22 +46,27 @@ class OAuthRefreshTokenManager(
    }
 
    fun resetRefreshTokens() {
-      authSchemeProvider.getAllOfType<OAuth2>()
-         .filter { (serviceName, token) -> token.refreshToken != null }
-         .ifEmpty {
-            logger.info { "Auth config has changed. No OAuth refresh tokens configured, so nothing to do" }
-            emptyMap()
+      val oauthTokens = authSchemeProvider.getAllOfType<OAuth2>()
+         .flatMap { (serviceName, tokens) ->
+            tokens.filter { it.refreshToken != null }
+               .map { serviceName to it }
          }
-         .forEach { (serviceName, oauthToken) ->
-            logger.info { "Resetting auth for $serviceName to expired access token, forcing refresh on next call" }
-            val (principal, client) = oauthToken.createAuthorizedClient(
-               serviceName, "expiredToken", Instant.MIN,
-               Instant.MIN.plusSeconds(60)
-            )
-            authorizedClientService.saveAuthorizedClient(
-               client, principal
-            ).subscribe()
-            logger.info { "Auth for $serviceName has been reset" }
-         }
+
+      if (oauthTokens.isEmpty()) {
+         logger.info { "Auth config has changed. No OAuth refresh tokens configured, so nothing to do" }
+         return
+      }
+
+      oauthTokens.forEach { (serviceName, oauthToken) ->
+         logger.info { "Resetting auth for $serviceName to expired access token, forcing refresh on next call" }
+         val (principal, client) = oauthToken.createAuthorizedClient(
+            serviceName, "expiredToken", Instant.MIN,
+            Instant.MIN.plusSeconds(60)
+         )
+         authorizedClientService.saveAuthorizedClient(
+            client, principal
+         ).subscribe()
+         logger.info { "Auth for $serviceName has been reset" }
+      }
    }
 }

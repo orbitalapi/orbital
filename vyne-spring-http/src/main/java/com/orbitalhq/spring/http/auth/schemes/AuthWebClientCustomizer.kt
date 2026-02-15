@@ -87,19 +87,54 @@ class AuthWebClientCustomizer(
          val serviceName = request.attribute(SERVICE_NAME_ATTRIBUTE)
             .getOrNull() as ServiceName? ?: error("Attribute $SERVICE_NAME_ATTRIBUTE should be set")
 
-         val authScheme = repository.getAuthScheme(serviceName)
-         if (authScheme != null) {
-            logger.info { "Service $serviceName matched against auth scheme ${authScheme::class.simpleName}" }
+         val authSchemes = repository.getAuthSchemes(serviceName)
+         if (authSchemes.isNotEmpty()) {
+            logger.info {
+               "Service $serviceName matched against ${authSchemes.size} auth scheme(s): " +
+               authSchemes.joinToString(", ") { it::class.simpleName ?: "Unknown" }
+            }
          } else {
             logger.info { "Service $serviceName not configured to use auth" }
+            return next.exchange(request)
          }
-         val filterFunction = getFilterFunction(serviceName, authScheme) ?: return next.exchange(request)
-         return filterFunction.filter(request, next)
+
+         val composedFilter = composeFilterFunctions(serviceName, authSchemes)
+         return composedFilter.filter(request, next)
       }
    }
+
+   /**
+    * Composes multiple filter functions into a single filter that applies all schemes sequentially.
+    * Schemes are applied in the order they appear in the list.
+    */
+   private fun composeFilterFunctions(
+      serviceName: ServiceName,
+      authSchemes: List<AuthScheme>
+   ): ExchangeFilterFunction {
+      // Build list of filter functions for each auth scheme
+      val filters = authSchemes.mapNotNull { authScheme ->
+         getFilterFunction(serviceName, authScheme)
+      }
+
+      // If no filter functions (e.g., all MutualTls), return pass-through
+      if (filters.isEmpty()) {
+         return ExchangeFilterFunction { request, next -> next.exchange(request) }
+      }
+
+      // Compose all filters using reduce pattern
+      return filters.reduce { composed, nextFilter ->
+         ExchangeFilterFunction { request, next ->
+            composed.filter(request) { intermediateRequest ->
+               nextFilter.filter(intermediateRequest, next)
+            }
+         }
+      }
+   }
+
    fun reactorClientHttpConnector(mutualTls: MutualTls) =  ReactorClientHttpConnector(httpClient(mtlsSslContext(mutualTls)))
 
-   fun mutualMtlsAuthScheme(serviceName: ServiceName): MutualTls? =  repository.getAuthScheme(serviceName) as? MutualTls
+   fun mutualMtlsAuthScheme(serviceName: ServiceName): MutualTls? =
+      repository.getAuthSchemes(serviceName).filterIsInstance<MutualTls>().firstOrNull()
 
    private fun getFilterFunction(serviceName: ServiceName, authScheme: AuthScheme?): ExchangeFilterFunction? {
       return when (authScheme) {

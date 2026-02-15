@@ -56,7 +56,7 @@ class OAuthWebClientCustomizerTest {
 
       val serviceName = "MyOAuthService"
       val customizer = AuthWebClientCustomizer.forTokens(
-         AuthTokens(mapOf(serviceName to authScheme)),
+         AuthTokens(mapOf(serviceName to listOf(authScheme))),
          oneTimeRefreshTokenReset = true
       )
       val webClient = WebClient.builder()
@@ -110,7 +110,7 @@ class OAuthWebClientCustomizerTest {
 
       val serviceName = "com.foo.MyOAuthService"
       val customizer = AuthWebClientCustomizer.forTokens(
-         AuthTokens(mapOf("com.foo.*" to authScheme)),
+         AuthTokens(mapOf("com.foo.*" to listOf(authScheme))),
          oneTimeRefreshTokenReset = true
       )
       val webClient = WebClient.builder()
@@ -178,7 +178,7 @@ class OAuthWebClientCustomizerTest {
 
       val serviceName = "MyOAuthService"
       val customizer = AuthWebClientCustomizer.forTokens(
-         AuthTokens(mapOf(serviceName to authScheme)),
+         AuthTokens(mapOf(serviceName to listOf(authScheme))),
          oneTimeRefreshTokenReset = true
       )
       val webClient = WebClient.builder()
@@ -252,7 +252,7 @@ class OAuthWebClientCustomizerTest {
 
       val serviceName = "com.foo.MyOAuthService"
       val customizer = AuthWebClientCustomizer.forTokens(
-         AuthTokens(mapOf("com.foo.*" to authScheme)),
+         AuthTokens(mapOf("com.foo.*" to listOf(authScheme))),
          oneTimeRefreshTokenReset = true
       )
       val webClient = WebClient.builder()
@@ -316,7 +316,7 @@ class OAuthWebClientCustomizerTest {
 
       val serviceName = "MyOAuthService"
       val customizer = AuthWebClientCustomizer.forTokens(
-         AuthTokens(mapOf(serviceName to authScheme)),
+         AuthTokens(mapOf(serviceName to listOf(authScheme))),
          oneTimeRefreshTokenReset = true
       )
       val webClient = WebClient.builder()

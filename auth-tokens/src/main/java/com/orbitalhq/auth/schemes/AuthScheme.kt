@@ -3,7 +3,9 @@ package com.orbitalhq.auth.schemes
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.typesafe.config.Config
+import com.typesafe.config.ConfigList
 import com.typesafe.config.ConfigObject
+import com.typesafe.config.ConfigValueType
 import io.github.config4k.extract
 import com.orbitalhq.auth.tokens.AuthToken
 import com.orbitalhq.config.getSafeConfigString
@@ -17,7 +19,7 @@ import java.io.File
 
 @Serializable
 data class AuthTokens(
-   val authenticationTokens: Map<ServiceName, AuthScheme>
+   val authenticationTokens: Map<ServiceName, List<AuthScheme>>
 ) {
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -41,30 +43,55 @@ data class AuthTokens(
             return empty()
          }
          val tokenConfigs = config.getObject(AuthTokens::authenticationTokens.name)
-         val schemes = tokenConfigs.map { (serviceName, tokenConfig) ->
-            require(tokenConfig is ConfigObject) { "Encoding error - expected a ConfigObject but was ${tokenConfig::class.simpleName}" }
-            val schemeType = tokenConfig["type"]?.unwrapped() as String?
-            val authScheme = if (schemeType == null) {
-               logger.error { "Configured Auth for service $serviceName does not define a type property - it looks like this is using an old format" }
-               val authScheme = tokenConfig.toConfig().extract<AuthToken>().upgradeToAuthScheme()
-               val updatedConfig = authScheme.asHocon()
-               logger.info { "Consider upgrading using the following config: \n${updatedConfig.getSafeConfigString()}" }
-               authScheme
-            } else {
-               when (val schemeType = schemeType) {
-                  "Basic" -> tokenConfig.toConfig().extract<BasicAuth>()
-                  "HttpHeader" -> tokenConfig.toConfig().extract<HttpHeader>()
-                  "QueryParam" -> tokenConfig.toConfig().extract<QueryParam>()
-                  "OAuth2" -> tokenConfig.toConfig().extract<OAuth2>()
-                  "Cookie" -> tokenConfig.toConfig().extract<Cookie>()
-                  "MutualTls" -> tokenConfig.toConfig().extract<MutualTls>()
-                  else -> error("Unrecognized type of auth scheme: $schemeType")
+         val schemes = tokenConfigs.map { (serviceName, tokenConfigValue) ->
+            // Detect whether the config is a single object (old format) or a list (new format)
+            val authSchemes: List<AuthScheme> = when (tokenConfigValue.valueType()) {
+               ConfigValueType.LIST -> {
+                  // New format: array of auth schemes
+                  val configList = tokenConfigValue as ConfigList
+                  configList.map { item ->
+                     require(item is ConfigObject) { "Each auth scheme in list must be an object for service $serviceName" }
+                     parseAuthScheme(serviceName, item.toConfig())
+                  }
                }
+               ConfigValueType.OBJECT -> {
+                  // Old format: single auth scheme - wrap in list for backwards compatibility
+                  require(tokenConfigValue is ConfigObject) { "Expected ConfigObject for single auth scheme for service $serviceName" }
+                  listOf(parseAuthScheme(serviceName, tokenConfigValue.toConfig()))
+               }
+               else -> error("Auth config for service $serviceName must be either an object or a list, but was ${tokenConfigValue.valueType()}")
             }
 
-            serviceName to authScheme
+            serviceName to authSchemes
          }.toMap()
          return AuthTokens(schemes)
+      }
+
+      /**
+       * Parses a single auth scheme from config.
+       * Handles both new format (with type field) and old format (without type field).
+       */
+      private fun parseAuthScheme(serviceName: String, tokenConfig: Config): AuthScheme {
+         val schemeType = tokenConfig.getString("type").takeIf { tokenConfig.hasPath("type") }
+         return if (schemeType == null) {
+            // Old format: No type field present
+            logger.error { "Configured Auth for service $serviceName does not define a type property - it looks like this is using an old format" }
+            val authScheme = tokenConfig.extract<AuthToken>().upgradeToAuthScheme()
+            val updatedConfig = authScheme.asHocon()
+            logger.info { "Consider upgrading using the following config: \n${updatedConfig.getSafeConfigString()}" }
+            authScheme
+         } else {
+            // New format: Type field present
+            when (schemeType) {
+               "Basic" -> tokenConfig.extract<BasicAuth>()
+               "HttpHeader" -> tokenConfig.extract<HttpHeader>()
+               "QueryParam" -> tokenConfig.extract<QueryParam>()
+               "OAuth2" -> tokenConfig.extract<OAuth2>()
+               "Cookie" -> tokenConfig.extract<Cookie>()
+               "MutualTls" -> tokenConfig.extract<MutualTls>()
+               else -> error("Unrecognized type of auth scheme: $schemeType")
+            }
+         }
       }
    }
 }

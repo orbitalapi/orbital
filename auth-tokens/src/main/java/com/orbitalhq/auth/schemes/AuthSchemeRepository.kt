@@ -9,9 +9,9 @@ import reactor.core.publisher.Flux
 interface AuthSchemeRepository : AuthSchemeProvider {
    fun saveToken(targetPackage: PackageIdentifier, serviceName: String, token: AuthScheme): SanitizedAuthScheme
 
-   fun listTokensWithoutCredentials(): Map<ServiceName, AuthScheme> {
+   fun listTokensWithoutCredentials(): Map<ServiceName, List<AuthScheme>> {
       return getAllTokens()
-         .authenticationTokens.mapValues { (name, scheme) -> scheme.sanitized() }
+         .authenticationTokens.mapValues { (name, schemes) -> schemes.map { it.sanitized() } }
    }
 
    fun deleteToken(targetPackage: PackageIdentifier, serviceName: String)
@@ -26,15 +26,15 @@ interface AuthSchemeRepository : AuthSchemeProvider {
 
 // Mainly for testing
 object EmptyAuthSchemeRepository : AuthSchemeRepository {
-   override fun getAuthScheme(serviceName: ServiceName): AuthScheme? {
-      return null
+   override fun getAuthSchemes(serviceName: ServiceName): List<AuthScheme> {
+      return emptyList()
    }
 
    override fun getRegisteredKey(presentedKey: String): String? {
       return null
    }
 
-   override fun getAll(): Map<ServiceName,AuthScheme> {
+   override fun getAll(): Map<ServiceName, List<AuthScheme>> {
       return emptyMap()
    }
 

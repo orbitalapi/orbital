@@ -41,13 +41,13 @@ class HoconOAuthClientRegistrationRepositoryTest {
 
 private class TestAuthSchemeProvider: AuthSchemeProvider {
     val configUpdatedSink = Sinks.many().multicast().directBestEffort<AuthTokens>()
-    val authSchemMap: MutableMap<ServiceName, AuthScheme> = mutableMapOf()
+    val authSchemMap: MutableMap<ServiceName, List<AuthScheme>> = mutableMapOf()
 
-    override fun getAuthScheme(serviceName: ServiceName): AuthScheme? {
-        return authSchemMap[serviceName]
+    override fun getAuthSchemes(serviceName: ServiceName): List<AuthScheme> {
+        return authSchemMap[serviceName] ?: emptyList()
     }
 
-    override fun getAll(): Map<ServiceName, AuthScheme> {
+    override fun getAll(): Map<ServiceName, List<AuthScheme>> {
         return authSchemMap.toMap()
     }
 
@@ -59,8 +59,8 @@ private class TestAuthSchemeProvider: AuthSchemeProvider {
     }
 
     fun updateAutScheme(serviceName: ServiceName, authScheme: AuthScheme) {
-        authSchemMap[serviceName] = authScheme
-        configUpdatedSink.tryEmitNext(AuthTokens(mapOf(serviceName to authScheme)))
+        authSchemMap[serviceName] = listOf(authScheme)
+        configUpdatedSink.tryEmitNext(AuthTokens(mapOf(serviceName to listOf(authScheme))))
     }
 
 }
