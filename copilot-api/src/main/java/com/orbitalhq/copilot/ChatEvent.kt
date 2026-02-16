@@ -2,7 +2,6 @@ package com.orbitalhq.copilot
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
-import com.fasterxml.jackson.annotation.JsonTypeName
 
 
 @JsonTypeInfo(
@@ -62,6 +61,9 @@ data class ChatEvent(
    // This is primarily for sorting events, which is why
    // I'm not using an Instant etc
    val timestamp: Long = System.currentTimeMillis(),
+   // The triggering messageId that this event relates to, if part of a user
+   // stream. Required for resubmitting messages
+   val triggeringUserMessageId: String? = null
 )
 
 
@@ -76,8 +78,8 @@ enum class ChatEventKind {
    // Custom MDX-specific tags
    PLAN_START,
    PLAN_STOP,
-   PROJECT_CODE_START,
-   PROJECT_CODE_STOP,
+   CODE_BLOCK_START,
+   CODE_BLOCK_STOP,
 
    // Sent at the end when this specific conversation stream has ended
    STREAM_END
