@@ -20,21 +20,8 @@ class ReactivePollingFileSystemMonitor(
 ) : ReactiveFileSystemMonitor {
 
    companion object {
-      val monitoredSuffixes = listOf(
-         ".taxi",
-         ".conf",
-         ".kts", // nebula
-         // Avro file types
-         ".avsc",
-         // Proto file types
-         ".proto",
-         // OAS file types
-         ".yaml",
-         ".json",
-         // SOAP file types
-         ".wsdl",
-         ".xml"
-      )
+      @Deprecated("Use FileSystemMonitorFilter.monitoredSuffixes instead", ReplaceWith("FileSystemMonitorFilter.monitoredSuffixes"))
+      val monitoredSuffixes = FileSystemMonitorFilter.monitoredSuffixes.map { ".$it" }
    }
    private val sink = Sinks.many().replay().latest<List<FileSystemChangeEvent>>()
    private val suspendedEvents = SuspendableEventPublisher.forFileSystemChangeEvents(sink)
@@ -51,10 +38,10 @@ class ReactivePollingFileSystemMonitor(
          FileFilterUtils.directoryFileFilter(),
          HiddenFileFilter.VISIBLE
       )
-      val suffixFileFilters = monitoredSuffixes.map { suffix ->
+      val suffixFileFilters = FileSystemMonitorFilter.monitoredSuffixes.map { suffix ->
          FileFilterUtils.and(
             FileFilterUtils.fileFileFilter(),
-            FileFilterUtils.suffixFileFilter(suffix)
+            FileFilterUtils.suffixFileFilter(".$suffix")
          )
       }
       val fileFilter = FileFilterUtils.or(directories,*suffixFileFilters.toTypedArray())
@@ -80,15 +67,21 @@ class ReactivePollingFileSystemMonitor(
             }
 
             override fun onFileCreate(file: File) {
-               emitChangeEvent(file, FileSystemChangeEventType.FileCreated)
+               if (FileSystemMonitorFilter.shouldMonitor(file.toPath())) {
+                  emitChangeEvent(file, FileSystemChangeEventType.FileCreated)
+               }
             }
 
             override fun onFileChange(file: File) {
-               emitChangeEvent(file, FileSystemChangeEventType.FileChanged)
+               if (FileSystemMonitorFilter.shouldMonitor(file.toPath())) {
+                  emitChangeEvent(file, FileSystemChangeEventType.FileChanged)
+               }
             }
 
             override fun onFileDelete(file: File) {
-               emitChangeEvent(file, FileSystemChangeEventType.FileDeleted)
+               if (FileSystemMonitorFilter.shouldMonitor(file.toPath())) {
+                  emitChangeEvent(file, FileSystemChangeEventType.FileDeleted)
+               }
             }
 
             override fun onStop(observer: FileAlterationObserver) {
