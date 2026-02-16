@@ -39,23 +39,44 @@ class LanguageServerWebsocketController(
       session.receive()
          .onErrorResume { error ->
             log().info("Language server disconnected: ${error.message}")
+            cleanupSession(session, languageServer)
             Mono.empty()
          }
          .subscribe(
             { message -> languageServer.consume(message.payloadAsText) },
-            { error -> log().info("Language server error: ${error.message}") }
+            { error ->
+               log().info("Language server error: ${error.message}")
+               cleanupSession(session, languageServer)
+            }
          )
 
       languageServerCache.put(session, languageServer)
       return session.send(
          languageServer.messages
             .map { message -> session.textMessage(message) })
+         .doFinally {
+            // Cleanup when the WebSocket session ends (normal close, error, or cancel)
+            cleanupSession(session, languageServer)
+         }
 
+   }
+
+   private fun cleanupSession(session: WebSocketSession, languageServer: WebsocketSessionLanguageServer) {
+      log().info("Cleaning up language server for session ${session.id}")
+      languageServerCache.invalidate(session)
+      languageServer.shutdown()
    }
 
    private val languageServerCache = CacheBuilder
       .newBuilder()
       .maximumSize(maximumSize.toLong())
+      .removalListener<WebSocketSession, WebsocketSessionLanguageServer> { notification ->
+         // Shutdown language server when evicted from cache
+         notification.value?.let { languageServer ->
+            log().info("Language server evicted from cache (${notification.cause}), shutting down")
+            languageServer.shutdown()
+         }
+      }
       .build<WebSocketSession, WebsocketSessionLanguageServer>()
 
 }
