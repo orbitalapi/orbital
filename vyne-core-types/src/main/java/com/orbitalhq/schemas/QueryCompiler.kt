@@ -4,11 +4,13 @@ import com.google.common.base.Stopwatch
 import com.google.common.cache.CacheBuilder
 import com.google.common.util.concurrent.UncheckedExecutionException
 import com.orbitalhq.schemas.taxi.TaxiSchema
+import com.orbitalhq.utils.Ids
 import com.orbitalhq.utils.log
 import lang.taxi.CompilationException
 import lang.taxi.Compiler
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
+import org.antlr.v4.runtime.CharStreams
 
 /**
  * Compiles a TaxiQL query against the current schema.
@@ -64,8 +66,13 @@ class DefaultQueryCompiler(private val schema: Schema, cacheSize: Long = 0) : Qu
             Triple(query, QueryOptions.fromQuery(query), schema)
          } else {
             val sw = Stopwatch.createStarted()
-            val taxiDoc = Compiler(source = query, importSources = listOf(this.schema.taxi)).compile()
-            val taxiQlQuery = taxiDoc.queries.first()
+            val sourceName = Ids.id("AdhocQuery-", size = 12)
+            val charStream = CharStreams.fromString(query, sourceName)
+            val taxiDoc = Compiler(input = charStream, importSources = listOf(this.schema.taxi)).compile()
+
+            val taxiQlQuery = taxiDoc.queries.find { query ->
+               query.compilationUnits.any { it.source.sourceName == sourceName }
+            } ?: error("Failed to compile the query. After a successful compilation pass, the provided query was not present in the schema")
             val taxiSchema = TaxiSchema(taxiDoc, this.schema.packages, this.schema.functionRegistry)
             val merged = taxiSchema.merge(this.schema.asTaxiSchema()).let { schema ->
                taxiQlQuery.serviceRestrictions.applyTo(schema)
