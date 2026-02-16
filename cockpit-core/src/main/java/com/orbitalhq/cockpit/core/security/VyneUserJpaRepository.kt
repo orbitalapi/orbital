@@ -15,15 +15,16 @@ interface VyneUserJpaRepository : JpaRepository<VyneUser,UserOrbitalId>{
    @Modifying
    @Query(
       value = """
-            INSERT INTO USERS(id, issuer, username, email, profile_url, name)
-            VALUES (:id, :issuer, :username, :email, :profileUrl, :name)
+            INSERT INTO USERS(id, issuer, username, email, profile_url, name, orgId)
+            VALUES (:id, :issuer, :username, :email, :profileUrl, :name, current_user)
             ON CONFLICT (id)
             DO UPDATE SET
                 issuer = :issuer,
                 username = :username,
                 email = :email,
                 profile_url = :profileUrl,
-                name = :name
+                name = :name,
+                orgId = current_user
         """,
       nativeQuery = true
    )
