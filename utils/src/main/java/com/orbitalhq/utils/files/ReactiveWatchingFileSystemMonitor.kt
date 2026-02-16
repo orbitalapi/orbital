@@ -101,18 +101,20 @@ class ReactiveWatchingFileSystemMonitor(
                val events = key.pollEvents()
                   .mapNotNull { event ->
                      (event.context() as? Path?)?.let { path ->
+                        val resolvedPath = (key.watchable() as Path).resolve(path)
+
                         /** Even if the subdirectory itself is not watched (is excluded), change events will still be generated
                          * for that subdirectory by the parent directory watcher (at least on Windows). Thus, we skip those events.
                          */
-                        if (excludedDirectoryNames.contains(path.toString())) {
+                        if (!FileSystemMonitorFilter.shouldMonitor(resolvedPath, excludedDirectoryNames)) {
                            return@mapNotNull null
                         }
+
                         val eventType = when (event.kind()) {
                            StandardWatchEventKinds.ENTRY_CREATE -> FileSystemChangeEvent.FileSystemChangeEventType.FileCreated
                            StandardWatchEventKinds.ENTRY_DELETE -> FileSystemChangeEvent.FileSystemChangeEventType.FileDeleted
                            else -> FileSystemChangeEvent.FileSystemChangeEventType.Unspecified
                         }
-                        val resolvedPath = (key.watchable() as Path).resolve(path)
                         FileSystemChangeEvent(resolvedPath, eventType)
                      }
                   }
