@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.hazelcast.core.HazelcastInstance
 import com.hazelcast.jet.Job
 import com.hazelcast.jet.core.JobStatus
+import com.hazelcast.jet.core.JobSuspensionCause
+import com.hazelcast.jet.impl.JobSuspensionCauseImpl
 import com.orbitalhq.pipelines.jet.api.streams.StreamJobStateEvent
 import com.orbitalhq.pipelines.jet.api.streams.StreamName
 import com.orbitalhq.pipelines.jet.api.streams.StreamStateWithJobStates
@@ -43,7 +45,7 @@ class StreamServerStatusService(
 
       fun streamJobStatusFromJetJob(job: Job): StreamJobStateEvent {
          val suspensionCause = if (job.status == JobStatus.SUSPENDED) {
-            job.readVolatile({ it.suspensionCause }, JobStatus.SUSPENDED, null).block()
+            job.readVolatile({ it.suspensionCause }, JobStatus.SUSPENDED, JobSuspensionCauseImpl()).block()
          } else null
          val isUserCancelled = if (job.status == JobStatus.FAILED) {
             job.readVolatile({ it.isUserCancelled }, JobStatus.FAILED, false).block() ?: false
@@ -103,7 +105,7 @@ class StreamServerStatusService(
  * for a suspension reason throws an exception.
  * So, we wrap the exception, and read for a short period.
  */
-private fun <T> Job.readVolatile(
+private fun <T : Any> Job.readVolatile(
    accessor: (Job) -> T?,
    whileInState: JobStatus,
    default: T,
@@ -111,9 +113,9 @@ private fun <T> Job.readVolatile(
    pollPeriod: Duration = Duration.ofMillis(10)
 ): Mono<T> {
    return Flux.interval(pollPeriod)
-      .map {
+      .mapNotNull {
          if (this.status != whileInState) {
-            return@map default
+            return@mapNotNull default
          }
          try {
             accessor(this)
@@ -121,7 +123,6 @@ private fun <T> Job.readVolatile(
             null
          }
       }
-      .filter { it != null }
       .next()
       .timeout(timeout, Mono.justOrEmpty(default)) as Mono<T>
 }

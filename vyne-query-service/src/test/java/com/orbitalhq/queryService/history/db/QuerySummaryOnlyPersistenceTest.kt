@@ -30,7 +30,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
@@ -68,21 +68,21 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
       } as PostgreSQLContainer<*>
 
    }
-   @MockBean
+   @MockitoBean
    lateinit var chatService: CopilotConversationApi
 
-   @MockBean
+   @MockitoBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
-   @MockBean
+   @MockitoBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
-   @MockBean
+   @MockitoBean
    lateinit var configService: ConfigService
-   @MockBean
+   @MockitoBean
    lateinit var licenseManager: OrbitalLicenseManager
 
-   @MockBean
+   @MockitoBean
    lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
    @Autowired
@@ -97,16 +97,16 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
    @Autowired
    lateinit var historyService: QueryHistoryService
 
-   @MockBean
+   @MockitoBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 
-   @MockBean
+   @MockitoBean
    lateinit var configLoader : WorkspaceConfigLoader
 
-   @MockBean
+   @MockitoBean
    lateinit var packagesService: PackageService
 
-   @MockBean
+   @MockitoBean
    lateinit var schemaEditorService: SchemaEditorService
 
 
@@ -141,7 +141,7 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
       results.should.be.empty
 
       val historyProfileData = historyService.getQueryProfileDataFromClientId(id)
-      historyProfileData.block().remoteCalls.should.be.empty
+      historyProfileData.block()!!.remoteCalls.should.be.empty
    }
 
    @Test
@@ -174,6 +174,6 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
       results.should.be.empty
 
       val historyProfileData = historyService.getQueryProfileDataFromClientId(id)
-      historyProfileData.block().remoteCalls.should.be.empty
+      historyProfileData.block()!!.remoteCalls.should.be.empty
    }
 }

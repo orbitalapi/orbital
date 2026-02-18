@@ -11,7 +11,7 @@ import com.orbitalhq.schemaServer.core.packages.PackageService
 import com.orbitalhq.schemaServer.core.repositories.WorkspaceConfigLoader
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ReactiveProjectStoreManager
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.wait.strategy.Wait
@@ -30,37 +30,37 @@ abstract class BaseIntegrationTest {
       } as PostgreSQLContainer<*>
    }
 
-   @MockBean
+   @MockitoBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 
-   @MockBean
+   @MockitoBean
    lateinit var configLoader: WorkspaceConfigLoader
 
 
-   @MockBean
+   @MockitoBean
    lateinit var hazelcastStreamObserver: HazelcastStreamResultObserver
 
-   @MockBean
+   @MockitoBean
    lateinit var cmsService: DefaultContentRepository
 
-   @MockBean
+   @MockitoBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
-   @MockBean
+   @MockitoBean
    lateinit var chatService: CopilotConversationApi
 
-   @MockBean
+   @MockitoBean
    lateinit var packagesService: PackageService
 
-   @MockBean
+   @MockitoBean
    lateinit var schemaEditorService: SchemaEditorService
 
-   @MockBean
+   @MockitoBean
    lateinit var configService: ConfigService
 
-   @MockBean
+   @MockitoBean
    lateinit var licenseManager: OrbitalLicenseManager
 
-   @MockBean
+   @MockitoBean
    lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 }

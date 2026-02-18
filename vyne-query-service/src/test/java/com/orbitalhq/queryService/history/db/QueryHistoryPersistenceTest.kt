@@ -78,11 +78,11 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.test.context.ActiveProfiles
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.junit4.SpringRunner
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.client.WebClient
@@ -129,30 +129,30 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    @Autowired
    lateinit var traceEventConsumer: PersistingTraceEventConsumer
 
-   @MockBean
+   @MockitoBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
-   @MockBean
+   @MockitoBean
    lateinit var chatService: CopilotConversationApi
 
-   @MockBean
+   @MockitoBean
    lateinit var cmsService: DefaultContentRepository
 
-   @MockBean
+   @MockitoBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 
-   @MockBean
+   @MockitoBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
-   @MockBean
+   @MockitoBean
    lateinit var configLoader : WorkspaceConfigLoader
 
-   @MockBean
+   @MockitoBean
    lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
-   @MockBean
+   @MockitoBean
    lateinit var configService: ConfigService
-   @MockBean
+   @MockitoBean
    lateinit var licenseManager: OrbitalLicenseManager
 
    @Autowired
@@ -176,10 +176,10 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
    @Autowired
    lateinit var activeQueryController: ActiveQueryController
 
-   @MockBean
+   @MockitoBean
    lateinit var packagesService: PackageService
 
-   @MockBean
+   @MockitoBean
    lateinit var schemaEditorService: SchemaEditorService
 
    @Rule
@@ -455,11 +455,11 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       Thread.sleep(2000) // Allow persistence to catch up
 
       val profileData = historyService.getQueryProfileDataFromClientId(id)
-      val remoteCalls = profileData.block().remoteCalls
+      val remoteCalls = profileData.block()!!.remoteCalls
       remoteCalls.should.have.size(2)
 
       // We should see a failure in the operation stats
-      val findAuthorStats = profileData.block().operationStats.first { it.operationName == "findAuthor" }
+      val findAuthorStats = profileData.block()!!.operationStats.first { it.operationName == "findAuthor" }
       findAuthorStats.responseCodes.should.contain(ResponseCodeGroup.HTTP_4XX to 1)
       findAuthorStats.callsInitiated.should.equal(1)
 
@@ -550,14 +550,14 @@ class QueryHistoryPersistenceTest : BaseQueryServiceTest() {
       }
       await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until<Boolean>(callable)
 
-      callable.result!!.block().remoteCalls.size == 2
+      callable.result!!.block()!!.remoteCalls.size == 2
       // Should have rich lineage around the null value
       val firstRecordNodeDetail =
          historyService.getNodeDetail(results[0].queryId!!, results[0].valueId, "authorName").block()
       val secondRecordNodeDetail =
          historyService.getNodeDetail(results[1].queryId!!, results[1].valueId, "authorName").block()
       firstRecordNodeDetail.should.equal(secondRecordNodeDetail)
-      firstRecordNodeDetail.source.should.not.be.empty
+      firstRecordNodeDetail!!.source.should.not.be.empty
 
       historyService.listHistory().test()
          .expectNextMatches { querySummary ->

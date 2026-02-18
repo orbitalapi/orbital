@@ -46,7 +46,7 @@ import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
@@ -70,28 +70,37 @@ import reactor.kotlin.test.test
 @ActiveProfiles("test")
 class QueryWebsocketIntegrationTest : DatabaseTest() {
 
-   @MockBean
+   @MockitoBean
    lateinit var chatService: CopilotConversationApi
 
-   @MockBean
+   @MockitoBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
-   @MockBean
+   @MockitoBean
    lateinit var packagesService: PackageService
 
-   @MockBean
+   @MockitoBean
    lateinit var schemaEditorService: SchemaEditorService
 
-   @MockBean
+   @MockitoBean
    lateinit var streamSubscriptionManager: RSocketStreamResultSubscriptionManager
 
    @Autowired
    lateinit var resultsSink: Sinks.Many<String>
 
-   @MockBean
+   @MockitoBean
    lateinit var configService: ConfigService
-   @MockBean
+   @MockitoBean
    lateinit var licenseManager: OrbitalLicenseManager
+
+   @MockitoBean
+   lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
+
+   @MockitoBean
+   lateinit var configLoader: WorkspaceConfigLoader
+
+   @MockitoBean
+   lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
    @Autowired
    lateinit var activeQueryMonitor: ActiveQueryMonitor
@@ -117,15 +126,6 @@ class QueryWebsocketIntegrationTest : DatabaseTest() {
    @TestConfiguration
    @Import(TestDiscoveryClientConfig::class, WebSocketConfig::class, StreamResultsWebsocketPublisher::class)
    class SpringConfig {
-
-      @MockBean
-      lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
-
-      @MockBean
-      lateinit var configLoader: WorkspaceConfigLoader
-
-      @MockBean
-      lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
       @Bean
       @Primary

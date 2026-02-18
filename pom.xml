@@ -12,7 +12,7 @@
    <parent>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-parent</artifactId>
-      <version>3.3.13</version>
+      <version>3.5.10</version>
    </parent>
 
    <url>https://orbitalhq.com</url>
@@ -49,7 +49,7 @@
       <kotlin.serialization.version>1.9.0</kotlin.serialization.version>
       <kotlin.dataframe.version>0.14.0</kotlin.dataframe.version>
 
-      <spring.cloud.version>2023.0.1</spring.cloud.version>
+      <spring.cloud.version>2025.0.1</spring.cloud.version>
       <arrow.version>1.1.5</arrow.version>
       <logstash.logback.version>7.4</logstash.logback.version>
 
@@ -58,7 +58,6 @@
       <testcontainers.version>1.19.3</testcontainers.version>
 
       <guava.version>32.1.3-jre</guava.version>
-      <reactor-bom.version>2023.0.0</reactor-bom.version>
 
       <logbook.version>3.12.0</logbook.version>
 
@@ -67,7 +66,6 @@
 
       <!-- CVE-2025-4949 fixed in 6.10.1.202505221210-r -->
       <jgit.version>6.10.1.202505221210-r</jgit.version>
-      <!--      <netty.version>4.1.75.Final</netty.version>-->
       <!-- CVE-2022-31692  -->
       <!--      <spring-security.version>5.7.5</spring-security.version>-->
       <!--      <spring-security-test.version>5.7.5</spring-security-test.version>-->
@@ -77,9 +75,6 @@
 
       <aws.s3.sdk.version>1.12.778</aws.s3.sdk.version>
       <aws.dynamo.sdk.version>1.12.701</aws.dynamo.sdk.version>
-
-      <!-- CVE-2025-55163 can probably remove after spring boot > 3.3.13 -->
-      <netty.version>4.1.124.Final</netty.version>
 
       <!-- Set protobuf-java to 3.25.5 because of vulnerabilities:
 CVE-2024-7254
@@ -308,6 +303,11 @@ Transitive dependency in wire-compiler and calcite-core
    <dependencyManagement>
       <dependencies>
          <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>mockwebserver</artifactId>
+            <version>4.12.0</version>
+         </dependency>
+         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
             <version>${commons-io.version}</version>
@@ -396,13 +396,14 @@ Transitive dependency in wire-compiler and calcite-core
             <artifactId>hazelcast</artifactId>
             <version>${hazelcast.version}</version>
          </dependency>
-         <dependency>
-            <groupId>io.projectreactor</groupId>
-            <artifactId>reactor-bom</artifactId>
-            <version>${reactor-bom.version}</version>
-            <type>pom</type>
-            <scope>import</scope>
-         </dependency>
+         <!-- Don't need to manage this independently it's covered by spring boot -->
+<!--         <dependency>-->
+<!--            <groupId>io.projectreactor</groupId>-->
+<!--            <artifactId>reactor-bom</artifactId>-->
+<!--            <version>${reactor-bom.version}</version>-->
+<!--            <type>pom</type>-->
+<!--            <scope>import</scope>-->
+<!--         </dependency>-->
          <dependency>
             <groupId>org.http4k</groupId>
             <artifactId>http4k-bom</artifactId>

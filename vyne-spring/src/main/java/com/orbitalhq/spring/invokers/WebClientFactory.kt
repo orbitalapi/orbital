@@ -58,7 +58,7 @@ class WebClientFactory(
       .clientConnector(
          ReactorClientHttpConnector(
             authRequestCustomizer.httpClient(sslContext = null)
-               .wiretap(this::class.qualifiedName, LogLevel.DEBUG, AdvancedByteBufFormat.TEXTUAL)
+               .wiretap(this::class.qualifiedName!!, LogLevel.DEBUG, AdvancedByteBufFormat.TEXTUAL)
          )
       )
       .filter(authRequestCustomizer.authFromServiceNameAttribute)

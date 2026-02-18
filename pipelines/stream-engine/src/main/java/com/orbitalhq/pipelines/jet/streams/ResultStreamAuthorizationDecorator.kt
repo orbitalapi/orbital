@@ -44,7 +44,7 @@ class ResultStreamAuthorizationDecorator(
       val queryReturnType = querySchema.type(query.returnType)
       val instanceType = queryReturnType.collectionType ?: queryReturnType
 
-      return stream.map { value ->
+      return stream.mapNotNull { value ->
          // first, parse back to a typed instance
          val valueAsTypedInstance = TypedInstance.from(instanceType, value, querySchema, source = Provided)
          val evaluatedTypedInstance = policyEvaluator.evaluate(valueAsTypedInstance, queryContext, executionScope)

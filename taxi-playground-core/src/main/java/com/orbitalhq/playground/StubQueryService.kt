@@ -153,7 +153,7 @@ class StubQueryService(
       val queryPlanEventHandler = QueryPlanEventHandler.createFor(vyne.schema)
       val eventBroker = QueryContextEventBroker(traceSpan = TraceContext.noOp().rootSpan)
          .addHandlers(listOf(remoteCallCollector, queryPlanEventHandler))
-      val resultFlux = runBlocking {
+      val resultFlux: Flux<TypedInstance> = runBlocking {
          vyne.query(query.query, arguments = query.parameters, eventBroker = eventBroker)
             .results
             .asFlux()
@@ -173,7 +173,7 @@ class StubQueryService(
 
       val serializedResults = resultFlux
          .filter { it !is TypedNull }
-         .map {
+         .mapNotNull { it: TypedInstance ->
             formatSerializer.serialize(it, querySchema)
          }.filter { it != null } as Flux<Any>
       val publisher = when {

@@ -40,7 +40,7 @@ class RoutedQueryTest {
          .build()
 
       val routedQuery = RoutedQuery.build(query, request)
-      routedQuery.block().arguments.entries.single().value.typedValue.value
+      routedQuery.block()!!.arguments.entries.single().value.typedValue.value
          .shouldBe("123")
    }
 
@@ -61,7 +61,7 @@ class RoutedQueryTest {
             .build()
 
         val routedQuery = RoutedQuery.build(query,  request)
-        routedQuery.block().arguments.entries.single().value.typedValue.value
+        routedQuery.block()!!.arguments.entries.single().value.typedValue.value
             .shouldBe("123")
     }
 
@@ -83,10 +83,10 @@ class RoutedQueryTest {
             .build()
 
         val routedQuery = RoutedQuery.build(query, request)
-        routedQuery.block().arguments.entries.toList()[0].value.typedValue.value
+        routedQuery.block()!!.arguments.entries.toList()[0].value.typedValue.value
             .shouldBe("123")
 
-        routedQuery.block().arguments.entries.toList()[1].value.typedValue.value
+        routedQuery.block()!!.arguments.entries.toList()[1].value.typedValue.value
             .shouldBe("request-365")
     }
 
@@ -107,7 +107,7 @@ class RoutedQueryTest {
          .body(Mono.just(requestBody))
 
       val routedQuery = RoutedQuery.build(query, request)
-      routedQuery.block().arguments.entries.single().value.typedValue.value
+      routedQuery.block()!!.arguments.entries.single().value.typedValue.value
          .shouldBe(requestBody)
    }
 
@@ -203,7 +203,7 @@ class RoutedQueryTest {
       val request = MockServerRequest.builder()
          .body(Mono.empty<String>())
 
-      val routedQuery = RoutedQuery.build(query, request).block()
+      val routedQuery = RoutedQuery.build(query, request).block()!!
       // Null is not provided as a value here, instead we treat the values as "not provided"
       routedQuery.argumentValues.shouldBeEmpty()
    }

@@ -11,18 +11,18 @@ import java.net.URI
  * Ensure no dependencies on Spring or similar libraries in here.
  *
  */
-interface AddressSupplier<T> {
+interface AddressSupplier<T : Any> {
    fun nextAddress(): Mono<T>
 
    val addresses: Mono<List<T>>
 
    companion object {
-      fun <T> just(address: T): AddressSupplier<T> = SimpleAddressSupplier(address)
-      fun <T> just(addresses: List<T>): AddressSupplier<T> = SimpleAddressSupplier(addresses)
+      fun <T : Any> just(address: T): AddressSupplier<T> = SimpleAddressSupplier(address)
+      fun <T : Any> just(addresses: List<T>): AddressSupplier<T> = SimpleAddressSupplier(addresses)
    }
 }
 
-class SimpleAddressSupplier<T>(addressList: List<T>) : AddressSupplier<T> {
+class SimpleAddressSupplier<T : Any>(addressList: List<T>) : AddressSupplier<T> {
    constructor(address: T) : this(listOf(address))
 
    override val addresses: Mono<List<T>> = Mono.just(addressList)

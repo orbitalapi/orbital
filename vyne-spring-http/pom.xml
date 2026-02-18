@@ -18,6 +18,10 @@
       </license>
    </licenses>
 
+   <properties>
+      <ayza.version>10.0.3</ayza.version>
+   </properties>
+
    <description>Small library containing the HTTP interactions for Vyne that depend on Spring.  Exists to allow Vyne to have spring dependencies at test time, but not at compile time
    </description>
    <dependencies>
@@ -51,14 +55,14 @@
 
       <dependency>
          <groupId>io.github.hakky54</groupId>
-         <artifactId>sslcontext-kickstart</artifactId>
-         <version>8.3.2</version>
+         <artifactId>ayza</artifactId>
+         <version>${ayza.version}</version>
       </dependency>
 
       <dependency>
          <groupId>io.github.hakky54</groupId>
-         <artifactId>sslcontext-kickstart-for-netty</artifactId>
-         <version>8.3.2</version>
+         <artifactId>ayza-for-netty</artifactId>
+         <version>${ayza.version}</version>
       </dependency>
       <!-- https://github.com/wiremock/wiremock/issues/2395
       Have to use wiremock-standalone with spring boot 12 -->

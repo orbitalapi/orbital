@@ -53,7 +53,7 @@ class S3ConnectorServiceTest : BaseS3Test() {
       val service = S3ConnectorService(connectionRegistry)
 
       val response = service.listBuckets(AWS_CONNECTION_NAME)
-         .block()
+         .block()!!
       response.bucketNames.shouldHaveSize(1)
       response.bucketNames.single().shouldBe(bucketName)
    }

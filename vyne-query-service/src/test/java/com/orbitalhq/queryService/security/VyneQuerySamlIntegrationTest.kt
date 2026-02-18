@@ -34,7 +34,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.boot.web.embedded.netty.NettyReactiveWebServerFactory
@@ -82,9 +82,6 @@ import kotlin.io.path.absolutePathString
 class VyneQuerySamlIntegrationTest {
    companion object {
       private const val orbitalSpId = "http://foo.orbitalhq.io"
-
-      @MockBean
-      lateinit var chatService: CopilotConversationApi
 
       @JvmStatic
       @TempDir
@@ -218,7 +215,10 @@ class VyneQuerySamlIntegrationTest {
       }
    }
 
-   @MockBean
+   @MockitoBean
+   lateinit var chatService: CopilotConversationApi
+
+   @MockitoBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
    @Autowired
@@ -227,19 +227,19 @@ class VyneQuerySamlIntegrationTest {
    @Autowired
    private lateinit var objectMapper: ObjectMapper
 
-   @MockBean
+   @MockitoBean
    lateinit var queryMetricsReporter: QueryMetricsReporter
 
-   @MockBean
+   @MockitoBean
    lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
-   @MockBean
+   @MockitoBean
    lateinit var packagesService: PackageService
 
-   @MockBean
+   @MockitoBean
    lateinit var schemaEditorService: SchemaEditorService
 
-   @MockBean
+   @MockitoBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
    /**
@@ -258,15 +258,15 @@ class VyneQuerySamlIntegrationTest {
       "userWithoutAnyRoleSetup" to emptyList()
    )
 
-   @MockBean
+   @MockitoBean
    lateinit var configService: ConfigService
-   @MockBean
+   @MockitoBean
    lateinit var licenseManager: OrbitalLicenseManager
 
-   @MockBean
+   @MockitoBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 
-   @MockBean
+   @MockitoBean
    lateinit var configLoader : WorkspaceConfigLoader
 
    @Autowired

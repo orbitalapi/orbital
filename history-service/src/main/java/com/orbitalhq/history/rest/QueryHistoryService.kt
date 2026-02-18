@@ -363,7 +363,7 @@ class QueryHistoryService(
    @GetMapping("/api/query/history/{id}/trace")
    @PreAuthorize("hasAuthority('${VynePrivileges.ViewHistoricQueryResults}')")
    fun getQueryTrace(@PathVariable("id") queryId: String): Mono<List<TraceSpanRecord>> {
-      return Mono.defer<List<TraceSpanRecord>?> {
+      return Mono.defer {
          val traceEvents = traceEventRepository.findByQueryIdOrderByTimestampAsc(queryId)
          val spans = traceSpanBuilder.buildTraceSpans(traceEvents)
 //            .let { traceSpanBuilder.flattenSpansForWaterfall(it) }

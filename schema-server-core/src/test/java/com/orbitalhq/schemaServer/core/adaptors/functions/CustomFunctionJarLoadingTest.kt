@@ -61,6 +61,6 @@ fun loadSourcePackage(path: Path, dependencyFetcherProvider: DependencyFetcherPr
    val converter = TaxiSchemaSourcesAdaptor(dependencyFetcherProvider = dependencyFetcherProvider)
    val metadata = converter.buildMetadata(loader)
       .block()!!
-   val source = converter.convert(metadata, loader).block()
+   val source = converter.convert(metadata, loader).block()!!
    return source
 }

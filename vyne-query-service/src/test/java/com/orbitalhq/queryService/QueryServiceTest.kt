@@ -35,7 +35,7 @@ class QueryServiceTest : BaseQueryServiceTest() {
    @Test
    fun `csv request produces expected results regardless of resultmode`() = runTest {
       ResultMode.values().forEach { resultMode ->
-         val next = queryService.submitVyneQlQuery("""find { Order[] }""", resultMode, TEXT_CSV).block().body
+         val next = queryService.submitVyneQlQuery("""find { Order[] }""", resultMode, TEXT_CSV).block()!!.body
             .single()
          val expected = """orderId,traderName,instrumentId
 orderId_0,john,Instrument_0""".trimMargin().withoutWhitespace()
@@ -52,7 +52,7 @@ orderId_0,john,Instrument_0""".trimMargin().withoutWhitespace()
                """find { Order[] } as Report[]""".trimIndent(),
                resultMode,
                TEXT_CSV
-            ).block().body.single()
+            ).block()!!.body.single()
          val expected = """orderId,tradeId,instrumentName,maturityDate,traderName
 orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
                """.withoutWhitespace()
@@ -70,7 +70,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
          """find { Order[] }""".trimIndent(),
          ResultMode.TYPED,
          MediaType.APPLICATION_JSON_VALUE
-      ).block().body.toList()
+      ).block()!!.body.toList()
 
       val next = turbine.first() as ValueWithTypeName
       next.value.should.equal(
@@ -168,7 +168,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
          ResultMode.TYPED,
          MediaType.APPLICATION_JSON_VALUE
       )
-         .block().body.toList()
+         .block()!!.body.toList()
       TODO("Assert the contents of the list")
 //      val response = jacksonObjectMapper().readTree(responseStr)
 //      response["fullyResolved"].booleanValue().should.equal(false)
@@ -206,7 +206,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
          authenticationWithRoles(listOf("QueryRunners"))
       ).block()
 
-      StepVerifier.create(response.body)
+      StepVerifier.create(response!!.body)
          .expectSubscription()
          .expectErrorMatches {
             (it is OrbitalQueryException) && it.message == "Not Authorized"
@@ -233,7 +233,7 @@ orderId_0,Trade_0,2040-11-20 0.1 Bond,2026-12-01,john
          authenticationWithRoles(listOf("QueryRunners"))
       ).block()
 
-      StepVerifier.create(response.body)
+      StepVerifier.create(response!!.body)
          .expectSubscription()
          .expectErrorMatches {
             (it is OrbitalQueryException) && it.message == "Not Authorized"

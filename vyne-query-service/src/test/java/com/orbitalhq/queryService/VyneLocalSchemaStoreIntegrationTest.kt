@@ -40,7 +40,7 @@ class VyneLocalSchemaStoreIntegrationTest {
          .bodyValue(listOf(expectedVersionedSource))
          .retrieve()
          .bodyToMono(SourceSubmissionResponse::class.java)
-         .block()
+         .block()!!
          .isValid.should.be.`true`
 
       // assert submitted schema is in store
@@ -53,7 +53,7 @@ class VyneLocalSchemaStoreIntegrationTest {
 
 
 
-      schemas.allSources.any { it == expectedVersionedSource }.should.be.`true`
+      schemas!!.allSources.any { it == expectedVersionedSource }.should.be.`true`
    }
 
 
