@@ -214,6 +214,8 @@ jobs:
   validate-license-compliance:
     name: Validate License Compliance
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     needs:
       - build-jvm
       - build-orbital-ui
@@ -468,6 +470,9 @@ jobs:
   scan-trivy:
     name: Container Vulnerability Scan
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
     needs: publish-orbital
     if: |
       github.event_name == 'push' && (
