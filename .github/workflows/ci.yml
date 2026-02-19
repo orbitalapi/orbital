@@ -220,7 +220,9 @@ jobs:
   publish-orbital:
     name: Publish Orbital (Alpine)
     runs-on: ubuntu-latest
-    needs: build-jvm
+    needs: 
+      - build-jvm
+      - build-orbital-ui
     if: |
       github.event_name == 'push' && (
         github.ref == 'refs/heads/develop' ||
@@ -237,6 +239,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts
+
+      - name: Download UI artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: orbital-ui
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -293,7 +300,9 @@ jobs:
   publish-orbital-jammy:
     name: Publish Orbital (Ubuntu Jammy)
     runs-on: ubuntu-latest
-    needs: build-jvm
+    needs:
+      - build-jvm
+      - build-orbital-ui
     if: |
       github.event_name == 'push' && (
         github.ref == 'refs/heads/develop' ||
@@ -310,6 +319,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts
+
+      - name: Download UI artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: orbital-ui
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
