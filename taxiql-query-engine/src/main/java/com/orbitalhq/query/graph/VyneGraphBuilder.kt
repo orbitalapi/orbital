@@ -474,6 +474,8 @@ class VyneGraphBuilder(
     * so if all the params are untyped, we shouldn't bother adding this node to the graph.
     */
    private fun hasOnlyRawPrimitivesForInputs(operation: RemoteOperation): Boolean {
+      // No-arg operations are handled separately (linked to STARTING_ELEMENT directly)
+      if (operation.parameters.isEmpty()) return false
       return operation.parameters.all { it.type.isPrimitive && it.defaultValue == null }
    }
 
@@ -520,8 +522,13 @@ class VyneGraphBuilder(
       operationNode: Element
    ): List<GraphConnection> {
       val connections = mutableListOf<GraphConnection>()
-      operation.parameters
-         .filter { !it.type.isPrimitive }
+      val nonPrimitiveParams = operation.parameters.filter { !it.type.isPrimitive }
+      if (nonPrimitiveParams.isEmpty()) {
+         // No-arg operation: link directly from STARTING_ELEMENT so the graph can always reach it
+         connections.addConnection(GraphSearcher.STARTING_ELEMENT, operationNode, Relationship.IS_NO_ARG_SERVICE)
+         return connections
+      }
+      nonPrimitiveParams
          .forEachIndexed { _, parameter ->
          // When building services, we need to use 'connector nodes'
          // as Hipster4J doesn't support identical vertex pairs with separate edges.

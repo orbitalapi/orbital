@@ -19,6 +19,7 @@ import com.orbitalhq.query.graph.edges.HasAttributeEdgeEvaluator
 import com.orbitalhq.query.graph.edges.HasParamOfTypeEdgeEvaluator
 import com.orbitalhq.query.graph.edges.InstanceHasAttributeEdgeEvaluator
 import com.orbitalhq.query.graph.edges.IsInstanceOfEdgeEvaluator
+import com.orbitalhq.query.graph.edges.NoArgServiceEdgeEvaluator
 import com.orbitalhq.query.graph.edges.IsTypeOfEdgeEvaluator
 import com.orbitalhq.query.graph.edges.OperationParameterEdgeEvaluator
 import com.orbitalhq.query.graph.edges.QueryBuildingEvaluator
@@ -140,6 +141,7 @@ interface QueryEngineFactory {
       private fun edgeEvaluators(operationInvocationEdgeEvaluator: EdgeEvaluator): List<EdgeEvaluator> {
          return listOf(
             StartFactEdgeEvaluator,
+            NoArgServiceEdgeEvaluator,
             RequiresParameterEdgeEvaluator(),
             AttributeOfEdgeEvaluator,
             IsTypeOfEdgeEvaluator,
