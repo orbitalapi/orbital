@@ -2,6 +2,7 @@ package com.orbitalhq.query
 
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.TypedInstance
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flowOf
@@ -33,7 +34,7 @@ data class QueryStrategyResult(
     * Really, only useful for debugging.
     */
    fun consumeFlow():List<TypedInstance> {
-      return runBlocking { matchedNodes.toList() }
+      return runBlocking(Dispatchers.IO) { matchedNodes.toList() }
    }
 
    companion object {

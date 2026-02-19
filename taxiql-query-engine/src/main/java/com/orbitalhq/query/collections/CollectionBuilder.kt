@@ -41,7 +41,7 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
       val ID_ANNOTATION = "Id".fqn()
 
       fun toCollectionType(flow: Flow<TypedInstanceWithMetadata>): TypedCollection {
-        return runBlocking {
+        return runBlocking(Dispatchers.IO) {
             TypedCollection.from(flow.map { it.instance }.toList())
          }
       }

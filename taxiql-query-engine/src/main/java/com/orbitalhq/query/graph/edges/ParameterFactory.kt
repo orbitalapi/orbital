@@ -26,6 +26,7 @@ import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.log
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
@@ -127,7 +128,7 @@ class ParameterFactory {
             val built = collection
                .takeWhile { !exceptionThrown }
                .mapNotNull { member ->
-                  runBlocking {
+                  runBlocking(Dispatchers.IO) {
                      try {
                         val memberOnlyQueryContext = context.only(member)
                         val builtFromMember =

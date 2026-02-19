@@ -7,6 +7,7 @@ import com.orbitalhq.query.TypeQueryExpression
 import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.schemas.taxi.toVyneType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.toList
@@ -56,7 +57,7 @@ class CollectionProjectionBuilder(val queryContext: QueryContext) :
       } ?: emptyList()
 
       val targetMemberType = targetType.collectionType ?: targetType
-      val buildResults = runBlocking {
+      val buildResults = runBlocking(Dispatchers.IO) {
          collectionToIterate.asFlow()
             .flatMapConcat { collectionMember ->
                queryContext.only(listOf(collectionMember) + additionalScopeFacts)
