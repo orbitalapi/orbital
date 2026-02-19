@@ -1,3 +1,14 @@
+@import "src/common";
+
 ag-grid-angular {
   height: 100%;
+}
+
+.empty-result {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: $slate-400;
+  font-size: 0.875rem;
 }

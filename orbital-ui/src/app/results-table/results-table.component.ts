@@ -50,8 +50,12 @@ type AgGridEventTypes = 'sortChanged' | 'columnResized' | 'columnMoved' | 'filte
   changeDetection: ChangeDetectionStrategy.OnPush,
   selector: 'app-results-table',
   template: `
+    <div class="empty-result" *ngIf="nullResultReceived">
+      <p>Query returned no results</p>
+    </div>
     <ag-grid-angular
       class="ag-theme-alpine"
+      [style.display]="nullResultReceived ? 'none' : null"
       [enableCellTextSelection]="true"
       [columnDefs]="columnDefs"
       [pagination]="true"
@@ -119,6 +123,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
 
   columnDefs: ColDef[] = [];
   paginationPageSize = 100;
+  nullResultReceived = false;
   private hasFirstData: boolean;
 
   constructor(
@@ -205,6 +210,10 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   private buildColumnDefinitions(value: InstanceLike) {
 
     const instanceValue = unwrapValue(value);
+    if (isNullOrUndefined(instanceValue)) {
+      this.nullResultReceived = true;
+      return;
+    }
     const scalar = isScalar(instanceValue);
     if (scalar) {
       this.columnDefs = [{
@@ -358,6 +367,7 @@ export class ResultsTableComponent extends BaseTypedInstanceViewer {
   }
 
   private resetGrid() {
+    this.nullResultReceived = false;
     if (this.gridApi) {
       this.columnDefs = [];
       this.gridApi.setGridOption("columnDefs", []);
