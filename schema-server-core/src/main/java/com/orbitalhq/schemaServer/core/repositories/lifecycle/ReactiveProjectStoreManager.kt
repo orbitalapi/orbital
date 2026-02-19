@@ -108,12 +108,14 @@ class ReactiveProjectStoreManager(
    private val fileSpecAddedEventsSubscription: Disposable
    private val fileSpecRemovedEventsSubscription: Disposable
    private val gitSpecAddedEventSubscription: Disposable
+   private val gitSpecRemovedEventSubscription: Disposable
    private val repoRemovedEventSSubscription: Disposable
 
    init {
       fileSpecAddedEventsSubscription = consumeFileSpecAddedEvents()
       fileSpecRemovedEventsSubscription = consumeFileSpecRemovedEvents()
       gitSpecAddedEventSubscription = consumeGitSpecAddedEvents()
+      gitSpecRemovedEventSubscription = consumeGitSpecRemovedEvents()
       repoRemovedEventSSubscription = consumeRepoRemovedEvents()
    }
 
@@ -211,6 +213,54 @@ class ReactiveProjectStoreManager(
       }
    }
 
+   /**
+    * These are events when the git spec is removed by manually editing the
+    * workspace.conf file (or modified, which generates a remove + add event)
+    */
+   private fun consumeGitSpecRemovedEvents(): Disposable {
+      return specEventSource.gitSpecRemoved.subscribe { event ->
+         logger.info { "Received event that git spec ${event.spec.name} at ${event.spec.uri} has been removed. Removing loaders and cleaning up working directory" }
+
+         // Find matching git loaders (don't use gitLoaders property as it excludes unhealthy ones)
+         val matchingLoaders = _loaders.keys.filterIsInstance<GitSchemaPackageLoader>()
+            .filter { loader -> loader.config == event.spec }
+
+         matchingLoaders.forEach { loader ->
+            val workingDir = loader.workingDir
+            removeLoader(loader)
+            deleteGitWorkingDirectory(workingDir)
+         }
+      }
+   }
+
+   /**
+    * Safely deletes a git working directory after a git spec is removed
+    */
+   private fun deleteGitWorkingDirectory(workingDir: Path) {
+      try {
+         if (!java.nio.file.Files.exists(workingDir)) {
+            logger.debug { "Working directory $workingDir does not exist, skipping deletion" }
+            return
+         }
+
+         // Safety check: verify it's a git directory
+         val gitDir = workingDir.resolve(".git")
+         if (!java.nio.file.Files.exists(gitDir)) {
+            logger.warn { "Directory $workingDir does not contain a .git folder, skipping deletion for safety" }
+            return
+         }
+
+         logger.info { "Deleting git working directory at $workingDir" }
+         workingDir.toFile().deleteRecursively()
+         logger.info { "Successfully deleted git working directory at $workingDir" }
+
+      } catch (e: Exception) {
+         // Non-fatal: Log warning but don't throw
+         // Directory will be handled on next clone attempt
+         logger.warn(e) { "Failed to delete git working directory at $workingDir: ${e.message}. This will not prevent the new clone." }
+      }
+   }
+
    override val editableLoaders: List<SchemaPackageTransport>
       get() {
          return loaders.filter { it.isEditable() }
@@ -218,7 +268,9 @@ class ReactiveProjectStoreManager(
 
    override fun close() {
       fileSpecAddedEventsSubscription.dispose()
+      fileSpecRemovedEventsSubscription.dispose()
       gitSpecAddedEventSubscription.dispose()
+      gitSpecRemovedEventSubscription.dispose()
       repoRemovedEventSSubscription.dispose()
    }
 
