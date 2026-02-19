@@ -78,8 +78,8 @@ jobs:
 
       - name: Configure Docker authentication
         run: |
-          mkdir -p /home/runner/.docker/
-          cat > /home/runner/.docker/config.json << EOF
+          mkdir -p $HOME/.docker/
+          cat > $HOME/.docker/config.json << EOF
           {
               "auths": {
                   "https://index.docker.io/v1/": {
