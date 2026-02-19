@@ -181,7 +181,7 @@ data class RoutedQuery(
    }
 }
 
-private fun <T> Optional<T>.valueOrRejectIfMissingAndMandatory(
+private fun <T : Any> Optional<T>.valueOrRejectIfMissingAndMandatory(
    parameterKind: String,
    parameterName: String,
    parameter: Parameter
@@ -192,7 +192,7 @@ private fun <T> Optional<T>.valueOrRejectIfMissingAndMandatory(
    }
 }
 
-private fun <T> T?.valueOrRejectIfMissingAndMandatory(
+private fun <T : Any> T?.valueOrRejectIfMissingAndMandatory(
    parameterKind: String,
    parameterName: String,
    parameter: Parameter

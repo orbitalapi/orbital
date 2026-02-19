@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.orbitalhq.query.QueryParseMetadata
+import com.orbitalhq.utils.Ids
 import lang.taxi.query.TaxiQLQueryString
 import java.time.Instant
 
@@ -24,7 +25,14 @@ data class ConversationMessage(
     */
    val displayMessage: String? = null,
    val chunks: List<MessageChunk> = emptyList(),
-   val timestamp: Instant = Instant.now()
+   val timestamp: Instant = Instant.now(),
+
+   /**
+    * Id for this message within the stream. Does not uniquely
+    * identify the message across the system. Provided by whoever originates the message
+    * (client or server)
+    */
+   val id: String = Ids.id(prefix = "", size = 8)
 ) {
    @get:JsonIgnore
    val queries: List<CodeBlockMessageChunk> = chunks

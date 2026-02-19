@@ -35,7 +35,6 @@ import org.junit.jupiter.api.io.TempDir
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Import
 import org.springframework.context.annotation.Primary
@@ -43,6 +42,7 @@ import org.springframework.core.io.ClassPathResource
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.test.context.junit.jupiter.SpringExtension
 import org.testcontainers.containers.GenericContainer
 import org.testcontainers.containers.wait.strategy.Wait
@@ -146,36 +146,36 @@ class OperationAuthenticationMtlsTest : DatabaseTest() {
    }
    private lateinit var taxiSchema: TaxiSchema
 
-   @MockBean
+   @MockitoBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
-   @MockBean
+   @MockitoBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
-   @MockBean
+   @MockitoBean
    lateinit var queryMetricsReporter: QueryMetricsReporter
 
-   @MockBean
+   @MockitoBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 
-   @MockBean
+   @MockitoBean
    lateinit var configService: ConfigService
-   @MockBean
+   @MockitoBean
    lateinit var licenseManager: OrbitalLicenseManager
 
-   @MockBean
+   @MockitoBean
    lateinit var configLoader : WorkspaceConfigLoader
 
-   @MockBean
+   @MockitoBean
    lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
-   @MockBean
+   @MockitoBean
    lateinit var packagesService: PackageService
 
-   @MockBean
+   @MockitoBean
    lateinit var schemaEditorService: SchemaEditorService
 
-   @MockBean
+   @MockitoBean
    lateinit var chatService: CopilotConversationApi
 
    @Bean
@@ -234,7 +234,7 @@ class OperationAuthenticationMtlsTest : DatabaseTest() {
       ).block()
 
       val response = queryService.submitVyneQlQuery("""find {  Todo[] }""")
-         .block()
+         .block()!!
          .body!!.toList()
 
       response.size.should.equal(2)
@@ -245,7 +245,7 @@ class OperationAuthenticationMtlsTest : DatabaseTest() {
       withTurbineTimeout(20.seconds) {
          val response = queryService
             .submitVyneQlQuery("""find { Assignee[] }""")
-            .block()?.body
+            .block()?.body!!
 
          StepVerifier.create(response).expectError()
          //response!!.awaitError()

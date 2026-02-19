@@ -23,6 +23,7 @@ enum class Relationship(
    val defaultIncrementalCost:Double = defaultCost
 ) {
    IS_START_FACT("Is starting fact", LinkType.START_POINT),
+   IS_NO_ARG_SERVICE("Is no-arg service", LinkType.START_POINT),
    IS_ATTRIBUTE_OF("Is an attribute of", LinkType.OBJECT_NAVIGATION),
    // If we've used an attribute in a path before, we want to penalize it, to allow other unused attributes to become
    // more viable

@@ -32,9 +32,11 @@ import kotlinx.coroutines.flow.firstOrNull
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.accessors.ConditionalAccessor
+import lang.taxi.expressions.OperationInvocationExpression
 import lang.taxi.expressions.ProjectingExpression
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.types.FormatsAndZoneOffset
+import lang.taxi.types.MemberTypeReferenceExpression
 import lang.taxi.types.ObjectType
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
@@ -368,6 +370,16 @@ class ObjectBuilder(
                // Don't attempt to populate expression types here.
                // The TypedObjectFactory has the expression evaluation logic,
                // so leave the value as un-populated.
+
+
+               // MP 17-Feb-26
+               // The list of accessors to exclude is growing, and I don't understand why we'd want to attempt to
+               // perform a build() on a field with an accessor - the TypedObjectFactory will populate this shortly.
+               // Have made the exclusion more aggressive, and will see what breaks.
+               // ORB-1072
+            } else if (field.accessor != null) {
+            } else if (field.accessor is MemberTypeReferenceExpression) {
+            } else if (field.accessor is OperationInvocationExpression) {
             } else if (field.accessor is ConditionalAccessor) {
                // Don't attempt to populate fields with ConditionalAccessor here.
                // The TypedObjectFactory has the expression evaluation logic,

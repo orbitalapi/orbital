@@ -17,7 +17,7 @@ import java.time.Duration
  * Addresses are round-robined.
  *
  */
-class DiscoveryClientAddressSupplier<T>(
+class DiscoveryClientAddressSupplier<T : Any>(
    private val discoveryClient: DiscoveryClient,
    private val serviceId: String,
    private val converter: (ServiceInstance) -> T,

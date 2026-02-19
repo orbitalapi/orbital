@@ -21,7 +21,7 @@ class WildcardMatchingOAuth2AuthorizedClientService(
    val repository: ReactiveClientRegistrationRepository
 ) : ReactiveOAuth2AuthorizedClientService {
    private val authorizedClients = ConcurrentHashMap<ServiceName, OAuth2AuthorizedClient>()
-   override fun <T : OAuth2AuthorizedClient?> loadAuthorizedClient(
+   override fun <T : OAuth2AuthorizedClient> loadAuthorizedClient(
       clientRegistrationId: String,
       principalName: String
    ): Mono<T> {

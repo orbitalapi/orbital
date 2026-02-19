@@ -2,12 +2,14 @@ package com.orbitalhq.copilot
 
 import com.orbitalhq.SourcePackage
 import com.orbitalhq.utils.SourcePackageCompression
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.codec.ServerSentEvent
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestPart
+import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.service.annotation.GetExchange
 import org.springframework.web.service.annotation.PostExchange
 import reactor.core.publisher.Flux
@@ -54,6 +56,18 @@ interface CopilotConversationApi {
    @PostExchange("/api/copilot/session/{sessionId}/message/stream")
    fun submitMessageToConversationStream(@RequestBody message: ConversationMessage, @PathVariable("sessionId") sessionId: String): Flux<ServerSentEvent<ChatEvent>>
 
+   /**
+    * Replaces an existing message in an existing session, creating a new "branch" of the conversation.
+    */
+   @PostExchange("/api/copilot/session/{sessionId}/message/{messageId}/branch")
+   fun replaceMessageInConversationStream(@RequestBody message: ConversationMessage, @PathVariable("sessionId") sessionId: String,  @PathVariable("messageId") messageId: String): Flux<ServerSentEvent<ChatEvent>>
+
+   /**
+    * Replays an existing message in an existing session, creating a new "branch" of the conversation.
+    */
+   @PostExchange("/api/copilot/session/{sessionId}/message/{messageId}/replay")
+   fun resubmitMessageInConversationStream(@PathVariable("sessionId") sessionId: String, @PathVariable("messageId") messageId: String): Flux<ServerSentEvent<ChatEvent>>
+
 
    @PostExchange("/api/copilot/session/{sessionId}/message-with-attachments", accept = [MediaType.MULTIPART_FORM_DATA_VALUE])
    fun submitMessageWithAttachments(
@@ -86,3 +100,7 @@ data class UserInteractionToolResponse(
 
 typealias ToolResponseCallId = String
 typealias ToolResponseData = String
+
+
+@ResponseStatus(HttpStatus.BAD_REQUEST)
+class BadRequestException(message: String) : RuntimeException(message)
