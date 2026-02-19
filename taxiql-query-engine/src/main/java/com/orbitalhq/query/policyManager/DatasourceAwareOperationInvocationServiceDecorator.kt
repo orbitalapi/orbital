@@ -17,7 +17,7 @@ class DatasourceAwareOperationInvocationServiceDecorator(private val operationSe
                                         preferredParams: Set<TypedInstance>,
                                         context: QueryContext,
                                         providedParamValues: List<Pair<Parameter, TypedInstance>>): Flow<TypedInstance> {
-       return withContext(Dispatchers.Default + MDCContext()) {
+       return withContext(Dispatchers.IO + MDCContext()) {
            val result = operationService.invokeOperation(service, operation, preferredParams, context, providedParamValues)
            context.onServiceInvoked(service)
            result
