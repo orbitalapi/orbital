@@ -161,7 +161,7 @@ build-jvm-develop:
    variables:
       MAVEN_GOALS: 'clean deploy'
       # We skip tests on develop and master, as the tests have already run on the branch
-      MAVEN_EXTRA_ARGS: '-P snapshot-release -DskipTests'
+      MAVEN_EXTRA_ARGS: '-P snapshot-release -DskipTests  -Daws.region=eu-west-2'
 
 
 verify-version:
@@ -204,7 +204,7 @@ build-jvm-release:
    variables:
       MAVEN_GOALS: 'clean deploy'
       # We skip tests on develop and master, as the tests have already run on the branch
-      MAVEN_EXTRA_ARGS: '-P release -DskipTests'
+      MAVEN_EXTRA_ARGS: '-P release -DskipTests  -Daws.region=eu-west-2'
 
 release-major:
    image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/maven:3.9.6-eclipse-temurin-21

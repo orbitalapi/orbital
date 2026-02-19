@@ -76,40 +76,31 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
-      - name: Configure Docker authentication
-        run: |
-          mkdir -p /home/runner/.docker/
-          cat > /home/runner/.docker/config.json << EOF
-          {
-              "auths": {
-                  "https://index.docker.io/v1/": {
-                      "username": "vynecd",
-                      "password": "${{ secrets.DOCKER_HUB_PASSWORD }}",
-                      "auth": "$(echo -n 'vynecd:${{ secrets.DOCKER_HUB_PASSWORD }}' | base64)"
-                  }
-              }
-          }
-          EOF
-
       - name: Determine Maven goals
         id: maven-config
         run: |
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
+            # Tags: deploy release jars, skip tests (already ran on branch)
             echo "goals=clean deploy" >> $GITHUB_OUTPUT
-            echo "extra_args=-P release -DskipTests" >> $GITHUB_OUTPUT
-          elif [[ "${{ github.ref_name }}" == "develop" ]] || [[ "${{ github.ref_name }}" == release/* ]]; then
+            echo "extra_args=-P release -DskipTests -Daws.region=eu-west-2" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_name }}" == "develop" ]] || [[ "${{ github.ref_name }}" == "master" ]] || [[ "${{ github.ref_name }}" == "main" ]]; then
+            # Develop/Master/Main: deploy snapshot jars, skip tests (already ran on branches)
             echo "goals=clean deploy" >> $GITHUB_OUTPUT
-            echo "extra_args=-P snapshot-release -DskipTests" >> $GITHUB_OUTPUT
+            echo "extra_args=-P snapshot-release -DskipTests -Daws.region=eu-west-2" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_name }}" == release/* ]]; then
+            # Release branches: deploy snapshot jars, run tests
+            echo "goals=clean deploy" >> $GITHUB_OUTPUT
+            echo "extra_args=-P snapshot-release -Daws.region=eu-west-2" >> $GITHUB_OUTPUT
           else
+            # Feature branches: build and test, do not publish
             echo "goals=clean install" >> $GITHUB_OUTPUT
             echo "extra_args=" >> $GITHUB_OUTPUT
           fi
 
       - name: Build with Maven
         env:
-          DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
           JOOQ_REPO_USERNAME: ${{ secrets.JOOQ_REPO_USERNAME }}
-          JOOQ_REPO_PASSWORD: ${{ secrets.JOOQ_REPO_PASSWORD }}          
+          JOOQ_REPO_PASSWORD: ${{ secrets.JOOQ_REPO_PASSWORD }}
         run: |
           echo "Running Maven with goals: ${{ steps.maven-config.outputs.goals }}"
           mvn $MAVEN_CLI_OPTS -DbuildNumber=${{ github.run_id }} ${{ steps.maven-config.outputs.extra_args }} ${{ steps.maven-config.outputs.goals }}
@@ -143,6 +134,7 @@ jobs:
           path: '**/target/surefire-reports/TEST-*.xml'
           retention-days: 7
           if-no-files-found: ignore
+
 
   build-orbital-ui:
     name: Build Orbital UI
@@ -182,6 +174,7 @@ jobs:
             licenses.csv
           retention-days: 1
 
+
   build-playground-ui:
     name: Build Playground UI
     runs-on: self-hosted
@@ -217,14 +210,50 @@ jobs:
           path: taxi-playground/target/classes/static
           retention-days: 1
 
+
+  validate-license-compliance:
+    name: Validate License Compliance
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    needs:
+      - build-jvm
+      - build-orbital-ui
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: build-artifacts
+
+      - name: Download UI artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: orbital-ui
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate licenses
+        run: node processLicenses.js
+
+
   publish-orbital:
     name: Publish Orbital (Alpine)
     runs-on: ubuntu-latest
-    needs: build-jvm
+    needs:
+      - build-jvm
+      - build-orbital-ui
     if: |
       github.event_name == 'push' && (
         github.ref == 'refs/heads/develop' ||
         github.ref == 'refs/heads/master' ||
+        github.ref == 'refs/heads/main' ||
         startsWith(github.ref, 'refs/tags/v') ||
         startsWith(github.ref, 'refs/heads/release/')
       )
@@ -237,6 +266,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts
+
+      - name: Download UI artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: orbital-ui
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -258,7 +292,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             tag="${{ github.ref_name }}"
             versionTag="${{ github.ref_name }}"
-          elif [[ "${{ github.ref_name }}" == "master" ]]; then
+          elif [[ "${{ github.ref_name }}" == "master" ]] || [[ "${{ github.ref_name }}" == "main" ]]; then
             tag="latest"
             versionTag="$PROJECT_VERSION"
           elif [[ "${{ github.ref_name }}" == "develop" ]]; then
@@ -266,10 +300,7 @@ jobs:
             versionTag="next-${{ github.run_id }}"
           elif [[ "${{ github.ref_name }}" == release/* ]]; then
             stripped_branch=$(echo "${{ github.ref_name }}" | sed 's/release\///')
-            tag="$stripped_branch-next"
-            versionTag="$PROJECT_VERSION-BETA-${{ github.run_id }}"
-          else
-            tag="${{ github.ref_name }}-next"
+            tag="${stripped_branch}-next"
             versionTag="$PROJECT_VERSION-BETA-${{ github.run_id }}"
           fi
 
@@ -290,14 +321,18 @@ jobs:
             orbitalhq/orbital:${{ steps.docker-tags.outputs.tag }}
             orbitalhq/orbital:${{ steps.docker-tags.outputs.version_tag }}
 
+
   publish-orbital-jammy:
     name: Publish Orbital (Ubuntu Jammy)
     runs-on: ubuntu-latest
-    needs: build-jvm
+    needs:
+      - build-jvm
+      - build-orbital-ui
     if: |
       github.event_name == 'push' && (
         github.ref == 'refs/heads/develop' ||
         github.ref == 'refs/heads/master' ||
+        github.ref == 'refs/heads/main' ||
         startsWith(github.ref, 'refs/tags/v') ||
         startsWith(github.ref, 'refs/heads/release/')
       )
@@ -310,6 +345,11 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: build-artifacts
+
+      - name: Download UI artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: orbital-ui
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -331,7 +371,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             tag="${{ github.ref_name }}-jammy"
             versionTag="${{ github.ref_name }}-jammy"
-          elif [[ "${{ github.ref_name }}" == "master" ]]; then
+          elif [[ "${{ github.ref_name }}" == "master" ]] || [[ "${{ github.ref_name }}" == "main" ]]; then
             tag="latest-jammy"
             versionTag="$PROJECT_VERSION-jammy"
           elif [[ "${{ github.ref_name }}" == "develop" ]]; then
@@ -339,10 +379,7 @@ jobs:
             versionTag="next-${{ github.run_id }}-jammy"
           elif [[ "${{ github.ref_name }}" == release/* ]]; then
             stripped_branch=$(echo "${{ github.ref_name }}" | sed 's/release\///')
-            tag="$stripped_branch-next-jammy"
-            versionTag="$PROJECT_VERSION-BETA-${{ github.run_id }}-jammy"
-          else
-            tag="${{ github.ref_name }}-next-jammy"
+            tag="${stripped_branch}-next-jammy"
             versionTag="$PROJECT_VERSION-BETA-${{ github.run_id }}-jammy"
           fi
 
@@ -361,6 +398,7 @@ jobs:
             orbitalhq/orbital:${{ steps.docker-tags.outputs.tag }}
             orbitalhq/orbital:${{ steps.docker-tags.outputs.version_tag }}
 
+
   publish-query-node:
     name: Publish Query Node
     runs-on: ubuntu-latest
@@ -369,6 +407,7 @@ jobs:
       github.event_name == 'push' && (
         github.ref == 'refs/heads/develop' ||
         github.ref == 'refs/heads/master' ||
+        github.ref == 'refs/heads/main' ||
         startsWith(github.ref, 'refs/tags/v') ||
         startsWith(github.ref, 'refs/heads/release/')
       )
@@ -402,7 +441,7 @@ jobs:
           if [[ "${{ github.ref }}" == refs/tags/* ]]; then
             tag="${{ github.ref_name }}"
             versionTag="${{ github.ref_name }}"
-          elif [[ "${{ github.ref_name }}" == "master" ]]; then
+          elif [[ "${{ github.ref_name }}" == "master" ]] || [[ "${{ github.ref_name }}" == "main" ]]; then
             tag="latest"
             versionTag="$PROJECT_VERSION"
           elif [[ "${{ github.ref_name }}" == "develop" ]]; then
@@ -410,10 +449,7 @@ jobs:
             versionTag="next-${{ github.run_id }}"
           elif [[ "${{ github.ref_name }}" == release/* ]]; then
             stripped_branch=$(echo "${{ github.ref_name }}" | sed 's/release\///')
-            tag="$stripped_branch-next"
-            versionTag="$PROJECT_VERSION-BETA-${{ github.run_id }}"
-          else
-            tag="${{ github.ref_name }}-next"
+            tag="${stripped_branch}-next"
             versionTag="$PROJECT_VERSION-BETA-${{ github.run_id }}"
           fi
 
@@ -429,6 +465,67 @@ jobs:
           tags: |
             orbitalhq/query-node:${{ steps.docker-tags.outputs.tag }}
             orbitalhq/query-node:${{ steps.docker-tags.outputs.version_tag }}
+
+
+  scan-trivy:
+    name: Container Vulnerability Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    needs: publish-orbital
+    if: |
+      github.event_name == 'push' && (
+        github.ref == 'refs/heads/develop' ||
+        github.ref == 'refs/heads/master' ||
+        github.ref == 'refs/heads/main' ||
+        startsWith(github.ref, 'refs/heads/release/')
+      )
+
+    steps:
+      - name: Determine image to scan
+        id: image
+        run: |
+          if [[ "${{ github.ref_name }}" == "develop" ]]; then
+            echo "tag=orbitalhq/orbital:next" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_name }}" == "master" ]] || [[ "${{ github.ref_name }}" == "main" ]]; then
+            echo "tag=orbitalhq/orbital:latest" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref_name }}" == release/* ]]; then
+            stripped=$(echo "${{ github.ref_name }}" | sed 's/release\///')
+            echo "tag=orbitalhq/orbital:${stripped}-next" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.image.outputs.tag }}
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'HIGH,CRITICAL'
+          exit-code: '1'
+
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Run detailed Trivy scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.image.outputs.tag }}
+          format: 'table'
+          output: 'vulnerabilities.txt'
+          severity: 'HIGH,CRITICAL'
+
+      - name: Upload vulnerability report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: vulnerability-report
+          path: vulnerabilities.txt
+          retention-days: 30
+
 
   tag-as-latest:
     name: Tag Images as Latest

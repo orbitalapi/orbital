@@ -1,75 +1,12 @@
 name: Verify
 
 on:
-  push:
-    branches:
-      - develop
   workflow_dispatch:
 
 jobs:
-  scan-orbital:
-    name: Container Scan - Orbital
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/develop'
-
-    steps:
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'orbitalhq/orbital:next'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-          severity: 'HIGH,CRITICAL'
-          exit-code: '1'
-
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: 'trivy-results.sarif'
-
-      - name: Run detailed Trivy scan
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'orbitalhq/orbital:next'
-          format: 'table'
-          output: 'vulnerabilities.txt'
-          severity: 'HIGH,CRITICAL'
-
-      - name: Upload vulnerability report
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: vulnerability-report-orbital
-          path: vulnerabilities.txt
-          retention-days: 30
-
-  validate-license-compliance:
-    name: Validate License Compliance
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Download UI artifacts
-        uses: actions/download-artifact@v4
-        with:
-          name: orbital-ui
-        continue-on-error: true
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-
-      - name: Validate licenses
-        run: node processLicenses.js
-
   regression-test:
     name: Regression Tests
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
 
     steps:
       - name: Checkout code

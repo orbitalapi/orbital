@@ -51,6 +51,14 @@ The following secrets need to be configured in GitHub repository settings (Setti
    - Description: SSH private key for accessing orbital-core-taxi repository
    - Used for: Publishing core types to GitHub
 
+3. **`JOOQ_REPO_USERNAME`**
+   - Description: Username for jOOQ Pro repository access
+   - Used for: Maven build dependencies
+
+4. **`JOOQ_REPO_PASSWORD`**
+   - Description: Password for jOOQ Pro repository access
+   - Used for: Maven build dependencies
+
 ### Optional Secrets
 
 These may be needed depending on your Maven repository configuration:
@@ -127,6 +135,8 @@ In GitLab CI, releases were triggered manually on the develop branch with button
 
 - [ ] Configure `DOCKER_HUB_PASSWORD` secret in GitHub
 - [ ] Configure `GITHUB_PRIVATE_KEY` secret in GitHub
+- [ ] Configure `JOOQ_REPO_USERNAME` secret in GitHub
+- [ ] Configure `JOOQ_REPO_PASSWORD` secret in GitHub
 - [ ] Verify Maven settings.xml is present at `.mvn/settings.xml`
 - [ ] Test a feature branch build
 - [ ] Test a develop branch build and Docker publish
