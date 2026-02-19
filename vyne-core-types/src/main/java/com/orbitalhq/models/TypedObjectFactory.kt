@@ -20,7 +20,6 @@ import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.timeBucket
 import com.orbitalhq.utils.xtimed
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.*
@@ -557,7 +556,7 @@ class TypedObjectFactory(
          )
       }
       val searchFailureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.defaultBehaviour(type)
-      return runBlocking(Dispatchers.IO) {
+      return runBlocking {
          logger.debug { "Initiating query to search for closed type ${type.name.shortDisplayName}" }
          queryForType(type, searchFailureBehaviour, AlwaysGoodSpec, attributeName = null)
       }
@@ -690,7 +689,7 @@ class TypedObjectFactory(
             // blocking when introducing type expressions with lookups.
             // However, in future, we need to mkae the TypedObjectFactory
             // async up the chain.
-            runBlocking(Dispatchers.IO) {
+            runBlocking {
                if (requestedType.isStream) {
                   error("Cannot perform an inner search for a stream")
                }
@@ -887,7 +886,7 @@ class TypedObjectFactory(
             // wrt/ coroutines vs flux atm.
             val argumentExpressionReturnType = schema.type(argumentTypeExpression.type)
             val scopedFacts = this.getCurrentScopedFacts()
-            val typedInstance = runBlocking(Dispatchers.IO) {
+            val typedInstance = runBlocking {
                // If we're doing nested traversal of lambda expressions,
                // there could be scoped facts we've been passed that will
                // be needed as inputs
@@ -1312,7 +1311,7 @@ class TypedObjectFactory(
       }
 
       val (additionalFacts, additionalScope) = getFactsInScopeForSearch()
-      val buildResult = runBlocking(Dispatchers.IO) {
+      val buildResult = runBlocking {
          logger.debug { "Initiating query to search for attribute $attributeName (${searchType.name.shortDisplayName})" }
          inPlaceQueryEngine.withAdditionalFacts(additionalFacts, additionalScope)
             .findType(
