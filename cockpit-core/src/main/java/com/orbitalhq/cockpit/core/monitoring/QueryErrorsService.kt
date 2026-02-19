@@ -57,19 +57,3 @@ class QueryErrorsService(
    }
 }
 
-/**
- * Similar to combineLatest - in that it emits messages from both fluxes as they arrive.
- * However, does not wait
- */
-fun <A, B> combineLatestWithNulls(fluxA: Flux<A>, fluxB: Flux<B>): Flux<Pair<A?, B?>> {
-   // Start each flux with null to ensure combineLatest emits pairs immediately
-   val startWithNullA = fluxA.startWith(Flux.just(null))
-   val startWithNullB = fluxB.startWith(Flux.just(null))
-
-   // Use combineLatest to combine the two fluxes
-   return Flux.combineLatest(
-      startWithNullA,
-      startWithNullB
-   ) { a, b -> Pair(a as? A, b as? B) } // Cast is safe because of startWith(null)
-
-}

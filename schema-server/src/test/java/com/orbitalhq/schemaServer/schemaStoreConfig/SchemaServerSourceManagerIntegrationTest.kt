@@ -44,13 +44,13 @@ class SchemaServerSourceManagerIntegrationTest {
       sourceManager.submitSources(packageOf("package2", """type FirstName inherits Name""")).block()!!
       sourceManager.submitSources(packageOf("package3", """type Living inherits Boolean""")).block()!!
       // Still expect that Living has been registered
-      sourceManager.listSchemas().block().schema.hasType("Living").should.be.`true`
-      sourceManager.listSchemas().block().schema.hasType("FirstNAme").should.be.`false`
+      sourceManager.listSchemas().block()!!.schema.hasType("Living").should.be.`true`
+      sourceManager.listSchemas().block()!!.schema.hasType("FirstNAme").should.be.`false`
       // Resolves the compilation error from Package2
       sourceManager.submitSources(packageOf("package4", """type Name inherits String""")).block()!!
 
-      sourceManager.listSchemas().block().schema.hasType("Name").should.be.`true`
-      sourceManager.listSchemas().block().schema.hasType("FirstName").should.be.`true`
+      sourceManager.listSchemas().block()!!.schema.hasType("Name").should.be.`true`
+      sourceManager.listSchemas().block()!!.schema.hasType("FirstName").should.be.`true`
    }
 
    private fun packageOf(packageName: String, content: String): SourcePackage {

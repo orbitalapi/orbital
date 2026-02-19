@@ -37,7 +37,7 @@ import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit.jupiter.SpringExtension
@@ -68,34 +68,34 @@ import javax.sql.DataSource
 @ActiveProfiles("test")
 class QueryLineageTest : BaseQueryServiceTest() {
 
-   @MockBean
+   @MockitoBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
-   @MockBean
+   @MockitoBean
    lateinit var configService: ConfigService
-   @MockBean
+   @MockitoBean
    lateinit var licenseManager: OrbitalLicenseManager
 
 
-   @MockBean
+   @MockitoBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
-   @MockBean
+   @MockitoBean
    lateinit var packagesService: PackageService
 
-   @MockBean
+   @MockitoBean
    lateinit var schemaEditorService: SchemaEditorService
 
-   @MockBean
+   @MockitoBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 
-   @MockBean
+   @MockitoBean
    lateinit var configLoader : WorkspaceConfigLoader
 
    @Autowired
    lateinit var datasource: DataSource
 
-   @MockBean
+   @MockitoBean
    lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
    @Autowired
@@ -117,7 +117,7 @@ class QueryLineageTest : BaseQueryServiceTest() {
    lateinit var sankeyChartRowRepository: QuerySankeyChartRowRepository
 
 
-   @MockBean
+   @MockitoBean
    lateinit var chatService: CopilotConversationApi
 
 

@@ -47,7 +47,7 @@ import org.junit.rules.TemporaryFolder
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
 import org.springframework.test.context.ActiveProfiles
@@ -86,38 +86,38 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
       } as PostgreSQLContainer<*>
 
    }
-   @MockBean
+   @MockitoBean
    lateinit var chatService: CopilotConversationApi
 
-   @MockBean
+   @MockitoBean
    lateinit var cmsService: DefaultContentRepository
 
-   @MockBean
+   @MockitoBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
-   @MockBean
+   @MockitoBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
-   @MockBean
+   @MockitoBean
    lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
 
-   @MockBean
+   @MockitoBean
    lateinit var configLoader: WorkspaceConfigLoader
 
-   @MockBean
+   @MockitoBean
    lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
-   @MockBean
+   @MockitoBean
    lateinit var packagesService: PackageService
 
-   @MockBean
+   @MockitoBean
    lateinit var configService: ConfigService
-   @MockBean
+   @MockitoBean
    lateinit var licenseManager: OrbitalLicenseManager
 
 
 
-   @MockBean
+   @MockitoBean
    lateinit var schemaEditorService: SchemaEditorService
 
    @Rule
@@ -270,12 +270,12 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
 
       Awaitility.await().atMost(Duration.FIVE_SECONDS).until<Boolean> {
          historyService.getRemoteCallListByClientId(clientQueryId)
-            .block().size == 2
+            .block()!!.size == 2
       }
       val calls = historyService.getRemoteCallListByClientId(clientQueryId)
          .block()
-      calls.shouldHaveSize(2)
-      val failedCall = calls.first { it.success == false }
+      calls!!.shouldHaveSize(2)
+      val failedCall = calls!!.first { it.success == false }
 
       val exchange = failedCall.exchange as HttpExchange
       exchange.responseCode.shouldBe(400)
@@ -329,11 +329,11 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
       }
       Awaitility.await().atMost(Duration.FIVE_SECONDS).until<Boolean> {
          historyService.getRemoteCallListByClientId(clientQueryId)
-            .block().isNotEmpty()
+            .block()!!.isNotEmpty()
 
       }
       val calls = historyService.getRemoteCallListByClientId(clientQueryId)
-         .block()
+         .block()!!
       calls.shouldHaveSize(1)
    }
 
@@ -382,11 +382,11 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
       }
       Awaitility.await().atMost(Duration.FIVE_SECONDS).until<Boolean> {
          historyService.getRemoteCallListByClientId(clientQueryId)
-            .block()
+            .block()!!
             .isNotEmpty()
       }
       val calls = historyService.getRemoteCallListByClientId(clientQueryId)
-         .block()
+         .block()!!
       calls.shouldHaveSize(1)
       calls[0].success.shouldBeFalse()
       val exchange = calls[0].exchange as HttpExchange

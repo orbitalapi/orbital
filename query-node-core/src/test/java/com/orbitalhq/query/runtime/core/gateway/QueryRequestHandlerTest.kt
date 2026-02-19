@@ -145,7 +145,7 @@ class QueryRequestHandlerTest {
          .expectStatus().isOk
          .returnResult<Map<String, Any>>()
 
-      val responseBody = result.responseBody.blockLast()
+      val responseBody = result.responseBody.blockLast()!!
       responseBody["status"].should.equal("OK")
       mockWebServerRule.takeRequest().headers[CorrelationHeaderName]!!.should.equal(orbitalHttpQueryCorrelationId)
    }
@@ -246,7 +246,7 @@ class QueryRequestHandlerTest {
          .expectHeader().value("filmId", CoreMatchers.`is`("1"))
          .returnResult<Map<String, Any>>()
 
-      val responseBody = result.responseBody.blockLast()
+      val responseBody = result.responseBody.blockLast()!!
       responseBody["rating"].should.equal("Good")
       mockWebServerRule.takeRequest()
    }
@@ -371,7 +371,7 @@ class QueryRequestHandlerTest {
          .expectHeader().value("Content-Type", CoreMatchers.`is`("application/json"))
          .returnResult<Map<String, Any>>()
 
-      val responseBody = result.responseBody.blockLast()
+      val responseBody = result.responseBody.blockLast()!!
       responseBody["message"].should.equal("xyz.abc.def")
    }
 

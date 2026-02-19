@@ -37,7 +37,7 @@ import org.skyscreamer.jsonassert.JSONAssert
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.boot.test.context.TestConfiguration
-import org.springframework.boot.test.mock.mockito.MockBean
+import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.boot.test.web.client.TestRestTemplate
 import org.springframework.boot.test.web.server.LocalServerPort
 import org.springframework.context.annotation.Bean
@@ -65,31 +65,40 @@ import kotlin.test.assertEquals
 )
 @ActiveProfiles("test")
 class VyneQueryIntegrationTest : DatabaseTest() {
-   @MockBean
+   @MockitoBean
    lateinit var chatService: CopilotConversationApi
 
-   @MockBean
+   @MockitoBean
    lateinit var cmsService: DefaultContentRepository
 
-   @MockBean
+   @MockitoBean
    lateinit var streamResultStreamProvider: StreamResultStreamProvider
 
-   @MockBean
+   @MockitoBean
    lateinit var reactiveProjectStoreManager: ReactiveProjectStoreManager
 
-   @MockBean
+   @MockitoBean
    lateinit var packagesService: PackageService
 
-   @MockBean
+   @MockitoBean
    lateinit var schemaEditorService: SchemaEditorService
 
-   @MockBean
+   @MockitoBean
    lateinit var queryMetricsReporter: QueryMetricsReporter
 
-   @MockBean
+   @MockitoBean
    lateinit var configService: ConfigService
-   @MockBean
+   @MockitoBean
    lateinit var licenseManager: OrbitalLicenseManager
+
+   @MockitoBean
+   lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
+
+   @MockitoBean
+   lateinit var configLoader: WorkspaceConfigLoader
+
+   @MockitoBean
+   lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
    @Autowired
    private lateinit var restTemplate: TestRestTemplate
@@ -160,15 +169,6 @@ class VyneQueryIntegrationTest : DatabaseTest() {
    //@Import(SchemaSourcePrimaryBeanConfig::class)
    @Import(TestDiscoveryClientConfig::class)
    class SpringConfig {
-
-      @MockBean
-      lateinit var eventDispatcher: ProjectSpecLifecycleEventDispatcher
-
-      @MockBean
-      lateinit var configLoader : WorkspaceConfigLoader
-
-      @MockBean
-      lateinit var hazelcastHealthCheckProvider: HazelcastHealthCheckProvider
 
       @Bean
       @Primary

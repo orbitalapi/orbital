@@ -99,7 +99,7 @@ class SwaggerSchemaConverterTest : BaseSchemaConverterServiceTest() {
          SwaggerConverterOptions(defaultNamespace = "com.vyne.petstore", serviceBasePath = "http://myjira.com", swagger = swagger)
 
       )
-      generatedTaxiCode.block().hasErrors.should.be.`false`
+      generatedTaxiCode.block()!!.hasErrors.should.be.`false`
    }
 
    @Test

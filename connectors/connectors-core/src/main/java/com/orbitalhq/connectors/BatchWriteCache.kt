@@ -13,7 +13,7 @@ import java.time.Duration
 
 private val logger = KotlinLogging.logger { }
 
-class BatchWriteCacheProvider<TCacheData, TCallBackData> {
+class BatchWriteCacheProvider<TCacheData, TCallBackData : Any> {
    // We are using a Guava cache rather than a ConcurrentHashMap here.
    // The reason for that is ConcurrentHashMap::getOrPut guarantees not to put the value into the map if the key is already there,
    // but the defaultValue function may be invoked even if the key is already in the map. We can't allow `defaultValue` to be invoked
@@ -77,7 +77,7 @@ class BatchWriteCacheProvider<TCacheData, TCallBackData> {
 }
 
 
-data class BatchWriteCache<TCacheData, TCallBackData>(
+data class BatchWriteCache<TCacheData, TCallBackData : Any>(
    private val sink: Sinks.Many<Pair<TCacheData, Sinks.One<TCallBackData>>>,
    private val batchSize: Int,
    private val batchTimeoutInMillis: Long,

@@ -296,7 +296,7 @@ class LocalSchemaEditingService(
       val packageIdentifier = PackageIdentifier.fromId(rawPackageIdentifier)
       return packagesServiceApi
          .listPackages()
-         .map { it.firstOrNull { f -> f.identifier == packageIdentifier } }
+         .mapNotNull { it.firstOrNull { f -> f.identifier == packageIdentifier } }
          .map { if (it?.editable == true) Unit else throw BadRequestException("$rawPackageIdentifier is not editable") }
    }
 

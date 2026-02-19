@@ -78,7 +78,7 @@ class KafkaTopicImporterTest : BaseSchemaConverterServiceTest() {
             packageIdentifier = PackageIdentifier.fromId("foo/test/1.0.0")
          )
       ).block()
-      result.services.should.have.size(1)
+      result!!.services.should.have.size(1)
       result.services.single().operations.should.have.size(1)
    }
 }

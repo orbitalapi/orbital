@@ -53,7 +53,7 @@ class JwtTokenTest {
         }.compactSerialization
 
 
-        return NimbusReactiveJwtDecoder.withPublicKey(rsaJsonWebKey.getRsaPublicKey()).build().decode(clientCredentialsBearerToken).block()
+        return NimbusReactiveJwtDecoder.withPublicKey(rsaJsonWebKey.getRsaPublicKey()).build().decode(clientCredentialsBearerToken).block()!!
 
 
 

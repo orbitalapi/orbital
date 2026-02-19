@@ -110,7 +110,7 @@ class ClusteredSchemaStoreIntegrationTest {
       schemaServerInstance1.isRunning.should.be.`false`
 
       // try to fetch the schema through second schema-server again
-      fetchSchemaThroughRSocket(rSocketServerPort2).blockFirst().parsedPackages.first().identifier.id.should.equal("com.vyne/test/1.0.0")
+      fetchSchemaThroughRSocket(rSocketServerPort2).blockFirst()!!.parsedPackages.first().identifier.id.should.equal("com.vyne/test/1.0.0")
    }
 
    private fun submitSchemasThroughRSocket(port: Int): SourceSubmissionResponse? {
