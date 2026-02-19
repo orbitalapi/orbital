@@ -12,7 +12,7 @@
    <parent>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-parent</artifactId>
-      <version>3.5.10</version>
+      <version>3.5.11</version>
    </parent>
 
    <url>https://orbitalhq.com</url>
@@ -89,6 +89,11 @@ Transitive dependency in wire-compiler and calcite-core
 
       <!-- CVE 2025-27817 fixed in 3.9.1 -->
       <kafka.version>3.9.1</kafka.version>
+
+      <!-- This is a transitive dependency of Kafka.
+      This can be removed once we upgrade to Spring Boot 4.x
+      -->
+      <lz4.version>1.8.1</lz4.version>
 
    </properties>
 
@@ -422,6 +427,11 @@ Transitive dependency in wire-compiler and calcite-core
             <groupId>javax.persistence</groupId>
             <artifactId>javax.persistence-api</artifactId>
             <version>2.2</version>
+         </dependency>
+         <dependency>
+            <groupId>org.lz4</groupId>
+            <artifactId>lz4-java</artifactId>
+            <version>${lz4.version}</version>
          </dependency>
          <dependency>
             <groupId>io.micrometer</groupId>
