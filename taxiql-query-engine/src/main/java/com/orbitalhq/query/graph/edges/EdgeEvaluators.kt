@@ -121,6 +121,7 @@ object IsInstanceOfEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_INST
 object CanPopulateEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.CAN_POPULATE)
 object ExtendsTypeEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.EXTENDS_TYPE)
 object EnumSynonymEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_SYNONYM_OF)
+object NoArgServiceEdgeEvaluator : PassThroughEdgeEvaluator(Relationship.IS_NO_ARG_SERVICE)
 object InstanceHasAttributeEdgeEvaluator : AttributeEvaluator(Relationship.INSTANCE_HAS_ATTRIBUTE)
 
 // Note: I suspect this might cause problems.

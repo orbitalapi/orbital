@@ -132,6 +132,7 @@ class ProjectionNamedScopeTest {
    fun `a projection can refine whats in scope`(): Unit = runBlocking {
       val (vyne, stub) = testVyne(
          """
+            type FilmId inherits Int
             model Film {
                title : Title inherits String
                cast : Actor[]
@@ -140,7 +141,7 @@ class ProjectionNamedScopeTest {
                name : Name inherits String
             }
             service FilmService {
-               operation getFilm():Film
+               operation getFilm(FilmId):Film(...)
             }
          """.trimIndent()
       )
@@ -153,7 +154,7 @@ class ProjectionNamedScopeTest {
          )
       )
       val queryResult = vyne.query(
-         """find { Film } as Actor[] as {
+         """find { Film(FilmId == 123)  } as Actor[] as {
          | actorName : Name
          | filmTitle : Title // should be null, as it's out-of-scope on Actor
          |}[]
@@ -189,7 +190,7 @@ class ProjectionNamedScopeTest {
                actors : Actor[]
             }
             service Films {
-               operation getFilm():Film
+               operation getFilm(FilmId):Film(...)
                operation getCast(FilmId):Cast
             }
          """.trimIndent()
@@ -202,7 +203,7 @@ class ProjectionNamedScopeTest {
 
       val resultWithoutExplicitScope = vyne.query(
          """
-         find { Film } as (first(Actor[])) -> { // note that film has been removed from the scope...
+         find { Film(FilmId == 123) } as (first(Actor[])) -> { // note that film has been removed from the scope...
             title : Title //... so we expect this isn't discoverable.
             starring : ActorName
          }
@@ -213,7 +214,7 @@ class ProjectionNamedScopeTest {
 
       val resultWithExplicitScope = vyne.query(
          """
-         find { Film } as (Film, first(Actor[])) -> { // Here, Film is in scope...
+         find { Film(FilmId == 123) } as (Film, first(Actor[])) -> { // Here, Film is in scope...
             title : Title // .. so this is knowable
             starring : ActorName
          }
