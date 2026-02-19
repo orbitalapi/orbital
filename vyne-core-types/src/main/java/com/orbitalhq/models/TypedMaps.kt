@@ -16,7 +16,6 @@ object TypedMaps {
       value: Any?,
       schema: Schema,
       performTypeConversions: Boolean = true,
-      nullValues: Set<String> = emptySet(),
       source: DataSource = UndefinedSource,
       evaluateAccessors: Boolean = true,
       functionRegistry: FunctionRegistry = FunctionRegistry.default,
@@ -45,7 +44,7 @@ object TypedMaps {
          // There's likely future use-cases for having Map<TypedInstance, TypedInstance>
          // but we dont have one right now.
          val key = key.toString()
-         val valueTypedInstance = TypedInstance.from(valueType, value, schema, performTypeConversions, nullValues, source, evaluateAccessors, functionRegistry, formatSpecs, inPlaceQueryEngine, parsingErrorBehaviour, format)
+         val valueTypedInstance = TypedInstance.from(valueType, value, schema, performTypeConversions, source = source, evaluateAccessors = evaluateAccessors, functionRegistry = functionRegistry, formatSpecs = formatSpecs, inPlaceQueryEngine = inPlaceQueryEngine, parsingErrorBehaviour = parsingErrorBehaviour, format = format)
          key to valueTypedInstance
       }.toMap()
       return TypedObject(type, mapEntries, source)

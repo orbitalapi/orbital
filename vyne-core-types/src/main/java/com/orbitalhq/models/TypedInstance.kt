@@ -168,7 +168,6 @@ interface TypedInstance : ValueWithType {
          value: Any,
          schema: Schema,
          performTypeConversions: Boolean = true,
-         nullValues: Set<String> = emptySet(),
          source: DataSource = UndefinedSource,
          evaluateAccessors: Boolean = true,
          functionRegistry: FunctionRegistry = FunctionRegistry.default,
@@ -197,7 +196,7 @@ interface TypedInstance : ValueWithType {
             val result = try {
                Either.Right(
                   from(
-                  type, value, schema, performTypeConversions, nullValues, source, evaluateAccessors, functionRegistry
+                  type, value, schema, performTypeConversions, source = source, evaluateAccessors = evaluateAccessors, functionRegistry = functionRegistry
                ))
             } catch (e: Exception) {
                Either.Left(StreamErrorMessage.fromException(e, type.paramaterizedName))
@@ -232,7 +231,6 @@ interface TypedInstance : ValueWithType {
          value: Any?,
          schema: Schema,
          performTypeConversions: Boolean = true,
-         nullValues: Set<String> = emptySet(),
          source: DataSource = UndefinedSource,
          evaluateAccessors: Boolean = true,
          functionRegistry: FunctionRegistry = FunctionRegistry.default,
@@ -250,17 +248,16 @@ interface TypedInstance : ValueWithType {
                value,
                schema,
                performTypeConversions,
-            nullValues,
-            source,
-            evaluateAccessors,
-            functionRegistry,
-            formatSpecs,
-            inPlaceQueryEngine,
-            parsingErrorBehaviour,
-            format,
-            metadata,
-            valueSuppliers,
-            parsingOptions
+               source,
+               evaluateAccessors,
+               functionRegistry,
+               formatSpecs,
+               inPlaceQueryEngine,
+               parsingErrorBehaviour,
+               format,
+               metadata,
+               valueSuppliers,
+               parsingOptions
             ))
          } catch (e: Exception) {
             Either.Left(StreamErrorMessage.fromException(e, type.paramaterizedName))
@@ -278,7 +275,6 @@ interface TypedInstance : ValueWithType {
          value: Any?,
          schema: Schema,
          performTypeConversions: Boolean = true,
-         nullValues: Set<String> = emptySet(),
          source: DataSource = UndefinedSource,
          evaluateAccessors: Boolean = true,
          functionRegistry: FunctionRegistry = FunctionRegistry.default,
@@ -297,7 +293,6 @@ interface TypedInstance : ValueWithType {
                type,
                value!!,
                schema,
-               nullValues,
                source = source,
                evaluateAccessors = evaluateAccessors,
                functionRegistry = functionRegistry,
@@ -323,7 +318,6 @@ interface TypedInstance : ValueWithType {
                   list,
                   schema,
                   performTypeConversions,
-                  nullValues,
                   source,
                   evaluateAccessors,
                   functionRegistry,
@@ -344,7 +338,6 @@ interface TypedInstance : ValueWithType {
                   list,
                   schema,
                   performTypeConversions,
-                  nullValues,
                   source,
                   evaluateAccessors,
                   functionRegistry,
@@ -401,7 +394,6 @@ interface TypedInstance : ValueWithType {
                   value,
                   schema,
                   performTypeConversions,
-                  nullValues,
                   source,
                   evaluateAccessors,
                   functionRegistry,
@@ -415,7 +407,6 @@ interface TypedInstance : ValueWithType {
                   value,
                   schema,
                   performTypeConversions,
-                  nullValues,
                   source,
                   evaluateAccessors,
                   functionRegistry,
@@ -427,7 +418,7 @@ interface TypedInstance : ValueWithType {
                when {
                   isJson(value) -> buildUsingObjectFactory() // This will end up back in here with a Map<String,Any>, falling through to below.
                   value is Map<*,*> -> {
-                     from(schema.type(MapType.untyped()), value, schema, performTypeConversions, nullValues, source, evaluateAccessors, functionRegistry, formatSpecs, inPlaceQueryEngine, parsingErrorBehaviour, format, metadata)
+                     from(schema.type(MapType.untyped()), value, schema, performTypeConversions, source, evaluateAccessors, functionRegistry, formatSpecs, inPlaceQueryEngine, parsingErrorBehaviour, format, metadata)
                   }
                   else -> TypedValue.from(type, value, performTypeConversions, source, parsingErrorBehaviour, format)
                }

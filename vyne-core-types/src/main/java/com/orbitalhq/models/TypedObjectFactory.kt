@@ -46,7 +46,6 @@ class TypedObjectFactory(
    private val type: Type,
    private val value: Any,
    internal val schema: Schema,
-   val nullValues: Set<String> = emptySet(),
    val source: DataSource,
    private val objectMapper: ObjectMapper = Jackson.defaultObjectMapper,
    private val functionRegistry: FunctionRegistry = schema.functionRegistry,
@@ -223,7 +222,6 @@ class TypedObjectFactory(
          field.fieldProjection,
          projectedType,
          schema,
-         this.nullValues,
          source,
          field.format,
          field.nullable,
@@ -236,7 +234,6 @@ class TypedObjectFactory(
       projection: FieldProjection,
       targetType: Type,
       schema: Schema,
-      nullValues: Set<String>,
       source: DataSource,
       format: FormatsAndZoneOffset?,
       nullable: Boolean,
@@ -295,7 +292,6 @@ class TypedObjectFactory(
          type,
          newValue,
          schema,
-         nullValues,
          source,
          objectMapper,
          functionRegistry,
@@ -372,7 +368,6 @@ class TypedObjectFactory(
          type,
          newMergedValue,
          schema,
-         nullValues,
          source,
          objectMapper,
          functionRegistry,
@@ -395,7 +390,6 @@ class TypedObjectFactory(
             type,
             jsonParsedStructure,
             schema,
-            nullValues = nullValues,
             source = source,
             evaluateAccessors = evaluateAccessors,
             functionRegistry = functionRegistry,
@@ -477,7 +471,6 @@ class TypedObjectFactory(
             type,
             jsonParsedStructure,
             schema,
-            nullValues = nullValues,
             source = source,
             evaluateAccessors = evaluateAccessors,
             functionRegistry = functionRegistry,
@@ -810,7 +803,6 @@ class TypedObjectFactory(
          type,
          accessor,
          schema,
-         nullValues,
          source = source,
          nullable = nullable,
          allowContextQuerying = true,
@@ -831,7 +823,7 @@ class TypedObjectFactory(
          // Enapsulate the logic in a dedicated function
          return evaluateLambdaExpression(expression, format)
       } else {
-         accessorReader.evaluate(value, expressionType, expression, schema, nullValues, source, format)
+         accessorReader.evaluate(value, expressionType, expression, schema, dataSource = source, format = format)
       }
 
    }
@@ -934,9 +926,8 @@ class TypedObjectFactory(
             schema.type(expression.returnType),
             expression,
             schema,
-            nullValues,
-            source,
-            format
+            dataSource = source,
+            format = format
          )
       }
       return result
@@ -948,9 +939,8 @@ class TypedObjectFactory(
          schema.type(expression.returnType),
          expression,
          schema,
-         nullValues,
-         source,
-         null
+         dataSource = source,
+         format = null
       )
    }
 

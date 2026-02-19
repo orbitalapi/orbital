@@ -71,7 +71,6 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
       accessor: ColumnAccessor,
       record: CSVRecord,
       schema: Schema,
-      nullValues: Set<String> = emptySet(),
       source: DataSource,
       nullable: Boolean,
       format: FormatsAndZoneOffset?
@@ -90,7 +89,7 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
             else -> throw IllegalArgumentException("Index type must be either Int or String.")
          }
 
-      if (isNull(value, nullValues)) {
+      if (isNull(value)) {
          return TypedInstance.from(type, null, schema, source = source)
       }
 
@@ -107,13 +106,8 @@ class CsvAttributeAccessorParser(private val primitiveParser: PrimitiveParser = 
       }
    }
 
-   private fun isNull(
-      value: Any?,
-      nullValues: Set<String>
-   ): Boolean {
-      return value == null ||
-         ((nullValues.isNotEmpty() && nullValues.contains(value)) ||
-            (nullValues.isEmpty() && value.toString().isEmpty()))
+   private fun isNull(value: Any?): Boolean {
+      return value == null || value.toString().isEmpty()
    }
 }
 

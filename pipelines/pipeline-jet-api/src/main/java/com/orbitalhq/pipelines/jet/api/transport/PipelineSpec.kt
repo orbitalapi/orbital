@@ -193,7 +193,6 @@ data class StringContentProvider(
 
 data class CsvRecordContentProvider(
    val content: CSVRecord,
-   val nullValues: Set<String>,
    override val sourceMessageMetadata: SourceMessageMetadata? = null,
    override val messageTimestamp: Instant = Instant.now()
 ) : MessageContentProvider {
@@ -206,8 +205,7 @@ data class CsvRecordContentProvider(
          inputType,
          content,
          schema,
-         source = Provided,
-         nullValues = nullValues
+         source = Provided
       )
    }
 }

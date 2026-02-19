@@ -62,10 +62,7 @@ class FileWatcherStreamSourceBuilder : PipelineSourceBuilder<FileWatcherStreamSo
                      // However, it doesn't, for now.
                      if (csvFormat != null) {
                         CSVParser.parse(fileContents, csvFormat).records.map { record ->
-                           CsvRecordContentProvider(
-                              record,
-                              setOfNotNull(csvModelFormatAnnotation!!.nullValue)
-                           )
+                           CsvRecordContentProvider(record)
                         }
                      } else {
                         listOf(StringContentProvider(fileContents))

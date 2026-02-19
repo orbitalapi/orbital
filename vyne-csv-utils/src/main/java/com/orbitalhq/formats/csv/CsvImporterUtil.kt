@@ -28,7 +28,6 @@ object CsvImporterUtil {
       val parsed = CSVParser.parse(content, format)
       val parsedRecords = CSVParser.parse(content, format).records
       val targetType = schema.type(typeName)
-      val nullValues = parameters.nullValue
       val records = parsedRecords
 //         .filter { parsed.headerNames == null || parsed.headerNames.isEmpty() || parsed.headerNames.size == it.size() }
          .map { csvRecord ->
@@ -37,7 +36,6 @@ object CsvImporterUtil {
                   targetType,
                   csvRecord,
                   schema,
-                  nullValues,
                   source = Provided,
                   functionRegistry = functionRegistry,
                   formatSpecs = emptyList()

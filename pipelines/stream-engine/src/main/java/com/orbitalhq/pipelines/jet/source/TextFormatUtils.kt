@@ -50,7 +50,7 @@ object TextFormatUtils {
    fun csvOrStringContentProvider(line: Any, modelFormat: CsvFormatSpecAnnotation?): MessageContentProvider {
       return if (line is CSVRecord) {
          require(modelFormat != null)
-         CsvRecordContentProvider(line, modelFormat.ingestionParameters.nullValue)
+         CsvRecordContentProvider(line)
       } else {
          StringContentProvider(line as String)
       }

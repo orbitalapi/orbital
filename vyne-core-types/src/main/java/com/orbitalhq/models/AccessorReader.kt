@@ -135,14 +135,13 @@ class AccessorReader(
       targetTypeRef: QualifiedName,
       accessor: Accessor,
       schema: Schema,
-      nullValues: Set<String> = emptySet(),
       source: DataSource,
       nullable: Boolean,
       format: FormatsAndZoneOffset?,
       allowContextQuerying: Boolean = false,
    ): TypedInstance {
       val targetType = schema.type(targetTypeRef)
-      return read(value, targetType, accessor, schema, nullValues, source, format, nullable, allowContextQuerying)
+      return read(value, targetType, accessor, schema, source, format, nullable, allowContextQuerying)
    }
 
    fun read(
@@ -150,7 +149,6 @@ class AccessorReader(
       targetType: Type,
       accessor: Accessor,
       schema: Schema,
-      nullValues: Set<String> = emptySet(),
       source: DataSource,
       format: FormatsAndZoneOffset?,
       nullable: Boolean = false,
@@ -165,27 +163,26 @@ class AccessorReader(
          is JsonPathAccessor -> parseJson(value, targetType, schema, accessor, source, format)
          is XpathAccessor -> parseXml(value, targetType, schema, accessor, source, nullable, format)
          is DestructuredAccessor -> parseDestructured(value, targetType, schema, accessor, source, format)
-         is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor, nullValues, source, nullable, format)
+         is ColumnAccessor -> parseColumnData(value, targetType, schema, accessor, source, nullable, format)
          /* was: (before removing the concept of "by default()"
          {
             if (accessor.index == null && accessor.defaultValue != null) {
                // This is some tech debt.
                // Default values (defined as by default("foo") turn up as ColumnAccessors.
-               readWithDefaultValue(value, targetType, schema, accessor, nullValues, source, nullable)
+               readWithDefaultValue(value, targetType, schema, accessor, source, nullable)
             } else {
-               parseColumnData(value, targetType, schema, accessor, nullValues, source, nullable, format)
+               parseColumnData(value, targetType, schema, accessor, source, nullable, format)
             }
 
          }
       */
 
-         is ConditionalAccessor -> evaluateConditionalAccessor(value, targetType, schema, accessor, nullValues, source)
+         is ConditionalAccessor -> evaluateConditionalAccessor(value, targetType, schema, accessor, source)
          is ReadFunctionFieldAccessor -> evaluateReadFunctionAccessor(
             value,
             targetType,
             schema,
             accessor,
-            nullValues,
             source,
             format
          )
@@ -195,7 +192,6 @@ class AccessorReader(
             targetType,
             schema,
             accessor,
-            nullValues,
             source,
             functionResultCache,
             format
@@ -212,7 +208,6 @@ class AccessorReader(
                   schema.type(expression.value.returnType),
                   expression.value,
                   schema,
-                  nullValues,
                   source,
                   format
                )
@@ -250,7 +245,6 @@ class AccessorReader(
             targetType,
             schema,
             accessor,
-            nullValues,
             source,
             functionResultCache,
             format
@@ -268,7 +262,6 @@ class AccessorReader(
             accessor,
             schema,
             value,
-            nullValues,
             source,
             format
          )
@@ -287,7 +280,6 @@ class AccessorReader(
             targetType,
             accessor.literal,
             schema,
-            nullValues,
             source,
             format,
             nullable,
@@ -299,7 +291,6 @@ class AccessorReader(
             targetType,
             accessor.function,
             schema,
-            nullValues,
             source,
             format,
             nullable,
@@ -324,7 +315,6 @@ class AccessorReader(
                targetType,
                accessor,
                schema,
-               nullValues,
                source,
                format,
                nullable,
@@ -345,7 +335,6 @@ class AccessorReader(
                targetType,
                accessor.expression,
                schema,
-               nullValues,
                source,
                format,
                nullable,
@@ -366,7 +355,6 @@ class AccessorReader(
                targetType,
                accessor,
                schema,
-               nullValues,
                source,
                functionResultCache,
                format
@@ -378,7 +366,6 @@ class AccessorReader(
             targetType,
             accessor,
             schema,
-            nullValues,
             source,
             functionResultCache,
             format
@@ -386,7 +373,7 @@ class AccessorReader(
 
          is LiteralArray -> {
             val typedInstances = accessor.members.map { expression ->
-               read(value, schema.type(expression.returnType), expression, schema, nullValues, source, format)
+               read(value, schema.type(expression.returnType), expression, schema, source, format)
             }
             TypedInstance.from(targetType, typedInstances, schema, source = source)
          }
@@ -397,7 +384,6 @@ class AccessorReader(
                schema.type(accessor.returnType),
                accessor,
                schema,
-               nullValues,
                source,
                format,
                functionResultCache
@@ -410,7 +396,6 @@ class AccessorReader(
                schema.type(accessor.returnType),
                accessor,
                schema,
-               nullValues,
                source,
                format,
                functionResultCache
@@ -423,7 +408,6 @@ class AccessorReader(
                schema.type(accessor.returnType),
                accessor,
                schema,
-               nullValues,
                source,
                format,
                functionResultCache
@@ -441,7 +425,6 @@ class AccessorReader(
       type: Type,
       accessor: OperationInvocationExpression,
       schema: Schema,
-      nullValues: Set<String>,
       source: DataSource,
       format: FormatsAndZoneOffset?,
       functionResultCache: MutableMap<FunctionResultCacheKey, Any>
@@ -455,7 +438,7 @@ class AccessorReader(
       require(accessor.inputs.size == operation.parameters.size) { "Operation ${operation.name} defines ${operation.parameters.size} parameters, but ${accessor.inputs.size} were provided" }
 
       val declaredInputs: List<ScopedFact> =
-         collateInputsForAccessor(accessor, schema, value, nullValues, source, format)
+         collateInputsForAccessor(accessor, schema, value, source, format)
       val parameters = declaredInputs.mapIndexed { index, scopedFact ->
          val parameter = operation.parameters.get(index)
          parameter to scopedFact.fact
@@ -479,7 +462,6 @@ class AccessorReader(
       type: Type,
       accessor: NegatedExpression,
       schema: Schema,
-      nullValues: Set<String>,
       source: DataSource,
       format: FormatsAndZoneOffset?,
       functionResultCache: MutableMap<FunctionResultCacheKey, Any>
@@ -489,10 +471,9 @@ class AccessorReader(
          type,
          accessor.expression,
          schema,
-         nullValues,
-         source,
-         format,
-         functionResultCache
+         dataSource = source,
+         format = format,
+         resultCache = functionResultCache
       )
       return when {
          original is TypedNull -> original
@@ -519,7 +500,6 @@ class AccessorReader(
       targetType: Type,
       accessor: ProjectingExpression,
       schema: Schema,
-      nullValues: Set<String>,
       source: DataSource,
       format: FormatsAndZoneOffset?,
       nullable: Boolean,
@@ -531,7 +511,6 @@ class AccessorReader(
          targetType,
          accessor.expression,
          schema,
-         nullValues,
          source,
          format,
          nullable,
@@ -555,7 +534,6 @@ class AccessorReader(
             valueProjector,
             projectionType,
             schema,
-            nullValues,
             source,
             format,
             nullable,
@@ -567,7 +545,6 @@ class AccessorReader(
             accessor.projection,
             projectionType,
             schema,
-            nullValues,
             source,
             format,
             nullable,
@@ -820,7 +797,6 @@ class AccessorReader(
       targetType: Type,
       schema: Schema,
       accessor: FunctionAccessor,
-      nullValues: Set<String>,
       source: DataSource,
       resultCache: MutableMap<FunctionResultCacheKey, Any>,
       format: FormatsAndZoneOffset?
@@ -834,7 +810,7 @@ class AccessorReader(
 //      }
 
       val declaredInputs: List<ScopedFact> =
-         collateInputsForAccessor(accessor, schema, value, nullValues, source, format)
+         collateInputsForAccessor(accessor, schema, value, source, format)
       val (varArgsParam, varArgsValue) = if (function.parameters.isNotEmpty() && function.parameters.last().isVarArg) {
          val varargFrom = function.parameters.size - 1
          val varargParam = function.parameters.last()
@@ -846,7 +822,6 @@ class AccessorReader(
                TypeUtils.mostSpecificType(varargType, schema.type(varargInputAccessor.returnType)),
                varargInputAccessor,
                schema,
-               nullValues,
                source,
                format = format,
                allowContextQuerying = true
@@ -886,7 +861,6 @@ class AccessorReader(
       accessor: CallableInvocationExpression,
       schema: Schema,
       value: Any,
-      nullValues: Set<String>,
       source: DataSource,
       format: FormatsAndZoneOffset?
    ): List<ScopedFact> {
@@ -961,7 +935,6 @@ class AccessorReader(
                   targetParameterType,
                   parameterInputAccessor,
                   schema,
-                  nullValues,
                   source,
                   allowContextQuerying = queryIfNotFound,
                   format = format
@@ -1020,7 +993,6 @@ class AccessorReader(
       targetType: Type,
       schema: Schema,
       accessor: FunctionExpressionAccessor,
-      nullValues: Set<String>,
       source: DataSource,
       resultCache: MutableMap<FunctionResultCacheKey, Any>,
       format: FormatsAndZoneOffset?
@@ -1031,7 +1003,6 @@ class AccessorReader(
             targetType,
             schema,
             accessor.functionAccessor,
-            nullValues,
             source,
             resultCache,
             format
@@ -1065,7 +1036,6 @@ class AccessorReader(
       targetType: Type,
       schema: Schema,
       accessor: ReadFunctionFieldAccessor,
-      nullValues: Set<String>,
       source: DataSource,
       format: FormatsAndZoneOffset?
    ): TypedInstance {
@@ -1080,7 +1050,6 @@ class AccessorReader(
                targetType,
                schema,
                readFunctionArgument.columnAccessor!!,
-               nullValues,
                source,
                format = format
             ).value
@@ -1099,7 +1068,6 @@ class AccessorReader(
       targetType: Type,
       schema: Schema,
       accessor: ConditionalAccessor,
-      nullValues: Set<String>,
       source: DataSource
    ): TypedInstance {
       return conditionalFieldSetEvaluator.evaluate(value, accessor.expression, null, targetType, source)
@@ -1110,7 +1078,6 @@ class AccessorReader(
       targetType: Type,
       schema: Schema,
       accessor: ColumnAccessor,
-      nullValues: Set<String> = emptySet(),
       source: DataSource,
       nullable: Boolean = false,
       format: FormatsAndZoneOffset?
@@ -1124,7 +1091,6 @@ class AccessorReader(
             accessor,
             value,
             schema,
-            nullValues,
             source,
             nullable,
             format
@@ -1242,7 +1208,6 @@ class AccessorReader(
       returnType: Type,
       expression: Expression,
       schema: Schema = this.schema,
-      nullValues: Set<String> = emptySet(),
       dataSource: DataSource,
       format: FormatsAndZoneOffset?,
       resultCache: MutableMap<FunctionResultCacheKey, Any> = mutableMapOf()
@@ -1253,7 +1218,6 @@ class AccessorReader(
             expression,
             schema,
             value,
-            nullValues,
             dataSource,
             format
          )
@@ -1264,7 +1228,6 @@ class AccessorReader(
             returnType,
             expression,
             schema,
-            nullValues,
             dataSource,
             resultCache,
             format
@@ -1275,7 +1238,6 @@ class AccessorReader(
             returnType,
             expression,
             schema,
-            nullValues,
             dataSource,
             resultCache,
             format
@@ -1291,7 +1253,6 @@ class AccessorReader(
                   schema.type(expression.value.returnType),
                   expression.value,
                   schema,
-                  nullValues,
                   dataSource,
                   format,
                   resultCache
@@ -1309,7 +1270,6 @@ class AccessorReader(
                   schema.type(memberExpression.returnType),
                   memberExpression,
                   schema,
-                  nullValues,
                   dataSource,
                   format,
                   resultCache
@@ -1324,7 +1284,6 @@ class AccessorReader(
             returnType,
             expression,
             schema,
-            nullValues,
             dataSource,
             format
          )
@@ -1341,7 +1300,7 @@ class AccessorReader(
 
          is CastExpression -> {
             val uncastExpressionResult =
-               evaluate(value, returnType, expression.expression, schema, nullValues, dataSource, format, resultCache)
+               evaluate(value, returnType, expression.expression, schema, dataSource, format, resultCache)
             val castType = schema.type(expression.type)
 
             val castValue = TypedInstance.from(
@@ -1361,7 +1320,6 @@ class AccessorReader(
                targetType = returnType,
                accessor = expression,
                schema = schema,
-               nullValues = nullValues,
                source = dataSource,
                format = format,
                nullable = true,
@@ -1381,7 +1339,6 @@ class AccessorReader(
                returnType,
                expression,
                schema,
-               nullValues,
                dataSource,
                format,
                resultCache
@@ -1394,7 +1351,6 @@ class AccessorReader(
                returnType,
                expression,
                schema,
-               nullValues,
                dataSource,
                format, functionResultCache
             )
@@ -1406,7 +1362,6 @@ class AccessorReader(
                returnType,
                expression,
                schema,
-               nullValues,
                dataSource,
                format, functionResultCache
             )
@@ -1422,13 +1377,12 @@ class AccessorReader(
       returnType: Type,
       expression: MemberAccessExpression,
       schema: Schema,
-      nullValues: Set<String>,
       dataSource: DataSource,
       format: FormatsAndZoneOffset?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
       val source = evaluate(
-         value, returnType, expression.lhs, schema, nullValues, dataSource, format, resultCache
+         value, returnType, expression.lhs, schema, dataSource, format, resultCache
       )
       return readFieldSelectorsAgainstObject(
          listOf(expression.rhs), source, schema.type(expression.returnType), expression.rhs.fieldName, value
@@ -1440,7 +1394,6 @@ class AccessorReader(
       returnType: Type,
       expression: ExtensionFunctionExpression,
       schema: Schema,
-      nullValues: Set<String>,
       dataSource: DataSource,
       resultCache: MutableMap<FunctionResultCacheKey, Any>,
       format: FormatsAndZoneOffset?
@@ -1450,7 +1403,6 @@ class AccessorReader(
          schema.type(expression.returnType),
          schema,
          expression.functionExpression.function,
-         nullValues,
          dataSource,
          resultCache,
          format
@@ -1462,13 +1414,12 @@ class AccessorReader(
       returnType: Type,
       expression: LambdaExpression,
       schema: Schema,
-      nullValues: Set<String>,
       dataSource: DataSource,
       format: FormatsAndZoneOffset?
    ): TypedInstance {
       // Hmm... gotta use the inputs here somehow, but not sure how right now,
       // since the context will give 'em to us when we need em
-      return evaluate(value, returnType, expression.expression, schema, nullValues, dataSource, format)
+      return evaluate(value, returnType, expression.expression, schema, dataSource, format)
    }
 
    private fun evaluateFunctionExpression(
@@ -1476,7 +1427,6 @@ class AccessorReader(
       returnType: Type,
       expression: FunctionExpression,
       schema: Schema,
-      nullValues: Set<String>,
       dataSource: DataSource,
       resultCache: MutableMap<FunctionResultCacheKey, Any>,
       format: FormatsAndZoneOffset?
@@ -1487,7 +1437,6 @@ class AccessorReader(
          returnType,
          schema,
          expression.function,
-         nullValues,
          dataSource,
          resultCache,
          format
@@ -1503,7 +1452,6 @@ class AccessorReader(
       expression: OperatorExpression,
       schema: Schema,
       value: Any,
-      nullValues: Set<String>,
       dataSource: DataSource,
       format: FormatsAndZoneOffset?
    ): TypedInstance {
@@ -1515,7 +1463,6 @@ class AccessorReader(
             lhsReturnType,
             expression.lhs,
             schema,
-            nullValues,
             dataSource,
             format
          )
@@ -1559,7 +1506,6 @@ class AccessorReader(
          rhsReturnType,
          expression.rhs,
          schema,
-         nullValues,
          dataSource,
          format
       )

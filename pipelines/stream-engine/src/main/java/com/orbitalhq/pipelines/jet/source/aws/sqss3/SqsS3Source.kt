@@ -255,7 +255,6 @@ class PollingSqsOperationSourceContext(
             Pair(
                CsvRecordContentProvider(
                   csvRecord,
-                  csvModelFormatAnnotation.ingestionParameters.nullValue,
                   S3SourceMetadata(etag)
                ), clock.millis()
             )

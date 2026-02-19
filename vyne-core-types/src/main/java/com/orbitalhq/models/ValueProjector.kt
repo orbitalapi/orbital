@@ -22,7 +22,6 @@ interface ValueProjector {
       // because the projection.targetType is a Taxi Type
       targetType: Type,
       schema: Schema,
-      nullValues: Set<String>,
       source: DataSource,
       format: FormatsAndZoneOffset?,
       nullable: Boolean,
