@@ -127,7 +127,7 @@ class ActiveQueryMonitor(private val hazelcast: HazelcastInstance):EntryUpdatedL
    }
 
    fun reportStart(queryId: String, clientQueryId: String?, query: TaxiQlQuery) {
-      logger.debug { "Reporting Query Starting - $queryId - [$query]" }
+      logger.debug { "Reporting Query Starting - $queryId - [${query.source}]" }
 
       storeAndEmit(queryId) {
          it.copy(state = QueryResponse.ResponseStatus.RUNNING, taxiQlQuery = query.source, queryMode = query.queryMode)
