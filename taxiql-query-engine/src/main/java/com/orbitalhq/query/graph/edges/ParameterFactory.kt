@@ -29,7 +29,6 @@ import com.orbitalhq.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.runBlocking
 import lang.taxi.expressions.Expression
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.types.PrimitiveType
@@ -119,33 +118,27 @@ class ParameterFactory {
 //      }
 
       // experiment: Are there any collections in the context we can iterate?
-      val builtFromCollection = context.facts.filter { it.type.isCollection }
-         .asSequence()
-         .mapNotNull { collection: TypedInstance ->
-            require(collection is TypedCollection) { "Expected to recieve a TypedCollection" }
-            var exceptionThrown = false
-            val built = collection
-               .takeWhile { !exceptionThrown }
-               .mapNotNull { member ->
-                  runBlocking {
-                     try {
-                        val memberOnlyQueryContext = context.only(member)
-                        val builtFromMember =
-                           attemptToConstruct(paramType.collectionType!!, memberOnlyQueryContext, operation, member)
-                        builtFromMember
-                     } catch (e: UnresolvedOperationParametersException) {
-                        exceptionThrown = true
-                        null
-                     }
-                  }
-               }
-            if (exceptionThrown) {
-               null
-            } else {
-               built
+      var builtFromCollection: List<TypedInstance>? = null
+      for (collection in context.facts.filter { it.type.isCollection }) {
+         require(collection is TypedCollection) { "Expected to recieve a TypedCollection" }
+         var exceptionThrown = false
+         val built = mutableListOf<TypedInstance>()
+         for (member in collection) {
+            if (exceptionThrown) break
+            try {
+               val memberOnlyQueryContext = context.only(member)
+               val builtFromMember =
+                  attemptToConstruct(paramType.collectionType!!, memberOnlyQueryContext, operation, member)
+               built.add(builtFromMember)
+            } catch (e: UnresolvedOperationParametersException) {
+               exceptionThrown = true
             }
          }
-         .firstOrNull()
+         if (!exceptionThrown) {
+            builtFromCollection = built
+            break
+         }
+      }
       if (builtFromCollection != null) {
          return TypedCollection.from(builtFromCollection, MixedSources)
       } else {

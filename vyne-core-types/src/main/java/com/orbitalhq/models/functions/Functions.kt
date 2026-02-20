@@ -24,7 +24,7 @@ typealias FunctionHandler = (
 ) -> TypedInstance
 
 interface FunctionInvoker {
-   fun invoke(
+   suspend fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -59,7 +59,7 @@ interface SelfDescribingFunction : NamedFunctionInvoker {
  * Helper class which will return TypedNull if any of the provided arguments were null.
  */
 abstract class NullSafeInvoker : NamedFunctionInvoker {
-   protected abstract fun doInvoke(
+   protected abstract suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -70,7 +70,7 @@ abstract class NullSafeInvoker : NamedFunctionInvoker {
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance
 
-   override fun invoke(
+   override suspend fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -141,7 +141,7 @@ class InlineFunctionInvoker(override val functionName: QualifiedName, val handle
    NullSafeInvoker() {
    constructor(functionName: String, handler: FunctionHandler) : this(QualifiedName.from(functionName), handler)
 
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

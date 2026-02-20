@@ -57,7 +57,7 @@ abstract class CollectionFilteringFunction : NullSafeInvoker() {
       return Triple(collection, deferredInstance, dataSource).right()
    }
 
-   protected fun applyFilter(
+   protected suspend fun applyFilter(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -93,7 +93,7 @@ abstract class CollectionFilteringFunction : NullSafeInvoker() {
 
    }
 
-   protected fun evaluatePredicateAgainstMember(
+   protected suspend fun evaluatePredicateAgainstMember(
       collectionMember: TypedInstance,
       schema: Schema,
       objectFactory: EvaluationValueSupplier,

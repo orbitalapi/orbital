@@ -61,7 +61,7 @@ abstract class BooleanPredicateEvaluator(
 ) :
    NullSafeInvoker() {
 
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -114,7 +114,7 @@ private fun expectAllBoolean(
 
 object Contains : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Contains.name
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -133,7 +133,7 @@ object Contains : NullSafeInvoker() {
 }
 
 object ContainsAll : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -161,7 +161,7 @@ object ContainsAll : NullSafeInvoker() {
 }
 
 object ContainsAny : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -197,7 +197,7 @@ object ContainsAny : NullSafeInvoker() {
 
 
 object Size : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -220,7 +220,7 @@ object Size : NullSafeInvoker() {
 object IsNullOrEmpty : NamedFunctionInvoker {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.IsNullOrEmpty.name
 
-   override fun invoke(
+   override suspend fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

@@ -16,7 +16,7 @@ import mu.KotlinLogging
 class FunctionRegistry(private val invokers: List<NamedFunctionInvoker>) {
    private val invokersByName = invokers.associateBy { it.functionName }
 
-   fun invoke(
+   suspend fun invoke(
       function: Function,
       declaredInputs: List<TypedInstance>,
       schema: Schema,

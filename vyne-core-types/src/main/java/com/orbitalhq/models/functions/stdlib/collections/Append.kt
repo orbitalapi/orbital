@@ -13,7 +13,7 @@ import lang.taxi.types.FormatsAndZoneOffset
 import lang.taxi.types.QualifiedName
 
 object Append : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

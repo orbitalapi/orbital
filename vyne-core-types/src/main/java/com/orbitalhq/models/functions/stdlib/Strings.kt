@@ -45,7 +45,7 @@ object Strings {
 
 object Concat : NamedFunctionInvoker {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Concat.name
-   override fun invoke(
+   override suspend fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -68,7 +68,7 @@ object Concat : NamedFunctionInvoker {
 object Trim : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Trim.name
 
-   override fun doInvoke(
+   override suspend fun doInvoke(
        inputValues: List<TypedInstance>,
        schema: Schema,
        returnType: Type,
@@ -113,7 +113,7 @@ private fun String.substringOrTypedNull(
 object Left : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Left.name
 
-   override fun doInvoke(
+   override suspend fun doInvoke(
        inputValues: List<TypedInstance>,
        schema: Schema,
        returnType: Type,
@@ -140,7 +140,7 @@ object Left : NullSafeInvoker() {
 object Right : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Right.name
 
-   override fun doInvoke(
+   override suspend fun doInvoke(
        inputValues: List<TypedInstance>,
        schema: Schema,
        returnType: Type,
@@ -167,7 +167,7 @@ object Right : NullSafeInvoker() {
 object Mid : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Mid.name
 
-   override fun doInvoke(
+   override suspend fun doInvoke(
        inputValues: List<TypedInstance>,
        schema: Schema,
        returnType: Type,
@@ -194,7 +194,7 @@ object Mid : NullSafeInvoker() {
 object Uppercase : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Uppercase.name
 
-   override fun doInvoke(
+   override suspend fun doInvoke(
        inputValues: List<TypedInstance>,
        schema: Schema,
        returnType: Type,
@@ -219,7 +219,7 @@ object Uppercase : NullSafeInvoker() {
 object Lowercase : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Lowercase.name
 
-   override fun doInvoke(
+   override suspend fun doInvoke(
        inputValues: List<TypedInstance>,
        schema: Schema,
        returnType: Type,
@@ -243,7 +243,7 @@ object Lowercase : NullSafeInvoker() {
 object Length : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Length.name
 
-   override fun doInvoke(
+   override suspend fun doInvoke(
        inputValues: List<TypedInstance>,
        schema: Schema,
        returnType: Type,
@@ -267,7 +267,7 @@ object Length : NullSafeInvoker() {
 object Find : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.IndexOf.name
 
-   override fun doInvoke(
+   override suspend fun doInvoke(
        inputValues: List<TypedInstance>,
        schema: Schema,
        returnType: Type,
@@ -290,7 +290,7 @@ object Find : NullSafeInvoker() {
 }
 
 object ContainsString : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
        inputValues: List<TypedInstance>,
        schema: Schema,
        returnType: Type,
@@ -316,7 +316,7 @@ object ContainsString : NullSafeInvoker() {
 
 object Coalesce : NamedFunctionInvoker {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Coalesce.name
-   override fun invoke(
+   override suspend fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -333,7 +333,7 @@ object Coalesce : NamedFunctionInvoker {
 
 object Replace : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Replace.name
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -359,7 +359,7 @@ object Replace : NullSafeInvoker() {
 }
 
 object PadStart : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -384,7 +384,7 @@ object PadStart : NullSafeInvoker() {
 
 
 object PadEnd : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -408,7 +408,7 @@ object PadEnd : NullSafeInvoker() {
 }
 
 object ApplyFormat : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -430,7 +430,7 @@ object ApplyFormat : NullSafeInvoker() {
 }
 
 object StartsWith : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -452,7 +452,7 @@ object StartsWith : NullSafeInvoker() {
 }
 
 object EndsWith : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -474,7 +474,7 @@ object EndsWith : NullSafeInvoker() {
 }
 
 object Matches : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -496,7 +496,7 @@ object Matches : NullSafeInvoker() {
 }
 
 object ContainsPattern : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

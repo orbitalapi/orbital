@@ -35,7 +35,7 @@ class DeferredExpression(
       return equality.isEqualTo(other)
    }
 
-   override fun evaluate(
+   override suspend fun evaluate(
       input: TypedInstance,
       dataSource: DataSource,
       evaluationValueSupplier: EvaluationValueSupplier,
@@ -94,7 +94,7 @@ data class DeferredProjection(
       return equality.isEqualTo(other)
    }
 
-   override fun evaluate(
+   override suspend fun evaluate(
       input: TypedInstance,
       dataSource: DataSource,
       evaluationValueSupplier: EvaluationValueSupplier,
@@ -132,7 +132,7 @@ interface DeferredTypedInstance : TypedInstance {
       TODO("Not yet implemented")
    }
 
-   fun evaluate(
+   suspend fun evaluate(
       input: TypedInstance,
       dataSource: DataSource,
       evaluationValueSupplier: EvaluationValueSupplier,

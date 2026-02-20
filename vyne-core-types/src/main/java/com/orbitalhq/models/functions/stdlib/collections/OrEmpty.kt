@@ -16,7 +16,7 @@ import lang.taxi.types.QualifiedName
 object OrEmpty : NamedFunctionInvoker { // Intentionally not NullSafeInvoker() as the first argument is often null
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.OrEmpty.name
 
-   override fun invoke(
+   override suspend fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

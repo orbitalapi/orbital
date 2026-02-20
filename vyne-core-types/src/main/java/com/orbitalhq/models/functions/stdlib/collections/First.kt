@@ -17,7 +17,7 @@ import lang.taxi.types.QualifiedName
 
 abstract class CollectionNavigatingFunction : NamedFunctionInvoker, CollectionFilteringFunction() {
 
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

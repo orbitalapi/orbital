@@ -30,7 +30,7 @@ enum class CollectionOperationType(
 
 abstract class BaseCollectionPredicateInvoker(val operationType: CollectionOperationType) :
    CollectionFilteringFunction(), NamedFunctionInvoker {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

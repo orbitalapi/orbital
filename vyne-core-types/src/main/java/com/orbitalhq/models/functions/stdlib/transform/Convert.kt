@@ -14,7 +14,7 @@ import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
 
 object Convert : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

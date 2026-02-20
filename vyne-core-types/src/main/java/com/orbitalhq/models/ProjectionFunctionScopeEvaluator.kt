@@ -5,7 +5,6 @@ import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.facts.ScopedFact
 import com.orbitalhq.schemas.Type
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.Argument
 import lang.taxi.accessors.ProjectionFunctionScope
 import lang.taxi.types.ArrayType
@@ -34,7 +33,7 @@ import lang.taxi.types.StreamType
  *
  */
 object ProjectionFunctionScopeEvaluator {
-   fun build(
+   suspend fun build(
       inputs: List<Argument>,
       primaryFacts: List<TypedInstance>,
       context: InPlaceQueryEngine,
@@ -57,9 +56,7 @@ object ProjectionFunctionScopeEvaluator {
                   val fact = FactBag.of(primaryFacts, schema)
                      .getFactOrNull(scopeType, FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT)
                   // If that didn't work, do a proper search
-                  fact ?: runBlocking {
-                     queryContextForFact(context, primaryFacts, scopeType)
-                  }
+                  fact ?: queryContextForFact(context, primaryFacts, scopeType)
                }
 
             } catch (e: Exception) {

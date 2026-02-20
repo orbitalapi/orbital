@@ -192,7 +192,7 @@ class ObjectBuilder(
          }
    }
 
-   private fun evaluateExpressionType(targetType: Type): TypedInstance {
+   private suspend fun evaluateExpressionType(targetType: Type): TypedInstance {
       return TypedObjectFactory(
          targetType,
          // Note: This used to be an empty list,
@@ -232,7 +232,7 @@ class ObjectBuilder(
     *   items: Thing[] by [ThingToIterate[]   with { CustomerName }]
     * }[]
     */
-   private fun buildCollectionWithProjectionExpression(targetType: Type): TypedInstance {
+   private suspend fun buildCollectionWithProjectionExpression(targetType: Type): TypedInstance {
       val collectionProjectionBuilder = accessorReaders.filterIsInstance<CollectionProjectionBuilder>().firstOrNull()
          ?: error("No CollectionProjectionBuilder was present in the acessor readers")
       return collectionProjectionBuilder.process(
