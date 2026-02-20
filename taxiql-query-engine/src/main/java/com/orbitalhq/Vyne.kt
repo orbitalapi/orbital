@@ -230,7 +230,7 @@ class Vyne(
    }
 
    @VisibleForTesting
-   internal fun buildContextAndExpression(
+   internal suspend fun buildContextAndExpression(
       taxiQl: TaxiQlQuery,
       queryId: String,
       clientQueryId: String?,
@@ -277,7 +277,7 @@ class Vyne(
       )
    }
 
-   private fun convertTaxiQlFactToInstances(
+   private suspend fun convertTaxiQlFactToInstances(
       taxiQl: TaxiQlQuery,
       arguments: Map<String, Any?>,
       executionContextFacts: Set<Fact> = emptySet()
@@ -314,27 +314,26 @@ class Vyne(
       // to us are available in the expressions we're evaluating.
       // eg:
       // given { name : String = 'foo' , upper = upperCase(name) }
-      val evaluatedExpressions = taxiQl.facts
-         .filter { it.value is FactValue.Expression }
-         .fold(constants) { previousParams, parameter ->
-            val facts = CopyOnWriteFactBag(emptyList(), schema, previousParams)
-            val valueSupplier = FactBagValueSupplier(facts, schema)
-            val accessorReader = AccessorReader(
-               valueSupplier,
-               schema.functionRegistry,
-               schema
-            )
+      var evaluatedExpressions = constants
+      for (parameter in taxiQl.facts.filter { it.value is FactValue.Expression }) {
+         val facts = CopyOnWriteFactBag(emptyList(), schema, evaluatedExpressions)
+         val valueSupplier = FactBagValueSupplier(facts, schema)
+         val accessorReader = AccessorReader(
+            valueSupplier,
+            schema.functionRegistry,
+            schema
+         )
 
-            val expression = parameter.value as FactValue.Expression
-            val evaluationResult = accessorReader.evaluate(
-               value = facts,
-               returnType = schema.type(parameter.type),
-               expression = expression.expression,
-               format = null,
-               dataSource = Provided
-            )
-            previousParams + ScopedFact(ProjectionFunctionScope(parameter.name, parameter.type), evaluationResult)
-         }
+         val expression = parameter.value as FactValue.Expression
+         val evaluationResult = accessorReader.evaluate(
+            value = facts,
+            returnType = schema.type(parameter.type),
+            expression = expression.expression,
+            format = null,
+            dataSource = Provided
+         )
+         evaluatedExpressions = evaluatedExpressions + ScopedFact(ProjectionFunctionScope(parameter.name, parameter.type), evaluationResult)
+      }
       return evaluatedExpressions.map { it.scope.name to it.fact }
          .toMap()
 

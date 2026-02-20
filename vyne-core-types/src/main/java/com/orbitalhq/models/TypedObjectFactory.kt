@@ -297,7 +297,7 @@ class TypedObjectFactory(
     * Returns a new TypedObjectFactory,
     * merging the current set of known values with the newValue if possible.
     */
-   fun newFactory(
+   suspend fun newFactory(
       type: Type,
       newValue: Any,
       factsToExclude: Set<TypedInstance> = emptySet(),
@@ -600,7 +600,7 @@ class TypedObjectFactory(
       }
    }
 
-   override fun withAdditionalScopedFacts(scopedFacts: List<ScopedFact>): TypedObjectFactory {
+   override suspend fun withAdditionalScopedFacts(scopedFacts: List<ScopedFact>): TypedObjectFactory {
       return when (value) {
          is FactBag -> newFactory(
             this.type, value.withAdditionalScopedFacts(scopedFacts, this.schema),

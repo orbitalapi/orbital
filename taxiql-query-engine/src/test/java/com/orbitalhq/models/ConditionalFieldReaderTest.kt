@@ -123,7 +123,7 @@ type TransformedTradeRecord {
       }
       """)
       val json = """{ "bankDirection" : "Buy" }"""
-      val order = TypedObjectFactory(vyne.schema.type("Order"), json, vyne.schema, source = Provided).build() as TypedObject
+      val order = kotlinx.coroutines.runBlocking { TypedObjectFactory(vyne.schema.type("Order"), json, vyne.schema, source = Provided).build() } as TypedObject
 
       order["clientDirection"].value!!.should.equal("Sell")
       order["bankDirection"].value!!.should.equal("Buy")
@@ -142,7 +142,7 @@ type TransformedTradeRecord {
       }
       """)
       val json = """{ "bankDirection" : "buy" }"""
-      val order = TypedObjectFactory(vyne.schema.type("Order"), json, vyne.schema, source = Provided).build() as TypedObject
+      val order = kotlinx.coroutines.runBlocking { TypedObjectFactory(vyne.schema.type("Order"), json, vyne.schema, source = Provided).build() } as TypedObject
 
       order["bankDirection"].value!!.should.equal("buy")
       order["clientDirection"].value.should.be.`null`
@@ -162,7 +162,7 @@ type TransformedTradeRecord {
       }
       """)
       val json = """{ "bankDirection" : "buy" }"""
-      val order = TypedObjectFactory(vyne.schema.type("Order"), json, vyne.schema, source = Provided).build() as TypedObject
+      val order = kotlinx.coroutines.runBlocking { TypedObjectFactory(vyne.schema.type("Order"), json, vyne.schema, source = Provided).build() } as TypedObject
 
       order["bankDirection"].value!!.should.equal("buy")
       order["clientDirection"].value.should.equal("Sell")

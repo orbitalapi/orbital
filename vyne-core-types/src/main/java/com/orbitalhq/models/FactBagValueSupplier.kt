@@ -49,7 +49,7 @@ class FactBagValueSupplier(
 
    override val hasDataContext: Boolean = true
    override val dataContext: SearchableDataContext = facts
-   override fun withAdditionalScopedFacts(scopedFacts: List<ScopedFact>): FactBagValueSupplier {
+   override suspend fun withAdditionalScopedFacts(scopedFacts: List<ScopedFact>): FactBagValueSupplier {
 
       return FactBagValueSupplier(
          this.facts,

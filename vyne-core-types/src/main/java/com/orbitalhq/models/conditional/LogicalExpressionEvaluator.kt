@@ -18,9 +18,9 @@ import java.math.BigDecimal
 import java.util.*
 
 object LogicalExpressionEvaluator {
-   fun evaluate(cases: List<WhenCaseBlock>, factory: EvaluationValueSupplier, type: Type): WhenCaseBlock? {
-      return cases.firstOrNull { case ->
-         when (case.matchExpression) {
+   suspend fun evaluate(cases: List<WhenCaseBlock>, factory: EvaluationValueSupplier, type: Type): WhenCaseBlock? {
+      for (case in cases) {
+         val matches = when (case.matchExpression) {
             is LogicalExpression -> {
                val expressionStack = Stack<Either<LogicalExpression, LogicalOp>>()
                pushExpression(case.matchExpression as LogicalExpression, expressionStack)
@@ -29,7 +29,9 @@ object LogicalExpressionEvaluator {
             is ElseMatchExpression -> true
             else -> false
          }
+         if (matches) return case
       }
+      return null
    }
 
    private fun pushExpression(logicalExpression: LogicalExpression, expressionStack: Stack<Either<LogicalExpression, LogicalOp>>) {
@@ -48,7 +50,7 @@ object LogicalExpressionEvaluator {
       }
    }
 
-   private fun evaluateExpressionStack(expressionStack: Stack<Either<LogicalExpression, LogicalOp>>, type: Type, factory: EvaluationValueSupplier): Boolean {
+   private suspend fun evaluateExpressionStack(expressionStack: Stack<Either<LogicalExpression, LogicalOp>>, type: Type, factory: EvaluationValueSupplier): Boolean {
       var result  = false
       var lastLogicalOp: LogicalOp? = null
       while (!expressionStack.empty()) {
@@ -66,7 +68,7 @@ object LogicalExpressionEvaluator {
    }
 
 
-   private fun evaluateComparisonExpression(logicalExpression: ComparisonExpression, factory: EvaluationValueSupplier): Boolean {
+   private suspend fun evaluateComparisonExpression(logicalExpression: ComparisonExpression, factory: EvaluationValueSupplier): Boolean {
       val right = logicalExpression.right
       val left = logicalExpression.left
       val (leftValue, rightValue) = when {

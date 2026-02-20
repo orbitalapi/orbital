@@ -51,17 +51,19 @@ class QueryOperationInvocationStrategy(
       return result
    }
 
-   private fun lookForCandidateQueryOperations(
+   private suspend fun lookForCandidateQueryOperations(
       context: QueryContext,
       target: Set<QuerySpecTypeNode>
    ): Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>> {
-      return target.associateWith { querySpecTypeNode ->
-         lookForCandidateQueryOperations(context.schema, querySpecTypeNode, context)
+      val result = mutableMapOf<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>>()
+      for (querySpecTypeNode in target) {
+         result[querySpecTypeNode] = lookForCandidateQueryOperations(context.schema, querySpecTypeNode, context)
       }
+      return result
    }
 
    @VisibleForTesting
-   internal fun lookForCandidateQueryOperations(
+   internal suspend fun lookForCandidateQueryOperations(
       schema: Schema,
       target: QuerySpecTypeNode,
       context: QueryContext
@@ -75,7 +77,7 @@ class QueryOperationInvocationStrategy(
          .filter { it.returnType.isAssignableTo(target.type) }
          .filter { it.hasFilterCapability }
 
-      return queryOperations.filter {
+      val filtered = queryOperations.filter {
          queryServiceSatisfiesConstraints(
             schema,
             it,
@@ -84,15 +86,16 @@ class QueryOperationInvocationStrategy(
          )
       }
          .mapNotNull { queryOperation -> findGrammarBuilder(queryOperation) }
-         .map { (queryOperation, grammarBuilder) ->
-            val queryTarget = if (isCovariance(queryOperation.returnType, target.type)) {
-               target.copy(type = queryOperation.returnType)
-            } else target
 
-            queryOperation to grammarBuilder.buildQuery(queryTarget, queryOperation, schema, context)
+      val result = mutableMapOf<RemoteOperation, Map<Parameter, TypedInstance>>()
+      for ((queryOperation, grammarBuilder) in filtered) {
+         val queryTarget = if (isCovariance(queryOperation.returnType, target.type)) {
+            target.copy(type = queryOperation.returnType)
+         } else target
 
-         }
-         .toList().toMap()
+         result[queryOperation] = grammarBuilder.buildQuery(queryTarget, queryOperation, schema, context)
+      }
+      return result
    }
 
    // TODO : We shouldn't be doing this kind of covariance checking here - these filters

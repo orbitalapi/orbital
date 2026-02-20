@@ -52,7 +52,7 @@ interface ScopedValueProvider {
    fun getScopedFactOrNull(scope: Argument): TypedInstance?
    suspend fun getValue(attributeName: AttributeName): TypedInstance
 
-   fun withAdditionalScopedFacts(scopedFacts: List<ScopedFact>):ScopedValueProvider
+   suspend fun withAdditionalScopedFacts(scopedFacts: List<ScopedFact>):ScopedValueProvider
 }
 
 class FactBagScopeValueProvider(private val factBag: FactBag, private val schema: Schema):ScopedValueProvider {
@@ -69,7 +69,7 @@ class FactBagScopeValueProvider(private val factBag: FactBag, private val schema
       TODO("Not yet implemented")
    }
 
-   override fun withAdditionalScopedFacts(scopedFacts: List<ScopedFact>): ScopedValueProvider {
+   override suspend fun withAdditionalScopedFacts(scopedFacts: List<ScopedFact>): ScopedValueProvider {
       return FactBagScopeValueProvider(
          factBag.withAdditionalScopedFacts(scopedFacts, schema),
          schema

@@ -39,7 +39,7 @@ private val logger = KotlinLogging.logger {}
  */
 class TaxiQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
    override val supportedGrammars: List<String> = listOf(VyneQlGrammar.GRAMMAR_NAME)
-   override fun buildQuery(
+   override suspend fun buildQuery(
       spec: QuerySpecTypeNode,
       queryOperation: QueryOperation,
       schema: Schema,
@@ -61,7 +61,7 @@ class TaxiQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
    }
 
    @VisibleForTesting
-   internal fun buildTaxiQl(spec: QuerySpecTypeNode, context: QueryContext): Pair<String, List<TypedInstance>> {
+   internal suspend fun buildTaxiQl(spec: QuerySpecTypeNode, context: QueryContext): Pair<String, List<TypedInstance>> {
       val constraints = spec.dataConstraints
       if (constraints.size > 1) {
          logger.warn { "Received multiple constraints - expected a single, compound constraint. ${constraints.joinToString()}" }
@@ -69,20 +69,23 @@ class TaxiQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
 
       // In converting the expressions to Taxi, we also resolve any placeholder variables
       // using the context
-      val statementsAndValues = constraints.map { buildConstraint(it, context) }
+      val statementsAndValues = mutableListOf<Pair<String, List<TypedInstance>>>()
+      for (constraint in constraints) {
+         statementsAndValues.add(buildConstraint(constraint, context))
+      }
       val constraintsStatement = statementsAndValues.joinToString("\n", prefix = "(\n", postfix = "\n)") { it.first }
       val resolvedValues = statementsAndValues.flatMap { it.second }
       return """find { ${spec.type.name.parameterizedName}${constraintsStatement} }""" to resolvedValues
    }
 
-   private fun buildConstraint(constraint: Constraint, context: QueryContext): Pair<String, List<TypedInstance>> {
+   private suspend fun buildConstraint(constraint: Constraint, context: QueryContext): Pair<String, List<TypedInstance>> {
       return when (constraint) {
          is ExpressionConstraint -> buildExpressionConstraint(constraint, context)
          else -> error("Support for constraint type ${constraint::class.simpleName} not implemented yet")
       }
    }
 
-   private fun buildExpressionConstraint(
+   private suspend fun buildExpressionConstraint(
       constraint: ExpressionConstraint,
       context: QueryContext
    ): Pair<String, List<TypedInstance>> {
@@ -135,7 +138,7 @@ private fun typedInstanceToLiteralExpressionAndValues(
  * returning a new expression where things like ArgumentSelectors have been replaced
  * with Literals
  */
-fun Expression.resolveVariablesUsing(context: QueryContext): Pair<Expression, List<TypedInstance>> {
+suspend fun Expression.resolveVariablesUsing(context: QueryContext): Pair<Expression, List<TypedInstance>> {
    return when (this) {
       is OperatorExpression -> {
          val (lhs, lhsInstances) = lhs.resolveVariablesUsing(context)
@@ -148,8 +151,9 @@ fun Expression.resolveVariablesUsing(context: QueryContext): Pair<Expression, Li
       }
 
       is LiteralArray -> {
-         val resolved = this.members.map {
-            it.resolveVariablesUsing(context)
+         val resolved = mutableListOf<Pair<Expression, List<TypedInstance>>>()
+         for (member in this.members) {
+            resolved.add(member.resolveVariablesUsing(context))
          }
          val resolvedList = resolved.flatMap { it.second }
 
