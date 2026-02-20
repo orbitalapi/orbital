@@ -19,7 +19,7 @@ class WhenBlockEvaluator(
    private val schema: Schema,
    private val accessorReader: AccessorReader
 ) {
-   fun evaluate(
+   suspend fun evaluate(
       value: Any,
       readCondition: WhenExpression,
       source: DataSource,
@@ -51,7 +51,7 @@ class WhenBlockEvaluator(
       return result
    }
 
-   private fun selectCaseBlock(
+   private suspend fun selectCaseBlock(
       selectorValue: TypedInstance,
       readCondition: WhenExpression,
       value: Any,
@@ -88,7 +88,7 @@ class WhenBlockEvaluator(
       return selectedCase to EvaluatedWhenCaseSelection(readCondition.asTaxi(), selectorValue, selectedCase?.asTaxi(), evaluations)
    }
 
-   private fun evaluateExpression(
+   private suspend fun evaluateExpression(
       matchExpression: Expression,
       type: Type,
       value: Any,
@@ -98,7 +98,7 @@ class WhenBlockEvaluator(
       return accessorReader.evaluate(value, type, matchExpression, dataSource = UndefinedSource, format = format)
    }
 
-   private fun evaluateSelector(
+   private suspend fun evaluateSelector(
       selectorExpression: WhenSelectorExpression,
       format: FormatsAndZoneOffset?
    ): TypedInstance {

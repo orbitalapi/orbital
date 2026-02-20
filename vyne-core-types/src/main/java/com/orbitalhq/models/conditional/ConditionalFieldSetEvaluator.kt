@@ -16,7 +16,7 @@ class ConditionalFieldSetEvaluator(private val factory: EvaluationValueSupplier,
 //   fun evaluate(readCondition: FieldSetExpression, targetType: Type): TypedInstance {
 //      return evaluate(readCondition, attributeName = null, targetType = targetType)
 //   }
-   fun evaluate(value:Any,readCondition: FieldSetExpression, attributeName: AttributeName?, targetType: Type, datasource:DataSource): TypedInstance {
+   suspend fun evaluate(value:Any,readCondition: FieldSetExpression, attributeName: AttributeName?, targetType: Type, datasource:DataSource): TypedInstance {
       TODO("Refactor when blocks")
 //      return try {
 //         when (readCondition) {

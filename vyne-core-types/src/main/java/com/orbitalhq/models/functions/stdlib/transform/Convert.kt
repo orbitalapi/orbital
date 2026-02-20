@@ -14,7 +14,7 @@ import lang.taxi.types.QualifiedName
 import mu.KotlinLogging
 
 object Convert : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -48,19 +48,20 @@ object Convert : NullSafeInvoker() {
 
       val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
       val converted = resultCache.getOrPut(resultCacheKey) {
-         if (targetType.isCollection && source is Collection<*>) {
-            val typedInstances = source.map { member ->
-               TypedObjectFactory(targetType.collectionType!!, FactBag.of(member as TypedInstance, schema), schema, source = dataSource, functionRegistry = schema.functionRegistry)
+         kotlinx.coroutines.runBlocking {
+            if (targetType.isCollection && source is Collection<*>) {
+               val typedInstances = source.map { member ->
+                  TypedObjectFactory(targetType.collectionType!!, FactBag.of(member as TypedInstance, schema), schema, source = dataSource, functionRegistry = schema.functionRegistry)
+                     .build()
+                     .convertToRawTypeIfRequired()
+               }
+               TypedCollection.arrayOf(targetType.collectionType!!, typedInstances, dataSource)
+            } else {
+               TypedObjectFactory(targetType, FactBag.of(source, schema), schema, source = dataSource, functionRegistry = schema.functionRegistry)
                   .build()
                   .convertToRawTypeIfRequired()
             }
-            TypedCollection.arrayOf(targetType.collectionType!!, typedInstances, dataSource)
-         } else {
-            TypedObjectFactory(targetType, FactBag.of(source, schema), schema, source = dataSource, functionRegistry = schema.functionRegistry)
-               .build()
-               .convertToRawTypeIfRequired()
          }
-
       }
       return converted as TypedInstance
    }

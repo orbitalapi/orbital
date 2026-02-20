@@ -67,7 +67,7 @@ class FactBagValueSupplier(
          }
       }
 
-   override fun getValue(
+   override suspend fun getValue(
        typeName: QualifiedName,
        queryIfNotFound: Boolean,
        allowAccessorEvaluation: Boolean,
@@ -88,7 +88,7 @@ class FactBagValueSupplier(
       )
    }
 
-   override fun getValue(attributeName: AttributeName): TypedInstance {
+   override suspend fun getValue(attributeName: AttributeName): TypedInstance {
       return scopedValueProvider.getValue(attributeName)
    }
 
@@ -100,12 +100,12 @@ class FactBagValueSupplier(
       return scopedValueProvider.getScopedFactOrNull(scope)
    }
 
-   override fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance {
+   override suspend fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance {
       // This method shouldn't be called.
       error("readAccessor is not supported by this class")
    }
 
-   override fun readAccessor(
+   override suspend fun readAccessor(
       type: QualifiedName,
       accessor: Accessor,
       nullable: Boolean,

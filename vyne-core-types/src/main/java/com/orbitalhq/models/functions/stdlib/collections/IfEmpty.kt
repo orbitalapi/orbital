@@ -16,7 +16,7 @@ object IfEmpty : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.IfEmpty.name
 
 
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

@@ -15,7 +15,7 @@ import mu.KotlinLogging
 object SingleBy : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.SingleBy.name
    private val logger = KotlinLogging.logger {}
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -43,15 +43,15 @@ object SingleBy : NullSafeInvoker() {
          resultCacheKey
       ) {
          val stopwatch = Stopwatch.createStarted()
-         val grouped = collection.groupBy { collectionMember ->
+         val grouped = mutableMapOf<TypedInstance, MutableList<TypedInstance>>()
+         for (collectionMember in collection) {
             val factBag = FactBagValueSupplier.of(listOf(collectionMember), schema, thisScopeValueSupplier = thisScopeValueSupplier)
-//            val reader = AccessorReader(factBag, schema.functionRegistry, schema, functionResultCache = resultCache)
 
             val evaluated = deferredInstance.evaluate(collectionMember, dataSource, factBag, functionResultCache = resultCache)
             if (evaluated is TypedNull) {
                deferredInstance.evaluate(collectionMember, dataSource, factBag, functionResultCache = resultCache)
             }
-            evaluated
+            grouped.getOrPut(evaluated) { mutableListOf() }.add(collectionMember)
          }
          logger.debug { "singleBy grouping function took ${stopwatch.elapsed().toMillis()}ms" }
          grouped

@@ -17,7 +17,7 @@ import lang.taxi.types.QualifiedName
 object ListOf : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.ListOf.name
 
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

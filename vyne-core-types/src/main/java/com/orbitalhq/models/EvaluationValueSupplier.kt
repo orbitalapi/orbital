@@ -21,15 +21,15 @@ import lang.taxi.types.FormatsAndZoneOffset
  * Generally a TypedObjectFactory
  */
 interface EvaluationValueSupplier : ScopedValueProvider {
-   fun getValue(
+   suspend fun getValue(
        typeName: QualifiedName,
        queryIfNotFound: Boolean = false,
        allowAccessorEvaluation: Boolean = true,
        constraints: List<Constraint> = emptyList()
    ): TypedInstance
 
-   fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance
-   fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean, format: FormatsAndZoneOffset?): TypedInstance
+   suspend fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance
+   suspend fun readAccessor(type: QualifiedName, accessor: Accessor, nullable: Boolean, format: FormatsAndZoneOffset?): TypedInstance
 
    /**
     * If the EvaluationValueSupplier has access to a queryEngine, it should
@@ -50,7 +50,7 @@ interface EvaluationValueSupplier : ScopedValueProvider {
 interface ScopedValueProvider {
    fun getScopedFact(scope: Argument): TypedInstance
    fun getScopedFactOrNull(scope: Argument): TypedInstance?
-   fun getValue(attributeName: AttributeName): TypedInstance
+   suspend fun getValue(attributeName: AttributeName): TypedInstance
 
    fun withAdditionalScopedFacts(scopedFacts: List<ScopedFact>):ScopedValueProvider
 }
@@ -65,7 +65,7 @@ class FactBagScopeValueProvider(private val factBag: FactBag, private val schema
    }
 
 
-   override fun getValue(attributeName: AttributeName): TypedInstance {
+   override suspend fun getValue(attributeName: AttributeName): TypedInstance {
       TODO("Not yet implemented")
    }
 

@@ -19,7 +19,7 @@ import java.math.RoundingMode
 object Average : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Average.name
 
-   override fun doInvoke(
+   override suspend fun doInvoke(
        inputValues: List<TypedInstance>,
        schema: Schema,
        returnType: Type,

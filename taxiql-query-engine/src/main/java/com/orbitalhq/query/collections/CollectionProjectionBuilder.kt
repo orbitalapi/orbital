@@ -10,7 +10,6 @@ import com.orbitalhq.schemas.taxi.toVyneType
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.CollectionProjectionExpressionAccessor
 import lang.taxi.types.Arrays
 import kotlin.reflect.KClass
@@ -29,7 +28,7 @@ class CollectionProjectionBuilder(val queryContext: QueryContext) :
    override val accessorType: KClass<CollectionProjectionExpressionAccessor> =
       CollectionProjectionExpressionAccessor::class
 
-   override fun process(
+   override suspend fun process(
       accessor: CollectionProjectionExpressionAccessor,
       objectFactory: EvaluationValueSupplier,
       schema: Schema,
@@ -56,13 +55,11 @@ class CollectionProjectionBuilder(val queryContext: QueryContext) :
       } ?: emptyList()
 
       val targetMemberType = targetType.collectionType ?: targetType
-      val buildResults = runBlocking {
-         collectionToIterate.asFlow()
-            .flatMapConcat { collectionMember ->
-               queryContext.only(listOf(collectionMember) + additionalScopeFacts)
-                  .build(TypeQueryExpression(targetMemberType)).results
-            }.toList()
-      }
+      val buildResults = collectionToIterate.asFlow()
+         .flatMapConcat { collectionMember ->
+            queryContext.only(listOf(collectionMember) + additionalScopeFacts)
+               .build(TypeQueryExpression(targetMemberType)).results
+         }.toList()
 
       val builtCollection = TypedCollection.from(buildResults, source)
       return builtCollection

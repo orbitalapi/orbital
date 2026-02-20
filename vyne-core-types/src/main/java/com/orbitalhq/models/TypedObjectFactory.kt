@@ -19,10 +19,11 @@ import com.orbitalhq.schemas.*
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.timeBucket
 import com.orbitalhq.utils.xtimed
-import kotlinx.coroutines.asCoroutineDispatcher
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.*
 import lang.taxi.expressions.Expression
 import lang.taxi.expressions.LambdaExpression
@@ -33,8 +34,6 @@ import lang.taxi.types.FormatsAndZoneOffset
 import mu.KotlinLogging
 import org.apache.commons.csv.CSVRecord
 import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.Executors
-import java.util.stream.Collectors
 
 
 /**
@@ -91,54 +90,22 @@ class TypedObjectFactory(
       private val logger = KotlinLogging.logger {}
 
       /*
-    * THREADING MODEL - READ BEFORE MODIFYING
-    * More detail in ORB-1077
+    * THREADING MODEL
     *
-    * Background
-    * ----------
-    * TypedObjectFactory uses per-field `lazy` delegates (LazyThreadSafetyMode.SYNCHRONIZED)
-    * to handle cross-field dependencies during expression evaluation (e.g. `total = quantity * price`).
-    * This was intentional: ConcurrentHashMap.computeIfAbsent is not re-entrant, so lazy was chosen
-    * to allow safe recursive field access within a single factory instance.
+    * All methods that perform async operations (querying the InPlaceQueryEngine, invoking
+    * operations, etc.) are suspend functions. This means no thread is ever blocked waiting
+    * for a coroutine — callers suspend and yield their worker back to the pool.
     *
-    * The problem
-    * -----------
-    * Several methods (handleTypeNotFound, evaluateLambdaExpression, queryForParentType) bridge
-    * async operations back to synchronous code via runBlocking { }. When these are invoked from
-    * a DefaultDispatcher worker thread, the worker blocks waiting for a coroutine to complete.
-    * That coroutine also needs a DefaultDispatcher thread to run. Under concurrent load (multiple
-    * factory instances building simultaneously), all DefaultDispatcher workers become blocked,
-    * the coroutines they're waiting on can never be scheduled, and the system stalls indefinitely.
-    * This was confirmed by a production thread dump showing all DefaultDispatcher workers parked
-    * in runBlocking { } inside handleTypeNotFound, each holding a lazy lock on a different
-    * factory instance.
+    * Cross-field dependencies (e.g. `total = quantity * price`) are handled via a simple
+    * HashMap cache: when getOrBuild() is called for a field, we check the cache first. If
+    * the field hasn't been computed yet, we compute it (calling suspend buildField()), cache
+    * the result, and return it. Since a single factory instance is only ever accessed from
+    * one coroutine at a time, no synchronization is needed.
     *
-    * Short-term fix
-    * --------------
-    * All runBlocking { } call sites in this class use a dedicated blockingBridgeDispatcher
-    * (unbounded cached thread pool) rather than inheriting the calling thread's dispatcher.
-    * This moves the blocking onto threads outside the DefaultDispatcher pool, freeing coroutine
-    * workers to complete the async operations being waited on.
-    *
-    * Why this is still a sticking plaster
-    * -------------------------------------
-    * The calling thread is still blocked — we've just moved the blockage off the bounded pool.
-    * Under sustained high concurrency the bridge pool will grow unboundedly (one thread per
-    * concurrent blocked call). This is acceptable in practice because it is bounded by upstream
-    * request concurrency, but it is not a principled fix.
-    *
-    * The correct long-term fix
-    * -------------------------
-    * Make the entire call chain properly async: replace the lazy + runBlocking pattern with
-    * suspend functions (or Deferred), propagating suspension all the way up through getValue(),
-    * buildField(), getOrBuild(), and buildAsync(). This eliminates thread blocking entirely —
-    * coroutines suspend and yield their workers back to the pool while waiting. This requires
-    * changes to the classes that call into TypedObjectFactory and is a non-trivial refactor,
-    * hence the bridge approach in the interim.
+    * Callers in suspend contexts (e.g. ObjectBuilder.buildAsync) call build() directly.
+    * Callers in non-suspend contexts (e.g. TypedObject.fromValue) use runBlocking at the
+    * call site — but crucially, no runBlocking exists inside this class or its call chain.
     */
-      private val blockingBridgeDispatcher = Executors.newCachedThreadPool(
-         Thread.ofVirtual().name("typed-obj-factory-bridge-", 0).factory()
-      ).asCoroutineDispatcher()
    }
 
 
@@ -201,58 +168,12 @@ class TypedObjectFactory(
    private val attributesToMap = type.attributes
 
 
-   private val fieldInitializers: Map<AttributeName, Lazy<TypedInstance>> by lazy {
-      attributesToMap.map { (attributeName, field) ->
-
-         // Do not use locks here, as it leads to thread starvation and deadlock
-         // when we hit handleTypeNotFound()
-         attributeName to lazy(LazyThreadSafetyMode.NONE) {
-
-            val fieldValue =
-               xtimed("build field $attributeName ${field.typeDisplayName}") {
-                  buildField(
-                     field,
-                     attributeName
-                  )
-               }.let { constructedField ->
-                  if (policyEngine != null && inPlaceQueryEngine != null) {
-                     policyEngine.evaluate(constructedField, inPlaceQueryEngine)
-                  } else {
-                     constructedField
-                  }
-               }
-
-            // Do not start a projection if the type we're projecting to is the same as the value we have.
-            // This happens if the projection was processed internally already within the object construction
-            if (field.fieldProjection != null && !field.fieldProjection.projectedType.isAssignableTo(
-                  fieldValue.type.taxiType,
-                  // Structural compatability is useful when assigning a value, but not
-                  // when determining if we want to project.
-                  // At projection time, the goal is to create an object that looks exactly like the provided spec.
-                  // If the source value (ie., fieldValue) is a superset of the projectedType, that would pass structural
-                  // compatability, but isn't what we want.
-                  // eg:
-                  // model EnhancedPerson { Name, Age }
-                  // model Person { Name }
-                  // If we project EnhancedPerson to Person, we want the Age field dropped, even though
-                  // the two types match from a structuralCompatability perspective.
-                  permitStructurallyCompatible = false
-               )
-            ) {
-               val projection = xtimed("Project field $attributeName") {
-                  projectField(
-                     field,
-                     fieldValue,
-                  )
-               }
-               projection
-
-            } else {
-               fieldValue
-            }
-         }
-      }.toMap()
-   }
+   /**
+    * Cache for computed field values. Replaces the previous lazy delegate map.
+    * Since a single factory instance is only accessed from one coroutine at a time,
+    * a plain HashMap is sufficient — no synchronization needed.
+    */
+   private val fieldValues: MutableMap<AttributeName, TypedInstance> = HashMap()
 
    /**
     * Where a field has an inline projection defined (
@@ -260,7 +181,7 @@ class TypedObjectFactory(
     *    a : A, b: B
     * }
     */
-   private fun projectField(
+   private suspend fun projectField(
       field: Field,
       fieldValue: TypedInstance,
    ): TypedInstance {
@@ -291,7 +212,7 @@ class TypedObjectFactory(
       )
    }
 
-   override fun project(
+   override suspend fun project(
       valueToProject: TypedInstance,
       projection: FieldProjection,
       targetType: Type,
@@ -315,21 +236,22 @@ class TypedObjectFactory(
          )
       }
       val projectedFieldValue = if (valueToProject is TypedCollection && targetType.isCollection) {
-         // Project each member of the collection seperately
-         valueToProject
-            .parallelStream()
-            .map { collectionMember ->
-               newFactory(
-                  targetType.collectionType!!,
-                  collectionMember,
-                  scopedArguments = projection.projectionFunctionScope
-               )
-                  .build()
-            }.collect(Collectors.toList())
-            .let { projectedCollection ->
-               // Use arrayOf (instead of from), as the collection may be empty, so we want to be explicit about it's type
-               TypedCollection.arrayOf(targetType.collectionType!!, projectedCollection, source)
-            }
+         // Project each member of the collection using coroutines instead of parallelStream
+         coroutineScope {
+            valueToProject.map { collectionMember ->
+               async {
+                  newFactory(
+                     targetType.collectionType!!,
+                     collectionMember,
+                     scopedArguments = projection.projectionFunctionScope
+                  )
+                     .build()
+               }
+            }.awaitAll()
+         }.let { projectedCollection ->
+            // Use arrayOf (instead of from), as the collection may be empty, so we want to be explicit about it's type
+            TypedCollection.arrayOf(targetType.collectionType!!, projectedCollection, source)
+         }
       } else {
          newFactory(targetType, valueToProject, scopedArguments = projection.projectionFunctionScope).build()
       }
@@ -479,7 +401,7 @@ class TypedObjectFactory(
       return TypedObject(type, attributes, source, metadata)
    }
 
-   fun build(decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
+   suspend fun build(decorator: suspend (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
       return timeBucket("Build ${this.type.name.shortDisplayName}") {
          doBuild(decorator)
       }
@@ -520,7 +442,7 @@ class TypedObjectFactory(
       )
    }
 
-   private fun doBuild(decorator: (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
+   private suspend fun doBuild(decorator: suspend (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
       val metadataAndFormat = formatDetector.getFormatType(type)
       if (metadataAndFormat != null) {
          val (metadata, modelFormatSpec) = metadataAndFormat
@@ -608,7 +530,7 @@ class TypedObjectFactory(
    /**
     * Called because the parent type is closed, so construction isn't possible
     */
-   private fun queryForParentType(): TypedInstance {
+   private suspend fun queryForParentType(): TypedInstance {
       if (inPlaceQueryEngine == null) {
          return TypedNull.create(
             type,
@@ -616,31 +538,50 @@ class TypedObjectFactory(
          )
       }
       val searchFailureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.defaultBehaviour(type)
-      // Be careful - this blocking behaviour can cause thread starvation.
-      // See comment on blockingBridgeDispatcher. The fix is to move this code to be fully async
-      return runBlocking(blockingBridgeDispatcher) {
-         logger.debug { "Initiating query to search for closed type ${type.name.shortDisplayName}" }
-         queryForType(type, searchFailureBehaviour, AlwaysGoodSpec, attributeName = null)
-      }
-
-
+      logger.debug { "Initiating query to search for closed type ${type.name.shortDisplayName}" }
+      return queryForType(type, searchFailureBehaviour, AlwaysGoodSpec, attributeName = null)
    }
 
-   private fun getOrBuild(attributeName: AttributeName, allowAccessorEvaluation: Boolean = true): TypedInstance {
-      // Originally we used a concurrentHashMap.computeIfAbsent { ... } approach here.
-      // However, functions on accessors can access other fields, which can cause recursive access.
-      // Therefore, migrated to using initializers with kotlin Lazy functions
-      val initializer = fieldInitializers[attributeName]
-         ?: error("Cannot request field $attributeName as no initializer has been prepared")
+   private suspend fun getOrBuild(attributeName: AttributeName, allowAccessorEvaluation: Boolean = true): TypedInstance {
+      // Check cache first — if the field was already computed (e.g. via cross-field reference), return it
+      fieldValues[attributeName]?.let { return it }
+
+      val field = attributesToMap[attributeName]
+         ?: error("Cannot request field $attributeName as no attribute definition exists")
 
       val accessorEvaluationWasSupressed = accessorEvaluationSupressed
       accessorEvaluationSupressed = !allowAccessorEvaluation
 
-      // Reading the value will trigger population the first time.
-      val value = initializer.value
+      val fieldValue =
+         xtimed("build field $attributeName ${field.typeDisplayName}") {
+            buildField(field, attributeName)
+         }.let { constructedField ->
+            if (policyEngine != null && inPlaceQueryEngine != null) {
+               policyEngine.evaluate(constructedField, inPlaceQueryEngine)
+            } else {
+               constructedField
+            }
+         }
+
+      // Do not start a projection if the type we're projecting to is the same as the value we have.
+      // This happens if the projection was processed internally already within the object construction
+      val result = if (field.fieldProjection != null && !field.fieldProjection.projectedType.isAssignableTo(
+            fieldValue.type.taxiType,
+            permitStructurallyCompatible = false
+         )
+      ) {
+         xtimed("Project field $attributeName") {
+            projectField(field, fieldValue)
+         }
+      } else {
+         fieldValue
+      }
 
       accessorEvaluationSupressed = accessorEvaluationWasSupressed
-      return value
+
+      // Cache the result for cross-field references
+      fieldValues[attributeName] = result
+      return result
    }
 
    override fun getScopedFact(scope: Argument): TypedInstance {
@@ -682,7 +623,7 @@ class TypedObjectFactory(
    /**
     * Returns a value looked up by it's type
     */
-   override fun getValue(
+   override suspend fun getValue(
       typeName: QualifiedName,
       queryIfNotFound: Boolean,
       allowAccessorEvaluation: Boolean,
@@ -727,7 +668,7 @@ class TypedObjectFactory(
       }
    }
 
-   private fun handleTypeNotFound(
+   private suspend fun handleTypeNotFound(
       requestedType: Type,
       queryIfNotFound: Boolean,
       constraints: List<Constraint>
@@ -745,71 +686,47 @@ class TypedObjectFactory(
       }
       return when {
          queryIfNotFound && inPlaceQueryEngine != null -> {
-            // Be careful - this blocking behaviour can cause thread starvation.
-            // See comment on blockingBridgeDispatcher. The fix is to move this code to be fully async
-            runBlocking(blockingBridgeDispatcher) {
-               if (requestedType.isStream) {
-                  error("Cannot perform an inner search for a stream")
-               }
-               val resultsFromSearch = try {
-                  // MP: 29-Jan-25: Found that facts from the context
-                  // are not being passed when doing an in-place search
-                  // So, in a nested projection, we were not searching with the facts
-                  // from the current scope.
-                  val queryEngine = if (value is FactBag) {
-                     inPlaceQueryEngine.withAdditionalFacts(value.rootFacts(), value.scopedFacts)
-                  } else {
-                     inPlaceQueryEngine
-                  }
-                  queryEngine.findType(requestedType, constraints = constraints)
-                     .toList()
-               } catch (e: Exception) {
-                  // OrbitalQueryException comes from a policy expression: e.g.when below `else` branch is triggered:
-                  /*policy AdminRestrictedInstrument against Instrument  (userInfo : UserInfo) -> {
-                     read {
-                        when {
-                           userInfo.roles.contains('QueryRunner') -> Instrument
-                           else -> throw((NotAuthorizedError) { message: 'Not Authorized' })
-                        }
-                     }
-                  }*/
-                  // so, we need to catch OrbitalQueryException and re-throw to halt the execution.
-                  // a query like find { fist(Instrument[]) } against the above policy would hit the debug point placed here.
-                  if (e is OrbitalQueryException) {
-                     throw e
-                  }
-
-                  // handle com.orbitalhq.query.UnresolvedTypeInQueryException
-                  emptyList()
-               }
-               when {
-                  resultsFromSearch.isEmpty() -> createTypedNull(
-                     "No attribute with type ${requestedType.name.parameterizedName} is present on type ${type.name.parameterizedName} and attempts to discover a value from the query engine did not find any approaches that produced a result"
-                  )
-
-                  resultsFromSearch.size == 1 && !requestedType.isCollection -> resultsFromSearch.first()
-
-                  // MP: 15-Jul-25: A search for T[] that produced null, hits here with a single TypedNull<T[]> -- don't wrap that into a collection
-                  resultsFromSearch.size == 1 && requestedType.isCollection && resultsFromSearch.single() is TypedNull && resultsFromSearch.single().type.isCollection -> resultsFromSearch.single()
-                  resultsFromSearch.size >= 1 && requestedType.isCollection -> TypedCollection.from(
-                     resultsFromSearch,
-                     MixedSources.singleSourceOrMixedSources(resultsFromSearch)
-                  )
-
-                  resultsFromSearch.size > 1 && !requestedType.isCollection -> {
-                     val errorMessage =
-                        "Search for ${requestedType.name.shortDisplayName} returned ${resultsFromSearch.size} results, which is invalid for non-array types. Returning null."
-                     logger.warn { errorMessage }
-                     createTypedNull(errorMessage)
-                  }
-
-                  else -> createTypedNull(
-                     "No attribute with type ${requestedType.name.parameterizedName} is present on type ${type.name.parameterizedName} and attempts to discover a value from the query engine returned ${resultsFromSearch.size} results.  Given this is ambiguous, returning null"
-                  )
-               }
-
+            if (requestedType.isStream) {
+               error("Cannot perform an inner search for a stream")
             }
+            val resultsFromSearch = try {
+               val queryEngine = if (value is FactBag) {
+                  inPlaceQueryEngine.withAdditionalFacts(value.rootFacts(), value.scopedFacts)
+               } else {
+                  inPlaceQueryEngine
+               }
+               queryEngine.findType(requestedType, constraints = constraints)
+                  .toList()
+            } catch (e: Exception) {
+               if (e is OrbitalQueryException) {
+                  throw e
+               }
+               emptyList()
+            }
+            when {
+               resultsFromSearch.isEmpty() -> createTypedNull(
+                  "No attribute with type ${requestedType.name.parameterizedName} is present on type ${type.name.parameterizedName} and attempts to discover a value from the query engine did not find any approaches that produced a result"
+               )
 
+               resultsFromSearch.size == 1 && !requestedType.isCollection -> resultsFromSearch.first()
+
+               resultsFromSearch.size == 1 && requestedType.isCollection && resultsFromSearch.single() is TypedNull && resultsFromSearch.single().type.isCollection -> resultsFromSearch.single()
+               resultsFromSearch.size >= 1 && requestedType.isCollection -> TypedCollection.from(
+                  resultsFromSearch,
+                  MixedSources.singleSourceOrMixedSources(resultsFromSearch)
+               )
+
+               resultsFromSearch.size > 1 && !requestedType.isCollection -> {
+                  val errorMessage =
+                     "Search for ${requestedType.name.shortDisplayName} returned ${resultsFromSearch.size} results, which is invalid for non-array types. Returning null."
+                  logger.warn { errorMessage }
+                  createTypedNull(errorMessage)
+               }
+
+               else -> createTypedNull(
+                  "No attribute with type ${requestedType.name.parameterizedName} is present on type ${type.name.parameterizedName} and attempts to discover a value from the query engine returned ${resultsFromSearch.size} results.  Given this is ambiguous, returning null"
+               )
+            }
          }
 
          queryIfNotFound && inPlaceQueryEngine == null -> {
@@ -824,18 +741,18 @@ class TypedObjectFactory(
    }
 
 
-   private fun getValue(attributeName: AttributeName, allowAccessorEvaluation: Boolean): TypedInstance {
+   private suspend fun getValue(attributeName: AttributeName, allowAccessorEvaluation: Boolean): TypedInstance {
       return getOrBuild(attributeName, allowAccessorEvaluation)
    }
 
    /**
     * Returns a value looked up by it's name
     */
-   override fun getValue(attributeName: AttributeName): TypedInstance {
+   override suspend fun getValue(attributeName: AttributeName): TypedInstance {
       return getValue(attributeName, allowAccessorEvaluation = true)
    }
 
-   override fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance {
+   override suspend fun readAccessor(type: Type, accessor: Accessor, format: FormatsAndZoneOffset?): TypedInstance {
       // MP 24-Jan-25:
       // Changed this to allowContextQuerying = true.
       // Otherwise, types on projections-with-expressions were not triggering querying - eg:
@@ -857,7 +774,7 @@ class TypedObjectFactory(
       )
    }
 
-   override fun readAccessor(
+   override suspend fun readAccessor(
       type: QualifiedName,
       accessor: Accessor,
       nullable: Boolean,
@@ -876,7 +793,7 @@ class TypedObjectFactory(
       )
    }
 
-   fun evaluateExpressionType(expressionType: Type, format: FormatsAndZoneOffset?): TypedInstance {
+   suspend fun evaluateExpressionType(expressionType: Type, format: FormatsAndZoneOffset?): TypedInstance {
       val expression = expressionType.expression!!
       return if (expression is LambdaExpression) {
          // Lambda Expression types are evaluated more like functions.
@@ -894,7 +811,7 @@ class TypedObjectFactory(
 
    }
 
-   fun evaluateLambdaExpression(expression: LambdaExpression, format: FormatsAndZoneOffset?): TypedInstance {
+   suspend fun evaluateLambdaExpression(expression: LambdaExpression, format: FormatsAndZoneOffset?): TypedInstance {
       // Lambda Expression types are evaluated more like functions.
       // Their inputs are declared independent of queries where they're evaluated
       // eg:
@@ -940,32 +857,24 @@ class TypedObjectFactory(
             // The inputs into this expression have constraints defined.
             // We can't search directly for the type, we need to do a search for the type with the provided constraints.
             val argumentTypeExpression = argument.expression as TypeExpression
-            // TODO : Fix runblocking, but that requires a big change, and not sure the direction of travel
-            // wrt/ coroutines vs flux atm.
             val argumentExpressionReturnType = schema.type(argumentTypeExpression.type)
             val scopedFacts = this.getCurrentScopedFacts()
 
-            // Be careful - this blocking behaviour can cause thread starvation.
-            // See comment on blockingBridgeDispatcher. The fix is to move this code to be fully async
-            val typedInstance = runBlocking(blockingBridgeDispatcher) {
-               // If we're doing nested traversal of lambda expressions,
-               // there could be scoped facts we've been passed that will
-               // be needed as inputs
-
-               val queryEngineWithScopedFacts =
-                  valueSupplier.inPlaceQueryEngine!!.withAdditionalFacts(emptyList(), scopedFacts)
-               val collectedList = queryEngineWithScopedFacts.findType(
-                  argumentExpressionReturnType, constraints = argumentTypeExpression.constraints
-               ).toList()
-               when {
-                  argumentExpressionReturnType.isCollection -> TypedCollection.from(collectedList)
-                  collectedList.isEmpty() -> TypedNull.create(argumentExpressionReturnType)
-                  collectedList.size == 1 -> collectedList.single()
-                  else -> {
-                     error("Expected a single value returned for the expression type ${argumentTypeExpression}, but got ${collectedList.size}")
-                  }
+            // If we're doing nested traversal of lambda expressions,
+            // there could be scoped facts we've been passed that will
+            // be needed as inputs
+            val queryEngineWithScopedFacts =
+               valueSupplier.inPlaceQueryEngine!!.withAdditionalFacts(emptyList(), scopedFacts)
+            val collectedList = queryEngineWithScopedFacts.findType(
+               argumentExpressionReturnType, constraints = argumentTypeExpression.constraints
+            ).toList()
+            val typedInstance = when {
+               argumentExpressionReturnType.isCollection -> TypedCollection.from(collectedList)
+               collectedList.isEmpty() -> TypedNull.create(argumentExpressionReturnType)
+               collectedList.size == 1 -> collectedList.single()
+               else -> {
+                  error("Expected a single value returned for the expression type ${argumentTypeExpression}, but got ${collectedList.size}")
                }
-
             }
 //            val typedInstance = TypedInstance.from(argumentExpressionReturnType, result, schema)
             ScopedFact(argument, typedInstance)
@@ -1003,7 +912,7 @@ class TypedObjectFactory(
       return result
    }
 
-   fun evaluateExpression(expression: Expression): TypedInstance {
+   suspend fun evaluateExpression(expression: Expression): TypedInstance {
       return accessorReader.evaluate(
          value,
          schema.type(expression.returnType),
@@ -1015,13 +924,13 @@ class TypedObjectFactory(
       )
    }
 
-   private fun evaluateExpressionType(typeName: QualifiedName): TypedInstance {
+   private suspend fun evaluateExpressionType(typeName: QualifiedName): TypedInstance {
       val type = schema.type(typeName)
       return evaluateExpressionType(type, null)
    }
 
 
-   private fun buildField(field: Field, attributeName: AttributeName): TypedInstance {
+   private suspend fun buildField(field: Field, attributeName: AttributeName): TypedInstance {
       // When we're building a field, if there's a projection on it,
       // we build the source type initially.  Once the source is built, we
       // then project to the target type.
@@ -1229,7 +1138,7 @@ class TypedObjectFactory(
     * We need to ensure that the value we're using
     * satisfies that constraint. Otherwise, search for it.
     */
-   private fun verifyValueSatisfiesConstraints(
+   private suspend fun verifyValueSatisfiesConstraints(
       value: TypedInstance,
       field: Field,
       type: Type,
@@ -1295,7 +1204,7 @@ class TypedObjectFactory(
     * That creates challenges, as we need to pass the ObjectBuilder in the TypedObjectFactory,
     * which becomes recursive.
     */
-   private fun attemptToBuildFieldObject(
+   private suspend fun attemptToBuildFieldObject(
       fieldType: Type,
       constraints: List<Constraint>
    ): TypedInstance? {
@@ -1330,7 +1239,7 @@ class TypedObjectFactory(
       )
    }
 
-   private fun queryForFieldValue(
+   private suspend fun queryForFieldValue(
       field: Field,
       type: Type,
       attributeName: AttributeName,
@@ -1351,7 +1260,7 @@ class TypedObjectFactory(
       }
    }
 
-   private fun queryForType(
+   private suspend fun queryForType(
       searchType: Type,
       searchFailureBehaviour: QueryFailureBehaviour,
       instanceValidPredicate: TypedInstanceValidPredicate,
@@ -1373,20 +1282,16 @@ class TypedObjectFactory(
 
       val (additionalFacts, additionalScope) = getFactsInScopeForSearch()
 
-      // Be careful - this blocking behaviour can cause thread starvation.
-      // See comment on blockingBridgeDispatcher. The fix is to move this code to be fully async
-      val buildResult = runBlocking(blockingBridgeDispatcher) {
-         logger.debug { "Initiating query to search for attribute $attributeName (${searchType.name.shortDisplayName})" }
-         inPlaceQueryEngine.withAdditionalFacts(additionalFacts, additionalScope)
-            .findType(
-               searchType,
-               instanceValidPredicate,
-               PermittedQueryStrategies.EXCLUDE_BUILDER_AND_MODEL_SCAN,
-               searchFailureBehaviour,
-               constraint
-            )
-            .toList()
-      }
+      logger.debug { "Initiating query to search for attribute $attributeName (${searchType.name.shortDisplayName})" }
+      val buildResult = inPlaceQueryEngine.withAdditionalFacts(additionalFacts, additionalScope)
+         .findType(
+            searchType,
+            instanceValidPredicate,
+            PermittedQueryStrategies.EXCLUDE_BUILDER_AND_MODEL_SCAN,
+            searchFailureBehaviour,
+            constraint
+         )
+         .toList()
       val attributeNameErrorMessagePart = if (attributeName != null) {
          " (attempting to build attribute $attributeName of ${this.type.name}"
       } else ""
@@ -1501,7 +1406,7 @@ class TypedObjectFactory(
    }
 
 
-   private fun readWithValueReader(
+   private suspend fun readWithValueReader(
       attributeName: AttributeName,
       type: Type,
       format: FormatsAndZoneOffset?

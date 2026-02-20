@@ -26,17 +26,20 @@ class CsvCollectionParser(val content: String,
    }
 
    fun parse(): TypedInstance {
-      val typedInstances = content.lineSequence()
-         .drop(1) // Ignore the header
-         .filter { it.isNotBlank() && it.isNotEmpty() }
-         .map { TypedObjectFactory(memberType,it,schema,
-            source = source,
-            functionRegistry = functionRegistry,
-            inPlaceQueryEngine = inPlaceQueryEngine,
-            formatSpecs = emptyList(),
-            metadata = metadata
-         ).build() }
-         .toList()
+      val typedInstances = kotlinx.coroutines.runBlocking {
+         content.lineSequence()
+            .drop(1) // Ignore the header
+            .filter { it.isNotBlank() && it.isNotEmpty() }
+            .map { line -> TypedObjectFactory(memberType,line,schema,
+               source = source,
+               functionRegistry = functionRegistry,
+               inPlaceQueryEngine = inPlaceQueryEngine,
+               formatSpecs = emptyList(),
+               metadata = metadata
+            ) }
+            .toList()
+            .map { it.build() }
+      }
       return TypedCollection.from(typedInstances, source)
    }
 

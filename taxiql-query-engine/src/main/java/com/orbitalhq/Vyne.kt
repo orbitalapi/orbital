@@ -423,14 +423,16 @@ class Vyne(
       // to our predicate.
       // That's wrong, as generally the collection will be the input, especially if our predciate / expression
       // is a contains(...)
-      val buildResult = TypedObjectFactory(
-         expressionType,
-         queryContext.facts,
-         schemaWithType,
-         source = Provided,
-         inPlaceQueryEngine = queryContext,
-         functionResultCache = queryContext.functionResultCache
-      ).build()
+      val buildResult = kotlinx.coroutines.runBlocking {
+         TypedObjectFactory(
+            expressionType,
+            queryContext.facts,
+            schemaWithType,
+            source = Provided,
+            inPlaceQueryEngine = queryContext,
+            functionResultCache = queryContext.functionResultCache
+         ).build()
+      }
       return buildResult
    }
 

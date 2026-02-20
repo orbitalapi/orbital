@@ -43,7 +43,7 @@ class PolicyAwareOperationInvocationServiceDecorator(private val operationServic
    }
 
 
-   private fun applyPolicyInstruction(
+   private suspend fun applyPolicyInstruction(
       value: TypedInstance,
       context: QueryContext,
       executionScope: ExecutionScope

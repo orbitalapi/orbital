@@ -16,7 +16,7 @@ import lang.taxi.types.PrimitiveType
 import lang.taxi.types.QualifiedName
 
 object ParseDate : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

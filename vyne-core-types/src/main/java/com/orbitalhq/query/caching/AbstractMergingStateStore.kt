@@ -72,19 +72,21 @@ abstract class AbstractMergingStateStore(
 
    companion object {
       fun buildSumTypeFromValues(sumType: Type, values: List<TypedInstance>, schema: Schema): TypedInstance {
-         return TypedObjectFactory(
-            sumType,
-            FactBag.of(values, schema),
-            schema,
-            source = MixedSources,
-            // This is important.
-            // We take the last value when reading from a fact bag.
-            // More recent values overwrite older values
-            // This works down the tree - two different types with children fields of
-            // the same type will pick the more recently inserted
-            factBagSearchStrategy = FactDiscoveryStrategy.ANY_DEPTH_TAKE_LAST
-         )
-            .build()
+         return kotlinx.coroutines.runBlocking {
+            TypedObjectFactory(
+               sumType,
+               FactBag.of(values, schema),
+               schema,
+               source = MixedSources,
+               // This is important.
+               // We take the last value when reading from a fact bag.
+               // More recent values overwrite older values
+               // This works down the tree - two different types with children fields of
+               // the same type will pick the more recently inserted
+               factBagSearchStrategy = FactDiscoveryStrategy.ANY_DEPTH_TAKE_LAST
+            )
+               .build()
+         }
       }
    }
 

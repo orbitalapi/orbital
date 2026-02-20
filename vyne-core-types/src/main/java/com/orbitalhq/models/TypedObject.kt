@@ -97,22 +97,24 @@ data class TypedObject(
          valueSuppliers: List<ValueSupplier> = emptyList(),
          parsingOptions: ParsingOptions = ParsingOptions.DEFAULT
       ): TypedInstance {
-         return TypedObjectFactory(
-            type,
-            value,
-            schema,
-            nullValues,
-            source,
-            evaluateAccessors = evaluateAccessors,
-            functionRegistry = functionRegistry,
-            inPlaceQueryEngine = inPlaceQueryEngine,
-            formatSpecs = formatSpecs,
-            parsingErrorBehaviour = parsingErrorBehaviour,
-            functionResultCache = functionResultCache,
-            metadata = metadata,
-            valueSuppliers = valueSuppliers,
-            parsingOptions = parsingOptions
-         ).build()
+         return kotlinx.coroutines.runBlocking {
+            TypedObjectFactory(
+               type,
+               value,
+               schema,
+               nullValues,
+               source,
+               evaluateAccessors = evaluateAccessors,
+               functionRegistry = functionRegistry,
+               inPlaceQueryEngine = inPlaceQueryEngine,
+               formatSpecs = formatSpecs,
+               parsingErrorBehaviour = parsingErrorBehaviour,
+               functionResultCache = functionResultCache,
+               metadata = metadata,
+               valueSuppliers = valueSuppliers,
+               parsingOptions = parsingOptions
+            ).build()
+         }
       }
    }
 

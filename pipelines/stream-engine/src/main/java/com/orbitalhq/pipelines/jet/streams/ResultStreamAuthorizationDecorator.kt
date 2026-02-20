@@ -47,7 +47,7 @@ class ResultStreamAuthorizationDecorator(
       return stream.mapNotNull { value ->
          // first, parse back to a typed instance
          val valueAsTypedInstance = TypedInstance.from(instanceType, value, querySchema, source = Provided)
-         val evaluatedTypedInstance = policyEvaluator.evaluate(valueAsTypedInstance, queryContext, executionScope)
+         val evaluatedTypedInstance = kotlinx.coroutines.runBlocking { policyEvaluator.evaluate(valueAsTypedInstance, queryContext, executionScope) }
          // Convert back to a raw object, since that's what we started with
          evaluatedTypedInstance.toRawObject()
       }
