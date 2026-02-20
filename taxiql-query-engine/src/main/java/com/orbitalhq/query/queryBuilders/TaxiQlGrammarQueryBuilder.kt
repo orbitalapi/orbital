@@ -69,10 +69,7 @@ class TaxiQlGrammarQueryBuilder : QueryGrammarQueryBuilder {
 
       // In converting the expressions to Taxi, we also resolve any placeholder variables
       // using the context
-      val statementsAndValues = mutableListOf<Pair<String, List<TypedInstance>>>()
-      for (constraint in constraints) {
-         statementsAndValues.add(buildConstraint(constraint, context))
-      }
+      val statementsAndValues = constraints.map { buildConstraint(it, context) }
       val constraintsStatement = statementsAndValues.joinToString("\n", prefix = "(\n", postfix = "\n)") { it.first }
       val resolvedValues = statementsAndValues.flatMap { it.second }
       return """find { ${spec.type.name.parameterizedName}${constraintsStatement} }""" to resolvedValues
@@ -151,9 +148,8 @@ suspend fun Expression.resolveVariablesUsing(context: QueryContext): Pair<Expres
       }
 
       is LiteralArray -> {
-         val resolved = mutableListOf<Pair<Expression, List<TypedInstance>>>()
-         for (member in this.members) {
-            resolved.add(member.resolveVariablesUsing(context))
+         val resolved = this.members.map {
+            it.resolveVariablesUsing(context)
          }
          val resolvedList = resolved.flatMap { it.second }
 

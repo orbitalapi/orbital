@@ -314,9 +314,10 @@ class Vyne(
       // to us are available in the expressions we're evaluating.
       // eg:
       // given { name : String = 'foo' , upper = upperCase(name) }
-      var evaluatedExpressions = constants
-      for (parameter in taxiQl.facts.filter { it.value is FactValue.Expression }) {
-         val facts = CopyOnWriteFactBag(emptyList(), schema, evaluatedExpressions)
+      val evaluatedExpressions = taxiQl.facts
+         .filter { it.value is FactValue.Expression }
+         .fold(constants) { previousParams, parameter ->
+            val facts = CopyOnWriteFactBag(emptyList(), schema, previousParams)
          val valueSupplier = FactBagValueSupplier(facts, schema)
          val accessorReader = AccessorReader(
             valueSupplier,
@@ -332,7 +333,7 @@ class Vyne(
             format = null,
             dataSource = Provided
          )
-         evaluatedExpressions = evaluatedExpressions + ScopedFact(ProjectionFunctionScope(parameter.name, parameter.type), evaluationResult)
+            previousParams + ScopedFact(ProjectionFunctionScope(parameter.name, parameter.type), evaluationResult)
       }
       return evaluatedExpressions.map { it.scope.name to it.fact }
          .toMap()
@@ -410,7 +411,7 @@ class Vyne(
    }
 
    @Deprecated("Looks like this is only called in tests. Does not propogate trace contexts. If this gets used, then it needs to accept a traceContext (or similar)")
-   fun evaluate(taxiExpression: String, returnType: Type): TypedInstance {
+   suspend fun evaluate(taxiExpression: String, returnType: Type): TypedInstance {
       val (schemaWithType, expressionType) = this.schema.compileExpression(taxiExpression, returnType)
 
       val queryContext = queryEngine(schema = schemaWithType)
@@ -422,8 +423,7 @@ class Vyne(
       // to our predicate.
       // That's wrong, as generally the collection will be the input, especially if our predciate / expression
       // is a contains(...)
-      val buildResult = kotlinx.coroutines.runBlocking {
-         TypedObjectFactory(
+      val buildResult = TypedObjectFactory(
             expressionType,
             queryContext.facts,
             schemaWithType,
@@ -431,7 +431,6 @@ class Vyne(
             inPlaceQueryEngine = queryContext,
             functionResultCache = queryContext.functionResultCache
          ).build()
-      }
       return buildResult
    }
 

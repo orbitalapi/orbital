@@ -65,13 +65,10 @@ abstract class CollectionFilteringFunction : NullSafeInvoker() {
       objectFactory: EvaluationValueSupplier,
       rawMessageBeingParsed: Any?
    ): Either<TypedNull, List<TypedInstance>> {
-      return when (val extracted = extractAndValidateInputs(inputValues, schema, returnType, function)) {
-         is Either.Left -> extracted
-         is Either.Right -> {
-            val (collection, deferredExpression, dataSource) = extracted.value
-            val filtered = mutableListOf<TypedInstance>()
-            for (collectionMember in collection) {
-               val filterResult = evaluatePredicateAgainstMember(
+      return extractAndValidateInputs(inputValues, schema, returnType, function)
+         .map { (collection, deferredExpression, dataSource) ->
+            val filtered = collection.filter { collectionMember ->
+               val filtered = evaluatePredicateAgainstMember(
                   collectionMember,
                   schema,
                   objectFactory,
@@ -81,14 +78,19 @@ abstract class CollectionFilteringFunction : NullSafeInvoker() {
                   function,
                   inputValues
                )
-               when (filterResult) {
-                  is Either.Left -> return filterResult.value.left()
-                  is Either.Right -> if (filterResult.value) filtered.add(collectionMember)
+               when (filtered) {
+                  // If the evaluation returned a typedNull, it indicates it failed, so
+                  // bail out of the evaluation, returning at the top level
+                  is Either.Left -> return filtered.value.left()
+                  // Otherwise, return the filter result
+                  is Either.Right -> return@filter filtered.value
                }
+
             }
-            filtered.right()
+            filtered
          }
-      }
+
+
    }
 
    protected suspend fun evaluatePredicateAgainstMember(

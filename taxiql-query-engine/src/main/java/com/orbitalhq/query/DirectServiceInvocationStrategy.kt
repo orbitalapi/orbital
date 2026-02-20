@@ -168,11 +168,11 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       parameters: Map<Parameter, TypedInstance>,
       context: QueryContext
    ): Pair<RemoteOperation, Map<Parameter, TypedInstance>> {
-      val defaultValues = mutableMapOf<Parameter, TypedInstance>()
-      for (param in operation.parameters) {
-         if (param.defaultValue != null && !parameters.containsKey(param)) {
-            defaultValues[param] = context.evaluate(param.defaultValue!!)
-         }
+      val defaultValues = operation.parameters
+         .filter { it.defaultValue != null }
+         .filter { !parameters.containsKey(it) }
+         .associateWith { parameter ->
+            context.evaluate(parameter.defaultValue!!)
       }
       return operation to (parameters + defaultValues)
    }
@@ -205,11 +205,12 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       // when evaluted against a contract of
       // find { Film[](PublicationDate >= 2020-10-02)
       // would provide a value of `date`
-      val satisfiedConstraints = mutableListOf<Pair<lang.taxi.services.operations.constraints.Constraint, List<Pair<Parameter, TypedInstance>>>>()
-      for (requiredConstraint in targetDataConstraints) {
+      val satisfiedConstraints = targetDataConstraints.mapNotNull { requiredConstraint ->
          val constraintComparison = remoteOperation.contract.satisfies(requiredConstraint)
          if (constraintComparison.satisfiesRequestedConstraint) {
-            satisfiedConstraints.add(requiredConstraint to getProvidedParameterValues(remoteOperation, constraintComparison.providedValues, context, schema))
+            requiredConstraint to getProvidedParameterValues(remoteOperation, constraintComparison.providedValues, context, schema)
+         } else {
+            null
          }
       }
 

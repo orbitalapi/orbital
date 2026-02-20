@@ -43,15 +43,15 @@ object SingleBy : NullSafeInvoker() {
          resultCacheKey
       ) {
          val stopwatch = Stopwatch.createStarted()
-         val grouped = mutableMapOf<TypedInstance, MutableList<TypedInstance>>()
-         for (collectionMember in collection) {
+         val grouped = collection.groupBy { collectionMember ->
             val factBag = FactBagValueSupplier.of(listOf(collectionMember), schema, thisScopeValueSupplier = thisScopeValueSupplier)
+//            val reader = AccessorReader(factBag, schema.functionRegistry, schema, functionResultCache = resultCache)
 
             val evaluated = deferredInstance.evaluate(collectionMember, dataSource, factBag, functionResultCache = resultCache)
             if (evaluated is TypedNull) {
                deferredInstance.evaluate(collectionMember, dataSource, factBag, functionResultCache = resultCache)
             }
-            grouped.getOrPut(evaluated) { mutableListOf() }.add(collectionMember)
+            evaluated
          }
          logger.debug { "singleBy grouping function took ${stopwatch.elapsed().toMillis()}ms" }
          grouped

@@ -40,11 +40,9 @@ abstract class BaseCollectionPredicateInvoker(val operationType: CollectionOpera
       returnTypeFormat: FormatsAndZoneOffset?,
       resultCache: MutableMap<FunctionResultCacheKey, Any>
    ): TypedInstance {
-      return when (val extracted = extractAndValidateInputs(inputValues, schema, returnType, function)) {
-         is Either.Left -> extracted.value
-         is Either.Right -> {
-            val (collection, deferredExpression, dataSource) = extracted.value
-            for (instance in collection) {
+      return extractAndValidateInputs(inputValues, schema, returnType, function)
+         .map { (collection, deferredExpression, dataSource) ->
+            collection.map { instance ->
                val eval = evaluatePredicateAgainstMember(
                   instance,
                   schema,
@@ -56,6 +54,8 @@ abstract class BaseCollectionPredicateInvoker(val operationType: CollectionOpera
                   inputValues
                )
                when (eval) {
+                  // If the evaluation returned a typedNull, it indicates it failed, so
+                  // bail out of the evaluation, returning at the top level
                   is Either.Left -> return eval.value
                   is Either.Right -> {
                      if (eval.value == operationType.terminateWhenEvaluatesAs) {
@@ -65,13 +65,14 @@ abstract class BaseCollectionPredicateInvoker(val operationType: CollectionOpera
                            schema,
                            source = dataSource
                         )
+                     } else {
+                        eval.value
                      }
                   }
                }
             }
             TypedInstance.from(returnType, operationType.valueIfAllEvaluated, schema, source = dataSource)
-         }
-      }
+         }.getOrHandle { it }
    }
 }
 

@@ -19,6 +19,7 @@ import com.orbitalhq.schemas.*
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.timeBucket
 import com.orbitalhq.utils.xtimed
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -89,23 +90,9 @@ class TypedObjectFactory(
    private companion object {
       private val logger = KotlinLogging.logger {}
 
-      /*
-    * THREADING MODEL
-    *
-    * All methods that perform async operations (querying the InPlaceQueryEngine, invoking
-    * operations, etc.) are suspend functions. This means no thread is ever blocked waiting
-    * for a coroutine — callers suspend and yield their worker back to the pool.
-    *
-    * Cross-field dependencies (e.g. `total = quantity * price`) are handled via a simple
-    * HashMap cache: when getOrBuild() is called for a field, we check the cache first. If
-    * the field hasn't been computed yet, we compute it (calling suspend buildField()), cache
-    * the result, and return it. Since a single factory instance is only ever accessed from
-    * one coroutine at a time, no synchronization is needed.
-    *
-    * Callers in suspend contexts (e.g. ObjectBuilder.buildAsync) call build() directly.
-    * Callers in non-suspend contexts (e.g. TypedObject.fromValue) use runBlocking at the
-    * call site — but crucially, no runBlocking exists inside this class or its call chain.
-    */
+      val parallelism = Runtime.getRuntime().availableProcessors()
+      val limitedParallelismDispatcher = Dispatchers.Default.limitedParallelism(parallelism)
+
    }
 
 
@@ -237,9 +224,10 @@ class TypedObjectFactory(
       }
       val projectedFieldValue = if (valueToProject is TypedCollection && targetType.isCollection) {
          // Project each member of the collection using coroutines instead of parallelStream
+
          coroutineScope {
             valueToProject.map { collectionMember ->
-               async {
+               async(limitedParallelismDispatcher) {
                   newFactory(
                      targetType.collectionType!!,
                      collectionMember,

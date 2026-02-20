@@ -54,20 +54,21 @@ object Fold : NamedFunctionInvoker {
          function.asTaxi(),
          inputValues
       )
-      var accumulator: TypedValue = initialValue
-      for (typedInstance in sourceCollection) {
+      val foldedValue = sourceCollection.fold(initialValue) { acc, typedInstance ->
          val factBagValueSupplier = FactBagValueSupplier.of(
-            listOf(accumulator, typedInstance),
+            listOf(acc, typedInstance),
             schema,
             objectFactory,
+            // Exact match so that the accumulated value (which is likely an INT) doesn't conflict with semantic subtypes.
+            // We should be smarter about this.
             TypeMatchingStrategy.EXACT_MATCH
          )
          val reader = AccessorReader(factBagValueSupplier, schema.functionRegistry, schema)
          val evaluated =
             reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = dataSource, format = null)
-         accumulator = evaluated as TypedValue
+         evaluated as TypedValue
       }
-      return accumulator
+      return foldedValue
    }
 }
 
@@ -101,16 +102,31 @@ object MapFunction : NullSafeInvoker() {
          error("Cannot evaluate expression ${function.asTaxi()} as the function declares multiple inputs. This should've been detected by the compiler")
       }
       val mapFunctionInput = lambdaExpression.inputs[0]
-      val result = mutableListOf<TypedInstance>()
-      for (typedInstance in sourceCollection) {
+      val result = sourceCollection.map { typedInstance ->
+         // Before we can evaluate the actual map, we need to resolve the instance in the collection against
+         // the arguments to the lambda.
+         // eg:
+         // Foo[].map( (Foo) -> ...... // the 2nd (Foo) there
+         // If they're the same, as in that example, then it's fine.
+         // But we also need to consider:
+         // Foo[].map ( (f:Foo) -> // named args
          val scopedFact = if (typedInstance.type.taxiType.isAssignableTo(mapFunctionInput.type)) {
             ScopedFact(mapFunctionInput, typedInstance)
          } else {
+            // It's not assignable.
+            // This is an error, as the function is defined as;
+            // declare extension function <T,A> map(collection: T[], callback: (T) -> A):A[]
+            // Therefore, this MUST be a T.
+            // However, if the compiler didn't enforce it, we have a problem
+            // ORB-1004
             logger.error { "Map function expected iterable values of ${mapFunctionInput.type.toVyneQualifiedName().shortDisplayName}, but found an incompatible value of ${typedInstance.type.qualifiedName.shortDisplayName}. This should've been detected by the compiler. Mapping may not behave as expected" }
             ScopedFact(mapFunctionInput, typedInstance)
          }
 
+         // The type of expression determines how we should behave
+         // (which is annoying)...
          val evaluated = if (lambdaExpression.expression is TypeExpression) {
+            // If the expression is in the form of T1[].map((T1) -> T2), then we should build T2 from T1
             thisScopeValueSupplier.newFactory(
                schema.type(lambdaExpression.expression.returnType), typedInstance,
                factsToExclude = setOf(sourceCollection),
@@ -118,11 +134,13 @@ object MapFunction : NullSafeInvoker() {
             )
                .build()
          } else {
+            // If the expression is in the form of T1[].map((T1) -> T1.someOtherExpression()), then we should evaluate the
+            // expression against the scope of T1
             val factBag = FactBag.of(emptyList(), schema).withAdditionalScopedFacts(listOf(scopedFact), schema)
             thisScopeValueSupplier.newFactoryWithOnly(expressionReturnType, factBag)
                .evaluateExpression(lambdaExpression)
          }
-         result.add(evaluated)
+         evaluated
       }
       return if (result.isEmpty()) {
          TypedCollection.empty(returnType)
@@ -152,11 +170,11 @@ object Reduce : NamedFunctionInvoker {
          function.asTaxi(),
          inputValues
       )
-      var acc: TypedInstance = sourceCollection.first()
-      for (i in 1 until sourceCollection.size) {
-         val typedInstance = sourceCollection.toList()[i]
+      sourceCollection.reduce { acc, typedInstance ->
          val reader = AccessorReader.forFacts(listOf(acc, typedInstance), schema)
-         acc = reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = dataSource, format = null)
+         val evaluated =
+            reader.evaluate(typedInstance, expressionReturnType, expression, dataSource = dataSource, format = null)
+         evaluated
       }
       sourceCollection.forEach { instance ->
 //         val reader = AccessorReader(SimpleValueStore(listOf(instance), schema), schema.functionRegistry, schema)

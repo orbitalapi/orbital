@@ -48,20 +48,19 @@ object Convert : NullSafeInvoker() {
 
       val dataSource = EvaluatedExpression(function.asTaxi(), inputValues)
       val converted = resultCache.getOrPut(resultCacheKey) {
-         kotlinx.coroutines.runBlocking {
-            if (targetType.isCollection && source is Collection<*>) {
-               val typedInstances = source.map { member ->
-                  TypedObjectFactory(targetType.collectionType!!, FactBag.of(member as TypedInstance, schema), schema, source = dataSource, functionRegistry = schema.functionRegistry)
-                     .build()
-                     .convertToRawTypeIfRequired()
-               }
-               TypedCollection.arrayOf(targetType.collectionType!!, typedInstances, dataSource)
-            } else {
-               TypedObjectFactory(targetType, FactBag.of(source, schema), schema, source = dataSource, functionRegistry = schema.functionRegistry)
+         if (targetType.isCollection && source is Collection<*>) {
+            val typedInstances = source.map { member ->
+               TypedObjectFactory(targetType.collectionType!!, FactBag.of(member as TypedInstance, schema), schema, source = dataSource, functionRegistry = schema.functionRegistry)
                   .build()
                   .convertToRawTypeIfRequired()
             }
+            TypedCollection.arrayOf(targetType.collectionType!!, typedInstances, dataSource)
+         } else {
+            TypedObjectFactory(targetType, FactBag.of(source, schema), schema, source = dataSource, functionRegistry = schema.functionRegistry)
+               .build()
+               .convertToRawTypeIfRequired()
          }
+
       }
       return converted as TypedInstance
    }

@@ -55,11 +55,9 @@ class QueryOperationInvocationStrategy(
       context: QueryContext,
       target: Set<QuerySpecTypeNode>
    ): Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>> {
-      val result = mutableMapOf<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>>()
-      for (querySpecTypeNode in target) {
-         result[querySpecTypeNode] = lookForCandidateQueryOperations(context.schema, querySpecTypeNode, context)
+      return target.associateWith { querySpecTypeNode ->
+         lookForCandidateQueryOperations(context.schema, querySpecTypeNode, context)
       }
-      return result
    }
 
    @VisibleForTesting
