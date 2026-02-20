@@ -19,6 +19,7 @@ import com.orbitalhq.schemas.*
 import com.orbitalhq.schemas.taxi.toVyneQualifiedName
 import com.orbitalhq.utils.timeBucket
 import com.orbitalhq.utils.xtimed
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
@@ -32,6 +33,7 @@ import lang.taxi.types.FormatsAndZoneOffset
 import mu.KotlinLogging
 import org.apache.commons.csv.CSVRecord
 import java.util.concurrent.CopyOnWriteArrayList
+import java.util.concurrent.Executors
 import java.util.stream.Collectors
 
 
@@ -85,9 +87,60 @@ class TypedObjectFactory(
 
 ) : EvaluationValueSupplier, ValueProjector, OperationInvokerContainer {
 
-   companion object {
+   private companion object {
       private val logger = KotlinLogging.logger {}
+
+      /*
+    * THREADING MODEL - READ BEFORE MODIFYING
+    * More detail in ORB-1077
+    *
+    * Background
+    * ----------
+    * TypedObjectFactory uses per-field `lazy` delegates (LazyThreadSafetyMode.SYNCHRONIZED)
+    * to handle cross-field dependencies during expression evaluation (e.g. `total = quantity * price`).
+    * This was intentional: ConcurrentHashMap.computeIfAbsent is not re-entrant, so lazy was chosen
+    * to allow safe recursive field access within a single factory instance.
+    *
+    * The problem
+    * -----------
+    * Several methods (handleTypeNotFound, evaluateLambdaExpression, queryForParentType) bridge
+    * async operations back to synchronous code via runBlocking { }. When these are invoked from
+    * a DefaultDispatcher worker thread, the worker blocks waiting for a coroutine to complete.
+    * That coroutine also needs a DefaultDispatcher thread to run. Under concurrent load (multiple
+    * factory instances building simultaneously), all DefaultDispatcher workers become blocked,
+    * the coroutines they're waiting on can never be scheduled, and the system stalls indefinitely.
+    * This was confirmed by a production thread dump showing all DefaultDispatcher workers parked
+    * in runBlocking { } inside handleTypeNotFound, each holding a lazy lock on a different
+    * factory instance.
+    *
+    * Short-term fix
+    * --------------
+    * All runBlocking { } call sites in this class use a dedicated blockingBridgeDispatcher
+    * (unbounded cached thread pool) rather than inheriting the calling thread's dispatcher.
+    * This moves the blocking onto threads outside the DefaultDispatcher pool, freeing coroutine
+    * workers to complete the async operations being waited on.
+    *
+    * Why this is still a sticking plaster
+    * -------------------------------------
+    * The calling thread is still blocked — we've just moved the blockage off the bounded pool.
+    * Under sustained high concurrency the bridge pool will grow unboundedly (one thread per
+    * concurrent blocked call). This is acceptable in practice because it is bounded by upstream
+    * request concurrency, but it is not a principled fix.
+    *
+    * The correct long-term fix
+    * -------------------------
+    * Make the entire call chain properly async: replace the lazy + runBlocking pattern with
+    * suspend functions (or Deferred), propagating suspension all the way up through getValue(),
+    * buildField(), getOrBuild(), and buildAsync(). This eliminates thread blocking entirely —
+    * coroutines suspend and yield their workers back to the pool while waiting. This requires
+    * changes to the classes that call into TypedObjectFactory and is a non-trivial refactor,
+    * hence the bridge approach in the interim.
+    */
+      private val blockingBridgeDispatcher = Executors.newCachedThreadPool(
+         Thread.ofVirtual().name("typed-obj-factory-bridge-", 0).factory()
+      ).asCoroutineDispatcher()
    }
+
 
    private val buildSpecProvider = TypedInstancePredicateFactory()
 
@@ -147,9 +200,13 @@ class TypedObjectFactory(
 
    private val attributesToMap = type.attributes
 
+
    private val fieldInitializers: Map<AttributeName, Lazy<TypedInstance>> by lazy {
       attributesToMap.map { (attributeName, field) ->
-         attributeName to lazy {
+
+         // Do not use locks here, as it leads to thread starvation and deadlock
+         // when we hit handleTypeNotFound()
+         attributeName to lazy(LazyThreadSafetyMode.NONE) {
 
             val fieldValue =
                xtimed("build field $attributeName ${field.typeDisplayName}") {
@@ -167,7 +224,8 @@ class TypedObjectFactory(
 
             // Do not start a projection if the type we're projecting to is the same as the value we have.
             // This happens if the projection was processed internally already within the object construction
-            if (field.fieldProjection != null && !field.fieldProjection.projectedType.isAssignableTo(fieldValue.type.taxiType,
+            if (field.fieldProjection != null && !field.fieldProjection.projectedType.isAssignableTo(
+                  fieldValue.type.taxiType,
                   // Structural compatability is useful when assigning a value, but not
                   // when determining if we want to project.
                   // At projection time, the goal is to create an object that looks exactly like the provided spec.
@@ -178,7 +236,9 @@ class TypedObjectFactory(
                   // model Person { Name }
                   // If we project EnhancedPerson to Person, we want the Age field dropped, even though
                   // the two types match from a structuralCompatability perspective.
-                  permitStructurallyCompatible = false)) {
+                  permitStructurallyCompatible = false
+               )
+            ) {
                val projection = xtimed("Project field $attributeName") {
                   projectField(
                      field,
@@ -556,7 +616,9 @@ class TypedObjectFactory(
          )
       }
       val searchFailureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.defaultBehaviour(type)
-      return runBlocking {
+      // Be careful - this blocking behaviour can cause thread starvation.
+      // See comment on blockingBridgeDispatcher. The fix is to move this code to be fully async
+      return runBlocking(blockingBridgeDispatcher) {
          logger.debug { "Initiating query to search for closed type ${type.name.shortDisplayName}" }
          queryForType(type, searchFailureBehaviour, AlwaysGoodSpec, attributeName = null)
       }
@@ -683,13 +745,9 @@ class TypedObjectFactory(
       }
       return when {
          queryIfNotFound && inPlaceQueryEngine != null -> {
-            // TODO : Remove the blocking behaviour here.
-            // TypedObjectFactory has always been blocking (but
-            // historically hasn't invoked services), so leaving as
-            // blocking when introducing type expressions with lookups.
-            // However, in future, we need to mkae the TypedObjectFactory
-            // async up the chain.
-            runBlocking {
+            // Be careful - this blocking behaviour can cause thread starvation.
+            // See comment on blockingBridgeDispatcher. The fix is to move this code to be fully async
+            runBlocking(blockingBridgeDispatcher) {
                if (requestedType.isStream) {
                   error("Cannot perform an inner search for a stream")
                }
@@ -886,7 +944,10 @@ class TypedObjectFactory(
             // wrt/ coroutines vs flux atm.
             val argumentExpressionReturnType = schema.type(argumentTypeExpression.type)
             val scopedFacts = this.getCurrentScopedFacts()
-            val typedInstance = runBlocking {
+
+            // Be careful - this blocking behaviour can cause thread starvation.
+            // See comment on blockingBridgeDispatcher. The fix is to move this code to be fully async
+            val typedInstance = runBlocking(blockingBridgeDispatcher) {
                // If we're doing nested traversal of lambda expressions,
                // there could be scoped facts we've been passed that will
                // be needed as inputs
@@ -1311,7 +1372,10 @@ class TypedObjectFactory(
       }
 
       val (additionalFacts, additionalScope) = getFactsInScopeForSearch()
-      val buildResult = runBlocking {
+
+      // Be careful - this blocking behaviour can cause thread starvation.
+      // See comment on blockingBridgeDispatcher. The fix is to move this code to be fully async
+      val buildResult = runBlocking(blockingBridgeDispatcher) {
          logger.debug { "Initiating query to search for attribute $attributeName (${searchType.name.shortDisplayName})" }
          inPlaceQueryEngine.withAdditionalFacts(additionalFacts, additionalScope)
             .findType(
