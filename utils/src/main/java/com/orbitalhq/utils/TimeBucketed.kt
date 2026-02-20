@@ -26,7 +26,7 @@ class TimeBucketed {
 }
 
 
-fun <T> timeBucket(name: String, bucket:TimeBucketed = TimeBucketed.DEFAULT, lambda: () -> T):T {
+inline fun <T> timeBucket(name: String, bucket:TimeBucketed = TimeBucketed.DEFAULT, lambda: () -> T):T {
    val sw = Stopwatch.createStarted()
    val result = lambda()
    bucket.addActivity(name, sw.elapsed())

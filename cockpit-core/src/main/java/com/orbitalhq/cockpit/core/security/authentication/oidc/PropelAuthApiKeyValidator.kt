@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component
 import org.springframework.web.client.RestClient
 import org.springframework.web.client.toEntity
 import reactor.core.publisher.Mono
+import reactor.core.scheduler.Schedulers
 import java.time.Instant
 
 @ConditionalOnProperty("vyne.security.openIdp.roles.format", havingValue = CloudPropelAuthClaimsExtractor.PropelAuthJwtKind, matchIfMissing = false)
@@ -83,7 +84,7 @@ class PropelAuthApiKeyValidator(
 //         sink.success(JwtAuthenticationToken(
 //            jwt
 //         ))
-      }
+      }.subscribeOn(Schedulers.boundedElastic()) as Mono<Authentication>
 
 
    }

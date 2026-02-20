@@ -230,7 +230,7 @@ class Vyne(
    }
 
    @VisibleForTesting
-   internal fun buildContextAndExpression(
+   internal suspend fun buildContextAndExpression(
       taxiQl: TaxiQlQuery,
       queryId: String,
       clientQueryId: String?,
@@ -277,7 +277,7 @@ class Vyne(
       )
    }
 
-   private fun convertTaxiQlFactToInstances(
+   private suspend fun convertTaxiQlFactToInstances(
       taxiQl: TaxiQlQuery,
       arguments: Map<String, Any?>,
       executionContextFacts: Set<Fact> = emptySet()
@@ -318,23 +318,23 @@ class Vyne(
          .filter { it.value is FactValue.Expression }
          .fold(constants) { previousParams, parameter ->
             val facts = CopyOnWriteFactBag(emptyList(), schema, previousParams)
-            val valueSupplier = FactBagValueSupplier(facts, schema)
-            val accessorReader = AccessorReader(
-               valueSupplier,
-               schema.functionRegistry,
-               schema
-            )
+         val valueSupplier = FactBagValueSupplier(facts, schema)
+         val accessorReader = AccessorReader(
+            valueSupplier,
+            schema.functionRegistry,
+            schema
+         )
 
-            val expression = parameter.value as FactValue.Expression
-            val evaluationResult = accessorReader.evaluate(
-               value = facts,
-               returnType = schema.type(parameter.type),
-               expression = expression.expression,
-               format = null,
-               dataSource = Provided
-            )
+         val expression = parameter.value as FactValue.Expression
+         val evaluationResult = accessorReader.evaluate(
+            value = facts,
+            returnType = schema.type(parameter.type),
+            expression = expression.expression,
+            format = null,
+            dataSource = Provided
+         )
             previousParams + ScopedFact(ProjectionFunctionScope(parameter.name, parameter.type), evaluationResult)
-         }
+      }
       return evaluatedExpressions.map { it.scope.name to it.fact }
          .toMap()
 
@@ -411,7 +411,7 @@ class Vyne(
    }
 
    @Deprecated("Looks like this is only called in tests. Does not propogate trace contexts. If this gets used, then it needs to accept a traceContext (or similar)")
-   fun evaluate(taxiExpression: String, returnType: Type): TypedInstance {
+   suspend fun evaluate(taxiExpression: String, returnType: Type): TypedInstance {
       val (schemaWithType, expressionType) = this.schema.compileExpression(taxiExpression, returnType)
 
       val queryContext = queryEngine(schema = schemaWithType)
@@ -424,13 +424,13 @@ class Vyne(
       // That's wrong, as generally the collection will be the input, especially if our predciate / expression
       // is a contains(...)
       val buildResult = TypedObjectFactory(
-         expressionType,
-         queryContext.facts,
-         schemaWithType,
-         source = Provided,
-         inPlaceQueryEngine = queryContext,
-         functionResultCache = queryContext.functionResultCache
-      ).build()
+            expressionType,
+            queryContext.facts,
+            schemaWithType,
+            source = Provided,
+            inPlaceQueryEngine = queryContext,
+            functionResultCache = queryContext.functionResultCache
+         ).build()
       return buildResult
    }
 

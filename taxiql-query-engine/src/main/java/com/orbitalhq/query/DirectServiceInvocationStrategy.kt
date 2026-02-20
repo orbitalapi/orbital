@@ -68,7 +68,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       return invokeOperations(operations, context, target)
    }
 
-   private fun lookForCandidateServices(
+   private suspend fun lookForCandidateServices(
       context: QueryContext,
       target: Set<QuerySpecTypeNode>
    ): Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>> {
@@ -84,13 +84,16 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
    /**
     * Returns the operations that we can invoke, grouped by target query node.
     */
-   private fun getCandidateOperations(
+   private suspend fun getCandidateOperations(
       schema: Schema,
       target: Set<QuerySpecTypeNode>,
       context: QueryContext
    ): Map<QuerySpecTypeNode, Map<RemoteOperation, Map<Parameter, TypedInstance>>> {
-      val grouped = target.map { it to getCandidateOperations(schema, it, context) }
-         .groupBy({ it.first }, { it.second })
+      val grouped = mutableMapOf<QuerySpecTypeNode, MutableList<Map<RemoteOperation, Map<Parameter, TypedInstance>>>>()
+      for (item in target) {
+         val candidates = getCandidateOperations(schema, item, context)
+         grouped.getOrPut(item) { mutableListOf() }.add(candidates)
+      }
 
       val result = grouped.mapValues { (_, operationParameterMaps) ->
          operationParameterMaps.reduce { acc, map -> acc + map }
@@ -103,7 +106,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
     * (either because they have no parameters, or because all their parameters are populated by constraints)
     * and the set of parameters that we have identified values for
     */
-   private fun getCandidateOperations(
+   private suspend fun getCandidateOperations(
       schema: Schema,
       target: QuerySpecTypeNode,
       context: QueryContext
@@ -114,34 +117,28 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
             it.returnType.isAssignableTo(target.type) && it.operationType == OperationScope.READ_ONLY
          }
       }
-      val operations = operationsForType
-         .mapNotNull { operation ->
-            val (satisfiesConstraints, operationParameters) = compareOperationContractToDataRequirementsAndFetchSearchParams(
-               operation,
-               target,
-               schema,
-               context
-            )
-            if (!satisfiesConstraints) {
-               null
-            } else {
-               operation to operationParameters
-            }
+      val result = mutableMapOf<RemoteOperation, Map<Parameter, TypedInstance>>()
+      for (operation in operationsForType) {
+         val (satisfiesConstraints, operationParameters) = compareOperationContractToDataRequirementsAndFetchSearchParams(
+            operation,
+            target,
+            schema,
+            context
+         )
+         if (!satisfiesConstraints) continue
+
+         val (op1, params1) = populateParamsFromContextValues(operation, operationParameters, context)
+         val (op2, params2) = provideUnpopulatedParametersWithDefaults(op1, params1, context)
+
+         // Check to see if there are any outstanding parameters that haven't been populated
+         val unpopulatedParams = op2.parameters.filter { parameter ->
+            !params2.containsKey(parameter) && !parameter.nullable
          }
-         .map { (operation, parameters) ->
-            populateParamsFromContextValues(operation, parameters, context)
+         if (unpopulatedParams.isEmpty()) {
+            result[op2] = params2
          }
-         .map { (operation, parameters) ->
-            provideUnpopulatedParametersWithDefaults(operation, parameters, context)
-         }
-         .filter { (operation, populatedOperationParameters) ->
-            // Check to see if there are any outstanding parameters that haven't been populated
-            val unpopulatedParams = operation.parameters.filter { parameter ->
-               !populatedOperationParameters.containsKey(parameter) && !parameter.nullable
-            }
-            unpopulatedParams.isEmpty()
-         }
-      return operations.toMap()
+      }
+      return result
    }
 
    /**
@@ -166,7 +163,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
     * Adds any parameters that are so far unpopulated, but
     * have a default expression that can be used to populate them
     */
-   private fun provideUnpopulatedParametersWithDefaults(
+   private suspend fun provideUnpopulatedParametersWithDefaults(
       operation: RemoteOperation,
       parameters: Map<Parameter, TypedInstance>,
       context: QueryContext
@@ -176,7 +173,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
          .filter { !parameters.containsKey(it) }
          .associateWith { parameter ->
             context.evaluate(parameter.defaultValue!!)
-         }
+      }
       return operation to (parameters + defaultValues)
    }
 
@@ -185,7 +182,7 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
     * If a contract exists on the target which provides input params, and the operation
     * can satisfy the contract, then the parameters to search inputs are returned mapped.
     */
-   private fun compareOperationContractToDataRequirementsAndFetchSearchParams(
+   private suspend fun compareOperationContractToDataRequirementsAndFetchSearchParams(
       remoteOperation: RemoteOperation,
       target: QuerySpecTypeNode,
       schema: Schema,
@@ -224,19 +221,20 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
       return allOperationConstraintsSatisfied to operationConstraintParameterValues
    }
 
-   private fun getProvidedParameterValues(
+   private suspend fun getProvidedParameterValues(
       remoteOperation: Operation,
       providedValues: List<Pair<Expression, Expression>>,
       context: QueryContext,
       schema: Schema
    ): List<Pair<Parameter, TypedInstance>> {
-      return providedValues.mapNotNull { (paramExpression, providedValueExpression) ->
+      val result = mutableListOf<Pair<Parameter, TypedInstance>>()
+      for ((paramExpression, providedValueExpression) in providedValues) {
          when (paramExpression) {
             is ArgumentSelector -> {
                val parameter = remoteOperation.parameter(paramExpression.scopeWithPath)
                if (parameter == null) {
                   logger.warn { "An expression was found to provide a value for parameter ${paramExpression.path}, but no such parameter exists on operation ${remoteOperation.name}" }
-                  return@mapNotNull null
+                  continue
                }
                // Short circut - if it's a literal (which is the most common case), then
                // provide the value
@@ -250,15 +248,15 @@ class DirectServiceInvocationStrategy(invocationService: OperationInvocationServ
 
                   else -> context.evaluate(expression = providedValueExpression)
                }
-               parameter to expressionResult
+               result.add(parameter to expressionResult)
             }
 
             else -> {
                logger.warn { "Not implemented: Mapping parameterExpression of type ${paramExpression::class.simpleName}" }
-               null
             }
          }
       }
+      return result
    }
 }
 

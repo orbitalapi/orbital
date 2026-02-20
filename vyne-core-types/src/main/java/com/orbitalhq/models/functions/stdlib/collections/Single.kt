@@ -16,7 +16,7 @@ import mu.KotlinLogging
 object Single : NamedFunctionInvoker, CollectionFilteringFunction() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Single.name
 private val logger = KotlinLogging.logger {}
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

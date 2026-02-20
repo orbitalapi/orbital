@@ -24,7 +24,7 @@ import java.time.LocalTime
 import java.time.temporal.Temporal
 
 abstract class BaseCurrentTimeInvoker(private val valueProvider: () -> Temporal) : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

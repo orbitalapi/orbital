@@ -16,7 +16,7 @@ import lang.taxi.types.QualifiedName
 object Throw : NamedFunctionInvoker {
    override val functionName: QualifiedName =  lang.taxi.functions.stdlib.Throw.name
 
-   override fun invoke(
+   override suspend fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

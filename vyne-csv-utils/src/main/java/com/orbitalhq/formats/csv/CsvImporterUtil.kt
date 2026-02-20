@@ -33,15 +33,17 @@ object CsvImporterUtil {
 //         .filter { parsed.headerNames == null || parsed.headerNames.isEmpty() || parsed.headerNames.size == it.size() }
          .map { csvRecord ->
             ParsedTypeInstance(
-               TypedObjectFactory(
-                  targetType,
-                  csvRecord,
-                  schema,
-                  nullValues,
-                  source = Provided,
-                  functionRegistry = functionRegistry,
-                  formatSpecs = emptyList()
-               ).build()
+               kotlinx.coroutines.runBlocking {
+                  TypedObjectFactory(
+                     targetType,
+                     csvRecord,
+                     schema,
+                     nullValues,
+                     source = Provided,
+                     functionRegistry = functionRegistry,
+                     formatSpecs = emptyList()
+                  ).build()
+               }
             )
          }
       return records

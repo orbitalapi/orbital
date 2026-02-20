@@ -35,7 +35,7 @@ object Functional {
 object Fold : NamedFunctionInvoker {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Fold.name
 
-   override fun invoke(
+   override suspend fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -77,7 +77,7 @@ object MapFunction : NullSafeInvoker() {
 
    private val logger = KotlinLogging.logger {}
 
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -152,7 +152,7 @@ object MapFunction : NullSafeInvoker() {
 }
 
 object Reduce : NamedFunctionInvoker {
-   override fun invoke(
+   override suspend fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

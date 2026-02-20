@@ -42,14 +42,14 @@ class QueryOperationInvocationStrategyTest {
    @Test
    fun matchesQueryOperationForFindAll() {
       val (context,querySpecNode) = getQuerySpecNode("find { Person[] }", schema)
-      val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode, context)
+      val candidates = kotlinx.coroutines.runBlocking { queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode, context) }
       candidates.should.have.size(1)
    }
 
    @Test
    fun matchesQueryOperationFilteringEqualsAttributeName() {
       val (context,querySpecNode) = getQuerySpecNode("find { Person[]( FirstName == 'Jimmy' ) }", schema)
-      val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode, context)
+      val candidates = kotlinx.coroutines.runBlocking { queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode, context) }
       candidates.should.have.size(1)
    }
 
@@ -75,7 +75,7 @@ class QueryOperationInvocationStrategyTest {
       """.trimIndent()
       )
       val (context,querySpecNode) = getQuerySpecNode("find { Trade[]( TraderName == 'Jimmy' ) }", schema)
-      val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode, context)
+      val candidates = kotlinx.coroutines.runBlocking { queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode, context) }
       candidates.should.have.size(2)
    }
 
@@ -109,7 +109,7 @@ class QueryOperationInvocationStrategyTest {
       """.trimIndent()
       )
       val (context,querySpecNode) = getQuerySpecNode("find { Trade[]( TraderName == 'Jimmy' ) }", schema)
-      val candidates = queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode, context)
+      val candidates = kotlinx.coroutines.runBlocking { queryOperationStrategy.lookForCandidateQueryOperations(schema, querySpecNode, context) }
       candidates.should.have.size(2)
    }
 
@@ -190,13 +190,15 @@ class QueryOperationInvocationStrategyTest {
 fun getQuerySpecNode(taxiQl: String, schema: TaxiSchema): Pair<QueryContext,QuerySpecTypeNode> {
    val (vyne, _) = testVyne(schema)
    val vyneQuery = Compiler(source = taxiQl, importSources = listOf(schema.document)).queries().first()
-   val (context, expression) = vyne.buildContextAndExpression(
-       vyneQuery,
-       queryId = UUID.randomUUID().toString(),
-       clientQueryId = null,
-       queryOptions = QueryOptions.default(),
-      querySchema =  vyne.schema
-   )
+   val (context, expression) = kotlinx.coroutines.runBlocking {
+      vyne.buildContextAndExpression(
+         vyneQuery,
+         queryId = UUID.randomUUID().toString(),
+         clientQueryId = null,
+         queryOptions = QueryOptions.default(),
+         querySchema = vyne.schema
+      )
+   }
    val queryParser = QueryParser(schema)
    val querySpecNodes = queryParser.parse(expression)
    return context to querySpecNodes.first()

@@ -44,7 +44,7 @@ class BoundFunction(
 
    override val functionName: QualifiedName = QualifiedName(namespace, name)
 
-   override fun invoke(
+   override suspend fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

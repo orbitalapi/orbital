@@ -16,7 +16,7 @@ import lang.taxi.types.FormatsAndZoneOffset
  * which include queries etc.
  */
 interface ValueProjector {
-   fun project(
+   suspend fun project(
       valueToProject: TypedInstance,
       projection: FieldProjection,
       // because the projection.targetType is a Taxi Type

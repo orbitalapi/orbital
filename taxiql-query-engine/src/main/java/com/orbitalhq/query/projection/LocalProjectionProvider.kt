@@ -294,7 +294,7 @@ class LocalProjectionProvider : ProjectionProvider {
     *
     * This code returns the actual fact, selecting the value from the inbound value.
     */
-   private fun buildScopedProjectionFacts(
+   private suspend fun buildScopedProjectionFacts(
       projection: Projection,
       emittedResult: TypedInstance,
       context: QueryContext
