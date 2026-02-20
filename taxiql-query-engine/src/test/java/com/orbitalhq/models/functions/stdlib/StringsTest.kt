@@ -207,9 +207,9 @@ class StringsTest {
       val endArg = 4.toTypedValue(intType)
       val nullArg = TypedNull.create(stringType)
 
-      Mid.invoke(listOf(nullArg, startArg, endArg), schema, stringType, stubAccessor, mock {  },null).value.should.be.`null`
-      Mid.invoke(listOf(helloArg, nullArg, endArg), schema, stringType, stubAccessor, mock {  },null).value.should.be.`null`
-      Mid.invoke(listOf(helloArg, startArg, nullArg), schema, stringType, stubAccessor, mock {  },null).value.should.be.`null`
+      kotlinx.coroutines.runBlocking { Mid.invoke(listOf(nullArg, startArg, endArg), schema, stringType, stubAccessor, mock {  },null) }.value.should.be.`null`
+      kotlinx.coroutines.runBlocking { Mid.invoke(listOf(helloArg, nullArg, endArg), schema, stringType, stubAccessor, mock {  },null) }.value.should.be.`null`
+      kotlinx.coroutines.runBlocking { Mid.invoke(listOf(helloArg, startArg, nullArg), schema, stringType, stubAccessor, mock {  },null) }.value.should.be.`null`
    }
 
    @Test

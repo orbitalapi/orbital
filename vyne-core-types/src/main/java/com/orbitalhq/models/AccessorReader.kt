@@ -29,7 +29,6 @@ import com.orbitalhq.utils.timeBucket
 import com.orbitalhq.utils.xtimed
 import kotlinx.coroutines.flow.toCollection
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
 import lang.taxi.accessors.Accessor
 import lang.taxi.accessors.ColumnAccessor
 import lang.taxi.accessors.ConditionalAccessor
@@ -85,7 +84,7 @@ object Parsers {
 
 interface AccessorHandler<T : Accessor> {
    val accessorType: KClass<T>
-   fun process(
+   suspend fun process(
       accessor: T,
       objectFactory: EvaluationValueSupplier,
       schema: Schema,
@@ -130,7 +129,7 @@ class AccessorReader(
       )
    }
 
-   fun read(
+   suspend fun read(
       value: Any,
       targetTypeRef: QualifiedName,
       accessor: Accessor,
@@ -145,7 +144,7 @@ class AccessorReader(
       return read(value, targetType, accessor, schema, nullValues, source, format, nullable, allowContextQuerying)
    }
 
-   fun read(
+   suspend fun read(
       value: Any,
       targetType: Type,
       accessor: Accessor,
@@ -436,7 +435,7 @@ class AccessorReader(
       }
    }
 
-   private fun evaluateOperationExpression(
+   private suspend fun evaluateOperationExpression(
       value: Any,
       type: Type,
       accessor: OperationInvocationExpression,
@@ -461,10 +460,8 @@ class AccessorReader(
          parameter to scopedFact.fact
       }
       require(operation.operationKind != OperationKind.Stream) { "Operation ${operation.name} returns a stream, which is not supported for in-place operation calls. Try querying with stream { ${operation.returnType.typeParameters[0].paramaterizedName} }"}
-      val result = runBlocking {
-         objectFactory.invokeOperation(service, operation, parameters)
+      val result = objectFactory.invokeOperation(service, operation, parameters)
             .toList()
-      }
       val accessorResult = when {
          operation.returnType.isCollection -> TypedCollection.arrayOf(operation.returnType, result)
          result.size == 1 -> result.single()
@@ -474,7 +471,7 @@ class AccessorReader(
       return accessorResult
    }
 
-   private fun evaluateNegatedExpression(
+   private suspend fun evaluateNegatedExpression(
       value: Any,
       type: Type,
       accessor: NegatedExpression,
@@ -514,7 +511,7 @@ class AccessorReader(
       }
    }
 
-   private fun evaluateProjectingExpression(
+   private suspend fun evaluateProjectingExpression(
       value: Any,
       targetType: Type,
       accessor: ProjectingExpression,
@@ -577,7 +574,7 @@ class AccessorReader(
    }
 
 
-   private fun readModelAttributeSelector(
+   private suspend fun readModelAttributeSelector(
       accessor: MemberTypeReferenceExpression,
       allowContextQuerying: Boolean,
       schema: Schema,
@@ -672,7 +669,7 @@ class AccessorReader(
     *  - A TypeExpression:  Foo (requesting a type)
     *  - An ExpressionType: Foo = Thing + 2 (A type that has an expression)
     */
-   private fun evaluateExpressionType(
+   private suspend fun evaluateExpressionType(
       requestedType: Type,
       source: Any
    ): TypedInstance {
@@ -687,7 +684,7 @@ class AccessorReader(
     *  - A request for an instance of that type, looked up from the objectFactory (if the return type is T)
     *  - A request for a reference to the type itself, for reflection purposes (if the return type is Type<T>)
     */
-   private fun readTypeExpression(
+   private suspend fun readTypeExpression(
       accessor: TypeExpression,
       allowContextQuerying: Boolean,
       targetType: Type,
@@ -719,7 +716,7 @@ class AccessorReader(
       return result
    }
 
-   private fun readScopedReferenceSelector(value: Any, accessor: ArgumentSelector): TypedInstance {
+   private suspend fun readScopedReferenceSelector(value: Any, accessor: ArgumentSelector): TypedInstance {
 
       val scopedInstance = if (value is FactBag) {
          value.getScopedFactOrNull(accessor.scope)?.fact
@@ -745,7 +742,7 @@ class AccessorReader(
       return result
    }
 
-   private fun evaluateFieldReference(
+   private suspend fun evaluateFieldReference(
       targetType: Type,
       selectors: List<FieldReferenceSelector>,
       source: DataSource,
@@ -815,7 +812,7 @@ class AccessorReader(
       }
    }
 
-   private fun evaluateFunctionAccessor(
+   private suspend fun evaluateFunctionAccessor(
       value: Any,
       targetType: Type,
       schema: Schema,
@@ -882,7 +879,7 @@ class AccessorReader(
       return functionResult
    }
 
-   private fun collateInputsForAccessor(
+   private suspend fun collateInputsForAccessor(
       accessor: CallableInvocationExpression,
       schema: Schema,
       value: Any,
@@ -973,7 +970,7 @@ class AccessorReader(
       return declaredInputs
    }
 
-   private fun invokeFunctionBody(
+   private suspend fun invokeFunctionBody(
       varArgsParam: Parameter?,
       varArgsValue: List<TypedInstance>,
       declaredInputs: List<ScopedFact>,
@@ -1015,7 +1012,7 @@ class AccessorReader(
       }
    }
 
-   private fun evaluateFunctionExpressionAccessor(
+   private suspend fun evaluateFunctionExpressionAccessor(
       value: Any,
       targetType: Type,
       schema: Schema,
@@ -1060,7 +1057,7 @@ class AccessorReader(
       }
    }
 
-   private fun evaluateReadFunctionAccessor(
+   private suspend fun evaluateReadFunctionAccessor(
       value: Any,
       targetType: Type,
       schema: Schema,
@@ -1094,7 +1091,7 @@ class AccessorReader(
       return TypedInstance.from(targetType, builder.toString(), schema, source = source)
    }
 
-   private fun evaluateConditionalAccessor(
+   private suspend fun evaluateConditionalAccessor(
       value: Any,
       targetType: Type,
       schema: Schema,
@@ -1140,7 +1137,7 @@ class AccessorReader(
       }
    }
 
-   private fun parseDestructured(
+   private suspend fun parseDestructured(
       value: Any,
       targetType: Type,
       schema: Schema,
@@ -1237,7 +1234,7 @@ class AccessorReader(
 
    }
 
-   fun evaluate(
+   suspend fun evaluate(
       value: Any,
       returnType: Type,
       expression: Expression,
@@ -1417,7 +1414,7 @@ class AccessorReader(
 
    }
 
-   private fun evaluateMemberAccessExpression(
+   private suspend fun evaluateMemberAccessExpression(
       value: Any,
       returnType: Type,
       expression: MemberAccessExpression,
@@ -1435,7 +1432,7 @@ class AccessorReader(
       )
    }
 
-   private fun evaluateExtensionFunctionExpression(
+   private suspend fun evaluateExtensionFunctionExpression(
       value: Any,
       returnType: Type,
       expression: ExtensionFunctionExpression,
@@ -1457,7 +1454,7 @@ class AccessorReader(
       )
    }
 
-   private fun evaluateLambdaExpression(
+   private suspend fun evaluateLambdaExpression(
       value: Any,
       returnType: Type,
       expression: LambdaExpression,
@@ -1471,7 +1468,7 @@ class AccessorReader(
       return evaluate(value, returnType, expression.expression, schema, nullValues, dataSource, format)
    }
 
-   private fun evaluateFunctionExpression(
+   private suspend fun evaluateFunctionExpression(
       value: Any,
       returnType: Type,
       expression: FunctionExpression,
@@ -1494,11 +1491,11 @@ class AccessorReader(
       )
    }
 
-   private fun evaluateTypeExpression(expression: TypeExpression, schema: Schema): TypedInstance {
+   private suspend fun evaluateTypeExpression(expression: TypeExpression, schema: Schema): TypedInstance {
       return objectFactory.getValue(expression.type.toVyneQualifiedName(), queryIfNotFound = true)
    }
 
-   private fun evaluateOperatorExpression(
+   private suspend fun evaluateOperatorExpression(
       returnType: Type,
       expression: OperatorExpression,
       schema: Schema,

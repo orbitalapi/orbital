@@ -33,7 +33,7 @@ object ObjectFunctions {
 
 object CollectAllInstances : NullSafeInvoker() {
    private val logger = KotlinLogging.logger {}
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -69,7 +69,7 @@ object CollectAllInstances : NullSafeInvoker() {
 object Equals : NamedFunctionInvoker {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Equals.name
 
-   override fun invoke(
+   override suspend fun invoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -91,7 +91,7 @@ object Equals : NamedFunctionInvoker {
 
 
 object EmptyInstance : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

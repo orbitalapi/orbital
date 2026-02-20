@@ -133,8 +133,9 @@ LastUpdated >= "2025-05-10T09:30:00Z"
 
    private fun generateQuery(querySpecNode: Pair<QueryContext, QuerySpecTypeNode>): String {
       val (context, spec) = querySpecNode
-      val generated =
+      val generated = kotlinx.coroutines.runBlocking {
          queryBuilder.buildQuery(spec, schema.tableOperations.first().queryOperations.first(), schema, context)
+      }
       return generated.entries.single().value.toRawObject() as String
    }
 }

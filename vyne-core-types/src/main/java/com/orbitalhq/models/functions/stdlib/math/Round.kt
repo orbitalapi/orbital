@@ -15,7 +15,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 
 object Round : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

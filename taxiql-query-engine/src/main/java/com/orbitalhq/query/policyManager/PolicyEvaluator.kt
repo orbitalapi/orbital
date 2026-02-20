@@ -47,7 +47,7 @@ class PolicyEvaluator {
       private val logger = KotlinLogging.logger {}
    }
 
-   fun evaluate(instance: TypedInstance, context: QueryContext, operationScope: ExecutionScope): TypedInstance {
+   suspend fun evaluate(instance: TypedInstance, context: QueryContext, operationScope: ExecutionScope): TypedInstance {
        val schema = context.schema
       val policyType = getPolicyType(instance, context)
       val policies = findPolicies(schema, policyType)
@@ -60,7 +60,7 @@ class PolicyEvaluator {
       return evaluationResult
    }
 
-   private fun evaluate(
+   private suspend fun evaluate(
       applicablePolicies: List<PolicyWithPath>,
       instance: TypedInstance,
       context: QueryContext,
@@ -111,7 +111,7 @@ class PolicyEvaluator {
       }
    }
 
-   private fun evaluatePolicyAtPath(
+   private suspend fun evaluatePolicyAtPath(
       policyWithPath: PolicyWithPath,
       rootInstance: TypedInstance,
       context: QueryContext,
@@ -136,7 +136,7 @@ class PolicyEvaluator {
       }
    }
 
-   private fun evaluatePolicy(
+   private suspend fun evaluatePolicy(
       policy: Policy,
       rule: PolicyRule,
       instance: TypedInstance,

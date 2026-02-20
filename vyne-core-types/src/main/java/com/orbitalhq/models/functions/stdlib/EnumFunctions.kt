@@ -28,7 +28,7 @@ object EnumFunctions {
 
 object EnumForName : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.EnumForName.name
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,
@@ -68,7 +68,7 @@ object EnumForName : NullSafeInvoker() {
 
 object HasEnumNamed : NullSafeInvoker() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.HasEnumNamed.name
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

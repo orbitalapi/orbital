@@ -26,7 +26,7 @@ import java.time.temporal.TemporalAmount
 import java.time.temporal.TemporalUnit
 
 abstract class BaseDateMathFunction(private val unit: TemporalUnit) : NullSafeInvoker() {
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

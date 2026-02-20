@@ -18,7 +18,7 @@ import lang.taxi.types.QualifiedName
 
 object Filter : CollectionFilteringFunction() {
    override val functionName: QualifiedName = lang.taxi.functions.stdlib.Filter.name
-   override fun doInvoke(
+   override suspend fun doInvoke(
       inputValues: List<TypedInstance>,
       schema: Schema,
       returnType: Type,

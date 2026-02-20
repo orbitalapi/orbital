@@ -596,7 +596,7 @@ data class QueryContext(
 
    }
 
-   override fun evaluate(expression: Expression, facts: FactBag, source: DataSource): TypedInstance {
+   override suspend fun evaluate(expression: Expression, facts: FactBag, source: DataSource): TypedInstance {
       return TypedObjectFactory(
          schema.type(expression.returnType),
          facts.withAdditionalScopedFacts(this.scopedFacts, schema),
@@ -607,7 +607,7 @@ data class QueryContext(
       ).evaluateExpression(expression)
    }
 
-   override fun evaluate(expression: Expression, value: TypedInstance, source: DataSource): TypedInstance {
+   override suspend fun evaluate(expression: Expression, value: TypedInstance, source: DataSource): TypedInstance {
       return TypedObjectFactory(
          schema.type(expression.returnType),
          value,

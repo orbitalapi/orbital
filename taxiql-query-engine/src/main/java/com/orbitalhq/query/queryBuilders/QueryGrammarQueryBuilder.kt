@@ -23,7 +23,7 @@ interface QueryGrammarQueryBuilder {
       return this.supportedGrammars.contains(grammar)
    }
 
-   fun buildQuery(
+   suspend fun buildQuery(
       spec: QuerySpecTypeNode,
       queryOperation: QueryOperation,
       schema: Schema,

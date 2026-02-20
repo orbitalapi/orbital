@@ -25,7 +25,7 @@ import lang.taxi.types.ArgumentSelector
 import mu.KotlinLogging
 import kotlin.reflect.KClass
 
-fun Constraint.evaluate(
+suspend fun Constraint.evaluate(
    value: TypedInstance,
    schema: Schema,
    context: InPlaceQueryEngine
@@ -36,7 +36,7 @@ fun Constraint.evaluate(
    }
 }
 
-fun ExpressionConstraint.evaluate(
+suspend fun ExpressionConstraint.evaluate(
    value: TypedInstance,
    schema: Schema,
    context: InPlaceQueryEngine

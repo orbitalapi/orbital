@@ -9,6 +9,7 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.policyManager.ExecutionScope
 import com.orbitalhq.query.policyManager.PolicyEvaluator
 import com.orbitalhq.schemas.Schema
+import kotlinx.coroutines.reactor.mono
 import lang.taxi.policies.PolicyOperationScope
 import lang.taxi.services.OperationScope
 import org.springframework.security.core.Authentication
@@ -44,13 +45,18 @@ class ResultStreamAuthorizationDecorator(
       val queryReturnType = querySchema.type(query.returnType)
       val instanceType = queryReturnType.collectionType ?: queryReturnType
 
-      return stream.mapNotNull { value ->
-         // first, parse back to a typed instance
-         val valueAsTypedInstance = TypedInstance.from(instanceType, value, querySchema, source = Provided)
-         val evaluatedTypedInstance = policyEvaluator.evaluate(valueAsTypedInstance, queryContext, executionScope)
-         // Convert back to a raw object, since that's what we started with
-         evaluatedTypedInstance.toRawObject()
-      }
+      return stream
+         .flatMap { value ->
+            val valueAsTypedInstance =
+               TypedInstance.from(instanceType, value, querySchema, source = Provided)
+
+            mono {
+               val evaluatedTypedInstance =
+                  policyEvaluator.evaluate(valueAsTypedInstance, queryContext, executionScope)
+               // Convert back to a raw object, since that's what we started with
+               evaluatedTypedInstance.toRawObject()
+            }
+         }
    }
    fun applyPolicies(stream: Flux<Any>, streamName: String, principal: Authentication, schema: Schema): Flux<Any> {
       return applyPolicies(stream, streamName, principal.toVyneUser(), schema)
