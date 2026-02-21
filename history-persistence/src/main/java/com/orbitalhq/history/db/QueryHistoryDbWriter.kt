@@ -67,10 +67,15 @@ class QueryHistoryDbWriter(
             logger.debug { "Subscription to QueryResultRow Queue for All Queries has completed" }
          }
          .subscribe { batch ->
-            val resultRows = batch.map { it.t2 }
-            queryHistoryDao.saveQueryResultRows(resultRows)
-            val latestIndex = batch.lastOrNull()?.t1 ?: -1
-            logger.debug { "Processing QueryResultRows on Queue for All Queries - position $latestIndex" }
+            try {
+               val resultRows = batch.map { it.t2 }
+               queryHistoryDao.saveQueryResultRows(resultRows)
+               val latestIndex = batch.lastOrNull()?.t1 ?: -1
+               logger.debug { "Processing QueryResultRows on Queue for All Queries - position $latestIndex" }
+            } catch (e: Exception) {
+               val rootCause = Throwables.getRootCause(e)
+               logger.error(rootCause) { "Error processing QueryResultRows on Queue for All Queries - ${rootCause.message}" }
+            }
          }
 
       persistenceQueue.retrieveNewErrorEvents().index()
@@ -84,10 +89,15 @@ class QueryHistoryDbWriter(
             logger.info { "Subscription to QueryErrorEvent Queue for All Queries has completed" }
          }
          .subscribe { batch ->
-            val resultRows = batch.map { it.t2 }
-            queryHistoryDao.saveQueryErrorRows(resultRows)
-            val latestIndex = batch.lastOrNull()?.t1 ?: -1
-            logger.debug { "Processing QueryErrorEvent on Queue for All Queries - position $latestIndex" }
+            try {
+               val resultRows = batch.map { it.t2 }
+               queryHistoryDao.saveQueryErrorRows(resultRows)
+               val latestIndex = batch.lastOrNull()?.t1 ?: -1
+               logger.debug { "Processing QueryErrorEvent on Queue for All Queries - position $latestIndex" }
+            } catch (e: Exception) {
+               val rootCause = Throwables.getRootCause(e)
+               logger.error(rootCause) { "Error processing QueryErrorEvents on Queue for All Queries - ${rootCause.message}" }
+            }
          }
       persistenceQueue.retrieveNewLineageRecords().index()
          .publishOn(QuerySummaryPersister.queryHistoryScheduler)
