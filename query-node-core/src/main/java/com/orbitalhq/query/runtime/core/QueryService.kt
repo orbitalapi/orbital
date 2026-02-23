@@ -28,7 +28,6 @@ import com.orbitalhq.query.QueryFailedException
 import com.orbitalhq.query.QueryMode
 import com.orbitalhq.query.QueryResponse
 import com.orbitalhq.query.QueryResult
-import com.orbitalhq.query.QueryStartEvent
 import com.orbitalhq.query.ResultMode
 import com.orbitalhq.query.SearchFailedException
 import com.orbitalhq.query.runtime.FailedSearchResponse
@@ -577,16 +576,14 @@ class QueryService(
              * Query failed due to compilation even without start execution.
              * We need to emit the QueryStart event manually so that analytics records are persisted for query compilation as well.
              */
-            historyWriterEventConsumer.handleEvent(
-               QueryStartEvent(
-                  queryId = queryId,
-                  timestamp = Instant.now(),
-                  taxiQuery = query,
-                  query = null,
-                  clientQueryId = clientQueryId ?: "",
-                  message = "",
-                  anonymousTypes = emptySet()
-               )
+            historyWriterEventConsumer.captureQueryStart(
+               queryId = queryId,
+               timestamp = Instant.now(),
+               taxiQuery = query,
+               query = null,
+               clientQueryId = clientQueryId ?: "",
+               message = "",
+               anonymousTypes = emptySet()
             )
             val failedSearchResponse = FailedSearchResponse(
                message = e.message!!, // Message contains the error messages from the compiler

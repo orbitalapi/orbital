@@ -94,7 +94,12 @@ object QueryResultEventMapper {
          responseStatus = QueryResponse.ResponseStatus.RUNNING,
          startTime = event.timestamp,
          responseType = event.message,
-        anonymousTypesJson = objectMapper.writeValueAsString(event.anonymousTypes)
+        anonymousTypesJson = objectMapper.writeValueAsString(event.anonymousTypes),
+        persistResults = event.persistResults,
+        persistRemoteCallResponses = event.persistRemoteCallResponses,
+        persistRemoteCallMetadata = event.persistRemoteCallMetadata,
+        persistTraceEvents = event.persistTraceEvents,
+        persistErrors = event.persistErrors
       )
    }
 }

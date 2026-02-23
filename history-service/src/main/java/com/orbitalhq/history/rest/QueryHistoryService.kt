@@ -102,7 +102,12 @@ class QueryHistoryService(
             recordCount = rs.getInt("record_count"),
             errorMessage = rs.getString("error_message"),
             anonymousTypesJson = rs.getString("anonymous_types_json"),
-            responseType = rs.getString("response_type")
+            responseType = rs.getString("response_type"),
+            persistResults = rs.getObject("persist_results") as Boolean?,
+            persistRemoteCallResponses = rs.getObject("persist_remote_call_responses") as Boolean?,
+            persistRemoteCallMetadata = rs.getObject("persist_remote_call_metadata") as Boolean?,
+            persistTraceEvents = rs.getObject("persist_trace_events") as Boolean?,
+            persistErrors = rs.getObject("persist_errors") as Boolean?
          )
 
          querySummary.durationMs = querySummary.endTime?.let {
