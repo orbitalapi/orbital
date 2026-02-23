@@ -34,6 +34,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
   activeRecordErrors$: Observable<StreamQueryErrorEvent>;
   errorCount: number =0;
   queryLoadingErrorMessage: string = null;
+  queryLoadingErrorAppearance: 'negative' | 'info' = 'negative';
 
   instanceSelected$ = new ReplaySubject<QueryResultInstanceSelectedEvent>(1);
   sidePanelVisible: boolean = false;
@@ -42,6 +43,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
 
   activeQueries: Map<string, RunningQueryStatus> = new Map<string, RunningQueryStatus>();
   config: AppConfig;
+  private historySummaries: QueryHistorySummary[] = [];
 
   constructor(appInfoService: AppInfoService,
               queryService: QueryService,
@@ -89,6 +91,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
     this.history$ = this.queryService.getHistory().pipe(
       // We don't want any queries that are still running, they're already stored in the activeQueries prop
       map(results => results.filter(result => result.responseStatus !== "RUNNING")),
+      tap(results => this.historySummaries = results),
       httpRequestStates()
     );
   }
@@ -143,7 +146,7 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
           }
         ),
         catchError((err, observable) => {
-          this.queryLoadingErrorMessage = 'Query results are not available for this query';
+          this.queryLoadingErrorMessage = this.getQueryResultsErrorMessage(selectedQueryId);
           return of(err);
         })
       );
@@ -183,6 +186,16 @@ export class QueryHistoryComponent extends BaseQueryResultDisplayComponent imple
 
   get queryId(): string {
     return this.selectedQueryId;
+  }
+
+  private getQueryResultsErrorMessage(queryId: string): string {
+    const selectedSummary = this.historySummaries.find(s => s.queryId === queryId);
+    if (selectedSummary && selectedSummary.persistResults === false) {
+      this.queryLoadingErrorAppearance = 'info';
+      return 'Result capture was disabled when this query ran. To capture results for future queries, enable the result persistence setting in your server configuration.';
+    }
+    this.queryLoadingErrorAppearance = 'negative';
+    return 'There was a problem retrieving the results for this query.';
   }
 
   private handleActiveQueryUpdate(next: RunningQueryStatus) {
