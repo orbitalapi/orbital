@@ -59,7 +59,17 @@ data class QuerySummary(
    @Column(name = "anonymous_types_json", columnDefinition = "clob")
    val anonymousTypesJson: String? = null,
    @Column(name = "response_type")
-   val responseType: String? = null
+   val responseType: String? = null,
+   @Column(name = "persist_results")
+   val persistResults: Boolean? = null,
+   @Column(name = "persist_remote_call_responses")
+   val persistRemoteCallResponses: Boolean? = null,
+   @Column(name = "persist_remote_call_metadata")
+   val persistRemoteCallMetadata: Boolean? = null,
+   @Column(name = "persist_trace_events")
+   val persistTraceEvents: Boolean? = null,
+   @Column(name = "persist_errors")
+   val persistErrors: Boolean? = null
 ) : VyneHistoryRecord() {
    @Transient
    var durationMs = endTime?.let { Duration.between(startTime, endTime).toMillis() }

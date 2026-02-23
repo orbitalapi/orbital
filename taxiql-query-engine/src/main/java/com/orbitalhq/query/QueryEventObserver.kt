@@ -8,6 +8,28 @@ import java.time.Instant
 interface QueryEventConsumer : RemoteCallOperationResultHandler {
    fun handleEvent(event: QueryEvent)
    fun shutdown() {}
+
+   fun captureQueryStart(
+      queryId: String,
+      timestamp: Instant,
+      taxiQuery: TaxiQLQueryString?,
+      query: Query?,
+      clientQueryId: String,
+      message: String,
+      anonymousTypes: Set<Type>
+   ) {
+      handleEvent(
+         QueryStartEvent(
+            queryId = queryId,
+            timestamp = timestamp,
+            taxiQuery = taxiQuery,
+            query = query,
+            clientQueryId = clientQueryId,
+            message = message,
+            anonymousTypes = anonymousTypes
+         )
+      )
+   }
 }
 
 sealed class QueryEvent(val isTerminalEvent: Boolean)
@@ -103,6 +125,11 @@ data class QueryStartEvent(
    val query: Query?,
    val clientQueryId: String,
    val message: String,
-   val anonymousTypes: Set<Type>
+   val anonymousTypes: Set<Type>,
+   val persistResults: Boolean? = null,
+   val persistRemoteCallResponses: Boolean? = null,
+   val persistRemoteCallMetadata: Boolean? = null,
+   val persistTraceEvents: Boolean? = null,
+   val persistErrors: Boolean? = null
 ) : QueryEvent(isTerminalEvent = false)
 
