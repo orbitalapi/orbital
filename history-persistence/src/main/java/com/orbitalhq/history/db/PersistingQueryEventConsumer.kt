@@ -12,6 +12,7 @@ import com.orbitalhq.query.QueryErrorStreamEvent
 import com.orbitalhq.query.QueryEvent
 import com.orbitalhq.query.QueryEventConsumer
 import com.orbitalhq.query.QueryFailureEvent
+import com.orbitalhq.query.Query
 import com.orbitalhq.query.QueryStartEvent
 import com.orbitalhq.query.RemoteCallOperationResultHandler
 import com.orbitalhq.query.RestfulQueryExceptionEvent
@@ -21,6 +22,8 @@ import com.orbitalhq.query.TaxiQlQueryExceptionEvent
 import com.orbitalhq.query.TaxiQlQueryResultEvent
 import com.orbitalhq.query.history.RemoteCallResponse
 import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.Type
+import lang.taxi.query.TaxiQLQueryString
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
@@ -29,6 +32,7 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import mu.KotlinLogging
+import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
 
 private val logger = KotlinLogging.logger {}
@@ -74,6 +78,33 @@ class PersistingQueryEventConsumer(
    override fun shutdown() {
       logger.debug { "Query result handler shutting down - $queryId" }
       super.terminateSubscription()
+   }
+
+   override fun captureQueryStart(
+      queryId: String,
+      timestamp: Instant,
+      taxiQuery: TaxiQLQueryString?,
+      query: Query?,
+      clientQueryId: String,
+      message: String,
+      anonymousTypes: Set<Type>
+   ) {
+      handleEvent(
+         QueryStartEvent(
+            queryId = queryId,
+            timestamp = timestamp,
+            taxiQuery = taxiQuery,
+            query = query,
+            clientQueryId = clientQueryId,
+            message = message,
+            anonymousTypes = anonymousTypes,
+            persistResults = config.persistResults,
+            persistRemoteCallResponses = config.persistRemoteCallResponses,
+            persistRemoteCallMetadata = config.persistRemoteCallMetadata,
+            persistTraceEvents = config.persistTraceEvents,
+            persistErrors = config.persistErrors
+         )
+      )
    }
 
    override fun handleEvent(event: QueryEvent) {

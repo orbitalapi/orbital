@@ -629,6 +629,11 @@ export interface QueryHistorySummary {
   durationMs: number | null;
   recordCount: number;
   errorMessage: string | null;
+  persistResults: boolean | null;
+  persistRemoteCallResponses: boolean | null;
+  persistRemoteCallMetadata: boolean | null;
+  persistTraceEvents: boolean | null;
+  persistErrors: boolean | null;
 }
 
 

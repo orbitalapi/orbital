@@ -9,7 +9,6 @@ import com.orbitalhq.query.QueryEventConsumer
 import com.orbitalhq.query.QueryFailureEvent
 import com.orbitalhq.query.QueryResponse
 import com.orbitalhq.query.QueryResult
-import com.orbitalhq.query.QueryStartEvent
 import com.orbitalhq.query.RestfulQueryExceptionEvent
 import com.orbitalhq.query.RestfulQueryResultEvent
 import com.orbitalhq.query.StreamingQueryCancelledEvent
@@ -58,16 +57,14 @@ class QueryLifecycleEventObserver(
 
    private fun captureQueryResultStreamToHistory(query: Query, queryResult: QueryResult): QueryResult {
       val queryStartTime = Instant.now()
-      consumer.handleEvent(
-         QueryStartEvent(
-            taxiQuery = null,
-            query = query,
-            message = queryResult.responseTypeName ?: "",
-            queryId = queryResult.queryId,
-            clientQueryId = queryResult.clientQueryId ?: queryResult.queryId,
-            timestamp = queryStartTime,
-            anonymousTypes = queryResult.anonymousTypes
-         )
+      consumer.captureQueryStart(
+         taxiQuery = null,
+         query = query,
+         message = queryResult.responseTypeName ?: "",
+         queryId = queryResult.queryId,
+         clientQueryId = queryResult.clientQueryId ?: queryResult.queryId,
+         timestamp = queryStartTime,
+         anonymousTypes = queryResult.anonymousTypes
       )
 
       return queryResult.copy(
@@ -145,16 +142,14 @@ class QueryLifecycleEventObserver(
       queryResult: QueryResult
    ): QueryResult {
       val queryStartTime = Instant.now()
-      consumer.handleEvent(
-         QueryStartEvent(
-            taxiQuery = query,
-            query = null,
-            message = queryResult.responseTypeName ?: "",
-            queryId = queryResult.queryId,
-            clientQueryId = queryResult.clientQueryId ?: queryResult.queryId,
-            timestamp = queryStartTime,
-            anonymousTypes = queryResult.anonymousTypes
-         )
+      consumer.captureQueryStart(
+         taxiQuery = query,
+         query = null,
+         message = queryResult.responseTypeName ?: "",
+         queryId = queryResult.queryId,
+         clientQueryId = queryResult.clientQueryId ?: queryResult.queryId,
+         timestamp = queryStartTime,
+         anonymousTypes = queryResult.anonymousTypes
       )
 
       return queryResult.copy(
