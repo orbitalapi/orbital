@@ -36,6 +36,7 @@ import java.time.Instant
 class QueryLifecycleEventObserver(
    private val consumer: QueryEventConsumer,
    private val activeQueryMonitor: ActiveQueryMonitor?,
+   private val username: String? = null
 ) {
    companion object {
       private val logger = KotlinLogging.logger {}
@@ -64,7 +65,8 @@ class QueryLifecycleEventObserver(
          queryId = queryResult.queryId,
          clientQueryId = queryResult.clientQueryId ?: queryResult.queryId,
          timestamp = queryStartTime,
-         anonymousTypes = queryResult.anonymousTypes
+         anonymousTypes = queryResult.anonymousTypes,
+         username = username
       )
 
       return queryResult.copy(
@@ -149,7 +151,8 @@ class QueryLifecycleEventObserver(
          queryId = queryResult.queryId,
          clientQueryId = queryResult.clientQueryId ?: queryResult.queryId,
          timestamp = queryStartTime,
-         anonymousTypes = queryResult.anonymousTypes
+         anonymousTypes = queryResult.anonymousTypes,
+         username = username
       )
 
       return queryResult.copy(

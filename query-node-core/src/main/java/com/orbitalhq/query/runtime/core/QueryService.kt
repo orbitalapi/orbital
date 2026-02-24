@@ -583,7 +583,8 @@ class QueryService(
                query = null,
                clientQueryId = clientQueryId ?: "",
                message = "",
-               anonymousTypes = emptySet()
+               anonymousTypes = emptySet(),
+               username = vyneUser?.username
             )
             val failedSearchResponse = FailedSearchResponse(
                message = e.message!!, // Message contains the error messages from the compiler
@@ -610,7 +611,7 @@ class QueryService(
          } catch (e: Exception) {
             FailedSearchResponse(e.message!!, null, queryId = queryId)
          }
-         QueryLifecycleEventObserver(historyWriterEventConsumer, activeQueryMonitor)
+         QueryLifecycleEventObserver(historyWriterEventConsumer, activeQueryMonitor, username = vyneUser?.username)
             .responseWithQueryHistoryListener(query, response) to queryOptions
       }
    }

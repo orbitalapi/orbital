@@ -99,7 +99,8 @@ object QueryResultEventMapper {
         persistRemoteCallResponses = event.persistRemoteCallResponses,
         persistRemoteCallMetadata = event.persistRemoteCallMetadata,
         persistTraceEvents = event.persistTraceEvents,
-        persistErrors = event.persistErrors
+        persistErrors = event.persistErrors,
+        username = event.username
       )
    }
 }

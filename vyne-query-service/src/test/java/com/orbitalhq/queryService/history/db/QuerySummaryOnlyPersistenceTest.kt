@@ -26,6 +26,10 @@ import com.orbitalhq.schemas.fqn
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
+import org.jose4j.jwk.RsaJwkGenerator
+import org.jose4j.jws.AlgorithmIdentifiers
+import org.jose4j.jws.JsonWebSignature
+import org.jose4j.jwt.JwtClaims
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.springframework.beans.factory.annotation.Autowired
@@ -34,6 +38,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
+import org.springframework.security.core.Authentication
+import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken
 import org.springframework.test.context.ActiveProfiles
 import org.springframework.test.context.junit4.SpringRunner
 import org.testcontainers.containers.PostgreSQLContainer
@@ -109,6 +116,84 @@ class QuerySummaryOnlyPersistenceTest : BaseQueryServiceTest() {
    @MockitoBean
    lateinit var schemaEditorService: SchemaEditorService
 
+
+   private fun authenticationWithPreferredUsername(preferredUsername: String): Authentication {
+      val rsaJsonWebKey = RsaJwkGenerator.generateJwk(2048)
+      rsaJsonWebKey.apply {
+         keyId = UUID.randomUUID().toString()
+         algorithm = AlgorithmIdentifiers.RSA_USING_SHA256
+         use = "sig"
+      }
+      val claims = JwtClaims().apply {
+         jwtId = UUID.randomUUID().toString()
+         issuer = "https://test.example.com"
+         subject = UUID.randomUUID().toString()
+         setExpirationTimeMinutesInTheFuture(10F)
+         setIssuedAtToNow()
+         setClaim("preferred_username", preferredUsername)
+      }
+      val jwt = JsonWebSignature().apply {
+         payload = claims.toJson()
+         key = rsaJsonWebKey.privateKey
+         algorithmHeaderValue = rsaJsonWebKey.algorithm
+         keyIdHeaderValue = rsaJsonWebKey.keyId
+         setHeader("typ", "JWT")
+      }.compactSerialization
+      return JwtAuthenticationToken(
+         NimbusReactiveJwtDecoder.withPublicKey(rsaJsonWebKey.getRsaPublicKey()).build().decode(jwt).block()
+      )
+   }
+
+   @Test
+   fun `username is persisted in query summary when query is submitted with authentication`() {
+      setupTestService(historyDbWriter)
+      val id = UUID.randomUUID().toString()
+      val auth = authenticationWithPreferredUsername("marty.mcfly")
+
+      runTest {
+         val turbine = queryService.submitVyneQlQueryStreamingResponse(
+            "find { Order[] } as Report[]",
+            auth = auth,
+            clientQueryId = id
+         ).testIn(this)
+
+         val first = turbine.awaitItem()
+         first.should.not.be.`null`
+         turbine.awaitComplete()
+      }
+
+      Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
+         queryHistoryRecordRepository.findByClientQueryId(id)?.endTime != null
+      }
+
+      val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)!!
+      historyRecord.username.should.equal("marty.mcfly")
+   }
+
+   @Test
+   fun `username is null in query summary when no authentication is provided`() {
+      setupTestService(historyDbWriter)
+      val id = UUID.randomUUID().toString()
+
+      runTest {
+         val turbine = queryService.submitVyneQlQueryStreamingResponse(
+            "find { Order[] } as Report[]",
+            auth = null,
+            clientQueryId = id
+         ).testIn(this)
+
+         val first = turbine.awaitItem()
+         first.should.not.be.`null`
+         turbine.awaitComplete()
+      }
+
+      Awaitility.await().atMost(com.jayway.awaitility.Duration.TEN_SECONDS).until {
+         queryHistoryRecordRepository.findByClientQueryId(id)?.endTime != null
+      }
+
+      val historyRecord = queryHistoryRecordRepository.findByClientQueryId(id)!!
+      historyRecord.username.should.be.`null`
+   }
 
    @Test
    fun `Only Query Summary is persisted when vyne history persistResults is false for a taxiQl query`() {

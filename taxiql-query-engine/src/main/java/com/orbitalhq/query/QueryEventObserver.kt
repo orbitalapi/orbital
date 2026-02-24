@@ -16,7 +16,8 @@ interface QueryEventConsumer : RemoteCallOperationResultHandler {
       query: Query?,
       clientQueryId: String,
       message: String,
-      anonymousTypes: Set<Type>
+      anonymousTypes: Set<Type>,
+      username: String? = null
    ) {
       handleEvent(
          QueryStartEvent(
@@ -26,7 +27,8 @@ interface QueryEventConsumer : RemoteCallOperationResultHandler {
             query = query,
             clientQueryId = clientQueryId,
             message = message,
-            anonymousTypes = anonymousTypes
+            anonymousTypes = anonymousTypes,
+            username = username
          )
       )
    }
@@ -130,6 +132,7 @@ data class QueryStartEvent(
    val persistRemoteCallResponses: Boolean? = null,
    val persistRemoteCallMetadata: Boolean? = null,
    val persistTraceEvents: Boolean? = null,
-   val persistErrors: Boolean? = null
+   val persistErrors: Boolean? = null,
+   val username: String? = null
 ) : QueryEvent(isTerminalEvent = false)
 
