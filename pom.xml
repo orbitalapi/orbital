@@ -88,7 +88,7 @@ Transitive dependency in wire-compiler and calcite-core
       <bouncycastle.version>1.78</bouncycastle.version>
 
       <!-- CVE 2025-27817 fixed in 3.9.1 -->
-      <kafka.version>3.9.1</kafka.version>
+      <kafka.version>3.9.2</kafka.version>
 
       <!-- This is a transitive dependency of Kafka.
       This can be removed once we upgrade to Spring Boot 4.x
