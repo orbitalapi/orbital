@@ -1,12 +1,12 @@
 import { Component } from '@angular/core';
-import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
+import { HeaderComponentLayoutComponent } from '../header-component-layout/header-component-layout.component';
 import { AddProjectComponent } from '../onboarding/add-project/add-project.component';
 
 @Component({
   selector: 'app-project-import',
   standalone: true,
   imports: [
-    HeaderComponentLayoutModule,
+    HeaderComponentLayoutComponent,
     AddProjectComponent
   ],
   template: `

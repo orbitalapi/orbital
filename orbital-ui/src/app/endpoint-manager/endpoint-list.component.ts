@@ -3,7 +3,7 @@ import {AsyncPipe, CommonModule, TitleCasePipe} from '@angular/common';
 import {ChangeDetectionStrategy, ChangeDetectorRef, Component, Inject} from '@angular/core';
 import {TuiAlertService, TuiAppearanceOptions, TuiNotification} from '@taiga-ui/core';
 import {Observable, switchMap} from 'rxjs';
-import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
+import {HeaderComponentLayoutComponent} from '../header-component-layout/header-component-layout.component';
 import {SchemaNotificationService} from '../services/schema-notification.service';
 import {SavedQuery, TypesService} from '../services/types.service';
 import {ActivatedRoute, Router} from "@angular/router";
@@ -63,7 +63,7 @@ import {takeUntilDestroyed} from "@angular/core/rxjs-interop";
   styleUrls: ['./endpoint-list.component.scss'],
   imports: [
     CommonModule,
-    HeaderComponentLayoutModule,
+    HeaderComponentLayoutComponent,
     AsyncPipe,
     TuiNotification,
     TitleCasePipe,

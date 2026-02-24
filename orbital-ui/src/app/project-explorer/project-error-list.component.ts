@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component} from '@angular/core';
 import {PackagesService, ProjectLoaderWithStatus} from "../package-viewer/packages.service";
 import {Observable} from "rxjs";
 import {AsyncPipe, CommonModule} from '@angular/common';
-import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
+import {HeaderComponentLayoutComponent} from '../header-component-layout/header-component-layout.component';
 import { map } from "rxjs/operators";
 
 @Component({
@@ -36,7 +36,7 @@ import { map } from "rxjs/operators";
     imports: [
       CommonModule,
       AsyncPipe,
-      HeaderComponentLayoutModule
+      HeaderComponentLayoutComponent
     ]
 })
 export class ProjectErrorListComponent {

@@ -6,7 +6,7 @@ import {RouterModule} from "@angular/router";
 import {AuthGuard} from "../services/auth.guard";
 import {VynePrivileges} from "../services/user-info.service";
 import {HeaderBarModule} from "../header-bar/header-bar.module";
-import {HeaderComponentLayoutModule} from "../header-component-layout/header-component-layout.module";
+import {HeaderComponentLayoutComponent} from "../header-component-layout/header-component-layout.component";
 import { TuiFieldErrorPipe, TuiTabs, TuiButtonLoading } from "@taiga-ui/kit";
 import {FormsModule, ReactiveFormsModule} from "@angular/forms";
 import { TuiNotification, TuiError, TuiButton } from "@taiga-ui/core";
@@ -29,7 +29,7 @@ import { UiCustomisations } from '../../environments/ui-customisations';
             }
         ]),
         HeaderBarModule,
-        HeaderComponentLayoutModule,
+        HeaderComponentLayoutComponent,
         ...TuiTabs,
         ReactiveFormsModule,
         TuiInputModule,

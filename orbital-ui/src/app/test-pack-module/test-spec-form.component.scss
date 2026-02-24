@@ -1,9 +1,13 @@
+@import "src/common";
+
+tui-input {
+  margin-bottom: 1rem;
+}
+
 .button-row {
   display: flex;
+
   .spacer {
     flex-grow: 1;
   }
-}
-mat-form-field {
-  width: 100%;
 }

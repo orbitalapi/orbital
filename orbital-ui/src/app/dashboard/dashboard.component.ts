@@ -4,7 +4,7 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Router, RouterLink, RouterOutlet} from '@angular/router';
 import { TuiNotification, TuiButton } from '@taiga-ui/core';
 import {UiCustomisations} from '../../environments/ui-customisations';
-import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
+import {HeaderComponentLayoutComponent} from '../header-component-layout/header-component-layout.component';
 import {OnboardingContainerComponent} from '../onboarding/onboarding-container.component';
 import {TypesService} from '../services/types.service';
 import {ChangelogCardComponent} from './changelog-card/changelog-card.component';
@@ -20,7 +20,7 @@ import {RequiresAuthorityDirective} from "../requires-authority.directive";
   selector: 'app-dashboard',
   standalone: true,
   imports: [
-    CommonModule, HeaderComponentLayoutModule, RouterOutlet, TuiButton, RouterLink,
+    CommonModule, HeaderComponentLayoutComponent, RouterOutlet, TuiButton, RouterLink,
     TuiNotification, DataSourcesCardComponent, EndpointStatsCardComponent, ChangelogCardComponent, CardComponent, ContentCardComponent,
     RequiresAuthorityDirective, NgIf],
   templateUrl: './dashboard.component.html',

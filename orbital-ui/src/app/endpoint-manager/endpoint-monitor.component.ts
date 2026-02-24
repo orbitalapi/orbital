@@ -20,7 +20,7 @@ import {BehaviorSubject, combineLatestWith, filter, interval, Observable, of} fr
 import {catchError, mergeMap, startWith, tap} from 'rxjs/operators';
 import {CodeViewerModule} from '../code-viewer/code-viewer.module';
 import {ExpandingPanelSetModule} from '../expanding-panelset/expanding-panel-set.module';
-import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
+import {HeaderComponentLayoutComponent} from '../header-component-layout/header-component-layout.component';
 import {DataSeries, MetricsPeriod, MetricsService, StreamMetricsData} from '../services/metrics.service';
 import {SavedQuery} from '../services/types.service';
 import {UiCustomisations} from "../../environments/ui-customisations";
@@ -136,7 +136,7 @@ type MetricsPeriodToDescription = {
   styleUrls: ['./endpoint-monitor.component.scss'],
   imports: [
     CommonModule,
-    HeaderComponentLayoutModule,
+    HeaderComponentLayoutComponent,
     ExpandingPanelSetModule,
     TuiSelectModule,
     FormsModule,

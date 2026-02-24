@@ -19,7 +19,7 @@ import { VynePrivileges } from 'src/app/services/user-info.service';
 import { TypeViewerContainerComponent } from 'src/app/type-viewer/type-viewer-container.component';
 import { TypeViewerModule } from 'src/app/type-viewer/type-viewer.module';
 import { TypeListModule } from 'src/app/type-list/type-list.module';
-import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/header-component-layout.module';
+import { HeaderComponentLayoutComponent } from 'src/app/header-component-layout/header-component-layout.component';
 import { TuiStepper, TuiTabs, TuiProgress } from '@taiga-ui/kit';
 import { SchemaDiagramModule } from 'src/app/schema-diagram/schema-diagram.module';
 import { UiCustomisations } from '../../environments/ui-customisations';
@@ -46,7 +46,7 @@ import {CustomMarkdownRenderer} from "../markdown-utils/markdown-custom-renderer
     HeaderBarModule,
     TypeViewerModule,
     TypeListModule,
-    HeaderComponentLayoutModule,
+    HeaderComponentLayoutComponent,
     ...TuiTabs,
     SchemaDiagramModule,
     ...TuiStepper,

@@ -1,7 +1,11 @@
 import { Component, HostBinding, Input, TemplateRef } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-header-component-layout',
+  standalone: true,
+  imports: [CommonModule, RouterLink],
   styleUrls: ['./header-component-layout.component.scss'],
   template: `
     <div class="header-container" [ngClass]="{'pad-bottom' : padBottom}">

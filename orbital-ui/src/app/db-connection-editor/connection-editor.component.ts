@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import {Component, EventEmitter, Input, Output} from '@angular/core';
 import { TuiError, TuiButton } from '@taiga-ui/core';
 import { TuiDataListWrapper, TuiStringifyContentPipe, TuiFilterByInputPipe, TuiFieldErrorPipe, TuiProgress } from '@taiga-ui/kit';
-import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
+import { HeaderComponentLayoutComponent } from '../header-component-layout/header-component-layout.component';
 import { ProjectSelectorModule } from '../project-selector/project-selector.module';
 import {
   ConnectionDriverConfigOptions,
@@ -33,7 +33,7 @@ export type ConnectionEditorMode = 'create' | 'edit';
   styleUrls: ['./connection-editor.component.scss'],
   imports: [
     CommonModule,
-    HeaderComponentLayoutModule,
+    HeaderComponentLayoutComponent,
     ProjectSelectorModule,
     ReactiveFormsModule,
     TuiInputModule,

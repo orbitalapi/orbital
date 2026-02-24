@@ -1,7 +1,7 @@
 import {ChangeDetectionStrategy, Component, computed, signal, WritableSignal} from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {UiCustomisations} from "../../environments/ui-customisations";
-import {HeaderComponentLayoutModule} from "../header-component-layout/header-component-layout.module";
+import {HeaderComponentLayoutComponent} from "../header-component-layout/header-component-layout.component";
 import {StubServerTreeComponent} from "./stub-server-tree/stub-server-tree.component";
 import {NebulaStacksResponse, StubsApiService} from '../services/stubs-api.service';
 import {ConnectionStatusComponent} from "../data-source-manager/connection-status/connection-status.component";
@@ -12,7 +12,7 @@ import {ConnectionStatus} from '../db-connection-editor/db-importer.service';
   standalone: true,
   imports: [
     CommonModule,
-    HeaderComponentLayoutModule,
+    HeaderComponentLayoutComponent,
     StubServerTreeComponent,
     ConnectionStatusComponent
   ],

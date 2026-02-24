@@ -2,7 +2,7 @@ import {ChangeDetectionStrategy, Component, Input} from '@angular/core';
 import {PackagesService, ProjectLoaderWithStatus} from "../package-viewer/packages.service";
 import {Observable} from "rxjs";
 import {ConnectionsListResponse, DbConnectionService} from "../db-connection-editor/db-importer.service";
-import {HeaderComponentLayoutModule} from "../header-component-layout/header-component-layout.module";
+import {HeaderComponentLayoutComponent} from "../header-component-layout/header-component-layout.component";
 import {AsyncPipe, NgForOf} from "@angular/common";
 
 @Component({
@@ -35,7 +35,7 @@ import {AsyncPipe, NgForOf} from "@angular/common";
   styleUrls: ['./data-source-error-list.component.scss'],
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    HeaderComponentLayoutModule,
+    HeaderComponentLayoutComponent,
     NgForOf,
     AsyncPipe
   ],
