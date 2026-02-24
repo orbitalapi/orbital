@@ -90,6 +90,7 @@ class ObjectBuilderStrategy(val formatSpecs: List<ModelFormatSpec> = emptyList()
          target.first().type,
          functionRegistry = context.schema.functionRegistry,
          formatSpecs = formatSpecs,
+         invocationConstraints = invocationConstraints
       ).build()
       return when {
          match != null && match is TypedNull -> QueryStrategyResult.searchFailed(failedAttempts = listOf(match.source))

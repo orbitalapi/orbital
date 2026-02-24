@@ -22,14 +22,19 @@ import com.orbitalhq.query.TypedInstanceValidPredicate
 import com.orbitalhq.query.UnresolvedTypeInQueryException
 import com.orbitalhq.query.graph.operationInvocation.UnresolvedOperationParametersException
 import com.orbitalhq.schemas.Operation
+import com.orbitalhq.schemas.OperationNames
 import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
+import com.orbitalhq.schemas.Schema
+import com.orbitalhq.schemas.ServiceFilteredSchema
 import com.orbitalhq.schemas.Type
 import com.orbitalhq.utils.log
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
 import lang.taxi.expressions.Expression
+import lang.taxi.query.ServiceRestriction
+import lang.taxi.query.ServiceRestrictions
 import lang.taxi.services.operations.constraints.Constraint
 import lang.taxi.types.PrimitiveType
 import java.util.concurrent.CopyOnWriteArrayList
@@ -196,7 +201,7 @@ class ParameterFactory {
       val built = TypedObjectFactory(
          paramType,
          context.facts,
-         context.schema,
+         queryContextWithOperationExclusion.schema,
          source = UndefinedSource,
          inPlaceQueryEngine = queryContextWithOperationExclusion,
          constructClosedParameterTypes = true
@@ -345,6 +350,28 @@ private class QueryContextWithOperationExclusion(
 
    override fun withAdditionalFacts(facts: List<TypedInstance>, scopedFacts: List<ScopedFact>): InPlaceQueryEngine {
       return QueryContextWithOperationExclusion(context.withAdditionalFacts(facts, scopedFacts), operation)
+   }
+
+   // Provided here for completeness, however it looks like this isn't actually what drives the
+   // services / operations that are in scope.
+   // Ultimately, you end up with the QueryEngine, which was constructed with a schema, and that's what gets used.
+   // The thing that becomes relevant is the excluded operations, that are passed into the searches.
+   override val schema: Schema = run {
+      if (operation == null) {
+         context.schema
+      } else {
+         val (serviceName, operationName) = OperationNames.serviceAndOperation(operation.qualifiedName.parameterizedName)
+         val service = context.schema.taxi.service(serviceName)
+         val operation = service.operation(operationName)
+         ServiceFilteredSchema(
+            context.schema,
+            ServiceRestrictions(
+               inclusions = emptyList(),
+               exclusions = listOf(ServiceRestriction(service, listOf(operation)))
+            )
+         )
+      }
+
    }
 
    override fun only(

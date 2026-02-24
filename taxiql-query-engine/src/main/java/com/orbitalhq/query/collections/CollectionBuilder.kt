@@ -97,7 +97,12 @@ class CollectionBuilder(val queryEngine: QueryEngine, val queryContext: QueryCon
       val queryResult =  if(constraints.isEmpty()) {
          queryEngine.find(targetType, queryContext, spec, ExcludeObjectBuilder)
       } else {
-         queryEngine.find(ConstrainedTypeNameQueryExpression(targetType.paramaterizedName, constraints), queryContext, spec, ExcludeObjectBuilder)
+         queryEngine.find(
+            ConstrainedTypeNameQueryExpression(targetType.paramaterizedName, constraints),
+            queryContext,
+            spec,
+            ExcludeObjectBuilder
+         )
       }
       val resultList = try {
          queryResult.results

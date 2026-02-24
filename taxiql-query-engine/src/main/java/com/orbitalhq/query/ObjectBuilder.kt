@@ -48,6 +48,7 @@ class ObjectBuilder(
    private val rootTargetType: Type,
    private val functionRegistry: FunctionRegistry = FunctionRegistry.default,
    private val formatSpecs: List<ModelFormatSpec>,
+   private val invocationConstraints: InvocationConstraints = InvocationConstraints.withAlwaysGoodPredicate
 ) {
    private val logger = KotlinLogging.logger {}
    private val id = UUID.randomUUID().toString()
@@ -535,9 +536,15 @@ class ObjectBuilder(
 //         val queryContext = context.copy()
 //         queryContext.addFacts(facts.rootAndScopedFacts())
          if (constraints.isEmpty()) {
-            queryEngine.find(targetType, context, spec, ExcludeObjectBuilder)
+            queryEngine.find(targetType, context, spec, ExcludeObjectBuilder, excludedOperations = invocationConstraints.excludedOperations)
          } else {
-            queryEngine.find(ConstrainedTypeNameQueryExpression(targetType.paramaterizedName, constraints), context, spec, ExcludeObjectBuilder)
+            queryEngine.find(
+               ConstrainedTypeNameQueryExpression(targetType.paramaterizedName, constraints),
+               context,
+               spec,
+               ExcludeObjectBuilder,
+               excludedOperations = invocationConstraints.excludedOperations
+            )
          }
 
       } catch (e: QueryCancelledException) {
