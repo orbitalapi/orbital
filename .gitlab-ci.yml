@@ -436,9 +436,8 @@ publish-playground-to-gitlab-container-registry:
    only:
       - develop
    variables:
-      # No need to clone the repo, we exclusively work on artifacts.  See
-      # https://docs.gitlab.com/ee/ci/runners/README.html#git-strategy
-      GIT_STRATEGY: none
+      # required to fetch the code, so that .trivyignore is available for trivy to use
+      GIT_STRATEGY: fetch
 #      Required if reading from Gitlab registry:
       TRIVY_USERNAME: "$CI_DEPENDENCY_PROXY_USER"
       TRIVY_PASSWORD: "$CI_DEPENDENCY_PROXY_PASSWORD"
