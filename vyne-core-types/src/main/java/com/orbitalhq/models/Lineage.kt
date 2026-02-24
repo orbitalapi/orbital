@@ -356,6 +356,12 @@ data class AmbiguousResult(
    override val failedAttempts: List<DataSource> = emptyList()
 ) : DataSource {
    override val name: String = "Lookup result was ambiguous"
+
+   companion object {
+      fun isAmbiguousResult(value: TypedNull): Boolean {
+         return value.source is AmbiguousResult
+      }
+   }
 }
 
 data class FailedSearch(val message: String, override val failedAttempts: List<DataSource> = emptyList()) : DataSource {
