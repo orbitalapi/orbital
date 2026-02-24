@@ -87,7 +87,8 @@ class PersistingQueryEventConsumer(
       query: Query?,
       clientQueryId: String,
       message: String,
-      anonymousTypes: Set<Type>
+      anonymousTypes: Set<Type>,
+      username: String?
    ) {
       handleEvent(
          QueryStartEvent(
@@ -102,7 +103,8 @@ class PersistingQueryEventConsumer(
             persistRemoteCallResponses = config.persistRemoteCallResponses,
             persistRemoteCallMetadata = config.persistRemoteCallMetadata,
             persistTraceEvents = config.persistTraceEvents,
-            persistErrors = config.persistErrors
+            persistErrors = config.persistErrors,
+            username = username
          )
       )
    }

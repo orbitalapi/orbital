@@ -69,7 +69,9 @@ data class QuerySummary(
    @Column(name = "persist_trace_events")
    val persistTraceEvents: Boolean? = null,
    @Column(name = "persist_errors")
-   val persistErrors: Boolean? = null
+   val persistErrors: Boolean? = null,
+   @Column(name = "username")
+   val username: String? = null
 ) : VyneHistoryRecord() {
    @Transient
    var durationMs = endTime?.let { Duration.between(startTime, endTime).toMillis() }

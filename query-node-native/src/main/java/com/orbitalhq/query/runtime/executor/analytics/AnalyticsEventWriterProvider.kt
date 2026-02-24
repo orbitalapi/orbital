@@ -49,8 +49,9 @@ class ShutdownDecorator(private val delegate: QueryEventConsumer, val onShutdown
       query: Query?,
       clientQueryId: String,
       message: String,
-      anonymousTypes: Set<Type>
-   ) = delegate.captureQueryStart(queryId, timestamp, taxiQuery, query, clientQueryId, message, anonymousTypes)
+      anonymousTypes: Set<Type>,
+      username: String?
+   ) = delegate.captureQueryStart(queryId, timestamp, taxiQuery, query, clientQueryId, message, anonymousTypes, username)
 
    override fun recordResult(operation: OperationResult, queryId: String) = delegate.recordResult(operation, queryId)
 
