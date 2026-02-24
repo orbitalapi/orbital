@@ -10,7 +10,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {TuiStepper} from '@taiga-ui/kit';
 import {tap} from 'rxjs/operators';
-import {HeaderComponentLayoutModule} from '../../header-component-layout/header-component-layout.module';
+import {HeaderComponentLayoutComponent} from '../../header-component-layout/header-component-layout.component';
 import { PoliciesService, PolicySetupReadiness } from '../../services/policies.service';
 import { CreateOrReplaceSource } from '../../project-import/schema-importer.service';
 import { SourcePackageDescription } from '../../package-viewer/packages.service';
@@ -25,7 +25,7 @@ import {WritePolicyStepComponent} from './write-policy-step/write-policy-step.co
   imports: [
     TuiStepper,
     CommonModule,
-    HeaderComponentLayoutModule,
+    HeaderComponentLayoutComponent,
     ConfigureAuthStepComponent,
     MapAuthTokenStepComponent,
     ConfirmModelStepComponent,

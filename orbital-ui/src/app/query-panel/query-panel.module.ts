@@ -58,7 +58,7 @@ import {QuerySnippetPanelModule} from 'src/app/query-snippet-panel/query-snippet
 import { TUI_VALIDATION_ERRORS, TuiDataListWrapper, TuiStringifyContentPipe, TuiFilterByInputPipe, TuiFieldErrorPipe, TuiTabs } from '@taiga-ui/kit';
 import {CatalogExplorerPanelModule} from "../catalog-explorer-panel/catalog-explorer-panel.module";
 import {SaveQueryDialogComponent} from "./query-editor/query-editor-toolbar/save-query-dialog.component";
-import {HeaderComponentLayoutModule} from "../header-component-layout/header-component-layout.module";
+import {HeaderComponentLayoutComponent} from "../header-component-layout/header-component-layout.component";
 import {DisableControlModule} from "../disable-control/disable-control.module";
 import {QueryHistoryPanelModule} from "../query-history-panel/query-history-panel.module";
 import {SavedQueriesPanelModule} from "../saved-queries-panel/saved-queries-panel.module";
@@ -111,7 +111,7 @@ import { TuiActiveZone, TuiAutoFocus } from '@taiga-ui/cdk';
     ...TuiDataListWrapper,
     TuiTextfieldControllerModule,
     CatalogExplorerPanelModule,
-    HeaderComponentLayoutModule,
+    HeaderComponentLayoutComponent,
     TuiNotification,
     TuiFilterByInputPipe,
     TuiStringifyContentPipe,

@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Injector } from '@angular/core';
 import { ResultsDownloadModule } from 'src/app/results-download/results-download.module';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
@@ -7,14 +7,19 @@ import { Type } from 'src/app/services/schema';
 import { CsvOptions } from 'src/app/services/types.service';
 import { TestSpecFormComponent } from 'src/app/test-pack-module/test-spec-form.component';
 import * as fileSaver from 'file-saver';
-import { MatDialog } from '@angular/material/dialog';
+import { TuiDialogService } from '@taiga-ui/core';
+import { PolymorpheusComponent } from '@taiga-ui/polymorpheus';
 
 // Don't provide in root, as we need
 // to depend on UI components that aren't imported in the root.
 @Injectable({ providedIn: ResultsDownloadModule })
 export class ResultsDownloadService {
 
-  constructor(private http: HttpClient, private dialogService: MatDialog) {
+  constructor(
+    private http: HttpClient,
+    private dialogService: TuiDialogService,
+    private injector: Injector
+  ) {
   }
 
   exportQueryHistoryFromClientQueryId(clientQueryId: string, type: ExportFormat): Observable<ArrayBuffer> {
@@ -146,12 +151,13 @@ export class ResultsDownloadService {
       });
   }
 
-  private doPromptToDownloadTestCase(): Observable<string> {
-    const dialogRef = this.dialogService.open(TestSpecFormComponent, {
-      width: '550px'
-    });
-
-    return dialogRef.afterClosed();
+  private doPromptToDownloadTestCase(): Observable<string | null> {
+    return this.dialogService.open<string | null>(
+      new PolymorpheusComponent(TestSpecFormComponent, this.injector),
+      {
+        size: 'm'
+      }
+    );
   }
 }
 

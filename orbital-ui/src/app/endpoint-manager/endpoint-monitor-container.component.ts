@@ -13,7 +13,7 @@ import {TuiConfirm, TuiStatus, TuiBadge, TuiSwitch, TuiConfirmData, TuiLineClamp
 import {PolymorpheusComponent} from '@taiga-ui/polymorpheus';
 import {combineLatestWith, filter, Observable, of} from 'rxjs';
 import {map, mergeMap, tap} from 'rxjs/operators';
-import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
+import {HeaderComponentLayoutComponent} from '../header-component-layout/header-component-layout.component';
 import {
   PipelineService,
   StreamRunningState,
@@ -99,7 +99,7 @@ import { MomentModule } from "ngx-moment";
   styleUrls: ['./endpoint-monitor-container.component.scss'],
   imports: [
     CommonModule,
-    HeaderComponentLayoutModule,
+    HeaderComponentLayoutComponent,
     TuiSwitch,
     TuiBadge,
     EndpointMonitorComponent,

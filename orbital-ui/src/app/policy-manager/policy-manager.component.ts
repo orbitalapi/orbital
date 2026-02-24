@@ -6,7 +6,7 @@ import {takeUntilDestroyed} from '@angular/core/rxjs-interop';
 import {Observable, of, switchMap} from 'rxjs';
 import {catchError, tap} from 'rxjs/operators';
 import {UiCustomisations} from '../../environments/ui-customisations';
-import {HeaderComponentLayoutModule} from '../header-component-layout/header-component-layout.module';
+import {HeaderComponentLayoutComponent} from '../header-component-layout/header-component-layout.component';
 import {ActivatedRoute, Router, RouterLink} from '@angular/router';
 import { TuiButton, TuiHint } from '@taiga-ui/core';
 import {PoliciesService, PolicySetupReadiness} from '../services/policies.service';
@@ -20,7 +20,7 @@ import {SchemaMemberNameBadgeComponent} from "../schema-member-name-badge/schema
   standalone: true,
   imports: [
     CommonModule,
-    HeaderComponentLayoutModule,
+    HeaderComponentLayoutComponent,
     TuiButton,
     RouterLink,
     TuiBadge,

@@ -17,7 +17,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { RouterModule } from '@angular/router';
 import { AuthManagerService } from 'src/app/auth-manager/auth-manager.service';
-import { HeaderComponentLayoutModule } from 'src/app/header-component-layout/header-component-layout.module';
+import { HeaderComponentLayoutComponent } from 'src/app/header-component-layout/header-component-layout.component';
 import { AddTokenPanelComponent } from './add-token-panel.component';
 import { UiCustomisations } from '../../environments/ui-customisations';
 
@@ -43,7 +43,7 @@ import { UiCustomisations } from '../../environments/ui-customisations';
                 title: `${UiCustomisations.productName}: Authentication`
             },
         ]),
-        HeaderComponentLayoutModule
+        HeaderComponentLayoutComponent
     ],
     exports: [AuthManagerComponent, TokenListComponent],
     declarations: [AuthManagerComponent, TokenListComponent, NewTokenPanelComponent, AddTokenPanelComponent],

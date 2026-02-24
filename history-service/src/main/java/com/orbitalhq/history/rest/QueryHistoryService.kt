@@ -50,9 +50,13 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
 import reactor.kotlin.core.publisher.toFlux
+import reactor.kotlin.core.util.function.component1
+import reactor.kotlin.core.util.function.component2
+import reactor.kotlin.core.util.function.component3
+import reactor.kotlin.core.util.function.component4
+import reactor.kotlin.core.util.function.component5
 import java.nio.ByteBuffer
 import java.time.Duration
-import java.util.concurrent.CompletableFuture
 
 private val logger = KotlinLogging.logger {}
 
@@ -447,28 +451,40 @@ class QueryHistoryService(
          throw exceptionProvider.badRequestException("Capturing remote call responses has been disabled.  Please configure setting vyne.history.persistRemoteCallResponses and set to true to enable the creation of regression packs.")
       }
 
-      val querySummary = CompletableFuture.supplyAsync { queryHistoryRecordRepository.findByQueryId(queryId) }
-      val results =
-         CompletableFuture.supplyAsync {
-            queryResultRowRepository.findAllByQueryId(queryId).map { it.asTypeNamedInstance() }
-         }
-      val lineageRecords = CompletableFuture.supplyAsync { lineageRecordRepository.findAllByQueryId(queryId) }
-      val remoteCalls = CompletableFuture.supplyAsync { remoteCallResponseRepository.findAllByQueryId(queryId) }
+      val querySummary = Mono.fromCallable {
+         queryHistoryRecordRepository.findByQueryId(queryId)
+      }.subscribeOn(Schedulers.boundedElastic())
 
-      val regressionPackFuture = CompletableFuture
-         .allOf(querySummary, results, lineageRecords, remoteCalls)
-         .thenApply {
+      val results = Mono.fromCallable {
+         queryResultRowRepository.findAllByQueryId(queryId).map { it.asTypeNamedInstance() }
+      }.subscribeOn(Schedulers.boundedElastic())
+
+      val lineageRecords = Mono.fromCallable {
+         lineageRecordRepository.findAllByQueryId(queryId)
+      }.subscribeOn(Schedulers.boundedElastic())
+
+      val remoteCalls = Mono.fromCallable {
+         remoteCallResponseRepository.findAllByQueryId(queryId)
+      }.subscribeOn(Schedulers.boundedElastic())
+
+      val traceSpans = Mono.fromCallable {
+         val traceEvents = traceEventRepository.findByQueryIdOrderByTimestampAsc(queryId)
+         traceSpanBuilder.buildTraceSpans(traceEvents)
+      }.subscribeOn(Schedulers.boundedElastic())
+
+      return Mono.zip(querySummary, results, lineageRecords, remoteCalls, traceSpans)
+         .map { (summary, resultsList, lineage, calls, spans) ->
             ByteBuffer.wrap(
                regressionPackProvider.createRegressionPack(
-                  results.join(),
-                  querySummary.join(),
-                  lineageRecords.join(),
-                  remoteCalls.join(),
+                  resultsList,
+                  summary,
+                  lineage,
+                  calls,
+                  spans,
                   request
                ).toByteArray()
             )
          }
-      return Mono.fromFuture(regressionPackFuture)
    }
 
    @GetMapping("/api/query/history/filter/{responseType}")

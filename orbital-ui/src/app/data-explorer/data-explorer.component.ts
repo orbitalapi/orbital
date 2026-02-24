@@ -16,8 +16,10 @@ import { environment } from '../../environments/environment';
 import { CaskService } from '../services/cask.service';
 import { HeaderTypes } from './csv-viewer.component';
 import { SchemaGeneratorComponent } from './schema-generator-panel/schema-generator.component';
-import { MatDialog } from '@angular/material/dialog';
+import { TuiDialogService } from '@taiga-ui/core';
+import { PolymorpheusComponent } from '@taiga-ui/polymorpheus';
 import { TestSpecFormComponent } from '../test-pack-module/test-spec-form.component';
+import { Injector } from '@angular/core';
 import { InstanceSelectedEvent } from '../query-panel/instance-selected-event';
 import { SchemaNotificationService } from '../services/schema-notification.service';
 import { from, Observable, ReplaySubject } from 'rxjs';
@@ -79,8 +81,9 @@ export class DataExplorerComponent {
   constructor(private typesService: TypesService,
               private caskService: CaskService,
               private exportFileService: ResultsDownloadService,
-              private dialogService: MatDialog,
-              private schemaNotificationService: SchemaNotificationService) {
+              private dialogService: TuiDialogService,
+              private schemaNotificationService: SchemaNotificationService,
+              private injector: Injector) {
     this.typesService.getTypes()
       .subscribe(next => {
         console.log('Data explorer received a new schema');
@@ -290,11 +293,12 @@ export class DataExplorerComponent {
   }
 
   onDownloadTestSpecClicked() {
-    const dialogRef = this.dialogService.open(TestSpecFormComponent, {
-      width: '550px'
-    });
-
-    dialogRef.afterClosed().subscribe(result => {
+    this.dialogService.open<string | null>(
+      new PolymorpheusComponent(TestSpecFormComponent, this.injector),
+      {
+        size: 'm'
+      }
+    ).subscribe(result => {
       if (result !== null) {
         // noinspection UnnecessaryLocalVariableJS
         const specName = result;

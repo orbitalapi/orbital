@@ -5,7 +5,7 @@ import { NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { Observable } from 'rxjs';
 import { filter, map } from 'rxjs/operators';
 import { UiCustomisations } from '../../environments/ui-customisations';
-import { HeaderComponentLayoutModule } from '../header-component-layout/header-component-layout.module';
+import { HeaderComponentLayoutComponent } from '../header-component-layout/header-component-layout.component';
 import {RequiresAuthorityDirective} from "../requires-authority.directive";
 
 @Component({
@@ -33,7 +33,7 @@ import {RequiresAuthorityDirective} from "../requires-authority.directive";
   `,
   styleUrls: ['./data-source-manager-header.component.scss'],
   imports: [
-    HeaderComponentLayoutModule,
+    HeaderComponentLayoutComponent,
     TuiButton,
     RouterOutlet,
     AsyncPipe,
