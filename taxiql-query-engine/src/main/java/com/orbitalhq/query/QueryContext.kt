@@ -19,7 +19,6 @@ import com.orbitalhq.models.facts.CopyOnWriteFactBag
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.facts.FactDiscoveryStrategy
 import com.orbitalhq.models.facts.ScopedFact
-import com.orbitalhq.models.facts.mergeScopedFacts
 import com.orbitalhq.models.facts.scopedFactsNotPresentIn
 import com.orbitalhq.models.functions.FunctionResultCacheKey
 import com.orbitalhq.query.graph.ServiceAnnotations

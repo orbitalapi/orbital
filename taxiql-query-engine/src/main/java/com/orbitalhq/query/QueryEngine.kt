@@ -27,7 +27,6 @@ import com.orbitalhq.query.graph.edges.ParameterFactory
 import com.orbitalhq.query.graph.operationInvocation.OperationInvocationService
 import com.orbitalhq.query.graph.operationInvocation.SearchRuntimeException
 import com.orbitalhq.query.projection.ProjectionProvider
-import com.orbitalhq.query.tracing.TraceContext
 import com.orbitalhq.query.tracing.TraceSpan
 import com.orbitalhq.retainFactsFromFactSet
 import com.orbitalhq.schemas.Operation
@@ -107,7 +106,8 @@ interface QueryEngine {
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate,
       failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
-      metricsTags: MetricTags = MetricTags.NONE
+      metricsTags: MetricTags = MetricTags.NONE,
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>> = emptySet(),
    ): QueryResult
 
    suspend fun find(
@@ -116,7 +116,8 @@ interface QueryEngine {
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate,
       failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
-      metricsTags: MetricTags = MetricTags.NONE
+      metricsTags: MetricTags = MetricTags.NONE,
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>> = emptySet(),
    ): QueryResult
 
    suspend fun find(
@@ -125,7 +126,8 @@ interface QueryEngine {
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate,
       failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
-      metricsTags: MetricTags = MetricTags.NONE
+      metricsTags: MetricTags = MetricTags.NONE,
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>> = emptySet(),
    ): QueryResult
 
    suspend fun find(
@@ -134,7 +136,8 @@ interface QueryEngine {
       spec: TypedInstanceValidPredicate = AlwaysGoodSpec,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate = AllIsApplicableQueryStrategyPredicate,
       failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
-      metricsTags: MetricTags = MetricTags.NONE
+      metricsTags: MetricTags = MetricTags.NONE,
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>> = emptySet()
    ): QueryResult
 
    suspend fun find(
@@ -580,10 +583,11 @@ class StatefulQueryEngine(
       spec: TypedInstanceValidPredicate,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
       failureBehaviour: QueryFailureBehaviour,
-      metricsTags: MetricTags
+      metricsTags: MetricTags,
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>
    ): QueryResult {
       val target = queryParser.parse(queryString)
-      return find(target, context, spec, applicableStrategiesPredicate, failureBehaviour, metricsTags)
+      return find(target, context, spec, applicableStrategiesPredicate, failureBehaviour, metricsTags, excludedOperations)
    }
 
    override suspend fun find(
@@ -592,7 +596,8 @@ class StatefulQueryEngine(
       spec: TypedInstanceValidPredicate,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
       failureBehaviour: QueryFailureBehaviour,
-      metricsTags: MetricTags
+      metricsTags: MetricTags,
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>
    ): QueryResult {
       return find(
          TypeQueryExpression(type),
@@ -600,7 +605,8 @@ class StatefulQueryEngine(
          spec,
          applicableStrategiesPredicate,
          failureBehaviour,
-         metricsTags
+         metricsTags,
+         excludedOperations
       )
    }
 
@@ -610,7 +616,8 @@ class StatefulQueryEngine(
       spec: TypedInstanceValidPredicate,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
       failureBehaviour: QueryFailureBehaviour,
-      metricsTags: MetricTags
+      metricsTags: MetricTags,
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>
    ): QueryResult {
       return find(setOf(target), context, spec, applicableStrategiesPredicate, failureBehaviour, metricsTags)
    }
@@ -621,10 +628,11 @@ class StatefulQueryEngine(
       spec: TypedInstanceValidPredicate,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
       failureBehaviour: QueryFailureBehaviour,
-      metricsTags: MetricTags
+      metricsTags: MetricTags,
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>>,
    ): QueryResult {
       try {
-         return doFind(target, context, spec, applicableStrategiesPredicate, failureBehaviour, metricsTags)
+         return doFind(target, context, spec, applicableStrategiesPredicate, failureBehaviour, metricsTags, excludedOperations)
       } catch (e: QueryCancelledException) {
          logger.info("QueryCancelled. Coroutine active state: ${currentCoroutineContext().isActive}")
          throw e
@@ -669,7 +677,8 @@ class StatefulQueryEngine(
       spec: TypedInstanceValidPredicate,
       applicableStrategiesPredicate: PermittedQueryStrategyPredicate,
       failureBehaviour: QueryFailureBehaviour = QueryFailureBehaviour.THROW,
-      metricsTags: MetricTags
+      metricsTags: MetricTags,
+      excludedOperations: Set<SearchGraphExclusion<RemoteOperation>> = emptySet(),
    ): QueryResult {
 
       val queryResult = when {
@@ -684,7 +693,8 @@ class StatefulQueryEngine(
             spec,
             applicableStrategiesPredicate = applicableStrategiesPredicate,
             failureBehaviour = failureBehaviour,
-            metricsTags = metricsTags
+            metricsTags = metricsTags,
+            excludedOperations = excludedOperations
          )
 
          else -> error("Querying with multiple targets is not supported")

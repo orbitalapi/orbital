@@ -6,6 +6,7 @@ import arrow.core.Either
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.google.common.base.Stopwatch
 import com.orbitalhq.models.*
+import com.orbitalhq.models.facts.CascadingFactBag
 import com.orbitalhq.models.facts.FactBag
 import com.orbitalhq.models.json.fromTypedCollection
 import com.orbitalhq.models.json.parseJson
@@ -24,6 +25,8 @@ import com.orbitalhq.utils.Benchmark
 import com.orbitalhq.utils.StrategyPerformanceProfiler
 import com.winterbe.expekt.expect
 import com.winterbe.expekt.should
+import io.kotest.matchers.atomic.shouldBeFalse
+import io.kotest.matchers.booleans.shouldBeFalse
 import io.kotest.matchers.collections.shouldContainInOrder
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
@@ -2147,6 +2150,7 @@ service Broker1Service {
             """.trimIndent()
          )
 
+
       result.rawObjects().should.be.equal(
          listOf(
             mapOf("isin" to null),
@@ -2154,6 +2158,10 @@ service Broker1Service {
             mapOf("isin" to null)
          )
       )
+
+      // I originally tested this using:
+      // CascadingFactBag.maxDepthExceeded.get().shouldBeFalse()
+
    }
 
    @Test
