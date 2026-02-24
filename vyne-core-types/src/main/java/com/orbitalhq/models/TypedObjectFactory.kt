@@ -1,5 +1,6 @@
 package com.orbitalhq.models
 
+import arrow.core.Either
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.errors.OrbitalQueryException
 import com.orbitalhq.models.conditional.ConditionalFieldSetEvaluator
@@ -82,8 +83,9 @@ class TypedObjectFactory(
     */
    private val factBagSearchStrategy: FactDiscoveryStrategy = FactDiscoveryStrategy.ANY_DEPTH_EXPECT_ONE_DISTINCT,
 
-   private val parsingOptions: ParsingOptions = ParsingOptions.DEFAULT
+   private val parsingOptions: ParsingOptions = ParsingOptions.DEFAULT,
 
+   val nullable: Boolean = false
 
 ) : EvaluationValueSupplier, ValueProjector, OperationInvokerContainer {
 
@@ -231,7 +233,8 @@ class TypedObjectFactory(
                   newFactory(
                      targetType.collectionType!!,
                      collectionMember,
-                     scopedArguments = projection.projectionFunctionScope
+                  scopedArguments = projection.projectionFunctionScope,
+                  nullable = nullable
                   )
                      .build()
                }
@@ -241,7 +244,7 @@ class TypedObjectFactory(
             TypedCollection.arrayOf(targetType.collectionType!!, projectedCollection, source)
          }
       } else {
-         newFactory(targetType, valueToProject, scopedArguments = projection.projectionFunctionScope).build()
+         newFactory(targetType, valueToProject, scopedArguments = projection.projectionFunctionScope, nullable = nullable).build()
       }
       return projectedFieldValue
    }
@@ -277,7 +280,8 @@ class TypedObjectFactory(
          functionResultCache,
          scopedArguments,
          factBagSearchStrategy = factBagSearchStrategy,
-         parsingOptions = parsingOptions
+         parsingOptions = parsingOptions,
+         nullable = this.nullable
       )
    }
 
@@ -291,7 +295,8 @@ class TypedObjectFactory(
       factsToExclude: Set<TypedInstance> = emptySet(),
       // TODO : 20-01-25: I suspect this should be List<ProjectionFunctionScope>, as
       // I'm pretty sure we support multiple scoped variables here.
-      scopedArguments: List<ProjectionFunctionScope>
+      scopedArguments: List<ProjectionFunctionScope>,
+      nullable: Boolean = false
    ): TypedObjectFactory {
 
 
@@ -354,7 +359,8 @@ class TypedObjectFactory(
          functionResultCache,
          scopedArguments,
          factBagSearchStrategy = factBagSearchStrategy,
-         parsingOptions = parsingOptions
+         parsingOptions = parsingOptions,
+         nullable = nullable
       )
    }
 
@@ -389,9 +395,9 @@ class TypedObjectFactory(
       return TypedObject(type, attributes, source, metadata)
    }
 
-   suspend fun build(decorator: suspend (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
+   suspend fun build(): TypedInstance {
       return timeBucket("Build ${this.type.name.shortDisplayName}") {
-         doBuild(decorator)
+         doBuild()
       }
    }
 
@@ -430,7 +436,7 @@ class TypedObjectFactory(
       )
    }
 
-   private suspend fun doBuild(decorator: suspend (attributeMap: Map<AttributeName, TypedInstance>) -> Map<AttributeName, TypedInstance> = { attributesToMap -> attributesToMap }): TypedInstance {
+   private suspend fun doBuild(): TypedInstance {
       val metadataAndFormat = formatDetector.getFormatType(type)
       if (metadataAndFormat != null) {
          val (metadata, modelFormatSpec) = metadataAndFormat
@@ -438,8 +444,26 @@ class TypedObjectFactory(
             return readWithFormatSpecDeserializer(metadata, modelFormatSpec)
          }
       }
-      if (value is FactBag && value.hasFactOfType(type, factBagSearchStrategy)) {
-         return value.getFact(type, factBagSearchStrategy)
+      if (value is FactBag) {
+         // MP 24-Feb-26
+         // Modified this check.
+         // If there's ambiguous data in the FactBag, we should just return the TypedNull
+         // as it contains useful information (that this is ambiguous). Further searches
+         // at this point are not useful.
+         // This got added because we've added a check below in typeIsConstructable
+         // to prevent attempting to construct scalar values (preferring searching for them instead).
+         // The "fail with ambiguous" used to happen later on, when we attempted to constrct
+         // the value - so all we're doing is bringing that scneario earlier
+         val factOrFailure =  value.getFactOrTypedNull(type, factBagSearchStrategy)
+         when (factOrFailure) {
+            is Either.Right -> return factOrFailure.value
+            is Either.Left -> {
+               val typedNull = factOrFailure.value
+               if (AmbiguousResult.isAmbiguousResult(typedNull)) {
+                  return typedNull
+               }
+            }
+         }
       }
       if (isJson(value)) {
          val jsonParsedStructure = JsonParsedStructure.from(value as String, objectMapper)
@@ -479,6 +503,9 @@ class TypedObjectFactory(
       // However we don't currently have an easy way to pass that flag in.
       // It's unlikely we're serializing results using a FactBag.
       val typeIsConstructable = when {
+         // Don't attempt to build scalar values. Since they weren't in the fact bag (checked above)
+         // construction makes no sense - so fall through to query.
+         type.isScalar -> false
          type.isClosed && !type.isParameterType -> false
          type.isClosed && type.isParameterType && constructClosedParameterTypes -> true
          else -> true
@@ -504,13 +531,11 @@ class TypedObjectFactory(
          attributeName to xtimed("build attribute $attributeName") { getOrBuild(attributeName) }
       }.toMap()
 
-      val decorated = xtimed("apply decorator") { decorator(mappedAttributes) }
-
       // MP: 30-Jun -- don't return an object from a projection requesting a collection.
-      return if (decorated.isEmpty() && type.isCollection) {
+      return if (mappedAttributes.isEmpty() && type.isCollection) {
          TypedCollection.empty(type)
       } else {
-         TypedObject(type, decorated, source, metadata)
+         TypedObject(type, mappedAttributes, source, metadata)
       }
 
    }
@@ -592,12 +617,14 @@ class TypedObjectFactory(
       return when (value) {
          is FactBag -> newFactory(
             this.type, value.withAdditionalScopedFacts(scopedFacts, this.schema),
-            scopedArguments = this.projectionScope
+            scopedArguments = this.projectionScope,
+            nullable = this.nullable
          )
 
          is TypedInstance -> newFactory(
             this.type, FactBag.of(this.value, this.schema).withAdditionalScopedFacts(scopedFacts, this.schema),
-            scopedArguments = this.projectionScope
+            scopedArguments = this.projectionScope,
+            nullable = this.nullable
          )
 
          else -> {
@@ -1095,7 +1122,7 @@ class TypedObjectFactory(
                   // BugFix: Only attempt to build a field object if the fieldType isn't scalar.
                   // Otherwise, we're calling into TypedObjectFactory with a scalar type,
                   // which is incorrect (it's intended for Object types).
-                  attemptToBuildFieldObject(fieldType, constraints)
+                  attemptToBuildFieldObject(fieldType, constraints, field.nullable)
                      ?: queryForFieldValue(field, fieldType, attributeName, constraints)
                }
             }
@@ -1194,7 +1221,8 @@ class TypedObjectFactory(
     */
    private suspend fun attemptToBuildFieldObject(
       fieldType: Type,
-      constraints: List<Constraint>
+      constraints: List<Constraint>,
+      nullable: Boolean
    ): TypedInstance? {
       if (type.isScalar) {
          return null
@@ -1204,7 +1232,7 @@ class TypedObjectFactory(
       if (constraints.isNotEmpty()) {
          return null
       }
-      val result = newFactory(fieldType, this.value, scopedArguments = projectionScope).build()
+      val result = newFactory(fieldType, this.value, scopedArguments = projectionScope, nullable = nullable).build()
       return if (result is TypedNull) {
          null
       } else {
