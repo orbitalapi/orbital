@@ -93,7 +93,8 @@ Transitive dependency in wire-compiler and calcite-core
       <!-- This is a transitive dependency of Kafka.
       This can be removed once we upgrade to Spring Boot 4.x
       -->
-      <lz4.version>1.8.1</lz4.version>
+      <!-- CVE-2025-66566 fixed in 1.10.1 -->
+      <lz4.version>1.10.1</lz4.version>
 
    </properties>
 

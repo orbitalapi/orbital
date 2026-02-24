@@ -40,4 +40,13 @@
       <packageUrl regex="true">^pkg:maven/io\.swagger\.parser\.v3/swagger\-parser\-safe\-url\-resolver@.*$</packageUrl>
       <cpe>cpe:/a:parse-url_project:parse-url</cpe>
    </suppress>
+   <suppress>
+      <notes><![CDATA[
+   False positive: mssql-jdbc 12.10.2.jre11 is the fixed version for CVE-2025-59250.
+   The scanner strips the jre11 classifier and fails to match 12.10.2 against the fix list.
+   Spring Boot 3.5.11 manages this at 12.10.2.jre11 which includes the fix.
+   ]]></notes>
+      <packageUrl regex="true">^pkg:maven/com\.microsoft\.sqlserver/mssql\-jdbc@.*$</packageUrl>
+      <cve>CVE-2025-59250</cve>
+   </suppress>
 </suppressions>
