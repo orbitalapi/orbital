@@ -1,0 +1,3 @@
+# False positive: Trivy's version parser does not handle the .jre11 suffix correctly.
+# We have mssql-jdbc 12.10.2.jre11 installed, which is listed as a fixed version for this CVE.
+CVE-2025-59250
