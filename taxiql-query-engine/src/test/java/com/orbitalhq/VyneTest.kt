@@ -56,13 +56,10 @@ type CreditRisk  inherits Int
 type NaicsCode  inherits Int
 
 service ClientService {
-   @StubResponse("mockClient")
    operation getClient(TaxFileNumber):Client
 
-   @StubResponse("creditRisk")
    operation getCreditRisk(ClientId,InvoiceValue):CreditRisk
 
-   @StubResponse("mockClients")
    operation getClients(NaicsCode):Client[]
 }
 """
@@ -241,7 +238,6 @@ class VyneTest {
          }
 
          service InstrumentService {
-            @StubOperation("findByInstrumentId")
             operation findByInstrumentId(InstrumentId):Instrument
          }
 
@@ -250,22 +246,18 @@ class VyneTest {
          // The first (shorter) path will fail, and we want
          // to ensure that the second longer path is also evaluated.
          service CfiToPuidCaskService {
-            @StubOperation("findByCfiCode")
             operation findByCfiCode(CfiCode):CfiToPuid
          }
 
          service ProductService {
-            @StubOperation("findByPuid")
             operation findByPuid(Puid):Product
          }
 
          service AnnaService {
-            @StubOperation("findByIsin")
             operation findByIsin(Isin):AnnaResponse
          }
 
          service InputService {
-           @StubOperation("findAll")
             operation `findAll`(): Input[]
          }
       """.trimIndent()
@@ -361,10 +353,8 @@ class VyneTest {
 
          service ProductService {
             // Shortest path, but provided value is null, so shouldn't be called
-            @StubOperation("findByCfiCode")
             operation findByCfiCode(CfiCode):Product
             // Longer path, but returns correct value
-            @StubOperation("isinToCfi")
             operation isinToCfi(Isin):CfiCodeHolder
          }
       """.trimIndent()
@@ -429,7 +419,6 @@ class VyneTest {
             }
 
             service StubService {
-               @StubResponse("securityDescription")
                operation getAnnaJson(isin:Isin):InstrumentResponse
             }
          }
@@ -449,7 +438,7 @@ class VyneTest {
       )
 
       runBlocking {
-         stubs.addResponse("securityDescription", stubResponse)
+         stubs.addResponse("getAnnaJson", stubResponse)
          vyne.addKeyValuePair("vyne.tests.Isin", "foo")
          val result = vyne.query().build("vyne.tests.RequiredOutput")
          result.isFullyResolved.should.be.`true`
@@ -495,7 +484,6 @@ class VyneTest {
                      FORWARD(920)
                   }
                   service ProductTaxonomyService {
-                     @StubResponse("mockProduct")
                      operation getProduct(NumericalProductType):Product
                   }
                 }
@@ -516,7 +504,7 @@ class VyneTest {
       """.trimIndent()
       )
 
-      stubService.addResponse("mockProduct") { _, parameters ->
+      stubService.addResponse("getProduct") { _, parameters ->
          parameters.should.have.size(1)
          parameters.first().second.value.should.be.equal(919)
          listOf(product)
@@ -550,7 +538,6 @@ class VyneTest {
                   }
 
                   service ProductTaxonomyService {
-                     @StubResponse("mockProduct")
                      operation getProduct(ProductClassification):Product
                   }
                 }
@@ -580,7 +567,7 @@ class VyneTest {
          }
       """.trimIndent()
       )
-      stubService.addResponse("mockProduct") { _, parameters ->
+      stubService.addResponse("getProduct") { _, parameters ->
          parameters.should.have.size(1)
          parameters.first().second.value.should.be.equal("FX_T2")
          listOf(product)
@@ -616,7 +603,7 @@ class VyneTest {
 
       runBlocking {
          val client = vyne.parseJsonModel("vyne.example.Client", json)
-         stubService.addResponse("mockClient", client)
+         stubService.addResponse("getClient", client)
          vyne.addKeyValuePair("vyne.example.TaxFileNumber", "123")
          val result: QueryResult = vyne.query().find("vyne.example.ClientName")
          result.typedInstances().first().value.should.equal("Jimmy's Choos")
@@ -638,7 +625,7 @@ class VyneTest {
 }"""
       runBlocking {
          val client = vyne.parseJsonModel("Client", json)
-         stubService.addResponse("mockClient", client)
+         stubService.addResponse("getClient", client)
          vyne.addKeyValuePair("vyne.example.TaxFileNumber", "123")
          val result: QueryResult = vyne.query().find("ClientName")
          result.typedInstances().first().value.should.equal("Jimmy's Choos")
@@ -652,7 +639,7 @@ class VyneTest {
          QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubService)
       val vyne = TestSchema.vyne(queryEngineFactory)
       stubService.addResponse(
-         "creditRisk",
+         "getCreditRisk",
          TypedValue.from(vyne.getType("vyne.example.CreditRisk"), 100, source = Provided)
       )
       vyne.addKeyValuePair("vyne.example.ClientId", "123")
@@ -660,7 +647,7 @@ class VyneTest {
       runBlocking {
          val result: QueryResult = vyne.query().find("vyne.example.CreditRisk")
          result.typedInstances().first().value.should.equal(100)
-         val paramsPassedToService: List<TypedInstance> = stubService.invocations["creditRisk"]!!
+         val paramsPassedToService: List<TypedInstance> = stubService.invocations["getCreditRisk"]!!
          expect(paramsPassedToService).size(2)
          expect(paramsPassedToService[0].value).to.equal("123")
          expect(paramsPassedToService[1].value).to.equal(1000.toBigDecimal())
@@ -691,12 +678,12 @@ class VyneTest {
    "isicCode" : "retailer"
 }"""
       stubService.addResponse(
-         "creditRisk",
+         "getCreditRisk",
          TypedValue.from(vyne.getType("vyne.example.CreditRisk"), 100, source = Provided)
       )
 
       val client = vyne.parseJsonModel("vyne.example.Client", json)
-      stubService.addResponse("mockClient", client)
+      stubService.addResponse("getClient", client)
 
       // We know the TaxFileNumber, which we should be able to use to discover their ClientId.
       vyne.addKeyValuePair("vyne.example.TaxFileNumber", "123")
@@ -708,7 +695,7 @@ class VyneTest {
 
          // Then....
          result.typedInstances().first().value.should.equal(100)
-         val paramsPassedToService: List<TypedInstance> = stubService.invocations["creditRisk"]!!
+         val paramsPassedToService: List<TypedInstance> = stubService.invocations["getCreditRisk"]!!
          expect(paramsPassedToService).size(2)
          expect(paramsPassedToService[0].value).to.equal("123")
          expect(paramsPassedToService[1].value).to.equal(1000.toBigDecimal())
@@ -1235,10 +1222,8 @@ service Broker2Service {
          }
 
          service MultipleInvocationService {
-            @StubResponse("mockCustomers")
             operation getCustomers():Client[]
 
-            @StubResponse("mockCountry")
             operation getCountry(CountryCode): Country
          }
       """.trimIndent()
@@ -1256,7 +1241,7 @@ service Broker2Service {
          )
       val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
       stubInvocationService.addResponse(
-         "mockCustomers", vyne.parseJsonModel(
+         "getCustomers", vyne.parseJsonModel(
             "Client[]", """
          [
             { name : "Jimmy", country : "UK" },
@@ -1268,7 +1253,7 @@ service Broker2Service {
       )
 
 
-      stubInvocationService.addResponse("mockCountry") { _, parameters ->
+      stubInvocationService.addResponse("getCountry") { _, parameters ->
          val countryCode = parameters.first().second.value!!.toString()
          if (countryCode == "UK") {
             listOf(vyne.tryTypedValue("Country", "United Kingdom"))
@@ -1556,16 +1541,13 @@ type CreditRisk inherits Int
 type NaicsCode inherits Int
 
 service ClientService {
-   @StubResponse("mockClient")
    operation getClient(TaxFileNumber):Client
 
-   @StubResponse("creditRisk")
    operation getCreditRisk(ClientId,InvoiceValue):CreditRisk
 
-   @StubResponse("mockClients")
    operation getClients(NaicsCode):Client[]
 
-   operation getClients(Client):Invoice
+   operation getInvoice(Client):Invoice
 }
 """.trimIndent()
       val stubInvocationService = StubService()
@@ -1622,9 +1604,7 @@ service ClientService {
             userName : UserName inherits String
          }
          service Users {
-            @StubResponse("lookupByIdEven")
             operation lookupByIdEven(id:UserId):User
-            @StubResponse("lookupByIdOdd")
             operation lookupByIdOdd(id:UserId):User
          }
       """.trimIndent()
@@ -1679,14 +1659,13 @@ service ClientService {
             lastName : LastName
          }
          service UserService {
-            @StubResponse("findUsers")
             operation findAllUsers() : InputModel[]
          }
       """
       )
       val inputJson = """{ "firstName" : "Jimmy", "lastName" : "Pitt" }"""
       val user = TypedInstance.from(vyne.type("InputModel"), inputJson, vyne.schema, source = Provided)
-      stub.addResponse("findUsers", TypedCollection.from(listOf(user)))
+      stub.addResponse("findAllUsers", TypedCollection.from(listOf(user)))
 
       runBlocking {
          val queryResult = vyne.query("find { InputModel[] } as OutputModel[]")
@@ -1788,7 +1767,6 @@ service ClientService {
          }
 
          service CacheService {
-            @StubResponse("findBetween")
             operation findByOrderDateTimeBetween(start : TransactionEventDateTime, end : TransactionEventDateTime ):
                        OrderWindowSummary[]( TransactionEventDateTime >= start && TransactionEventDateTime < end )
          }
@@ -1797,7 +1775,7 @@ service ClientService {
       val queryEngineFactory =
          QueryEngineFactory.withOperationInvokers(VyneCacheConfiguration.default(), emptyList(), stubInvocationService)
       val vyne = Vyne(queryEngineFactory).addSchema(TaxiSchema.from(testSchema))
-      stubInvocationService.addResponse("findBetween") { _, parameters ->
+      stubInvocationService.addResponse("findByOrderDateTimeBetween") { _, parameters ->
          parameters.should.have.size(2)
          parameters[0].second.value.should.be.equal(Instant.parse("2011-12-03T10:15:30Z"))
          parameters[1].second.value.should.be.equal(Instant.parse("2021-12-03T10:15:30Z"))

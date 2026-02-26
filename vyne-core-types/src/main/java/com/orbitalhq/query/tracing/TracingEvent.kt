@@ -187,6 +187,11 @@ sealed class TracingEventExchangeMetadata {
     *
     * This payload may be null if the event system has disabled capture for the source,
     * and it may be truncated if the payload size exceeds configured defaults.
+    *
+    * Note: Although this is @JsonIgnore for default serialization, the payload is explicitly
+    * written into the persisted JSON by [com.orbitalhq.history.db.ContextAwareEventMetadataMapper]
+    * when storing to the database. This means the payload IS available when deserializing
+    * from stored trace events.
     */
    @get:JsonIgnore
    abstract val payload: suspend () -> String?

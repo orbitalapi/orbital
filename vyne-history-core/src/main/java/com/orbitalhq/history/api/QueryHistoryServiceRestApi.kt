@@ -100,7 +100,17 @@ interface QueryHistoryServiceRestApi {
 }
 
 
-data class RegressionPackRequest(val queryId: String, val regressionPackName: String)
+enum class RegressionPackFormat {
+   Preflight,
+   Zip
+}
+
+data class RegressionPackRequest(
+   val queryId: String,
+   val regressionPackName: String,
+   val format: RegressionPackFormat = RegressionPackFormat.Preflight,
+   val description: String? = null
+)
 
 data class QueryResultNodeDetail(
    val attributeName: String,

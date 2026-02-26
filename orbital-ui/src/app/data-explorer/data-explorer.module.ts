@@ -42,7 +42,6 @@ import { SchemaGeneratorComponent } from './schema-generator-panel/schema-genera
 import { GridHeaderActionsComponent } from './custom-csv-table-header';
 import { MatRadioModule } from '@angular/material/radio';
 import { HeaderBarModule } from '../header-bar/header-bar.module';
-import { TestPackModuleModule } from '../test-pack-module/test-pack-module.module';
 import { MatIconModule } from '@angular/material/icon';
 import { AngularSplitModule } from 'angular-split';
 import { RouterModule } from '@angular/router';
@@ -83,7 +82,6 @@ import { ResultsDownloadModule } from 'src/app/results-download/results-download
         ReactiveFormsModule,
         MatRadioModule,
         HeaderBarModule,
-        TestPackModuleModule,
         MatIconModule,
         NgxFileDropModule,
         AngularSplitModule,

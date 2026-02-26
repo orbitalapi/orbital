@@ -73,26 +73,22 @@ namespace com.orbitalhq {
 
     @ServiceDiscoveryClient(serviceName = "rates-provider")
     service RateConversionService {
-         @StubResponse
          @HttpOperation(method = "POST", url = "/rates/{targetCurrency}")
          operation convertRates( @RequestBody source : TradeValue, targetCurrency : Currency ) : TradeValue( from source, this.currency == targetCurrency )
     }
 
     @ServiceDiscoveryClient(serviceName = "rules-provider")
     service JurisdictionRuleService {
-        @StubResponse("jurisdictionRuleService")
         @HttpOperation(method = "POST" , url = "/rules/jurisdiction")
         operation evaluate( @RequestBody JurisdictionRuleRequest ) : JurisdictionRuleResult
     }
     @ServiceDiscoveryClient(serviceName = "rules-provider")
     service NotionalLimitRuleService {
-        @StubResponse("notionalLimitRuleService")
         @HttpOperation(method = "POST" , url = "/rules/notionalLimits")
         operation evaluate( @RequestBody NotionalLimitRuleRequest ) : NotionalLimitRuleResult
     }
     @ServiceDiscoveryClient(serviceName = "rules-provider")
     service TradeValueRuleService {
-        @StubResponse("tradeValueRuleService")
         @HttpOperation(method = "POST" , url = "")
         operation evaluate( @RequestBody TradeValueRuleRequest ) : TradeValueRuleResult
     }

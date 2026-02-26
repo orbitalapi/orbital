@@ -2,7 +2,7 @@ import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
   Component, computed, DestroyRef, effect,
-  EventEmitter, input,
+  EventEmitter, Injector, input,
   Input,
   Output, ViewChild
 } from '@angular/core';
@@ -19,11 +19,12 @@ import {QueryPlan, QueryProfileData, StreamQueryErrorEvent} from '../services/qu
 import { BaseQueryResultComponent } from '../query-panel/result-display/BaseQueryResultComponent';
 import { TypesService } from '../services/types.service';
 import { AppInfoService, AppConfig } from '../services/app-info.service';
-import { ConfigDisabledFormComponent } from '../test-pack-module/config-disabled-form.component';
 import {
-  ConfigPersistResultsDisabledFormComponent
-} from '../test-pack-module/config-persist-results-disabled-form.component';
-import { MatDialog } from '@angular/material/dialog';
+  ConfigDisabledDialogComponent,
+  ConfigDisabledDialogData
+} from '../test-pack-module/config-disabled-dialog.component';
+import { TuiDialogService } from '@taiga-ui/core';
+import { PolymorpheusComponent } from '@taiga-ui/polymorpheus';
 import { isNullOrUndefined } from 'src/app/utils/utils';
 import { ExportFormat } from 'src/app/results-download/results-download.service';
 
@@ -291,7 +292,8 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   constructor(
     protected typeService: TypesService,
     protected appInfoService: AppInfoService,
-    private dialogService: MatDialog,
+    private dialogService: TuiDialogService,
+    private injector: Injector,
     private changeDetector: ChangeDetectorRef,
     private destroyRef: DestroyRef
   ) {
@@ -403,13 +405,24 @@ export class TabbedResultsViewComponent extends BaseQueryResultComponent {
   showDisabledTestCaseConfig($event) {
     $event.preventDefault();
     $event.stopPropagation();
-    this.dialogService.open(ConfigDisabledFormComponent);
+    this.showConfigDisabledDialog({
+      settings: ['vyne.analytics.persistRemoteCallResponses', 'vyne.analytics.persistResults']
+    });
   }
 
   showDisabledPersistResultsConfig($event) {
     $event.preventDefault();
     $event.stopPropagation();
-    this.dialogService.open(ConfigPersistResultsDisabledFormComponent);
+    this.showConfigDisabledDialog({
+      settings: ['vyne.analytics.persistResults']
+    });
+  }
+
+  private showConfigDisabledDialog(data: ConfigDisabledDialogData) {
+    this.dialogService.open(
+      new PolymorpheusComponent(ConfigDisabledDialogComponent, this.injector),
+      { size: 'm', data }
+    ).subscribe();
   }
 
 

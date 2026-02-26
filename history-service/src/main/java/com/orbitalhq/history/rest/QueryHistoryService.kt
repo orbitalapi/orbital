@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.orbitalhq.history.QueryAnalyticsConfig
 import com.orbitalhq.history.RemoteCallAnalyzer
 import com.orbitalhq.history.api.QueryResultNodeDetail
+import com.orbitalhq.history.api.RegressionPackFormat
 import com.orbitalhq.history.api.RegressionPackRequest
 import com.orbitalhq.history.db.LineageRecordRepository
 import com.orbitalhq.history.db.QueryErrorEventRowRepository
@@ -14,8 +15,9 @@ import com.orbitalhq.history.db.RemoteCallResponseRepository
 import com.orbitalhq.history.db.tracing.TraceEventRepository
 import com.orbitalhq.history.db.tracing.TraceSpanBuilder
 import com.orbitalhq.history.rest.export.ExportFormat
+import com.orbitalhq.history.rest.export.PreflightSpecProvider
 import com.orbitalhq.history.rest.export.QueryHistoryExporter
-import com.orbitalhq.history.rest.export.RegressionPackProvider
+import com.orbitalhq.history.rest.export.RegressionPackZipFileProvider
 import com.orbitalhq.query.QueryProfileData
 import com.orbitalhq.query.QueryResponse
 import com.orbitalhq.query.ValueWithTypeName
@@ -25,7 +27,6 @@ import com.orbitalhq.query.history.QuerySankeyChartRow
 import com.orbitalhq.query.history.QuerySummary
 import com.orbitalhq.query.history.toDto
 import com.orbitalhq.query.history.tracing.TraceSpanRecord
-import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.fqn
 import com.orbitalhq.security.VynePrivileges
 import com.orbitalhq.spring.config.RequiresOrbitalDbEnabled
@@ -55,6 +56,7 @@ import reactor.kotlin.core.util.function.component2
 import reactor.kotlin.core.util.function.component3
 import reactor.kotlin.core.util.function.component4
 import reactor.kotlin.core.util.function.component5
+import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.time.Duration
 
@@ -71,12 +73,13 @@ class QueryHistoryService(
    private val sankeyChartRowRepository: QuerySankeyChartRowRepository,
    private val queryHistoryExporter: QueryHistoryExporter,
    private val objectMapper: ObjectMapper,
-   private val regressionPackProvider: RegressionPackProvider,
+   private val regressionPackZipFileProvider: RegressionPackZipFileProvider,
    private val queryAnalyticsConfig: QueryAnalyticsConfig,
    private val exceptionProvider: ExceptionProvider,
    private val jdbcTemplate: JdbcTemplate,
    private val queryErrorEventRowRepository: QueryErrorEventRowRepository,
-   private val traceEventRepository: TraceEventRepository
+   private val traceEventRepository: TraceEventRepository,
+   private val preflightSpecProvider: PreflightSpecProvider
 ) : IQueryHistoryService {
    private val remoteCallAnalyzer = RemoteCallAnalyzer()
    private val traceSpanBuilder = TraceSpanBuilder()
@@ -415,16 +418,16 @@ class QueryHistoryService(
       val traceEvents = traceEventRepository.findByQueryIdOrderByTimestampAsc(querySummary.queryId)
       val traceSpans = traceSpanBuilder.buildTraceSpans(traceEvents)
 //         .let { traceSpanBuilder.flattenSpansForWaterfall(it) }
-         return Mono.just(
-      QueryProfileData(
-         querySummary.queryId,
-         querySummary.durationMs ?: 0,
-         remoteCalls,
-         operationStats = stats,
-         queryLineageData = queryLineageData,
-         errors = errors,
-         traceSpans = traceSpans
-      )
+      return Mono.just(
+         QueryProfileData(
+            querySummary.queryId,
+            querySummary.durationMs ?: 0,
+            remoteCalls,
+            operationStats = stats,
+            queryLineageData = queryLineageData,
+            errors = errors,
+            traceSpans = traceSpans
+         )
       )
    }
 
@@ -474,16 +477,26 @@ class QueryHistoryService(
 
       return Mono.zip(querySummary, results, lineageRecords, remoteCalls, traceSpans)
          .map { (summary, resultsList, lineage, calls, spans) ->
-            ByteBuffer.wrap(
-               regressionPackProvider.createRegressionPack(
+            val baos: ByteArrayOutputStream = when (request.format) {
+               RegressionPackFormat.Zip -> regressionPackZipFileProvider.createRegressionPack(
                   resultsList,
                   summary,
                   lineage,
                   calls,
                   spans,
                   request
-               ).toByteArray()
-            )
+               )
+
+               RegressionPackFormat.Preflight -> preflightSpecProvider.createTestSpec(
+                  resultsList,
+                  summary,
+                  lineage,
+                  calls,
+                  spans,
+                  request
+               )
+            }
+            ByteBuffer.wrap(baos.toByteArray())
          }
    }
 

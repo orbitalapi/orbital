@@ -42,7 +42,6 @@ namespace vyne.creditInc {
 
 namespace io.osmosis.demos.creditInc.clientLookup {
     service ClientLookupService {
-        @StubResponse
         operation findClientById( vyne.creditInc.ClientId ) : vyne.creditInc.Client
     }
 }
@@ -56,7 +55,6 @@ namespace vyne.creditInc {
 
 namespace io.osmosis.demos.invictus.rates {
     service RateConversionService {
-        @StubResponse
         operation convertRates( vyne.creditInc.Money, targetCurrency : vyne.creditInc.Currency ) : vyne.creditInc.Money( from source, Currency == targetCurrency )
     }
 }
@@ -75,7 +73,6 @@ namespace vyne.creditInc {
 
 namespace vyne.creditInc.creditMarkup {
     service CreditCostService {
-        @StubResponse
         operation calculateCreditCosts( vyne.creditInc.CreditCostRequest ) : vyne.creditInc.CreditCostResponse
     }
 }
@@ -87,9 +84,7 @@ namespace isic.uk {
 
 namespace io.osmosis.demos.creditInc.isic {
     service IsicConversionService {
-        @StubResponse
         operation toSic2003( isic.uk.SIC2008 ) : isic.uk.SIC2003
-        @StubResponse
         operation toSic2008( isic.uk.SIC2003 ) : isic.uk.SIC2008
     }
 }

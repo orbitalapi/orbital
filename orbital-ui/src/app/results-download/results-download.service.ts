@@ -5,7 +5,11 @@ import { Observable } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import { Type } from 'src/app/services/schema';
 import { CsvOptions } from 'src/app/services/types.service';
-import { TestSpecFormComponent } from 'src/app/test-pack-module/test-spec-form.component';
+import {
+  RegressionPackFormat,
+  TestSpecFormComponent,
+  TestSpecFormResult
+} from 'src/app/test-pack-module/test-spec-form.component';
 import * as fileSaver from 'file-saver';
 import { TuiDialogService } from '@taiga-ui/core';
 import { PolymorpheusComponent } from '@taiga-ui/polymorpheus';
@@ -62,32 +66,40 @@ export class ResultsDownloadService {
     });
   }
 
-  downloadRegressionPack(id: string, regressionPackName: string): Observable<ArrayBuffer> {
+  downloadRegressionPack(id: string, regressionPackName: string, format: RegressionPackFormat, description?: string): Observable<ArrayBuffer> {
     return this.http.post(`${environment.serverUrl}/api/query/history/${id}/regressionPack`,
-      { queryId: id, regressionPackName },
+      { queryId: id, regressionPackName, format, description },
       { responseType: 'arraybuffer' }
     );
   }
 
-  downloadRegressionPackFromClientId(id: string, regressionPackName: string): Observable<ArrayBuffer> {
+  downloadRegressionPackFromClientId(id: string, regressionPackName: string, format: RegressionPackFormat, description?: string): Observable<ArrayBuffer> {
     return this.http.post(`${environment.serverUrl}/api/query/history/clientId/${id}/regressionPack`,
-      { queryId: id, regressionPackName },
+      { queryId: id, regressionPackName, format, description },
       { responseType: 'arraybuffer' }
     );
   }
 
-  downloadRegressionPackZipFile(id: string, regressionPackName: string) {
-    this.downloadRegressionPack(id, regressionPackName).subscribe(response => {
-      const blob: Blob = new Blob([response], { type: `application/zip; charset=utf-8` });
-      fileSaver.saveAs(blob, `${regressionPackName}.zip`);
+  downloadRegressionPackFile(id: string, result: TestSpecFormResult) {
+    this.downloadRegressionPack(id, result.name, result.format, result.description).subscribe(response => {
+      this.saveRegressionPackResponse(response, result);
     });
   }
 
-  downloadRegressionPackZipFileFromClientId(id: string, regressionPackName: string) {
-    this.downloadRegressionPackFromClientId(id, regressionPackName).subscribe(response => {
-      const blob: Blob = new Blob([response], { type: `application/zip; charset=utf-8` });
-      fileSaver.saveAs(blob, `${regressionPackName}.zip`);
+  downloadRegressionPackFileFromClientId(id: string, result: TestSpecFormResult) {
+    this.downloadRegressionPackFromClientId(id, result.name, result.format, result.description).subscribe(response => {
+      this.saveRegressionPackResponse(response, result);
     });
+  }
+
+  private saveRegressionPackResponse(response: ArrayBuffer, result: TestSpecFormResult) {
+    if (result.format === 'Preflight') {
+      const blob = new Blob([response], { type: 'text/markdown; charset=utf-8' });
+      fileSaver.saveAs(blob, `${result.name}.spec.md`);
+    } else {
+      const blob = new Blob([response], { type: 'application/zip; charset=utf-8' });
+      fileSaver.saveAs(blob, `${result.name}.zip`);
+    }
   }
 
 
@@ -135,24 +147,24 @@ export class ResultsDownloadService {
 
   promptToDownloadTestCase(queryId: string) {
     this.doPromptToDownloadTestCase()
-      .subscribe(specName => {
-        if (specName !== null) {
-          this.downloadRegressionPackZipFile(queryId, specName);
+      .subscribe(result => {
+        if (result !== null) {
+          this.downloadRegressionPackFile(queryId, result);
         }
       });
   }
 
   promptToDownloadTestCaseFromClientId(clientQueryId: string) {
     this.doPromptToDownloadTestCase()
-      .subscribe(specName => {
-        if (specName !== null) {
-          this.downloadRegressionPackZipFileFromClientId(clientQueryId, specName);
+      .subscribe(result => {
+        if (result !== null) {
+          this.downloadRegressionPackFileFromClientId(clientQueryId, result);
         }
       });
   }
 
-  private doPromptToDownloadTestCase(): Observable<string | null> {
-    return this.dialogService.open<string | null>(
+  private doPromptToDownloadTestCase(): Observable<TestSpecFormResult | null> {
+    return this.dialogService.open<TestSpecFormResult | null>(
       new PolymorpheusComponent(TestSpecFormComponent, this.injector),
       {
         size: 'm'

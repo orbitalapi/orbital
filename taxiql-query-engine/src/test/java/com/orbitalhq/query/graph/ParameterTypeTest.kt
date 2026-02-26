@@ -48,13 +48,10 @@ namespace vyne.example
 
 
       service EmployeeService {
-         @StubResponse("mockEmployeeSocialSecurity")
          operation getEmployeeSocialSecurity(EmployeeId):EmployeeSocialSecurity
 
-         @StubResponse("mockEmployeeDetails")
          operation getEmployeeDetails(EmployeeDetailsRequest):EmployeeDetails
 
-         @StubResponse("mockEmployees")
          operation getEmployees():Employee[]
       }
 """
@@ -121,11 +118,11 @@ namespace vyne.example
          }
       """.trimIndent()
          stubService.addResponse(
-            "mockEmployees",
+            "getEmployees",
             TypedInstance.from(vyne.type("vyne.example.Employee[]"), employees, vyne.schema, source = Provided)
          )
          stubService.addResponse(
-            "mockEmployeeSocialSecurity",
+            "getEmployeeSocialSecurity",
             TypedInstance.from(
                vyne.type("vyne.example.EmployeeSocialSecurity"),
                employeeSocialSecurity,
@@ -134,7 +131,7 @@ namespace vyne.example
             )
          )
          stubService.addResponse(
-            "mockEmployeeDetails",
+            "getEmployeeDetails",
             TypedInstance.from(
                vyne.type("vyne.example.EmployeeDetails"),
                employeeDetails,

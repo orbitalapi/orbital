@@ -104,4 +104,6 @@ data class TraceSpanRecord(
     * Whether this span has any error events
     */
    val hasErrors: Boolean = events.any { it.tracingEventKind == TracingEventKind.ERROR }
+
+   fun flatten():List<TraceSpanRecord> = listOf(this) + children.flatMap { it.flatten() }
 }
