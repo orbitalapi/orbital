@@ -1,0 +1,31 @@
+@import "src/common";
+
+code {
+  background: $slate-100;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-size: 0.875rem;
+}
+
+ul {
+  margin: 0.5rem 0 1rem;
+  padding-left: 1.5rem;
+
+  li {
+    margin-bottom: 0.25rem;
+  }
+}
+
+p {
+  margin-bottom: 0.5rem;
+  color: $slate-600;
+}
+
+.button-row {
+  display: flex;
+  margin-top: 1rem;
+
+  .spacer {
+    flex-grow: 1;
+  }
+}

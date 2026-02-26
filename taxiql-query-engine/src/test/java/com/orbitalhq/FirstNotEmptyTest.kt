@@ -82,7 +82,6 @@ class FirstNotEmptyTest {
             productName : ProductName inherits String
          }
          service CalendarService {
-            @StubResponse("lookupProduct")
             operation lookupDate(Isin):Product
          }
          model Product {
@@ -119,8 +118,7 @@ class FirstNotEmptyTest {
             productName : ProductName inherits String
          }
          service CalendarService {
-            @StubResponse("lookupProduct")
-            operation lookupDate(Isin):Product
+            operation lookupProduct(Isin):Product
          }
          model Product {
             name : ProductName
@@ -163,7 +161,6 @@ class FirstNotEmptyTest {
             expiryDate : ExpiryDate
          }
          service CalendarService {
-            @StubResponse("lookupDate")
             operation lookupDate(Isin):Product
          }
          model Product {
@@ -206,9 +203,7 @@ class FirstNotEmptyTest {
             productName : ProductName inherits String
          }
          service CalendarService {
-            @StubResponse("lookupProductA")
             operation lookupProductA(Isin):Product
-            @StubResponse("lookupProductB")
             operation lookupProductB(Isin):Product
 
          }
@@ -352,9 +347,7 @@ class FirstNotEmptyTest {
             productName : ProductName inherits String
          }
          service CalendarService {
-            @StubResponse("lookupProductA")
             operation lookupProductA(Isin):Product
-            @StubResponse("lookupProductB")
             operation lookupProductB(Isin):Product
 
          }
@@ -415,7 +408,6 @@ class FirstNotEmptyTest {
             productName : ProductName inherits String
          }
          service ProductService {
-            @StubResponse("lookupProduct")
             operation lookupProduct(Isin):Product
          }
          model Product {
@@ -486,9 +478,7 @@ class FirstNotEmptyTest {
             productName : ProductName inherits String
          }
          service CalendarService {
-            @StubResponse("lookupProductA")
             operation lookupProductA(Isin):Product
-            @StubResponse("lookupProductB")
             operation lookupProductB(Isin):Product
 
          }

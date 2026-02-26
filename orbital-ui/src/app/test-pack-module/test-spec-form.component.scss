@@ -1,6 +1,21 @@
 @import "src/common";
 
+tui-select {
+  margin-bottom: 1rem;
+}
+
 tui-input {
+  margin-bottom: 1rem;
+}
+
+tui-textarea {
+  margin-bottom: 0.5rem;
+}
+
+.hint {
+  display: block;
+  font-size: 0.75rem;
+  color: $slate-500;
   margin-bottom: 1rem;
 }
 

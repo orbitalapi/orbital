@@ -46,18 +46,14 @@ class VyneServiceInvocationTest {
 
          @DataStore
          service TradeService {
-            @StubResponse("findAllTrades")
             operation findAllTrades():Trade[]
 
             // We don't want this to be called.
-            @StubResponse("findTradesBySalesPerson")
             operation findTradesBySalesPerson(TraderUserId):Trade
             // We don't want this to be called.
-            @StubResponse("findTrade")
             operation findTrade(TradeId):Trade
          }
          service ProductService {
-         @StubResponse("findProductData")
             operation findProductData(Isin):Product
          }
       """.trimIndent()

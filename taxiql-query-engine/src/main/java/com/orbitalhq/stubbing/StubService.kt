@@ -215,6 +215,31 @@ class StubService(
    private var wildcardHandler: OperationResponseHandler? = null
 
    /**
+    * Resolves the key used to look up a response/handler for an operation.
+    * Stubs can be registered by either the short operation name (e.g. "getProduct")
+    * or the fully qualified name (e.g. "com.foo.ProductsApi@@getProduct").
+    * This method checks both forms against the given map, preferring a match on the
+    * fully qualified name if both are present.
+    */
+   private fun <V> resolveKey(map: Map<String, V>, operation: RemoteOperation): String? {
+      val qualifiedName = operation.qualifiedName.parameterizedName
+      return when {
+         map.containsKey(qualifiedName) -> qualifiedName
+         map.containsKey(operation.name) -> operation.name
+         else -> null
+      }
+   }
+
+   /**
+    * Finds an operation in the schema by either its short name or fully qualified name.
+    */
+   private fun findOperationByKey(stubOperationKey: String): RemoteOperation? {
+      return schema!!.operations.firstOrNull {
+         it.name == stubOperationKey || it.qualifiedName.parameterizedName == stubOperationKey
+      }
+   }
+
+   /**
     * Clears all configured responses, handlers, and invocation history.
     *
     * This method provides a clean slate by removing:
@@ -368,12 +393,11 @@ class StubService(
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val paramDescription = parameters.joinToString { "${it.second.type.name.shortDisplayName} = ${it.second.value}" }
       logger.debug { "Invoking ${service.name} -> ${operation.name}($paramDescription)" }
-      val stubResponseKey = if (operation.hasMetadata("StubResponse")) {
-         val metadata = operation.firstMetadata("StubResponse")
-         (metadata.params["value"] as String?).orElse(operation.name)
-      } else {
-         operation.name
-      }
+      val responseKey = resolveKey(responses, operation)
+      val handlerKey = resolveKey(handlers, operation)
+      val flowHandlerKey = resolveKey(flowHandlers, operation)
+
+      val stubResponseKey =  responseKey ?: handlerKey ?: flowHandlerKey ?: operation.name
 
       val paramValues = parameters.map { it.second }
       invocations[stubResponseKey] = paramValues
@@ -381,24 +405,21 @@ class StubService(
          calls.put(stubResponseKey, paramValues)
       }
 
-      if (!responses.containsKey(stubResponseKey) && !handlers.containsKey(stubResponseKey) && !flowHandlers.containsKey(
-            stubResponseKey
-         ) && wildcardHandler == null
-      ) {
+
+      if (responseKey == null && handlerKey == null && flowHandlerKey == null && wildcardHandler == null) {
          throw IllegalArgumentException("No stub response or handler prepared for operation $stubResponseKey")
       }
       val stubResponse = when {
-         responses.containsKey(stubResponseKey) -> {
-            unwrapTypedCollections(responses[stubResponseKey]!!)
+         responseKey != null -> {
+            unwrapTypedCollections(responses[responseKey]!!)
          }
 
-         handlers.containsKey(stubResponseKey) -> {
-            unwrapTypedCollections(handlers[stubResponseKey]!!.invoke(operation, parameters))
+         handlerKey != null -> {
+            unwrapTypedCollections(handlers[handlerKey]!!.invoke(operation, parameters))
          }
 
-
-         flowHandlers.containsKey(stubResponseKey) -> {
-            flowHandlers[stubResponseKey]!!.invoke(operation, parameters)
+         flowHandlerKey != null -> {
+            flowHandlers[flowHandlerKey]!!.invoke(operation, parameters)
          }
          wildcardHandler != null -> invokeWildcardHandler(operation, parameters)
          else -> error("No handler found for $stubResponseKey")
@@ -698,10 +719,10 @@ class StubService(
        */
       responses: Map<Any, String>, modifyDataSource: Boolean = false
    ) {
-      val operation = schema!!.operations.firstOrNull { it.name == stubOperationKey }
+      val operation = findOperationByKey(stubOperationKey)
          ?: error("Cannot stub $stubOperationKey as it's not a valid operation")
       val responseTypedInstances = responses.mapValues { (_, json) ->
-         parseJson(schema, operation.returnType.paramaterizedName, json)
+         parseJson(schema!!, operation.returnType.paramaterizedName, json)
       }
       addResponse(stubOperationKey, modifyDataSource) { _, parameters: List<Pair<Parameter, TypedInstance>> ->
          val param = parameters.first().second.toRawObject()
@@ -717,8 +738,8 @@ class StubService(
    }
 
    fun addResponseEmitter(stubOperationKey: String): ResponseEmitter {
-      val operation = schema!!.streamOperations.firstOrNull { it.name == stubOperationKey }
-         ?: schema.operations.firstOrNull { it.name == stubOperationKey }
+      val operation = schema!!.streamOperations.firstOrNull { it.name == stubOperationKey || it.qualifiedName.parameterizedName == stubOperationKey }
+         ?: findOperationByKey(stubOperationKey)
          ?: error("Cannot stub $stubOperationKey as it's not a valid operation")
       val type = if (operation.returnType.isStream) {
          operation.returnType.typeParameters[0]
@@ -776,7 +797,7 @@ class StubService(
     * @throws RuntimeException if the JSON cannot be parsed according to the operation's return type
     */
    fun addResponse(stubOperationKey: String, json: String, modifyDataSource: Boolean = false) {
-      val operation = schema!!.operations.firstOrNull { it.name == stubOperationKey }
+      val operation = findOperationByKey(stubOperationKey)
          ?: error("Cannot stub $stubOperationKey as it's not a valid operation")
       val response = parseJson(schema!!, operation.returnType.paramaterizedName, json)
       addResponse(stubOperationKey, response, modifyDataSource)
@@ -990,14 +1011,13 @@ class StubService(
    }
 
    override fun canSupport(service: Service, operation: RemoteOperation): Boolean {
-      // TODO : why did I need to do this?
-      // This was working by using annotations on the method to indicate that there was a stub response
-      // Why do I care about that?  I could just use the method name as a default?!
-      // I've changed this to look for a match with responses against the method name - revert if that turns out to be dumb.
-      return operation.metadata.any { it.name.name == "StubResponse" } ||
-         this.responses.containsKey(operation.name) ||
+      val operationFullName = operation.qualifiedName.parameterizedName
+      return this.responses.containsKey(operation.name) ||
+         this.responses.containsKey(operationFullName) ||
          this.handlers.containsKey(operation.name) ||
+         this.handlers.containsKey(operationFullName) ||
          this.flowHandlers.containsKey(operation.name) ||
+         this.flowHandlers.containsKey(operationFullName) ||
          this.wildcardHandler != null
    }
 

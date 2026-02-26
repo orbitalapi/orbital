@@ -41,13 +41,10 @@ parameter type ClientRiskRequest {
 }
 
 service MyService {
-   @StubResponse("calculateRisk")
    operation calculateRisk(Money(this.currency == 'GBP')):Risk
 
-   @StubResponse("convertCurrency")
    operation convertCurrency(source : Money , target : Currency) : Money( from source, this.currency == target )
 
-   @StubResponse("calculateRiskForClient")
    operation calculateRiskForClient(ClientRiskRequest):ClientRisk
 }"""
 
@@ -118,9 +115,7 @@ type UkSic2003 inherits String
 type UkSic2007 inherits String
 type Foo inherits String
 service TestService {
-   @StubResponse("calculateFoo")
    operation calculateFoo(UkSic2007):Foo
-   @StubResponse("convertUkSic")
    operation convertUkSic(UkSic2003):UkSic2007
 }
 """
@@ -153,9 +148,7 @@ parameter type RequestObject {
    input : UkSic2007
 }
 service TestService {
-   @StubResponse("calculateFoo")
    operation calculateFoo(RequestObject):Foo
-   @StubResponse("convertUkSic")
    operation convertUkSic(UkSic2003):UkSic2007
 }
 """

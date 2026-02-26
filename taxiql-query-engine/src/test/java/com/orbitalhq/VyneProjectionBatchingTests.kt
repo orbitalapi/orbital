@@ -31,9 +31,7 @@ class VyneProjectionBatchingTests {
             clientName : ClientName
          }
          service ClientService {
-            @StubResponse("findSingleClient")
             operation findSingleClient(ClientId):Client
-            @StubResponse("findClients")
             operation findClients(ClientId[]):Client[]
          }
       """

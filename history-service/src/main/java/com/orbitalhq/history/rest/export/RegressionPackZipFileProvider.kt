@@ -25,7 +25,7 @@ data class TestSpec(
    val traceSpansFileName: String
 )
 @Component
-class RegressionPackProvider(
+class RegressionPackZipFileProvider(
    objectMapper: ObjectMapper,
    private val schemaProvider: SchemaSourceProvider
 ) {

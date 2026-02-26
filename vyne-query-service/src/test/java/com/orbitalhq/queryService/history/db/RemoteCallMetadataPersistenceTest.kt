@@ -8,13 +8,17 @@ import com.orbitalhq.cockpit.core.connectors.hazelcast.HazelcastHealthCheckProvi
 import com.orbitalhq.cockpit.core.content.DefaultContentRepository
 import com.orbitalhq.copilot.CopilotConversationApi
 import com.orbitalhq.history.QueryAnalyticsConfig
+import com.orbitalhq.history.api.RegressionPackFormat
+import com.orbitalhq.history.api.RegressionPackRequest
 import com.orbitalhq.history.db.LineageRecordRepository
+import com.orbitalhq.history.db.PersistingTraceEventConsumer
 import com.orbitalhq.history.db.QueryErrorEventRowRepository
 import com.orbitalhq.history.db.QueryHistoryDbWriter
 import com.orbitalhq.history.db.QueryHistoryRecordRepository
 import com.orbitalhq.history.db.QueryResultRowRepository
 import com.orbitalhq.history.db.QuerySankeyChartRowRepository
 import com.orbitalhq.history.db.RemoteCallResponseRepository
+import com.orbitalhq.history.db.tracing.TraceEventRepository
 import com.orbitalhq.history.rest.QueryHistoryService
 import com.orbitalhq.http.MockWebServerRule
 import com.orbitalhq.http.emptyResponse
@@ -41,6 +45,7 @@ import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry
 import kotlinx.coroutines.flow.toList
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
@@ -61,13 +66,15 @@ import java.util.concurrent.ConcurrentHashMap
 
 @RunWith(SpringRunner::class)
 @ActiveProfiles("test")
-@Import(TestSpringConfig::class)
+@Import(TestSpringConfig::class, PersistingTraceEventConsumer::class)
 @SpringBootTest(
    properties = [
       "vyne.schema.publicationMethod=LOCAL",
       "vyne.search.directory=./search/\${random.int}",
+      "vyne.analytics.persistResults=true",
+      "vyne.analytics.persistRemoteCallResponses=true",
       "vyne.analytics.persistRemoteCallMetadata=true",
-      "vyne.analytics.persistRemoteCallResponses=false",
+      "vyne.analytics.persistTraceEvents=true",
       "vyne.analytics.writerMaxBatchSize=1",
       "vyne.analytics.writerMaxDuration=100ms",
       "vyne.telemetry.enabled=false"
@@ -86,6 +93,13 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
       } as PostgreSQLContainer<*>
 
    }
+
+   @Autowired
+   lateinit var traceEventConsumer: PersistingTraceEventConsumer
+
+   @Autowired
+   lateinit var traceEventRepository: TraceEventRepository
+
    @MockitoBean
    lateinit var chatService: CopilotConversationApi
 
@@ -150,6 +164,91 @@ class RemoteCallMetadataPersistenceTest : BaseQueryServiceTest() {
    @Rule
    @JvmField
    final val server = MockWebServerRule()
+
+
+   @Test
+   @Ignore // I can't get this tio persist the required events, and I can't work out why
+   fun `export a query with http calls as a preflight test spec`() {
+      val vyne = testVyne(
+         """
+         model Movie {
+            id : MovieId inherits Int
+            title : MovieTitle inherits String
+         }
+         model Cast {
+            id : PersonId inherits String
+            name : PersonName inherits String
+         }
+         service Movies {
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/movies")
+            operation listMovies():Movie[]
+            @HttpOperation(method = "GET", url = "http://localhost:${server.port}/cast")
+            operation getCast(@PathVariable("id") id: MovieId):Cast[]
+         }
+      """, Invoker.RestTemplateWithCache
+      )
+      setupTestService(vyne, null, buildHistoryConsumer())
+      val jackson = jacksonObjectMapper()
+      server.prepareResponse(
+         ConcurrentHashMap(),
+         "/movies" to response(
+            jackson.writeValueAsString(
+               listOf(mapOf("id" to 1, "title" to "Star Wars"))
+            )
+         ),
+         "/cast" to response(
+            jackson.writeValueAsString(
+               listOf(mapOf("id" to "1", "name" to "Harrison Ford"))
+            )
+         )
+      )
+
+      val clientQueryId = Ids.id("query")
+      var queryId:String? = null
+      runBlocking {
+         val result = queryService.submitVyneQlQueryStreamingResponse(
+            """
+         find { Movie[] } as {
+            id : MovieId
+            title : MovieTitle
+            cast : Cast[]
+         }[]
+      """.trimIndent(), clientQueryId = clientQueryId
+         ).toList()
+         result.shouldHaveSize(1)
+      }
+
+      Awaitility.await()
+         .atMost(Duration.FIVE_SECONDS)
+         .until<Boolean> {
+            val responses = queryHistoryRecordRepository.findByClientQueryId(clientQueryId)
+               ?.let { historyRecord ->
+                  queryId = historyRecord.queryId
+                  remoteCallResponseRepository.findAllByQueryId(historyRecord.queryId)
+               } ?: emptyList()
+            responses.isNotEmpty()
+         }
+
+      val calls = remoteCallResponseRepository.findAllByQueryId(queryId!!)
+      calls.shouldHaveSize(2)
+      calls.forEach { it.response.shouldNotBeNull() }
+
+      Awaitility.await()
+         .atMost(Duration.FIVE_SECONDS)
+         .until<Boolean> {
+            val traceEvents = traceEventRepository.findByQueryIdOrderByTimestampAsc(queryId!!)
+            traceEvents.isNotEmpty()
+         }
+
+      val byteBuffer = historyService.getRegressionPack(queryId!!, RegressionPackRequest(
+         queryId,
+         "A test with http calls",
+         RegressionPackFormat.Preflight,
+         "This is a test that should show http calls"
+      )).block()!!
+      byteBuffer
+   }
+
 
    @Test
    fun `http calls made in query are persisted`() {
