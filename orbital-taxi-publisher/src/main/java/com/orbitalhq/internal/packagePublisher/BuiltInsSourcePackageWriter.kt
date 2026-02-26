@@ -50,6 +50,11 @@ class BuiltInsSourcePackageWriter(
 
    private fun writeSources() {
       val basePath = Paths.get(config.outputPath)
+      val srcDir = basePath.resolve("src").toFile()
+      if (srcDir.exists()) {
+         printOut("Clearing existing src/ directory to remove stale files")
+         srcDir.deleteRecursively()
+      }
       printOut("Writing sources using base path of $basePath")
       BuiltInTypesProvider.sourcePackage
          .sources.forEach { versionedSource ->

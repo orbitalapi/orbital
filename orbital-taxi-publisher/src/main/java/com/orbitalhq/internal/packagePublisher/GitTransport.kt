@@ -140,6 +140,7 @@ class GitTransport(
     fun commitAndTryPush() {
         printOut("Committing changes...")
         git.add().addFilepattern(".").call()
+        git.add().addFilepattern(".").setUpdate(true).call()
         git.commit()
             .setMessage("Automated update")
             .setAllowEmpty(true)
