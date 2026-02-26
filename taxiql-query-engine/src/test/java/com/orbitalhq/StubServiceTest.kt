@@ -2,6 +2,7 @@ package com.orbitalhq
 
 import com.orbitalhq.query.VyneQlGrammar
 import io.kotest.core.spec.style.DescribeSpec
+import io.kotest.matchers.shouldBe
 
 class StubServiceSpec : DescribeSpec({
   describe("stub service") {
@@ -27,6 +28,22 @@ class StubServiceSpec : DescribeSpec({
         stub.addTableFindManyResponse("people", """[{ "id" : "123" }]""")
         vyne.query("""find { Person[] }""")
            .rawObjects()
+     }
+
+     it("can stub operations by their full name") {
+         val (vyne,stub) = testVyne("""
+            model Person {
+               name : String
+            }
+
+            service PersonApi {
+               operation getPerson():Person
+            }
+         """.trimIndent())
+        stub.addResponse("PersonApi@@getPerson", """{ "name" : "Jimmy" }""")
+        vyne.query("find { Person }")
+           .firstRawObject()
+           .shouldBe(mapOf("name" to "Jimmy"))
      }
   }
 })
