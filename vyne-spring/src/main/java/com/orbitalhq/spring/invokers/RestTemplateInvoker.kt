@@ -10,6 +10,7 @@ import com.orbitalhq.models.TypedInstance.Companion.EXPIRY_METADATA
 import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.RemoteCallExchangeMetadata
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.OperationInvoker
@@ -101,9 +102,10 @@ class RestTemplateInvoker(
       queryId: String,
       queryOptions: QueryOptions
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
+      val remoteCallId = UUID.randomUUID().toString()
       logger.info { "Invoking Operation ${operation.name} with parameters: ${parameters.joinToString(",") { (_, typedInstance) -> typedInstance.type.fullyQualifiedName + " -> " + typedInstance.toRawObject() }}" }
       val (_, url, method) = operation.httpOperationMetadata()
-      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, url)
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, url, remoteCallId = remoteCallId)
       val retrySpec = operation.retrySpec()
       val httpMethod = HttpMethod.valueOf(method)
       //val httpResult = profilerOperation.startChild(this, "Invoke HTTP Operation", OperationType.REMOTE_CALL) { httpInvokeOperation ->
@@ -145,8 +147,6 @@ class RestTemplateInvoker(
 
 
       logger.info { "[$queryId] - Performing $httpMethod to ${expandedUri.toASCIIString()} with retry specification => ${retrySpec?.toLogString()}" }
-
-      val remoteCallId = UUID.randomUUID().toString()
 
       val results = request
          .exchange()
@@ -212,8 +212,8 @@ class RestTemplateInvoker(
                         // Use trafficSink (which uses logbook), as it applied sensible filtering
                         requestHeaders = trafficSink.requestHeaders(),
                         responseHeaders = trafficSink.responseHeaders(),
-
-                     )
+                     ),
+                     parameters = RemoteCallExchangeMetadata.convertParametersToJson(parameters)
                   )
                )
             }
@@ -367,7 +367,8 @@ class RestTemplateInvoker(
             requestBody = httpEntity.body?.toString(),
             responseCode = httpStatus,
             responseSize = 0,
-            headers = com.orbitalhq.query.HttpHeaders.empty()
+            headers = com.orbitalhq.query.HttpHeaders.empty(),
+            parameters = RemoteCallExchangeMetadata.convertParametersToJson(parameters)
          )
       )
       eventDispatcher.reportRemoteOperationInvoked(OperationResult.from(parameters, remoteCall), queryId)

@@ -84,6 +84,12 @@ data class TracingEvent(
    val eventId: String = Ids.fastUuid(),
    val timestamp: Instant = Instant.now(),
 
+   /**
+    * The associated remote call, if one exists.
+    * Not all trace events have a remote call.
+    */
+   val remoteCallId: String? = null
+
    ) {
    val idSet = TracingEventIdSet(eventId, spanId, traceId)
 

@@ -32,6 +32,7 @@ import org.springframework.data.mongodb.core.ReactiveMongoOperations
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import java.time.Duration
+import java.util.UUID
 
 class MongoNativeAggregateQueryInvoker(
    connectionFactory: MongoConnectionFactory,
@@ -240,7 +241,8 @@ class MongoNativeAggregateQueryInvoker(
             return Flux.just(errorMessage.left())
          }
 
-      val traceSpan = eventDispatcher.createOperationTraceSpan(service, operation, collectionName)
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceSpan = eventDispatcher.createOperationTraceSpan(service, operation, collectionName, remoteCallId = remoteCallId)
       val aggregateJson = aggregation.toString()
 
       logger.info { "Executing Mongo Aggregate: $aggregateJson" }
@@ -291,7 +293,8 @@ class MongoNativeAggregateQueryInvoker(
          aggregateJson,
          connectionConfig.connectionString.hosts.joinToString(),
          elapsed = Duration.ZERO, // Happens reactive, so duration makes no sense here
-         recordCount = -1
+         recordCount = -1,
+         parameterPairs = parameters
       )
 
       eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)

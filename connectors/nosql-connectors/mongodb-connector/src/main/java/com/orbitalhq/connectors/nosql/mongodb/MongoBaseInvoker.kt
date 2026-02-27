@@ -12,6 +12,7 @@ import com.orbitalhq.models.OperationResultReference
 import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.RemoteCallExchangeMetadata
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.SqlExchange
 import com.orbitalhq.query.StreamErrorMessage
@@ -20,7 +21,6 @@ import com.orbitalhq.query.tracing.DatabaseResponseRecord
 import com.orbitalhq.query.tracing.OperationTraceSpan
 import com.orbitalhq.query.tracing.SpanState
 import com.orbitalhq.query.tracing.TraceEventDirection
-import com.orbitalhq.query.tracing.TracingEvent
 import com.orbitalhq.query.tracing.TracingEventKind
 import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schemas.AttributeName
@@ -37,7 +37,6 @@ import lang.taxi.query.TaxiQlQuery
 import org.bson.types.Decimal128
 import org.bson.types.ObjectId
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
-import org.springframework.data.mongodb.core.aggregation.Aggregation
 import reactor.core.publisher.Flux
 import java.math.BigDecimal
 import java.time.Duration
@@ -75,10 +74,11 @@ abstract class MongoBaseInvoker(
       mongoHosts: String,
       elapsed: Duration,
       recordCount: Int,
-      verb: String = "Query"
+      verb: String = "Query",
+      parameterPairs: List<Pair<Parameter, TypedInstance>> = emptyList()
    ): OperationResult {
 
-      val remoteCall = buildRemoteCall(service, mongoHosts, operation, criteria, elapsed, recordCount, verb)
+      val remoteCall = buildRemoteCall(service, mongoHosts, operation, criteria, elapsed, recordCount, verb, parameterPairs)
       return OperationResult.fromTypedInstances(
          parameters,
          remoteCall
@@ -111,7 +111,8 @@ abstract class MongoBaseInvoker(
          exchange = SqlExchange(
             sql = criteria,
             recordCount = recordCount,
-            verb = verb
+            verb = verb,
+            parameters = RemoteCallExchangeMetadata.convertParametersToJson(parameters)
          ),
 
          )
@@ -130,7 +131,8 @@ abstract class MongoBaseInvoker(
       criteria: String,
       elapsed: Duration,
       recordCount: Int,
-      verb: String
+      verb: String,
+      parameterPairs: List<Pair<Parameter, TypedInstance>> = emptyList()
    ) = RemoteCall(
       service = service.name,
       address = mongoHosts,
@@ -146,7 +148,8 @@ abstract class MongoBaseInvoker(
       exchange = SqlExchange(
          sql = criteria,
          recordCount = recordCount,
-         verb = verb
+         verb = verb,
+         parameters = RemoteCallExchangeMetadata.convertParametersToJson(parameterPairs)
       ),
 
       )

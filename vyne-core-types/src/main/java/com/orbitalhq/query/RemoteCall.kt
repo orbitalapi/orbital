@@ -4,9 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
+import com.orbitalhq.models.TypedInstance
+import com.orbitalhq.models.json.Jackson
 import com.orbitalhq.schemas.OperationNames
+import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.QualifiedNameAsStringDeserializer
 import com.orbitalhq.schemas.QualifiedNameAsStringSerializer
@@ -112,6 +116,36 @@ enum class ResponseMessageType {
 )
 sealed class RemoteCallExchangeMetadata {
    abstract val requestBody: String?
+
+   /**
+    * The parameters that were used in the exchange.
+    * Key: ParameterName (or "p${index}"), value: a json version of TypedInstance.rawValue() of the parameter
+    * Generally, only populated on the outbound message, and empty on the inbound.
+    *
+    * This is a Map<String,Any?> which is encoded as JSON
+    * to make this class serializable (as Kotlin serializer doesn't know how to deal with Any?),
+    * and the intended consumer wants this as JSON anyway.
+    *
+    * Nullable, as not all interactions / operations declare parameters
+    */
+   abstract val parameters: String?
+
+   companion object {
+      fun convertParametersToMap(parameters:List<Pair<Parameter, TypedInstance>>):Map<String,Any?> {
+         return parameters.mapIndexed { index,  (parameter,value) ->
+            val name = parameter.name ?: "p$index"
+            val valueAsJson = value.toRawObject()
+            name to valueAsJson
+         }.toMap()
+      }
+      /**
+       * Returns the parameters as a JSON string
+       */
+      fun convertParametersToJson(parameters:List<Pair<Parameter, TypedInstance>>, objectMapper: ObjectMapper = Jackson.defaultObjectMapper):String {
+         val parametersAsMap = convertParametersToMap(parameters)
+         return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(parametersAsMap)
+      }
+   }
 }
 
 @Serializable
@@ -129,7 +163,7 @@ data class HttpExchange(
    val url: String,
    val verb: String,
    override val requestBody: String?,
-
+   override val parameters: String?,
    val responseCode: Int,
    val responseSize: Int,
    val headers: com.orbitalhq.query.HttpHeaders
@@ -139,7 +173,8 @@ data class HttpExchange(
 data class SqlExchange(
    val sql: String,
    val recordCount: Int,
-   val verb: String
+   val verb: String,
+   override val parameters: String?,
 ) : RemoteCallExchangeMetadata() {
    override val requestBody: String = sql
 }
@@ -156,6 +191,7 @@ data class CacheExchange(
    val verb: CacheOperationVerb,
    val cacheType: CacheType,
    val recordCount: Int,
+   override val parameters: String?,
 ) : RemoteCallExchangeMetadata() {
    override val requestBody: String? = null
 
@@ -197,9 +233,10 @@ data class CacheExchange(
 
 @Serializable
 data class MessageStreamExchange(
-   val topic: String
+   val topic: String,
 ) : RemoteCallExchangeMetadata() {
    override val requestBody: String? = null
+   override val parameters: String? = null
 }
 
 @Serializable
@@ -207,7 +244,8 @@ data class ObjectStoreExchange(
    val bucketName: String,
    val filePattern: String? = null,
    val sql: String? = null,
-   val responseSize: Long
+   val responseSize: Long,
+   override val parameters: String?,
 ) : RemoteCallExchangeMetadata() {
    override val requestBody: String? = filePattern
 }
@@ -215,4 +253,5 @@ data class ObjectStoreExchange(
 @Serializable
 object EmptyExchangeData : RemoteCallExchangeMetadata() {
    override val requestBody: String? = null
+   override val parameters: String? = null
 }

@@ -105,14 +105,13 @@ class LambdaInvoker(
 
       val client = createAsyncLambdaClient(connection)
       val payload = argument?.let { objectMapper.writeValueAsString(it) } ?: "{}"
-      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, functionName)
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, functionName, remoteCallId = remoteCallId)
 
       val invokeRequest: InvokeRequest = InvokeRequest.builder()
          .functionName(functionName)
          .payload(SdkBytes.fromUtf8String(payload))
          .build()
-
-      val remoteCallId = UUID.randomUUID().toString()
       logger.info { "Invoking lambda function $functionName with arguments $payload" }
 
       traceContext.emitEvent(

@@ -24,6 +24,7 @@ import lang.taxi.types.annotation
 import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 
 class JdbcBatchInsertUpsertInvoker(
@@ -62,7 +63,8 @@ class JdbcBatchInsertUpsertInvoker(
 
       val recordToWrite = parameters[0].second
       val tableName = SqlUtils.getTableName(recordToWrite.type.taxiType)
-      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, tableName)
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, tableName, remoteCallId = remoteCallId)
       val batchWriteCache = batchWriteCacheProvider.forQueryId(
          queryId,
          batchParams.size,

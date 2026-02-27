@@ -64,7 +64,10 @@ data class TraceSpan(
        */
       eventSourceQualifiedName: String,
       direction: TraceEventDirection,
-      linkedEventId: String? = null
+      linkedEventId: String? = null,
+
+      remoteCallId: String? = null,
+
    ): TracingEvent {
       this.eventCount.incrementAndGet()
       val event = TracingEvent(
@@ -79,7 +82,8 @@ data class TraceSpan(
          eventVerb = eventVerb,
          eventSourceQualifiedName = eventSourceQualifiedName,
          linkedEventId = linkedEventId,
-         direction = direction
+         direction = direction,
+         remoteCallId = remoteCallId
       )
       this.traceContext.emitEvent(spanEventSource, event)
       return event
@@ -188,7 +192,9 @@ class OperationTraceSpan(
     * A human readable name for the resource that this event relates to.
     * Could be a table name, topic, url, etc.
     */
-   private val eventResourceName: String
+   private val eventResourceName: String,
+
+   private val remoteCallId: String
 ) {
    fun emitEvent(
       kind: TracingEventKind,
@@ -214,7 +220,7 @@ class OperationTraceSpan(
        * Normally used when linking the start of a projection to a
        * source message
        */
-      linkedEventId: String? = null
+      linkedEventId: String? = null,
    ): TracingEvent = traceSpan.emitEvent(
       kind,
       spanState,
@@ -224,6 +230,7 @@ class OperationTraceSpan(
       eventResource = eventResourceName,
       eventVerb = verb,
       linkedEventId = linkedEventId,
-      direction = direction
+      direction = direction,
+      remoteCallId = remoteCallId
    )
 }

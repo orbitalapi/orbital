@@ -3,7 +3,6 @@ package com.orbitalhq.stubbing
 import arrow.core.Either
 import arrow.core.flatMap
 import arrow.core.left
-import arrow.core.right
 import com.google.common.collect.MultimapBuilder
 import com.orbitalhq.Vyne
 import com.orbitalhq.VyneCacheConfiguration
@@ -21,6 +20,7 @@ import com.orbitalhq.query.HttpHeaders
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.QueryEngineFactory
 import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.RemoteCallExchangeMetadata
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.caching.StateStoreProvider
@@ -40,7 +40,6 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.TableOperation
 import com.orbitalhq.schemas.Type
-import com.orbitalhq.utils.orElse
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asFlow
@@ -447,7 +446,8 @@ class StubService(
                         requestBody = """{ "stub" : "Not captured" }""",
                         responseCode = 200,
                         responseSize = 1000,
-                        headers = HttpHeaders.empty()
+                        headers = HttpHeaders.empty(),
+                        parameters = RemoteCallExchangeMetadata.convertParametersToJson(parameters)
                      )
                   )
                   OperationResult.from(parameters, remoteCall)

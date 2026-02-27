@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
+import java.util.UUID
 
 /**
  * Handles the @MongoDelete, which providers
@@ -66,7 +67,8 @@ class MongoDeleteByQueryInvoker(
             return flowOf(errorMessage.left())
          }
 
-      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, collectionName)
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, collectionName, remoteCallId = remoteCallId)
       val stopwatch = Stopwatch.createStarted()
       val filterJson = filter.toString()
 

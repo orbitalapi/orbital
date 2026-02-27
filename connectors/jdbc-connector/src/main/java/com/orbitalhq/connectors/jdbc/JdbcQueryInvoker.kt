@@ -22,6 +22,7 @@ import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.flow.Flow
 import mu.KotlinLogging
+import java.util.UUID
 
 class JdbcQueryInvoker(
    connectionFactory: JdbcConnectionFactory,
@@ -52,7 +53,8 @@ class JdbcQueryInvoker(
 
       logger.debug { "$queryId: Starting JDBC Query $sql" }
       val stopwatch = Stopwatch.createStarted()
-      val span = eventDispatcher.createOperationTraceSpan(service, operation, "")
+      val remoteCallId = UUID.randomUUID().toString()
+      val span = eventDispatcher.createOperationTraceSpan(service, operation, "", remoteCallId = remoteCallId)
       span.emitEvent(
          TracingEventKind.OK,
          SpanState.ACTIVE,
@@ -84,7 +86,8 @@ class JdbcQueryInvoker(
          sql,
          connectionConfig.address,
          elapsed,
-         recordCount = resultList.size
+         recordCount = resultList.size,
+         parameterPairs = parameters
       )
       eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
       return convertToTypedInstances(

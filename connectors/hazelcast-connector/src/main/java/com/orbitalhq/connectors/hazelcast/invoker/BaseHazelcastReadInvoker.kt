@@ -18,6 +18,7 @@ import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.query.CacheExchange.CacheOperationVerb
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.RemoteCallExchangeMetadata
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.tracing.CacheRequest
@@ -41,6 +42,7 @@ import kotlinx.coroutines.flow.flatMapConcat
 import lang.taxi.expressions.LiteralExpression
 import lang.taxi.expressions.OperatorExpression
 import lang.taxi.expressions.TypeExpression
+import java.util.UUID
 import lang.taxi.query.TaxiQLQueryString
 import lang.taxi.query.TaxiQlQuery
 import lang.taxi.services.operations.constraints.ExpressionConstraint
@@ -166,7 +168,8 @@ abstract class BaseHazelcastReadInvoker {
       schema: Schema,
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val startTime = Instant.now()
-      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, "")
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, "", remoteCallId = remoteCallId)
       val executionConfig = getExecutionConfig(operation, hazelcastInstance, parameters, schema)
       return when {
          executionConfig.idLookupValue != null -> findById(
@@ -280,7 +283,8 @@ abstract class BaseHazelcastReadInvoker {
          elapsed = Duration.between(startTime, Instant.now()),
          resultSize,
          CacheOperationVerb.QUERY,
-         isSuccessful
+         isSuccessful,
+         parameterPairs = parameters
       )
       eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
       return flowOfResult(
@@ -356,7 +360,8 @@ abstract class BaseHazelcastReadInvoker {
          elapsed = Duration.between(startTime, Instant.now()),
          recordCount,
          CacheOperationVerb.GET,
-         isSuccess
+         isSuccess,
+         parameterPairs = parameters
       )
       eventDispatcher.reportRemoteOperationInvoked(result, queryId)
       val errorMessage = "Lookup using key $idLookupValue against map $mapName returned null"
@@ -434,7 +439,8 @@ abstract class BaseHazelcastReadInvoker {
          elapsed = Duration.between(startTime, Instant.now()),
          resultSize,
          CacheOperationVerb.GET_ALL,
-         true
+         true,
+         parameterPairs = parameters
       )
       eventDispatcher.reportRemoteOperationInvoked(result, queryId)
       return flowOfResult(
@@ -551,7 +557,8 @@ abstract class BaseHazelcastReadInvoker {
       elapsed: Duration,
       recordCount: Int,
       verb: CacheOperationVerb,
-      success: Boolean
+      success: Boolean,
+      parameterPairs: List<Pair<Parameter, TypedInstance>> = emptyList()
    ): OperationResult {
       val remoteCall =
          buildRemoteCall(
@@ -564,7 +571,8 @@ abstract class BaseHazelcastReadInvoker {
             elapsed,
             recordCount,
             verb,
-            success
+            success,
+            parameterPairs
          )
       return OperationResult.fromTypedInstances(
          parameters,
@@ -582,7 +590,8 @@ abstract class BaseHazelcastReadInvoker {
       elapsed: Duration,
       recordCount: Int,
       verb: CacheOperationVerb,
-      success: Boolean
+      success: Boolean,
+      parameterPairs: List<Pair<Parameter, TypedInstance>> = emptyList()
    ) = RemoteCall(
       service = service.name,
       address = address,
@@ -600,7 +609,8 @@ abstract class BaseHazelcastReadInvoker {
          verb = verb,
          connectionName = connectionName,
          cacheName = cacheName,
-         cacheType = CacheExchange.CacheType.Hazelcast
+         cacheType = CacheExchange.CacheType.Hazelcast,
+         parameters = RemoteCallExchangeMetadata.convertParametersToJson(parameterPairs)
       ),
       isFailed = !success
    )

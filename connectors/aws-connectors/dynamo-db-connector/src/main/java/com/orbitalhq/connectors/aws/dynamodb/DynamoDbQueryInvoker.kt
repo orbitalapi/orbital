@@ -39,6 +39,7 @@ import software.amazon.awssdk.services.dynamodb.model.GetItemResponse
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse
 import software.amazon.awssdk.services.dynamodb.model.ScanResponse
 import java.math.BigDecimal
+import java.util.UUID
 
 class DynamoDbQueryInvoker(
    private val connectionRegistry: AwsConnectionRegistry,
@@ -63,7 +64,8 @@ class DynamoDbQueryInvoker(
       val (taxiQuery, constructedQueryDataSource) = parameters[0].second.let { it.value as String to it.source as ConstructedQueryDataSource }
       val query = queryBuilder.buildQuery(schema, taxiQuery)
       val (client, awsConfig) = buildClient(service, operation)
-      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, "")
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, "", remoteCallId = remoteCallId)
 
       return Mono.fromFuture(executeRequest(query, client))
          .doOnError { e ->
@@ -80,7 +82,7 @@ class DynamoDbQueryInvoker(
                "Query error",
                TraceEventDirection.INBOUND
             )
-            val remoteCall = buildRemoteCall(service, awsConfig, operation, query, -1, -1, errorCode, message)
+            val remoteCall = buildRemoteCall(service, awsConfig, operation, query, -1, -1, errorCode, message, parameterPairs = parameters)
             val operationResult = OperationResult.fromTypedInstances(constructedQueryDataSource.inputs, remoteCall)
             eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
             logger.error(e) { message }
@@ -111,7 +113,7 @@ class DynamoDbQueryInvoker(
             logger.info { "DynamoDb call completed in ${duration}ms for request $query" }
             val response = responsePair.t2
             val count = response.count()
-            val remoteCall = buildRemoteCall(service, awsConfig, operation, query, duration, count)
+            val remoteCall = buildRemoteCall(service, awsConfig, operation, query, duration, count, parameterPairs = parameters)
             val operationResult = OperationResult.fromTypedInstances(constructedQueryDataSource.inputs, remoteCall)
             eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
             val items = safeParse(responsePair, operation, eventDispatcher, queryId, schema, operationResult, traceContext)

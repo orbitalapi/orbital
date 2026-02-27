@@ -408,5 +408,6 @@ private fun createTraceEvent(
    eventResource = eventResource,
    eventSourceQualifiedName = eventSourceQualifiedName,
    linkedEventId = null,
-   direction = TraceEventDirection.OUTBOUND
+   direction = TraceEventDirection.OUTBOUND,
+   remoteCallId = "remote-call-id"
 )

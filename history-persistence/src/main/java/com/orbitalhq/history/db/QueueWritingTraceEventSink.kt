@@ -71,7 +71,8 @@ class QueueWritingTraceEventSink(
             event.eventResource,
             event.eventSourceQualifiedName,
             event.linkedEventId,
-            event.direction
+            event.direction,
+            event.remoteCallId
          )
          persistenceQueue.storeTraceEvent(eventRow)
       }

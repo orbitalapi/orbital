@@ -18,6 +18,7 @@ import com.orbitalhq.schemas.Schema
 import com.orbitalhq.schemas.Service
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
+import java.util.UUID
 
 /**
  * S3 invoker for mutating operations
@@ -41,7 +42,8 @@ class S3WriteInvoker : BaseS3Invoker() {
       }
          ?: error("Expected exactly one input parameter to contain an annotation of @${S3ConnectorTaxi.RequestBodyFqn.fullyQualifiedName}")
 
-      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, bucketName)
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, bucketName, remoteCallId = remoteCallId)
 
       val (metadata, format) = formatRegistry.forType(body.type)
       val payload = if (format != null) {

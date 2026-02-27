@@ -28,6 +28,7 @@ import mu.KotlinLogging
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import java.time.Duration
+import java.util.UUID
 
 private val logger = KotlinLogging.logger { }
 
@@ -66,7 +67,8 @@ class MongoReadOnlyQueryInvoker(
          error("Mongo Joins are not yet supported - can only select from a single collection")
       }
       val collectionName = typesToCollectionNames.values.first()
-      val traceSpan = eventDispatcher.createOperationTraceSpan(service, operation, collectionName)
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceSpan = eventDispatcher.createOperationTraceSpan(service, operation, collectionName, remoteCallId = remoteCallId)
       val criteriaJson = if (criterias.isEmpty()) SelectAllCriteria else criterias.first().criteriaObject.toJson(MongoConverters.encoder)
 
 
@@ -124,7 +126,8 @@ class MongoReadOnlyQueryInvoker(
          criteriaJson,
          mongoConnectionConfig.connectionString.hosts.joinToString(),
          elapsed = Duration.ZERO, // Happens reactive, so duration makes no sense here
-         recordCount = -1
+         recordCount = -1,
+         parameterPairs = parameters
       )
 
       eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)

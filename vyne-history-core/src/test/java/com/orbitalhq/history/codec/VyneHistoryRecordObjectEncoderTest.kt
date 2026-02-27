@@ -98,12 +98,13 @@ class VyneHistoryRecordObjectEncoderTest {
          startTime = Instant.parse("2022-10-22T23:00:00Z"),
          durationMs = 33,
          exchange = HttpExchange(
-            "http://foo.com",
-            "GET",
-            "{ foo }",
-            200,
-            20000,
-            HttpHeaders.empty()
+            url = "http://foo.com",
+            verb = "GET",
+            requestBody = "{ foo }",
+            parameters = null,
+            responseCode = 200,
+            responseSize = 20000,
+            headers = HttpHeaders.empty()
          ),
          operation = "foo.bar.Bz".fqn(),
          success = true,

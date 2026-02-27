@@ -7,8 +7,8 @@ import com.orbitalhq.connectors.resultType
 import com.orbitalhq.models.DataSource
 import com.orbitalhq.models.OperationResult
 import com.orbitalhq.models.TypedInstance
-import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.RemoteCallExchangeMetadata
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.SqlExchange
 import com.orbitalhq.query.StreamErrorMessage
@@ -94,10 +94,11 @@ abstract class BaseJdbcOperationInvoker(
       jdbcUrl: String,
       elapsed: Duration,
       recordCount: Int,
-      verb: String = "SELECT"
+      verb: String = "SELECT",
+      parameterPairs: List<Pair<Parameter, TypedInstance>> = emptyList()
    ): OperationResult {
 
-      val remoteCall = buildRemoteCall(service, jdbcUrl, operation, sql, elapsed, recordCount, verb)
+      val remoteCall = buildRemoteCall(service, jdbcUrl, operation, sql, elapsed, recordCount, verb, parameterPairs)
       return OperationResult.fromTypedInstances(
          parameters,
          remoteCall
@@ -111,7 +112,8 @@ abstract class BaseJdbcOperationInvoker(
       sql: String,
       elapsed: Duration,
       recordCount: Int,
-      verb: String
+      verb: String,
+      parameterPairs: List<Pair<Parameter, TypedInstance>> = emptyList()
    ) = RemoteCall(
       service = service.name,
       address = jdbcUrl,
@@ -127,7 +129,8 @@ abstract class BaseJdbcOperationInvoker(
       exchange = SqlExchange(
          sql = sql,
          recordCount = recordCount,
-         verb = verb
+         verb = verb,
+         parameters = RemoteCallExchangeMetadata.convertParametersToJson(parameterPairs)
       ),
 
    )
