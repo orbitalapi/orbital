@@ -69,8 +69,9 @@ open class GitPollOperations(
     * Returns a boolean indicating if changes made locally as a result of the fetch
     */
    fun fetchLatest(): GitSyncStatus {
+      val existedLocally = existsLocally()
       return try {
-         if (existsLocally()) {
+         if (existedLocally) {
             logger.debug { "Pulling latest git from ${config.redactedUrl} on branch ${config.branch} to ${workingDir.absolutePath}" }
             val checkoutRef = checkout()
             val pullResult = pull()
@@ -87,6 +88,7 @@ open class GitPollOperations(
                repository = config,
                checkoutRoot = workingDir.toPath(),
                currentRef = GitRef(branchRef),
+               existedLocally = true,
             )
          } else {
             val workingDirPath = workingDir.toPath()
@@ -106,7 +108,8 @@ open class GitPollOperations(
                behindCount = 0,
                repository = config,
                checkoutRoot = workingDir.toPath(),
-               currentRef = GitRef(ref)
+               currentRef = GitRef(ref),
+               existedLocally = false,
             )
          }
       } catch (e: Exception) {
@@ -122,7 +125,8 @@ open class GitPollOperations(
             behindCount = 0,
             repository = config,
             checkoutRoot = workingDir.toPath(),
-            errorMessage = errorMessage
+            errorMessage = errorMessage,
+            existedLocally = existedLocally,
          )
       }
    }
@@ -196,7 +200,13 @@ data class GitSyncStatus(
    val repository: GitRepositoryConnectionConfig,
    val checkoutRoot: Path,
    val currentRef: GitRef? = null,
-   val errorMessage: String? = null
+   val errorMessage: String? = null,
+   /**
+    * Indicates whether the repository existed locally (had a previous successful sync)
+    * at the time this sync was attempted. Used to distinguish between a first-time
+    * clone failure (ERROR) and a transient network failure on an already-synced repo (WARNING).
+    */
+   val existedLocally: Boolean = false,
 ) {
    val isClean = aheadCount == 0 && behindCount == 0 && !hasUnresolvedRebase && !hasUnresolvedMerges
    val description: String
