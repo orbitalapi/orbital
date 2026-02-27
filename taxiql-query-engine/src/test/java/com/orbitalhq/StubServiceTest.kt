@@ -45,5 +45,22 @@ class StubServiceSpec : DescribeSpec({
            .firstRawObject()
            .shouldBe(mapOf("name" to "Jimmy"))
      }
+
+     it("can stub streaming operations by their full name") {
+        val (vyne,stub) = testVyne("""
+            model Person {
+               name : String
+            }
+
+            service PersonApi {
+               stream personEvents:Stream<Person>
+            }
+         """.trimIndent())
+        val emitter = stub.addResponseEmitter("PersonApi@@personEvents")
+
+        vyne.query("find { Person }")
+           .firstRawObject()
+           .shouldBe(mapOf("name" to "Jimmy"))
+     }
   }
 })
