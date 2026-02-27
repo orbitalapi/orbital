@@ -1979,18 +1979,21 @@ find { CompanyMemberData[] } as {
          val serviceCapture = argumentCaptor<Service>()
          val operationCapture = argumentCaptor<RemoteOperation>()
          val resourceNameCapture = argumentCaptor<String>()
+         val remoteCallIdCapture = argumentCaptor<String>()
          on {
             createOperationTraceSpan(
                serviceCapture.capture(),
                operationCapture.capture(),
-               resourceNameCapture.capture()
+               resourceNameCapture.capture(),
+               remoteCallIdCapture.capture()
             )
          } doAnswer {
             OperationTraceSpan(
                TraceContext.noOp().rootSpan,
                serviceCapture.lastValue,
                operationCapture.lastValue,
-               resourceNameCapture.lastValue
+               resourceNameCapture.lastValue,
+               remoteCallIdCapture.lastValue
             )
          }
          on { reportRemoteOperationInvoked(capture.capture(), com.nhaarman.mockito_kotlin.any()) } doAnswer {

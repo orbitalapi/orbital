@@ -15,6 +15,7 @@ import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.models.TypedObject
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.RemoteCallExchangeMetadata
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.SqlExchange
 import com.orbitalhq.query.StreamErrorMessage
@@ -44,6 +45,7 @@ import org.jooq.Result
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
 enum class UpsertVerb {
@@ -217,7 +219,8 @@ open class JdbcUpsertInvoker(
       )
       logger.info { "Writing INSERT to table ${tableAnnotation.tableName}" }
       val tableName = SqlUtils.getTableName(inputAsList.first().type.taxiType)
-      val span = eventDispatcher.createOperationTraceSpan(service, operation, tableName)
+      val remoteCallId = UUID.randomUUID().toString()
+      val span = eventDispatcher.createOperationTraceSpan(service, operation, tableName, remoteCallId = remoteCallId)
       val startTime = Instant.now()
       try {
          // Emit event before doing the thing
@@ -243,7 +246,7 @@ open class JdbcUpsertInvoker(
          }
 
          val remoteCall =
-            buildRemoteCall(service, connectionConfig, operation, sqlOperation.sql, startTime, errorMessage = null)
+            buildRemoteCall(service, connectionConfig, operation, sqlOperation.sql, startTime, errorMessage = null, parameterPairs = parameters)
          val operationResult = OperationResult.fromTypedInstances(
             parameters.map { it.second },
             remoteCall
@@ -266,7 +269,7 @@ open class JdbcUpsertInvoker(
          )
 
          val remoteCall =
-            buildRemoteCall(service, connectionConfig, operation, sqlOperation.sql, startTime, errorMessage)
+            buildRemoteCall(service, connectionConfig, operation, sqlOperation.sql, startTime, errorMessage, parameterPairs = parameters)
          eventDispatcher.reportRemoteOperationInvoked(
             OperationResult.fromTypedInstances(
                parameters.map { it.second },
@@ -309,7 +312,8 @@ open class JdbcUpsertInvoker(
       operation: RemoteOperation,
       sql: String,
       startTime: Instant,
-      errorMessage: String?
+      errorMessage: String?,
+      parameterPairs: List<Pair<Parameter, TypedInstance>> = emptyList()
    ) = RemoteCall(
       service = service.name,
       address = connectionConfig.address,
@@ -323,7 +327,8 @@ open class JdbcUpsertInvoker(
       exchange = SqlExchange(
          sql,
          0,
-         "UPSERT"
+         "UPSERT",
+         parameters = RemoteCallExchangeMetadata.convertParametersToJson(parameterPairs)
       ),
       isFailed = errorMessage != null
    )

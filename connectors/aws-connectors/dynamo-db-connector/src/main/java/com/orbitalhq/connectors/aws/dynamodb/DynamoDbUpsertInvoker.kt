@@ -26,6 +26,7 @@ import mu.KotlinLogging
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 import reactor.core.scheduler.Schedulers
+import java.util.UUID
 
 class DynamoDbUpsertInvoker(
    private val connectionRegistry: AwsConnectionRegistry,
@@ -51,7 +52,8 @@ class DynamoDbUpsertInvoker(
       val request = queryBuilder.buildPut(schemaProvider.schema, recordToWrite)
 
       val (client, awsConfig) = buildClient(service, operation)
-      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, "")
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, "", remoteCallId = remoteCallId)
 
       return Mono.fromFuture(executeRequest(request, client))
          .doOnSubscribe {
@@ -93,7 +95,7 @@ class DynamoDbUpsertInvoker(
                "Upsert response",
                direction = TraceEventDirection.INBOUND
             )
-            val remoteCall = buildRemoteCall(service, awsConfig, operation, request, duration, count)
+            val remoteCall = buildRemoteCall(service, awsConfig, operation, request, duration, count, parameterPairs = parameters)
             val operationResult = OperationResult.fromTypedInstances(parameters.map { it.second }, remoteCall)
             eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
             val writeResultValue: Either<StreamErrorMessage, TypedInstance> = Either.Right(

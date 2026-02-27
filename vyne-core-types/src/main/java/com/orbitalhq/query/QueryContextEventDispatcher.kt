@@ -60,9 +60,11 @@ interface QueryContextEventDispatcher {
        * A human readable name for the resource that this event relates to.
        * Could be a table name, topic, url, etc.
        */
-      eventResourceName: String
+      eventResourceName: String,
+
+      remoteCallId: String
    ): OperationTraceSpan {
-      return OperationTraceSpan(this.createSpan(), service, operation, eventResourceName)
+      return OperationTraceSpan(this.createSpan(), service, operation, eventResourceName, remoteCallId)
    }
 
 // TODO: This didn't get implemented, as passing tags around was too messy / too easy

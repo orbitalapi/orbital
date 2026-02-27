@@ -42,6 +42,7 @@ import mu.KotlinLogging
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 import java.time.Duration
+import java.util.UUID
 
 /**
  * Handles the @DeleteOperation annotations,
@@ -82,7 +83,8 @@ class MongoDeleteQueryInvoker(
          ?: error("Expected a single parameter, but received ${parameters.size}")
 
       val collectionName = inputType.taxiType.collectionNameOrTypeName()
-      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, collectionName)
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, collectionName, remoteCallId = remoteCallId)
       val (connectionConfig, reactiveMongoTemplate) = getConnectionConfigAndTemplate(service)
 
       val tags = tags(connectionConfig, collectionName, operation)

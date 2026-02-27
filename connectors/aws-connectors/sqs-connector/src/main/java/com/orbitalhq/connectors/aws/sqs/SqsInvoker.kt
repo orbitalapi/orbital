@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import lang.taxi.services.OperationScope
 import mu.KotlinLogging
+import java.util.UUID
 
 class SqsInvoker(
    private val schemaProvider: SchemaProvider,
@@ -94,7 +95,8 @@ class SqsInvoker(
       val sqsOperation = operation.firstMetadata(SqsConnectorTaxi.Annotations.SqsOperation.NAME)
          .let { SqsConnectorTaxi.Annotations.SqsOperation.from(it) }
 
-      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, sqsOperation.queue)
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, sqsOperation.queue, remoteCallId = remoteCallId)
 
       return if (operation.operationType == OperationScope.MUTATION) {
          publishToTopic(connectionName, sqsOperation, parameters, eventDispatcher, traceContext)

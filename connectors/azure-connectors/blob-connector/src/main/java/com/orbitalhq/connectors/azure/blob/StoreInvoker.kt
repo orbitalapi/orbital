@@ -38,6 +38,7 @@ import mu.KotlinLogging
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 
 private val logger = KotlinLogging.logger { }
 
@@ -69,7 +70,8 @@ class StoreInvoker(
       val paramMap = paramList.associate { param -> param.nameUsedInTemplate to param.value }
       val azureStoreConnection = fetchConnection(service)
       val containerName = fetchContainer(operation)
-      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, containerName)
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, containerName, remoteCallId = remoteCallId)
 
       traceContext.emitEvent(
          kind = TracingEventKind.OK,

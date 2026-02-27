@@ -13,6 +13,7 @@ import com.orbitalhq.query.HttpExchange
 import com.orbitalhq.query.HttpHeaders
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.RemoteCallExchangeMetadata
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.tracing.HttpRequest
@@ -25,7 +26,6 @@ import com.orbitalhq.schema.api.SchemaProvider
 import com.orbitalhq.schema.consumer.SchemaChangedEventProvider
 import com.orbitalhq.schemas.OperationInvocationException
 import com.orbitalhq.schemas.Parameter
-import com.orbitalhq.schemas.QualifiedName
 import com.orbitalhq.schemas.QueryOptions
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Schema
@@ -34,7 +34,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import lang.taxi.generators.SourceMap
 import lang.taxi.generators.soap.SoapAnnotations
-import lang.taxi.generators.soap.SoapLanguage
 import lang.taxi.packages.SourcesTypes
 import mu.KotlinLogging
 import org.apache.cxf.endpoint.Client
@@ -46,6 +45,7 @@ import java.nio.file.Paths
 import java.time.Instant
 import kotlin.io.path.extension
 import kotlin.io.path.writeText
+import java.util.UUID
 import kotlin.time.Duration
 import kotlin.time.measureTimedValue
 
@@ -140,7 +140,8 @@ class SoapInvoker(
       queryOptions: QueryOptions
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
 
-      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, "")
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, "", remoteCallId = remoteCallId)
       val soapClient = clientCache.get(schemaProvider.schema, service)
       require(parameters.size <= 1) { "SOAP services expect 0 or 1 parameters, but got ${parameters.size}" }
       val parameterValues = paramToOrderedArray(parameters.singleOrNull())
@@ -187,7 +188,7 @@ class SoapInvoker(
          val schema = schemaProvider.schema
 
          val remoteCall = buildRemoteCall(
-            service, operation, outboundMessage, inboundMessage, duration, timestamp
+            service, operation, outboundMessage, inboundMessage, duration, timestamp, parameterPairs = parameters
          )
          val operationResult = OperationResult.from(parameters, remoteCall)
 
@@ -229,7 +230,8 @@ class SoapInvoker(
                requestBody = null,
                responseCode = responseCode,
                responseSize = 0,
-               headers = HttpHeaders.empty()
+               headers = HttpHeaders.empty(),
+               parameters = RemoteCallExchangeMetadata.convertParametersToJson(parameters)
             ),
             response = message,
             isFailed = true
@@ -269,7 +271,8 @@ class SoapInvoker(
       inboundMessage: InboundSoapResponse,
       duration: Duration,
       timestamp: Instant,
-      failed: Boolean = false
+      failed: Boolean = false,
+      parameterPairs: List<Pair<Parameter, TypedInstance>> = emptyList()
    ): RemoteCall {
       return RemoteCall(
          service = service.name,
@@ -280,12 +283,13 @@ class SoapInvoker(
          timestamp = timestamp,
          responseMessageType = ResponseMessageType.FULL,
          exchange = HttpExchange(
-            outboundMessage.url,
-            outboundMessage.method,
-            outboundMessage.payload,
-            inboundMessage.resultCode,
-            inboundMessage.payload.length,
-            HttpHeaders.empty()
+            url = outboundMessage.url,
+            verb = outboundMessage.method,
+            requestBody = outboundMessage.payload,
+            parameters = RemoteCallExchangeMetadata.convertParametersToJson(parameterPairs),
+            responseCode = inboundMessage.resultCode,
+            responseSize = inboundMessage.payload.length,
+            headers = HttpHeaders.empty()
          ),
          response = inboundMessage.payload,
          isFailed = failed

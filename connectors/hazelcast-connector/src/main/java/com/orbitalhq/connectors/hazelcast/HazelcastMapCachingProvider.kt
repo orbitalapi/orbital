@@ -18,6 +18,7 @@ import com.orbitalhq.models.serde.toSerializable
 import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.query.ConstructedQueryDataSource
 import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.RemoteCallExchangeMetadata
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.connectors.CacheNames
@@ -257,7 +258,8 @@ class HazelcastMapCachingProvider(
             cacheKey,
             CacheExchange.CacheOperationVerb.GET_CACHED_RESULT,
             CacheExchange.CacheType.Hazelcast,
-            resultSize
+            resultSize,
+            parameters = RemoteCallExchangeMetadata.convertParametersToJson(message.parameters)
          ),
          timestamp = Instant.ofEpochMilli(Duration.ofNanos(startTime).toMillis()),
          response = null, // Do we want to persist the response again?

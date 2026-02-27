@@ -84,4 +84,7 @@ data class TraceEventRow(
    @Enumerated(EnumType.STRING)
    @Column(name = "event_direction")
    val direction: TraceEventDirection,
+
+   @Column(name = "remote_call_id")
+   val remoteCallId: String?
 )

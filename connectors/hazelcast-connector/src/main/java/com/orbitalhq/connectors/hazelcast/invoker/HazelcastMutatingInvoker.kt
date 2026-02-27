@@ -16,6 +16,7 @@ import com.orbitalhq.models.json.right
 import com.orbitalhq.query.CacheExchange
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.RemoteCallExchangeMetadata
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.tracing.CacheRequest
@@ -35,6 +36,7 @@ import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 
 class HazelcastMutatingInvoker {
 
@@ -218,7 +220,8 @@ class HazelcastMutatingInvoker {
       schema: Schema
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val startTime = Instant.now()
-      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, "")
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, "", remoteCallId = remoteCallId)
 
       fun reportResult(
          sql: String,
@@ -235,7 +238,8 @@ class HazelcastMutatingInvoker {
             sql,
             Duration.between(startTime, Instant.now()),
             resultSize,
-            verb
+            verb,
+            parameterPairs = parameters
          )
          eventDispatcher.reportRemoteOperationInvoked(result, queryId)
          return result.asOperationReferenceDataSource()
@@ -283,7 +287,8 @@ class HazelcastMutatingInvoker {
       sql: String,
       elapsed: Duration,
       recordCount: Int,
-      verb: CacheExchange.CacheOperationVerb
+      verb: CacheExchange.CacheOperationVerb,
+      parameterPairs: List<Pair<Parameter, TypedInstance>> = emptyList()
    ): OperationResult {
       val remoteCall =
          buildRemoteCall(
@@ -295,28 +300,14 @@ class HazelcastMutatingInvoker {
             elapsed,
             recordCount,
             verb,
-            connectionConfig.connectionName
+            connectionConfig.connectionName,
+            parameterPairs
          )
       return OperationResult.fromTypedInstances(
          parameters,
          remoteCall
       )
    }
-
-   /**
-    * data class CacheExchange(
-    *    val connectionName: String,
-    *    val cacheName: String,
-    *    /**
-    *     * When a simple key lookup, provide the key.
-    *     * If querying, provide the query statement
-    *     */
-    *    val cacheKeyOrStatement: String,
-    *    val verb: CacheOperationVerb,
-    *    val cacheType: CacheType,
-    *    val recordCount: Int,
-    * )
-    */
 
    private fun buildRemoteCall(
       mapName: String,
@@ -327,7 +318,8 @@ class HazelcastMutatingInvoker {
       elapsed: Duration,
       recordCount: Int,
       verb: CacheExchange.CacheOperationVerb,
-      connectionName: String
+      connectionName: String,
+      parameterPairs: List<Pair<Parameter, TypedInstance>> = emptyList()
    ) = RemoteCall(
       service = service.name,
       address = hazelcastAddresses,
@@ -346,7 +338,8 @@ class HazelcastMutatingInvoker {
          cacheKeyOrStatement = sql,
          cacheType = CacheExchange.CacheType.Hazelcast,
          recordCount = recordCount,
-         verb = verb
+         verb = verb,
+         parameters = RemoteCallExchangeMetadata.convertParametersToJson(parameterPairs)
       ),
 
       )

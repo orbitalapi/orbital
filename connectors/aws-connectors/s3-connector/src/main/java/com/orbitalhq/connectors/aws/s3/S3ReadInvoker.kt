@@ -8,6 +8,7 @@ import com.orbitalhq.models.format.FormatRegistry
 import com.orbitalhq.query.ObjectStoreExchange
 import com.orbitalhq.query.QueryContextEventDispatcher
 import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.RemoteCallExchangeMetadata
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.StreamErrorMessage
 import com.orbitalhq.query.tracing.ObjectStoreRequest
@@ -30,6 +31,7 @@ import org.apache.commons.io.FileUtils
 import software.amazon.awssdk.services.s3.model.S3Object
 import java.time.Duration
 import java.time.Instant
+import java.util.UUID
 
 /**
  * Invoker for s3 that reads directly from files.
@@ -54,7 +56,8 @@ class S3ReadInvoker : BaseS3Invoker() {
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
       val filePattern = getFilenamePattern(parameters)
       val startTime = Instant.now()
-      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, bucketName)
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, bucketName, remoteCallId = remoteCallId)
 
       traceContext.emitEvent(
          kind = TracingEventKind.OK,
@@ -87,7 +90,8 @@ class S3ReadInvoker : BaseS3Invoker() {
                awsConnection.connectionName,
                bucketName,
                s3Object = null,
-               errorMessage = error.message
+               errorMessage = error.message,
+               parameterPairs = parameters
             )
             eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
             OperationInvocationException(
@@ -136,7 +140,8 @@ class S3ReadInvoker : BaseS3Invoker() {
                      awsConnection.connectionName,
                      bucketName,
                      s3Object = s3Object,
-                     errorMessage = error.message
+                     errorMessage = error.message,
+                     parameterPairs = parameters
                   )
                   eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
                   OperationInvocationException(
@@ -166,6 +171,7 @@ class S3ReadInvoker : BaseS3Invoker() {
                awsConnection.connectionName,
                bucketName,
                s3Object,
+               parameterPairs = parameters
             )
             eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
             TypedInstance.forStream(
@@ -188,7 +194,8 @@ class S3ReadInvoker : BaseS3Invoker() {
       address: String,
       bucketName: String,
       s3Object: S3Object? = null,
-      errorMessage: String? = null
+      errorMessage: String? = null,
+      parameterPairs: List<Pair<Parameter, TypedInstance>> = emptyList()
    ): OperationResult {
 
       val remoteCall = RemoteCall(
@@ -206,6 +213,7 @@ class S3ReadInvoker : BaseS3Invoker() {
             bucketName,
             s3Object?.key(),
             responseSize = s3Object?.size() ?: -1,
+            parameters = RemoteCallExchangeMetadata.convertParametersToJson(parameterPairs)
          )
       )
       return OperationResult.fromTypedInstances(

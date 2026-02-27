@@ -24,6 +24,7 @@ import io.micrometer.core.instrument.MeterRegistry
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import mu.KotlinLogging
+import java.util.UUID
 
 private val logger = KotlinLogging.logger { }
 
@@ -53,7 +54,8 @@ class MongoMutatingQueryInvoker(
       val (param, input) = parameters.singleOrNull()
          ?: error("Expected a single parameter, but received ${parameters.size}")
       val collectionName = inputType.taxiType.collectionNameOrTypeName()
-      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, collectionName)
+      val remoteCallId = UUID.randomUUID().toString()
+      val traceContext = eventDispatcher.createOperationTraceSpan(service, operation, collectionName, remoteCallId = remoteCallId)
       val (connectionConfig, reactiveMongoTemplate) = getConnectionConfigAndTemplate(service)
       val recordToWrite = parameters[0].second
       val documentMap = typedInstanceToMap(recordToWrite)
@@ -152,7 +154,8 @@ class MongoMutatingQueryInvoker(
                "upsert",
                connectionConfig.connectionString.hosts.joinToString(),
                java.time.Duration.ofMillis(duration),
-               recordCount = 1
+               recordCount = 1,
+               parameterPairs = parameters
             )
             eventDispatcher.reportRemoteOperationInvoked(operationResult, queryId)
             val resultTypedInstance =

@@ -14,25 +14,6 @@ import com.orbitalhq.query.history.QuerySummary
 import com.orbitalhq.query.history.RemoteCallResponse
 import com.orbitalhq.query.history.tracing.TraceEventRow
 import com.orbitalhq.query.history.tracing.TraceSpanRecord
-import com.orbitalhq.query.tracing.CacheRequest
-import com.orbitalhq.query.tracing.CacheResponse
-import com.orbitalhq.query.tracing.ConnectionError
-import com.orbitalhq.query.tracing.DatabaseRequest
-import com.orbitalhq.query.tracing.DatabaseResponse
-import com.orbitalhq.query.tracing.DatabaseResponseComplete
-import com.orbitalhq.query.tracing.DatabaseResponseRecord
-import com.orbitalhq.query.tracing.EmptyTraceMetadata
-import com.orbitalhq.query.tracing.FunctionCallRequest
-import com.orbitalhq.query.tracing.FunctionCallResponse
-import com.orbitalhq.query.tracing.HttpRequest
-import com.orbitalhq.query.tracing.HttpResponse
-import com.orbitalhq.query.tracing.MessageStreamDisconnection
-import com.orbitalhq.query.tracing.MessageStreamErrorEvent
-import com.orbitalhq.query.tracing.MessageStreamEventReceived
-import com.orbitalhq.query.tracing.MessageStreamSubscription
-import com.orbitalhq.query.tracing.ObjectStoreRequest
-import com.orbitalhq.query.tracing.ObjectStoreResponse
-import com.orbitalhq.query.tracing.ProjectionTraceMetadata
 import com.orbitalhq.query.tracing.TraceEventDirection
 import com.orbitalhq.query.tracing.TracingEventExchangeMetadata
 import com.orbitalhq.schemas.OperationNames
@@ -62,7 +43,7 @@ class PreflightSpecProvider {
       val responseJson = objectMapper.writerWithDefaultPrettyPrinter()
          .writeValueAsString(response)
 
-      val stubs = convertSpansToStubs(spans)
+      val stubs = convertSpansToStubs(spans, calls)
       val testSpec = TestSpec(
          name = request.regressionPackName,
          description = request.description,
@@ -79,7 +60,7 @@ class PreflightSpecProvider {
       return outputStream
    }
 
-   private fun convertSpansToStubs(spans: List<TraceSpanRecord>): List<Stub> {
+   private fun convertSpansToStubs(spans: List<TraceSpanRecord>, calls: List<RemoteCallResponse>): List<Stub> {
       return spans.flatMap { it.flatten() }
          .filter { OperationNames.isName(it.eventSourceQualifiedName) }
          .map { span ->
@@ -104,7 +85,11 @@ class PreflightSpecProvider {
                   } else {
                      payload.orEmpty()
                   }
-                  ExchangeMetadataTypeAndPayload(eventType, payloadOrErrorMessage)
+                  val matchedCall: RemoteCallResponse? = if (event.remoteCallId != null) {
+                     calls.firstOrNull { it.remoteCallId == event.remoteCallId }
+                  } else null
+
+                  ExchangeMetadataTypeAndPayload(eventType, payloadOrErrorMessage, matchedCall)
                } catch (e: Exception) {
                   logger.warn(e) { "Failed to read exchange metadata for event ${event.eventId} with (${event.eventVerb} on ${event.eventResource}), so cannot create stub" }
                   null
@@ -122,12 +107,17 @@ class PreflightSpecProvider {
    ): Stub {
       val (serviceName, operationName) = OperationNames.serviceAndOperation(span.eventSourceQualifiedName)
       val (mode, requestMessage, responseMessages) = convertEventsToMessages(events)
+      val parameters = events.firstOrNull { it.first.direction == TraceEventDirection.OUTBOUND }
+         ?.second?.remoteCall?.exchange?.parameters
+
       return Stub(
          operationName,
          span.eventSourceQualifiedName,
          mode,
-         if (mode == StubMode.REQUEST_RESPONSE) responseMessages.firstOrNull() else null,
+         parameters =  parameters,
+         response = if (mode == StubMode.REQUEST_RESPONSE) responseMessages.firstOrNull() else null,
          messages = if (mode == StubMode.STREAM) responseMessages else null,
+
       )
    }
 
@@ -191,4 +181,4 @@ class PreflightSpecProvider {
 
 }
 
-private data class ExchangeMetadataTypeAndPayload(val eventType: String, val payload: String)
+private data class ExchangeMetadataTypeAndPayload(val eventType: String, val payload: String, val remoteCall: RemoteCallResponse?)

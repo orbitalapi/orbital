@@ -3,9 +3,12 @@ package com.orbitalhq.connectors.aws.dynamodb
 import com.orbitalhq.connectors.aws.configureWithExplicitValuesIfProvided
 import com.orbitalhq.connectors.aws.core.registry.AwsConnectionRegistry
 import com.orbitalhq.connectors.config.aws.AwsConnectionConfiguration
+import com.orbitalhq.models.TypedInstance
 import com.orbitalhq.query.RemoteCall
+import com.orbitalhq.query.RemoteCallExchangeMetadata
 import com.orbitalhq.query.ResponseMessageType
 import com.orbitalhq.query.SqlExchange
+import com.orbitalhq.schemas.Parameter
 import com.orbitalhq.schemas.RemoteOperation
 import com.orbitalhq.schemas.Service
 import com.orbitalhq.schemas.fqn
@@ -73,6 +76,7 @@ abstract class BaseDynamoInvoker(
         count: Int,
         resultCode: Int = -1,
         errorMessage: String? = null,
+        parameterPairs: List<Pair<Parameter, TypedInstance>> = emptyList(),
     ): RemoteCall {
         return RemoteCall(
             service = service.name,
@@ -89,7 +93,8 @@ abstract class BaseDynamoInvoker(
             exchange = SqlExchange(
                 sql = query.toString(),
                 recordCount = count,
-               verb = "SELECT"
+               verb = "SELECT",
+               parameters = RemoteCallExchangeMetadata.convertParametersToJson(parameterPairs)
             )
 
         )

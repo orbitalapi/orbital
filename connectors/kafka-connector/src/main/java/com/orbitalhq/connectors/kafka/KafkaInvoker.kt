@@ -28,6 +28,7 @@ import kotlinx.coroutines.flow.onCompletion
 import lang.taxi.services.OperationScope
 import lang.taxi.types.PrimitiveType
 import mu.KotlinLogging
+import java.util.UUID
 
 
 private val logger = KotlinLogging.logger { }
@@ -136,7 +137,8 @@ class KafkaInvoker(
       queryId: String,
       queryOptions: QueryOptions
    ): Flow<Either<StreamErrorMessage, TypedInstance>> {
-      val span = eventDispatcher.createOperationTraceSpan(service, operation, kafkaOperation.topic)
+      val remoteCallId = UUID.randomUUID().toString()
+      val span = eventDispatcher.createOperationTraceSpan(service, operation, kafkaOperation.topic, remoteCallId = remoteCallId)
 
       val (eventMetadata, rawStream) = streamManager.getStream(
          createConsumerRequest(connectionName, kafkaOperation, service, operation, queryOptions)

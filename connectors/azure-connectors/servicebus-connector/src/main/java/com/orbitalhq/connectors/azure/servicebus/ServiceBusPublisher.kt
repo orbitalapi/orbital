@@ -241,7 +241,8 @@ class ServiceBusPublisher(
       exchange = SqlExchange(
          sql = criteria,
          recordCount = recordCount,
-         verb = verb
+         verb = verb,
+         parameters = null
       ),
 
       )
