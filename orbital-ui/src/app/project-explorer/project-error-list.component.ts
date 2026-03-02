@@ -10,18 +10,24 @@ import { map } from "rxjs/operators";
     template: `
     <app-header-component-layout
       title="Projects - problems"
-      description="There are problems with these projects, preventing them from loading.">
+      description="These projects have issues. Errors prevent loading; warnings mean the project loaded from a local cache but could not sync with the remote.">
       <div class="project-list-container">
         <table class="project-list">
           <thead>
           <tr>
             <th>Project</th>
+            <th>Severity</th>
             <th>Status</th>
           </tr>
           </thead>
           <tbody>
-          <tr *ngFor="let project of (unhealthyLoaders$ | async)">
+          <tr *ngFor="let project of (unhealthyLoaders$ | async)" [ngClass]="project.status.state.toLowerCase()">
             <td>{{ project.loaderDescription }}</td>
+            <td class="severity-cell">
+              <span class="severity-badge" [ngClass]="project.status.state.toLowerCase()">
+                {{ project.status.state === 'ERROR' ? 'Error' : 'Warning' }}
+              </span>
+            </td>
             <td>{{ project.status.message }}</td>
           </tr>
           </tbody>

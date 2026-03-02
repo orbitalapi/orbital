@@ -5,6 +5,7 @@ import com.orbitalhq.schema.publisher.loaders.LoaderStatus
 import com.orbitalhq.schemaServer.core.adaptors.SchemaSourcesAdaptorFactory
 import com.orbitalhq.schemaServer.core.file.deployProject
 import com.orbitalhq.schemaServer.core.git.GitProjectSpec
+import com.orbitalhq.schemaServer.core.git.GitRepoSync
 import com.orbitalhq.schemaServer.core.git.GitSchemaPackageLoader
 import com.orbitalhq.schemaServer.packages.TaxiPackageLoaderSpec
 import com.orbitalhq.utils.files.ReactivePollingFileSystemMonitor
@@ -220,7 +221,120 @@ class TaxiGitPackageLoaderTest {
          }
          .expectNextMatches {
             it.state.shouldBe(LoaderStatus.LoaderState.ERROR)
-            it.message.shouldBe("Failed to perform git sync to config local-test at http://badgiturl.nope/ - TransportException - http://badgiturl.nope/: cannot open git-upload-pack")
+            it.message.shouldContain("Failed to sync git repository 'local-test' at http://badgiturl.nope/")
+            true
+         }
+         .thenCancel()
+         .verify()
+   }
+
+   @Test
+   fun `loader is warning (not error) if sync fails but repo was previously synced`() {
+      deployTestProjectToRemoteGitPath()
+      val checkoutRoot = localRepoDir.root.toPath()
+
+      // First, perform a successful sync to establish a local copy
+      val goodConfig = GitProjectSpec(
+         "local-test",
+         uri = remoteRepoDir.root.toURI().toASCIIString(),
+         branch = "master",
+         loader = TaxiPackageLoaderSpec
+      )
+      GitRepoSync.syncNow(checkoutRoot, goodConfig)
+
+      // Change the remote URL to a bad one so subsequent pulls actually fail.
+      // pull() uses the git-configured remote from .git/config, not config.uri
+      Git.open(checkoutRoot.toFile()).use { localGit ->
+         val gitConfig = localGit.repository.config
+         gitConfig.setString("remote", "origin", "url", "http://badgiturl.nope/")
+         gitConfig.save()
+      }
+
+      // Now create a loader with a bad URL pointing to the same (already-synced) working dir
+      val badConfig = GitProjectSpec(
+         "local-test",
+         uri = "http://badgiturl.nope/",
+         branch = "master",
+         loader = TaxiPackageLoaderSpec
+      )
+      val adaptor = SchemaSourcesAdaptorFactory().getAdaptor(badConfig.loader)
+      val fileMonitor = ReactivePollingFileSystemMonitor(checkoutRoot, Duration.ofDays(1))
+      val loader = GitSchemaPackageLoader(
+         checkoutRoot,
+         badConfig,
+         adaptor,
+         fileMonitor,
+         gitPollFrequency = Duration.ofDays(1)
+      )
+
+      loader.loaderStatus
+         .test()
+         .expectSubscription()
+         .expectNextMatches { it == LoaderStatus.STARTING }
+         .then {
+            loader.syncNow()
+         }
+         .expectNextMatches {
+            it.state.shouldBe(LoaderStatus.LoaderState.WARNING)
+            it.message.shouldContain("Remote sync failed — using locally cached version")
+            it.message.shouldContain("Failed to sync git repository 'local-test'")
+            true
+         }
+         .thenCancel()
+         .verify()
+   }
+
+   @Test
+   fun `source packages are still loaded from local copy when sync fails on a previously synced repo`() {
+      deployTestProjectToRemoteGitPath()
+      val checkoutRoot = localRepoDir.root.toPath()
+
+      // First, perform a successful sync to establish a local copy
+      val goodConfig = GitProjectSpec(
+         "local-test",
+         uri = remoteRepoDir.root.toURI().toASCIIString(),
+         branch = "master",
+         loader = TaxiPackageLoaderSpec
+      )
+      GitRepoSync.syncNow(checkoutRoot, goodConfig)
+
+      // Change the remote URL to a bad one so subsequent pulls actually fail.
+      // pull() uses the git-configured remote from .git/config, not config.uri
+      Git.open(checkoutRoot.toFile()).use { localGit ->
+         val gitConfig = localGit.repository.config
+         gitConfig.setString("remote", "origin", "url", "http://badgiturl.nope/")
+         gitConfig.save()
+      }
+
+      // Now create a loader with a bad URL pointing to the same (already-synced) working dir
+      val badConfig = GitProjectSpec(
+         "local-test",
+         uri = "http://badgiturl.nope/",
+         branch = "master",
+         loader = TaxiPackageLoaderSpec
+      )
+      val adaptor = SchemaSourcesAdaptorFactory().getAdaptor(badConfig.loader)
+      val fileMonitor = ReactivePollingFileSystemMonitor(checkoutRoot, Duration.ofDays(1))
+      val loader = GitSchemaPackageLoader(
+         checkoutRoot,
+         badConfig,
+         adaptor,
+         fileMonitor,
+         gitPollFrequency = Duration.ofDays(1)
+      )
+
+      // Even though the sync will fail, packages should still be emitted from the local copy
+      loader.start()
+         .test()
+         .expectSubscription()
+         .expectNextMatches { sourcePackage ->
+            sourcePackage.identifier.shouldBe(
+               PackageIdentifier(
+                  organisation = "taxi",
+                  name = "sample",
+                  version = "0.3.0"
+               )
+            )
             true
          }
          .thenCancel()
