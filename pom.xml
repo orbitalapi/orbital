@@ -60,6 +60,10 @@
       <guava.version>32.1.3-jre</guava.version>
 
       <logbook.version>3.12.0</logbook.version>
+      <!-- CVE  GHSA-72hv-8253-57qq  in Jackson 2.19.4.
+      Remove once we upgrade Spring Boot > 3.5.11
+      -->
+      <jackson-bom.version>2.21.1</jackson-bom.version>
 
       <!-- CVE-2025-7962, resolved in 2.0.4 -->
       <angus-mail.version>2.0.3</angus-mail.version>
