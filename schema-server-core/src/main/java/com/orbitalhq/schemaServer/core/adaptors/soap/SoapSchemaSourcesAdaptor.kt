@@ -37,7 +37,8 @@ class SoapSchemaSourcesAdaptor(
          DefaultPackageMetadata(
             spec.identifier,
             submissionDate = Instant.now(),
-            dependencies = emptyList()
+            dependencies = emptyList(),
+            compilerOptions = spec.compilerOptions
          )
       )
    }

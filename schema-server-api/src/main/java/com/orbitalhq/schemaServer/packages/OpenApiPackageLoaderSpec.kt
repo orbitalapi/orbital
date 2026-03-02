@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonProperty
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.packages.PackageLoaderSpec
 import com.orbitalhq.schemaServer.packages.PackageType
+import lang.taxi.packages.CompilerOptions
 import java.net.URI
 import java.time.Instant
 
@@ -28,6 +29,7 @@ data class OpenApiPackageLoaderSpec(
    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
    val submissionDate: Instant = Instant.now(),
    val dependencies: List<PackageIdentifier> = emptyList(),
+   val compilerOptions: CompilerOptions = CompilerOptions.DEFAULT
 ) : PackageLoaderSpec {
    override val packageType: PackageType = PackageType.OpenApi
 }

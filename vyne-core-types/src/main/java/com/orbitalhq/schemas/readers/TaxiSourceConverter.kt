@@ -1,9 +1,10 @@
 package com.orbitalhq.schemas.readers
 
 import com.orbitalhq.SourcePackage
-import lang.taxi.CompilationError
 import lang.taxi.Compiler
+import lang.taxi.CompilerConfig
 import lang.taxi.TaxiDocument
+import lang.taxi.packages.CompilerOptions
 import lang.taxi.sources.SourceCodeLanguages
 import org.antlr.v4.runtime.CharStreams
 
@@ -17,17 +18,18 @@ object TaxiSourceConverter : SourceToTaxiConverter {
 
    override fun loadAll(
       sourcePackages: List<SourcePackage>,
-      imports: List<TaxiDocument>
+      imports: List<TaxiDocument>,
+      compilerOptions: CompilerOptions
    ): SourceConverterLoadResult {
       val sourceStreams = sourcePackages.flatMap { it.sourcesWithPackageIdentifier }
          .filter { it.language == SourceCodeLanguages.TAXI }
          .map {  CharStreams.fromString(it.content, it.packageQualifiedName)  }
 
-      val (errors,taxiDoc) = Compiler(sourceStreams, imports).compileWithMessages()
+      val (errors,taxiDoc) = Compiler(sourceStreams, imports, config = CompilerConfig(compilerOptions = compilerOptions)).compileWithMessages()
       return SourceConverterLoadResult(errors, taxiDoc, sourcePackages)
    }
 
-   override fun load(sourcePackage: SourcePackage, imports: List<TaxiDocument>): SourceConverterLoadResult {
+   override fun load(sourcePackage: SourcePackage, imports: List<TaxiDocument>, compilerOptions: CompilerOptions): SourceConverterLoadResult {
       error("Not implemented - call loadAll() for taxi sources")
    }
 //   override fun load(

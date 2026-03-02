@@ -35,7 +35,9 @@ class OpenApiSchemaSourcesAdaptor(private val spec: OpenApiPackageLoaderSpec) : 
          DefaultPackageMetadata(
             spec.identifier,
             spec.submissionDate,
-            spec.dependencies
+            spec.dependencies,
+            spec.compilerOptions
+
          )
       )
    }

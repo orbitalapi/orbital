@@ -10,6 +10,7 @@ import com.orbitalhq.schemas.sourceMapFromVersionedSource
 import com.orbitalhq.schemas.toVersionedSource
 import com.orbitalhq.utils.shaHash
 import lang.taxi.generators.SourceMap
+import lang.taxi.packages.CompilerOptions
 import lang.taxi.packages.SourcesType
 import lang.taxi.packages.SourcesTypes
 import lang.taxi.packages.SourcesTypes.ORIGINAL_SOURCE
@@ -73,7 +74,7 @@ data class SourcePackage(
    val sourcesWithPackageIdentifier: List<VersionedSource> =
       this.sources.map { it.copy(packageIdentifier = this.packageMetadata.identifier) }
 
-   fun source(filename: String):VersionedSource {
+   fun source(filename: String): VersionedSource {
       return this.sources.single { it.name == filename }
    }
 
@@ -81,7 +82,7 @@ data class SourcePackage(
       fun getSourceMaps(schema: Schema): List<Pair<SourcePackage, SourceMap>> {
          return schema.packages.mapNotNull { sourcePackage ->
             val sourceMapSources = sourcePackage.additionalSources[SourcesTypes.SOURCE_MAP] ?: emptyList()
-            val sourceMaps =  sourceMapSources.map { sourceMapFromVersionedSource(it) }
+            val sourceMaps = sourceMapSources.map { sourceMapFromVersionedSource(it) }
             val sourceMap = sourceMaps.reduceOrNull(SourceMap::combine)
             if (sourceMap != null) {
                sourcePackage to sourceMap
@@ -96,7 +97,11 @@ data class SourcePackage(
        * Sources in the original source package are moved to additional sources, tagged as OriginalSource,
        * and the new transpiled sources become the source of the package
        */
-      fun asTranspiledPackage(originalPackage: SourcePackage, generatedTaxiSources: List<VersionedSource>, sourceMap: SourceMap = SourceMap.EMPTY):SourcePackage {
+      fun asTranspiledPackage(
+         originalPackage: SourcePackage,
+         generatedTaxiSources: List<VersionedSource>,
+         sourceMap: SourceMap = SourceMap.EMPTY
+      ): SourcePackage {
          val additionalSources = mutableMapOf(
             ORIGINAL_SOURCE to originalPackage.sources
          )
@@ -110,7 +115,13 @@ data class SourcePackage(
             readme = null,
          )
       }
-      fun asTranspiledPackage(packageMetadata: PackageMetadata, originalSources: List<VersionedSource>, generatedTaxiSources: List<VersionedSource>, sourceMap: SourceMap = SourceMap.EMPTY):SourcePackage {
+
+      fun asTranspiledPackage(
+         packageMetadata: PackageMetadata,
+         originalSources: List<VersionedSource>,
+         generatedTaxiSources: List<VersionedSource>,
+         sourceMap: SourceMap = SourceMap.EMPTY
+      ): SourcePackage {
          val additionalSources = mutableMapOf(
             ORIGINAL_SOURCE to originalSources
          )
@@ -285,6 +296,9 @@ interface PackageMetadata : Serializable {
    val submissionDate: Instant
    val dependencies: List<PackageIdentifier>
 
+   val compilerOptions: CompilerOptions
+      get() = CompilerOptions.DEFAULT
+
 
    companion object {
       @JvmStatic
@@ -292,9 +306,10 @@ interface PackageMetadata : Serializable {
       fun from(
          identifier: PackageIdentifier,
          submissionDate: Instant = Instant.now(),
-         dependencies: List<PackageIdentifier> = emptyList()
+         dependencies: List<PackageIdentifier> = emptyList(),
+         compilerOptions: CompilerOptions = CompilerOptions.DEFAULT
       ): PackageMetadata = DefaultPackageMetadata(
-         identifier, submissionDate, dependencies
+         identifier, submissionDate, dependencies, compilerOptions
       )
 
       @JvmStatic
@@ -322,7 +337,8 @@ data class DefaultPackageMetadata(
    @kotlinx.serialization.Serializable(with = InstantSerializer::class)
    @kotlinx.serialization.EncodeDefault
    override val submissionDate: Instant = Instant.now(),
-   override val dependencies: List<PackageIdentifier> = emptyList()
+   override val dependencies: List<PackageIdentifier> = emptyList(),
+   override val compilerOptions: CompilerOptions
 ) : PackageMetadata
 
 fun lang.taxi.packages.PackageIdentifier.toVynePackageIdentifier(): PackageIdentifier {
@@ -337,7 +353,8 @@ fun TaxiPackageProject.toPackageMetadata(): PackageMetadata {
    return DefaultPackageMetadata(
       identifier = this.identifier.toVynePackageIdentifier(),
       submissionDate = Instant.now(),
-      dependencies = this.dependencyPackages.map { it.toVynePackageIdentifier() }
+      dependencies = this.dependencyPackages.map { it.toVynePackageIdentifier() },
+      compilerOptions = this.compilerOptions
    )
 }
 
