@@ -20,3 +20,27 @@ app-header-component-layout {
   margin-top: 1rem;
 }
 
+.severity-cell {
+  width: 6rem;
+  text-align: center;
+}
+
+.severity-badge {
+  display: inline-block;
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+
+  &.error {
+    background-color: #fde8e8;
+    color: #c0392b;
+  }
+
+  &.warning {
+    background-color: #fef3cd;
+    color: #856404;
+  }
+}
+

@@ -1,6 +1,7 @@
 package com.orbitalhq.schemaServer.core.git
 
 import mu.KotlinLogging
+import com.google.common.base.Throwables
 import org.eclipse.jgit.api.Git
 import org.eclipse.jgit.api.MergeCommand
 import org.eclipse.jgit.api.PullResult
@@ -113,8 +114,9 @@ open class GitPollOperations(
             )
          }
       } catch (e: Exception) {
+         val rootCause = Throwables.getRootCause(e)
          val errorMessage =
-            "Failed to perform git sync to config ${config.name} at ${config.redactedUrl} - ${e::class.simpleName} - ${e.message}"
+            "Failed to sync git repository '${config.name}' at ${config.redactedUrl} - ${rootCause::class.simpleName}: ${rootCause.message}"
          logger.warn { errorMessage }
          GitSyncStatus(
             successful = false,

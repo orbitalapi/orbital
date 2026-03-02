@@ -221,7 +221,7 @@ class TaxiGitPackageLoaderTest {
          }
          .expectNextMatches {
             it.state.shouldBe(LoaderStatus.LoaderState.ERROR)
-            it.message.shouldBe("Failed to perform git sync to config local-test at http://badgiturl.nope/ - TransportException - http://badgiturl.nope/: cannot open git-upload-pack")
+            it.message.shouldContain("Failed to sync git repository 'local-test' at http://badgiturl.nope/")
             true
          }
          .thenCancel()
@@ -276,7 +276,8 @@ class TaxiGitPackageLoaderTest {
          }
          .expectNextMatches {
             it.state.shouldBe(LoaderStatus.LoaderState.WARNING)
-            it.message.shouldContain("Failed to perform git sync")
+            it.message.shouldContain("Remote sync failed — using locally cached version")
+            it.message.shouldContain("Failed to sync git repository 'local-test'")
             true
          }
          .thenCancel()

@@ -150,7 +150,7 @@ class GitSchemaPackageLoader(
       val loaderStatus = when {
          syncStatus.successful && syncStatus.isClean -> LoaderStatus.OK
          !syncStatus.successful && syncStatus.existedLocally -> LoaderStatus.warning(
-            syncStatus.errorMessage ?: "An unknown error occurred whilst pulling the git repository"
+            "Remote sync failed — using locally cached version. ${syncStatus.errorMessage ?: "Unknown error"}"
          )
          !syncStatus.successful -> LoaderStatus.error(
             syncStatus.errorMessage ?: "An unknown error occurred whilst pulling the git repository"
