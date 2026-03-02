@@ -107,7 +107,7 @@ export interface ProjectLoaderWithStatus {
 }
 
 export interface LoaderStatus {
-  state: 'OK' | 'ERROR' | 'STARTING'
+  state: 'OK' | 'ERROR' | 'WARNING' | 'STARTING'
   message: string | null;
 }
 

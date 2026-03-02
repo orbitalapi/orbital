@@ -117,7 +117,9 @@ class GitSchemaPackageLoader(
          }
          .index()
          .filter {
-            (it.t1 == 0L && it.t2.successful) || it.t2.pulledChanges
+            // On first load: allow if sync succeeded OR if repo existed locally (previous sync available)
+            // On subsequent ticks: only load if new changes were pulled
+            (it.t1 == 0L && (it.t2.successful || it.t2.existedLocally)) || it.t2.pulledChanges
          }
          .flatMap {
             try {
@@ -147,6 +149,9 @@ class GitSchemaPackageLoader(
    private fun updateLoaderStatus(syncStatus: GitSyncStatus):GitSyncStatus {
       val loaderStatus = when {
          syncStatus.successful && syncStatus.isClean -> LoaderStatus.OK
+         !syncStatus.successful && syncStatus.existedLocally -> LoaderStatus.warning(
+            "Remote sync failed — using locally cached version. ${syncStatus.errorMessage ?: "Unknown error"}"
+         )
          !syncStatus.successful -> LoaderStatus.error(
             syncStatus.errorMessage ?: "An unknown error occurred whilst pulling the git repository"
          )

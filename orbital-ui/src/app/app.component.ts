@@ -146,11 +146,16 @@ export class AppComponent implements OnInit {
     this.packagesService.loadUnhealthyProjects()
       .pipe(takeUntil(this.destroyLoadProjectLoadersWithErrors))
       .subscribe(unhealthyPackagesResponse => {
-        if (unhealthyPackagesResponse.unhealthyLoaders.length > 0) {
+        const errorLoaders = unhealthyPackagesResponse.unhealthyLoaders.filter(l => l.status.state === 'ERROR')
+        const warningLoaders = unhealthyPackagesResponse.unhealthyLoaders.filter(l => l.status.state === 'WARNING')
+
+        if (errorLoaders.length > 0) {
           this.addAlertIfNotPresent({
             id: 'project-loader-error',
             severity: "Error",
-            message: `${unhealthyPackagesResponse.unhealthyLoaders.length} of your projects cannot be loaded due to a configuration problem`,
+            message: errorLoaders.length === 1
+              ? `1 project could not be loaded`
+              : `${errorLoaders.length} projects could not be loaded`,
             actionLabel: 'See details',
             handler: () => {
               this.router.navigate(['projects', 'problems'])
@@ -158,6 +163,22 @@ export class AppComponent implements OnInit {
           })
         } else {
           this.removeAlertById('project-loader-error')
+        }
+
+        if (warningLoaders.length > 0) {
+          this.addAlertIfNotPresent({
+            id: 'project-loader-warning',
+            severity: "Warning",
+            message: warningLoaders.length === 1
+              ? `1 project could not sync with its remote — using locally cached version`
+              : `${warningLoaders.length} projects could not sync with their remotes — using locally cached versions`,
+            actionLabel: 'See details',
+            handler: () => {
+              this.router.navigate(['projects', 'problems'])
+            }
+          })
+        } else {
+          this.removeAlertById('project-loader-warning')
         }
 
         if (Object.keys(unhealthyPackagesResponse.unhealthyPackages).length > 0) {
