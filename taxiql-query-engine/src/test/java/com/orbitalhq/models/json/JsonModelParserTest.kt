@@ -36,6 +36,15 @@ type Client {
 """
 
    @Test
+   fun `test inner json strings`() {
+      val json = """
+         { "name" : "Jimmy", "payload" : "{ \"message\" : \"Hello\" }" }
+      """.trimIndent()
+      val parsed:Map<String,Any> = Jackson.defaultObjectMapper.readValue<Map<String,Any>>(json)
+      parsed
+   }
+
+   @Test
    fun `string decimals are parsed to number types correctly`() {
       val schema = TaxiSchema.from("""
          model Foo {
