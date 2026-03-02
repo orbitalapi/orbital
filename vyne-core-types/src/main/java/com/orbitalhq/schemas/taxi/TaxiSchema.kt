@@ -13,6 +13,7 @@ import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
 import lang.taxi.*
 import lang.taxi.messages.Severity
+import lang.taxi.packages.CompilerOptions
 import lang.taxi.packages.SourcesTypes
 import lang.taxi.packages.TaxiSourcesLoader
 import lang.taxi.policies.Policy
@@ -401,6 +402,10 @@ class TaxiSchema(
       ): Pair<List<CompilationError>, TaxiSchema> {
          val stopwatch = Stopwatch.createStarted()
 
+         val compilerOptions = packages.fold(CompilerOptions.DEFAULT) { a, b ->
+            CompilerOptions.merge(a, b.packageMetadata.compilerOptions)
+         }
+
          // TODO : We need to improve the processing order here, to consider
          // import / dependencies between projects.
          val packagesByLanguage = packages
@@ -440,7 +445,8 @@ class TaxiSchema(
             } else {
                val (errors, doc, transpiledSources) = converter.loadAll(
                   sourcePackages,
-                  listOf(accTaxiDoc) + importedTaxiDocs
+                  listOf(accTaxiDoc) + importedTaxiDocs,
+                  compilerOptions
                )
                // TODO : Need to get smarter about how errors are handled.
                // Currently, an error in an earlier compilation may be resolved by a later compilation.

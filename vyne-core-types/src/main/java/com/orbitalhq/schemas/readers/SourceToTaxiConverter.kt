@@ -3,7 +3,7 @@ package com.orbitalhq.schemas.readers
 import com.orbitalhq.SourcePackage
 import lang.taxi.CompilationError
 import lang.taxi.TaxiDocument
-import lang.taxi.generators.GeneratedTaxiCode
+import lang.taxi.packages.CompilerOptions
 
 /**
  * Converter which accepts source code and returns an actual taxi document.
@@ -41,13 +41,17 @@ interface SourceToTaxiConverter {
    // That doesn't solve the problem, but works around them for now.
    // This means that things like Soap loaders are loaded after the taxi projects,
    // so for now, by convention, their dependencies are already loaded.
-   fun load(sourcePackage: SourcePackage, imports: List<TaxiDocument>): SourceConverterLoadResult
+   fun load(sourcePackage: SourcePackage, imports: List<TaxiDocument>, compilerOptions: CompilerOptions): SourceConverterLoadResult
 
-   fun loadAll(sourcePackages: List<SourcePackage>, imports: List<TaxiDocument>): SourceConverterLoadResult {
+   fun loadAll(sourcePackages: List<SourcePackage>, imports: List<TaxiDocument>, compilerOptions: CompilerOptions): SourceConverterLoadResult {
       val allErrors = mutableListOf<CompilationError>()
       val allTranspiledSources = mutableListOf<SourcePackage>()
       val merged = sourcePackages.fold(TaxiDocument.empty()) { acc, sourcePackage ->
-         val (errors: List<CompilationError>, taxi: TaxiDocument, transpiledSource: List<SourcePackage>) = load(sourcePackage, imports)
+         val (errors: List<CompilationError>, taxi: TaxiDocument, transpiledSource: List<SourcePackage>) = load(
+            sourcePackage,
+            imports,
+            compilerOptions
+         )
          allErrors.addAll(errors)
          allTranspiledSources.addAll(transpiledSource)
          acc.merge(taxi)

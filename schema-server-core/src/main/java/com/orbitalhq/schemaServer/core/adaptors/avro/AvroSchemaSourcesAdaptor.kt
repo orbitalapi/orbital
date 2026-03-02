@@ -12,6 +12,7 @@ import com.orbitalhq.schemaServer.packages.AvroPackageLoaderSpec
 import lang.taxi.generators.SourceMap
 import lang.taxi.generators.avro.AvroSchemaFormats
 import lang.taxi.generators.avro.TaxiGenerator
+import lang.taxi.packages.CompilerOptions
 import lang.taxi.packages.SourcesType
 import lang.taxi.sources.SourceCodeLanguages
 import reactor.core.publisher.Flux
@@ -26,7 +27,8 @@ class AvroSchemaSourcesAdaptor(private val spec: AvroPackageLoaderSpec) : AvroTa
          DefaultPackageMetadata(
             spec.identifier,
             submissionDate = Instant.now(),
-            dependencies = emptyList()
+            dependencies = emptyList(),
+            compilerOptions = spec.compilerOptions
          )
       )
    }
