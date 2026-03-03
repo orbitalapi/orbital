@@ -51,7 +51,7 @@ class PreflightSpecProvider {
          resultFormat = ResultFormat.JSON,
          expectedResult = responseJson,
          dataSources = stubs,
-         flow = null, // TOOD
+         schema = null,
          specVersion = "0.1" // TODO : Remove this when it's provided by TestSpec
       )
       val testSpecMarkdown = TestSpecWriter.write(testSpec)
