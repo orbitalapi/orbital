@@ -18,6 +18,7 @@ import org.reactivestreams.Publisher
 import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.http.ResponseEntity
+import org.springframework.http.server.reactive.ServerHttpRequest
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PathVariable
 import org.springframework.web.bind.annotation.PostMapping
@@ -26,12 +27,16 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.server.ResponseStatusException
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
+import java.io.ByteArrayOutputStream
+import java.util.Base64
+import java.util.zip.GZIPOutputStream
 
 data class QueryValidationResult(
    val isValid: Boolean,
    val errors: List<String>,
    val expected: Any? = null,
-   val actual: Any? = null
+   val actual: Any? = null,
+   val playgroundUrl: String
 )
 
 @RestController
@@ -104,12 +109,14 @@ class PlaygroundQueryService(private val stubQueryService: StubQueryService) {
    }
 
    @PostMapping("/api/validate")
-   fun validate(@RequestBody queryMessage: StubQueryMessage): Mono<QueryValidationResult> {
+   fun validate(@RequestBody queryMessage: StubQueryMessage, request: ServerHttpRequest): Mono<QueryValidationResult> {
       if (queryMessage.expectedJson.isNullOrBlank()) {
          throw ResponseStatusException(HttpStatus.BAD_REQUEST, "expectedJson must be provided")
       }
       val expectedJsonString = queryMessage.expectedJson!!
       val expectedJsonObject = parseJson(expectedJsonString)
+      val playgroundHost = "${request.uri.scheme}://${request.uri.authority}"
+      val playgroundUrl = getPlaygroundUrl(queryMessage, playgroundHost)
 
       val queryId: String = Ids.id(prefix = "query-", size = 12)
       val (queryResult, _) = try {
@@ -125,7 +132,8 @@ class PlaygroundQueryService(private val stubQueryService: StubQueryService) {
                isValid = false,
                errors = listOf("Query execution failed: $errorBody"),
                expected = expectedJsonObject,
-               actual = null
+               actual = null,
+               playgroundUrl = playgroundUrl
             )
          )
       }
@@ -146,19 +154,21 @@ class PlaygroundQueryService(private val stubQueryService: StubQueryService) {
                isValid = false,
                errors = listOf("Failed to parse expectedJson: ${e.message}"),
                expected = queryMessage.expectedJson,
-               actual = actual
+               actual = actual,
+               playgroundUrl = playgroundUrl
             )
          }
 
          if (actualJsonNode == expectedJsonNode) {
-            QueryValidationResult(isValid = true, errors = emptyList())
+            QueryValidationResult(isValid = true, errors = emptyList(), playgroundUrl = playgroundUrl)
          } else {
             val errors = compareJson("", expectedJsonNode, actualJsonNode)
             QueryValidationResult(
                isValid = false,
                errors = errors,
                expected = expectedJsonObject,
-               actual = actual
+               actual = actual,
+               playgroundUrl = playgroundUrl
             )
          }
       }
@@ -210,5 +220,13 @@ class PlaygroundQueryService(private val stubQueryService: StubQueryService) {
       } catch (e: Exception) {
          json
       }
+   }
+
+   private fun getPlaygroundUrl(queryMessage: StubQueryMessage, playgroundHost: String): String {
+      val json = objectMapper.writeValueAsString(queryMessage)
+      val gzipOutput = ByteArrayOutputStream()
+      GZIPOutputStream(gzipOutput).use { it.write(json.toByteArray()) }
+      val base64Encoded = Base64.getEncoder().encodeToString(gzipOutput.toByteArray())
+      return "$playgroundHost/?enableDevTools=true#pako:$base64Encoded"
    }
 }
