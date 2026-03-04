@@ -1,5 +1,7 @@
 package org.taxilang.playground
 
+import com.fasterxml.jackson.databind.JsonNode
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.orbitalhq.cockpit.core.query.QueryInsightUtils
@@ -25,9 +27,17 @@ import org.springframework.web.server.ResponseStatusException
 import reactor.core.publisher.Flux
 import reactor.core.publisher.Mono
 
+data class QueryValidationResult(
+   val isValid: Boolean,
+   val errors: List<String>,
+   val expected: Any? = null,
+   val actual: Any? = null
+)
+
 @RestController
 class PlaygroundQueryService(private val stubQueryService: StubQueryService) {
 
+   private val objectMapper: ObjectMapper = jacksonObjectMapper()
    private val insightUtils = QueryInsightUtils()
 
    @PostMapping("/api/query/parse")
@@ -91,5 +101,114 @@ class PlaygroundQueryService(private val stubQueryService: StubQueryService) {
             .body(publisher)
 
       )
+   }
+
+   @PostMapping("/api/validate")
+   fun validate(@RequestBody queryMessage: StubQueryMessage): Mono<QueryValidationResult> {
+      if (queryMessage.expectedJson.isNullOrBlank()) {
+         throw ResponseStatusException(HttpStatus.BAD_REQUEST, "expectedJson must be provided")
+      }
+      val expectedJsonString = queryMessage.expectedJson!!
+      val expectedJsonObject = parseJson(expectedJsonString)
+
+      val queryId: String = Ids.id(prefix = "query-", size = 12)
+      val (queryResult, _) = try {
+         stubQueryService.submitQuery(
+            queryMessage,
+            addDelayToStreams = false,
+            queryId = queryId
+         )
+      } catch (error: OrbitalQueryException) {
+         val (_, errorBody, _) = HttpErrorResponse.getErrorCodeAndPayload(error)
+         return Mono.just(
+            QueryValidationResult(
+               isValid = false,
+               errors = listOf("Query execution failed: $errorBody"),
+               expected = expectedJsonObject,
+               actual = null
+            )
+         )
+      }
+
+      val resultFlux = when (queryResult) {
+         is Mono<*> -> Flux.from(queryResult)
+         is Flux<*> -> queryResult
+         else -> error("Unknown type of publisher: ${queryResult::class.simpleName}")
+      }
+
+      return resultFlux.collectList().map { results ->
+         val actual: Any = if (results.size == 1) results.first()!! else results
+         val actualJsonNode = objectMapper.valueToTree<JsonNode>(actual)
+         val expectedJsonNode = try {
+            objectMapper.readTree(expectedJsonString)
+         } catch (e: Exception) {
+            return@map QueryValidationResult(
+               isValid = false,
+               errors = listOf("Failed to parse expectedJson: ${e.message}"),
+               expected = queryMessage.expectedJson,
+               actual = actual
+            )
+         }
+
+         if (actualJsonNode == expectedJsonNode) {
+            QueryValidationResult(isValid = true, errors = emptyList())
+         } else {
+            val errors = compareJson("", expectedJsonNode, actualJsonNode)
+            QueryValidationResult(
+               isValid = false,
+               errors = errors,
+               expected = expectedJsonObject,
+               actual = actual
+            )
+         }
+      }
+   }
+
+   private fun compareJson(path: String, expected: JsonNode, actual: JsonNode): List<String> {
+      val errors = mutableListOf<String>()
+      val currentPath = path.ifEmpty { "$" }
+
+      if (expected.nodeType != actual.nodeType) {
+         errors.add("Type mismatch at $currentPath: expected ${expected.nodeType} but got ${actual.nodeType}")
+         return errors
+      }
+
+      when {
+         expected.isObject -> {
+            val expectedFields = expected.fieldNames().asSequence().toSet()
+            val actualFields = actual.fieldNames().asSequence().toSet()
+            for (field in expectedFields - actualFields) {
+               errors.add("Missing field at $currentPath.$field")
+            }
+            for (field in actualFields - expectedFields) {
+               errors.add("Unexpected field at $currentPath.$field")
+            }
+            for (field in expectedFields.intersect(actualFields)) {
+               errors.addAll(compareJson("$currentPath.$field", expected[field], actual[field]))
+            }
+         }
+         expected.isArray -> {
+            if (expected.size() != actual.size()) {
+               errors.add("Array size mismatch at $currentPath: expected ${expected.size()} elements but got ${actual.size()}")
+            }
+            for (i in 0 until minOf(expected.size(), actual.size())) {
+               errors.addAll(compareJson("$currentPath[$i]", expected[i], actual[i]))
+            }
+         }
+         else -> {
+            if (expected != actual) {
+               errors.add("Value mismatch at $currentPath: expected $expected but got $actual")
+            }
+         }
+      }
+      return errors
+   }
+
+   private fun parseJson(json: String): Any {
+      return try {
+         objectMapper.readValue<Any>(json)
+      } catch (e: Exception) {
+         json
+      }
    }
 }

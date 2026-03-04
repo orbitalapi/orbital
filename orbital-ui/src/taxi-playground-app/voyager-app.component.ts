@@ -284,6 +284,9 @@ export class VoyagerAppComponent implements OnInit {
     this.codeUpdated$.next('')
     this.setCodeFromExample(emptyQueryMessage())
     this.readmePanelComponent.resetViewMode()
+    if (this.childComponent) {
+      this.childComponent.queryResult = null;
+    }
     //await this.router.navigate(['/'])
     this.updateRouteAndPersistTolocalStorage(true)
   }
@@ -329,7 +332,10 @@ export class VoyagerAppComponent implements OnInit {
 
   copyDevCode(snippetType: SnippetType) {
     if (snippetType === "JSON") {
-      this.clipboard.copy(JSON.stringify(this.queryMessage, null, 3))
+      const queryWithResults = this.childComponent?.queryResult
+        ? {...this.queryMessage, expectedJson: this.childComponent.queryResult}
+        : this.queryMessage;
+      this.clipboard.copy(JSON.stringify(queryWithResults, null, 3))
     } else if (snippetType === 'PlaygroundSnippet') {
       this.copyAsPlaygroundSnippet(this.queryMessage)
     } else if (snippetType === 'KotlinDocs') {
@@ -340,6 +346,7 @@ export class VoyagerAppComponent implements OnInit {
   }
 
   private copyAsKotlinDocsAnnotation(queryMessage: StubQueryMessage) {
+    const expectedJson = this.childComponent?.queryResult ?? '<<PASTE EXPECTED JSON HERE>>';
     const snippet = `
       DocsSnippet(
         markdown = """${queryMessage.readme}""",
@@ -349,7 +356,7 @@ export class VoyagerAppComponent implements OnInit {
           query = """
           ${queryMessage.query}
           """.trimIndent(),
-          expectedJson = """<<PASTE EXPECTED JSON HERE>>"""
+          expectedJson = """${expectedJson}"""
         )
     `
     // Even though the string is now correct, if we copy it to the clipboard as-is,
@@ -363,7 +370,10 @@ export class VoyagerAppComponent implements OnInit {
    */
   private copyAsPlaygroundSnippet(queryMessage: StubQueryMessage) {
     const snippet = this.createJavascriptSnippet(queryMessage);
-    const stringifiedJson = JSON.stringify(queryMessage, null, 2)
+    const queryWithResults = this.childComponent?.queryResult
+      ? {...queryMessage, expectedJson: this.childComponent.queryResult}
+      : queryMessage;
+    const stringifiedJson = JSON.stringify(queryWithResults, null, 2)
     const tsx = `
 <PlaygroundSnippet
   title = '' // Add a title here
@@ -437,8 +447,11 @@ export class VoyagerAppComponent implements OnInit {
       return "`" + formattedValue + "`"
     }
 
+    const queryWithResults = this.childComponent?.queryResult
+      ? {...queryMessage, expectedJson: this.childComponent.queryResult}
+      : queryMessage;
     let queryAsJson = JSON.stringify({
-      ...queryMessage,
+      ...queryWithResults,
       schema: 'SCHEMA_GOES_HERE',
       query: 'QUERY_GOES_HERE'
     }, null, 3)
