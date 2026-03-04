@@ -26,7 +26,7 @@ We also want to protect our commercial interests, ensuring that customers don't 
 To further clarify our intentions of what we consider allowed / prohibited within the BSL section of our code:
  * Shipping commercial products (including SaaS) that use Orbital to integrate data sources is permitted, where those integration capabilities are not configurable by end users
  * Using Orbital to build public facing APIs that you expose to paying customers in your commercial product (including SaaS) is permitted
- * Using Orbital internally in your organisation is permitted
+ * Using Orbital internally in your organization requires a license
  * Using Orbital to provide configurable integration capabilities to end users requires a license
  * Using Orbital to allow end-users to build their own APIs requires a license
  * Using Orbital to allow customers to create data pipelines requires a license
