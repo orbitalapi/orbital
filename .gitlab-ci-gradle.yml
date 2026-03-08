@@ -1,0 +1,454 @@
+include:
+#  This doesn't seem to work.
+#   - template: Security/Dependency-Scanning.gitlab-ci.yml
+
+variables:
+   # Gradle specific settings
+   GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx4g -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError' -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.caching=true"
+   GRADLE_USER_HOME: ".gradle"
+   
+   # Used during gitflow interaction.
+   MAJOR_RELEASE_DIGIT: 0
+   MINOR_RELEASE_DIGIT: 1
+   PATCH_RELEASE_DIGIT: 2
+
+   # https://docs.gitlab.com/ee/ci/large_repositories/#shallow-cloning
+   GIT_DEPTH: 10
+
+   TF_STATE_NAME_DEV: dev
+   TF_STATE_NAME_PROD: prod
+
+.git_template: &git_setup |
+   git remote set-url --push origin "https://oauth2:${GITLAB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+   git config user.name "vyne-cd"
+   git config user.email vyne-cd@vyne.co
+
+stages:
+   - build
+   - test
+   - publish
+   - deploy
+   - verify
+   - release
+
+.build-jvm:
+   stage: build
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/gradle:8.10.2-jdk21
+   cache:
+      key: "$CI_COMMIT_REF_SLUG"
+      paths:
+         - .gradle/caches
+         - .gradle/wrapper
+   script:
+      # Do the "docker login" manually as there's no Docker CLI installed on gradle images
+      - |
+         mkdir -p /root/.docker/
+         cat > /root/.docker/config.json << EOF
+         {
+             "auths": {
+                 "https://index.docker.io/v1/": {
+                     "username": "vynecd",
+                     "password": "${DOCKER_HUB_PASSWORD}",
+                     "auth": "$(echo -n 'vynecd:${DOCKER_HUB_PASSWORD}' | base64)"
+                 }
+             }
+         }
+         EOF
+      - 'if [ -z "${GITLAB_TOKEN}" ]; then echo "var is blank"; else echo "var is set"; fi'
+      - 'if [ -z "${CI_SERVER_HOST}" ]; then echo "var is blank"; else echo "var is set"; fi'
+      - 'if [ -z "${CI_PROJECT_PATH}" ]; then echo "var is blank"; else echo "var is set"; fi'
+      - 'gradle --version'
+      - 'gradle -PbuildNumber=$CI_PIPELINE_ID $GRADLE_EXTRA_ARGS $GRADLE_TASKS'
+
+      # Read the version from gradle.properties and set to an env variable
+      - echo $(gradle -q printVersion) > build-version.txt
+      # Get the 3rd party license report for usage later
+      - gradle generateLicenseReport
+   artifacts:
+      paths:
+         - build-version.txt
+         - build/reports/dependency-license/THIRD-PARTY-NOTICES.txt
+         # Be careful!  The each of these jar files can get big.
+         # If the total size of all jar files being stored in artifacts
+         # exceeds 1GB then builds can fail.
+         - "query-node-native/build/libs/query-node-native.jar"
+         - "station/build/distributions/orbital.zip"
+         - "orbital-taxi-publisher/build/distributions/packagePublisher.zip"
+         - "taxi-playground/build/libs/taxi-playground.jar"
+      expire_in: 1 hours
+      reports:
+         junit:
+            - "**/build/test-results/test/TEST-*.xml"
+
+.build-ui:
+   stage: build
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:18.18
+   before_script:
+      - npm config set cache .npm/cache --global
+      - npm --global cache verify
+      - npm get cache
+      - export NODE_OPTIONS="--max-old-space-size=8192"
+   cache:
+      paths:
+         - .npm/cache
+
+build-vyne-ui:
+   extends: .build-ui
+   script:
+      - cd orbital-ui
+      - npm ci
+      - npm run-script build-prod
+      # Capture 3rd party licenses for checks later
+      - npx license-checker --out ../licenses.csv --csv
+   artifacts:
+      paths:
+         - station/src/main/resources/static
+         - licenses.csv
+      expire_in: 1 hours
+
+build-playground-ui:
+   extends: .build-ui
+   script:
+      - cd orbital-ui
+      - npm ci
+      - npm run-script build-prod-playground
+   artifacts:
+      paths:
+         - "taxi-playground/src/main/resources/static"
+      expire_in: 1 hours
+
+build-jvm-branch:
+   stage: build
+   except:
+      - tags
+      - develop
+      - master
+   extends: .build-jvm
+   variables:
+      GRADLE_TASKS: 'clean build'
+      GRADLE_EXTRA_ARGS: ''
+
+build-jvm-develop:
+   stage: build
+   only:
+      - develop
+      - release/*
+   except:
+      - tags
+   extends: .build-jvm
+   variables:
+      GRADLE_TASKS: 'clean publish'
+      # We skip tests on develop and master, as the tests have already run on the branch
+      GRADLE_EXTRA_ARGS: '-x test'
+
+build-jvm-master:
+   stage: build
+   only:
+      - master
+      - tags
+   extends: .build-jvm
+   variables:
+      GRADLE_TASKS: 'clean publish'
+      # We skip tests on develop and master, as the tests have already run on the branch
+      GRADLE_EXTRA_ARGS: '-x test'
+
+release-major:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/gradle:8.10.2-jdk21
+   variables:
+      GIT_STRATEGY: clone
+   dependencies: [ ]
+   stage: release
+   script:
+      - *git_setup
+      - 'gradle release -Prelease.versionIncrementer=incrementMajor'
+   only:
+      - develop
+   when: manual
+
+release-minor:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/gradle:8.10.2-jdk21
+   variables:
+      GIT_STRATEGY: clone
+   dependencies: [ ]
+   stage: release
+   script:
+      - *git_setup
+      - 'gradle release -Prelease.versionIncrementer=incrementMinor'
+   only:
+      - develop
+   when: manual
+
+release-patch:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/gradle:8.10.2-jdk21
+   variables:
+      GIT_STRATEGY: clone
+   dependencies: [ ]
+   stage: release
+   script:
+      - *git_setup
+      - 'gradle release -Prelease.versionIncrementer=incrementPatch'
+   only:
+      - develop
+   when: manual
+
+regression-test:
+   stage: verify
+   resource_group: docker_release
+   variables:
+      VYNE_DOCKER_TAG: latest
+   script:
+      - gradle clean build -x test
+      - cd regression-tests
+      - gradle -Dtest=TaxonomyRegressionTest -Drun.mode=docker -Dvyne.tag=${VYNE_DOCKER_TAG} test
+   when: manual
+   artifacts:
+      when: always
+      reports:
+         junit:
+            - "**/build/test-results/test/TEST-*.xml"
+
+# This creates the multi-platform Docker images
+.publish-docker:
+   stage: deploy
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.17-0.8.2
+   variables:
+      DOCKER_BUILDKIT: 1
+      BUILDKIT_PROGRESS: plain
+      PROGRESS_NO_TRUNC: 1
+   services:
+      - docker:dind
+   script:
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+      - PROJECT_VERSION=$(cat build-version.txt)
+      - docker buildx create --use
+      - docker run --privileged --rm tonistiigi/binfmt --install all # Install the required emulators in order to build ARM images
+      - |
+         if [[ -n "$CI_COMMIT_TAG" ]]; then
+            tag="$CI_COMMIT_TAG"
+            versionTag="$CI_COMMIT_TAG"
+         elif [[ "$CI_COMMIT_BRANCH" == "master" ]]; then
+           tag="latest"
+           versionTag="$PROJECT_VERSION"
+         elif [[ "$CI_COMMIT_BRANCH" == "develop" ]]; then
+            tag="next"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+         elif [[ "$CI_COMMIT_BRANCH" =~ ^release\/ ]]; then
+            stripped_branch=${CI_COMMIT_BRANCH#release/}
+            tag="$stripped_branch-next"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+         else
+            tag="$CI_COMMIT_BRANCH-next"
+            versionTag="$PROJECT_VERSION-BETA-$CI_COMMIT_SHORT_SHA"
+         fi
+         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+         echo "Running on branch '$CI_COMMIT_BRANCH': version = $versionTag"
+         echo "Running with base image tag: ${base_image_tag}"
+      - cd $projectDir
+      - >
+         docker buildx build
+         --platform linux/arm64/v8,linux/amd64
+         --push
+         --build-arg BASE_IMAGE_TAG=${base_image_tag}
+         -t "${registry}${registry_orbital}/${microservice_orbital}:${tag}${tag_suffix}"
+         -t "${registry}${registry_orbital}/${microservice_orbital}:${versionTag}${tag_suffix}"
+         .
+
+.tag-docker-image-as-latest:
+   stage: deploy
+   image: docker:latest
+   services:
+      - docker:dind
+   rules:
+      - if: $CI_COMMIT_TAG
+        when: manual
+   script:
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+      - docker pull ${registry}${registry_orbital}/${microservice_orbital}:$CI_COMMIT_TAG
+      - docker tag ${registry}${registry_orbital}/${microservice_orbital} latest
+      - docker push ${registry}${registry_orbital}/${microservice_orbital}:latest
+      - docker pull ${registry}${registry_orbital}/${microservice_orbital}:$CI_COMMIT_TAG-jammy
+      - docker tag ${registry}${registry_orbital}/${microservice_orbital} latest-jammy
+      - docker push ${registry}${registry_orbital}/${microservice_orbital}:latest-jammy
+
+.publish-to-docker-hub:
+   extends: .publish-docker
+   rules:
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: never
+      -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
+         when: always
+      -  if: $CI_COMMIT_TAG
+         when: always
+#         Always publish if we're on a release branch
+      -  if: $CI_COMMIT_BRANCH =~ /^release\//
+      -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
+         when: manual
+         allow_failure: true
+   variables:
+      registry_orbital: orbitalhq
+
+.publish-to-gitlab-container-registry:
+   extends: .publish-docker
+   rules:
+      -  if: $CI_PIPELINE_SOURCE == "merge_request_event"
+         when: never
+      -  if: ($CI_COMMIT_BRANCH == "develop" || $CI_COMMIT_BRANCH == "master")
+      #         Always publish if we're on a release branch
+      -  if: $CI_COMMIT_BRANCH =~ /^release\//
+      -  if: ($CI_COMMIT_BRANCH != "develop" && $CI_COMMIT_BRANCH != "master")
+         when: manual
+         allow_failure: true
+   variables:
+      registry_orbital: $CI_REGISTRY_IMAGE
+   before_script:
+      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+
+publish-orbital-to-docker-hub:
+   extends: .publish-to-docker-hub
+   variables:
+      projectDir: station
+      microservice_orbital: orbital
+      base_image_tag: alpine
+
+tag-orbital-as-latest:
+   extends: .tag-docker-image-as-latest
+   variables:
+      microservice_orbital: orbital
+      registry_orbital: orbitalhq
+
+publish-orbital-to-docker-hub-mac-m2:
+   extends: .publish-to-docker-hub
+   variables:
+      projectDir: station
+      microservice_orbital: orbital
+      tag_suffix: -jammy # jammy is the name of ubuntu we use
+      base_image_tag: jammy # jammy is the name of ubuntu we use
+
+publish-query-node-to-docker-hub:
+   extends: .publish-to-docker-hub
+   variables:
+      projectDir: query-node-native
+      microservice_orbital: query-node
+
+tag-query-node-as-latest:
+   extends: .tag-docker-image-as-latest
+   variables:
+      microservice_orbital: query-node
+      registry_orbital: orbitalhq
+
+publish-playground-to-gitlab-container-registry:
+   extends: .publish-to-gitlab-container-registry
+   variables:
+      projectDir: taxi-playground
+      microservice_orbital: taxi-playground
+
+.publish-docker-gitlab:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/jdrouet/docker-with-buildx:20.10.8-0.6.3
+   stage: publish
+   except:
+      - tags
+   variables:
+      DOCKER_BUILDKIT: 1
+      BUILDKIT_PROGRESS: plain
+      PROGRESS_NO_TRUNC: 1
+   before_script:
+      - docker info
+      - docker buildx create --use
+      - docker login -u vynecd -p $DOCKER_HUB_PASSWORD
+      - echo "$CI_REGISTRY_PASSWORD" | docker login --username $CI_REGISTRY_USER --password-stdin $CI_REGISTRY
+      - |
+         if [[ "$CI_COMMIT_BRANCH" == "$CI_DEFAULT_BRANCH" ]]; then
+           tag="latest"
+         else
+           tag="$CI_COMMIT_REF_SLUG"
+         fi
+         echo "Running on branch '$CI_COMMIT_BRANCH': tag = $tag"
+   script:
+      - cd $projectDir
+      - pwd
+      - >
+         docker buildx build
+         --platform linux/arm64/v8,linux/amd64
+         --push
+         -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${tag}"
+         -t "${CI_REGISTRY}/vyne/vyne/${microservice}:${CI_COMMIT_SHORT_SHA}" .
+
+.container_scanning:
+   image:
+      name: docker.io/aquasec/trivy:latest
+      entrypoint: [""]
+   stage: verify
+   only:
+      - develop
+   variables:
+      # No need to clone the repo, we exclusively work on artifacts.  See
+      # https://docs.gitlab.com/ee/ci/runners/README.html#git-strategy
+      GIT_STRATEGY: none
+#      Required if reading from Gitlab registry:
+      TRIVY_USERNAME: "$CI_DEPENDENCY_PROXY_USER"
+      TRIVY_PASSWORD: "$CI_DEPENDENCY_PROXY_PASSWORD"
+#      TRIVY_AUTH_URL: "$CI_REGISTRY"
+      FULL_IMAGE_NAME: $imageName
+      TRIVY_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-db
+      TRIVY_JAVA_DB_REPOSITORY: public.ecr.aws/aquasecurity/trivy-java-db
+   script:
+#      - docker login -u $CI_DEPENDENCY_PROXY_USER -p $CI_DEPENDENCY_PROXY_PASSWORD $CI_DEPENDENCY_PROXY_SERVER
+      - trivy --version
+      # cache cleanup is needed when scanning images with the same tags, it does not remove the database
+      - time trivy clean --scan-cache
+      # update vulnerabilities db
+      - time trivy image --download-db-only --no-progress --cache-dir .trivycache/
+      # Builds report and puts it in the default workdir $CI_PROJECT_DIR, so `artifacts:` can take it from there
+      - time trivy image --scanners vuln --exit-code 0 --cache-dir .trivycache/ --no-progress --output "$CI_PROJECT_DIR/vulnerabilities.txt" "$FULL_IMAGE_NAME"
+      # Prints full report
+      - time trivy image --scanners vuln --exit-code 0 --cache-dir .trivycache/ --no-progress "$FULL_IMAGE_NAME"
+      # Fail on critical vulnerabilities
+      - time trivy image --scanners vuln --exit-code 1 --cache-dir .trivycache/ --severity HIGH,CRITICAL --no-progress "$FULL_IMAGE_NAME"
+   cache:
+      paths:
+         - .trivycache/
+   # Enables https://docs.gitlab.com/ee/user/application_security/container_scanning/ (Container Scanning report is available on GitLab EE Ultimate or GitLab.com Gold)
+   artifacts:
+      when:                          always
+      reports:
+         container_scanning:          vulnerabilities.txt
+
+scan-orbital:
+   extends: .container_scanning
+   variables:
+      imageName: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/orbitalhq/orbital:next
+
+validate-license-compliance:
+   stage: verify
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/node:18.18
+   script:
+      - node processLicenses.js
+
+publish-core-types:
+   image: ${CI_DEPENDENCY_PROXY_GROUP_IMAGE_PREFIX}/gradle:8.10.2-jdk21
+   stage: deploy
+   only:
+      - tags
+      - develop
+      - master
+   before_script:
+      - 'command -v ssh-agent >/dev/null || ( apt-get update -y && apt-get install openssh-client -y )'
+      - apt-get install zip -y
+      - mkdir -p ~/.ssh
+      - echo "$GITHUB_PRIVATE_KEY"  > $HOME/.ssh/id_rsa
+      - chmod -R 600 ~/.ssh
+      - eval $(ssh-agent -s)
+      - ssh-add ~/.ssh/id_rsa
+   script:
+      - PROJECT_VERSION=$(cat build-version.txt)
+      - cd orbital-taxi-publisher/build/distributions
+      - unzip packagePublisher.zip
+      - cd packagePublisher
+      - mkdir -p schema
+      - echo ${PROJECT_VERSION}
+      - >
+         ./bin/packagePublisher
+         --output=./schema
+         --version=${PROJECT_VERSION}
+         --remote-url=git@github.com:orbitalapi/orbital-core-taxi
+         --ssh-key=/root/.ssh/id_rsa
