@@ -18,43 +18,35 @@
 
 [Website](https://orbitalhq.com)&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
 [Docs](https://orbitalhq.com/docs)&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
-[Blog](https://orbitalhq.com/blog)&nbsp;&nbsp;&nbsp;
-[Get in touch](#)
+[Blog](https://orbitalhq.com/blog)&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
+[Get in touch](https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg)
 
 </div>
 
-Orbital automates integration between your data sources. 
+**Orbital is a data gateway that automates integration across your APIs, databases, and message queues — no glue code required.**
 
-It's decentralized by nature - there's no central mapping code defined.
-Instead, Orbital is powered by the API specs you're already building.
+It's powered by [Taxi](https://taxilang.org), which adds semantic metadata to your existing API specs. Orbital reads those specs and composes services on-the-fly, adapting automatically as they change.
 
-Orbital creates integration on-the-fly, without engineers having to write glue code.
+## Quick start
 
-Get started right now, by spinning up Orbital on your machine. 
-
-* Grab the `docker-compose.yml` at [https://start.orbitalhq.com/](https://start.orbitalhq.com/)
-   * Note that some of Orbital's test features leverage platform-specific docker features. 
-   * So, either visit the above in a browser and download the file (we'll work out the correct one to serve you), or...
-   * `curl  -H "x-os: ${OS:-${OSTYPE:-$(uname)}}" https://start.orbitalhq.com -o docker-compose.yml` will also fetch the right version for your OS
-* Then `docker compose up`
-* Finally visit http://localhost:9022 in your browser.
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
 
 ```bash
-# for the impatient...
-curl  -H "x-os: ${OS:-${OSTYPE:-$(uname)}}" https://start.orbitalhq.com -o docker-compose.yml
-docker compose up -d
+curl -sSL https://start.orbitalhq.com/start.sh | bash
 ```
 
+The script detects your OS, downloads the right compose file, starts Orbital, and opens [http://localhost:9022](http://localhost:9022) in your browser.
+
 ## What is Orbital?
-Orbital is a data gateway that automates the orchestration, integration and transformation of data and services (API’s, databases, message brokers) across your enterprise.
-Powered by your API specs enriched with Semantic Metadata, Orbital removes the need for glue code,
-and self adapts as your services evolve.
+Orbital is a data gateway that automates the orchestration, integration and transformation of data and services (APIs, databases, message brokers) across your enterprise.
+Powered by your API specs enriched with semantic metadata, Orbital removes the need for glue code,
+and self-adapts as your services evolve.
 
 Think of it as data federation (a single API for all your sources), without having to shift to GraphQL.
 
 Orbital integrates on-the-fly, automatically adjusting as your data sources change.
 
-This is powered [Taxi](https://github.com/taxilang/taxilang) which adds rich [Semantic Metadata](https://orbitalhq.com/blog/2023-05-22-semantic-metadata-101) to your exist API specs, that describes how data relates between your data sources.
+This is powered by [Taxi](https://taxilang.org), which adds rich [Semantic Metadata](https://orbitalhq.com/blog/2023-05-22-semantic-metadata-101) to your existing API specs, describing how data relates between your data sources.
 
 ![Network Diagram](./network-diagram.png)
 
@@ -62,14 +54,14 @@ This is powered [Taxi](https://github.com/taxilang/taxilang) which adds rich [Se
 1. **No glue code:** Glue code that stitches APIs together is brittle, breaking whenever APIs change.
 2. **API First:** Orbital is powered by your existing API specs, meaning less code to maintain
 3. **Technology Agnostic:** Using gRPC? REST? SOAP? Kafka? Orbital doesn't care. It'll work with what you have
-4. **Automatically Adapts:** As your API specs change, Orbital automatically adapts it's integration flows, so consumers stay unaffected.
+4. **Automatically Adapts:** As your API specs change, Orbital automatically adapts its integration flows, so consumers stay unaffected.
 
 ## How does it work?
 Here's the main ideas of Orbital.
 
 0. **Define some shared terms**
 
-Create a [Taxi project](https://taxilang.org/taxi-cli/intro/):
+Create a [Taxi project](https://taxilang.org/docs/taxi-cli/taxi-cli-intro):
 
 ```bash
 taxi init
@@ -107,8 +99,7 @@ components:
 Tell Orbital about your API.  There's a few ways to do this.
 
  * [Get Orbital to poll your OpenAPI spec](https://orbitalhq.com/docs/describing-data-sources/open-api#publishing-open-api-specs-to-orbital)
- * [Read from a Git repository](https://orbitalhq.com/docs/connecting-data-sources/connecting-a-git-repo)
- * [Get your app to push directly to Orbital](https://orbitalhq.com/docs/connecting-data-sources/overview#pushing-updates-on-startup)
+ * [Connect your data sources](https://orbitalhq.com/docs/describing-data-sources/configuring-connections)
 
 3. **Query for data**
 
@@ -141,14 +132,14 @@ Orbital builds the integration for each query, and composes the APIs on demand.
 
 Because it's powered by API specs:
  * There's no resolvers to maintain
- * Changes to API specs are automatically main
+ * Changes to API specs are automatically maintained
 
 ## Taxi
-Under the hood, Orbital is a [TaxiQL](https://docs.taxilang.org/language-reference/querying-with-taxiql/) query server.
+Under the hood, Orbital is a [TaxiQL](https://taxilang.org/docs/taxiql/querying) query server.
 
 ### Links
  * [Taxi](https://taxilang.org)
- * [TaxiQL](https://docs.taxilang.org/language-reference/querying-with-taxiql/) 
+ * [TaxiQL](https://taxilang.org/docs/taxiql/querying)
 
 ## Get in touch
  * 💬 [Connect with us on Slack](https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg)
@@ -160,20 +151,20 @@ Under the hood, Orbital is a [TaxiQL](https://docs.taxilang.org/language-referen
 ## FAQ's
 
 #### How does this relate to GraphQL?
-Orbital gives you many of the benefits of GraphQL (API federation, custom response schemas), without having to move your tech stack over to GraphQl - instead working with your existing tech stack(s).
+Orbital gives you many of the benefits of GraphQL (API federation, custom response schemas), without having to move your tech stack over to GraphQL - instead working with your existing tech stack(s).
 
 The key differences are:
 
 ##### Technology agnostic
-GraphQL works great when you have GraphQL everywhere.  For everything else, you have to maintain a seperate shim layer to adapt your RESTful API / Database / Message Queue etc., to GraphQL.
+GraphQL works great when you have GraphQL everywhere.  For everything else, you have to maintain a separate shim layer to adapt your RESTful API / Database / Message Queue etc., to GraphQL.
 
-Orbital and Taxi work by embedding metatdata in your existing API specs (OpenAPI / Protobuf / Avro / JsonSchema, etc), so that you don't need to change the underlying tech you're using.
+Orbital and Taxi work by embedding metadata in your existing API specs (OpenAPI / Protobuf / Avro / JsonSchema, etc), so that you don't need to change the underlying tech you're using.
 
 ##### Decentralized, spec-first federation
-Orbital is built for decentralized teams, so that teams can ship changes independently, without having to build and maintain a seperate integration layer.
+Orbital is built for decentralized teams, so that teams can ship changes independently, without having to build and maintain a separate integration layer.
 
 ##### Resolver-free
-Resolvers in GraphQL are integration code that has to be maintated - often by a dedicated GraphQL / middleware team.  This means teams that own services have to co-ordinate changes with a seperate integration team.
+Resolvers in GraphQL are integration code that has to be maintained - often by a dedicated GraphQL / middleware team.  This means teams that own services have to co-ordinate changes with a separate integration team.
 
 Instead, Orbital uses Taxi metadata embedded in API specs to define how data relates semantically.  From here, most integration can be created automatically.
 
@@ -192,4 +183,3 @@ or implementing the spec from scratch in Taxi (it's really quick)
  * [Why we built Taxi](https://orbitalhq.com/blog/2023-05-12-why-we-created-taxi)
  * [Using Semantic Metadata to automate integration](https://orbitalhq.com/blog/2023-01-16-using-semantic-metadata)
  * [Querying for data](https://orbitalhq.com/docs/querying/writing-queries)
- * 
