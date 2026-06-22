@@ -3,8 +3,7 @@
 <div align="center">
 
 [![Docker Pulls](https://img.shields.io/docker/pulls/orbitalhq/orbital?style=for-the-badge)](https://hub.docker.com/r/orbitalhq/orbital)
-![Latest Version](https://img.shields.io/badge/dynamic/xml.svg?label=Latest&url=http%3A%2F%2Frepo.orbitalhq.com%2Frelease%2Fio%2Fvyne%2Fplatform%2Fmaven-metadata.xml&query=%2F%2Frelease&colorB=green&prefix=v&style=for-the-badge&)
-[![License](https://img.shields.io/github/license/orbitalapi/orbital?style=for-the-badge)](./LICENSE)
+[![Latest Version](https://img.shields.io/badge/Latest-v0.33.0-green?style=for-the-badge)](https://gitlab.com/orbitalapi/orbital/-/releases)
 
 </div>
 
@@ -50,7 +49,10 @@ Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) insta
 curl -sSL https://start.orbitalhq.com/start.sh | bash
 ```
 
-The script detects your OS, downloads the right compose file, starts Orbital, and opens [http://localhost:9022](http://localhost:9022) in your browser.
+The script will:
+- Detect your OS and download the right Docker Compose file
+- Start Orbital in the background
+- Open **[http://localhost:9022](http://localhost:9022)** in your browser
 
 ## Why Orbital?
 
