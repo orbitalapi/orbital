@@ -2,74 +2,71 @@
 
 <div align="center">
 
-
 [![Docker Pulls](https://img.shields.io/docker/pulls/orbitalhq/orbital?style=for-the-badge)](https://hub.docker.com/r/orbitalhq/orbital)
-![Latest Version](https://img.shields.io/badge/dynamic/xml.svg?label=Latest&url=http%3A%2F%2Frepo.orbitalhq.com%2Frelease%2Fio%2Fvyne%2Fplatform%2Fmaven-metadata.xml&query=%2F%2Frelease&colorB=green&prefix=v&style=for-the-badge&)
-![Pipeline status](https://gitlab.com/vyne/vyne/badges/develop/pipeline.svg?style=flat-square)
+[![Maven](https://badges.mvnrepository.com/badge/com.orbitalhq/vyne-core-types/badge.svg?label=Maven)](https://mvnrepository.com/artifact/com.orbitalhq/vyne-core-types)
 </div>
 
 <div align="center">
 
 [![Join us on Slack](https://img.shields.io/badge/Slack-chat%20with%20us-%235865F2?style=for-the-badge&logo=slack&logoColor=%23fff)](https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg)
 [![Follow us on Twitter](https://img.shields.io/badge/Follow-@orbitalapi-%235865F2?style=for-the-badge&logo=twitter&logoColor=white)](https://twitter.com/orbitalapi)
+
 </div>
 
 <div align="center">
 
 [Website](https://orbitalhq.com)&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
 [Docs](https://orbitalhq.com/docs)&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
-[Blog](https://orbitalhq.com/blog)&nbsp;&nbsp;&nbsp;
-[Get in touch](#)
+[Blog](https://orbitalhq.com/blog)&nbsp;&nbsp;&nbsp;•&nbsp;&nbsp;&nbsp;
+[Get in touch](https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg)
 
 </div>
 
-Orbital automates integration between your data sources. 
+**Orbital is a data gateway that automates integration across your APIs, databases, and message queues — no glue code required.**
 
-It's decentralized by nature - there's no central mapping code defined.
-Instead, Orbital is powered by the API specs you're already building.
-
-Orbital creates integration on-the-fly, without engineers having to write glue code.
-
-Get started right now, by spinning up Orbital on your machine. 
-
-* Grab the `docker-compose.yml` at [https://start.orbitalhq.com/](https://start.orbitalhq.com/)
-   * Note that some of Orbital's test features leverage platform-specific docker features. 
-   * So, either visit the above in a browser and download the file (we'll work out the correct one to serve you), or...
-   * `curl  -H "x-os: ${OS:-${OSTYPE:-$(uname)}}" https://start.orbitalhq.com -o docker-compose.yml` will also fetch the right version for your OS
-* Then `docker compose up`
-* Finally visit http://localhost:9022 in your browser.
-
-```bash
-# for the impatient...
-curl  -H "x-os: ${OS:-${OSTYPE:-$(uname)}}" https://start.orbitalhq.com -o docker-compose.yml
-docker compose up -d
-```
-
-## What is Orbital?
-Orbital is a data gateway that automates the orchestration, integration and transformation of data and services (API’s, databases, message brokers) across your enterprise.
-Powered by your API specs enriched with Semantic Metadata, Orbital removes the need for glue code,
-and self adapts as your services evolve.
-
-Think of it as data federation (a single API for all your sources), without having to shift to GraphQL.
-
-Orbital integrates on-the-fly, automatically adjusting as your data sources change.
-
-This is powered [Taxi](https://github.com/taxilang/taxilang) which adds rich [Semantic Metadata](https://orbitalhq.com/blog/2023-05-22-semantic-metadata-101) to your exist API specs, that describes how data relates between your data sources.
+Powered by [Taxi](https://taxilang.org), Orbital reads your existing API specs (enriched with semantic metadata) and composes services on-the-fly, adapting automatically as they change. Think of it as data federation — a single API for all your sources — without having to shift to GraphQL.
 
 ![Network Diagram](./network-diagram.png)
 
+## Table of Contents
+
+-  [Quick Start](#quick-start)
+-  [Why Orbital?](#why-orbital)
+-  [How does it work?](#how-does-it-work)
+-  [Supported Connectors](#supported-connectors)
+-  [Development](#development)
+-  [Project Structure](#project-structure)
+-  [Contributing](#contributing)
+-  [FAQs](#faqs)
+-  [Get in touch](#get-in-touch)
+
+## Quick Start
+
+Requires [Docker](https://docs.docker.com/engine/install) installed and running.
+
+```bash
+curl -sSL https://start.orbitalhq.com/start.sh | bash
+```
+
+The script will:
+- Detect your OS and download the right Docker Compose file
+- Start Orbital in the background
+- Open **[http://localhost:9022](http://localhost:9022)** in your browser
+
 ## Why Orbital?
+
 1. **No glue code:** Glue code that stitches APIs together is brittle, breaking whenever APIs change.
 2. **API First:** Orbital is powered by your existing API specs, meaning less code to maintain
 3. **Technology Agnostic:** Using gRPC? REST? SOAP? Kafka? Orbital doesn't care. It'll work with what you have
-4. **Automatically Adapts:** As your API specs change, Orbital automatically adapts it's integration flows, so consumers stay unaffected.
+4. **Automatically Adapts:** As your API specs change, Orbital automatically adapts its integration flows, so consumers stay unaffected.
 
 ## How does it work?
+
 Here's the main ideas of Orbital.
 
 0. **Define some shared terms**
 
-Create a [Taxi project](https://taxilang.org/taxi-cli/intro/):
+Create a [Taxi project](https://taxilang.org/docs):
 
 ```bash
 taxi init
@@ -83,9 +80,8 @@ type MovieTitle inherits String
 // ... etc...
 ```
 
-
 1. **Add metadata into your APIs**
-   
+
 ```diff
 # An extract of an OpenAPI spec:
 components:
@@ -98,21 +94,21 @@ components:
 +           x-taxi-type:
 +             name: MovieId
 
-```   
+```
 
 (See the full docs for [OpenAPI](https://orbitalhq.com/docs/describing-data-sources/open-api), or other examples in [Protobuf](https://orbitalhq.com/docs/describing-data-sources/protobuf) and [Databases](https://orbitalhq.com/docs/describing-data-sources/databases))
 
 2. **Publish your API specs to Orbital**
 
-Tell Orbital about your API.  There's a few ways to do this.
+Tell Orbital about your API. There's a few ways to do this.
 
- * [Get Orbital to poll your OpenAPI spec](https://orbitalhq.com/docs/describing-data-sources/open-api#publishing-open-api-specs-to-orbital)
- * [Read from a Git repository](https://orbitalhq.com/docs/connecting-data-sources/connecting-a-git-repo)
- * [Get your app to push directly to Orbital](https://orbitalhq.com/docs/connecting-data-sources/overview#pushing-updates-on-startup)
+-  [Get Orbital to poll your OpenAPI spec](https://orbitalhq.com/docs/describing-data-sources/open-api#publishing-open-api-specs-to-orbital)
+-  [Connect your data sources](https://orbitalhq.com/docs/describing-data-sources/configuring-connections)
 
 3. **Query for data**
 
 Some example queries:
+
 ```taxi
 // Find all the movies
 find { Movie[] }
@@ -140,56 +136,100 @@ find { Movie[] } as {
 Orbital builds the integration for each query, and composes the APIs on demand.
 
 Because it's powered by API specs:
- * There's no resolvers to maintain
- * Changes to API specs are automatically main
+
+-  There's no resolvers to maintain
+-  Changes to API specs are automatically maintained
+
+## Supported Connectors
+
+| Category | Connectors |
+|----------|------------|
+| REST / HTTP | OpenAPI, REST |
+| Messaging | Kafka, AWS SQS |
+| Databases | JDBC (PostgreSQL, MySQL, and more) |
+| RPC | gRPC, SOAP |
+| Cloud | AWS, Azure |
+| Schema formats | Protobuf, Avro, JSON Schema |
+
+## Development
+
+For building from source, Maven configuration, development workflow, commit conventions, and release instructions, see [DEVELOPING.md](./DEVELOPING.md).
+
+**Note:** Orbital was previously called Vyne, so you'll see that name throughout the codebase.
+
+## Project Structure
+
+This is a multi-module Maven project with key modules:
+
+-  **`schema-server-core`** - Core schema server functionality
+-  **`taxiql-query-engine`** - TaxiQL query engine (all changes require tests)
+-  **`station`** - Main shipped application
+-  **`orbital-ui`** - User interface components
+-  **`connectors/`** - Integration connectors (JDBC, Kafka, AWS, Azure, etc.)
+-  **`schema-management`** - Schema management utilities
+-  **`vyne-spring`** - Spring Framework integrations
+
+See [project structure](./pom.xml) for the complete module list. For UI-specific conventions, see [orbital-ui/CLAUDE.md](./orbital-ui/CLAUDE.md).
+
+## Contributing
+
+We'd love to have you contribute! Please reach out on [Slack](https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg) before opening a PR — since development is primarily on GitLab, a quick heads-up saves everyone time.
+
+-  [Report a bug](https://github.com/orbitalapi/orbital/issues)
+-  [Ask a question](https://github.com/orbitalapi/orbital/discussions)
 
 ## Taxi
-Under the hood, Orbital is a [TaxiQL](https://docs.taxilang.org/language-reference/querying-with-taxiql/) query server.
 
-### Links
- * [Taxi](https://taxilang.org)
- * [TaxiQL](https://docs.taxilang.org/language-reference/querying-with-taxiql/) 
+Under the hood, Orbital is a [TaxiQL](https://taxilang.org/docs/taxiql/querying) query server.
+
+### Further Reading
+
+-  [Taxi language](https://taxilang.org)
+-  [TaxiQL query language](https://taxilang.org/docs/taxiql/querying)
+-  [Semantic Integration 101](https://orbitalhq.com/blog/2023-05-22-semantic-metadata-101)
+-  [Why we built Taxi](https://orbitalhq.com/blog/2023-05-12-why-we-created-taxi)
+-  [Using Semantic Metadata to automate integration](https://orbitalhq.com/blog/2023-01-16-using-semantic-metadata)
+-  [Querying for data](https://orbitalhq.com/docs/querying/writing-queries)
 
 ## Get in touch
- * 💬 [Connect with us on Slack](https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg)
- * ☎️ [Book a call with the founders](https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0ihMtHrlqo-9Zu2041JizUvJv-rk8m2l88UtiTI14c-dtv8ZVrnd_p1dLnmMyFFKc1tAF2ig41)
- * 🐞 [Report a bug](https://github.com/orbitalapi/orbital/issues)
- * 🙋 [Ask a question](https://github.com/orbitalapi/orbital/discussions)
 
+-  💬 [Connect with us on Slack](https://join.slack.com/t/orbitalapi/shared_invite/zt-697laanr-DHGXXak5slqsY9DqwrkzHg)
+-  ☎️ [Book a call with the founders](https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ0ihMtHrlqo-9Zu2041JizUvJv-rk8m2l88UtiTI14c-dtv8ZVrnd_p1dLnmMyFFKc1tAF2ig41)
+-  🐞 [Report a bug](https://github.com/orbitalapi/orbital/issues)
+-  🙋 [Ask a question](https://github.com/orbitalapi/orbital/discussions)
 
-## FAQ's
+## FAQs
 
 #### How does this relate to GraphQL?
-Orbital gives you many of the benefits of GraphQL (API federation, custom response schemas), without having to move your tech stack over to GraphQl - instead working with your existing tech stack(s).
+
+Orbital gives you many of the benefits of GraphQL (API federation, custom response schemas), without having to move your tech stack over to GraphQL - instead working with your existing tech stack(s).
 
 The key differences are:
 
 ##### Technology agnostic
-GraphQL works great when you have GraphQL everywhere.  For everything else, you have to maintain a seperate shim layer to adapt your RESTful API / Database / Message Queue etc., to GraphQL.
 
-Orbital and Taxi work by embedding metatdata in your existing API specs (OpenAPI / Protobuf / Avro / JsonSchema, etc), so that you don't need to change the underlying tech you're using.
+GraphQL works great when you have GraphQL everywhere. For everything else, you have to maintain a separate shim layer to adapt your RESTful API / Database / Message Queue etc., to GraphQL.
+
+Orbital and Taxi work by embedding metadata in your existing API specs (OpenAPI / Protobuf / Avro / JsonSchema, etc), so that you don't need to change the underlying tech you're using.
 
 ##### Decentralized, spec-first federation
-Orbital is built for decentralized teams, so that teams can ship changes independently, without having to build and maintain a seperate integration layer.
+
+Orbital is built for decentralized teams, so that teams can ship changes independently, without having to build and maintain a separate integration layer.
 
 ##### Resolver-free
-Resolvers in GraphQL are integration code that has to be maintated - often by a dedicated GraphQL / middleware team.  This means teams that own services have to co-ordinate changes with a seperate integration team.
 
-Instead, Orbital uses Taxi metadata embedded in API specs to define how data relates semantically.  From here, most integration can be created automatically.
+Resolvers in GraphQL are integration code that has to be maintained - often by a dedicated GraphQL / middleware team. This means teams that own services have to co-ordinate changes with a separate integration team.
+
+Instead, Orbital uses Taxi metadata embedded in API specs to define how data relates semantically. From here, most integration can be created automatically.
 
 #### Does this mean all my systems have to have the same ID schemes and request/response models?
-Nope. Taxi is designed to encourage teams to evolve independently, without sharing common models.  Instead, semantic scalars are used to compose models together automatically.
+
+Nope. Taxi is designed to encourage teams to evolve independently, without sharing common models. Instead, semantic scalars are used to compose models together automatically.
 
 We talk more about that in [Why we built Taxi](https://orbitalhq.com/blog/2023-05-12-why-we-created-taxi)
 
 #### I can't embed tags in my API specs - does that stop me using Orbital?
+
 Nope. There's plenty of options if you can't edit API specs directly (or don't have them) - such as working with a clone of the spec,
 or implementing the spec from scratch in Taxi (it's really quick)
 
-## Doc links
-
- * [Semantic Integration 101](https://orbitalhq.com/blog/2023-05-22-semantic-metadata-101)
- * [Why we built Taxi](https://orbitalhq.com/blog/2023-05-12-why-we-created-taxi)
- * [Using Semantic Metadata to automate integration](https://orbitalhq.com/blog/2023-01-16-using-semantic-metadata)
- * [Querying for data](https://orbitalhq.com/docs/querying/writing-queries)
- * 
