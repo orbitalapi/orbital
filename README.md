@@ -3,8 +3,7 @@
 <div align="center">
 
 [![Docker Pulls](https://img.shields.io/docker/pulls/orbitalhq/orbital?style=for-the-badge)](https://hub.docker.com/r/orbitalhq/orbital)
-[![Latest Version](https://img.shields.io/badge/Latest-v0.33.0-green?style=for-the-badge)](https://gitlab.com/orbitalapi/orbital/-/releases)
-
+[![Maven](https://badges.mvnrepository.com/badge/com.orbitalhq/vyne-core-types/badge.svg?label=Maven)](https://mvnrepository.com/artifact/com.orbitalhq/vyne-core-types)
 </div>
 
 <div align="center">
@@ -43,7 +42,7 @@ Powered by [Taxi](https://taxilang.org), Orbital reads your existing API specs (
 
 ## Quick Start
 
-Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running.
+Requires [Docker](https://docs.docker.com/engine/install) installed and running.
 
 ```bash
 curl -sSL https://start.orbitalhq.com/start.sh | bash
@@ -153,8 +152,6 @@ Because it's powered by API specs:
 | Schema formats | Protobuf, Avro, JSON Schema |
 
 ## Development
-
-We actively develop on [GitLab](https://gitlab.com/vyne/vyne) and mirror to GitHub.
 
 For building from source, Maven configuration, development workflow, commit conventions, and release instructions, see [DEVELOPING.md](./DEVELOPING.md).
 
