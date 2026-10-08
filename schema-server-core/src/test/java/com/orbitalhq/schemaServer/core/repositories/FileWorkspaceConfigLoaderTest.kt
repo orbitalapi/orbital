@@ -1,12 +1,19 @@
 package com.orbitalhq.schemaServer.core.repositories
 
+import com.nhaarman.mockito_kotlin.argumentCaptor
+import com.nhaarman.mockito_kotlin.atLeastOnce
 import com.nhaarman.mockito_kotlin.mock
+import com.nhaarman.mockito_kotlin.verify
 import com.orbitalhq.PackageIdentifier
 import com.orbitalhq.schemaServer.core.file.FileProjectSpec
 import com.orbitalhq.schemaServer.core.file.WorkspaceFileProjectConfig
 import com.orbitalhq.schemaServer.core.file.deployProject
+import com.orbitalhq.schemaServer.core.git.GitProjectSpec
+import com.orbitalhq.schemaServer.core.git.WorkspaceGitProjectConfig
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecAddedEvent
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.FileSpecRemovedEvent
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.GitSpecAddedEvent
+import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectSpecLifecycleEventDispatcher
 import com.orbitalhq.schemaServer.core.repositories.lifecycle.ProjectStoreLifecycleManager
 import com.orbitalhq.schemaServer.repositories.FileProjectStoreTestRequest
 import com.orbitalhq.test.utils.FlakeyOnBuildServer
@@ -88,6 +95,49 @@ class FileWorkspaceConfigLoaderTest {
       eventDispatcher.gitSpecRemoved,
       eventDispatcher.gitSpecAdded
    )
+
+   @Test
+   fun `adding a git project resolves the default checkout root without persisting an absolute path`() {
+      assertGitCheckoutRoot()
+   }
+
+   @Test
+   fun `adding a git project resolves a configured relative checkout root without persisting an absolute path`() {
+      assertGitCheckoutRoot(Paths.get("custom/projects"))
+   }
+
+   @Test
+   fun `adding a git project preserves an absolute checkout root`() {
+      assertGitCheckoutRoot(projectFolder.toPath().toAbsolutePath())
+   }
+
+   private fun assertGitCheckoutRoot(checkoutRoot: Path? = null) {
+      val dispatcher = mock<ProjectSpecLifecycleEventDispatcher>()
+      val gitLoader = FileWorkspaceConfigLoader(
+         configFile.toPath(), eventDispatcher = dispatcher, projectManager = mock { }, emitStateOnInit = false
+      )
+      try {
+         gitLoader.save(WorkspaceConfig(git = checkoutRoot?.let { WorkspaceGitProjectConfig(checkoutRoot = it) }))
+         val spec = GitProjectSpec(name = "sample", uri = "https://example.com/sample.git", branch = "main")
+
+         gitLoader.addGitSpec(spec).status.shouldBe(ModifyProjectResponseStatus.Ok)
+
+         val savedRoot = checkoutRoot ?: WorkspaceGitProjectConfig().checkoutRoot
+         val expectedRoot = configFile.toPath().toAbsolutePath().parent.resolve(savedRoot)
+         argumentCaptor<GitSpecAddedEvent>().apply {
+            verify(dispatcher, atLeastOnce()).gitRepositorySpecAdded(capture())
+            allValues.forEach { event ->
+               event.spec.shouldBe(spec)
+               event.config.checkoutRoot.shouldBe(expectedRoot)
+            }
+         }
+         gitLoader.invalidateCache()
+         gitLoader.typedConfig().git!!.checkoutRoot.shouldBe(savedRoot)
+         gitLoader.typedConfig().git!!.repositories.shouldBe(listOf(spec))
+      } finally {
+         gitLoader.stopWatching()
+      }
+   }
 
    private fun writeWorkspaceConfWithProjectPaths(vararg paths: Path): String {
       val projects = paths.map { path ->

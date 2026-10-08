@@ -412,7 +412,10 @@ class FileWorkspaceConfigLoader(
          )
       )
       save(updated)
-      eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(gitSpec, updated.git!!))
+      val resolvedGitConfig = updated.git!!.copy(
+         checkoutRoot = convertRelativePathsToAbsoluteFromWorkspaceFile(updated.git.checkoutRoot)
+      )
+      eventDispatcher.gitRepositorySpecAdded(GitSpecAddedEvent(gitSpec, resolvedGitConfig))
       return ModifyWorkspaceResponse(
          ModifyProjectResponseStatus.Ok,
          "${gitSpec.name} added as a new project, you need to commit and push  your workspace.conf"
